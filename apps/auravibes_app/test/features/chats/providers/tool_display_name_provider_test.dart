@@ -191,10 +191,14 @@ void main() {
       );
 
       expect(titles, (
+        skillId: appSkill.identifier,
+        skillSource: SkillSource.app,
         skillTitle: appSkill.title,
         skillTitleKey: appSkill.titleKey,
         toolTitle: tool.title,
         toolTitleKey: tool.titleKey,
+        toolDescription: tool.description,
+        toolDescriptionKey: tool.descriptionKey,
       ));
     });
 
@@ -244,10 +248,14 @@ void main() {
       );
 
       expect(titles, (
+        skillId: 'skill-1',
+        skillSource: SkillSource.user,
         skillTitle: 'Research Assistant',
         skillTitleKey: null,
         toolTitle: 'Search the web',
         toolTitleKey: null,
+        toolDescription: 'Searches the web.',
+        toolDescriptionKey: null,
       ));
     });
 

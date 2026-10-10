@@ -2333,6 +2333,7 @@ void main() {
         label.textSpan?.toPlainText(),
         contains('Research Assistant / Search the web'),
       );
+      expect(label.textSpan?.toPlainText(), contains('Searches the web.'));
       expect(find.text('Call Skill Tool'), findsNothing);
       final status = tester.widget<Text>(
         find.byKey(const ValueKey('activity_tool_status_tc-skill')),
@@ -2347,6 +2348,106 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       semantics.dispose();
+    });
+
+    testWidgets('opens the owning skill from a separate activity action', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-open-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research","tool":"search_web"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+      Widget? mainChat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/chats/conv-1',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            builder: (_, _) => mainChat ?? const SizedBox.shrink(),
+          ),
+          GoRoute(
+            path: '/workspaces/:workspaceId/more/skills/:skillId',
+            builder: (_, state) => Material(
+              child: Text('Skill details ${state.pathParameters['skillId']}'),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          messageEntitiesById: {message.id: message},
+          overrides: [
+            ..._messageOverrides({message.id: message}),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => const [
+                WorkspaceSkill(
+                  id: 'skill-1',
+                  slug: 'research',
+                  title: 'Research Assistant',
+                  description: '',
+                  source: SkillSource.user,
+                  kind: SkillKind.template,
+                  isEnabled: true,
+                ),
+              ],
+            ),
+            skillTemplateToolsProvider('ws-1', 'skill-1').overrideWith(
+              (ref) async => [
+                SkillTemplateToolEntity(
+                  id: 'tool-1',
+                  skillId: 'skill-1',
+                  templateType: SkillTemplateToolType.url,
+                  title: 'Search the web',
+                  description: 'Searches the web.',
+                  slug: 'search_web',
+                  isEnabled: true,
+                  requiresCredential: false,
+                  createdAt: DateTime(2026),
+                  updatedAt: DateTime(2026),
+                ),
+              ],
+            ),
+          ],
+          appBuilder: (context, child) {
+            mainChat = ChatPrimaryScrollController(child: child);
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('activity_open_skill_tc-open-skill')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_tool_details_tc-open-skill')),
+        findsNothing,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('activity_open_skill_tc-open-skill')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Skill details skill-1'), findsOneWidget);
     });
 
     testWidgets('shows app skill and tool titles in activity rows', (
@@ -2412,10 +2513,17 @@ void main() {
       final skillTitle =
           appSkill.titleKey?.tr(context: context) ?? appSkill.title;
       final toolTitle = tool.titleKey?.tr(context: context) ?? tool.title;
+      final toolDescription =
+          tool.descriptionKey?.tr(context: context) ?? tool.description;
       final label = tester.widget<Text>(labelFinder);
       expect(
         label.textSpan?.toPlainText(),
         contains('$skillTitle / $toolTitle'),
+      );
+      expect(label.textSpan?.toPlainText(), contains(toolDescription));
+      expect(
+        find.byKey(const ValueKey('activity_open_skill_tc-app-skill')),
+        findsOneWidget,
       );
       expect(find.text('Completed'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);

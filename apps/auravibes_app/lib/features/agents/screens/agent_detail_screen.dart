@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/agents/usecases/list_agent_tool_overrides
 import 'package:auravibes_app/features/agents/usecases/save_agent_tool_overrides_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_usecase.dart';
 import 'package:auravibes_app/features/agents/widgets/agent_availability_summary.dart';
+import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/markdown/markdown_editor_launcher.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
@@ -2141,6 +2142,7 @@ extension on _AgentToolPermissionsDialogState {
     return _ToolGroup(
       key: request.key,
       title: _skillGroupTitle(request.skill, parsed.skillSlug),
+      titleKey: request.skill?.source == .app ? request.skill?.titleKey : null,
       tools: [],
       overrideCount: _skillGroupOverrideCount(
         source: parsed.source,
@@ -2380,6 +2382,7 @@ class const _ToolGroupItem({
   Widget build(BuildContext context) {
     return _CollapsibleToolSection(
       title: group.title,
+      titleKey: group.titleKey,
       empty: empty,
       isExpanded: state._isGroupExpanded(group, query),
       onToggle: () => state._toggleGroup(group, query),
@@ -2468,6 +2471,7 @@ class const _GroupedTools({
 class const _ToolGroup({
   required final String key,
   required final String title,
+  required final String? titleKey,
   required final List<WorkspaceToolEntity> tools,
   required final int overrideCount,
 }) {
@@ -2673,6 +2677,7 @@ class _ToolSection({
 
 class const _CollapsibleToolSection({
   required final String title,
+  required final String? titleKey,
   required final Widget empty,
   required final bool isExpanded,
   required final VoidCallback onToggle,
@@ -2686,6 +2691,7 @@ class const _CollapsibleToolSection({
     padding: const EdgeInsets.only(bottom: 16),
     child: _CollapsibleToolColumn(
       title: title,
+      titleKey: titleKey,
       empty: empty,
       isExpanded: isExpanded,
       onToggle: onToggle,
@@ -2699,6 +2705,7 @@ class const _CollapsibleToolSection({
 // ignore: prefer_const_constructors_in_immutables, child captures runtime state.
 class _CollapsibleToolColumn({
   required final String title,
+  required final String? titleKey,
   required final Widget empty,
   required final bool isExpanded,
   required final VoidCallback onToggle,
@@ -2711,6 +2718,7 @@ class _CollapsibleToolColumn({
     children: [
       _CollapsibleToolHeader(
         title: title,
+        titleKey: titleKey,
         isExpanded: isExpanded,
         onToggle: onToggle,
       ),
@@ -2732,12 +2740,21 @@ class _CollapsibleToolColumn({
 
 class const _CollapsibleToolHeader({
   required final String title,
+  required final String? titleKey,
   required final bool isExpanded,
   required final VoidCallback onToggle,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraTile(
-    child: AuraColumn(children: [Text(title)], crossAxisAlignment: .start),
+    child: AuraColumn(
+      children: [
+        if (titleKey case final String localizedTitle)
+          TextLocale(localizedTitle)
+        else
+          Text(title),
+      ],
+      crossAxisAlignment: .start,
+    ),
     onTap: onToggle,
     variant: .surface,
     leading: AuraIcon(isExpanded ? Icons.expand_less : Icons.expand_more),
@@ -2927,17 +2944,40 @@ class const _AgentToolPermissionTileContent({
   required final WorkspaceToolEntity tool,
   required final AgentToolPermissionMode value,
   required final ValueChanged<AgentToolPermissionMode> onChanged,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => AuraColumn(
+  Widget build(BuildContext context, WidgetRef ref) => AuraColumn(
     children: [
-      AuraText(child: tool.getNameWidget()),
+      AuraText(child: _toolName(context, ref)),
       _AgentToolDescription(tool: tool),
       _AgentToolPermissionSelector(value: value, onChanged: onChanged),
     ],
     spacing: .xs,
     crossAxisAlignment: .start,
   );
+
+  Widget _toolName(BuildContext context, WidgetRef ref) {
+    final target = ToolNameFormatter.parseSkillToolName(tool.toolId);
+    if (target == null) return tool.getNameWidget();
+
+    final titlesAsync = ref.watch(
+      skillToolCallDisplayTitlesProvider(
+        tool.workspaceId,
+        target.skillSlug,
+        target.toolSlug,
+      ),
+    );
+    final titles = titlesAsync.maybeWhen(
+      data: (value) => value,
+      orElse: () => null,
+    );
+    final title =
+        titles?.toolTitleKey?.tr(context: context) ??
+        titles?.toolTitle ??
+        target.toolSlug.toHumanReadable();
+
+    return Text(title);
+  }
 }
 
 class const _AgentToolDescription({required final WorkspaceToolEntity tool})

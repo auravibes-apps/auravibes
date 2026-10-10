@@ -4,7 +4,8 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
-import 'package:auravibes_engine/auravibes_engine.dart' show callSkillToolName;
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show callSkillToolName, normalizeToolCallUserFacingDescription;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
@@ -34,6 +35,25 @@ abstract final class SkillToolCallDisplay {
     );
 
     return '$skillTitle / $toolTitle';
+  }
+
+  static String? description({
+    required BuildContext context,
+    required SkillToolCallDisplayTitles? titles,
+    required String? userFacingDescription,
+  }) {
+    final userFacing = normalizeToolCallUserFacingDescription(
+      userFacingDescription,
+    );
+    if (userFacing != null) return userFacing;
+
+    final saved = _localizedTitle(
+      context,
+      titles?.toolDescriptionKey,
+      titles?.toolDescription ?? '',
+    );
+
+    return normalizeToolCallUserFacingDescription(saved);
   }
 
   static SkillToolCallTarget? _targetFromArguments(String argumentsRaw) {
