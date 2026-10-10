@@ -1,4 +1,6 @@
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
+import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +8,41 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraButton', () {
+    testWidgets('uses the scoped content radius', (tester) async {
+      final theme = AuraTheme.light;
+      await tester.pumpWidget(
+        AuraThemeScope(
+          theme: theme,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCornerRadiusScope.select(
+                level: .xl,
+                child: AuraCornerRadiusScope.adjust(
+                  delta: 4,
+                  child: const AuraButton(
+                    onPressed: _noop,
+                    child: Text('Scoped'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final decoration = tester
+          .widget<AuraPressable>(find.byType(AuraPressable))
+          .decoration;
+      expect(
+        decoration,
+        isA<BoxDecoration>().having(
+          (value) => value.borderRadius,
+          'borderRadius',
+          BorderRadius.circular(theme.fromBorderRadius(.xl) - 4),
+        ),
+      );
+    });
+
     testWidgets('renders, sizes, centers, and activates button', (
       tester,
     ) async {
@@ -250,4 +287,8 @@ void main() {
       });
     });
   });
+}
+
+void _noop() {
+  final _ = Object();
 }

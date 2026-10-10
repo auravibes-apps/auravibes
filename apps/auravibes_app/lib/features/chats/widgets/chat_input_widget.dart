@@ -72,8 +72,8 @@ class const ChatInputWidget({
   required final VoidCallback onToolsPress,
   required final Widget modelSheetControl,
   required final Widget agentSheetControl,
-  required final Widget modelCompactControl,
-  required final Widget agentCompactControl,
+  required final Widget Function(VoidCallback onPressed) modelCompactControl,
+  required final Widget Function(VoidCallback onPressed) agentCompactControl,
   final ValueChanged<bool>? onDraftStatusChanged,
   final String? conversationId,
   final bool autofocus = false,
@@ -517,7 +517,7 @@ class const _ChatInputPadding({required final _ChatInputState state})
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: _ChatInputField(
         state: state,
         footer: _ChatInputFooter(state: state),
@@ -575,8 +575,8 @@ class _ChatInputFieldView extends StatelessWidget {
          onSubmitted: (_) => unawaited(actions.sendMessage()),
          onTapOutside: (_) => focusNode.unfocus(),
          focusNode: focusNode,
-         header: header,
-         footer: footer,
+         header: AuraCornerRadiusScope.adjust(delta: 4, child: header),
+         footer: AuraCornerRadiusScope.adjust(delta: 4, child: footer),
        );
 
   final AuraInput input;
@@ -584,13 +584,13 @@ class _ChatInputFieldView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     key: const ValueKey<String>('chat_composer'),
-    child: input,
+    child: AuraCornerRadiusScope.select(level: .xl, child: input),
     identifier: 'chat_composer',
   );
 }
 
 class const _ChatInputAgentSelector({
-  required final Widget compactControl,
+  required final Widget Function(VoidCallback onPressed) compactControl,
   required final Widget sheetControl,
   required final String workspaceId,
   required final String? conversationId,
@@ -607,7 +607,7 @@ class const _ChatInputAgentSelector({
 }
 
 class const _ChatInputAgentSelectorLayout({
-  required final Widget compactControl,
+  required final Widget Function(VoidCallback onPressed) compactControl,
   required final Widget sheetControl,
   required final String workspaceId,
   required final String? conversationId,
@@ -615,7 +615,7 @@ class const _ChatInputAgentSelectorLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
+    padding: const EdgeInsets.only(bottom: 4),
     child: Row(
       children: [
         Expanded(
@@ -638,17 +638,13 @@ class const _ChatInputAgentSelectorLayout({
 }
 
 class const _ChatInputAgentSelectorControl({
-  required final Widget compactControl,
+  required final Widget Function(VoidCallback onPressed) compactControl,
   required final Widget sheetControl,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => StableUiSelector(
     identifier: 'chat_agent_selector',
-    child: GestureDetector(
-      child: IgnorePointer(child: compactControl),
-      onTap: () => _showAgentSelectorSheet(context, sheetControl),
-      behavior: .opaque,
-    ),
+    child: compactControl(() => _showAgentSelectorSheet(context, sheetControl)),
   );
 }
 
@@ -1902,14 +1898,12 @@ class const _ModelSelectorButton({required final _ChatInputState state})
   Widget build(BuildContext context) {
     return StableUiSelector(
       identifier: 'chat_model_selector',
-      child: GestureDetector(
-        child: state.input.modelCompactControl,
-        onTap: () => _showSelectorSheet(
+      child: state.input.modelCompactControl(
+        () => _showSelectorSheet(
           context: context,
           title: const TextLocale(LocaleKeys.models_screens_select_model),
           child: state.input.modelSheetControl,
         ),
-        behavior: .opaque,
       ),
     );
   }

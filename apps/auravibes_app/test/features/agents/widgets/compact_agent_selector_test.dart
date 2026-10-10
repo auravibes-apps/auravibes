@@ -145,8 +145,51 @@ void main() {
     );
 
     expect(find.byType(AuraDropdownSelector<String>), findsNothing);
+    expect(find.byType(AuraTile), findsOneWidget);
     expect(find.byIcon(Icons.smart_toy_outlined), findsOneWidget);
     expect(find.text('Research Agent'), findsOneWidget);
+    expect(
+      tester.getRect(find.text('Research Agent')).center.dy,
+      closeTo(tester.getRect(find.byType(AuraTile)).center.dy, 0.1),
+    );
+  });
+
+  testWidgets('compact no-agent label is vertically centered', (tester) async {
+    await _pumpSubject(
+      tester,
+      agents: [_makeAgent('agent-1', 'Research Agent')],
+      onChanged: (_) {
+        final _ = Object();
+      },
+      compactMode: true,
+    );
+
+    expect(find.text('No agent'), findsOneWidget);
+    expect(
+      tester.getRect(find.text('No agent')).center.dy,
+      closeTo(tester.getRect(find.byType(AuraTile)).center.dy, 0.1),
+    );
+  });
+
+  testWidgets('compact tile handles its own tap', (tester) async {
+    var tapped = false;
+    await _pumpSubject(
+      tester,
+      agents: [_makeAgent('agent-1', 'Research Agent')],
+      onChanged: (_) {
+        final _ = Object();
+      },
+      agentId: 'agent-1',
+      compactMode: true,
+      onCompactTap: () => tapped = true,
+    );
+
+    final tile = tester.widget<AuraTile>(find.byType(AuraTile));
+    expect(tile.onTap, isNotNull);
+    await tester.tap(find.byType(AuraTile));
+    final pumpCount = await tester.pumpAndSettle();
+    expect(pumpCount, greaterThanOrEqualTo(0));
+    expect(tapped, isTrue);
   });
 
   testWidgets('dropdown ignores unavailable selected agent', (tester) async {
@@ -188,6 +231,7 @@ Future<void> _pumpSubject(
   String? agentId,
   bool compactMode = false,
   bool sheetMode = false,
+  VoidCallback? onCompactTap,
 }) async {
   final _ = await tester.runAsync(() async {
     await tester.pumpWidget(
@@ -202,6 +246,7 @@ Future<void> _pumpSubject(
                   workspaceId: 'ws-1',
                   agentId: agentId,
                   onChanged: onChanged,
+                  onCompactTap: onCompactTap,
                   compactMode: compactMode,
                   sheetMode: sheetMode,
                 ),

@@ -1,11 +1,42 @@
 // Required: Tests use fixed widget dimensions.
 
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/organisms/aura_field_wrapper.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraFieldWrapper', () {
+    testWidgets('uses scoped outer radius', (tester) async {
+      final theme = AuraTheme.light;
+      await tester.pumpWidget(
+        AuraThemeScope(
+          theme: theme,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCornerRadiusScope.select(
+                level: .sm,
+                child: const AuraFieldWrapper(child: SizedBox()),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final decoration = tester
+          .widget<AnimatedContainer>(find.byType(AnimatedContainer))
+          .decoration;
+      expect(
+        decoration,
+        isA<BoxDecoration>().having(
+          (value) => value.borderRadius,
+          'borderRadius',
+          BorderRadius.circular(theme.fromBorderRadius(.sm)),
+        ),
+      );
+    });
+
     testWidgets('renders label, hint, and child', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(

@@ -1,5 +1,6 @@
 import 'dart:ui' show SemanticsRole, Tristate;
 
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_container.dart';
@@ -11,6 +12,29 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraTabs', () {
+    testWidgets('uses scoped radius for tab surfaces', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          AuraCornerRadiusScope.select(
+            level: .xl,
+            child: const AuraTabs<void>(items: _items),
+          ),
+        ),
+      );
+
+      final pressable = tester.widget<AuraPressable>(
+        find.byType(AuraPressable).first,
+      );
+      expect(
+        pressable.decoration,
+        isA<BoxDecoration>().having(
+          (decoration) => decoration.borderRadius,
+          'borderRadius',
+          BorderRadius.circular(AuraTheme.light.fromBorderRadius(.xl)),
+        ),
+      );
+    });
+
     testWidgets('reveals an initially selected edge tab after route uncover', (
       tester,
     ) async {
@@ -497,7 +521,16 @@ void main() {
         pressables.every((tab) => tab.color == AuraTheme.light.colors.primary),
         isTrue,
       );
-      expect(pressables.every((tab) => tab.decoration == null), isTrue);
+      expect(
+        pressables.every((tab) {
+          final decoration = tab.decoration;
+
+          return decoration is BoxDecoration &&
+              decoration.borderRadius ==
+                  BorderRadius.circular(AuraTheme.light.fromBorderRadius(.md));
+        }),
+        isTrue,
+      );
 
       final labels = tester.widgetList<AuraText>(find.byType(AuraText));
       expect(labels.firstOrNull?.tint, AuraTint.primary);

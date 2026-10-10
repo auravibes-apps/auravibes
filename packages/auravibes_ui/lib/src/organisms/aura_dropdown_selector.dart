@@ -1,5 +1,6 @@
 // ignore_for_file: type=lint, type=warning
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
@@ -412,7 +413,9 @@ class const _DropdownMenu<T>({
         color: auraColors.surface,
         border: Border.fromBorderSide(BorderSide(color: auraColors.outline)),
         borderRadius: BorderRadius.all(
-          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
+          Radius.circular(
+            AuraCornerRadiusScope.resolve(context, fallback: .xl),
+          ),
         ),
       ),
       constraints: const BoxConstraints(maxHeight: 300),
@@ -483,7 +486,9 @@ class const _DropdownMenu<T>({
                         ? auraColors.primary.withValues(alpha: 0.08)
                         : DesignColors.transparent,
                     borderRadius: BorderRadius.all(
-                      Radius.circular(context.auraTheme.fromBorderRadius(.sm)),
+                      Radius.circular(
+                        AuraCornerRadiusScope.resolve(context, fallback: .sm),
+                      ),
                     ),
                   ),
                   onPressed: option.isEnabled

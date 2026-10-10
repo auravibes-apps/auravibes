@@ -21,6 +21,7 @@ class const CompactWorkspaceModelSelector({
   final bool compactMode = false,
   final bool sheetMode = false,
   final bool modelUnavailable = false,
+  final VoidCallback? onCompactTap,
   super.key,
 }) extends HookConsumerWidget {
   static const _selectorWidth = 220.0;
@@ -40,6 +41,7 @@ class const CompactWorkspaceModelSelector({
         compactMode: compactMode,
         sheetMode: sheetMode,
         modelUnavailable: modelUnavailable,
+        onCompactTap: onCompactTap,
         recentModelIds: recentModelIds,
       ),
     );
@@ -83,11 +85,17 @@ class const _ModelSelectorView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => switch (models) {
-    AsyncLoading() => _ModelSelectorLoading(sheetMode: config.sheetMode),
+    AsyncLoading() => _ModelSelectorLoading(
+      compactMode: config.compactMode,
+      sheetMode: config.sheetMode,
+      onCompactTap: config.onCompactTap,
+    ),
     AsyncError(:final error, :final stackTrace) => _ModelSelectorError(
+      compactMode: config.compactMode,
       sheetMode: config.sheetMode,
       error: error,
       stackTrace: stackTrace,
+      onCompactTap: config.onCompactTap,
     ),
     AsyncData(:final value) => _CompactModelSelectorBody(
       groupedModels: value,
@@ -102,36 +110,58 @@ typedef _SelectorConfig = ({
   bool compactMode,
   bool sheetMode,
   bool modelUnavailable,
+  VoidCallback? onCompactTap,
   List<String> recentModelIds,
 });
 
-class const _ModelSelectorLoading({required final bool sheetMode})
-    extends StatelessWidget {
+class const _ModelSelectorLoading({
+  required final bool compactMode,
+  required final bool sheetMode,
+  required final VoidCallback? onCompactTap,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => sheetMode
-      ? const Center(child: AuraSpinner(size: .small))
-      : const SizedBox(
-          width: 180,
-          child: AuraDropdownSelector<String>(
-            options: [],
-            placeholder: AuraSpinner(size: .small),
-            isEnabled: false,
-          ),
-        );
+  Widget build(BuildContext context) {
+    if (sheetMode) return const Center(child: AuraSpinner(size: .small));
+    if (compactMode) {
+      return _ModelChip(
+        label: const AuraSpinner(size: .small),
+        onTap: onCompactTap,
+      );
+    }
+
+    return const SizedBox(
+      width: 180,
+      child: AuraDropdownSelector<String>(
+        options: [],
+        placeholder: AuraSpinner(size: .small),
+        isEnabled: false,
+      ),
+    );
+  }
 }
 
 class const _ModelSelectorError({
+  required final bool compactMode,
   required final bool sheetMode,
   required final Object error,
   required final StackTrace stackTrace,
+  required final VoidCallback? onCompactTap,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => sheetMode
-      ? AppErrorWidget(error: error, stackTrace: stackTrace)
-      : SizedBox(
-          width: CompactWorkspaceModelSelector._selectorWidth,
-          child: AppErrorWidget(error: error, stackTrace: stackTrace),
-        );
+  Widget build(BuildContext context) {
+    if (sheetMode) return AppErrorWidget(error: error, stackTrace: stackTrace);
+    if (compactMode) {
+      return _ModelChip(
+        label: AppErrorWidget(error: error, stackTrace: stackTrace),
+        onTap: onCompactTap,
+      );
+    }
+
+    return SizedBox(
+      width: CompactWorkspaceModelSelector._selectorWidth,
+      child: AppErrorWidget(error: error, stackTrace: stackTrace),
+    );
+  }
 }
 
 class const _CompactModelSelectorBody({
@@ -146,6 +176,7 @@ class const _CompactModelSelectorBody({
         groupedModels: groupedModels,
         workspaceModelSelectionId: config.selectedId,
         modelUnavailable: config.modelUnavailable,
+        onCompactTap: config.onCompactTap,
       );
     }
 
@@ -836,8 +867,9 @@ class const _AllModelsSectionTitle() extends StatelessWidget {
   );
 }
 
-BorderRadius _inputRadius(BuildContext context) =>
-    BorderRadius.all(.circular(context.auraTheme.fromBorderRadius(.xl)));
+BorderRadius _inputRadius(BuildContext context) => BorderRadius.all(
+  .circular(AuraCornerRadiusScope.resolve(context, fallback: .xl)),
+);
 
 class _ModelDropdownOption extends AuraDropdownOption<String> {
   new(WorkspaceModelSelectionWithConnectionEntity model)
@@ -899,6 +931,7 @@ class const _ModelCompactChip({
   groupedModels,
   required final String? workspaceModelSelectionId,
   required final bool modelUnavailable,
+  required final VoidCallback? onCompactTap,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -910,48 +943,53 @@ class const _ModelCompactChip({
         modelUnavailable ||
         (workspaceModelSelectionId != null && selectedModel == null);
     if (isUnavailable) {
-      return _unavailableModelChip;
+      return _ModelChip(
+        label: const TextLocale(
+          LocaleKeys.models_screens_model_unavailable,
+          softWrap: false,
+          overflow: .ellipsis,
+          maxLines: 1,
+        ),
+        trailing: const AuraIcon(Icons.warning_amber_rounded, tint: .warning),
+        onTap: onCompactTap,
+      );
     }
 
     if (groupedModels.isEmpty) {
-      return const _ModelChip(
-        label: TextLocale(
+      return _ModelChip(
+        label: const TextLocale(
           LocaleKeys.models_screens_select_model,
           softWrap: false,
           overflow: .ellipsis,
           maxLines: 1,
         ),
+        onTap: onCompactTap,
       );
     }
 
-    return _SelectedModelChip(selectedModel: selectedModel);
+    return _SelectedModelChip(
+      selectedModel: selectedModel,
+      onTap: onCompactTap,
+    );
   }
 }
 
-const _unavailableModelChip = _ModelChip(
-  label: TextLocale(
-    LocaleKeys.models_screens_model_unavailable,
-    softWrap: false,
-    overflow: .ellipsis,
-    maxLines: 1,
-  ),
-  trailing: AuraIcon(Icons.warning_amber_rounded, tint: .warning),
-);
-
 class _SelectedModelChip extends _ModelChip {
-  new({required WorkspaceModelSelectionWithConnectionEntity? selectedModel})
-    : super(
-        label: switch (selectedModel?.workspaceModelSelection.modelName ??
-            selectedModel?.workspaceModelSelection.modelId) {
-          final name? => Text(name, overflow: .ellipsis, maxLines: 1),
-          null => const TextLocale(
-            LocaleKeys.models_screens_select_model,
-            softWrap: false,
-            overflow: .ellipsis,
-            maxLines: 1,
-          ),
-        },
-      );
+  new({
+    required WorkspaceModelSelectionWithConnectionEntity? selectedModel,
+    required super.onTap,
+  }) : super(
+         label: switch (selectedModel?.workspaceModelSelection.modelName ??
+             selectedModel?.workspaceModelSelection.modelId) {
+           final name? => Text(name, overflow: .ellipsis, maxLines: 1),
+           null => const TextLocale(
+             LocaleKeys.models_screens_select_model,
+             softWrap: false,
+             overflow: .ellipsis,
+             maxLines: 1,
+           ),
+         },
+       );
 }
 
 WorkspaceModelSelectionWithConnectionEntity? _selectedModel(
@@ -964,44 +1002,22 @@ WorkspaceModelSelectionWithConnectionEntity? _selectedModel(
     )
     .firstOrNull;
 
-class const _ModelChip({required final Widget label, final Widget? trailing})
-    extends StatelessWidget {
+class const _ModelChip({
+  required final Widget label,
+  final Widget? trailing,
+  final VoidCallback? onTap,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return _DecoratedModelChip(
-      label: label,
-      borderColor: context.auraColors.outline,
-      radius: context.auraTheme.fromBorderRadius(.xl),
+    return AuraTile(
+      child: label,
+      onTap: onTap,
+      variant: .outlined,
+      size: .small,
+      leading: const AuraIcon(Icons.memory_outlined, size: .small),
       trailing: trailing,
     );
   }
-}
-
-class _DecoratedModelChip extends Container {
-  new({
-    required Widget label,
-    required Color borderColor,
-    required double radius,
-    Widget? trailing,
-  }) : super(
-         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-         decoration: BoxDecoration(
-           border: Border.all(color: borderColor),
-           borderRadius: BorderRadius.circular(radius),
-         ),
-         width: .infinity,
-         child: Row(
-           children: [
-             const AuraIcon(Icons.memory_outlined, size: .small),
-             const AuraSizedBox(width: .xs),
-             Flexible(child: label),
-             if (trailing case final value?) ...[
-               const AuraSizedBox(width: .xs),
-               value,
-             ],
-           ],
-         ),
-       );
 }
 
 class const _ModelSheetOptionContent({

@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_tooltip.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -9,7 +10,7 @@ typedef _AuraIconButtonValues = ({
   double iconSize,
   Color foregroundColor,
   Color backgroundColor,
-  AuraBorderRadius borderRadius,
+  double borderRadius,
 });
 
 /// A specialized icon button component following the Aura design system.
@@ -218,7 +219,10 @@ class const _AuraIconButtonButton({
     final content = _AuraIconButtonButtonData(
       button: button,
       colors: colors,
-      theme: context.auraTheme,
+      borderRadius: AuraCornerRadiusScope.resolve(
+        context,
+        fallback: button._getBorderRadius(),
+      ),
     ).toWidget();
     final identifier = button.identifier;
     if (identifier == null) return content;
@@ -235,18 +239,16 @@ class _AuraIconButtonButtonData {
   new({
     required AuraIconButton button,
     required AuraColorScheme colors,
-    required AuraTheme theme,
+    required double borderRadius,
   }) : this.fromValues(
          button: button,
          colors: colors,
-         theme: theme,
-         values: _iconButtonValues(button, colors),
+         values: _iconButtonValues(button, colors, borderRadius),
        );
 
   new fromValues({
     required AuraIconButton button,
     required AuraColorScheme colors,
-    required AuraTheme theme,
     required _AuraIconButtonValues values,
   }) : _widget = IconButton(
          iconSize: values.iconSize,
@@ -266,9 +268,7 @@ class _AuraIconButtonButtonData {
                  side: button.variant == AuraIconButtonVariant.outlined
                      ? BorderSide(color: colors.outline)
                      : BorderSide.none,
-                 borderRadius: BorderRadius.circular(
-                   theme.fromBorderRadius(values.borderRadius),
-                 ),
+                 borderRadius: BorderRadius.circular(values.borderRadius),
                ),
                splashFactory: NoSplash.splashFactory,
              ).copyWith(
@@ -278,6 +278,9 @@ class _AuraIconButtonButtonData {
                  }
                  if (states.contains(WidgetState.focused)) {
                    return colors.surfaceVariant;
+                 }
+                 if (states.contains(WidgetState.hovered)) {
+                   return colors.onSurface.withValues(alpha: 0.08);
                  }
 
                  return Colors.transparent;
@@ -298,11 +301,12 @@ class _AuraIconButtonButtonData {
 _AuraIconButtonValues _iconButtonValues(
   AuraIconButton button,
   AuraColorScheme colors,
+  double borderRadius,
 ) => (
   iconSize: button._getIconSize(),
   foregroundColor: button._getIconColor(colors),
   backgroundColor: button._getBackgroundColor(colors),
-  borderRadius: button._getBorderRadius(),
+  borderRadius: borderRadius,
 );
 
 VoidCallback? _iconButtonOnPressed(AuraIconButton button) =>

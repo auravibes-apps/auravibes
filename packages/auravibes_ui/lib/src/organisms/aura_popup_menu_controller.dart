@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart' show AuraTileVariant;
@@ -342,7 +343,7 @@ class _AuraPopupMenuCard extends StatelessWidget {
   Widget build(BuildContext context) => AuraCard(
     child: ClipRRect(
       borderRadius: BorderRadius.all(
-        .circular(context.auraTheme.fromBorderRadius(.xl)),
+        .circular(AuraCornerRadiusScope.resolve(context, fallback: .xl)),
       ),
       child: _AuraPopupMenuCardContent(items: items, close: close),
     ),
@@ -576,6 +577,6 @@ class _AuraPopupMenuItemRow extends StatelessWidget {
 Color _popupMenuItemColor(AuraTileVariant variant, AuraColorScheme colors) =>
     switch (variant) {
       .error => colors.error,
-      .surface => colors.foregroundOnSurface,
+      .surface || .outlined => colors.foregroundOnSurface,
       .primary || .ghost || .selected => colors.primary,
     };

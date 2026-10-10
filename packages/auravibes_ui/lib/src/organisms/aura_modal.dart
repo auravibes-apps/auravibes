@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -360,7 +361,7 @@ class _AuraModalSurfaceBox extends StatelessWidget {
 BoxDecoration _modalSurfaceDecoration(BuildContext context) => BoxDecoration(
   color: context.auraColors.surface,
   borderRadius: BorderRadius.all(
-    .circular(context.auraTheme.fromBorderRadius(.lg)),
+    .circular(AuraCornerRadiusScope.resolve(context, fallback: .lg)),
   ),
   boxShadow: const [DesignShadows.lg],
 );

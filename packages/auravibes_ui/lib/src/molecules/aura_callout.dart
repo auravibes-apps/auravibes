@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -45,10 +46,11 @@ class _AuraCalloutSurface extends StatelessWidget {
     required AuraCallout callout,
     required AuraColorScheme colors,
     required AuraTheme theme,
+    required double radius,
   }) : _child = DecoratedBox(
          decoration: BoxDecoration(
            color: colors.colorFor(callout.tint).withValues(alpha: 0.12),
-           borderRadius: BorderRadius.circular(theme.fromBorderRadius(.md)),
+           borderRadius: BorderRadius.circular(radius),
          ),
          child: _AuraCalloutContent(callout: callout, spacing: theme.spacing),
        );
@@ -58,6 +60,7 @@ class _AuraCalloutSurface extends StatelessWidget {
         callout: callout,
         colors: context.auraColors,
         theme: context.auraTheme,
+        radius: AuraCornerRadiusScope.resolve(context, fallback: .md),
       );
 
   final Widget _child;

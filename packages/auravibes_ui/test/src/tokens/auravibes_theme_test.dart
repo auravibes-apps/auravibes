@@ -30,6 +30,7 @@ void main() {
       expect(theme.animation, AuraTheme.light.animation);
       expect(theme.spacing, AuraTheme.light.spacing);
       expect(theme.borderRadius, AuraTheme.light.borderRadius);
+      expect(theme.globalBorderRadiusLevel, isNull);
       expect(theme.typography, AuraTheme.light.typography);
       expect(theme.interactionSizes, AuraTheme.light.interactionSizes);
     });
@@ -138,6 +139,36 @@ void main() {
       expect(theme.fromBorderRadius(.lg), 8);
       expect(theme.fromBorderRadius(.xl), 16);
       expect(theme.fromBorderRadius(.full), 9999);
+    });
+
+    test('global radius level overrides selectors without changing scale', () {
+      final theme = AuraTheme.light.copyWith(globalBorderRadiusLevel: .sm);
+
+      for (final radius in AuraBorderRadius.values) {
+        expect(theme.fromBorderRadius(radius), theme.borderRadius.sm);
+      }
+      expect(theme.borderRadius, same(AuraTheme.light.borderRadius));
+    });
+
+    test('lerp interpolates global radius level at halfway', () {
+      final small = AuraTheme.light.copyWith(globalBorderRadiusLevel: .sm);
+      final large = AuraTheme.light.copyWith(globalBorderRadiusLevel: .xl);
+      final middle = small.lerp(large, 0.5);
+
+      expect(small.lerp(large, 0), same(small));
+      expect(
+        small.lerp(large, 0.49).globalBorderRadiusLevel,
+        AuraBorderRadius.sm,
+      );
+      expect(
+        small.lerp(large, 0.5).globalBorderRadiusLevel,
+        AuraBorderRadius.xl,
+      );
+      for (final radius in AuraBorderRadius.values) {
+        expect(middle.fromBorderRadius(radius), 9);
+      }
+      expect(middle.borderRadius.sm, 2);
+      expect(small.lerp(large, 1), same(large));
     });
 
     test('lerp interpolates radius values', () {

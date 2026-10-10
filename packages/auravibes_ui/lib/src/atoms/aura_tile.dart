@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
@@ -11,6 +12,7 @@ typedef _AuraTileAppearance = ({
   AuraTile tile,
   AuraColorScheme colors,
   AuraTheme theme,
+  double borderRadius,
   bool canInteract,
   bool focused,
   double overlayAlpha,
@@ -42,6 +44,7 @@ class AuraTile extends StatefulWidget {
     this.onTap,
     this.variant = AuraTileVariant.primary,
     this.size = AuraTileSize.medium,
+    this.borderRadius,
     this.isLoading = false,
     this.leading,
     this.trailing,
@@ -62,6 +65,9 @@ class AuraTile extends StatefulWidget {
 
   /// The size of the tile.
   final AuraTileSize size;
+
+  /// The tile's theme-owned corner radius.
+  final AuraBorderRadius? borderRadius;
 
   /// Whether the tile is in a loading state.
   final bool isLoading;
@@ -119,6 +125,11 @@ extension on _AuraTileState {
     tile: widget,
     colors: context.auraColors,
     theme: context.auraTheme,
+    borderRadius: AuraCornerRadiusScope.resolve(
+      context,
+      explicit: widget.borderRadius,
+      fallback: .lg,
+    ),
     canInteract: _canInteract,
     focused: _focused,
     overlayAlpha: _overlayAlpha,
@@ -402,9 +413,7 @@ Key? _tileIdentifierKey(String? identifier) =>
 BoxDecoration _tileDecoration(_AuraTileAppearance appearance) => BoxDecoration(
   color: _tileBackgroundColor(appearance),
   border: Border.fromBorderSide(.new(color: _tileBorderColor(appearance))),
-  borderRadius: BorderRadius.all(
-    .circular(appearance.theme.fromBorderRadius(.lg)),
-  ),
+  borderRadius: BorderRadius.all(.circular(appearance.borderRadius)),
   boxShadow: _tileBoxShadow(appearance),
 );
 
@@ -434,15 +443,22 @@ Color _tileVariantBackgroundColor(
 ) => switch (variant) {
   .primary => colors.fillFor(.primary),
   .surface => colors.surface,
+  .outlined => DesignColors.transparent,
   .ghost => DesignColors.transparent,
   .selected => colors.primary.withValues(alpha: 0.1),
   .error => colors.error,
 };
 
-Color _tileBorderColor(_AuraTileAppearance appearance) =>
-    appearance.focused && appearance.canInteract
-    ? appearance.colors.primary
-    : Colors.transparent;
+Color _tileBorderColor(_AuraTileAppearance appearance) {
+  if (appearance.focused && appearance.canInteract) {
+    return appearance.colors.primary;
+  }
+  if (appearance.tile.variant == AuraTileVariant.outlined) {
+    return appearance.colors.outline;
+  }
+
+  return Colors.transparent;
+}
 
 List<BoxShadow> _tileBoxShadow(_AuraTileAppearance appearance) =>
     appearance.tile.variant == AuraTileVariant.surface
@@ -485,6 +501,7 @@ Color _tileVariantTextColor(AuraTileVariant variant, AuraColorScheme colors) =>
     switch (variant) {
       .primary => colors.onFill(.primary),
       .surface => colors.foregroundOnSurface,
+      .outlined => colors.foregroundOnSurface,
       .ghost => colors.foregroundOnSurface,
       .selected => colors.primary,
       .error => colors.onTint(.error),
@@ -519,6 +536,9 @@ enum AuraTileVariant {
 
   /// A tile with surface background and subtle shadow.
   surface,
+
+  /// A transparent tile with an outline border.
+  outlined,
 
   /// A tile with transparent background and no border.
   ghost,

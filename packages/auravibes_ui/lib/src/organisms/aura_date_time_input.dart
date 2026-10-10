@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
@@ -778,7 +779,7 @@ class const _AuraDateTimePickerDoneButton({
       BoxDecoration(
         color: colors.primary,
         borderRadius: BorderRadius.circular(
-          context.auraTheme.fromBorderRadius(.md),
+          AuraCornerRadiusScope.resolve(context, fallback: .md),
         ),
       );
 }
@@ -871,7 +872,7 @@ class _AuraDateTimePickerFrameContent extends StatelessWidget {
          decoration: BoxDecoration(
            color: colors.surface,
            borderRadius: BorderRadius.circular(
-             context.auraTheme.fromBorderRadius(.lg),
+             AuraCornerRadiusScope.resolve(context, fallback: .lg),
            ),
            boxShadow: [
              BoxShadow(

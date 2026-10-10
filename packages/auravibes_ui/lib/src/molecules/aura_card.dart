@@ -54,7 +54,7 @@ class const _AuraCardBody({required final AuraCard card})
     return _AuraCardSurface(
       card: card,
       colors: colors,
-      radius: context.auraTheme.fromBorderRadius(.xl),
+      radius: AuraCornerRadiusScope.resolve(context, fallback: .xl),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_spinner.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -74,6 +75,7 @@ class const _AuraLoadingOverlayView({
     view: this,
     theme: context.auraTheme,
     colors: context.auraColors,
+    radius: AuraCornerRadiusScope.resolve(context, fallback: .lg),
   );
 }
 
@@ -82,6 +84,7 @@ class _AuraLoadingOverlayFrame extends StatelessWidget {
     required _AuraLoadingOverlayView view,
     required AuraTheme theme,
     required AuraColorScheme colors,
+    required double radius,
   }) : _child = _AuraLoadingOverlayStack(
          child: view.child,
          overlay: _AuraLoadingOverlayLayer(
@@ -93,6 +96,7 @@ class _AuraLoadingOverlayFrame extends StatelessWidget {
            semanticLabel: view.semanticLabel,
            theme: theme,
            colors: colors,
+           radius: radius,
          ),
        );
 
@@ -125,6 +129,7 @@ class _AuraLoadingOverlayLayer extends StatelessWidget {
     required String? semanticLabel,
     required AuraTheme theme,
     required AuraColorScheme colors,
+    required double radius,
   }) : _child = Semantics(
          child: ColoredBox(
            color: backgroundColor ?? colors.scrim,
@@ -136,6 +141,7 @@ class _AuraLoadingOverlayLayer extends StatelessWidget {
                spinnerColor: spinnerColor,
                theme: theme,
                colors: colors,
+               radius: radius,
              ),
            ),
          ),
@@ -158,9 +164,10 @@ class _AuraLoadingPanel extends StatelessWidget {
     required Color? spinnerColor,
     required AuraTheme theme,
     required AuraColorScheme colors,
+    required double radius,
   }) : _child = Container(
          padding: EdgeInsets.all(theme.fromSpacing(.xl)),
-         decoration: _loadingPanelDecoration(colors, theme),
+         decoration: _loadingPanelDecoration(colors, radius),
          child: _AuraLoadingPanelContent(
            message: message,
            spinnerSize: spinnerSize,
@@ -261,14 +268,12 @@ class _AuraLoadingMessageBody extends StatelessWidget {
   Widget build(BuildContext context) => _child;
 }
 
-BoxDecoration _loadingPanelDecoration(
-  AuraColorScheme colors,
-  AuraTheme theme,
-) => BoxDecoration(
-  color: colors.surface,
-  borderRadius: BorderRadius.all(.circular(theme.fromBorderRadius(.lg))),
-  boxShadow: const [DesignShadows.lg],
-);
+BoxDecoration _loadingPanelDecoration(AuraColorScheme colors, double radius) =>
+    BoxDecoration(
+      color: colors.surface,
+      borderRadius: BorderRadius.all(.circular(radius)),
+      boxShadow: const [DesignShadows.lg],
+    );
 
 class const _AuraLoadingMessageText({
   required final String message,

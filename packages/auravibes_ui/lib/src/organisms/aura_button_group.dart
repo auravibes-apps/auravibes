@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: UI components keep related private widgets together.
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -171,7 +172,7 @@ class const _AuraButtonGroupLayout<T>({
       auraTheme: auraTheme,
     )._children,
     orientation: group.orientation,
-    borderRadius: auraTheme.fromBorderRadius(.md),
+    borderRadius: AuraCornerRadiusScope.resolve(context, fallback: .md),
   );
 }
 

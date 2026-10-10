@@ -772,7 +772,9 @@ RoundedRectangleBorder _auraChipShape(
 ) {
   return RoundedRectangleBorder(
     side: .new(color: colors.outlineVariant),
-    borderRadius: BorderRadius.all(.circular(auraTheme.borderRadius.full)),
+    borderRadius: BorderRadius.all(
+      .circular(auraTheme.fromBorderRadius(.full)),
+    ),
   );
 }
 
@@ -800,7 +802,9 @@ DialogThemeData _auraBaseDialogTheme(
     shadowColor: colors.shadow,
     surfaceTintColor: colors.surface,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(.circular(auraTheme.borderRadius.xl)),
+      borderRadius: BorderRadius.all(
+        .circular(auraTheme.fromBorderRadius(.xl)),
+      ),
     ),
     iconColor: colors.primary,
     barrierColor: colors.scrim,
@@ -854,7 +858,7 @@ TextStyle? _auraSnackBarTextStyle(AuraColorScheme colors, TextTheme textTheme) {
 
 ShapeBorder _auraSnackBarShape(AuraTheme auraTheme) {
   return RoundedRectangleBorder(
-    borderRadius: BorderRadius.all(.circular(auraTheme.borderRadius.lg)),
+    borderRadius: BorderRadius.all(.circular(auraTheme.fromBorderRadius(.lg))),
   );
 }
 

@@ -1167,7 +1167,6 @@ class const _ChatConversationBody({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       _ConversationOrientation(data: data),
-      _ConversationActivitySummary(data: data),
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(data: data),
       if (_hasChatConversationStatus(data) || data.showInputComposer)
@@ -1237,12 +1236,38 @@ class const _ChatConversationMessageList({
 
 class const _ChatConversationControls({
   required final _LoadedChatConversationData data,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => _ChatControlsBar(
-    workspaceId: data.workspaceId,
-    conversationId: data.conversation.id,
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final childCount = _activeConversationChildCount(ref, data.conversation.id);
+    final activityKey = _conversationActivityKey((
+      data: data,
+      childCount: childCount,
+    ));
+    final isIdle = activityKey == 'idle';
+
+    return AuraColumn(
+      children: [
+        if (!isIdle)
+          _ConversationActivityLabel(
+            activityKey: activityKey,
+            childCount: childCount,
+          ),
+        _ChatControlsBar(
+          workspaceId: data.workspaceId,
+          conversationId: data.conversation.id,
+          idleActivitySummary: isIdle
+              ? _ConversationActivityLabel(
+                  activityKey: activityKey,
+                  childCount: childCount,
+                  compact: true,
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+      spacing: isIdle ? .none : .base,
+    );
+  }
 }
 
 class const _ChatConversationStatus({
@@ -1470,16 +1495,18 @@ class _ChatComposerInput extends StatelessWidget {
            agentId: data.conversation.agentId,
            onChanged: data.callbacks.selectors.onAgentChanged,
          ),
-         modelCompactControl: _ChatComposerModelCompactControl(
+         modelCompactControl: (onPressed) => _ChatComposerModelCompactControl(
            workspaceId: data.workspaceId,
            workspaceModelSelectionId: data.conversation.modelId,
            onChanged: data.callbacks.selectors.onModelSelectionChanged,
            modelUnavailable: modelUnavailable,
+           onCompactTap: onPressed,
          ),
-         agentCompactControl: _ChatComposerAgentCompactControl(
+         agentCompactControl: (onPressed) => _ChatComposerAgentCompactControl(
            workspaceId: data.workspaceId,
            agentId: data.conversation.agentId,
            onChanged: data.callbacks.selectors.onAgentChanged,
+           onCompactTap: onPressed,
          ),
          conversationId: data.conversation.id,
          reasoningControl: reasoningControl,
@@ -1548,6 +1575,7 @@ class const _ChatComposerModelCompactControl({
   required final String? workspaceModelSelectionId,
   required final ValueChanged<String?> onChanged,
   required final bool modelUnavailable,
+  required final VoidCallback onCompactTap,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CompactWorkspaceModelSelector(
@@ -1556,6 +1584,7 @@ class const _ChatComposerModelCompactControl({
     onChanged: onChanged,
     compactMode: true,
     modelUnavailable: modelUnavailable,
+    onCompactTap: onCompactTap,
   );
 }
 
@@ -1563,12 +1592,14 @@ class const _ChatComposerAgentCompactControl({
   required final String workspaceId,
   required final String? agentId,
   required final ValueChanged<String?> onChanged,
+  required final VoidCallback onCompactTap,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CompactAgentSelector(
     workspaceId: workspaceId,
     agentId: agentId,
     onChanged: onChanged,
+    onCompactTap: onCompactTap,
     compactMode: true,
   );
 }
@@ -1576,6 +1607,7 @@ class const _ChatComposerAgentCompactControl({
 class const _ChatControlsBar({
   required final String workspaceId,
   required final String conversationId,
+  required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1589,6 +1621,7 @@ class const _ChatControlsBar({
       child: _ChatControlsContent(
         workspaceId: workspaceId,
         conversationId: conversationId,
+        idleActivitySummary: idleActivitySummary,
       ),
     );
   }
@@ -1597,6 +1630,7 @@ class const _ChatControlsBar({
 class const _ChatControlsContent({
   required final String workspaceId,
   required final String conversationId,
+  required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -1605,6 +1639,7 @@ class const _ChatControlsContent({
     child: _ChatControlsPadding(
       workspaceId: workspaceId,
       conversationId: conversationId,
+      idleActivitySummary: idleActivitySummary,
     ),
   );
 }
@@ -1612,16 +1647,19 @@ class const _ChatControlsContent({
 class const _ChatControlsPadding({
   required final String workspaceId,
   required final String conversationId,
+  required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(
+      left: context.auraTheme.fromSpacing(.md),
       top: context.auraTheme.fromSpacing(.sm),
-      right: context.auraTheme.fromSpacing(.sm),
+      right: context.auraTheme.fromSpacing(.md),
     ),
     child: _ChatControlsAlignment(
       workspaceId: workspaceId,
       conversationId: conversationId,
+      idleActivitySummary: idleActivitySummary,
     ),
   );
 }
@@ -1629,23 +1667,22 @@ class const _ChatControlsPadding({
 class const _ChatControlsAlignment({
   required final String workspaceId,
   required final String conversationId,
+  required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.centerRight,
-    child: Row(
-      mainAxisSize: .min,
-      children: [
-        ActiveSubAgentStatusWidget(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ),
-        ConversationContextUsagePill(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ),
-      ],
-    ),
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(child: idleActivitySummary),
+      ActiveSubAgentStatusWidget(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+      const AuraSizedBox(width: .sm),
+      ConversationContextUsagePill(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+    ],
   );
 }
 
@@ -2655,24 +2692,6 @@ String _conversationParentTitle(
     ? parent.title
     : parentId;
 
-class const _ConversationActivitySummary({
-  required final _LoadedChatConversationData data,
-}) extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final childCount = _activeConversationChildCount(ref, data.conversation.id);
-    final activityKey = _conversationActivityKey((
-      data: data,
-      childCount: childCount,
-    ));
-
-    return _ConversationActivityLabel(
-      activityKey: activityKey,
-      childCount: childCount,
-    );
-  }
-}
-
 int _activeConversationChildCount(WidgetRef ref, String conversationId) =>
     ref.watch(
       activeSubAgentRuntimeProvider.select(
@@ -2683,6 +2702,7 @@ int _activeConversationChildCount(WidgetRef ref, String conversationId) =>
 class const _ConversationActivityLabel({
   required final String activityKey,
   required final int childCount,
+  final bool compact = false,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
@@ -2690,6 +2710,15 @@ class const _ConversationActivityLabel({
       'conversation_activity.$activityKey'.tr(
         namedArgs: {'count': '$childCount'},
       ),
+      style: compact
+          ? TextStyle(
+              color: context.auraColors.onSurfaceVariant,
+              fontSize: context.auraTheme.typography.fontSizeXs,
+              fontFamily: context.auraTheme.typography.bodyFontFamily,
+            )
+          : null,
+      overflow: compact ? .ellipsis : null,
+      maxLines: compact ? 1 : null,
     ),
     liveRegion: true,
   );

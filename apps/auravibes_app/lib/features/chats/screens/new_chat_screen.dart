@@ -392,8 +392,10 @@ class const _NewChatInput({required final Widget child})
            onToolsPress: data.actions.onToolsPress,
            modelSheetControl: _NewChatModelSheetControl(data: data),
            agentSheetControl: _NewChatAgentSheetControl(data: data),
-           modelCompactControl: _NewChatModelCompactControl(data: data),
-           agentCompactControl: _NewChatAgentCompactControl(data: data),
+           modelCompactControl: (onPressed) =>
+               _NewChatModelCompactControl(data: data, onCompactTap: onPressed),
+           agentCompactControl: (onPressed) =>
+               _NewChatAgentCompactControl(data: data, onCompactTap: onPressed),
            onDraftStatusChanged: (hasDraft) =>
                data.draftStatus.value = hasDraft,
            autofocus: true,
@@ -443,24 +445,30 @@ class const _NewChatAgentSheetControl({required final _NewChatBodyData data})
   );
 }
 
-class const _NewChatModelCompactControl({required final _NewChatBodyData data})
-    extends StatelessWidget {
+class const _NewChatModelCompactControl({
+  required final _NewChatBodyData data,
+  required final VoidCallback onCompactTap,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CompactWorkspaceModelSelector(
     workspaceId: data.workspaceId,
     workspaceModelSelectionId: data.state.modelId,
     onChanged: data.actions.setModelId,
     compactMode: true,
+    onCompactTap: onCompactTap,
   );
 }
 
-class const _NewChatAgentCompactControl({required final _NewChatBodyData data})
-    extends StatelessWidget {
+class const _NewChatAgentCompactControl({
+  required final _NewChatBodyData data,
+  required final VoidCallback onCompactTap,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CompactAgentSelector(
     workspaceId: data.workspaceId,
     agentId: data.state.agentId,
     onChanged: data.actions.setAgentId,
+    onCompactTap: onCompactTap,
     compactMode: true,
   );
 }
@@ -514,8 +522,8 @@ class const _UnavailableChatInput({required final String workspaceId})
     },
     modelSheetControl: const SizedBox.shrink(),
     agentSheetControl: const SizedBox.shrink(),
-    modelCompactControl: const SizedBox.shrink(),
-    agentCompactControl: const SizedBox.shrink(),
+    modelCompactControl: (_) => const SizedBox.shrink(),
+    agentCompactControl: (_) => const SizedBox.shrink(),
     disabled: true,
   );
 }

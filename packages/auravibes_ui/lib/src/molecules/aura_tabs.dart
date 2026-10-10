@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'dart:ui' show SemanticsRole;
 
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_edgy.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
@@ -334,6 +335,7 @@ class _AuraTabBarState extends State<_AuraTabBar> {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
     final targetSize = auraTheme.interactionSizes.minimumTargetSize;
+    final borderRadius = AuraCornerRadiusScope.resolve(context, fallback: .md);
     final title = widget.titles[index];
 
     return Semantics(
@@ -363,6 +365,9 @@ class _AuraTabBarState extends State<_AuraTabBar> {
                       padding: const AuraEdgeInsetsGeometry.horizontal(.md),
                     ),
                   ),
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(.circular(borderRadius)),
                 ),
                 color: auraColors.primary,
                 interaction: AuraPressableInteraction.localNavigation,
