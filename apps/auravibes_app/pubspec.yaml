@@ -64,7 +64,7 @@ dependencies:
   media_kit_libs_linux: ^1.2.1
   media_kit_libs_windows_audio: ^1.0.9
   mime: ^2.1.0
-  openai_dart: ^8.0.0
+  openai_dart: ^10.0.0
 
   # Other dependencies
   package_info_plus: ^10.2.1
