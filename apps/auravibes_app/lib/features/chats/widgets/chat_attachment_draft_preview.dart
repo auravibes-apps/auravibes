@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const ChatAttachmentDraftPreview({
@@ -75,7 +75,7 @@ class const _AttachmentDraftAudioPlayer({
 class _AttachmentDraftAudioPlayerState
     extends State<_AttachmentDraftAudioPlayer> {
   AudioPlayer? _player;
-  StreamSubscription<void>? _completionSubscription;
+  StreamSubscription<PlayerState>? _completionSubscription;
   bool _isPlaying = false;
 
   @override
@@ -117,7 +117,8 @@ class _AttachmentDraftAudioPlayerState
 
     try {
       _setPlaying(true);
-      await player.play(DeviceFileSource(widget.localPath));
+      final _ = await player.setFilePath(widget.localPath);
+      unawaited(player.play().catchError((Object _) => _setPlaying(false)));
     } on Object {
       _setPlaying(false);
     }
@@ -133,9 +134,11 @@ class _AttachmentDraftAudioPlayerState
   }
 
   void _listenForCompletion(AudioPlayer player) {
-    _completionSubscription ??= player.onPlayerComplete.listen(
-      (_) => _setPlaying(false),
-    );
+    _completionSubscription ??= player.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed) {
+        _setPlaying(false);
+      }
+    });
   }
 
   void _setPlaying(bool isPlaying) {

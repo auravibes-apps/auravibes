@@ -11,6 +11,7 @@ import 'package:auravibes_app/main/main_locale.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_app/services/marionette/marionette_extensions.dart';
+import 'package:auravibes_app/widgets/android_desktop_caption_backdrop.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_app/widgets/friendly_build_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -24,6 +25,9 @@ import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:image_picker_android/image_picker_android.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
+import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -32,6 +36,7 @@ PrintLogCollector? _marionetteLogCollector;
 Future<void> main() async {
   _configureFlavor();
   final marionetteInstanceId = _ensureFlutterBinding();
+  _configurePlatformPlugins();
   _configureLogging();
   await MainLocale.ensureInitialized();
 
@@ -43,7 +48,6 @@ Future<void> main() async {
     );
   }
 
-  ErrorWidget.builder = (details) => FriendlyBuildErrorWidget(details: details);
   _runApp(container);
   _scheduleModelSync(container);
 }
@@ -125,7 +129,22 @@ void _configureSystemUi() {
   SystemChrome.setEnabledSystemUIMode(.edgeToEdge);
 }
 
+void _configurePlatformPlugins() {
+  AndroidPhotoPickerSetup.configure();
+  JustAudioMediaKit.ensureInitialized();
+}
+
+abstract final class AndroidPhotoPickerSetup {
+  static void configure() {
+    final imagePicker = ImagePickerPlatform.instance;
+    if (imagePicker is ImagePickerAndroid) {
+      imagePicker.useAndroidPhotoPicker = true;
+    }
+  }
+}
+
 void _runApp(ProviderContainer container) {
+  ErrorWidget.builder = (details) => FriendlyBuildErrorWidget(details: details);
   runApp(
     UncontrolledProviderScope(
       container: container,
@@ -319,13 +338,15 @@ class const _AuraAppContent({
   required final Widget? child,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => TweenAnimationBuilder<AuraTheme>(
-    tween: _AuraThemeTween(end: targetAuraTheme),
-    duration: kThemeAnimationDuration,
-    builder: (context, theme, _) => _AuraAppThemeContent(
-      router: router,
-      theme: theme,
-      child: _snackBarBuilder(context, child),
+  Widget build(BuildContext context) => AndroidDesktopCaptionBackdrop(
+    child: TweenAnimationBuilder<AuraTheme>(
+      tween: _AuraThemeTween(end: targetAuraTheme),
+      duration: kThemeAnimationDuration,
+      builder: (context, theme, _) => _AuraAppThemeContent(
+        router: router,
+        theme: theme,
+        child: _snackBarBuilder(context, child),
+      ),
     ),
   );
 }
