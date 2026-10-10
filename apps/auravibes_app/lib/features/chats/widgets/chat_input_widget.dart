@@ -110,6 +110,7 @@ class const _ChatInputDraftHooks({
   required final FocusNode focusNode,
   required final ValueNotifier<List<MessageAttachmentToCreate>> attachments,
   required final ValueNotifier<bool> isSending,
+  required final ChatAttachmentAudioPreviewCoordinator audioPreviewCoordinator,
 });
 
 class const _ChatInputRecordingHooks({
@@ -144,6 +145,9 @@ abstract final class _ChatInputHooksFactory {
           initialDraft?.attachments ?? <MessageAttachmentToCreate>[],
         ),
         isSending: useState(false),
+        audioPreviewCoordinator: useMemoized(
+          ChatAttachmentAudioPreviewCoordinator.new,
+        ),
       );
 
   static _ChatInputRecordingHooks recording() => _ChatInputRecordingHooks(
@@ -708,6 +712,7 @@ extension _ChatInputDraftActions on _ChatInputActions {
   }
 
   void disposeDraft() {
+    _draft.audioPreviewCoordinator.dispose();
     if ((_recording.isRecording.value ||
             _recording.isStartingRecording.value) &&
         _recording.recordingStop.value == null) {
@@ -1544,6 +1549,7 @@ class const _ChatInputAttachments({required final _ChatInputState state})
 
     return _ChatInputAttachmentVisibility(
       attachments: attachments,
+      audioPreviewCoordinator: state.hooks.draft.audioPreviewCoordinator,
       onRemove: _removeAttachment,
       onClearAll: _clearAllAttachments,
       enabled: !state.hooks.recording.isRecording.value,
@@ -1569,6 +1575,7 @@ class const _ChatInputAttachments({required final _ChatInputState state})
 
 class const _ChatInputAttachmentVisibility({
   required final List<MessageAttachmentToCreate> attachments,
+  required final ChatAttachmentAudioPreviewCoordinator audioPreviewCoordinator,
   required final ValueChanged<MessageAttachmentToCreate> onRemove,
   required final VoidCallback onClearAll,
   required final bool enabled,
@@ -1581,6 +1588,7 @@ class const _ChatInputAttachmentVisibility({
         children: [
           _AttachmentChips(
             attachments: attachments,
+            audioPreviewCoordinator: audioPreviewCoordinator,
             onRemove: onRemove,
             onClearAll: onClearAll,
             enabled: enabled,
@@ -2046,6 +2054,7 @@ bool _isSendButtonDisabled(_ChatInputState state) {
 
 class const _AttachmentChips({
   required final List<MessageAttachmentToCreate> attachments,
+  required final ChatAttachmentAudioPreviewCoordinator audioPreviewCoordinator,
   required final ValueChanged<MessageAttachmentToCreate> onRemove,
   required final VoidCallback onClearAll,
   final bool enabled = true,
@@ -2060,6 +2069,7 @@ class const _AttachmentChips({
           ChatAttachmentDraftPreview(
             attachment: attachment,
             onRemove: onRemove,
+            audioPreviewCoordinator: audioPreviewCoordinator,
             enabled: enabled,
           ),
         if (attachments.length > 1)
