@@ -26,7 +26,6 @@ void main() {
     material_ui.Widget buildWidget() => material_ui.MaterialApp(
       home: material_ui.Builder(
         builder: (context) => WidgetbookConfig.applyTheme(
-          context,
           .light(),
           material_ui.Builder(
             builder: (themeContext) => hueAddon.apply(

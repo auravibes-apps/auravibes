@@ -41,7 +41,6 @@ void main() {
                 ),
                 Expanded(
                   child: WidgetbookConfig.applyTheme(
-                    context,
                     .new(),
                     const AuraInput(placeholder: Text('Input')),
                   ),

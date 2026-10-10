@@ -26,26 +26,24 @@ class const CompactWorkspaceModelSelector({
 }) extends HookConsumerWidget {
   static const _selectorWidth = 220.0;
   @override
-  Widget build(BuildContext _, WidgetRef ref) {
-    final recentModelIds = compactMode && !sheetMode
-        ? const <String>[]
-        : _recentModelIds(ref);
+  Widget build(BuildContext _, WidgetRef ref) => _ModelSelectorView(
+    models: ref.watch(
+      listModelsGroupedByProviderProvider(workspaceId: workspaceId),
+    ),
+    config: _selectorConfig(ref),
+  );
 
-    return _ModelSelectorView(
-      models: ref.watch(
-        listModelsGroupedByProviderProvider(workspaceId: workspaceId),
-      ),
-      config: (
-        selectedId: workspaceModelSelectionId,
-        onChanged: _onModelChanged(ref),
-        compactMode: compactMode,
-        sheetMode: sheetMode,
-        modelUnavailable: modelUnavailable,
-        onCompactTap: onCompactTap,
-        recentModelIds: recentModelIds,
-      ),
-    );
-  }
+  _SelectorConfig _selectorConfig(WidgetRef ref) => (
+    selectedId: workspaceModelSelectionId,
+    onChanged: _onModelChanged(ref),
+    compactMode: compactMode,
+    sheetMode: sheetMode,
+    modelUnavailable: modelUnavailable,
+    onCompactTap: onCompactTap,
+    recentModelIds: compactMode && !sheetMode
+        ? const <String>[]
+        : _recentModelIds(ref),
+  );
 
   List<String> _recentModelIds(WidgetRef ref) =>
       ref.watch(recentModelSelectionsProvider(workspaceId)).value ??
@@ -942,36 +940,28 @@ class const _ModelCompactChip({
     final isUnavailable =
         modelUnavailable ||
         (workspaceModelSelectionId != null && selectedModel == null);
-    if (isUnavailable) {
-      return _ModelChip(
-        label: const TextLocale(
-          LocaleKeys.models_screens_model_unavailable,
-          softWrap: false,
-          overflow: .ellipsis,
-          maxLines: 1,
-        ),
-        trailing: const AuraIcon(Icons.warning_amber_rounded, tint: .warning),
-        onTap: onCompactTap,
-      );
-    }
-
-    if (groupedModels.isEmpty) {
-      return _ModelChip(
-        label: const TextLocale(
-          LocaleKeys.models_screens_select_model,
-          softWrap: false,
-          overflow: .ellipsis,
-          maxLines: 1,
-        ),
-        onTap: onCompactTap,
-      );
-    }
+    if (isUnavailable) return _UnavailableModelChip(onTap: onCompactTap);
 
     return _SelectedModelChip(
       selectedModel: selectedModel,
       onTap: onCompactTap,
     );
   }
+}
+
+class const _UnavailableModelChip({required final VoidCallback? onTap})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ModelChip(
+    label: const TextLocale(
+      LocaleKeys.models_screens_model_unavailable,
+      softWrap: false,
+      overflow: .ellipsis,
+      maxLines: 1,
+    ),
+    trailing: const AuraIcon(Icons.warning_amber_rounded, tint: .warning),
+    onTap: onTap,
+  );
 }
 
 class _SelectedModelChip extends _ModelChip {

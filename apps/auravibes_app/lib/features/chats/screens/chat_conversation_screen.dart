@@ -1238,36 +1238,67 @@ class const _ChatConversationControls({
   required final _LoadedChatConversationData data,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final childCount = _activeConversationChildCount(ref, data.conversation.id);
-    final activityKey = _conversationActivityKey((
-      data: data,
-      childCount: childCount,
-    ));
-    final isIdle = activityKey == 'idle';
+  Widget build(BuildContext context, WidgetRef ref) =>
+      _ChatConversationControlsLayout(
+        data: data,
+        activity: _conversationActivitySummary(ref, data),
+      );
+}
 
-    return AuraColumn(
-      children: [
-        if (!isIdle)
-          _ConversationActivityLabel(
-            activityKey: activityKey,
-            childCount: childCount,
-          ),
-        _ChatControlsBar(
-          workspaceId: data.workspaceId,
-          conversationId: data.conversation.id,
-          idleActivitySummary: isIdle
-              ? _ConversationActivityLabel(
-                  activityKey: activityKey,
-                  childCount: childCount,
-                  compact: true,
-                )
-              : const SizedBox.shrink(),
-        ),
-      ],
-      spacing: isIdle ? .none : .base,
-    );
-  }
+typedef _ConversationActivitySummary = ({String activityKey, int childCount});
+
+_ConversationActivitySummary _conversationActivitySummary(
+  WidgetRef ref,
+  _LoadedChatConversationData data,
+) {
+  final childCount = _activeConversationChildCount(ref, data.conversation.id);
+
+  return (
+    activityKey: _conversationActivityKey((data: data, childCount: childCount)),
+    childCount: childCount,
+  );
+}
+
+class const _ChatConversationControlsLayout({
+  required final _LoadedChatConversationData data,
+  required final _ConversationActivitySummary activity,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _ActiveConversationActivityLabel(activity: activity),
+      _ChatControlsBar(
+        workspaceId: data.workspaceId,
+        conversationId: data.conversation.id,
+        idleActivitySummary: _IdleConversationActivityLabel(activity: activity),
+      ),
+    ],
+    spacing: activity.activityKey == 'idle' ? .none : .base,
+  );
+}
+
+class const _ActiveConversationActivityLabel({
+  required final _ConversationActivitySummary activity,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => activity.activityKey == 'idle'
+      ? const SizedBox.shrink()
+      : _ConversationActivityLabel(
+          activityKey: activity.activityKey,
+          childCount: activity.childCount,
+        );
+}
+
+class const _IdleConversationActivityLabel({
+  required final _ConversationActivitySummary activity,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => activity.activityKey != 'idle'
+      ? const SizedBox.shrink()
+      : _CompactConversationActivityLabel(
+          activityKey: activity.activityKey,
+          childCount: activity.childCount,
+        );
 }
 
 class const _ChatConversationStatus({
@@ -2702,27 +2733,40 @@ int _activeConversationChildCount(WidgetRef ref, String conversationId) =>
 class const _ConversationActivityLabel({
   required final String activityKey,
   required final int childCount,
-  final bool compact = false,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: Text(_conversationActivityText(activityKey, childCount)),
+    liveRegion: true,
+  );
+}
+
+class const _CompactConversationActivityLabel({
+  required final String activityKey,
+  required final int childCount,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     child: Text(
-      'conversation_activity.$activityKey'.tr(
-        namedArgs: {'count': '$childCount'},
-      ),
-      style: compact
-          ? TextStyle(
-              color: context.auraColors.onSurfaceVariant,
-              fontSize: context.auraTheme.typography.fontSizeXs,
-              fontFamily: context.auraTheme.typography.bodyFontFamily,
-            )
-          : null,
-      overflow: compact ? .ellipsis : null,
-      maxLines: compact ? 1 : null,
+      _conversationActivityText(activityKey, childCount),
+      style: _compactConversationActivityStyle(context),
+      overflow: .ellipsis,
+      maxLines: 1,
     ),
     liveRegion: true,
   );
 }
+
+String _conversationActivityText(String activityKey, int childCount) =>
+    'conversation_activity.$activityKey'.tr(
+      namedArgs: {'count': '$childCount'},
+    );
+
+TextStyle _compactConversationActivityStyle(BuildContext context) => TextStyle(
+  color: context.auraColors.onSurfaceVariant,
+  fontSize: context.auraTheme.typography.fontSizeXs,
+  fontFamily: context.auraTheme.typography.bodyFontFamily,
+);
 
 String _conversationActivityKey(
   ({_LoadedChatConversationData data, int childCount}) request,

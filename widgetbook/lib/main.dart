@@ -35,30 +35,22 @@ abstract final class WidgetbookConfig {
   );
 
   static Widget applyTheme(
-    BuildContext _,
     ThemeData theme,
     Widget child, {
     int hue = _defaultHue,
-  }) {
-    final auraTheme = _createAuraTheme(theme.brightness, hue);
+  }) => _applyAuraTheme(theme, _createAuraTheme(theme.brightness, hue), child);
 
-    return Theme(
-      data: theme.copyWith(
-        colorScheme: _createColorScheme(auraTheme, theme.brightness),
-        scaffoldBackgroundColor: auraTheme.colors.background,
-        extensions: [
-          ...theme.extensions.values.where(
-            (extension) => extension is! _AuraThemeSeed,
-          ),
-          _AuraThemeSeed(theme: auraTheme),
-        ],
-      ),
-      child: AuraSdkMaterialSurface(
-        // ignore: deprecated_member_use - Widgetbook previews legacy dependencies.
-        child: MaterialUiCompatibilityBridge(child: Material(child: child)),
-      ),
-    );
-  }
+  static Widget _applyAuraTheme(
+    ThemeData theme,
+    AuraTheme auraTheme,
+    Widget child,
+  ) => Theme(
+    data: _AuraThemeSeed.applyTo(theme, auraTheme),
+    child: AuraSdkMaterialSurface(
+      // ignore: deprecated_member_use - Widgetbook previews legacy dependencies.
+      child: MaterialUiCompatibilityBridge(child: Material(child: child)),
+    ),
+  );
 
   // Hue addon builds the computed theme once, inside the selected brightness.
   static Widget _applyBrightness(
@@ -89,10 +81,6 @@ abstract final class WidgetbookConfig {
     return ThemeAddon<ThemeData>(themes, _applyBrightness);
   }
 
-  static Addon _createHueAddon() => AuraHueAddon();
-
-  static Addon _createGlobalBorderRadiusAddon() => _GlobalBorderRadiusAddon();
-
   static Addon _createPortalAddon() => BuilderAddon(
     name: 'portal',
     builder: (context, child) => Portal(child: AuraSnackBarHost(child: child)),
@@ -114,8 +102,8 @@ List<Addon> _createAddons() => [
   ..._createBaseAddons(),
   WidgetbookConfig._createViewportAddon(),
   WidgetbookConfig._createThemeAddon(),
-  WidgetbookConfig._createHueAddon(),
-  WidgetbookConfig._createGlobalBorderRadiusAddon(),
+  AuraHueAddon(),
+  _GlobalBorderRadiusAddon(),
   WidgetbookConfig._createPortalAddon(),
   WidgetbookConfig._createSafeAreaAddon(),
   AlignmentAddon(),
@@ -136,24 +124,8 @@ class AuraHueAddon() extends Addon<int> with SingleFieldOnly {
   );
 
   @override
-  Widget apply(BuildContext context, Widget child, int setting) {
-    final theme = Theme.of(context);
-    final auraTheme = _createAuraTheme(theme.brightness, setting);
-
-    return Theme(
-      data: theme.copyWith(
-        colorScheme: _createColorScheme(auraTheme, theme.brightness),
-        scaffoldBackgroundColor: auraTheme.colors.background,
-        extensions: [
-          ...theme.extensions.values.where(
-            (extension) => extension is! _AuraThemeSeed,
-          ),
-          _AuraThemeSeed(theme: auraTheme),
-        ],
-      ),
-      child: child,
-    );
-  }
+  Widget apply(BuildContext context, Widget child, int setting) =>
+      WidgetbookConfig.applyTheme(Theme.of(context), child, hue: setting);
 }
 
 class _GlobalBorderRadiusAddon()
@@ -186,6 +158,18 @@ class _AuraThemeSeed extends ThemeExtension<_AuraThemeSeed> {
   const new({required this.theme});
 
   final AuraTheme theme;
+
+  static ThemeData applyTo(ThemeData theme, AuraTheme auraTheme) =>
+      theme.copyWith(
+        colorScheme: _createColorScheme(auraTheme, theme.brightness),
+        scaffoldBackgroundColor: auraTheme.colors.background,
+        extensions: [
+          ...theme.extensions.values.where(
+            (extension) => extension is! _AuraThemeSeed,
+          ),
+          _AuraThemeSeed(theme: auraTheme),
+        ],
+      );
 
   @override
   _AuraThemeSeed copyWith() => this;
@@ -234,10 +218,12 @@ class _AnimatedAuraThemeScopeState extends State<_AnimatedAuraThemeScope> {
     tween: _AuraThemeTween(end: _targetTheme),
     duration: _targetTheme.animation.normal,
     curve: Curves.easeInOut,
-    builder: (context, theme, child) =>
-        AuraThemeScope(theme: theme, child: child ?? widget.child),
+    builder: _buildThemeScope,
     child: widget.child,
   );
+
+  Widget _buildThemeScope(BuildContext _, AuraTheme theme, Widget? child) =>
+      AuraThemeScope(theme: theme, child: child ?? widget.child);
 }
 
 AuraTheme _resolveAuraTheme(_AnimatedAuraThemeScope widget) =>

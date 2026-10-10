@@ -44,32 +44,50 @@ class const RadiusScopeDemo({
   @override
   Widget build(BuildContext context) => AuraCornerRadiusScope.select(
     level: level,
-    child: Builder(
-      builder: (context) => Column(
-        mainAxisSize: .min,
-        crossAxisAlignment: .stretch,
-        children: [
-          Text('Selected radius: ${AuraCornerRadiusScope.of(context)}dp'),
-          const AuraSizedBox(height: .sm),
-          const AuraTile(child: Text('Selected scope')),
-          const AuraSizedBox(height: .md),
-          AuraCornerRadiusScope.adjust(
-            delta: delta,
-            child: Builder(
-              builder: (context) => Column(
-                crossAxisAlignment: .stretch,
-                children: [
-                  Text(
-                    'Adjusted radius: ${AuraCornerRadiusScope.of(context)}dp',
-                  ),
-                  const AuraSizedBox(height: .sm),
-                  const AuraTile(child: Text('Nested adjustment')),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+    child: _SelectedRadiusContent(delta: delta),
+  );
+}
+
+class const _SelectedRadiusContent({required this.delta})
+    extends StatelessWidget {
+  final double delta;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    children: [
+      const _RadiusValueLabel(label: 'Selected radius:'),
+      const AuraSizedBox(height: .sm),
+      const AuraTile(child: Text('Selected scope')),
+      const AuraSizedBox(height: .md),
+      _AdjustedRadiusContent(delta: delta),
+    ],
+  );
+}
+
+class const _AdjustedRadiusContent({required this.delta})
+    extends StatelessWidget {
+  final double delta;
+
+  @override
+  Widget build(BuildContext context) => AuraCornerRadiusScope.adjust(
+    delta: delta,
+    child: Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        const _RadiusValueLabel(label: 'Adjusted radius:'),
+        const AuraSizedBox(height: .sm),
+        const AuraTile(child: Text('Nested adjustment')),
+      ],
     ),
   );
+}
+
+class const _RadiusValueLabel({required this.label}) extends StatelessWidget {
+  final String label;
+
+  @override
+  Widget build(BuildContext context) =>
+      Text('$label${AuraCornerRadiusScope.of(context)}dp');
 }

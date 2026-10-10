@@ -51,6 +51,7 @@ const String _cameraAttachmentErrorKey =
 const String _clearAllAttachmentsKey =
     LocaleKeys.chats_screens_chat_conversation_clear_all_attachments;
 const Duration _maxVoiceRecordingDuration = .new(minutes: 2);
+const double _chatInputCornerRadiusDelta = 4;
 
 typedef _ChatInputActionsRequest = ({
   WidgetRef ref,
@@ -515,22 +516,20 @@ class const _ChatInputSafeArea({required final _ChatInputState state})
 class const _ChatInputPadding({required final _ChatInputState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: _ChatInputField(
-        state: state,
-        footer: _ChatInputFooter(state: state),
-        header: _ChatInputAgentSelector(
-          compactControl: state.input.agentCompactControl,
-          sheetControl: state.input.agentSheetControl,
-          workspaceId: state.input.workspaceId,
-          conversationId: state.input.conversationId,
-          onSkillsPress: state.input.onSkillsPress,
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+    child: _ChatInputFieldComposition(state: state),
+  );
+}
+
+class const _ChatInputFieldComposition({required final _ChatInputState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ChatInputField(
+    state: state,
+    footer: _ChatInputFooter(state: state),
+    header: _ChatInputAgentSelector(state: state),
+  );
 }
 
 class const _ChatInputField({
@@ -575,8 +574,14 @@ class _ChatInputFieldView extends StatelessWidget {
          onSubmitted: (_) => unawaited(actions.sendMessage()),
          onTapOutside: (_) => focusNode.unfocus(),
          focusNode: focusNode,
-         header: AuraCornerRadiusScope.adjust(delta: 4, child: header),
-         footer: AuraCornerRadiusScope.adjust(delta: 4, child: footer),
+         header: AuraCornerRadiusScope.adjust(
+           delta: _chatInputCornerRadiusDelta,
+           child: header,
+         ),
+         footer: AuraCornerRadiusScope.adjust(
+           delta: _chatInputCornerRadiusDelta,
+           child: footer,
+         ),
        );
 
   final AuraInput input;
@@ -589,20 +594,15 @@ class _ChatInputFieldView extends StatelessWidget {
   );
 }
 
-class const _ChatInputAgentSelector({
-  required final Widget Function(VoidCallback onPressed) compactControl,
-  required final Widget sheetControl,
-  required final String workspaceId,
-  required final String? conversationId,
-  required final VoidCallback? onSkillsPress,
-}) extends StatelessWidget {
+class const _ChatInputAgentSelector({required final _ChatInputState state})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _ChatInputAgentSelectorLayout(
-    compactControl: compactControl,
-    sheetControl: sheetControl,
-    workspaceId: workspaceId,
-    conversationId: conversationId,
-    onSkillsPress: onSkillsPress,
+    compactControl: state.input.agentCompactControl,
+    sheetControl: state.input.agentSheetControl,
+    workspaceId: state.input.workspaceId,
+    conversationId: state.input.conversationId,
+    onSkillsPress: state.input.onSkillsPress,
   );
 }
 
