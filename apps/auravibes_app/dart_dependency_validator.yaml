@@ -5,3 +5,6 @@ ignore:
  - easy_localization_loader
  - drift_flutter
  - build_runner   # Development tool with executables
+ # Native playback libraries used by generated platform plugin registrants.
+ - media_kit_libs_linux
+ - media_kit_libs_windows_audio
