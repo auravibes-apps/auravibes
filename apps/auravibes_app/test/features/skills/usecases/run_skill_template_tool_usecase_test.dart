@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
@@ -125,5 +128,89 @@ void main() {
       throwsA(isA<StateError>()),
     );
     final _ = verifyNever(() => skills.getSkillBySlug(any(), any()));
+  });
+
+  test('template cancellation reaches the in-flight HTTP operation', () async {
+    final now = DateTime.utc(2026);
+    final skills = _SkillsRepository();
+    final tools = _SkillTemplateToolsRepository();
+    final executor = _SkillTemplateExecutor();
+    final skill = SkillEntity(
+      id: 'skill-1',
+      workspaceId: 'workspace-1',
+      source: .user,
+      kind: .template,
+      title: 'Example',
+      slug: 'example-skill',
+      description: 'Example skill',
+      content: 'Use the example skill.',
+      isEnabled: true,
+      isCredentialOptional: true,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final tool = SkillTemplateToolEntity(
+      id: 'tool-1',
+      skillId: skill.id,
+      templateType: .url,
+      title: 'Example tool',
+      description: 'Runs the example tool.',
+      slug: 'example-tool',
+      isEnabled: true,
+      requiresCredential: false,
+      templateJson: '{"url":"https://example.com"}',
+      inputsJson: '{}',
+      createdAt: now,
+      updatedAt: now,
+    );
+    when(() => skills.getSkillBySlug('workspace-1', skill.slug))
+        .thenAnswer((_) async => skill);
+    when(() => tools.getToolBySlug(skill.id, tool.slug))
+        .thenAnswer((_) async => tool);
+
+    final requestStarted = Completer<void>();
+    final response = Completer<engine.UrlResponse>();
+    var cancelCalls = 0;
+    final httpOperation = CancelableOperation<engine.UrlResponse>.fromFuture(
+      response.future,
+      onCancel: () async {
+        cancelCalls += 1;
+      },
+    );
+    when(
+      () => executor.call(
+        definition: any(named: 'definition'),
+        inputs: any(named: 'inputs'),
+        credentials: any(named: 'credentials'),
+        schema: any(named: 'schema'),
+        credentialDefinitions: any(named: 'credentialDefinitions'),
+      ),
+    ).thenAnswer((_) {
+      requestStarted.complete();
+      return httpOperation;
+    });
+
+    final usecase = RunSkillTemplateToolUsecase(
+      tools,
+      skills,
+      _CredentialDefinitionsRepository(),
+      _CredentialsRepository(),
+      executor,
+      (_) async => const WorkspaceSession(
+        LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+      ),
+    );
+    final operation = usecase.callCancelable(
+      workspaceId: 'workspace-1',
+      skillSlug: skill.slug,
+      toolSlug: tool.slug,
+      arguments: const {},
+    );
+
+    await requestStarted.future.timeout(const Duration(seconds: 1));
+    await Future.wait([operation.cancel(), operation.cancel()]);
+
+    expect(cancelCalls, 1);
+    expect(await operation.valueOrCancellation(), isNull);
   });
 }

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
@@ -70,16 +73,90 @@ class const RunSkillTemplateToolUsecase(
     required String skillSlug,
     required String toolSlug,
     required Map<String, dynamic> arguments,
-  }) async {
-    final session = await _workspaceSession(workspaceId);
-    _ensureLocalSession(session);
+  }) => callCancelable(
+    workspaceId: workspaceId,
+    skillSlug: skillSlug,
+    toolSlug: toolSlug,
+    arguments: arguments,
+  ).valueOrCancellation();
 
-    return await _runEnabledTool((
-      workspaceId: workspaceId,
-      skillSlug: skillSlug,
-      toolSlug: toolSlug,
-      arguments: arguments,
-    ));
+  CancelableOperation<Object?> callCancelable({
+    required String workspaceId,
+    required String skillSlug,
+    required String toolSlug,
+    required Map<String, dynamic> arguments,
+  }) => _CancelableTemplateToolCall(this, (
+    workspaceId: workspaceId,
+    skillSlug: skillSlug,
+    toolSlug: toolSlug,
+    arguments: arguments,
+  )).start();
+}
+
+class _CancelableTemplateToolCall {
+  _CancelableTemplateToolCall(this._usecase, this._request);
+
+  final RunSkillTemplateToolUsecase _usecase;
+  final _TemplateInvocationRequest _request;
+  CancelableOperation<UrlResponse>? _httpOperation;
+
+  CancelableOperation<Object?> start() {
+    final completer = CancelableCompleter<Object?>(
+      onCancel: () async {
+        await _httpOperation?.cancel();
+      },
+    );
+    unawaited(_run(completer));
+
+    return completer.operation;
+  }
+
+  Future<void> _run(CancelableCompleter<Object?> completer) async {
+    try {
+      final session = await _usecase._workspaceSession(_request.workspaceId);
+      _usecase._ensureLocalSession(session);
+      if (completer.isCanceled) return;
+
+      final skill = await _usecase._loadEnabledSkill(
+        _request.workspaceId,
+        _request.skillSlug,
+      );
+      if (skill == null) {
+        completer.complete(null);
+        return;
+      }
+      if (completer.isCanceled) return;
+
+      final tool = await _usecase._loadEnabledTool(skill.id, _request.toolSlug);
+      if (tool == null) {
+        completer.complete(null);
+        return;
+      }
+      if (completer.isCanceled) return;
+
+      final execution = await _usecase._templateExecutionRequest((
+        workspaceId: _request.workspaceId,
+        skill: skill,
+        tool: tool,
+        arguments: _request.arguments,
+      ));
+      if (completer.isCanceled) return;
+
+      final operation = _usecase._templateExecutor.call(
+        definition: execution.definition,
+        inputs: execution.inputs,
+        credentials: execution.credentials,
+        schema: execution.definition.inputSchema,
+        credentialDefinitions: execution.credentialDefinitions,
+      );
+      _httpOperation = operation;
+      final response = await operation.valueOrCancellation();
+      if (response == null || completer.isCanceled) return;
+
+      completer.complete(response.body);
+    } on Object catch (error, stackTrace) {
+      if (!completer.isCanceled) completer.completeError(error, stackTrace);
+    }
   }
 }
 

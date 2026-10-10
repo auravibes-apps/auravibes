@@ -351,6 +351,7 @@ class _FakeExecutionProvider({
   @override
   Future<Object?> runResolvedTool({
     required String conversationId,
+    required String toolCallId,
     required String tool,
     required Map<String, dynamic> arguments,
   }) async {

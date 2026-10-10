@@ -61,6 +61,7 @@ typedef AgentToolExecutionErrorRequest<TTool extends Object> = ({
 typedef AgentResolvedToolRunner<TTool extends Object> =
     Future<Object?> Function({
       required String conversationId,
+      required String toolCallId,
       required TTool tool,
       required Map<String, dynamic> arguments,
     });
@@ -94,6 +95,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
       final arguments = safeJsonDecodeToolArguments(argumentsRaw);
       final result = await runResolvedTool(
         conversationId: conversationId,
+        toolCallId: toolCallId,
         tool: tool,
         arguments: arguments,
       );
