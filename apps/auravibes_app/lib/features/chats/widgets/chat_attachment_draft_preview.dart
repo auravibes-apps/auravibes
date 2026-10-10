@@ -89,48 +89,62 @@ class _AttachmentDraftChipLabelState extends State<_AttachmentDraftChipLabel> {
   var _hasPlaybackError = false;
 
   @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: .new(maxWidth: widget.maxWidth),
-      child: Column(
-        mainAxisSize: .min,
-        crossAxisAlignment: .start,
-        children: [
-          Row(
-            mainAxisSize: .min,
-            children: [
-              if (widget.attachment.modality == .audio) ...[
-                _AttachmentDraftAudioPlayer(
-                  localPath: widget.attachment.localPath,
-                  enabled: widget.enabled,
-                  audioPreviewCoordinator: widget.audioPreviewCoordinator,
-                  onPlaybackErrorChanged: _setPlaybackError,
-                  key: ObjectKey(widget.attachment),
-                ),
-                const SizedBox(width: 4),
-              ],
-              Flexible(
-                child: _AttachmentDraftLabel(attachment: widget.attachment),
-              ),
-            ],
-          ),
-          if (_hasPlaybackError)
-            AuraText(
-              child: Text(
-                LocaleKeys.chats_screens_chat_conversation_audio_preview_error
-                    .tr(),
-              ),
-              style: .caption,
-              tint: .error,
-            ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: .new(maxWidth: widget.maxWidth),
+    child: Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
+      children: [
+        _AttachmentDraftChipLabelRow(
+          attachment: widget.attachment,
+          enabled: widget.enabled,
+          audioPreviewCoordinator: widget.audioPreviewCoordinator,
+          onPlaybackErrorChanged: _setPlaybackError,
+        ),
+        if (_hasPlaybackError) const _AttachmentDraftAudioPreviewError(),
+      ],
+    ),
+  );
 
   void _setPlaybackError(bool hasError) {
     if (mounted) setState(() => _hasPlaybackError = hasError);
   }
+}
+
+class const _AttachmentDraftChipLabelRow({
+  required final MessageAttachmentToCreate attachment,
+  required final bool enabled,
+  required final ChatAttachmentAudioPreviewCoordinator? audioPreviewCoordinator,
+  required final ValueChanged<bool> onPlaybackErrorChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      if (attachment.modality == .audio) ...[
+        _AttachmentDraftAudioPlayer(
+          localPath: attachment.localPath,
+          enabled: enabled,
+          audioPreviewCoordinator: audioPreviewCoordinator,
+          onPlaybackErrorChanged: onPlaybackErrorChanged,
+          key: ObjectKey(attachment),
+        ),
+        const SizedBox(width: 4),
+      ],
+      Flexible(child: _AttachmentDraftLabel(attachment: attachment)),
+    ],
+  );
+}
+
+class const _AttachmentDraftAudioPreviewError() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      LocaleKeys.chats_screens_chat_conversation_audio_preview_error.tr(),
+    ),
+    style: .caption,
+    tint: .error,
+  );
 }
 
 class const _AttachmentDraftAudioPlayer({
@@ -190,29 +204,46 @@ class _AttachmentDraftAudioPlayerState
       _isPlaying ? _stopPlayback() : _startPlayback();
 
   Future<void> _startPlayback() async {
-    final player = _player ??= .new();
-    _listenForCompletion(player);
+    final player = _preparePlayer();
     final playbackRequest = ++_playbackRequest;
-    final coordinator = widget.audioPreviewCoordinator;
-    if (coordinator != null) {
-      final canPlay = await coordinator.activate(_previewOwner, _stopPlayback);
-      if (!canPlay || !mounted || playbackRequest != _playbackRequest) return;
-    }
+    if (!await _activatePreview(playbackRequest)) return;
 
+    _setPlaying(true);
+    widget.onPlaybackErrorChanged(false);
     try {
-      _setPlaying(true);
-      widget.onPlaybackErrorChanged(false);
-      final _ = await player.setFilePath(widget.localPath);
-      if (!mounted || playbackRequest != _playbackRequest) return;
-      unawaited(
-        player.play().catchError((Object _) async {
-          await _handlePlaybackFailure(player, playbackRequest);
-        }),
-      );
+      await _loadAndPlay(player, playbackRequest);
     } on Object {
       await _handlePlaybackFailure(player, playbackRequest);
     }
   }
+
+  AudioPlayer _preparePlayer() {
+    final player = _player ??= .new();
+    _listenForCompletion(player);
+
+    return player;
+  }
+
+  Future<bool> _activatePreview(int playbackRequest) async {
+    final coordinator = widget.audioPreviewCoordinator;
+    if (coordinator == null) return _isCurrentRequest(playbackRequest);
+    final canPlay = await coordinator.activate(_previewOwner, _stopPlayback);
+
+    return canPlay && _isCurrentRequest(playbackRequest);
+  }
+
+  Future<void> _loadAndPlay(AudioPlayer player, int playbackRequest) async {
+    final _ = await player.setFilePath(widget.localPath);
+    if (!_isCurrentRequest(playbackRequest)) return;
+    unawaited(
+      player.play().catchError((Object _) async {
+        await _handlePlaybackFailure(player, playbackRequest);
+      }),
+    );
+  }
+
+  bool _isCurrentRequest(int playbackRequest) =>
+      mounted && playbackRequest == _playbackRequest;
 
   Future<void> _stopPlayback() {
     final existingStop = _stoppingPlayback;
