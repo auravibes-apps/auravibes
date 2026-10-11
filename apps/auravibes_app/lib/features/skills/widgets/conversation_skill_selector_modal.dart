@@ -948,8 +948,12 @@ class _LoadedSkillActions extends StatelessWidget {
   final List<Widget> _children;
 
   @override
-  Widget build(BuildContext context) =>
-      AuraColumn(children: _children, spacing: .xs, crossAxisAlignment: .end);
+  Widget build(BuildContext context) => AuraColumn(
+    children: _children,
+    spacing: .xs,
+    crossAxisAlignment: .end,
+    mainAxisSize: .min,
+  );
 }
 
 class const _AvailableSkillActions({
@@ -972,6 +976,7 @@ class const _AvailableSkillActions({
     ],
     spacing: .xs,
     crossAxisAlignment: .end,
+    mainAxisSize: .min,
   );
 }
 

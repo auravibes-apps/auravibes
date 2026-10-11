@@ -91,7 +91,7 @@ void main() {
     final semantics = tester
         .getSemantics(find.byKey(const ValueKey('skill-row-research')))
         .getSemanticsData();
-    expect(semantics.label, contains('Ready in context'));
+    expect(semantics.label, contains('Needs context'));
     expect(semantics.label, contains('Instruction requirements met'));
     expect(semantics.flagsCollection.isSelected, ui.Tristate.isTrue);
   });
@@ -531,7 +531,16 @@ void main() {
       );
     });
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsIdentifier('skills-control'));
+    await tester.sendKeyEvent(.tab);
+    expect(
+      tester
+          .getSemantics(find.bySemanticsIdentifier('skills-control'))
+          .getSemanticsData()
+          .flagsCollection
+          .isFocused,
+      ui.Tristate.isTrue,
+    );
+    await tester.sendKeyEvent(.enter);
     final _ = await tester.pumpAndSettle();
     expect(find.text('Conversation skills'), findsOneWidget);
 
