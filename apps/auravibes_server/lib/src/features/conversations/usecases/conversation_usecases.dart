@@ -759,6 +759,10 @@ class ConversationUseCases {
       'agentId': request.agentId,
     });
     final attachmentIds = request.attachmentIds.map(_parseObjectId).toSet();
+    final contentDigest = base64UrlEncode(
+      (await Sha256().hash(utf8.encode(content))).bytes,
+    );
+    final sortedAttachmentIds = attachmentIds.toList()..sort();
     final result = await _mutate(
       session,
       userId: userId,
@@ -828,7 +832,42 @@ class ConversationUseCases {
           now: now,
           transaction: transaction,
         );
-        return _Mutation(started, 'turnStarted', request.conversationId);
+        final eventSequence = conversation.eventSequence + 1;
+        await Conversation.db.updateRow(
+          session,
+          conversation.copyWith(
+            revision: conversation.revision + 1,
+            projectionRevision: conversation.projectionRevision + 1,
+            eventSequence: eventSequence,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+        await ConversationEvent.db.insertRow(
+          session,
+          ConversationEvent(
+            workspaceId: request.workspaceId,
+            conversationId: conversation.id!,
+            sequence: eventSequence,
+            eventId: 'user-message:${request.clientMessageId}',
+            actorUserId: userId,
+            requestId: request.requestId,
+            kind: ConversationEventType.messageQueued,
+            payloadJson: jsonEncode({
+              'messageId': request.clientMessageId,
+              'contentDigest': contentDigest,
+              'attachmentIds': sortedAttachmentIds,
+            }),
+            createdAt: now,
+          ),
+          transaction: transaction,
+        );
+        return _Mutation(
+          started,
+          'turnStarted',
+          request.conversationId,
+          affectedConversationIds: [request.conversationId],
+        );
       },
     );
     session.log(
@@ -939,79 +978,79 @@ class ConversationUseCases {
     required int workspaceId,
     required String conversationId,
   }) async {
-    final queued = await session.db.transaction((transaction) async {
-      final conversation = await _repository.findConversationByStableId(
-        session,
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        transaction: transaction,
-        lock: true,
-      );
-      if (conversation == null ||
-          conversation.activeExecutionId != null ||
-          await _repository.hasActiveMutation(
-            session,
-            workspaceId: workspaceId,
-            conversationId: conversation.id!,
-            transaction: transaction,
-          )) {
-        return null;
-      }
-      final pending = await _repository.listPendingMessages(
-        session,
-        workspaceId: workspaceId,
-        conversationId: conversation.id!,
-        transaction: transaction,
-      );
-      if (pending.isEmpty) return null;
-      final recentEvents = await ConversationEvent.db.find(
-        session,
-        where: (table) =>
-            table.workspaceId.equals(workspaceId) &
-            table.conversationId.equals(conversation.id!) &
-            table.kind.inSet({
-              ConversationEventType.executionStarted,
-              ConversationEventType.executionStopped,
-              ConversationEventType.executionCompleted,
-              ConversationEventType.executionFailed,
-            }),
-        orderBy: (table) => table.sequence.desc(),
-        limit: 1,
-        transaction: transaction,
-      );
-      if (recentEvents.firstOrNull?.kind ==
-          ConversationEventType.executionStopped) {
-        return null;
-      }
-      if (conversation.executionState != 'idle' &&
-          conversation.executionState != ConversationStatuses.failed &&
-          conversation.executionState !=
-              ConversationStatuses.awaitingUserAction) {
-        return null;
-      }
-      return (conversation: conversation, message: pending.first);
-    });
-    if (queued == null) return false;
-
-    try {
-      await continueConversation(
-        session,
-        userId: userId,
-        request: ContinueConversationRequest(
+    while (true) {
+      final queued = await session.db.transaction((transaction) async {
+        final conversation = await _repository.findConversationByStableId(
+          session,
           workspaceId: workspaceId,
-          requestId: 'queued:${queued.message.stableId}',
           conversationId: conversationId,
-          expectedProjectionRevision: queued.conversation.projectionRevision,
-          a2uiSupportedComponents: const [],
-        ),
-      );
-      return true;
-    } on ConversationException catch (error) {
-      if (error.code == ConversationErrorCode.turnConflict ||
-          error.code == ConversationErrorCode.staleRevision) {
-        return false;
+          transaction: transaction,
+          lock: true,
+        );
+        if (conversation == null ||
+            conversation.activeExecutionId != null ||
+            await _repository.hasActiveMutation(
+              session,
+              workspaceId: workspaceId,
+              conversationId: conversation.id!,
+              transaction: transaction,
+            )) {
+          return null;
+        }
+        final pending = await _repository.listPendingMessages(
+          session,
+          workspaceId: workspaceId,
+          conversationId: conversation.id!,
+          transaction: transaction,
+        );
+        if (pending.isEmpty) return null;
+        final recentEvents = await ConversationEvent.db.find(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(workspaceId) &
+              table.conversationId.equals(conversation.id!) &
+              table.kind.inSet({
+                ConversationEventType.executionStarted,
+                ConversationEventType.executionStopped,
+                ConversationEventType.executionCompleted,
+                ConversationEventType.executionFailed,
+              }),
+          orderBy: (table) => table.sequence.desc(),
+          limit: 1,
+          transaction: transaction,
+        );
+        if (recentEvents.firstOrNull?.kind ==
+            ConversationEventType.executionStopped) {
+          return null;
+        }
+        if (conversation.executionState != 'idle' &&
+            conversation.executionState != ConversationStatuses.failed &&
+            conversation.executionState !=
+                ConversationStatuses.awaitingUserAction) {
+          return null;
+        }
+        return (conversation: conversation, message: pending.first);
+      });
+      if (queued == null) return false;
+
+      try {
+        await continueConversation(
+          session,
+          userId: userId,
+          request: ContinueConversationRequest(
+            workspaceId: workspaceId,
+            requestId: 'queued:${queued.message.stableId}',
+            conversationId: conversationId,
+            expectedProjectionRevision: queued.conversation.projectionRevision,
+            a2uiSupportedComponents: const [],
+          ),
+        );
+        return true;
+      } on ConversationException catch (error) {
+        if (error.code == ConversationErrorCode.staleRevision) continue;
+        if (error.code == ConversationErrorCode.turnConflict) return false;
+        rethrow;
       }
-      rethrow;
     }
   }
 
