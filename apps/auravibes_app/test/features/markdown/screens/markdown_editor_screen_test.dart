@@ -264,6 +264,7 @@ void main() {
     final launchedUrls = <String>[];
     _mockUrlLauncher(tester, (call) async {
       launchedUrls.add((call.arguments as Map)['url'] as String);
+
       return true;
     });
     await _openMarkdownEditor(

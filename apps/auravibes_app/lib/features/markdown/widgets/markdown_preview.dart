@@ -48,10 +48,10 @@ Future<void> _openExternalLink(BuildContext context, String url) async {
   } on Object {
     if (!context.mounted) return;
     unawaited(AuraHaptics.error());
-    const TextLocale errorMessage = .new(
+    const errorMessage = TextLocale(
       LocaleKeys.markdown_editor_external_link_error,
     );
     final _ = ScaffoldMessenger.of(context)
-        .showSnackBar(.new(content: errorMessage));
+        .showSnackBar(const .new(content: errorMessage));
   }
 }
