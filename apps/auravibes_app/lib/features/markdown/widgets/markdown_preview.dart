@@ -41,16 +41,10 @@ bool _hasSafeHost(Uri uri) =>
 Future<bool?> _confirmExternalLink(BuildContext context, Uri uri) =>
     AuraDialogs.confirm(
       context: context,
-      title: _externalLinkTitle(),
-      message: _externalLinkMessage(uri),
+      title: Text(LocaleKeys.markdown_editor_external_link_title.tr()),
+      message: AuraSelectableText(_localizedExternalLinkMessage(uri)),
       actions: _externalLinkActions(),
     );
-
-Text _externalLinkTitle() =>
-    Text(LocaleKeys.markdown_editor_external_link_title.tr());
-
-Widget _externalLinkMessage(Uri uri) =>
-    AuraSelectableText(_localizedExternalLinkMessage(uri));
 
 String _localizedExternalLinkMessage(Uri uri) => LocaleKeys
     .markdown_editor_external_link_message
@@ -65,12 +59,12 @@ Future<void> _launchExternalLink(BuildContext context, Uri uri) async {
   try {
     await OpenSystemBrowser.call(uri);
   } on Object {
+    if (!context.mounted) return;
     _showExternalLinkError(context);
   }
 }
 
 void _showExternalLinkError(BuildContext context) {
-  if (!context.mounted) return;
   unawaited(AuraHaptics.error());
   const errorMessage = TextLocale(
     LocaleKeys.markdown_editor_external_link_error,
