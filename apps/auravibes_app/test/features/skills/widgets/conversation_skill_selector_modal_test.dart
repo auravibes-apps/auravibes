@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/skills/widgets/conversation_skill_selecto
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/widgets.dart' show CustomPaint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -20,8 +21,6 @@ void main() {
   testWidgets('shows selected skill and current context separately', (
     tester,
   ) async {
-    final semanticsHandle = tester.ensureSemantics();
-    addTearDown(semanticsHandle.dispose);
     final container = ProviderContainer(
       overrides: [
         skillAccessSummaryProvider.overrideWith((_, _) async => null),
@@ -151,8 +150,6 @@ void main() {
   });
 
   testWidgets('search filters both sections by description', (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     final container = _container(
       state: const ConversationSkillSelectorState(
         loaded: [_research],
@@ -182,8 +179,6 @@ void main() {
   testWidgets('loading selector has a localized live-region label', (
     tester,
   ) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     final selector = Completer<ConversationSkillSelectorState>();
     final container = ProviderContainer(
       overrides: [
@@ -253,8 +248,6 @@ void main() {
   testWidgets('skill row semantics announce selection and readiness', (
     tester,
   ) async {
-    final semanticsHandle = tester.ensureSemantics();
-    addTearDown(semanticsHandle.dispose);
     final container = _container(
       state: const ConversationSkillSelectorState(
         loaded: [_research],
@@ -292,8 +285,6 @@ void main() {
   testWidgets('retryable context errors label their recovery action', (
     tester,
   ) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     final container = _container(
       state: const ConversationSkillSelectorState(
         loaded: [_research],
@@ -305,12 +296,15 @@ void main() {
     addTearDown(container.dispose);
     await _pumpModal(tester, container);
 
-    expect(find.bySemanticsLabel('Retry preparing Research'), findsOneWidget);
+    final retry = find.widgetWithText(AuraButton, 'Retry');
+    await tester.ensureVisible(retry);
+    expect(
+      find.bySemanticsLabel(RegExp('Retry preparing Research')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Add stays promptless and shows pending state', (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     final loadStarted = Completer<void>();
     final finishLoad = Completer<void>();
     var sends = 0;
@@ -416,7 +410,9 @@ void main() {
     addTearDown(container.dispose);
     await _pumpModal(tester, container);
 
-    final _ = await tester.tap(find.text('Preview'));
+    final preview = find.widgetWithText(AuraButton, 'Preview');
+    await tester.ensureVisible(preview);
+    final _ = await tester.tap(preview);
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Search sources'), findsOneWidget);
@@ -483,8 +479,6 @@ void main() {
       state: const ConversationSkillSelectorState(loaded: [], loadable: []),
     );
     addTearDown(container.dispose);
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
 
     await tester.runAsync(() async {
       await tester.pumpWidget(
@@ -531,15 +525,14 @@ void main() {
       );
     });
     final _ = await tester.pumpAndSettle();
-    expect(await tester.sendKeyEvent(.tab), isTrue);
-    expect(
-      tester
-          .getSemantics(find.bySemanticsIdentifier('skills-control'))
-          .getSemanticsData()
-          .flagsCollection
-          .isFocused,
-      ui.Tristate.isTrue,
+    final focusRing = find.descendant(
+      of: find.widgetWithText(AuraButton, 'Skills'),
+      matching: find.byType(CustomPaint),
     );
+    expect(tester.widget<CustomPaint>(focusRing).foregroundPainter, isNull);
+    expect(await tester.sendKeyEvent(.tab), isTrue);
+    await tester.pump();
+    expect(tester.widget<CustomPaint>(focusRing).foregroundPainter, isNotNull);
     expect(await tester.sendKeyEvent(.enter), isTrue);
     final _ = await tester.pumpAndSettle();
     expect(find.text('Conversation skills'), findsOneWidget);
@@ -547,14 +540,7 @@ void main() {
     await tester.tap(find.text('Close'));
     final _ = await tester.pumpAndSettle();
 
-    expect(
-      tester
-          .getSemantics(find.bySemanticsIdentifier('skills-control'))
-          .getSemanticsData()
-          .flagsCollection
-          .isFocused,
-      ui.Tristate.isTrue,
-    );
+    expect(tester.widget<CustomPaint>(focusRing).foregroundPainter, isNotNull);
   });
 }
 

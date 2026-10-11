@@ -605,7 +605,7 @@ class const _LoadedSkillTile({
   required final _SelectorActions actions,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraTile(
+  Widget build(BuildContext _) => _SkillTileLayout(
     child: _SkillTileContents(
       skill: skill,
       actions: actions,
@@ -615,8 +615,7 @@ class const _LoadedSkillTile({
       contextFailure: contextFailure,
       actionResult: actionResult,
     ),
-    variant: .ghost,
-    trailing: _LoadedSkillActions(
+    actions: _LoadedSkillActions(
       skill: skill,
       pending: pending,
       contextStatus: contextStatus,
@@ -634,7 +633,7 @@ class const _AvailableSkillTile({
   required final _SelectorActions actions,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraTile(
+  Widget build(BuildContext _) => _SkillTileLayout(
     child: _SkillTileContents(
       skill: skill,
       actions: actions,
@@ -642,13 +641,36 @@ class const _AvailableSkillTile({
       pending: pending,
       actionResult: actionResult,
     ),
-    variant: .ghost,
-    trailing: _AvailableSkillActions(
+    actions: _AvailableSkillActions(
       skill: skill,
       pending: pending,
       actionResult: actionResult,
       actions: actions,
     ),
+  );
+}
+
+class const _SkillTileLayout({
+  required final Widget child,
+  required final Widget actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final actionsBelow = constraints.maxWidth < _selectorDialogWidth;
+
+      return AuraTile(
+        child: actionsBelow
+            ? AuraColumn(
+                children: [child, actions],
+                spacing: .sm,
+                crossAxisAlignment: .stretch,
+              )
+            : child,
+        variant: .ghost,
+        trailing: actionsBelow ? null : actions,
+      );
+    },
   );
 }
 
