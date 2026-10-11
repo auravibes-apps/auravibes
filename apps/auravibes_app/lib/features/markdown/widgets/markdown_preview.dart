@@ -18,40 +18,63 @@ class const MarkdownPreview({required final String text, super.key})
 
 Future<void> _openExternalLink(BuildContext context, String url) async {
   final uri = Uri.tryParse(url);
-  final scheme = uri?.scheme.toLowerCase();
-  if (uri == null ||
-      !uri.isAbsolute ||
-      !uri.hasAuthority ||
-      (scheme != 'http' && scheme != 'https') ||
-      uri.host.isEmpty ||
-      uri.userInfo.isNotEmpty) {
-    return;
-  }
+  if (uri == null || !_isSafeExternalUri(uri)) return;
 
-  final confirmed = await AuraDialogs.confirm(
-    context: context,
-    title: Text(LocaleKeys.markdown_editor_external_link_title.tr()),
-    message: AuraSelectableText(
-      LocaleKeys.markdown_editor_external_link_message.tr(
-        namedArgs: {'host': uri.host, 'url': uri.toString()},
-      ),
-    ),
-    actions: .new(
-      confirmLabel: Text(LocaleKeys.markdown_editor_external_link_open.tr()),
-      cancelLabel: Text(LocaleKeys.common_cancel.tr()),
-    ),
-  );
+  final confirmed = await _confirmExternalLink(context, uri);
   if (confirmed != true || !context.mounted) return;
 
+  await _launchExternalLink(context, uri);
+}
+
+bool _isSafeExternalUri(Uri uri) =>
+    uri.isAbsolute &&
+    uri.hasAuthority &&
+    _hasHttpScheme(uri) &&
+    _hasSafeHost(uri);
+
+bool _hasHttpScheme(Uri uri) =>
+    const {'http', 'https'}.contains(uri.scheme.toLowerCase());
+
+bool _hasSafeHost(Uri uri) =>
+    uri.hasAuthority && uri.host.isNotEmpty && uri.userInfo.isEmpty;
+
+Future<bool?> _confirmExternalLink(BuildContext context, Uri uri) =>
+    AuraDialogs.confirm(
+      context: context,
+      title: _externalLinkTitle(),
+      message: _externalLinkMessage(uri),
+      actions: _externalLinkActions(),
+    );
+
+Text _externalLinkTitle() =>
+    Text(LocaleKeys.markdown_editor_external_link_title.tr());
+
+Widget _externalLinkMessage(Uri uri) =>
+    AuraSelectableText(_localizedExternalLinkMessage(uri));
+
+String _localizedExternalLinkMessage(Uri uri) => LocaleKeys
+    .markdown_editor_external_link_message
+    .tr(namedArgs: {'host': uri.host, 'url': uri.toString()});
+
+AuraConfirmDialogActions _externalLinkActions() => .new(
+  confirmLabel: Text(LocaleKeys.markdown_editor_external_link_open.tr()),
+  cancelLabel: Text(LocaleKeys.common_cancel.tr()),
+);
+
+Future<void> _launchExternalLink(BuildContext context, Uri uri) async {
   try {
     await OpenSystemBrowser.call(uri);
   } on Object {
-    if (!context.mounted) return;
-    unawaited(AuraHaptics.error());
-    const errorMessage = TextLocale(
-      LocaleKeys.markdown_editor_external_link_error,
-    );
-    final _ = ScaffoldMessenger.of(context)
-        .showSnackBar(const .new(content: errorMessage));
+    _showExternalLinkError(context);
   }
+}
+
+void _showExternalLinkError(BuildContext context) {
+  if (!context.mounted) return;
+  unawaited(AuraHaptics.error());
+  const errorMessage = TextLocale(
+    LocaleKeys.markdown_editor_external_link_error,
+  );
+  final _ = ScaffoldMessenger.of(context)
+      .showSnackBar(const .new(content: errorMessage));
 }
