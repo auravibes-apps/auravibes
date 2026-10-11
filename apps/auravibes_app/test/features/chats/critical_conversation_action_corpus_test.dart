@@ -219,7 +219,7 @@ Future<void> _retryUnavailable(WidgetTester tester) async {
 }
 
 Future<void> _approveAvailable(WidgetTester tester) async {
-  final actions = CriticalConversationBatchApprovalActions.new();
+  final actions = CriticalConversationBatchApprovalActions();
   await _pumpAndInit(
     tester,
     _ApprovalSubject(
@@ -242,7 +242,7 @@ Future<void> _approveAvailable(WidgetTester tester) async {
 }
 
 Future<void> _skipAvailable(WidgetTester tester) async {
-  final actions = CriticalConversationBatchApprovalActions.new();
+  final actions = CriticalConversationBatchApprovalActions();
   await _pumpAndInit(
     tester,
     _ApprovalSubject(
@@ -300,7 +300,7 @@ Future<void> _attachAvailable(WidgetTester tester) async {
     find.byKey(const ValueKey<String>('chat_attachment_options_button')),
   );
   await tester.pump();
-  await tester.tap(find.byIcon(.attach_file));
+  await tester.tap(find.byIcon(Icons.attach_file));
   final _ = await tester.pumpAndSettle();
 
   expect(picker.pickCount, 1);
@@ -330,8 +330,8 @@ Future<void> _attachUnavailable(WidgetTester tester) async {
     find.byKey(const ValueKey<String>('chat_attachment_options_button')),
   );
   await tester.pump();
-  expect(find.byIcon(.attach_file), findsOneWidget);
-  await tester.tap(find.byIcon(.attach_file));
+  expect(find.byIcon(Icons.attach_file), findsOneWidget);
+  await tester.tap(find.byIcon(Icons.attach_file));
   await tester.pump();
 
   expect(picker.pickCount, 0);
@@ -341,7 +341,7 @@ Future<void> _attachUnavailable(WidgetTester tester) async {
 
 Future<void> _selectModelAvailable(WidgetTester tester) async {
   final changes = <String?>[];
-  final recents = CriticalConversationRecentModelsNotifier.new();
+  final recents = CriticalConversationRecentModelsNotifier();
   await _pumpModelSelector(
     tester,
     _ModelSelectorSubject(
@@ -377,40 +377,25 @@ Future<void> _selectModelUnavailable(WidgetTester tester) async {
   expect(find.text('Model'), findsOneWidget);
 }
 
-class _InputSubject extends StatelessWidget {
-  const _InputSubject({
-    required this.onSendMessage,
-    this.onToolsPress = _ignore,
-    this.isBusy = false,
-    this.onStop,
-    this.modalitiesInput = const [],
-    this.modelSheetControl = const SizedBox.shrink(),
-    this.modelCompactControl,
-  });
-
-  final FutureOr<void> Function(ChatDraft draft) onSendMessage;
-  final VoidCallback onToolsPress;
-  final bool isBusy;
-  final VoidCallback? onStop;
-  final List<String> modalitiesInput;
-  final Widget modelSheetControl;
-  final Widget Function(VoidCallback onPressed)? modelCompactControl;
-
+class const _InputSubject({
+  required final FutureOr<void> Function(ChatDraft draft) onSendMessage,
+  final bool isBusy = false,
+  final VoidCallback? onStop,
+  final List<String> modalitiesInput = const [],
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ChatInputWidget(
     workspaceId: criticalConversationWorkspaceId,
     onSendMessage: onSendMessage,
-    onToolsPress: onToolsPress,
-    modelSheetControl: modelSheetControl,
+    onToolsPress: _ignore,
+    modelSheetControl: const SizedBox.shrink(),
     agentSheetControl: const SizedBox.shrink(),
-    modelCompactControl:
-        modelCompactControl ??
-        (onPressed) => AuraTile(
-          child: const Text('Model'),
-          onTap: onPressed,
-          variant: .outlined,
-          size: .small,
-        ),
+    modelCompactControl: (onPressed) => AuraTile(
+      child: const Text('Model'),
+      onTap: onPressed,
+      variant: .outlined,
+      size: .small,
+    ),
     agentCompactControl: (onPressed) => AuraTile(
       child: const Text('Agent'),
       onTap: onPressed,
@@ -423,18 +408,12 @@ class _InputSubject extends StatelessWidget {
   );
 }
 
-class _ModelSelectorSubject extends StatelessWidget {
-  const _ModelSelectorSubject({
-    required this.groupedModels,
-    required this.recents,
-    required this.onChanged,
-  });
-
-  final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
-  groupedModels;
-  final CriticalConversationRecentModelsNotifier recents;
-  final ValueChanged<String?> onChanged;
-
+class const _ModelSelectorSubject({
+  required final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
+  groupedModels,
+  required final CriticalConversationRecentModelsNotifier recents,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TestableApp(
     child: Scaffold(
@@ -458,12 +437,10 @@ class _ModelSelectorSubject extends StatelessWidget {
   );
 }
 
-class _ApprovalSubject extends StatelessWidget {
-  const _ApprovalSubject({required this.actions, required this.pendingCalls});
-
-  final CriticalConversationBatchApprovalActions actions;
-  final List<PendingToolCall> pendingCalls;
-
+class const _ApprovalSubject({
+  required final CriticalConversationBatchApprovalActions actions,
+  required final List<PendingToolCall> pendingCalls,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _LocalApp(
     child: Material(
@@ -477,12 +454,10 @@ class _ApprovalSubject extends StatelessWidget {
   );
 }
 
-class _MessageSubject extends StatelessWidget {
-  const _MessageSubject({required this.message, required this.onRetryMessage});
-
-  final MessageEntity message;
-  final Future<void> Function(MessageEntity message) onRetryMessage;
-
+class const _MessageSubject({
+  required final MessageEntity message,
+  required final Future<void> Function(MessageEntity message) onRetryMessage,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _LocalApp(
     child: ChatPrimaryScrollController(
@@ -535,12 +510,10 @@ class _MessageSubject extends StatelessWidget {
   );
 }
 
-class _InputApp extends StatelessWidget {
-  const _InputApp({required this.input, this.attachmentService});
-
-  final ChatInputWidget input;
-  final CriticalConversationAttachmentService? attachmentService;
-
+class const _InputApp({
+  required final Widget input,
+  final CriticalConversationAttachmentService? attachmentService,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _LocalApp(
     child: AuraSnackBarHost(
@@ -563,12 +536,10 @@ class _InputApp extends StatelessWidget {
   );
 }
 
-class _LocalApp extends StatelessWidget {
-  const _LocalApp({required this.child, this.overrides = const []});
-
-  final Widget child;
-  final List<Override> overrides;
-
+class const _LocalApp({
+  required final Widget child,
+  final List<Override> overrides = const [],
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => EasyLocalization(
     child: TestProviderScope(

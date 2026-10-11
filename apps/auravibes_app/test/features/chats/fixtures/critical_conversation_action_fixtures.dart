@@ -181,6 +181,9 @@ base class CriticalConversationPlatformFile({
   final Uri uri = .file(path);
 
   @override
+  Never get xFile => throw UnimplementedError();
+
+  @override
   int lengthSync() => size;
 
   @override
