@@ -244,12 +244,20 @@ extension on AppDatabase {
   }
 
   Future<void> _runCoreUpgrades(Migrator m, int from) async {
+    await _runAgentAndWorkspaceUpgrades(m, from);
+    await _runCatalogAndConversationUpgrades(m, from);
+  }
+
+  Future<void> _runAgentAndWorkspaceUpgrades(Migrator m, int from) async {
     await _upgradeAgentsSchema(m, from);
     await _upgradeAgentToolsSchema(m, from);
     await _upgradeAttachmentSchema(m, from);
     await _upgradeCloudAgentSchema(m, from);
     await _backfillAgentDescriptions(from);
     await _upgradeCloudWorkspaceSchema(m, from);
+  }
+
+  Future<void> _runCatalogAndConversationUpgrades(Migrator m, int from) async {
     await _upgradeAgentCatalogSchema(from);
     await _runMcpSchemaUpgrades(m, from);
     await _runConversationUpgrades(m, from);

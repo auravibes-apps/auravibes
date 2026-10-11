@@ -542,27 +542,52 @@ Future<Object?> _registerAndAwaitCancelableOperation(
   _CancelableOperationRequest request,
 ) async {
   final operationResult = request.operation.valueOrCancellation();
-  final handle = request.runtime.registerToolCancellationHandle((
-    conversationId: request.conversationId,
-    toolCallId: request.toolCallId,
-    isSupported: request.isCancellationSupported,
-    cancel: request.operation.cancel,
+  final handle = _registerCancelableOperation(request, operationResult);
+
+  return await _awaitCancelableOperation(
+    request: request,
     operationResult: operationResult,
-    isCancellationConfirmed: () => request.operation.isCanceled,
-  ));
+    handle: handle,
+  );
+}
+
+AgentToolCancellationHandle _registerCancelableOperation(
+  _CancelableOperationRequest request,
+  Future<Object?> operationResult,
+) => request.runtime.registerToolCancellationHandle((
+  conversationId: request.conversationId,
+  toolCallId: request.toolCallId,
+  isSupported: request.isCancellationSupported,
+  cancel: request.operation.cancel,
+  operationResult: operationResult,
+  isCancellationConfirmed: () => request.operation.isCanceled,
+));
+
+Future<Object?> _awaitCancelableOperation({
+  required _CancelableOperationRequest request,
+  required Future<Object?> operationResult,
+  required AgentToolCancellationHandle handle,
+}) async {
   try {
     return await Future.any<Object?>([
       operationResult,
       _backgroundWorkAcknowledgementAfterDetach(handle.detached),
     ]);
   } finally {
-    if (handle.backgroundWorkId == null) {
-      request.runtime.completeToolCancellationHandle(
-        conversationId: request.conversationId,
-        toolCallId: request.toolCallId,
-        handle: handle,
-      );
-    }
+    _completeCancelableOperation(request: request, handle: handle);
+  }
+}
+
+void _completeCancelableOperation({
+  required _CancelableOperationRequest request,
+  required AgentToolCancellationHandle handle,
+}) {
+  if (handle.backgroundWorkId == null) {
+    request.runtime.completeToolCancellationHandle(
+      conversationId: request.conversationId,
+      toolCallId: request.toolCallId,
+      handle: handle,
+    );
   }
 }
 
