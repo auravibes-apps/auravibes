@@ -1130,9 +1130,9 @@ _ToolbarActionState _inlineFormattingState(
   for (final span in spans) {
     final selectionIsInsideContent =
         bounds.start >= span.contentStart && bounds.end <= span.contentEnd;
-    final selectionContainsSpan =
-        bounds.start <= span.start && bounds.end >= span.end;
-    if (selectionIsInsideContent || selectionContainsSpan) return .active;
+    final selectionIsExactlySpan =
+        bounds.start == span.start && bounds.end == span.end;
+    if (selectionIsInsideContent || selectionIsExactlySpan) return .active;
   }
 
   return spans.any(

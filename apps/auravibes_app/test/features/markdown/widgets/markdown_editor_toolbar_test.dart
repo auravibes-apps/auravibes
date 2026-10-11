@@ -506,6 +506,18 @@ void main() {
       );
       expect(toggleSemantics().properties.toggled, isTrue);
 
+      controller.selection = .new(
+        baseOffset: boldStart - '**'.length,
+        extentOffset: text.length,
+      );
+      await tester.pump();
+
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.filled,
+      );
+      expect(toggleSemantics().properties.toggled, isTrue);
+
       controller.selection = .new(baseOffset: 0, extentOffset: boldStart + 2);
       await tester.pump();
 
@@ -516,6 +528,19 @@ void main() {
       expect(
         find.byKey(const ValueKey('markdown-toolbar-mixed-indicator-bold')),
         findsOneWidget,
+      );
+      expect(toggleSemantics().properties.mixed, isTrue);
+      expect(toggleSemantics().properties.toggled, isNull);
+
+      controller.selection = const .new(
+        baseOffset: 0,
+        extentOffset: text.length,
+      );
+      await tester.pump();
+
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.outlined,
       );
       expect(toggleSemantics().properties.mixed, isTrue);
       expect(toggleSemantics().properties.toggled, isNull);
@@ -686,6 +711,42 @@ void main() {
         controller.selection,
         const TextSelection(baseOffset: 2, extentOffset: text.length + 4),
       );
+    });
+
+    testWidgets('formats a selected single line as a heading or quote', (
+      tester,
+    ) async {
+      for (final action in [
+        (icon: Icons.title, prefix: '# '),
+        (icon: Icons.format_quote, prefix: '> '),
+      ]) {
+        const content = 'selected line';
+        final controller = TextEditingController(text: content);
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+        controller.selection = const .new(
+          baseOffset: 0,
+          extentOffset: content.length,
+        );
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+
+        expect(controller.text, '${action.prefix}$content');
+        expect(
+          controller.selection,
+          TextSelection(
+            baseOffset: action.prefix.length,
+            extentOffset: action.prefix.length + content.length,
+          ),
+        );
+      }
     });
 
     testWidgets('removes heading and blockquote markers on repeated toggle', (
