@@ -739,7 +739,7 @@ class _SkillTileIdentityState extends State<_SkillTileIdentity> {
             border: _showFocusHighlight
                 ? Border.all(color: context.auraColors.primary, width: 2)
                 : null,
-            borderRadius: const BorderRadius.all(Radius.circular(4)),
+            borderRadius: const BorderRadius.all(.circular(4)),
           ),
           child: ExcludeSemantics(
             child: AuraColumn(

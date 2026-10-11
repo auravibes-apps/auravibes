@@ -12,7 +12,6 @@ import 'package:auravibes_app/features/skills/widgets/conversation_skill_selecto
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -444,8 +443,8 @@ void main() {
 
     final search = tester.widget<EditableText>(find.byType(EditableText));
     expect(search.focusNode.hasFocus, isTrue);
-    final _ = await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-    final _ = await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    final _ = await tester.sendKeyEvent(.tab);
+    final _ = await tester.sendKeyEvent(.enter);
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Skill preview'), findsOneWidget);
