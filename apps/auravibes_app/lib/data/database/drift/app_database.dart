@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/database/drift/daos/agents_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/app_skill_workspace_settings_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/background_works_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
@@ -28,6 +29,7 @@ import 'package:auravibes_app/data/database/drift/tables/agent_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/agents.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_settings.dart';
+import 'package:auravibes_app/data/database/drift/tables/background_works.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
@@ -58,6 +60,7 @@ export 'daos/agents_dao.dart';
 export 'daos/api_model_providers_dao.dart';
 export 'daos/api_models_dao.dart';
 export 'daos/app_skill_workspace_settings_dao.dart';
+export 'daos/background_works_dao.dart';
 export 'daos/conversation_skills_dao.dart';
 export 'daos/conversation_tools_dao.dart';
 export 'daos/message_dao.dart';
@@ -101,9 +104,11 @@ part 'app_database.g.dart';
     AppSkillWorkspaceSettings,
     RecentModelSelections,
     ModelUsageRecords,
+    BackgroundWorks,
   ],
   daos: [
     WorkspaceDao,
+    BackgroundWorksDao,
     ModelConnectionsDao,
     WorkspaceModelSelectionsDao,
     ApiModelProvidersDao,
@@ -166,7 +171,9 @@ class AppDatabase extends _$AppDatabase {
       _mcpCatalogSnapshotSchemaVersion + 1;
   static const int _toolSamplingPolicySchemaVersion =
       _mcpTestSummarySchemaVersion + 1;
-  static const int _currentSchemaVersion = _toolSamplingPolicySchemaVersion;
+  static const int _backgroundWorkSchemaVersion =
+      _toolSamplingPolicySchemaVersion + 1;
+  static const int _currentSchemaVersion = _backgroundWorkSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -247,6 +254,14 @@ extension on AppDatabase {
     await _runMcpSchemaUpgrades(m, from);
     await _runConversationUpgrades(m, from);
     await _upgradeToolSamplingPolicySchema(m);
+    await _upgradeBackgroundWorkSchema(m, from);
+  }
+
+  Future<void> _upgradeBackgroundWorkSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._backgroundWorkSchemaVersion) return;
+    if (!await _tableExists('background_works')) {
+      await m.createTable(backgroundWorks);
+    }
   }
 
   Future<void> _runMcpSchemaUpgrades(Migrator m, int from) async {

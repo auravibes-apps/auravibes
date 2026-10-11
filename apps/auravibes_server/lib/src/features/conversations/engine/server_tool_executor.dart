@@ -267,7 +267,11 @@ class const ServerToolExecutorService({
     ServerResolvedTool tool,
     ServerToolRequest request,
   ) async {
-    await _throwIfCancelled(session, turn);
+    await _throwIfCancelled(
+      session,
+      turn,
+      isCancelled: request.isCancelled,
+    );
     return switch (tool.descriptor.kind) {
       AgentResolvedToolKind.mcp => _runMcp(
         session,
@@ -286,12 +290,14 @@ class const ServerToolExecutorService({
         turn,
         tool,
         request.arguments,
+        isCancelled: request.isCancelled,
       ),
       AgentResolvedToolKind.skillAppTemplate => _runNativeSkill(
         session,
         turn,
         tool,
         request.arguments,
+        isCancelled: request.isCancelled,
       ),
       AgentResolvedToolKind.skillNative
           when tool.descriptor.skillSlug == agentsSkillSlug =>
@@ -751,8 +757,9 @@ class const ServerToolExecutorService({
     Session session,
     ConversationTurn turn,
     ServerResolvedTool tool,
-    Map<String, dynamic> arguments,
-  ) async {
+    Map<String, dynamic> arguments, {
+    Future<bool> Function()? isCancelled,
+  }) async {
     final skill = serviceSkillDefinitions
         .where((candidate) => candidate.slug == tool.descriptor.skillSlug)
         .firstOrNull;
@@ -800,6 +807,7 @@ class const ServerToolExecutorService({
       session,
       turn,
       requireHttps: credentials.isNotEmpty,
+      isCancelled: isCancelled,
     );
     return runCompiledServiceSkillTool(
       skillSlug: skill.slug,
@@ -1475,8 +1483,9 @@ class const ServerToolExecutorService({
     Session session,
     ConversationTurn turn,
     ServerResolvedTool tool,
-    Map<String, dynamic> arguments,
-  ) async {
+    Map<String, dynamic> arguments, {
+    Future<bool> Function()? isCancelled,
+  }) async {
     final resources = await WorkspaceResource.db.find(
       session,
       where: (table) =>
@@ -1527,7 +1536,7 @@ class const ServerToolExecutorService({
               await const WorkspaceSecretCipher().decrypt(session, secret),
             ),
           );
-    await _throwIfCancelled(session, turn);
+    await _throwIfCancelled(session, turn, isCancelled: isCancelled);
     final response =
         await SkillTemplateExecutor(
               const ResolveSkillUrlTemplate(),
@@ -1535,6 +1544,7 @@ class const ServerToolExecutorService({
                 session,
                 turn,
                 requireHttps: credentials.isNotEmpty,
+                isCancelled: isCancelled,
               ),
             )
             .call(
@@ -1722,6 +1732,7 @@ class const ServerToolExecutorService({
     Session session,
     ConversationTurn turn, {
     required bool requireHttps,
+    Future<bool> Function()? isCancelled,
   }) =>
       (input) => CancelableOperation<UrlResponse>.fromFuture(
         runBoundedServerSkillHttpRequest(
@@ -1739,6 +1750,7 @@ class const ServerToolExecutorService({
               target.addresses,
               input,
               onClient: registerClient,
+              isCancelled: isCancelled,
             );
           },
         ),
@@ -1751,11 +1763,20 @@ class const ServerToolExecutorService({
     List<InternetAddress> addresses,
     UrlRequest input, {
     void Function(HttpClient client)? onClient,
+    Future<bool> Function()? isCancelled,
   }) async {
     final client = _client(uri, addresses);
     onClient?.call(client);
     final requestDone = Completer<void>();
-    unawaited(_closeClientOnCancellation(client, session, turn, requestDone));
+    unawaited(
+      _closeClientOnCancellation(
+        client,
+        session,
+        turn,
+        requestDone,
+        isCancelled: isCancelled,
+      ),
+    );
     final stopwatch = Stopwatch()..start();
     try {
       final request = await client.openUrl(input.method.value, uri);
@@ -1773,7 +1794,7 @@ class const ServerToolExecutorService({
         elapsed: stopwatch.elapsed,
       );
     } on Object {
-      await _throwIfCancelled(session, turn);
+      await _throwIfCancelled(session, turn, isCancelled: isCancelled);
       rethrow;
     } finally {
       client.close(force: true);
@@ -1783,9 +1804,10 @@ class const ServerToolExecutorService({
 
   Future<void> _throwIfCancelled(
     Session session,
-    ConversationTurn turn,
-  ) async {
-    if (await _isCancelled(session, turn)) {
+    ConversationTurn turn, {
+    Future<bool> Function()? isCancelled,
+  }) async {
+    if (await (isCancelled?.call() ?? _isCancelled(session, turn))) {
       throw const ConversationCancelledException();
     }
   }
@@ -1820,10 +1842,12 @@ class const ServerToolExecutorService({
     HttpClient client,
     Session session,
     ConversationTurn turn,
-    Completer<void> requestDone,
-  ) => closeOnServerSkillCancellation(
-    isCancelled: () =>
-        const DatabaseConversationCancellationProbe().isCancelled(
+    Completer<void> requestDone, {
+    Future<bool> Function()? isCancelled,
+  }) => closeOnServerSkillCancellation(
+    isCancelled:
+        isCancelled ??
+        () => const DatabaseConversationCancellationProbe().isCancelled(
           session,
           turn.id!,
         ),

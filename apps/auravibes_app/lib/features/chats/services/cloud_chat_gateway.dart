@@ -445,6 +445,48 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
   );
 }
 
+extension CloudChatGatewayBackgroundWorkOps on CloudChatGateway {
+  Future<BackgroundWorkView> detachToolCall({
+    required String requestId,
+    required String conversationId,
+    required String toolCallId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.detachToolCall(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+      ),
+    ),
+  );
+
+  Future<List<BackgroundWorkView>> listBackgroundWorks(String conversationId) =>
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.listBackgroundWorks(
+          .new(workspaceId: _workspaceId, conversationId: conversationId),
+        ),
+      );
+
+  Future<BackgroundWorkView> stopBackgroundWork({
+    required String requestId,
+    required String conversationId,
+    required String workId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.stopBackgroundWork(
+      .new(
+        requestId: requestId,
+        workspaceId: _workspaceId,
+        conversationId: conversationId,
+        workId: workId,
+      ),
+    ),
+  );
+}
+
 extension CloudChatGatewayConversationOperations on CloudChatGateway {
   Future<ConversationSnapshot> continueConversation({
     required String requestId,

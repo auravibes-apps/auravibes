@@ -1,0 +1,4 @@
+class: ListBackgroundWorksRequest
+fields:
+  workspaceId: int
+  conversationId: String

@@ -1,0 +1,6 @@
+class: StopBackgroundWorkRequest
+fields:
+  requestId: String
+  workspaceId: int
+  conversationId: String
+  workId: String

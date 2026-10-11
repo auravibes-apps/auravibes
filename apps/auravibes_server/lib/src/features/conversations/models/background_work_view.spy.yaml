@@ -1,0 +1,15 @@
+class: BackgroundWorkView
+fields:
+  id: String
+  workspaceId: int
+  conversationId: String
+  originatingMessageId: String?
+  toolCallId: String
+  toolKind: String
+  status: String
+  statusPreview: String?
+  resultContent: String?
+  resultByteLength: int
+  errorCode: String?
+  createdAt: DateTime
+  updatedAt: DateTime

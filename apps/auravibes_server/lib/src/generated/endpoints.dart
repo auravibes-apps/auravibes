@@ -32,6 +32,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/cre
     as _ish3zj9o;
 import 'package:auravibes_server/src/generated/features/conversations/models/delete_conversation_request.dart'
     as _il5llor3;
+import 'package:auravibes_server/src/generated/features/conversations/models/detach_tool_call_request.dart'
+    as _inotib2f;
 import 'package:auravibes_server/src/generated/features/conversations/models/edit_pending_conversation_message_request.dart'
     as _igstxg4l;
 import 'package:auravibes_server/src/generated/features/conversations/models/fork_conversation_request.dart'
@@ -40,6 +42,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/get
     as _itkmf3xs;
 import 'package:auravibes_server/src/generated/features/conversations/models/get_turn_request.dart'
     as _iaqawmcu;
+import 'package:auravibes_server/src/generated/features/conversations/models/list_background_works_request.dart'
+    as _i2euehas;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_conversation_messages_request.dart'
     as _i5dqxctc;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_conversations_request.dart'
@@ -54,6 +58,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/res
     as _if7qtxue;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
     as _ijasfsbp;
+import 'package:auravibes_server/src/generated/features/conversations/models/stop_background_work_request.dart'
+    as _iysdyp93;
 import 'package:auravibes_server/src/generated/features/conversations/models/stop_conversation_request.dart'
     as _ii20rgdx;
 import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_batch_request.dart'
@@ -835,6 +841,66 @@ class Endpoints extends _is.EndpointDispatch {
               ) async =>
                   (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
                       .getConversationSnapshot(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'detachToolCall': _is.MethodConnector(
+          name: 'detachToolCall',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_inotib2f.DetachToolCallRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .detachToolCall(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'listBackgroundWorks': _is.MethodConnector(
+          name: 'listBackgroundWorks',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i2euehas.ListBackgroundWorksRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .listBackgroundWorks(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'stopBackgroundWork': _is.MethodConnector(
+          name: 'stopBackgroundWork',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iysdyp93.StopBackgroundWorkRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .stopBackgroundWork(
                         session,
                         params['request'],
                       ),

@@ -1181,6 +1181,62 @@ void main() {
     );
   });
 
+  test(
+    'returns one background acknowledgement and keeps the call running',
+    () async {
+      final _ = cancellationRuntime.start('conversation-1');
+      final appSkillTool = _MockRunAppSkillToolUsecase();
+      final specs = _currentAppSkillSpecs(
+        'skill__app_native__duckduckgo__search',
+      );
+      final operation = CancelableCompleter<Object?>();
+      when(
+        () => appSkillTool.callCancelable(
+          workspaceId: 'workspace-1',
+          skillSlug: 'duckduckgo',
+          toolSlug: 'search',
+          arguments: {'query': 'dart'},
+        ),
+      ).thenReturn(operation.operation);
+      final provider = AppResolvedToolProvider(
+        agentCancellationRuntime: cancellationRuntime,
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+        }) async => 'mcp result',
+        runAppSkillToolUsecase: appSkillTool,
+        buildAppSkillNativeToolSpecsUsecase: specs,
+      );
+
+      final result = provider.runSkillNativeTool((
+        conversationId: 'conversation-1',
+        toolCallId: 'call-background',
+        workspaceId: 'workspace-1',
+        skillSlug: 'duckduckgo',
+        toolSlug: 'search',
+        arguments: {'query': 'dart'},
+      ));
+      await Future<void>.delayed(.zero);
+      expect(
+        cancellationRuntime.detachToolCall(
+          conversationId: 'conversation-1',
+          toolCallId: 'call-background',
+          workId: 'work-1',
+        ),
+        isTrue,
+      );
+
+      expect(await result, {
+        'status': 'running_in_background',
+        'work_id': 'work-1',
+      });
+      operation.complete('eventual result');
+      await Future<void>.delayed(.zero);
+      expect(operation.isCanceled, isFalse);
+    },
+  );
+
   test('rejects app native tools absent from current specifications', () async {
     final appSkillTool = _MockRunAppSkillToolUsecase();
     final specs = _currentAppSkillSpecs(null);
