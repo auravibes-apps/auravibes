@@ -105,7 +105,7 @@ void main() {
         isSupported: true,
         cancel: () async => cancelCalls++,
         operationResult: operation.future,
-      )..recordChildConversationId(childConversation.id);
+      )..childConversation.record(childConversation.id);
       final coordinator = _coordinator(fixture);
 
       final work = await coordinator.runInBackground(
@@ -169,7 +169,7 @@ void main() {
           (items) =>
               items.single.identity.childConversationId == childConversation.id,
         );
-    handle.recordChildConversationId(childConversation.id);
+    handle.childConversation.record(childConversation.id);
     expect(
       (await linked).single.identity.childConversationId,
       childConversation.id,
