@@ -20,7 +20,10 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final pending = Completer<String>();
     final calls = <CloudAccountKey>[];
-    final first = cloudAccountKey('https://one.example', 'same');
+    final first = CloudAccountKeyFactory.fromIdentity(
+      'https://one.example',
+      'same',
+    );
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(

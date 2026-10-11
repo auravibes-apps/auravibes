@@ -19,7 +19,7 @@ class const WorkspaceSettingsScreen({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final view = useWorkspaceSettingsSnapshot(ref, workspaceId, guard);
+    final view = _useWorkspaceSettingsSnapshot(ref, workspaceId, guard);
 
     return DraftExitScope(
       guard: view.guard,
@@ -41,7 +41,7 @@ typedef _WorkspaceSettingsSnapshot = ({
   bool loaded,
 });
 
-_WorkspaceSettingsSnapshot useWorkspaceSettingsSnapshot(
+_WorkspaceSettingsSnapshot _useWorkspaceSettingsSnapshot(
   WidgetRef ref,
   String workspaceId,
   DraftExitGuard guard,

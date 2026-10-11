@@ -16,8 +16,14 @@ void main() {
   test(
     'availability and discovery share expired and unknown health by origin',
     () async {
-      final one = cloudAccountKey('https://one.example', 'same');
-      final two = cloudAccountKey('https://two.example', 'same');
+      final one = CloudAccountKeyFactory.fromIdentity(
+        'https://one.example',
+        'same',
+      );
+      final two = CloudAccountKeyFactory.fromIdentity(
+        'https://two.example',
+        'same',
+      );
       final calls = <CloudAccountKey>[];
       final container = ProviderContainer(
         overrides: [
@@ -89,13 +95,13 @@ void main() {
   );
 
   test('canonical keys preserve origin for a shared account ID', () {
-    expect(cloudAccountKey('https://ONE.example/api', 'same'), (
-      serverUrl: 'https://one.example',
-      accountId: 'same',
-    ));
     expect(
-      cloudAccountKey('https://one.example', 'same'),
-      isNot(cloudAccountKey('https://two.example', 'same')),
+      CloudAccountKeyFactory.fromIdentity('https://ONE.example/api', 'same'),
+      (serverUrl: 'https://one.example', accountId: 'same'),
+    );
+    expect(
+      CloudAccountKeyFactory.fromIdentity('https://one.example', 'same'),
+      isNot(CloudAccountKeyFactory.fromIdentity('https://two.example', 'same')),
     );
   });
 
@@ -107,7 +113,7 @@ void main() {
       );
       final before = DateTime.now();
       final health = await check.call(
-        cloudAccountKey('https://one.example', 'same'),
+        CloudAccountKeyFactory.fromIdentity('https://one.example', 'same'),
       );
       expect(health.status, CloudAccountHealthStatus.verified);
       expect(health.checkedAt?.isBefore(before), isFalse);
@@ -117,7 +123,10 @@ void main() {
   test(
     'expired, email-required, wrong user and unreachable remain distinct',
     () async {
-      final key = cloudAccountKey('https://one.example', 'same');
+      final key = CloudAccountKeyFactory.fromIdentity(
+        'https://one.example',
+        'same',
+      );
       for (final code in [
         CloudWorkspaceErrorCode.authenticationRequired,
         CloudWorkspaceErrorCode.emailAccountRequired,
@@ -149,8 +158,14 @@ void main() {
     () async {
       final calls = <CloudAccountKey>[];
       final pending = Completer<String>();
-      final first = cloudAccountKey('https://one.example', 'same');
-      final second = cloudAccountKey('https://two.example', 'same');
+      final first = CloudAccountKeyFactory.fromIdentity(
+        'https://one.example',
+        'same',
+      );
+      final second = CloudAccountKeyFactory.fromIdentity(
+        'https://two.example',
+        'same',
+      );
       final container = ProviderContainer(
         overrides: [
           checkCloudAccountUsecaseProvider.overrideWith(
