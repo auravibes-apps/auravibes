@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/markdown/screens/markdown_editor_screen.d
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -352,6 +353,49 @@ void main() {
     }
   });
 
+  testWidgets('keyboard shortcuts keep focus, preview, and undo state', (
+    tester,
+  ) async {
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+    );
+    await tester.showKeyboard(_markdownEditorInput);
+    final editable = tester.widget<EditableText>(_markdownEditorInput);
+    final controller = editable.controller
+      ..value = const TextEditingValue(
+        text: 'text',
+        selection: .new(baseOffset: 0, extentOffset: 4),
+      );
+    final focusNode = editable.focusNode;
+    final originalValue = controller.value;
+    await tester.pump();
+
+    await _sendControlShortcut(tester, .keyB);
+
+    final formattedValue = controller.value;
+    expect(controller.text, '**text**');
+    expect(focusNode.hasFocus, isTrue);
+
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    final _ = await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isFalse);
+
+    await _sendControlShortcut(tester, .keyB);
+    expect(controller.value, formattedValue);
+    expect(find.bySemanticsLabel('Preview'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    final _ = await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isTrue);
+    expect(controller.value, formattedValue);
+
+    await tester.tap(find.byIcon(Icons.undo));
+    final _ = await tester.pumpAndSettle();
+
+    expect(controller.value, originalValue);
+  });
+
   testWidgets('preview does not change the draft returned by Save', (
     tester,
   ) async {
@@ -552,4 +596,15 @@ Future<void> _showMarkdownEditor(
     ),
   );
   onResult(result);
+}
+
+Future<void> _sendControlShortcut(
+  WidgetTester tester,
+  LogicalKeyboardKey key,
+) async {
+  final _ = await tester.sendKeyDownEvent(.controlLeft);
+  final _ = await tester.sendKeyDownEvent(key);
+  final _ = await tester.sendKeyUpEvent(key);
+  final _ = await tester.sendKeyUpEvent(.controlLeft);
+  await tester.pump();
 }

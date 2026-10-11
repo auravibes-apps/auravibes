@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/markdown/widgets/markdown_link_dialog.dar
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const MarkdownEditorToolbar({
@@ -20,6 +21,8 @@ class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
   final _undoHistory = <({TextEditingValue before, TextEditingValue after})>[];
   final _redoHistory = <({TextEditingValue before, TextEditingValue after})>[];
   String _lastText = '';
+  KeyEventResult Function(FocusNode, KeyEvent)? _previousKeyEventHandler;
+  KeyEventResult Function(FocusNode, KeyEvent)? _keyEventHandler;
 
   TextEditingController get _controller => widget.controller;
 
@@ -37,11 +40,22 @@ class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
   void initState() {
     super.initState();
     _lastText = _controller.text;
+    _attachKeyEventHandler();
+  }
+
+  @override
+  void dispose() {
+    _detachKeyEventHandler(_focusNode);
+    super.dispose();
   }
 
   @override
   void didUpdateWidget(MarkdownEditorToolbar oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      _detachKeyEventHandler(oldWidget.focusNode);
+      _attachKeyEventHandler();
+    }
     if (oldWidget.controller == widget.controller) return;
 
     _lastText = _controller.text;
@@ -86,6 +100,57 @@ class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
 }
 
 extension on _MarkdownEditorToolbarState {
+  void _attachKeyEventHandler() {
+    _previousKeyEventHandler = _focusNode.onKeyEvent;
+    final handler = _onKeyEvent;
+    _keyEventHandler = handler;
+    _focusNode.onKeyEvent = handler;
+  }
+
+  void _detachKeyEventHandler(FocusNode focusNode) {
+    final handler = _keyEventHandler;
+    if (handler != null && identical(focusNode.onKeyEvent, handler)) {
+      focusNode.onKeyEvent = _previousKeyEventHandler;
+    }
+    _previousKeyEventHandler = null;
+    _keyEventHandler = null;
+  }
+
+  KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
+    final action = _shortcutAction(event);
+    if (action != null) {
+      _applyAction(action, context);
+
+      return .handled;
+    }
+
+    return _previousKeyEventHandler?.call(node, event) ?? .ignored;
+  }
+
+  _ToolbarActionKind? _shortcutAction(KeyEvent event) {
+    if (event is! KeyDownEvent) return null;
+
+    // Use Command on macOS and Control elsewhere for the shared actions.
+    final keyboard = HardwareKeyboard.instance;
+    final isMacOS = Theme.of(context).platform == TargetPlatform.macOS;
+    final hasPrimaryModifier = isMacOS
+        ? keyboard.isMetaPressed && !keyboard.isControlPressed
+        : keyboard.isControlPressed && !keyboard.isMetaPressed;
+    if (!hasPrimaryModifier ||
+        keyboard.isAltPressed ||
+        keyboard.isShiftPressed) {
+      return null;
+    }
+
+    return switch (event.logicalKey) {
+      .keyB => .bold,
+      .keyI => .italic,
+      .keyE => .code,
+      .keyK => .link,
+      _ => null,
+    };
+  }
+
   void _toolbarEdit(VoidCallback edit) {
     edit();
     _lastText = _controller.text;
