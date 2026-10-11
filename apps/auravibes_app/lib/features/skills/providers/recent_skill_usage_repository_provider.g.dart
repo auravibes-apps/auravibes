@@ -56,4 +56,4 @@ final class RecentSkillUsageRepositoryProvider
 }
 
 String _$recentSkillUsageRepositoryHash() =>
-    r'205cc1bd63709441ffd9ab51e03df1aae5f07b32';
+    r'088272e8766d066bccfa4cbe021d444e2844cd8a';
