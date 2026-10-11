@@ -50,23 +50,26 @@ class const _SkillCapabilityPreviewBody({
   Widget build(BuildContext context) => SizedBox(
     width: _previewDialogWidth,
     child: SingleChildScrollView(
-      child: _skillCapabilityPreviewContent(summary),
+      child: _SkillCapabilityPreviewContent(summary: summary),
     ),
   );
 }
 
-Widget _skillCapabilityPreviewContent(
-  AsyncValue<SkillAccessSummary?> summary,
-) => switch (summary) {
-  AsyncData(value: final value?) => _SkillCapabilitiesPreviewContents(
-    summary: value,
-  ),
-  AsyncLoading() => const TextLocale(
-    LocaleKeys.skills_selector_preview_loading,
-  ),
-  AsyncData() ||
-  AsyncError() => const TextLocale(LocaleKeys.skills_selector_preview_error),
-};
+class const _SkillCapabilityPreviewContent({
+  required final AsyncValue<SkillAccessSummary?> summary,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (summary) {
+    AsyncData(value: final value?) => _SkillCapabilitiesPreviewContents(
+      summary: value,
+    ),
+    AsyncLoading() => const TextLocale(
+      LocaleKeys.skills_selector_preview_loading,
+    ),
+    AsyncData() ||
+    AsyncError() => const TextLocale(LocaleKeys.skills_selector_preview_error),
+  };
+}
 
 class const _SkillCapabilitiesPreviewContents({
   required final SkillAccessSummary summary,
@@ -139,7 +142,7 @@ class const _SkillCapabilityPreviewToolContent({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       _SkillCapabilityPreviewToolHeader(tool: tool),
-      _skillCapabilityToolDescription(tool),
+      _SkillCapabilityToolDescription(tool: tool),
     ],
     spacing: .xs,
     crossAxisAlignment: .start,
@@ -152,7 +155,10 @@ class const _SkillCapabilityPreviewToolHeader({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      AuraText(child: _skillCapabilityToolTitle(tool), style: .heading5),
+      AuraText(
+        child: _SkillCapabilityToolTitle(tool: tool),
+        style: .heading5,
+      ),
       TextLocale(_previewToolStatusKey(tool.status)),
     ],
     spacing: .xs,
@@ -160,18 +166,28 @@ class const _SkillCapabilityPreviewToolHeader({
   );
 }
 
-Widget _skillCapabilityToolTitle(SkillToolAccess tool) =>
-    switch (tool.titleKey) {
-      final key? => TextLocale(key),
-      null => Text(tool.title),
-    };
+class const _SkillCapabilityToolTitle({required final SkillToolAccess tool})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (tool.titleKey) {
+    final key? => TextLocale(key),
+    null => Text(tool.title),
+  };
+}
 
-Widget _skillCapabilityToolDescription(SkillToolAccess tool) {
-  if (tool.descriptionKey case final key?) return TextLocale(key);
-  final description = tool.description.trim();
-  if (description.isNotEmpty) return Text(description);
+class const _SkillCapabilityToolDescription({
+  required final SkillToolAccess tool,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (tool.descriptionKey case final key?) return TextLocale(key);
+    final description = tool.description.trim();
+    if (description.isNotEmpty) return Text(description);
 
-  return const TextLocale(LocaleKeys.skills_selector_preview_description_empty);
+    return const TextLocale(
+      LocaleKeys.skills_selector_preview_description_empty,
+    );
+  }
 }
 
 String _skillCapabilityToolSemanticsLabel(

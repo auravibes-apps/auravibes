@@ -652,40 +652,42 @@ class const _AvailableSkillTile({
   );
 }
 
-class const _SkillTileContents({
-  required final AvailableSkill skill,
-  required final _SelectorActions actions,
-  required final bool selected,
-  required final bool pending,
-  final ConversationSkillContextStatus? contextStatus,
-  final ConversationSkillContextFailure? contextFailure,
-  final ConversationSkillActionResult? actionResult,
-}) extends StatelessWidget {
+class _SkillTileContents extends StatelessWidget {
+  _SkillTileContents({
+    required AvailableSkill skill,
+    required _SelectorActions actions,
+    required bool selected,
+    required bool pending,
+    ConversationSkillContextStatus? contextStatus,
+    ConversationSkillContextFailure? contextFailure,
+    ConversationSkillActionResult? actionResult,
+  }) : _children = [
+         _SkillTileIdentity(
+           skill: skill,
+           selected: selected,
+           pending: pending,
+           onPreview: actions.onPreview,
+           contextStatus: contextStatus,
+           contextFailure: contextFailure,
+           actionResult: actionResult,
+         ),
+         _SkillTileAccessStatus(
+           skill: skill,
+           actions: actions,
+           pending: pending,
+         ),
+         _SkillTileMessages(
+           description: skill.description,
+           contextFailure: contextFailure,
+           actionResult: actionResult,
+         ),
+       ];
+
+  final List<Widget> _children;
+
   @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [_identity, _accessStatus, _messages],
-    spacing: .xs,
-    crossAxisAlignment: .start,
-  );
-
-  _SkillTileIdentity get _identity => _SkillTileIdentity(
-    skill: skill,
-    selected: selected,
-    pending: pending,
-    onPreview: actions.onPreview,
-    contextStatus: contextStatus,
-    contextFailure: contextFailure,
-    actionResult: actionResult,
-  );
-
-  _SkillTileAccessStatus get _accessStatus =>
-      _SkillTileAccessStatus(skill: skill, actions: actions, pending: pending);
-
-  _SkillTileMessages get _messages => _SkillTileMessages(
-    description: skill.description,
-    contextFailure: contextFailure,
-    actionResult: actionResult,
-  );
+  Widget build(BuildContext context) =>
+      AuraColumn(children: _children, spacing: .xs, crossAxisAlignment: .start);
 }
 
 class const _SkillTileAccessStatus({
@@ -834,8 +836,7 @@ List<String> _skillActionSemanticsLabels(
   _SkillTileIdentity identity,
 ) => [
   if (identity.actionResult case final result?)
-    if (_skillActionResultLabel(context, result) case final resultLabel?)
-      resultLabel,
+    ?_skillActionResultLabel(context, result),
 ];
 
 String _skillIdentityMembershipLabel(BuildContext context, bool selected) =>
@@ -1064,42 +1065,25 @@ class const _RecoveryButton({
   required final _SelectorActions actions,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _recoveryActionWidget(context, this);
-}
+  Widget build(BuildContext context) {
+    final action = _recoveryAction(contextFailure, actionResult);
+    if (action == .credentials) {
+      return _CredentialSetupButton(
+        onPressed: disabled ? null : () => actions.onCredentialSetup(skill),
+        semanticLabel: LocaleKeys.skills_selector_semantics_credentials.tr(
+          context: context,
+          namedArgs: {'skill': skill.title},
+        ),
+      );
+    }
 
-Widget _recoveryActionWidget(BuildContext context, _RecoveryButton request) {
-  final action = _recoveryAction(request.contextFailure, request.actionResult);
-  if (action == .credentials) {
-    return _credentialRecoveryButton(context, request);
+    return _RecoveryActionButton(
+      textKey: _recoveryTextKey(action),
+      onPressed: disabled ? null : _recoveryCallback(action, skill, actions),
+      semanticLabel: _recoverySemanticLabel(context, action, skill),
+    );
   }
-
-  return _contextRecoveryButton(context, action, request);
 }
-
-Widget _credentialRecoveryButton(
-  BuildContext context,
-  _RecoveryButton request,
-) => _CredentialSetupButton(
-  onPressed: request.disabled
-      ? null
-      : () => request.actions.onCredentialSetup(request.skill),
-  semanticLabel: LocaleKeys.skills_selector_semantics_credentials.tr(
-    context: context,
-    namedArgs: {'skill': request.skill.title},
-  ),
-);
-
-Widget _contextRecoveryButton(
-  BuildContext context,
-  _RecoveryAction action,
-  _RecoveryButton request,
-) => _RecoveryActionButton(
-  textKey: _recoveryTextKey(action),
-  onPressed: request.disabled
-      ? null
-      : _recoveryCallback(action, request.skill, request.actions),
-  semanticLabel: _recoverySemanticLabel(context, action, request.skill),
-);
 
 String _recoverySemanticLabel(
   BuildContext context,
