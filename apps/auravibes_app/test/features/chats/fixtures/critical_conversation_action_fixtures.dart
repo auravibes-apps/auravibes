@@ -1,17 +1,14 @@
 import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
-import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/models/providers/recent_model_selections_notifier.dart';
 import 'package:file_picker/file_picker.dart' as fp;
-import 'package:auravibes_engine/auravibes_engine.dart';
 
 enum CriticalConversationAction {
   send,
@@ -30,48 +27,48 @@ class const CriticalConversationActionCase({
 });
 
 const criticalConversationActions = <CriticalConversationAction>{
-  CriticalConversationAction.send,
-  CriticalConversationAction.stop,
-  CriticalConversationAction.retry,
-  CriticalConversationAction.approve,
-  CriticalConversationAction.skip,
-  CriticalConversationAction.attach,
-  CriticalConversationAction.selectModel,
+  .send,
+  .stop,
+  .retry,
+  .approve,
+  .skip,
+  .attach,
+  .selectModel,
 };
 
 const criticalConversationActionCases = <CriticalConversationActionCase>[
-  CriticalConversationActionCase(
-    action: CriticalConversationAction.send,
+  .new(
+    action: .send,
     availableWhen: 'the composer contains a message draft',
     unavailableWhen: 'the composer is empty',
   ),
-  CriticalConversationActionCase(
-    action: CriticalConversationAction.stop,
+  .new(
+    action: .stop,
     availableWhen: 'a generation is active and has a stop callback',
     unavailableWhen: 'the conversation is idle',
   ),
-  CriticalConversationActionCase(
-    action: CriticalConversationAction.retry,
+  .new(
+    action: .retry,
     availableWhen: 'the latest user message has failed and has valid content',
     unavailableWhen: 'the latest user message is already sent',
   ),
-  CriticalConversationActionCase(
-    action: CriticalConversationAction.approve,
+  .new(
+    action: .approve,
     availableWhen: 'multiple pending tool calls can be approved together',
     unavailableWhen: 'the conversation has no pending tool calls',
   ),
-  CriticalConversationActionCase(
-    action: CriticalConversationAction.skip,
+  .new(
+    action: .skip,
     availableWhen: 'multiple pending tool calls can be skipped together',
     unavailableWhen: 'the conversation has no pending tool calls',
   ),
-  CriticalConversationActionCase(
-    action: CriticalConversationAction.attach,
+  .new(
+    action: .attach,
     availableWhen: 'the local workspace and model accept file input',
     unavailableWhen: 'the selected model does not accept file input',
   ),
-  CriticalConversationActionCase(
-    action: CriticalConversationAction.selectModel,
+  .new(
+    action: .selectModel,
     availableWhen: 'the workspace has a configured model selection',
     unavailableWhen: 'the workspace has no configured model selections',
   ),
@@ -91,16 +88,16 @@ const criticalConversationAttachment = MessageAttachmentToCreate(
 );
 
 const criticalConversationPendingCalls = <PendingToolCall>[
-  PendingToolCall(
-    toolCall: MessageToolCallEntity(
+  .new(
+    toolCall: .new(
       id: 'tool-call-1',
       name: 'built_in_1_read_file',
       argumentsRaw: '{"input":"brief.txt"}',
     ),
     messageId: 'assistant-message-1',
   ),
-  PendingToolCall(
-    toolCall: MessageToolCallEntity(
+  .new(
+    toolCall: .new(
       id: 'tool-call-2',
       name: 'built_in_1_read_file',
       argumentsRaw: '{"input":"notes.txt"}',
@@ -112,11 +109,11 @@ const criticalConversationPendingCalls = <PendingToolCall>[
 MessageEntity criticalConversationUserMessage({
   required String id,
   required MessageStatus status,
-}) => MessageEntity(
+}) => .new(
   id: id,
   conversationId: criticalConversationId,
   content: 'Retry this local fixture.',
-  messageType: MessageType.text,
+  messageType: .text,
   isUser: true,
   status: status,
   createdAt: DateTime(2026),
@@ -124,32 +121,27 @@ MessageEntity criticalConversationUserMessage({
 );
 
 WorkspaceModelSelectionWithConnectionEntity
-criticalConversationModelSelection() =>
-    WorkspaceModelSelectionWithConnectionEntity(
-      workspaceModelSelection: WorkspaceModelSelectionEntity(
-        id: criticalConversationModelSelectionId,
-        modelId: 'fixture-model',
-        modelName: 'Fixture Model',
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-        modelConnectionId: 'fixture-connection',
-        modalitiesInput: const ['text', 'file'],
-      ),
-      modelConnection: ModelConnectionEntity(
-        id: 'fixture-connection',
-        name: 'Local Fixture',
-        modelId: 'openai',
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-        workspaceId: criticalConversationWorkspaceId,
-        hasKey: true,
-      ),
-      modelsProvider: const ApiModelProviderEntity(
-        id: 'openai',
-        name: 'OpenAI',
-        type: ModelProvidersType.openai,
-      ),
-    );
+criticalConversationModelSelection() => .new(
+  workspaceModelSelection: .new(
+    id: criticalConversationModelSelectionId,
+    modelId: 'fixture-model',
+    createdAt: DateTime(2026),
+    updatedAt: DateTime(2026),
+    modelConnectionId: 'fixture-connection',
+    modelName: 'Fixture Model',
+    modalitiesInput: const ['text', 'file'],
+  ),
+  modelConnection: .new(
+    id: 'fixture-connection',
+    name: 'Local Fixture',
+    modelId: 'openai',
+    createdAt: DateTime(2026),
+    updatedAt: DateTime(2026),
+    workspaceId: criticalConversationWorkspaceId,
+    hasKey: true,
+  ),
+  modelsProvider: const .new(id: 'openai', name: 'OpenAI', type: .openai),
+);
 
 class CriticalConversationFilePicker extends fp.FilePickerPlatform {
   int pickCount = 0;
@@ -186,10 +178,7 @@ base class CriticalConversationPlatformFile({
   required String path,
 }) extends fp.PlatformFile {
   @override
-  final Uri uri = Uri.file(path);
-
-  @override
-  Never get xFile => throw UnimplementedError();
+  final Uri uri = .file(path);
 
   @override
   int lengthSync() => size;
@@ -208,7 +197,6 @@ class CriticalConversationAttachmentService
     implements LocalChatAttachmentService {
   int copyCount = 0;
 
-  @override
   String get storageNamespace => 'issue-954-fixture';
 
   @override
@@ -224,16 +212,16 @@ class CriticalConversationAttachmentService
   }
 
   @override
-  Future<void> deleteAttachment(String localPath) async {}
+  Future<void> deleteAttachment(String localPath) => Future<void>.value();
 
   @override
-  Future<void> startVoiceRecording() async {}
+  Future<void> startVoiceRecording() => Future<void>.value();
 
   @override
   Future<MessageAttachmentToCreate?> stopVoiceRecording() async => null;
 
   @override
-  Future<void> cancelVoiceRecording() async {}
+  Future<void> cancelVoiceRecording() => Future<void>.value();
 
   @override
   Future<MessageAttachmentToCreate> createArchiveAttachment(
@@ -246,14 +234,14 @@ class CriticalConversationAttachmentService
 
 class CriticalConversationBatchApprovalActions
     implements BatchToolApprovalActions {
-  List<PendingToolCall> approvedCalls = const [];
-  List<PendingToolCall> skippedCalls = const [];
-
   static const _emptyResult = BatchToolApprovalResult(
     claimed: [],
     alreadyHandled: [],
     conflicted: [],
   );
+
+  List<PendingToolCall> approvedCalls = const [];
+  List<PendingToolCall> skippedCalls = const [];
 
   @override
   Future<BatchToolApprovalResult> approveOnce({

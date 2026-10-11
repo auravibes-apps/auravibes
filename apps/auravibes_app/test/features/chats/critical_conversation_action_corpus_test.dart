@@ -3,11 +3,9 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -29,6 +27,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod/src/framework.dart' show Override;
 
+import '../../helpers/test_app.dart';
 import '../../helpers/test_provider_scope.dart';
 import 'fixtures/critical_conversation_action_fixtures.dart';
 
@@ -71,7 +70,7 @@ void main() {
 }
 
 Future<void> _runMacScenario(Future<void> Function() scenario) async {
-  debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+  debugDefaultTargetPlatformOverride = .macOS;
   try {
     await scenario();
   } finally {
@@ -108,8 +107,8 @@ Future<void> _sendAvailable(WidgetTester tester) async {
   ChatDraft? sentDraft;
   await _pumpAndInit(
     tester,
-    _inputApp(
-      input: _inputSubject(onSendMessage: (draft) => sentDraft = draft),
+    _InputApp(
+      input: _InputSubject(onSendMessage: (draft) => sentDraft = draft),
     ),
   );
   await tester.enterText(find.byType(EditableText), 'A local message');
@@ -124,7 +123,7 @@ Future<void> _sendUnavailable(WidgetTester tester) async {
   var sendCount = 0;
   await _pumpAndInit(
     tester,
-    _inputApp(input: _inputSubject(onSendMessage: (_) => sendCount++)),
+    _InputApp(input: _InputSubject(onSendMessage: (_) => sendCount++)),
   );
   final sendButton = find.descendant(
     of: find.byKey(const ValueKey<String>('chat_send_button')),
@@ -141,9 +140,9 @@ Future<void> _stopAvailable(WidgetTester tester) async {
   var stopped = false;
   await _pumpAndInit(
     tester,
-    _inputApp(
-      input: _inputSubject(
-        onSendMessage: (_) {},
+    _InputApp(
+      input: _InputSubject(
+        onSendMessage: (_) => Future<void>.value(),
         isBusy: true,
         onStop: () => stopped = true,
       ),
@@ -160,8 +159,11 @@ Future<void> _stopUnavailable(WidgetTester tester) async {
   var stopped = false;
   await _pumpAndInit(
     tester,
-    _inputApp(
-      input: _inputSubject(onSendMessage: (_) {}, onStop: () => stopped = true),
+    _InputApp(
+      input: _InputSubject(
+        onSendMessage: (_) => Future<void>.value(),
+        onStop: () => stopped = true,
+      ),
     ),
   );
 
@@ -175,12 +177,12 @@ Future<void> _stopUnavailable(WidgetTester tester) async {
 Future<void> _retryAvailable(WidgetTester tester) async {
   final message = criticalConversationUserMessage(
     id: 'failed-user-message',
-    status: MessageStatus.error,
+    status: .error,
   );
   final retried = <String>[];
   await _pumpAndInit(
     tester,
-    _messageSubject(
+    _MessageSubject(
       message: message,
       onRetryMessage: (value) async => retried.add(value.id),
     ),
@@ -198,12 +200,12 @@ Future<void> _retryAvailable(WidgetTester tester) async {
 Future<void> _retryUnavailable(WidgetTester tester) async {
   final message = criticalConversationUserMessage(
     id: 'sent-user-message',
-    status: MessageStatus.sent,
+    status: .sent,
   );
   var retried = false;
   await _pumpAndInit(
     tester,
-    _messageSubject(
+    _MessageSubject(
       message: message,
       onRetryMessage: (_) async => retried = true,
     ),
@@ -217,10 +219,10 @@ Future<void> _retryUnavailable(WidgetTester tester) async {
 }
 
 Future<void> _approveAvailable(WidgetTester tester) async {
-  final actions = CriticalConversationBatchApprovalActions();
+  final actions = CriticalConversationBatchApprovalActions.new();
   await _pumpAndInit(
     tester,
-    _approvalSubject(
+    _ApprovalSubject(
       actions: actions,
       pendingCalls: criticalConversationPendingCalls,
     ),
@@ -240,10 +242,10 @@ Future<void> _approveAvailable(WidgetTester tester) async {
 }
 
 Future<void> _skipAvailable(WidgetTester tester) async {
-  final actions = CriticalConversationBatchApprovalActions();
+  final actions = CriticalConversationBatchApprovalActions.new();
   await _pumpAndInit(
     tester,
-    _approvalSubject(
+    _ApprovalSubject(
       actions: actions,
       pendingCalls: criticalConversationPendingCalls,
     ),
@@ -263,10 +265,7 @@ Future<void> _skipAvailable(WidgetTester tester) async {
 Future<void> _approvalUnavailable(WidgetTester tester) async {
   await _pumpAndInit(
     tester,
-    _approvalSubject(
-      actions: CriticalConversationBatchApprovalActions(),
-      pendingCalls: const [],
-    ),
+    _ApprovalSubject(actions: .new(), pendingCalls: const []),
   );
 
   expect(
@@ -288,9 +287,9 @@ Future<void> _attachAvailable(WidgetTester tester) async {
 
   await _pumpAndInit(
     tester,
-    _inputApp(
-      input: _inputSubject(
-        onSendMessage: (_) {},
+    _InputApp(
+      input: _InputSubject(
+        onSendMessage: (_) => Future<void>.value(),
         modalitiesInput: const ['text', 'file'],
       ),
       attachmentService: attachmentService,
@@ -301,8 +300,8 @@ Future<void> _attachAvailable(WidgetTester tester) async {
     find.byKey(const ValueKey<String>('chat_attachment_options_button')),
   );
   await tester.pump();
-  await tester.tap(find.byIcon(Icons.attach_file));
-  await tester.pumpAndSettle();
+  await tester.tap(find.byIcon(.attach_file));
+  final _ = await tester.pumpAndSettle();
 
   expect(picker.pickCount, 1);
   expect(attachmentService.copyCount, 1);
@@ -318,9 +317,9 @@ Future<void> _attachUnavailable(WidgetTester tester) async {
 
   await _pumpAndInit(
     tester,
-    _inputApp(
-      input: _inputSubject(
-        onSendMessage: (_) {},
+    _InputApp(
+      input: _InputSubject(
+        onSendMessage: (_) => Future<void>.value(),
         modalitiesInput: const ['text'],
       ),
       attachmentService: attachmentService,
@@ -331,8 +330,8 @@ Future<void> _attachUnavailable(WidgetTester tester) async {
     find.byKey(const ValueKey<String>('chat_attachment_options_button')),
   );
   await tester.pump();
-  expect(find.byIcon(Icons.attach_file), findsOneWidget);
-  await tester.tap(find.byIcon(Icons.attach_file));
+  expect(find.byIcon(.attach_file), findsOneWidget);
+  await tester.tap(find.byIcon(.attach_file));
   await tester.pump();
 
   expect(picker.pickCount, 0);
@@ -342,10 +341,10 @@ Future<void> _attachUnavailable(WidgetTester tester) async {
 
 Future<void> _selectModelAvailable(WidgetTester tester) async {
   final changes = <String?>[];
-  final recents = CriticalConversationRecentModelsNotifier();
-  await _pumpAndInit(
+  final recents = CriticalConversationRecentModelsNotifier.new();
+  await _pumpModelSelector(
     tester,
-    _modelSelectorSubject(
+    _ModelSelectorSubject(
       groupedModels: {
         'fixture-connection': [criticalConversationModelSelection()],
       },
@@ -364,11 +363,11 @@ Future<void> _selectModelAvailable(WidgetTester tester) async {
 
 Future<void> _selectModelUnavailable(WidgetTester tester) async {
   final changes = <String?>[];
-  await _pumpAndInit(
+  await _pumpModelSelector(
     tester,
-    _modelSelectorSubject(
+    _ModelSelectorSubject(
       groupedModels: const {},
-      recents: CriticalConversationRecentModelsNotifier(),
+      recents: .new(),
       onChanged: changes.add,
     ),
   );
@@ -378,190 +377,238 @@ Future<void> _selectModelUnavailable(WidgetTester tester) async {
   expect(find.text('Model'), findsOneWidget);
 }
 
-ChatInputWidget _inputSubject({
-  required FutureOr<void> Function(ChatDraft draft) onSendMessage,
-  VoidCallback onToolsPress = _ignore,
-  bool isBusy = false,
-  VoidCallback? onStop,
-  List<String> modalitiesInput = const [],
-  Widget modelSheetControl = const SizedBox.shrink(),
-  Widget Function(VoidCallback onPressed)? modelCompactControl,
-}) => ChatInputWidget(
-  workspaceId: criticalConversationWorkspaceId,
-  onSendMessage: onSendMessage,
-  onToolsPress: onToolsPress,
-  modelSheetControl: modelSheetControl,
-  agentSheetControl: const SizedBox.shrink(),
-  modelCompactControl:
-      modelCompactControl ??
-      (onPressed) => AuraTile(
-        child: const Text('Model'),
-        onTap: onPressed,
-        variant: .outlined,
-        size: .small,
-      ),
-  agentCompactControl: (onPressed) => AuraTile(
-    child: const Text('Agent'),
-    onTap: onPressed,
-    variant: .outlined,
-    size: .small,
-  ),
-  modalitiesInput: modalitiesInput,
-  isBusy: isBusy,
-  onStop: onStop,
-);
+class _InputSubject extends StatelessWidget {
+  const _InputSubject({
+    required this.onSendMessage,
+    this.onToolsPress = _ignore,
+    this.isBusy = false,
+    this.onStop,
+    this.modalitiesInput = const [],
+    this.modelSheetControl = const SizedBox.shrink(),
+    this.modelCompactControl,
+  });
 
-Widget _modelSelectorSubject({
-  required Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
-  groupedModels,
-  required CriticalConversationRecentModelsNotifier recents,
-  required ValueChanged<String?> onChanged,
-}) => _localApp(
-  overrides: [
-    listModelsGroupedByProviderProvider.overrideWith(
-      (ref, workspaceId) => Stream.value(groupedModels),
-    ),
-    recentModelSelectionsProvider(criticalConversationWorkspaceId)
-        .overrideWith(() => recents),
-  ],
-  child: Scaffold(
-    body: Portal(
-      child: CompactWorkspaceModelSelector(
-        workspaceId: criticalConversationWorkspaceId,
-        workspaceModelSelectionId: null,
-        onChanged: onChanged,
-        sheetMode: true,
-      ),
-    ),
-  ),
-);
+  final FutureOr<void> Function(ChatDraft draft) onSendMessage;
+  final VoidCallback onToolsPress;
+  final bool isBusy;
+  final VoidCallback? onStop;
+  final List<String> modalitiesInput;
+  final Widget modelSheetControl;
+  final Widget Function(VoidCallback onPressed)? modelCompactControl;
 
-Widget _approvalSubject({
-  required CriticalConversationBatchApprovalActions actions,
-  required List<PendingToolCall> pendingCalls,
-}) => _localApp(
-  overrides: [batchToolApprovalUsecaseProvider.overrideWithValue(actions)],
-  child: Material(
-    child: ChatToolApprovalCard(
-      workspaceId: criticalConversationWorkspaceId,
-      conversationId: criticalConversationId,
-      pendingCalls: pendingCalls,
+  @override
+  Widget build(BuildContext context) => ChatInputWidget(
+    workspaceId: criticalConversationWorkspaceId,
+    onSendMessage: onSendMessage,
+    onToolsPress: onToolsPress,
+    modelSheetControl: modelSheetControl,
+    agentSheetControl: const SizedBox.shrink(),
+    modelCompactControl:
+        modelCompactControl ??
+        (onPressed) => AuraTile(
+          child: const Text('Model'),
+          onTap: onPressed,
+          variant: .outlined,
+          size: .small,
+        ),
+    agentCompactControl: (onPressed) => AuraTile(
+      child: const Text('Agent'),
+      onTap: onPressed,
+      variant: .outlined,
+      size: .small,
     ),
-  ),
-);
+    modalitiesInput: modalitiesInput,
+    isBusy: isBusy,
+    onStop: onStop,
+  );
+}
 
-Widget _messageSubject({
-  required MessageEntity message,
-  required Future<void> Function(MessageEntity message) onRetryMessage,
-}) => _localApp(
-  overrides: [
-    conversationSelectedProvider.overrideWithValue(criticalConversationId),
-    workspaceSessionForRouteProvider(
-      criticalConversationWorkspaceId,
-    ).overrideWithValue(
-      const AsyncData(
-        WorkspaceSession(
-          LocalWorkspaceRef(localWorkspaceId: criticalConversationWorkspaceId),
+class _ModelSelectorSubject extends StatelessWidget {
+  const _ModelSelectorSubject({
+    required this.groupedModels,
+    required this.recents,
+    required this.onChanged,
+  });
+
+  final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
+  groupedModels;
+  final CriticalConversationRecentModelsNotifier recents;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) => TestableApp(
+    child: Scaffold(
+      body: Portal(
+        child: CompactWorkspaceModelSelector(
+          workspaceId: criticalConversationWorkspaceId,
+          workspaceModelSelectionId: null,
+          onChanged: onChanged,
+          sheetMode: true,
         ),
       ),
     ),
-    conversationByIdStreamProvider(
-      criticalConversationWorkspaceId,
-      conversationId: criticalConversationId,
-    ).overrideWith((ref) => Stream.value(null)),
-    childConversationsStreamProvider(
-      criticalConversationWorkspaceId,
-      parentConversationId: criticalConversationId,
-    ).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
-    messageConversationByIdProvider.overrideWith((ref, _) => message),
-    isMessageStreamingProvider.overrideWith((ref, _) => false),
-    conversationBusyStateProvider(
-      criticalConversationWorkspaceId,
-      criticalConversationId,
-    ).overrideWith(
-      (ref) async => const ConversationBusyState(
-        isStreaming: false,
-        hasPendingTools: false,
+    overrides: [
+      listModelsGroupedByProviderProvider.overrideWith(
+        (ref, workspaceId) => Stream.value(groupedModels),
       ),
-    ),
-    conversationCompactionExecutionStateProvider(
-      criticalConversationWorkspaceId,
-      criticalConversationId,
-    ).overrideWith((ref) => null),
-  ],
-  child: ChatPrimaryScrollController(
-    child: Scaffold(
-      body: ChatMessagesWidget(
+      recentModelSelectionsProvider(criticalConversationWorkspaceId)
+          .overrideWith(() => recents),
+    ],
+    workspaceId: criticalConversationWorkspaceId,
+  );
+}
+
+class _ApprovalSubject extends StatelessWidget {
+  const _ApprovalSubject({required this.actions, required this.pendingCalls});
+
+  final CriticalConversationBatchApprovalActions actions;
+  final List<PendingToolCall> pendingCalls;
+
+  @override
+  Widget build(BuildContext context) => _LocalApp(
+    child: Material(
+      child: ChatToolApprovalCard(
         workspaceId: criticalConversationWorkspaceId,
         conversationId: criticalConversationId,
-        messages: [message.id],
-        messageEntitiesById: {message.id: message},
-        onRetryMessage: onRetryMessage,
+        pendingCalls: pendingCalls,
       ),
     ),
-  ),
-);
+    overrides: [batchToolApprovalUsecaseProvider.overrideWithValue(actions)],
+  );
+}
 
-Widget _inputApp({
-  required ChatInputWidget input,
-  Widget? child,
-  CriticalConversationAttachmentService? attachmentService,
-  List<Override> overrides = const [],
-}) => _localApp(
-  overrides: [
-    workspaceSessionForRouteProvider(
-      criticalConversationWorkspaceId,
-    ).overrideWithValue(
-      const AsyncData(
-        WorkspaceSession(
-          LocalWorkspaceRef(localWorkspaceId: criticalConversationWorkspaceId),
+class _MessageSubject extends StatelessWidget {
+  const _MessageSubject({required this.message, required this.onRetryMessage});
+
+  final MessageEntity message;
+  final Future<void> Function(MessageEntity message) onRetryMessage;
+
+  @override
+  Widget build(BuildContext context) => _LocalApp(
+    child: ChatPrimaryScrollController(
+      child: Scaffold(
+        body: ChatMessagesWidget(
+          workspaceId: criticalConversationWorkspaceId,
+          conversationId: criticalConversationId,
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          onRetryMessage: onRetryMessage,
         ),
       ),
     ),
-    if (attachmentService case final service?)
-      localChatAttachmentServiceProvider.overrideWithValue(service),
-    ...overrides,
-  ],
-  child:
-      child ??
-      AuraSnackBarHost(
-        child: Material(child: Portal(child: input)),
-      ),
-);
-
-Widget _localApp({
-  required Widget child,
-  List<Override> overrides = const [],
-}) => EasyLocalization(
-  child: TestProviderScope(
-    overrides: overrides,
-    child: Builder(
-      builder: (context) => MaterialApp(
-        home: AuraThemeScope(
-          theme: .light,
-          child: Theme(
-            data: ThemeData(),
-            child: AuraLegacyMaterialBridge(child: child),
+    overrides: [
+      conversationSelectedProvider.overrideWithValue(criticalConversationId),
+      workspaceSessionForRouteProvider(criticalConversationWorkspaceId)
+          .overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                LocalWorkspaceRef(
+                  localWorkspaceId: criticalConversationWorkspaceId,
+                ),
+              ),
+            ),
           ),
+      conversationByIdStreamProvider(
+        criticalConversationWorkspaceId,
+        conversationId: criticalConversationId,
+      ).overrideWith((ref) => Stream.value(null)),
+      childConversationsStreamProvider(
+        criticalConversationWorkspaceId,
+        parentConversationId: criticalConversationId,
+      ).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
+      messageConversationByIdProvider.overrideWith((ref, _) => message),
+      isMessageStreamingProvider.overrideWith((ref, _) => false),
+      conversationBusyStateProvider(
+        criticalConversationWorkspaceId,
+        criticalConversationId,
+      ).overrideWith(
+        (ref) async => const ConversationBusyState(
+          isStreaming: false,
+          hasPendingTools: false,
         ),
-        locale: context.locale,
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
+      ),
+      conversationCompactionExecutionStateProvider(
+        criticalConversationWorkspaceId,
+        criticalConversationId,
+      ).overrideWith((ref) => null),
+    ],
+  );
+}
+
+class _InputApp extends StatelessWidget {
+  const _InputApp({required this.input, this.attachmentService});
+
+  final ChatInputWidget input;
+  final CriticalConversationAttachmentService? attachmentService;
+
+  @override
+  Widget build(BuildContext context) => _LocalApp(
+    child: AuraSnackBarHost(
+      child: Material(child: Portal(child: input)),
+    ),
+    overrides: [
+      workspaceSessionForRouteProvider(criticalConversationWorkspaceId)
+          .overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                LocalWorkspaceRef(
+                  localWorkspaceId: criticalConversationWorkspaceId,
+                ),
+              ),
+            ),
+          ),
+      if (attachmentService case final service?)
+        localChatAttachmentServiceProvider.overrideWithValue(service),
+    ],
+  );
+}
+
+class _LocalApp extends StatelessWidget {
+  const _LocalApp({required this.child, this.overrides = const []});
+
+  final Widget child;
+  final List<Override> overrides;
+
+  @override
+  Widget build(BuildContext context) => EasyLocalization(
+    child: TestProviderScope(
+      overrides: overrides,
+      child: Builder(
+        builder: (context) => MaterialApp(
+          home: AuraThemeScope(
+            theme: .light,
+            child: Theme(
+              data: .new(),
+              child: AuraLegacyMaterialBridge(child: child),
+            ),
+          ),
+          locale: context.locale,
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+        ),
       ),
     ),
-  ),
-  supportedLocales: const [Locale('en')],
-  path: 'assets/i18n',
-  fallbackLocale: const Locale('en'),
-  startLocale: const Locale('en'),
-  useOnlyLangCode: true,
-  useFallbackTranslations: true,
-);
+    supportedLocales: const [Locale('en')],
+    path: 'assets/i18n',
+    fallbackLocale: const Locale('en'),
+    startLocale: const Locale('en'),
+    useOnlyLangCode: true,
+    useFallbackTranslations: true,
+  );
+}
 
 Future<void> _pumpAndInit(WidgetTester tester, Widget subject) async {
-  await tester.runAsync(() async => tester.pumpWidget(subject));
+  await tester.runAsync(() => tester.pumpWidget(subject));
   await tester.pump();
   await tester.pump();
+}
+
+Future<void> _pumpModelSelector(WidgetTester tester, Widget subject) async {
+  final _ = await tester.runAsync(() async {
+    await tester.pumpWidget(subject);
+    await Future<void>.delayed(.zero);
+  });
+  final _ = await tester.pumpAndSettle();
 }
 
 void _ignore() {
