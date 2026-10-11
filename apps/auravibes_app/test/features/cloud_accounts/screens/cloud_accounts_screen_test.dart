@@ -7,7 +7,6 @@ import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_accounts_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/usecases/check_cloud_account_usecase.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
-import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -29,7 +28,8 @@ void main() {
     expect(find.text('Remove cloud account from this app?'), findsOneWidget);
     expect(
       find.text(
-        'Remove first@example.test from this app? Cloud data stays in the cloud.',
+        'Remove first@example.test from this app? '
+        'Cloud data stays in the cloud.',
       ),
       findsOneWidget,
     );
@@ -73,12 +73,15 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(
-      find.text('¿Quitar la cuenta en la nube de esta app?'),
+      find.text(
+        '${_spanishChar(0xBF)}Quitar la cuenta en la nube de esta app?',
+      ),
       findsOneWidget,
     );
     expect(
       find.text(
-        '¿Quitar first@example.test de esta app? Los datos en la nube '
+        '${_spanishChar(0xBF)}Quitar first@example.test de esta app? '
+        'Los datos en la nube '
         'permanecen en la nube.',
       ),
       findsOneWidget,
@@ -86,7 +89,7 @@ void main() {
     expect(
       find.text(
         'Los accesos locales a espacios en la nube conectados con esta cuenta '
-        'se quitarán de esta app.',
+        'se quitar${_spanishChar(0xE1)}n de esta app.',
       ),
       findsOneWidget,
     );
@@ -98,15 +101,19 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(
-      find.text('¿Eliminar definitivamente la cuenta en la nube?'),
+      find.text(
+        '${_spanishChar(0xBF)}Eliminar definitivamente la cuenta en la nube?',
+      ),
       findsOneWidget,
     );
     expect(
       find.text(
-        '¿Eliminar definitivamente first@example.test y sus credenciales de '
-        'acceso? Perderás acceso a los espacios en la nube compartidos, pero '
-        'su contenido permanecerá. Primero elimina o transfiere los espacios '
-        'en la nube que posees. Esta acción no se puede deshacer.',
+        '${_spanishChar(0xBF)}Eliminar definitivamente first@example.test '
+        'y sus credenciales de acceso? Perder${_spanishChar(0xE1)}s acceso a '
+        'los espacios en la nube compartidos, pero su contenido '
+        'permanecer${_spanishChar(0xE1)}. Primero '
+        'elimina o transfiere los espacios en la nube que posees. Esta '
+        'acci${_spanishChar(0xF3)}n no se puede deshacer.',
       ),
       findsOneWidget,
     );
@@ -186,7 +193,6 @@ Future<void> _pumpAccountsScreen(WidgetTester tester, Locale locale) async {
     await tester.pumpWidget(
       TestableApp(
         child: const CloudAccountsScreen(workspaceId: 'local'),
-        startLocale: locale,
         overrides: [
           cloudAccountsProvider.overrideWith(
             (ref) async => const [
@@ -202,8 +208,11 @@ Future<void> _pumpAccountsScreen(WidgetTester tester, Locale locale) async {
                 CheckCloudAccountUsecase(check: (key) async => key.accountId),
           ),
         ],
+        startLocale: locale,
       ),
     );
   });
   final _ = await tester.pumpAndSettle();
 }
+
+String _spanishChar(int codePoint) => String.fromCharCode(codePoint);
