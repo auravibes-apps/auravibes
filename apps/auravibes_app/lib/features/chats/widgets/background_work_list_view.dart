@@ -383,22 +383,63 @@ class const _BackgroundWorkTileActions({
   @override
   Widget build(BuildContext context) {
     final workId = data.identity.id;
-    final openChild = onOpenChild;
-    final childConversationId = data.identity.childConversationId;
+    final actions = [
+      _stopBackgroundWorkTileAction(data, workId, onStop),
+      _openChildBackgroundWorkTileAction(data, workId, onOpenChild),
+      _openResultBackgroundWorkTileAction(data, workId, onOpenResult),
+    ];
 
     return Wrap(
       spacing: _backgroundWorkActionSpacing,
       runSpacing: _backgroundWorkActionRunSpacing,
       children: [
-        if (data.status == .running)
-          _BackgroundWorkStopButton(workId: workId, action: onStop),
-        if (childConversationId != null && openChild != null)
-          _BackgroundWorkOpenChildButton(workId: workId, action: openChild),
-        if (data.hasResult)
-          _BackgroundWorkOpenResultButton(workId: workId, action: onOpenResult),
+        for (final action in actions)
+          if (action != null) action.widget,
       ],
     );
   }
+}
+
+typedef _BackgroundWorkTileAction = ({Widget widget});
+
+_BackgroundWorkTileAction? _stopBackgroundWorkTileAction(
+  _BackgroundWorkTileData data,
+  String workId,
+  Future<void> Function() onStop,
+) {
+  if (data.status != .running) return null;
+
+  return (widget: _BackgroundWorkStopButton(workId: workId, action: onStop));
+}
+
+_BackgroundWorkTileAction? _openChildBackgroundWorkTileAction(
+  _BackgroundWorkTileData data,
+  String workId,
+  Future<void> Function()? onOpenChild,
+) {
+  final openChild = onOpenChild;
+  if (data.identity.childConversationId == null || openChild == null) {
+    return null;
+  }
+
+  return (
+    widget: _BackgroundWorkOpenChildButton(workId: workId, action: openChild),
+  );
+}
+
+_BackgroundWorkTileAction? _openResultBackgroundWorkTileAction(
+  _BackgroundWorkTileData data,
+  String workId,
+  Future<void> Function() onOpenResult,
+) {
+  if (!data.hasResult) return null;
+
+  return (
+    widget: _BackgroundWorkOpenResultButton(
+      workId: workId,
+      action: onOpenResult,
+    ),
+  );
 }
 
 class const _BackgroundWorkStopButton({
