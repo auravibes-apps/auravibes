@@ -450,17 +450,33 @@ extension CloudChatGatewayBackgroundWorkOps on CloudChatGateway {
     required String requestId,
     required String conversationId,
     required String toolCallId,
-  }) => CloudAppErrors.guardCall(
-    .conversation,
-    () => _client.conversation.detachToolCall(
-      .new(
-        workspaceId: _workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        toolCallId: toolCallId,
-      ),
-    ),
-  );
+  }) async {
+    try {
+      return await CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.detachToolCall(
+          .new(
+            workspaceId: _workspaceId,
+            requestId: requestId,
+            conversationId: conversationId,
+            toolCallId: toolCallId,
+          ),
+        ),
+      );
+    } on CloudAppException catch (error, stackTrace) {
+      if (error.code != ConversationErrorCode.turnConflict.name) rethrow;
+      Error.throwWithStackTrace(
+        CloudAppException(
+          localizationKey:
+              'chats_screens.chat_conversation.background_work.'
+              'detachment_unavailable',
+          context: .conversation,
+          code: error.code,
+        ),
+        stackTrace,
+      );
+    }
+  }
 
   Future<List<BackgroundWorkView>> listBackgroundWorks(String conversationId) =>
       CloudAppErrors.guardCall(

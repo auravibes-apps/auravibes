@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
-import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
     as conversation_repo;
 import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
@@ -380,7 +380,20 @@ void main() {
         }
         expect(cancelledAfterDetach, isFalse);
         expect(completed?.status, 'completed');
+        expect(
+          completed?.statusPreview,
+          BackgroundWorkPreviews.queuedForContinuation,
+        );
         expect(completed?.resultContent, contains('"ok":true'));
+        final visibleWorks = await endpoints.conversation.listBackgroundWorks(
+          fixture.session,
+          ListBackgroundWorksRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: 'conversation-1',
+          ),
+        );
+        expect(visibleWorks.single.id, work.id);
+        expect(visibleWorks.single.resultContent, contains('"ok":true'));
         final completionEvents = await ConversationEvent.db.find(
           fixture.database,
           where: (table) =>
@@ -411,9 +424,421 @@ void main() {
           where: (table) =>
               table.workspaceId.equals(fixture.workspaceId) &
               table.conversationId.equals(fixture.conversationId),
+          orderBy: (table) => table.acceptedSequence,
         );
         expect(turns, hasLength(1));
         expect(turns.single.status, ConversationStatuses.cancelled);
+      },
+    );
+
+    test(
+      'claimed continuation clears the queued marker without losing the result',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        final message = fixture.messages.singleWhere(
+          (candidate) => candidate.role == 'user',
+        );
+        const workId = 'background-work-queued-marker';
+        const toolCallId = 'background-call-queued-marker';
+        final toolCall = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            turnId: fixture.turn.id!,
+            messageId: message.id!,
+            stableId: toolCallId,
+            name: 'skill__user__research__search',
+            argumentsJson: '{}',
+            argumentsDigest: 'digest',
+            backgroundEligible: true,
+            backgroundWorkStableId: workId,
+            status: 'runningInBackground',
+            revision: 2,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await BackgroundWorkRecord.db.insertRow(
+          fixture.database,
+          BackgroundWorkRecord(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            conversationToolCallId: toolCall.id!,
+            originatingMessageId: message.id,
+            stableId: workId,
+            toolCallId: toolCallId,
+            toolKind: 'skillTemplate',
+            status: 'completed',
+            statusPreview: BackgroundWorkPreviews.queuedForContinuation,
+            resultContent: '{"answer":"saved"}',
+            resultByteLength: 18,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.updateRow(
+          fixture.database,
+          message.copyWith(
+            metadataJson: jsonEncode({
+              'isBackgroundWorkCompletion': true,
+              'backgroundWorkId': workId,
+            }),
+          ),
+        );
+
+        await runConversationWorker(
+          fixture.database,
+          isActive: () => true,
+          worker: ConversationWorker(host: const _CompletingHost()),
+        );
+
+        final stored = await BackgroundWorkRecord.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(workId),
+        );
+        expect(stored?.status, 'completed');
+        expect(stored?.statusPreview, 'Completed');
+        expect(stored?.resultContent, '{"answer":"saved"}');
+        final continuationEvents = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId),
+          orderBy: (table) => table.sequence,
+        );
+        expect(
+          _backgroundWorkStatusPreviews(continuationEvents, workId),
+          [
+            BackgroundWorkPreviews.continuationInProgress,
+            'Completed',
+          ],
+        );
+      },
+    );
+
+    test(
+      'retrying a continuation keeps its completed result inspectable',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        final message = fixture.messages.singleWhere(
+          (candidate) => candidate.role == 'user',
+        );
+        const workId = 'background-work-retry-marker';
+        const toolCallId = 'background-call-retry-marker';
+        final toolCall = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            turnId: fixture.turn.id!,
+            messageId: message.id!,
+            stableId: toolCallId,
+            name: 'skill__user__research__search',
+            argumentsJson: '{}',
+            argumentsDigest: 'digest',
+            backgroundEligible: true,
+            backgroundWorkStableId: workId,
+            status: 'runningInBackground',
+            revision: 2,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await BackgroundWorkRecord.db.insertRow(
+          fixture.database,
+          BackgroundWorkRecord(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            conversationToolCallId: toolCall.id!,
+            originatingMessageId: message.id,
+            stableId: workId,
+            toolCallId: toolCallId,
+            toolKind: 'skillTemplate',
+            status: 'completed',
+            statusPreview: BackgroundWorkPreviews.queuedForContinuation,
+            resultContent: '{"answer":"saved before retry"}',
+            resultByteLength: 31,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.updateRow(
+          fixture.database,
+          message.copyWith(
+            metadataJson: jsonEncode({
+              'isBackgroundWorkCompletion': true,
+              'backgroundWorkId': workId,
+            }),
+          ),
+        );
+
+        await runConversationWorker(
+          fixture.database,
+          isActive: () => true,
+          worker: ConversationWorker(host: const _ConfigurationFailingHost()),
+        );
+
+        final stored = await BackgroundWorkRecord.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(workId),
+        );
+        final retriedJob = await ConversationJob.db.findById(
+          fixture.database,
+          fixture.job.id!,
+        );
+        expect(retriedJob?.status, ConversationJobStatuses.queued);
+        expect(
+          stored?.statusPreview,
+          BackgroundWorkPreviews.queuedForContinuation,
+        );
+        expect(stored?.resultContent, '{"answer":"saved before retry"}');
+        final continuationEvents = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId),
+        );
+        expect(
+          _backgroundWorkStatusPreviews(continuationEvents, workId),
+          [
+            BackgroundWorkPreviews.continuationInProgress,
+            BackgroundWorkPreviews.queuedForContinuation,
+          ],
+        );
+        final visibleWorks = await endpoints.conversation.listBackgroundWorks(
+          fixture.session,
+          ListBackgroundWorksRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: 'conversation-1',
+          ),
+        );
+        expect(visibleWorks.single.id, workId);
+      },
+    );
+
+    test(
+      'cloud detachment is rejected at the global limit and recovers capacity',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        final message = fixture.messages.first;
+        final activeWorks = <BackgroundWorkRecord>[];
+        for (
+          var index = 0;
+          index < ConversationLimits.maxConcurrentDetachedWork;
+          index++
+        ) {
+          final workId = 'background-capacity-$index';
+          final toolCall = await ConversationToolCall.db.insertRow(
+            fixture.database,
+            ConversationToolCall(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+              turnId: fixture.turn.id!,
+              messageId: message.id!,
+              stableId: 'background-capacity-call-$index',
+              name: 'skill__user__research__search',
+              argumentsJson: '{}',
+              argumentsDigest: 'digest',
+              backgroundEligible: true,
+              backgroundWorkStableId: workId,
+              status: 'runningInBackground',
+              resultJson: jsonEncode({
+                'status': 'running_in_background',
+                'work_id': workId,
+              }),
+              revision: 2,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          activeWorks.add(
+            await BackgroundWorkRecord.db.insertRow(
+              fixture.database,
+              BackgroundWorkRecord(
+                workspaceId: fixture.workspaceId,
+                conversationId: fixture.conversationId,
+                conversationToolCallId: toolCall.id!,
+                originatingMessageId: message.id,
+                stableId: workId,
+                toolCallId: toolCall.stableId,
+                toolKind: 'skillTemplate',
+                status: 'running',
+                createdAt: now,
+                updatedAt: now,
+              ),
+            ),
+          );
+        }
+        final target = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            turnId: fixture.turn.id!,
+            messageId: message.id!,
+            stableId: 'background-capacity-target',
+            name: 'skill__user__research__search',
+            argumentsJson: '{}',
+            argumentsDigest: 'digest',
+            backgroundEligible: true,
+            status: 'running',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final useCases = ConversationUseCases(
+          conversation_repo.ConversationRepository(),
+        );
+        final request = DetachToolCallRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'detach-over-capacity',
+          conversationId: 'conversation-1',
+          toolCallId: target.stableId,
+        );
+
+        await expectLater(
+          useCases.detachToolCall(
+            fixture.database,
+            userId: fixture.userId,
+            request: request,
+          ),
+          throwsA(
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'code',
+              ConversationErrorCode.turnConflict,
+            ),
+          ),
+        );
+        final unchangedTarget = await ConversationToolCall.db.findById(
+          fixture.database,
+          target.id!,
+        );
+        expect(unchangedTarget?.status, 'running');
+        expect(unchangedTarget?.backgroundWorkStableId, isNull);
+
+        await BackgroundWorkRecord.db.updateRow(
+          fixture.database,
+          activeWorks.first.copyWith(status: 'completed'),
+        );
+        final admitted = await useCases.detachToolCall(
+          fixture.database,
+          userId: fixture.userId,
+          request: request.copyWith(requestId: 'detach-after-capacity'),
+        );
+
+        expect(admitted.status, 'running');
+        expect(admitted.statusPreview, isNull);
+        expect(
+          await BackgroundWorkRecord.db.count(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.status.equals('running'),
+          ),
+          ConversationLimits.maxConcurrentDetachedWork,
+        );
+      },
+    );
+
+    test(
+      'concurrent detaches across conversations share one global capacity',
+      () async {
+        final fixtures = <_Fixture>[];
+        final requestCount = ConversationLimits.maxConcurrentDetachedWork + 2;
+        for (var index = 0; index < requestCount; index++) {
+          fixtures.add(await prepare());
+        }
+        final useCases = ConversationUseCases(
+          conversation_repo.ConversationRepository(),
+        );
+        final requests =
+            <
+              ({
+                _Fixture fixture,
+                DetachToolCallRequest request,
+              })
+            >[];
+        final now = DateTime.now().toUtc();
+        for (var index = 0; index < fixtures.length; index++) {
+          final fixture = fixtures[index];
+          final message = fixture.messages.first;
+          final toolCall = await ConversationToolCall.db.insertRow(
+            fixture.database,
+            ConversationToolCall(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+              turnId: fixture.turn.id!,
+              messageId: message.id!,
+              stableId: 'background-global-capacity-$index',
+              name: 'skill__user__research__search',
+              argumentsJson: '{}',
+              argumentsDigest: 'digest',
+              backgroundEligible: true,
+              status: 'running',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          requests.add((
+            fixture: fixture,
+            request: DetachToolCallRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'detach-global-capacity-$index',
+              conversationId: 'conversation-1',
+              toolCallId: toolCall.stableId,
+            ),
+          ));
+        }
+
+        Future<Object> attemptDetach(
+          _Fixture fixture,
+          DetachToolCallRequest request,
+        ) async {
+          try {
+            return await useCases.detachToolCall(
+              fixture.database,
+              userId: fixture.userId,
+              request: request,
+            );
+          } on ConversationException catch (error) {
+            return error;
+          }
+        }
+
+        final outcomes = await Future.wait([
+          for (final item in requests)
+            attemptDetach(item.fixture, item.request),
+        ]);
+        final admitted = outcomes.whereType<BackgroundWorkView>();
+        final rejected = outcomes.whereType<ConversationException>();
+
+        expect(
+          admitted,
+          hasLength(ConversationLimits.maxConcurrentDetachedWork),
+        );
+        expect(rejected, hasLength(requestCount - admitted.length));
+        expect(
+          rejected.map((error) => error.code),
+          everyElement(ConversationErrorCode.turnConflict),
+        );
+        expect(
+          await BackgroundWorkRecord.db.count(
+            fixtures.first.database,
+            where: (table) =>
+                table.workspaceId.inSet(
+                  fixtures.map((fixture) => fixture.workspaceId).toSet(),
+                ) &
+                table.status.equals('running'),
+          ),
+          ConversationLimits.maxConcurrentDetachedWork,
+        );
       },
     );
 
@@ -606,7 +1031,7 @@ void main() {
         );
         expect(
           completed.map((work) => work.statusPreview),
-          everyElement('Outcome unknown'),
+          everyElement(BackgroundWorkPreviews.queuedForContinuation),
         );
         expect(events, hasLength(2));
         expect(events[0].sequence, lessThan(events[1].sequence));
@@ -2095,6 +2520,26 @@ class const _CompletingHost() implements ConversationEngineHost {
   }) => throw UnimplementedError();
 }
 
+class const _ConfigurationFailingHost() implements ConversationEngineHost {
+  @override
+  Future<ConversationEngineResult> executeTurn(
+    Session session, {
+    required ConversationJob job,
+    required ConversationTurn turn,
+    required List<ConversationMessage> messages,
+    required ConversationProgressPublisher liveTurns,
+    Future<void>? leaseLost,
+  }) => throw const ConversationEngineConfigurationException('test');
+
+  @override
+  Future<ConversationCompactionResult> compact(
+    Session session, {
+    required ConversationJob job,
+    required List<ConversationMessage> messages,
+    Future<void>? leaseLost,
+  }) => throw UnimplementedError();
+}
+
 class _EffectTrackingHost implements ConversationEngineHost {
   var calls = 0;
 
@@ -2152,6 +2597,21 @@ class _Fixture({
   required final ConversationJob job,
   required var List<ConversationMessage> messages,
 });
+
+List<String?> _backgroundWorkStatusPreviews(
+  List<ConversationEvent> events,
+  String workId,
+) {
+  final previews = <String?>[];
+  for (final event in events) {
+    final payload = jsonDecode(event.payloadJson);
+    if (payload is! Map<String, dynamic> || payload['workId'] != workId) {
+      continue;
+    }
+    previews.add(payload['statusPreview'] as String?);
+  }
+  return previews;
+}
 
 class const _ImmediateAdmissionGate() implements ConversationAdmissionGate {
   @override

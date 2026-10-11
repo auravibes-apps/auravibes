@@ -32,6 +32,8 @@ import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.da
 import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_continuation_status.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_detach_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
@@ -1311,6 +1313,14 @@ class const _ChatConversationStatus({
 
     return AuraColumn(
       children: [
+        BackgroundWorkDetachControls(
+          workspaceId: data.workspaceId,
+          conversationId: data.conversation.id,
+        ),
+        BackgroundWorkContinuationStatus(
+          workspaceId: data.workspaceId,
+          conversationId: data.conversation.id,
+        ),
         if (retryAt != null && !data.hidesStoppedRun)
           _RateLimitRetryIndicator(retryAt: retryAt),
         if (data.state.queuedDrafts.isNotEmpty)

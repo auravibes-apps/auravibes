@@ -1298,6 +1298,18 @@ class ConversationUseCases {
       if (!call.backgroundEligible || call.status != 'running') {
         _fail(ConversationErrorCode.turnConflict);
       }
+      await _repository.lockBackgroundWorkCapacity(
+        session,
+        transaction: transaction,
+      );
+      final activeBackgroundWork = await _repository.countActiveBackgroundWork(
+        session,
+        transaction: transaction,
+      );
+      if (activeBackgroundWork >=
+          ConversationLimits.maxConcurrentDetachedWork) {
+        _fail(ConversationErrorCode.turnConflict);
+      }
       final now = DateTime.now().toUtc();
       final stableId = const Uuid().v7();
       final work = await BackgroundWorkRecord.db.insertRow(
@@ -1363,14 +1375,32 @@ class ConversationUseCases {
       request.workspaceId,
       request.conversationId,
     );
-    final records = await BackgroundWorkRecord.db.find(
+    final recentRecords = await BackgroundWorkRecord.db.find(
       session,
       where: (table) =>
           table.workspaceId.equals(request.workspaceId) &
           table.conversationId.equals(conversation.id),
-      orderBy: (table) => table.createdAt,
+      orderBy: (table) => table.createdAt.desc(),
       limit: 100,
     );
+    final queuedRecords = await BackgroundWorkRecord.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(request.workspaceId) &
+          table.conversationId.equals(conversation.id) &
+          table.statusPreview.inSet({
+            BackgroundWorkPreviews.queuedForContinuation,
+            BackgroundWorkPreviews.continuationInProgress,
+            BackgroundWorkPreviews.continuationFailed,
+          }),
+      orderBy: (table) => table.createdAt,
+    );
+    final recordsById = {
+      for (final record in [...recentRecords, ...queuedRecords])
+        record.id!: record,
+    };
+    final records = recordsById.values.toList()
+      ..sort((left, right) => left.createdAt.compareTo(right.createdAt));
     final messages = await ConversationMessage.db.find(
       session,
       where: (table) => table.id.inSet(
