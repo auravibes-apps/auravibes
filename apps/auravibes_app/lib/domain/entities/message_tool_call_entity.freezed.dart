@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MessageToolCallEntity {
 
- String get id; String get name; String get argumentsRaw;@JsonKey(includeIfNull: false) String? get userFacingDescription;@JsonKey(includeIfNull: false) String? get argumentsDigest;@JsonKey(includeIfNull: false) String? get turnId;@JsonKey(includeIfNull: false) int? get turnRevision;/// The raw response from tool execution, if successful.
+ String get id; String get name; String get argumentsRaw;@JsonKey(includeIfNull: false) String? get userFacingDescription;@JsonKey(includeIfNull: false) String? get argumentsDigest;@JsonKey(includeIfNull: false) String? get turnId;@JsonKey(includeIfNull: false) int? get turnRevision; bool get backgroundEligible;/// The raw response from tool execution, if successful.
  String? get responseRaw;/// The bounded response projection used in model context, when different.
 @JsonKey(includeIfNull: false) String? get responseContextRaw;/// Whether output was truncated for model context or persistence.
  bool get outputTruncated;/// Original result size before projection or persistence bounds.
@@ -39,14 +39,14 @@ $MessageToolCallEntityCopyWith<MessageToolCallEntity> get copyWith => _$MessageT
 @override
 bool operator ==(Object other) {
   final _this = this as MessageToolCallEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToolCallEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.argumentsRaw, _this.argumentsRaw) || other.argumentsRaw == _this.argumentsRaw)&&(identical(other.userFacingDescription, _this.userFacingDescription) || other.userFacingDescription == _this.userFacingDescription)&&(identical(other.argumentsDigest, _this.argumentsDigest) || other.argumentsDigest == _this.argumentsDigest)&&(identical(other.turnId, _this.turnId) || other.turnId == _this.turnId)&&(identical(other.turnRevision, _this.turnRevision) || other.turnRevision == _this.turnRevision)&&(identical(other.responseRaw, _this.responseRaw) || other.responseRaw == _this.responseRaw)&&(identical(other.responseContextRaw, _this.responseContextRaw) || other.responseContextRaw == _this.responseContextRaw)&&(identical(other.outputTruncated, _this.outputTruncated) || other.outputTruncated == _this.outputTruncated)&&(identical(other.originalResponseBytes, _this.originalResponseBytes) || other.originalResponseBytes == _this.originalResponseBytes)&&(identical(other.fullOutputForContext, _this.fullOutputForContext) || other.fullOutputForContext == _this.fullOutputForContext)&&(identical(other.resultStatus, _this.resultStatus) || other.resultStatus == _this.resultStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToolCallEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.argumentsRaw, _this.argumentsRaw) || other.argumentsRaw == _this.argumentsRaw)&&(identical(other.userFacingDescription, _this.userFacingDescription) || other.userFacingDescription == _this.userFacingDescription)&&(identical(other.argumentsDigest, _this.argumentsDigest) || other.argumentsDigest == _this.argumentsDigest)&&(identical(other.turnId, _this.turnId) || other.turnId == _this.turnId)&&(identical(other.turnRevision, _this.turnRevision) || other.turnRevision == _this.turnRevision)&&(identical(other.backgroundEligible, _this.backgroundEligible) || other.backgroundEligible == _this.backgroundEligible)&&(identical(other.responseRaw, _this.responseRaw) || other.responseRaw == _this.responseRaw)&&(identical(other.responseContextRaw, _this.responseContextRaw) || other.responseContextRaw == _this.responseContextRaw)&&(identical(other.outputTruncated, _this.outputTruncated) || other.outputTruncated == _this.outputTruncated)&&(identical(other.originalResponseBytes, _this.originalResponseBytes) || other.originalResponseBytes == _this.originalResponseBytes)&&(identical(other.fullOutputForContext, _this.fullOutputForContext) || other.fullOutputForContext == _this.fullOutputForContext)&&(identical(other.resultStatus, _this.resultStatus) || other.resultStatus == _this.resultStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as MessageToolCallEntity;
-  return Object.hash(runtimeType,_this.id,_this.name,_this.argumentsRaw,_this.userFacingDescription,_this.argumentsDigest,_this.turnId,_this.turnRevision,_this.responseRaw,_this.responseContextRaw,_this.outputTruncated,_this.originalResponseBytes,_this.fullOutputForContext,_this.resultStatus);
+  return Object.hash(runtimeType,_this.id,_this.name,_this.argumentsRaw,_this.userFacingDescription,_this.argumentsDigest,_this.turnId,_this.turnRevision,_this.backgroundEligible,_this.responseRaw,_this.responseContextRaw,_this.outputTruncated,_this.originalResponseBytes,_this.fullOutputForContext,_this.resultStatus);
 }
 
 
@@ -58,7 +58,7 @@ abstract mixin class $MessageToolCallEntityCopyWith<$Res>  {
   factory $MessageToolCallEntityCopyWith(MessageToolCallEntity value, $Res Function(MessageToolCallEntity) _then) = _$MessageToolCallEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String argumentsRaw,@JsonKey(includeIfNull: false) String? userFacingDescription,@JsonKey(includeIfNull: false) String? argumentsDigest,@JsonKey(includeIfNull: false) String? turnId,@JsonKey(includeIfNull: false) int? turnRevision, String? responseRaw,@JsonKey(includeIfNull: false) String? responseContextRaw, bool outputTruncated,@JsonKey(includeIfNull: false) int? originalResponseBytes, bool fullOutputForContext,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
+ String id, String name, String argumentsRaw,@JsonKey(includeIfNull: false) String? userFacingDescription,@JsonKey(includeIfNull: false) String? argumentsDigest,@JsonKey(includeIfNull: false) String? turnId,@JsonKey(includeIfNull: false) int? turnRevision, bool backgroundEligible, String? responseRaw,@JsonKey(includeIfNull: false) String? responseContextRaw, bool outputTruncated,@JsonKey(includeIfNull: false) int? originalResponseBytes, bool fullOutputForContext,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
 });
 
 
@@ -75,7 +75,7 @@ class _$MessageToolCallEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageToolCallEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? userFacingDescription = freezed,Object? argumentsDigest = freezed,Object? turnId = freezed,Object? turnRevision = freezed,Object? responseRaw = freezed,Object? responseContextRaw = freezed,Object? outputTruncated = null,Object? originalResponseBytes = freezed,Object? fullOutputForContext = null,Object? resultStatus = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? userFacingDescription = freezed,Object? argumentsDigest = freezed,Object? turnId = freezed,Object? turnRevision = freezed,Object? backgroundEligible = null,Object? responseRaw = freezed,Object? responseContextRaw = freezed,Object? outputTruncated = null,Object? originalResponseBytes = freezed,Object? fullOutputForContext = null,Object? resultStatus = freezed,}) {
   return _then(MessageToolCallEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -84,7 +84,8 @@ as String,userFacingDescription: freezed == userFacingDescription ? _self.userFa
 as String?,argumentsDigest: freezed == argumentsDigest ? _self.argumentsDigest : argumentsDigest // ignore: cast_nullable_to_non_nullable
 as String?,turnId: freezed == turnId ? _self.turnId : turnId // ignore: cast_nullable_to_non_nullable
 as String?,turnRevision: freezed == turnRevision ? _self.turnRevision : turnRevision // ignore: cast_nullable_to_non_nullable
-as int?,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
+as int?,backgroundEligible: null == backgroundEligible ? _self.backgroundEligible : backgroundEligible // ignore: cast_nullable_to_non_nullable
+as bool,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
 as String?,responseContextRaw: freezed == responseContextRaw ? _self.responseContextRaw : responseContextRaw // ignore: cast_nullable_to_non_nullable
 as String?,outputTruncated: null == outputTruncated ? _self.outputTruncated : outputTruncated // ignore: cast_nullable_to_non_nullable
 as bool,originalResponseBytes: freezed == originalResponseBytes ? _self.originalResponseBytes : originalResponseBytes // ignore: cast_nullable_to_non_nullable
@@ -175,10 +176,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  String? responseRaw, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  bool backgroundEligible,  String? responseRaw, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity() when $default != null:
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
+return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.backgroundEligible,_that.responseRaw,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
   return orElse();
 
 }
@@ -196,10 +197,10 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescripti
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  String? responseRaw, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  bool backgroundEligible,  String? responseRaw, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity():
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
+return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.backgroundEligible,_that.responseRaw,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -216,10 +217,10 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescripti
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  String? responseRaw, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  bool backgroundEligible,  String? responseRaw, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity() when $default != null:
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
+return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.backgroundEligible,_that.responseRaw,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
   return null;
 
 }
@@ -231,7 +232,7 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescripti
 @JsonSerializable()
 
 class _MessageToolCallEntity extends MessageToolCallEntity {
-  const _MessageToolCallEntity({required this.id, required this.name, required this.argumentsRaw, @JsonKey(includeIfNull: false) this.userFacingDescription, @JsonKey(includeIfNull: false) this.argumentsDigest, @JsonKey(includeIfNull: false) this.turnId, @JsonKey(includeIfNull: false) this.turnRevision, this.responseRaw, @JsonKey(includeIfNull: false) this.responseContextRaw, this.outputTruncated = false, @JsonKey(includeIfNull: false) this.originalResponseBytes, this.fullOutputForContext = false, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) this.resultStatus}): super._();
+  const _MessageToolCallEntity({required this.id, required this.name, required this.argumentsRaw, @JsonKey(includeIfNull: false) this.userFacingDescription, @JsonKey(includeIfNull: false) this.argumentsDigest, @JsonKey(includeIfNull: false) this.turnId, @JsonKey(includeIfNull: false) this.turnRevision, this.backgroundEligible = false, this.responseRaw, @JsonKey(includeIfNull: false) this.responseContextRaw, this.outputTruncated = false, @JsonKey(includeIfNull: false) this.originalResponseBytes, this.fullOutputForContext = false, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) this.resultStatus}): super._();
   factory _MessageToolCallEntity.fromJson(Map<String, dynamic> json) => _$MessageToolCallEntityFromJson(json);
 
 @override final  String id;
@@ -241,6 +242,7 @@ class _MessageToolCallEntity extends MessageToolCallEntity {
 @override@JsonKey(includeIfNull: false) final  String? argumentsDigest;
 @override@JsonKey(includeIfNull: false) final  String? turnId;
 @override@JsonKey(includeIfNull: false) final  int? turnRevision;
+@override@JsonKey() final  bool backgroundEligible;
 /// The raw response from tool execution, if successful.
 @override final  String? responseRaw;
 /// The bounded response projection used in model context, when different.
@@ -270,13 +272,13 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToolCallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&(identical(other.userFacingDescription, userFacingDescription) || other.userFacingDescription == userFacingDescription)&&(identical(other.argumentsDigest, argumentsDigest) || other.argumentsDigest == argumentsDigest)&&(identical(other.turnId, turnId) || other.turnId == turnId)&&(identical(other.turnRevision, turnRevision) || other.turnRevision == turnRevision)&&(identical(other.responseRaw, responseRaw) || other.responseRaw == responseRaw)&&(identical(other.responseContextRaw, responseContextRaw) || other.responseContextRaw == responseContextRaw)&&(identical(other.outputTruncated, outputTruncated) || other.outputTruncated == outputTruncated)&&(identical(other.originalResponseBytes, originalResponseBytes) || other.originalResponseBytes == originalResponseBytes)&&(identical(other.fullOutputForContext, fullOutputForContext) || other.fullOutputForContext == fullOutputForContext)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToolCallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&(identical(other.userFacingDescription, userFacingDescription) || other.userFacingDescription == userFacingDescription)&&(identical(other.argumentsDigest, argumentsDigest) || other.argumentsDigest == argumentsDigest)&&(identical(other.turnId, turnId) || other.turnId == turnId)&&(identical(other.turnRevision, turnRevision) || other.turnRevision == turnRevision)&&(identical(other.backgroundEligible, backgroundEligible) || other.backgroundEligible == backgroundEligible)&&(identical(other.responseRaw, responseRaw) || other.responseRaw == responseRaw)&&(identical(other.responseContextRaw, responseContextRaw) || other.responseContextRaw == responseContextRaw)&&(identical(other.outputTruncated, outputTruncated) || other.outputTruncated == outputTruncated)&&(identical(other.originalResponseBytes, originalResponseBytes) || other.originalResponseBytes == originalResponseBytes)&&(identical(other.fullOutputForContext, fullOutputForContext) || other.fullOutputForContext == fullOutputForContext)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,name,argumentsRaw,userFacingDescription,argumentsDigest,turnId,turnRevision,responseRaw,responseContextRaw,outputTruncated,originalResponseBytes,fullOutputForContext,resultStatus);
+    return Object.hash(runtimeType,id,name,argumentsRaw,userFacingDescription,argumentsDigest,turnId,turnRevision,backgroundEligible,responseRaw,responseContextRaw,outputTruncated,originalResponseBytes,fullOutputForContext,resultStatus);
 }
 
 
@@ -288,7 +290,7 @@ abstract mixin class _$MessageToolCallEntityCopyWith<$Res> implements $MessageTo
   factory _$MessageToolCallEntityCopyWith(_MessageToolCallEntity value, $Res Function(_MessageToolCallEntity) _then) = __$MessageToolCallEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String argumentsRaw,@JsonKey(includeIfNull: false) String? userFacingDescription,@JsonKey(includeIfNull: false) String? argumentsDigest,@JsonKey(includeIfNull: false) String? turnId,@JsonKey(includeIfNull: false) int? turnRevision, String? responseRaw,@JsonKey(includeIfNull: false) String? responseContextRaw, bool outputTruncated,@JsonKey(includeIfNull: false) int? originalResponseBytes, bool fullOutputForContext,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
+ String id, String name, String argumentsRaw,@JsonKey(includeIfNull: false) String? userFacingDescription,@JsonKey(includeIfNull: false) String? argumentsDigest,@JsonKey(includeIfNull: false) String? turnId,@JsonKey(includeIfNull: false) int? turnRevision, bool backgroundEligible, String? responseRaw,@JsonKey(includeIfNull: false) String? responseContextRaw, bool outputTruncated,@JsonKey(includeIfNull: false) int? originalResponseBytes, bool fullOutputForContext,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
 });
 
 
@@ -305,7 +307,7 @@ class __$MessageToolCallEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageToolCallEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? userFacingDescription = freezed,Object? argumentsDigest = freezed,Object? turnId = freezed,Object? turnRevision = freezed,Object? responseRaw = freezed,Object? responseContextRaw = freezed,Object? outputTruncated = null,Object? originalResponseBytes = freezed,Object? fullOutputForContext = null,Object? resultStatus = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? userFacingDescription = freezed,Object? argumentsDigest = freezed,Object? turnId = freezed,Object? turnRevision = freezed,Object? backgroundEligible = null,Object? responseRaw = freezed,Object? responseContextRaw = freezed,Object? outputTruncated = null,Object? originalResponseBytes = freezed,Object? fullOutputForContext = null,Object? resultStatus = freezed,}) {
   return _then(_MessageToolCallEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -314,7 +316,8 @@ as String,userFacingDescription: freezed == userFacingDescription ? _self.userFa
 as String?,argumentsDigest: freezed == argumentsDigest ? _self.argumentsDigest : argumentsDigest // ignore: cast_nullable_to_non_nullable
 as String?,turnId: freezed == turnId ? _self.turnId : turnId // ignore: cast_nullable_to_non_nullable
 as String?,turnRevision: freezed == turnRevision ? _self.turnRevision : turnRevision // ignore: cast_nullable_to_non_nullable
-as int?,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
+as int?,backgroundEligible: null == backgroundEligible ? _self.backgroundEligible : backgroundEligible // ignore: cast_nullable_to_non_nullable
+as bool,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
 as String?,responseContextRaw: freezed == responseContextRaw ? _self.responseContextRaw : responseContextRaw // ignore: cast_nullable_to_non_nullable
 as String?,outputTruncated: null == outputTruncated ? _self.outputTruncated : outputTruncated // ignore: cast_nullable_to_non_nullable
 as bool,originalResponseBytes: freezed == originalResponseBytes ? _self.originalResponseBytes : originalResponseBytes // ignore: cast_nullable_to_non_nullable

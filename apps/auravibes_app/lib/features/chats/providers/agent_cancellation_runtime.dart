@@ -12,6 +12,11 @@ typedef _ToolCancellationRegistrationRequest = ({
   Future<void> Function() cancel,
 });
 
+typedef _ToolCancellationHandleKey = ({
+  String conversationId,
+  String toolCallId,
+});
+
 class AgentCancellationRuntime implements AgentCancellationEffects {
   new({@visibleForTesting this.cleanupTimeout = const Duration(seconds: 5)});
 
@@ -23,6 +28,8 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
   final _pendingStops = <String>{};
   final _toolCancellationHandles =
       <String, Map<String, AgentToolCancellationHandle>>{};
+  final _toolCancellationHandleChanges =
+      StreamController<_ToolCancellationHandleKey>.broadcast(sync: true);
 
   @override
   AgentCancellationScope start(String conversationId) =>
@@ -31,6 +38,41 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
   @override
   AgentCancellationScope? current(String conversationId) =>
       _entries[conversationId];
+
+  bool canRunToolInBackground({
+    required String conversationId,
+    required String toolCallId,
+  }) {
+    final handle = toolCancellationHandle(
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+    );
+
+    return handle?.status == AgentToolCancellationStatus.running &&
+        handle?.operationCompleted == false;
+  }
+
+  Stream<bool> watchCanRunToolInBackground({
+    required String conversationId,
+    required String toolCallId,
+  }) => Stream<bool>.multi((controller) {
+    bool canRun() => canRunToolInBackground(
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+    );
+
+    final subscription = _toolCancellationHandleChanges.stream.listen((key) {
+      if (key.conversationId == conversationId &&
+          key.toolCallId == toolCallId) {
+        controller.add(canRun());
+      }
+    });
+    controller
+      ..addSync(canRun())
+      ..onCancel = subscription.cancel;
+  });
+
+  void dispose() => _toolCancellationHandleChanges.close();
 
   @override
   void requestStop(String conversationId) {
@@ -81,6 +123,17 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
     }
     final _ = _pendingStops.remove(conversationId);
   }
+
+  void _notifyToolCancellationHandleChanged(
+    String conversationId,
+    String toolCallId,
+  ) {
+    if (_toolCancellationHandleChanges.isClosed) return;
+    _toolCancellationHandleChanges.add((
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+    ));
+  }
 }
 
 enum AgentToolCancellationStatus {
@@ -98,6 +151,7 @@ class AgentToolCancellationHandle {
     required bool isSupported,
     required this._cancel,
     this.operationResult,
+    this._onChanged,
   }) : _isSupported = isSupported,
        _status = isSupported
            ? AgentToolCancellationStatus.running
@@ -117,6 +171,7 @@ class AgentToolCancellationHandle {
   final String toolCallId;
   final Future<Object?>? operationResult;
   final Future<void> Function() _cancel;
+  final void Function()? _onChanged;
   final bool _isSupported;
   AgentCancellationCleanupRegistration? _cleanupRegistration;
   AgentToolCancellationStatus _status;
@@ -143,15 +198,17 @@ class AgentToolCancellationHandle {
     if (registration == null || !registration.remove()) return false;
     _cleanupRegistration = null;
     _backgroundWorkId = workId;
-    _status = AgentToolCancellationStatus.detached;
+    _status = .detached;
     _detachedCompleter.complete(workId);
+    _onChanged?.call();
 
     return true;
   }
 
   void markOperationCompleted() {
     _operationCompleted = true;
-    _status = AgentToolCancellationStatus.completed;
+    _status = .completed;
+    _onChanged?.call();
   }
 
   Future<bool> requestCancellation() async {
@@ -166,6 +223,7 @@ class AgentToolCancellationHandle {
     }
 
     _status = .cancellationRequested;
+    _onChanged?.call();
     final cancellation = _cancelToolOnce(this);
     _cancellation = cancellation;
     await cancellation;
@@ -185,6 +243,7 @@ Future<void> _cancelToolOnce(AgentToolCancellationHandle handle) async {
       .._cancellationWasConfirmed = true
       .._status = .cancellationConfirmed;
   }
+  handle._onChanged?.call();
 }
 
 extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
@@ -196,9 +255,13 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
     _ToolCancellationRegistrationRequest request, {
     Future<Object?>? operationResult,
   }) {
-    final handle = _newToolCancellationHandle(request, operationResult);
+    final handle = _newToolCancellationHandle(this, request, operationResult);
     _storeToolCancellationHandle(this, request, handle);
     _registerToolCancellationCleanup(this, request, handle);
+    _notifyToolCancellationHandleChanged(
+      request.conversationId,
+      request.toolCallId,
+    );
 
     return handle;
   }
@@ -232,6 +295,7 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
     if (handles.isEmpty) {
       final _ = _toolCancellationHandles.remove(conversationId);
     }
+    _notifyToolCancellationHandleChanged(conversationId, toolCallId);
   }
 
   bool isCancellationRequested(String conversationId) =>
@@ -285,6 +349,7 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
 }
 
 AgentToolCancellationHandle _newToolCancellationHandle(
+  AgentCancellationRuntime runtime,
   _ToolCancellationRegistrationRequest request,
   Future<Object?>? operationResult,
 ) => AgentToolCancellationHandle(
@@ -292,6 +357,10 @@ AgentToolCancellationHandle _newToolCancellationHandle(
   isSupported: request.isSupported,
   cancel: request.cancel,
   operationResult: operationResult,
+  onChanged: () => runtime._notifyToolCancellationHandleChanged(
+    request.conversationId,
+    request.toolCallId,
+  ),
 );
 
 void _storeToolCancellationHandle(
@@ -374,7 +443,10 @@ Future<void> _waitForScopeCleanup(
 final agentCancellationRuntimeProvider = Provider<AgentCancellationRuntime>((
   ref,
 ) {
-  return AgentCancellationRuntime();
+  final runtime = AgentCancellationRuntime();
+  final _ = ref.onDispose(runtime.dispose);
+
+  return runtime;
 });
 
 enum ActiveSubAgentStatus {

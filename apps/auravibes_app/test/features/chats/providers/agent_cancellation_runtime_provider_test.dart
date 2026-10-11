@@ -74,6 +74,42 @@ void main() {
       expect(handle.status, AgentToolCancellationStatus.cancellationConfirmed);
     });
 
+    test(
+      'background eligibility follows registration, detach, and completion',
+      () async {
+        final runtime = AgentCancellationRuntime()..start('conversation-1');
+        final values = <bool>[];
+        final subscription = runtime
+            .watchCanRunToolInBackground(
+              conversationId: 'conversation-1',
+              toolCallId: 'call-1',
+            )
+            .listen(values.add);
+        addTearDown(subscription.cancel);
+        addTearDown(runtime.dispose);
+        await Future<void>.delayed(Duration.zero);
+        expect(values, [false]);
+
+        final operation = Completer<Object?>();
+        final handle = runtime.registerToolCancellationHandle((
+          conversationId: 'conversation-1',
+          toolCallId: 'call-1',
+          isSupported: true,
+          cancel: () async {},
+        ), operationResult: operation.future);
+        await Future<void>.delayed(Duration.zero);
+        expect(values, [false, true]);
+
+        expect(handle.tryDetach(workId: 'work-1'), isTrue);
+        await Future<void>.delayed(Duration.zero);
+        expect(values, [false, true, false]);
+
+        operation.complete('done');
+        await Future<void>.delayed(Duration.zero);
+        expect(values.last, isFalse);
+      },
+    );
+
     test('unsupported tool cancellation never reports confirmation', () async {
       var cancelCalls = 0;
       final handle = AgentToolCancellationHandle(
