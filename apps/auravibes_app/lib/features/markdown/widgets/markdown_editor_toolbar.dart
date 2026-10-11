@@ -1186,17 +1186,23 @@ List<({int start, int end})> _fencedCodeBlockContentRanges(String text) {
   int? contentStart;
   int? fenceCharacter;
   var fenceLength = 0;
+  var containerPrefixes = const <_FenceContainerPrefix>[];
   var lineStart = 0;
 
   while (lineStart <= text.length) {
     final newlineOffset = text.indexOf('\n', lineStart);
     final lineEnd = newlineOffset == -1 ? text.length : newlineOffset;
-    final fence = _fencedCodeFenceAt(text, lineStart, lineEnd);
+    final fence = fenceCharacter == null
+        ? _fencedCodeFenceAt(text, lineStart, lineEnd)
+        : _fencedCodeClosingFenceAt(
+            text,
+            lineStart,
+            lineEnd,
+            containerPrefixes,
+          );
 
     if (fenceCharacter == null) {
-      if (fence == null ||
-          (fence.markerCharacter == 0x60 &&
-              _containsCodeUnit(text, fence.infoStart, lineEnd, 0x60))) {
+      if (fence == null) {
         if (newlineOffset == -1) break;
         lineStart = newlineOffset + 1;
         continue;
@@ -1204,6 +1210,7 @@ List<({int start, int end})> _fencedCodeBlockContentRanges(String text) {
 
       fenceCharacter = fence.markerCharacter;
       fenceLength = fence.markerLength;
+      containerPrefixes = fence.containerPrefixes;
       contentStart = lineEnd < text.length ? lineEnd + 1 : text.length;
     } else if (fence != null &&
         fence.markerCharacter == fenceCharacter &&
@@ -1216,6 +1223,7 @@ List<({int start, int end})> _fencedCodeBlockContentRanges(String text) {
       contentStart = null;
       fenceCharacter = null;
       fenceLength = 0;
+      containerPrefixes = const [];
     }
 
     if (newlineOffset == -1) break;
@@ -1229,12 +1237,18 @@ List<({int start, int end})> _fencedCodeBlockContentRanges(String text) {
   return ranges;
 }
 
-({int markerCharacter, int markerLength, int infoStart})? _fencedCodeFenceAt(
-  String text,
-  int lineStart,
-  int lineEnd,
-) {
+typedef _FenceContainerPrefix = ({bool isBlockQuote, int indent});
+typedef _FencedCodeFence = ({
+  int markerCharacter,
+  int markerLength,
+  int infoStart,
+  List<_FenceContainerPrefix> containerPrefixes,
+});
+
+_FencedCodeFence? _fencedCodeFenceAt(String text, int lineStart, int lineEnd) {
   var markerStart = lineStart;
+  var containerEnd = lineStart;
+  final containerPrefixes = <_FenceContainerPrefix>[];
   while (markerStart < lineEnd) {
     var indentation = 0;
     while (markerStart < lineEnd &&
@@ -1245,11 +1259,13 @@ List<({int start, int end})> _fencedCodeBlockContentRanges(String text) {
     }
 
     if (markerStart < lineEnd && text.codeUnitAt(markerStart) == 0x3e) {
+      containerPrefixes.add((isBlockQuote: true, indent: 0));
       markerStart++;
       if (markerStart < lineEnd &&
           _isMarkdownWhitespace(text.codeUnitAt(markerStart))) {
         markerStart++;
       }
+      containerEnd = markerStart;
       continue;
     }
 
@@ -1260,11 +1276,92 @@ List<({int start, int end})> _fencedCodeBlockContentRanges(String text) {
           _isMarkdownWhitespace(text.codeUnitAt(markerStart))) {
         markerStart++;
       }
+      containerPrefixes.add((
+        isBlockQuote: false,
+        indent: markerStart - containerEnd,
+      ));
+      containerEnd = markerStart;
       continue;
     }
 
     break;
   }
+
+  final marker = _fencedCodeMarkerAt(text, markerStart, lineEnd);
+  if (marker == null ||
+      (marker.markerCharacter == 0x60 &&
+          _containsCodeUnit(text, marker.infoStart, lineEnd, 0x60))) {
+    return null;
+  }
+
+  return (
+    markerCharacter: marker.markerCharacter,
+    markerLength: marker.markerLength,
+    infoStart: marker.infoStart,
+    containerPrefixes: containerPrefixes,
+  );
+}
+
+_FencedCodeFence? _fencedCodeClosingFenceAt(
+  String text,
+  int lineStart,
+  int lineEnd,
+  List<_FenceContainerPrefix> containerPrefixes,
+) {
+  var markerStart = lineStart;
+  for (final prefix in containerPrefixes) {
+    if (prefix.isBlockQuote) {
+      var indentation = 0;
+      while (markerStart < lineEnd &&
+          indentation < 3 &&
+          text.codeUnitAt(markerStart) == 0x20) {
+        markerStart++;
+        indentation++;
+      }
+      if (markerStart >= lineEnd || text.codeUnitAt(markerStart) != 0x3e) {
+        return null;
+      }
+      markerStart++;
+      if (markerStart < lineEnd &&
+          _isMarkdownWhitespace(text.codeUnitAt(markerStart))) {
+        markerStart++;
+      }
+      continue;
+    }
+
+    for (var indentation = 0; indentation < prefix.indent; indentation++) {
+      if (markerStart >= lineEnd ||
+          !_isMarkdownWhitespace(text.codeUnitAt(markerStart))) {
+        return null;
+      }
+      markerStart++;
+    }
+  }
+
+  var indentation = 0;
+  while (markerStart < lineEnd &&
+      indentation < 3 &&
+      text.codeUnitAt(markerStart) == 0x20) {
+    markerStart++;
+    indentation++;
+  }
+
+  final marker = _fencedCodeMarkerAt(text, markerStart, lineEnd);
+  if (marker == null) return null;
+
+  return (
+    markerCharacter: marker.markerCharacter,
+    markerLength: marker.markerLength,
+    infoStart: marker.infoStart,
+    containerPrefixes: containerPrefixes,
+  );
+}
+
+({int markerCharacter, int markerLength, int infoStart})? _fencedCodeMarkerAt(
+  String text,
+  int markerStart,
+  int lineEnd,
+) {
   if (markerStart >= lineEnd) return null;
 
   final markerCharacter = text.codeUnitAt(markerStart);

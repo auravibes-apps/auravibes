@@ -696,12 +696,13 @@ void main() {
       }
     });
 
-    testWidgets('ignores fenced code inside blockquotes and list items', (
+    testWidgets('matches fenced code container prefixes when closing', (
       tester,
     ) async {
       for (final text in [
         '> ```\n> **literal**\n> ```',
         '- ```\n  **literal**\n  ```',
+        '```\n- ```\n**literal**\n```',
       ]) {
         final controller = TextEditingController(text: text);
         final focusNode = FocusNode();
