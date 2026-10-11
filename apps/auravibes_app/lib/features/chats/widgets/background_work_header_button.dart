@@ -164,7 +164,7 @@ class const _BackgroundWorkSheetLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ConstrainedBox(
-    constraints: BoxConstraints(
+    constraints: .new(
       maxHeight:
           MediaQuery.sizeOf(context).height * _backgroundWorkSheetHeightFactor,
     ),
@@ -234,6 +234,7 @@ class const _BackgroundWorkListStateView({
     if (display.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
+
     return const _BackgroundWorkMessage(
       localeKey:
           LocaleKeys.chats_screens_chat_conversation_background_work_load_error,
@@ -252,6 +253,7 @@ _BackgroundWorkListDisplay _backgroundWorkListDisplay(
   if (worksAsync is AsyncError<List<AgentBackgroundWork>>) {
     return (works: null, isLoading: false);
   }
+
   return (works: worksAsync.value, isLoading: worksAsync.isLoading);
 }
 

@@ -135,8 +135,8 @@ class const _BackgroundWorkTileContent({
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: .start,
       mainAxisSize: .min,
+      crossAxisAlignment: .start,
       children: [
         _BackgroundWorkTileInformation(data: data, now: now),
         const AuraSizedBox(height: .xs),
@@ -156,8 +156,8 @@ class const _BackgroundWorkTileInformation({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: .start,
     mainAxisSize: .min,
+    crossAxisAlignment: .start,
     children: [
       _BackgroundWorkTileHeadingSection(data: data),
       _BackgroundWorkTileDetailsSection(data: data, now: now),
@@ -170,8 +170,8 @@ class const _BackgroundWorkTileHeadingSection({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: .start,
     mainAxisSize: .min,
+    crossAxisAlignment: .start,
     children: [
       _BackgroundWorkTileHeading(identity: data.identity, status: data.status),
       const AuraSizedBox(height: .xs),
@@ -188,8 +188,8 @@ class const _BackgroundWorkTileDetailsSection({
     final workId = data.identity.id;
 
     return Column(
-      crossAxisAlignment: .start,
       mainAxisSize: .min,
+      crossAxisAlignment: .start,
       children: [
         _BackgroundWorkTileElapsed(
           workId: workId,
@@ -395,6 +395,7 @@ String _elapsedLabelForSeconds(int seconds) {
   if (seconds < _secondsPerMinute) return _elapsedSecondsLabel(seconds);
 
   final minutes = seconds ~/ _secondsPerMinute;
+
   return _elapsedLabelForMinutes(minutes, seconds % _secondsPerMinute);
 }
 
@@ -404,6 +405,7 @@ String _elapsedLabelForMinutes(int minutes, int seconds) {
   }
 
   final hours = minutes ~/ _minutesPerHour;
+
   return _elapsedHoursLabel(hours, minutes % _minutesPerHour);
 }
 

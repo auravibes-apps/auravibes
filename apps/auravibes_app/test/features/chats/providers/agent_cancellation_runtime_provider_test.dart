@@ -89,7 +89,7 @@ void main() {
             .listen(values.add);
         addTearDown(subscription.cancel);
         addTearDown(runtime.dispose);
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
         expect(values, [false]);
 
         final operation = Completer<Object?>();
@@ -97,19 +97,19 @@ void main() {
           conversationId: 'conversation-1',
           toolCallId: 'call-1',
           isSupported: true,
-          cancel: () async {},
+          cancel: Future<void>.value,
           operationResult: operation.future,
           isCancellationConfirmed: null,
         ));
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
         expect(values, [false, true]);
 
         expect(handle.tryDetach(workId: 'work-1'), isTrue);
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
         expect(values, [false, true, false]);
 
         operation.complete('done');
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
         expect(values.last, isFalse);
       },
     );
