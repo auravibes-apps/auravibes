@@ -781,6 +781,44 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.context_usage.semantic_warning';
   static const chats_screens_chat_conversation_context_usage_semantic_overflow =
       'chats_screens.chat_conversation.context_usage.semantic_overflow';
+  static const chats_screens_chat_conversation_background_work_title =
+      'chats_screens.chat_conversation.background_work_title';
+  static const chats_screens_chat_conversation_background_work_accessible_label =
+      'chats_screens.chat_conversation.background_work_accessible_label';
+  static const chats_screens_chat_conversation_background_work_empty =
+      'chats_screens.chat_conversation.background_work_empty';
+  static const chats_screens_chat_conversation_background_work_load_error =
+      'chats_screens.chat_conversation.background_work_load_error';
+  static const chats_screens_chat_conversation_background_work_elapsed =
+      'chats_screens.chat_conversation.background_work_elapsed';
+  static const chats_screens_chat_conversation_background_work_elapsed_seconds =
+      'chats_screens.chat_conversation.background_work_elapsed_seconds';
+  static const chats_screens_chat_conversation_background_work_elapsed_minutes =
+      'chats_screens.chat_conversation.background_work_elapsed_minutes';
+  static const chats_screens_chat_conversation_background_work_elapsed_hours =
+      'chats_screens.chat_conversation.background_work_elapsed_hours';
+  static const chats_screens_chat_conversation_background_work_status_running =
+      'chats_screens.chat_conversation.background_work_status_running';
+  static const chats_screens_chat_conversation_background_work_status_stop_requested =
+      'chats_screens.chat_conversation.background_work_status_stop_requested';
+  static const chats_screens_chat_conversation_background_work_status_completed =
+      'chats_screens.chat_conversation.background_work_status_completed';
+  static const chats_screens_chat_conversation_background_work_status_failed =
+      'chats_screens.chat_conversation.background_work_status_failed';
+  static const chats_screens_chat_conversation_background_work_status_stopped =
+      'chats_screens.chat_conversation.background_work_status_stopped';
+  static const chats_screens_chat_conversation_background_work_run =
+      'chats_screens.chat_conversation.background_work_run';
+  static const chats_screens_chat_conversation_background_work_stop =
+      'chats_screens.chat_conversation.background_work_stop';
+  static const chats_screens_chat_conversation_background_work_open_result =
+      'chats_screens.chat_conversation.background_work_open_result';
+  static const chats_screens_chat_conversation_background_work_detach_error =
+      'chats_screens.chat_conversation.background_work_detach_error';
+  static const chats_screens_chat_conversation_background_work_stop_error =
+      'chats_screens.chat_conversation.background_work_stop_error';
+  static const chats_screens_chat_conversation_background_work_open_error =
+      'chats_screens.chat_conversation.background_work_open_error';
   static const tools_screen_title = 'tools_screen.title';
   static const tools_screen_refresh_tooltip = 'tools_screen.refresh_tooltip';
   static const tools_screen_reset_tool_permissions_title =

@@ -523,7 +523,26 @@
         "semantic_elevated": "{usage}, {percent} por ciento, acercándose al límite",
         "semantic_warning": "{usage}, {percent} por ciento, cerca del límite",
         "semantic_overflow": "{usage}, {percent} por ciento, supera el límite por {overflow} tokens"
-      }
+      },
+      "background_work_title": "Trabajo en segundo plano",
+      "background_work_accessible_label": "Trabajo en segundo plano, {} activos",
+      "background_work_empty": "No hay tareas en segundo plano en esta conversación.",
+      "background_work_load_error": "No se pudieron cargar las tareas en segundo plano. Vuelve a abrir la lista para intentarlo.",
+      "background_work_elapsed": "Tiempo transcurrido: {}",
+      "background_work_elapsed_seconds": "{} s",
+      "background_work_elapsed_minutes": "{} min {} s",
+      "background_work_elapsed_hours": "{} h {} min",
+      "background_work_status_running": "En ejecución",
+      "background_work_status_stop_requested": "Detención solicitada",
+      "background_work_status_completed": "Completada",
+      "background_work_status_failed": "Fallida",
+      "background_work_status_stopped": "Detenida",
+      "background_work_run": "Ejecutar en segundo plano",
+      "background_work_stop": "Detener",
+      "background_work_open_result": "Abrir resultado",
+      "background_work_detach_error": "No se pudo pasar esta herramienta a segundo plano. Es posible que ya haya terminado.",
+      "background_work_stop_error": "No se pudo detener esta tarea. Revisa su estado e inténtalo de nuevo.",
+      "background_work_open_error": "No se pudo abrir el resultado de segundo plano."
     }
   },
   "tools_screen": {

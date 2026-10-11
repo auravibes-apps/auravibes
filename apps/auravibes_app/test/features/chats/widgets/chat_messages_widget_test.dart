@@ -17,6 +17,7 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -4233,6 +4234,66 @@ void main() {
     });
 
     testWidgets(
+      'offers background work only while the running tool is eligible',
+      (tester) async {
+        const toolCall = MessageToolCallEntity(
+          id: 'tc-background',
+          name: 'built_in_1_calculator',
+          argumentsRaw: '{"expression": "1 + 1"}',
+          resultStatus: ToolCallResultStatus.running,
+        );
+        final message = _createMessage(
+          content: '',
+          isUser: false,
+          status: MessageStatus.unfinished,
+          metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+        );
+        final eligibility = StreamController<bool>.broadcast();
+        addTearDown(eligibility.close);
+
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: ['msg-1'],
+            overrides: [
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => message,
+              ),
+              isMessageStreamingProvider.overrideWith((ref, id) => true),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: true,
+                  hasPendingTools: true,
+                ),
+              ),
+              toolBackgroundEligibilityProvider.overrideWith(
+                (ref, request) => eligibility.stream,
+              ),
+            ],
+          ),
+        );
+
+        const action = ValueKey('activity_run_in_background_tc-background');
+        expect(find.byKey(action), findsNothing);
+
+        eligibility.add(true);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(find.byKey(action), findsOneWidget);
+
+        eligibility.add(false);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(find.byKey(action), findsNothing);
+
+        eligibility.add(true);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(find.byKey(action), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'reopens a stable live run for an appended tool and collapses on completion',
       (tester) async {
         const firstToolCall = MessageToolCallEntity(
@@ -5246,6 +5307,8 @@ class const _ChatMessagesTestSubject({
             WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
           ),
         ),
+        conversationBackgroundWorksProvider(conversationId)
+            .overrideWith((ref) => Stream.value(const [])),
         ...overrides.cast(),
       ],
       child: EasyLocalization(
