@@ -1,8 +1,10 @@
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_selector.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/responsive_shell_layout.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -43,6 +45,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   final ResponsiveSlidingDrawerController _controller = .new();
   GoRouter? _router;
   Uri? _previousRoute;
+  bool _isSidebarCompact = false;
 
   GoRouter get _requiredRouter {
     final router = _router;
@@ -75,51 +78,108 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
     _controller.closeIfMobile();
     setState(() => _previousRoute = currentRoute);
   }
+
+  void _toggleDesktopSidebar() {
+    if (!ResponsiveShellLayout.isDesktop(MediaQuery.sizeOf(context).width)) {
+      return;
+    }
+    setState(() => _isSidebarCompact = !_isSidebarCompact);
+  }
 }
 
 class const _ResponsiveDrawerView({
   required final _AppWithResponsiveDrawerState state,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => ResponsiveSlidingDrawer(
-    drawer: _AppDrawerNavigation(state: state),
-    body: ResponsiveSlidingDrawerProvider(
-      controller: state._controller,
-      child: state.widget.child,
-    ),
-    isDarkMode: Theme.of(context).brightness == Brightness.dark,
-    controller: state._controller,
-    initiallyOpen: ResponsiveShellLayout.isDesktop(
+  Widget build(BuildContext context) {
+    final isDesktop = ResponsiveShellLayout.isDesktop(
       MediaQuery.sizeOf(context).width,
-    ),
-  );
+    );
+    final isCompact = isDesktop && state._isSidebarCompact;
+
+    return ResponsiveSlidingDrawer(
+      drawer: _AppDrawerNavigation(
+        state: state,
+        isDesktop: isDesktop,
+        isExpanded: !isCompact,
+      ),
+      body: ResponsiveSlidingDrawerProvider(
+        controller: state._controller,
+        child: state.widget.child,
+      ),
+      isDarkMode: Theme.of(context).brightness == Brightness.dark,
+      controller: state._controller,
+      initiallyOpen: isDesktop,
+      isDesktopCompact: isCompact,
+    );
+  }
 }
 
 class const _AppDrawerNavigation({
   required final _AppWithResponsiveDrawerState state,
+  required final bool isDesktop,
+  required final bool isExpanded,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Material(
     child: AuraSidebar(
       navigationItems: state.widget.navigationItems,
       onNavigationTap: state.widget.onNavigationTap,
+      isExpanded: isExpanded,
       selectedIndex: state.widget.selectedIndex,
-      header: _WorkspaceHeader(workspaceId: state.widget.workspaceId),
-      middleSection: SidebarConversationsWidget(
+      header: _WorkspaceHeader(
         workspaceId: state.widget.workspaceId,
+        isDesktop: isDesktop,
+        isExpanded: isExpanded,
+        onToggle: state._toggleDesktopSidebar,
       ),
+      middleSection: isExpanded
+          ? SidebarConversationsWidget(workspaceId: state.widget.workspaceId)
+          : null,
     ),
   );
 }
 
-class const _WorkspaceHeader({required final String workspaceId})
-    extends ConsumerWidget {
+class const _WorkspaceHeader({
+  required final String workspaceId,
+  required final bool isDesktop,
+  required final bool isExpanded,
+  required final VoidCallback onToggle,
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => SafeArea(
-    bottom: false,
-    child: AuraPadding(
-      child: WorkspaceSelector(workspaceId: workspaceId),
-      padding: .small,
-    ),
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final toggleTooltip = _sidebarToggleTooltip(isExpanded, context);
+
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        mainAxisSize: .min,
+        children: [
+          if (isDesktop)
+            AuraPadding(
+              child: Align(
+                alignment: .centerRight,
+                child: AuraIconButton(
+                  icon: isExpanded ? Icons.menu_open : Icons.menu,
+                  onPressed: onToggle,
+                  semanticLabel: toggleTooltip,
+                  tooltip: toggleTooltip,
+                ),
+              ),
+              padding: .small,
+            ),
+          if (isExpanded)
+            AuraPadding(
+              child: WorkspaceSelector(workspaceId: workspaceId),
+              padding: .small,
+            ),
+        ],
+      ),
+    );
+  }
 }
+
+String _sidebarToggleTooltip(bool isExpanded, BuildContext context) =>
+    isExpanded
+    ? LocaleKeys.navigation_drawer_collapse_sidebar_tooltip.tr(context: context)
+    : LocaleKeys.navigation_drawer_expand_sidebar_tooltip.tr(context: context);

@@ -6,7 +6,9 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
@@ -18,6 +20,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/test_provider_scope.dart';
 
@@ -518,6 +521,7 @@ void main() {
     ({Widget app, GoRouter router}) _buildTestApp({
       required String initialLocation,
       required List<StatefulShellBranch> branches,
+      Locale startLocale = const Locale('en'),
     }) {
       final repo = _FakeConversationRepository();
       addTearDown(() async {
@@ -586,7 +590,7 @@ void main() {
         supportedLocales: const [Locale('en')],
         path: 'assets/i18n',
         fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
+        startLocale: startLocale,
         useOnlyLangCode: true,
         useFallbackTranslations: true,
       );
@@ -813,6 +817,151 @@ void main() {
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);
     });
 
+    testWidgets(
+      'desktop sidebar toggles by keyboard and restores its saved width',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        SharedPreferences.setMockInitialValues({
+          'app_desktop_drawer_width': 320.0,
+        });
+        final app = _buildTestApp(
+          initialLocation: '/workspaces/ws-test/tools',
+          branches: [
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: 'tools',
+                  builder: (_, _) => const Text('Tools screen'),
+                ),
+              ],
+            ),
+          ],
+        ).app;
+        await tester.runAsync(() async {
+          await tester.pumpWidget(app);
+        });
+        final _ = await tester.pumpAndSettle();
+
+        expect(find.byTooltip('Collapse sidebar'), findsOneWidget);
+        expect(_sidebarPanelWidth(tester), 320);
+        expect(find.byType(SidebarConversationsWidget), findsOneWidget);
+
+        final semantics = tester.ensureSemantics();
+        try {
+          Focus.of(tester.element(find.byIcon(Icons.menu_open))).requestFocus();
+          final _ = await tester.pump();
+          final _ = await tester.sendKeyEvent(.enter);
+          final _ = await tester.pumpAndSettle();
+
+          expect(
+            tester.widget<AuraSidebar>(find.byType(AuraSidebar)).isExpanded,
+            isFalse,
+          );
+          expect(_sidebarPanelWidth(tester), 80);
+          expect(find.byType(SidebarConversationsWidget), findsNothing);
+          expect(find.byTooltip('Expand sidebar'), findsOneWidget);
+          expect(find.bySemanticsLabel('Chats'), findsOneWidget);
+          expect(find.byTooltip('Chats'), findsOneWidget);
+        } finally {
+          semantics.dispose();
+        }
+
+        final preferences = await SharedPreferences.getInstance();
+        expect(preferences.getDouble('app_desktop_drawer_width'), 320);
+
+        await tester.tap(find.byTooltip('Expand sidebar'));
+        final _ = await tester.pumpAndSettle();
+        expect(
+          tester.widget<AuraSidebar>(find.byType(AuraSidebar)).isExpanded,
+          isTrue,
+        );
+        expect(_sidebarPanelWidth(tester), 320);
+        expect(find.byType(SidebarConversationsWidget), findsOneWidget);
+        expect(find.text('Chats'), findsOneWidget);
+      },
+    );
+
+    testWidgets('compact navigation translates icon tooltips and semantics', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      SharedPreferences.setMockInitialValues({});
+      final app = _buildTestApp(
+        initialLocation: '/workspaces/ws-test/tools',
+        startLocale: const Locale('es'),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: 'tools',
+                builder: (_, _) => const Text('Tools screen'),
+              ),
+            ],
+          ),
+        ],
+      ).app;
+      await tester.runAsync(() async {
+        await tester.pumpWidget(app);
+      });
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Contraer barra lateral'));
+      final _ = await tester.pumpAndSettle();
+
+      final sidebarContext = tester.element(find.byType(AuraSidebar));
+      final translatedLabel = LocaleKeys.navigation_agents_skills.tr(
+        context: sidebarContext,
+      );
+      final semantics = tester.ensureSemantics();
+      try {
+        expect(find.bySemanticsLabel(translatedLabel), findsOneWidget);
+        expect(find.byTooltip(translatedLabel), findsOneWidget);
+      } finally {
+        semantics.dispose();
+      }
+    });
+
+    testWidgets('mobile navigation remains expanded without desktop toggle', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      SharedPreferences.setMockInitialValues({});
+      final app = _buildTestApp(
+        initialLocation: '/workspaces/ws-test/tools',
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: 'tools',
+                builder: (_, _) => const Text('Tools screen'),
+              ),
+            ],
+          ),
+        ],
+      ).app;
+      await tester.runAsync(() async {
+        await tester.pumpWidget(app);
+      });
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<AuraSidebar>(find.byType(AuraSidebar)).isExpanded,
+        isTrue,
+      );
+      expect(find.byType(SidebarConversationsWidget), findsOneWidget);
+      expect(find.byTooltip('Collapse sidebar'), findsNothing);
+      expect(find.byTooltip('Expand sidebar'), findsNothing);
+    });
+
     test(
       'fake conversation repository close clears tracked controllers',
       () async {
@@ -827,6 +976,14 @@ void main() {
       },
     );
   });
+}
+
+double _sidebarPanelWidth(WidgetTester tester) {
+  final panel = find
+      .ancestor(of: find.byType(AuraSidebar), matching: find.byType(SizedBox))
+      .first;
+
+  return tester.getSize(panel).width;
 }
 
 class _FakeNavigationShell extends Fake implements StatefulNavigationShell {

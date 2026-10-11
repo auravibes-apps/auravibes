@@ -12,7 +12,9 @@
   "navigation_drawer": {
     "toggle_tooltip": "Toggle navigation menu",
     "resize_handle_tooltip": "Resize navigation drawer",
-    "resize_handle_hint": "Drag horizontally to change the drawer width"
+    "resize_handle_hint": "Drag horizontally to change the drawer width",
+    "collapse_sidebar_tooltip": "Collapse sidebar",
+    "expand_sidebar_tooltip": "Expand sidebar"
   },
   "intro_flow": {
     "welcome": {
