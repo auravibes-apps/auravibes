@@ -383,6 +383,80 @@ void main() {
       publishConversationJob: (_, _) async {},
     );
 
+    test('workspace removal fences new detached tool work', () async {
+      final fixture = await prepareExecution();
+      final turn = (await ConversationTurn.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.conversationId.equals(fixture.conversationDatabaseId),
+      ))!;
+      final assistant = (await ConversationMessage.db.findById(
+        fixture.database,
+        turn.assistantMessageId!,
+      ))!;
+      final now = DateTime.now().toUtc();
+      final _ = await ConversationToolCall.db.insertRow(
+        fixture.database,
+        ConversationToolCall(
+          workspaceId: fixture.workspaceId,
+          conversationId: fixture.conversationDatabaseId,
+          turnId: turn.id!,
+          messageId: assistant.id!,
+          stableId: 'tool-call-after-workspace-removal',
+          name: 'background-search',
+          argumentsJson: '{}',
+          argumentsDigest: 'digest',
+          backgroundEligible: true,
+          status: 'running',
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final workspace = (await CloudWorkspace.db.findById(
+        fixture.database,
+        fixture.workspaceId,
+      ))!;
+      final _ = await CloudWorkspace.db.updateRow(
+        fixture.database,
+        workspace.copyWith(
+          revision: workspace.revision + 1,
+          deletedAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      await expectLater(
+        decisionUseCases().detachToolCall(
+          fixture.database,
+          userId: fixture.userId,
+          request: DetachToolCallRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'detach-after-workspace-removal',
+            conversationId: fixture.conversationId,
+            toolCallId: 'tool-call-after-workspace-removal',
+          ),
+        ),
+        throwsA(
+          isA<ConversationException>().having(
+            (error) => error.code,
+            'code',
+            ConversationErrorCode.notFound,
+          ),
+        ),
+      );
+      expect(
+        await BackgroundWorkRecord.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ),
+        isEmpty,
+      );
+    });
+
     test('Fork during approval stops before the active user turn', () async {
       final fixture = await prepareExecution(seedCompletedTurn: true);
       final staged = await stageAwaitingApproval(fixture, calls: 1);
@@ -443,6 +517,8 @@ void main() {
         ))!;
         const detachedToolCallId = 'detached-tool-call';
         const detachedWorkId = 'detached-work-id';
+        const completedToolCallId = 'completed-detached-tool-call';
+        const completedWorkId = 'completed-detached-work-id';
         const deliveredToolCallId = 'delivered-tool-call';
         final acknowledgement = jsonEncode({
           'status': 'running_in_background',
@@ -482,6 +558,47 @@ void main() {
             updatedAt: now,
           ),
         );
+        final completedAcknowledgement = jsonEncode({
+          'status': 'running_in_background',
+          'work_id': completedWorkId,
+        });
+        final completedCall = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            turnId: turn.id!,
+            messageId: assistant.id!,
+            stableId: completedToolCallId,
+            name: 'completed-background-search',
+            argumentsJson: '{"private":"completed query"}',
+            argumentsDigest: 'completed-detached-digest',
+            backgroundWorkStableId: completedWorkId,
+            status: 'runningInBackground',
+            resultJson: completedAcknowledgement,
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await BackgroundWorkRecord.db.insertRow(
+          fixture.database,
+          BackgroundWorkRecord(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            conversationToolCallId: completedCall.id!,
+            originatingMessageId: assistant.id,
+            stableId: completedWorkId,
+            toolCallId: completedToolCallId,
+            toolKind: 'skill.native',
+            status: 'completed',
+            statusPreview: 'Completed',
+            resultContent: 'private stored completion result',
+            resultByteLength: 'private stored completion result'.length,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
         await ConversationToolCall.db.insertRow(
           fixture.database,
           ConversationToolCall(
@@ -511,6 +628,11 @@ void main() {
                   'result': jsonDecode(acknowledgement),
                 },
                 {
+                  'id': completedToolCallId,
+                  'arguments': {'private': 'completed query'},
+                  'result': jsonDecode(completedAcknowledgement),
+                },
+                {
                   'id': deliveredToolCallId,
                   'arguments': {'query': 'public history'},
                   'result': {'answer': 'already delivered'},
@@ -518,6 +640,23 @@ void main() {
               ],
             }),
             updatedAt: now,
+          ),
+        );
+
+        final sourceConversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationDatabaseId,
+        ))!;
+        await endpoints.conversation.queueConversationMessage(
+          fixture.session,
+          QueueConversationMessageRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'queue-before-fork',
+            conversationId: fixture.conversationId,
+            expectedProjectionRevision: sourceConversation.projectionRevision,
+            clientMessageId: 'queued-message-not-forked',
+            content: 'This queued prompt stays in the source.',
+            attachmentIds: const [],
           ),
         );
 
@@ -564,14 +703,46 @@ void main() {
           fixture.database,
           where: (table) => table.stableId.equals(detachedWorkId),
         );
+        final completedSourceWork = await BackgroundWorkRecord.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(completedWorkId),
+        );
+        final forkQueuedMessage = await ConversationMessage.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.conversationId.equals(forkConversation.id) &
+              table.stableId.equals('queued-message-not-forked'),
+        );
+        final forkTurns = await ConversationTurn.db.find(
+          fixture.database,
+          where: (table) => table.conversationId.equals(forkConversation.id),
+        );
+        final forkEvents = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) => table.conversationId.equals(forkConversation.id),
+        );
 
         expect(forkCalls, hasLength(1));
         expect(forkCalls.single.name, 'delivered-search');
         expect(forkToolCalls, hasLength(1));
         expect(forkToolCalls.single['id'], deliveredToolCallId);
         expect(forkAssistant.metadataJson, isNot(contains(detachedWorkId)));
+        expect(forkAssistant.metadataJson, isNot(contains(completedWorkId)));
         expect(forkAssistant.metadataJson, isNot(contains('search query')));
+        expect(forkAssistant.metadataJson, isNot(contains('completed query')));
         expect(sourceWork?.status, 'running');
+        expect(completedSourceWork?.status, 'completed');
+        expect(
+          completedSourceWork?.resultContent,
+          'private stored completion result',
+        );
+        expect(forkQueuedMessage, isNull);
+        expect(forkTurns, hasLength(1));
+        expect(forkTurns.single.status, ConversationStatuses.completed);
+        expect(
+          forkEvents.map((event) => event.payloadJson),
+          everyElement(isNot(contains('queued-message-not-forked'))),
+        );
       },
     );
 

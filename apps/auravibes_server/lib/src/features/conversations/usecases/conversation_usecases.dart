@@ -1242,6 +1242,15 @@ class ConversationUseCases {
         userId: userId,
         transaction: transaction,
       );
+      final workspace = await CloudWorkspace.db.findFirstRow(
+        session,
+        where: (table) => table.id.equals(request.workspaceId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (workspace == null || workspace.deletedAt != null) {
+        _fail(ConversationErrorCode.notFound);
+      }
       final conversation = await _repository.findConversationByStableId(
         session,
         workspaceId: request.workspaceId,

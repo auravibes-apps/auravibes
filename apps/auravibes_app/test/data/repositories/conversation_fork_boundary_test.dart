@@ -85,6 +85,8 @@ void main() {
     final backgroundWork = BackgroundWorkRepository(database);
     const workId = 'source-only-background-work';
     const toolCallId = 'source-only-tool-call';
+    const completedWorkId = 'source-only-completed-background-work';
+    const completedToolCallId = 'source-only-completed-tool-call';
     final _ = await backgroundWork.create(
       .new(
         id: workId,
@@ -92,6 +94,26 @@ void main() {
         conversationId: source.id,
         toolCallId: toolCallId,
         toolKind: 'skill.native',
+      ),
+    );
+    final _ = await backgroundWork.create(
+      .new(
+        id: completedWorkId,
+        workspaceId: source.workspaceId,
+        conversationId: source.id,
+        toolCallId: completedToolCallId,
+        toolKind: 'skill.native',
+      ),
+    );
+    const completedResult = 'completed result stays in the source record';
+    final _ = await backgroundWork.finish(
+      .new(
+        conversationId: source.id,
+        workId: completedWorkId,
+        status: AgentBackgroundWorkStatus.completed,
+        resultContent: completedResult,
+        resultByteLength: utf8.encode(completedResult).length,
+        statusPreview: 'Completed',
       ),
     );
     final now = DateTime.utc(2026);
@@ -115,6 +137,12 @@ void main() {
               argumentsRaw: '{"query":"still running"}',
               resultStatus: .success,
             ),
+            MessageToolCallEntity(
+              id: completedToolCallId,
+              name: 'research-search',
+              argumentsRaw: '{"query":"completed private query"}',
+              resultStatus: .success,
+            ),
           ],
         ).toJson(),
       ),
@@ -125,11 +153,10 @@ void main() {
         .getMessagesByConversation(fork.id);
 
     expect(
-      (await backgroundWork.watchConversation(source.id).first)
-          .single
-          .identity
-          .id,
-      workId,
+      (await backgroundWork.watchConversation(source.id).first).map(
+        (work) => work.identity.id,
+      ),
+      containsAll([workId, completedWorkId]),
     );
     expect(await backgroundWork.watchConversation(fork.id).first, isEmpty);
     expect(
@@ -139,7 +166,9 @@ void main() {
           predicate<MessageToolCallEntity>(
             (call) =>
                 call.id == toolCallId ||
-                call.argumentsRaw.contains('still running'),
+                call.argumentsRaw.contains('still running') ||
+                call.id == completedToolCallId ||
+                call.argumentsRaw.contains('completed private query'),
           ),
         ),
       ),
@@ -166,7 +195,9 @@ void main() {
           predicate<MessageToolCallEntity>(
             (call) =>
                 call.id == toolCallId ||
-                call.argumentsRaw.contains('still running'),
+                call.argumentsRaw.contains('still running') ||
+                call.id == completedToolCallId ||
+                call.argumentsRaw.contains('completed private query'),
           ),
         ),
       ),
@@ -191,7 +222,9 @@ void main() {
           predicate<MessageToolCallEntity>(
             (call) =>
                 call.id == toolCallId ||
-                call.argumentsRaw.contains('still running'),
+                call.argumentsRaw.contains('still running') ||
+                call.id == completedToolCallId ||
+                call.argumentsRaw.contains('completed private query'),
           ),
         ),
       ),

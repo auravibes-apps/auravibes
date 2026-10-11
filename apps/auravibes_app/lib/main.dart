@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:auravibes_app/app_env_config.dart';
+import 'package:auravibes_app/features/chats/providers/recover_interrupted_background_work_use_case_provider.dart';
 import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_notifier.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
@@ -42,6 +43,9 @@ Future<void> main() async {
 
   _configureSystemUi();
   final container = ProviderContainer();
+  await container
+      .read(recoverInterruptedBackgroundWorkUseCaseProvider)
+      .call(startedAt: DateTime.now().toUtc());
   if (marionetteInstanceId != null) {
     MarionetteExtensionRegistration.register(
       MarionetteExtensionBootstrap.createState(container),

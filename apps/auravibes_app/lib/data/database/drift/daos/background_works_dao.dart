@@ -49,6 +49,36 @@ extension BackgroundWorksDaoOperations on BackgroundWorksDao {
     )..where((table) => _provisionalWork(table, conversationId, workId))).go();
   }
 
+  Future<void> reconcileInterrupted({required DateTime startedAt}) async {
+    await transaction(() async {
+      final interrupted =
+          await (select(backgroundWorks)
+                ..where(
+                  (table) =>
+                      table.createdAt.isSmallerThanValue(startedAt) &
+                      table.status.isIn(_activeStatuses),
+                )
+                ..orderBy([
+                  (table) => OrderingTerm(expression: table.createdAt),
+                  (table) => OrderingTerm(expression: table.id),
+                ]))
+              .get();
+      for (final work in interrupted) {
+        final _ = await _finish(
+          .new(
+            conversationId: work.conversationId,
+            workId: work.id,
+            status: .failed,
+            resultContent: null,
+            resultByteLength: 0,
+            statusPreview: 'Outcome unknown',
+            errorCode: 'outcome_unknown',
+          ),
+        );
+      }
+    });
+  }
+
   Future<bool> requestStop({
     required String conversationId,
     required String workId,
