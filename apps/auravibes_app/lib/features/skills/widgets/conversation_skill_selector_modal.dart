@@ -920,35 +920,36 @@ class const _SkillContextFailureMessage({
   );
 }
 
-class const _LoadedSkillActions({
-  required final AvailableSkill skill,
-  required final bool pending,
-  required final ConversationSkillContextStatus? contextStatus,
-  required final ConversationSkillContextFailure? contextFailure,
-  required final ConversationSkillActionResult? actionResult,
-  required final _SelectorActions actions,
-}) extends StatelessWidget {
+class _LoadedSkillActions extends StatelessWidget {
+  new({
+    required AvailableSkill skill,
+    required bool pending,
+    required ConversationSkillContextStatus? contextStatus,
+    required ConversationSkillContextFailure? contextFailure,
+    required ConversationSkillActionResult? actionResult,
+    required _SelectorActions actions,
+  }) : _children = [
+         _PreviewSkillButton(skill: skill, onPressed: actions.onPreview),
+         _UseNowButton(
+           skill: skill,
+           pending: pending,
+           onPressed: actions.onUseNow,
+         ),
+         if (_showsRecovery(contextStatus, contextFailure, actionResult))
+           _RecoveryButton(
+             skill: skill,
+             contextFailure: contextFailure,
+             actionResult: actionResult,
+             disabled: pending,
+             actions: actions,
+           ),
+       ];
+
+  final List<Widget> _children;
+
   @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      _PreviewSkillButton(skill: skill, onPressed: actions.onPreview),
-      _UseNowButton(
-        skill: skill,
-        pending: pending,
-        onPressed: actions.onUseNow,
-      ),
-      if (_showsRecovery(contextStatus, contextFailure, actionResult))
-        _RecoveryButton(
-          skill: skill,
-          contextFailure: contextFailure,
-          actionResult: actionResult,
-          disabled: pending,
-          actions: actions,
-        ),
-    ],
-    spacing: .xs,
-    crossAxisAlignment: .end,
-  );
+  Widget build(BuildContext context) =>
+      AuraColumn(children: _children, spacing: .xs, crossAxisAlignment: .end);
 }
 
 class const _AvailableSkillActions({
@@ -1065,24 +1066,49 @@ class const _RecoveryButton({
   required final _SelectorActions actions,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final action = _recoveryAction(contextFailure, actionResult);
-    if (action == .credentials) {
-      return _CredentialSetupButton(
-        onPressed: disabled ? null : () => actions.onCredentialSetup(skill),
-        semanticLabel: LocaleKeys.skills_selector_semantics_credentials.tr(
-          context: context,
-          namedArgs: {'skill': skill.title},
+  Widget build(BuildContext context) =>
+      switch (_recoveryAction(contextFailure, actionResult)) {
+        .credentials => _CredentialRecoveryButton(
+          skill: skill,
+          disabled: disabled,
+          actions: actions,
         ),
-      );
-    }
+        final action => _ContextRecoveryButton(
+          skill: skill,
+          action: action,
+          disabled: disabled,
+          actions: actions,
+        ),
+      };
+}
 
-    return _RecoveryActionButton(
-      textKey: _recoveryTextKey(action),
-      onPressed: disabled ? null : _recoveryCallback(action, skill, actions),
-      semanticLabel: _recoverySemanticLabel(context, action, skill),
-    );
-  }
+class const _CredentialRecoveryButton({
+  required final AvailableSkill skill,
+  required final bool disabled,
+  required final _SelectorActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _CredentialSetupButton(
+    onPressed: disabled ? null : () => actions.onCredentialSetup(skill),
+    semanticLabel: LocaleKeys.skills_selector_semantics_credentials.tr(
+      context: context,
+      namedArgs: {'skill': skill.title},
+    ),
+  );
+}
+
+class const _ContextRecoveryButton({
+  required final AvailableSkill skill,
+  required final _RecoveryAction action,
+  required final bool disabled,
+  required final _SelectorActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _RecoveryActionButton(
+    textKey: _recoveryTextKey(action),
+    onPressed: disabled ? null : _recoveryCallback(action, skill, actions),
+    semanticLabel: _recoverySemanticLabel(context, action, skill),
+  );
 }
 
 String _recoverySemanticLabel(
