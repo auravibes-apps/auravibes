@@ -72,4 +72,62 @@ void main() {
       '"reason":"Quota exceeded"}',
     );
   });
+
+  test('redacts Basic authorization header values', () {
+    expect(
+      LogRedaction.redact('Authorization: Basic dXNlcjpwYXNz'),
+      'Authorization: Basic [REDACTED]',
+    );
+    expect(
+      LogRedaction.redact('{"Authorization":"Basic fixture-auth-secret"}'),
+      '{"Authorization":"[REDACTED]"}',
+    );
+  });
+
+  test('redacts Cookie and Set-Cookie header values', () {
+    expect(
+      LogRedaction.redact('Cookie: session=secret; theme=dark'),
+      'Cookie: [REDACTED]',
+    );
+    expect(
+      LogRedaction.redact('Set-Cookie: session=secret; HttpOnly; Secure'),
+      'Set-Cookie: [REDACTED]',
+    );
+    expect(
+      LogRedaction.redact('Cookie=session=secret; theme=dark'),
+      'Cookie=[REDACTED]',
+    );
+    expect(
+      LogRedaction.redact('Set-Cookie=session=secret; HttpOnly'),
+      'Set-Cookie=[REDACTED]',
+    );
+    expect(
+      LogRedaction.redact(
+        '{"Cookie":"session=secret","Set-Cookie":"session=secret"}',
+      ),
+      '{"Cookie":"[REDACTED]","Set-Cookie":"[REDACTED]"}',
+    );
+    expect(
+      LogRedaction.redact(
+        r'{"Set-Cookie":"session=\"secret-token\"; HttpOnly"}',
+      ),
+      '{"Set-Cookie":"[REDACTED]"}',
+    );
+  });
+
+  test('redacts URL userinfo', () {
+    expect(
+      LogRedaction.redact('Download https://alice:secret@example.com/file'),
+      'Download https://[REDACTED]@example.com/file',
+    );
+  });
+
+  test('redacts common signed URL query parameters case-insensitively', () {
+    expect(
+      LogRedaction.redact(
+        'Download https://example.com/file?sig=one&Signature=two&X-Amz-Signature=three&oauth_signature=four&hmac=five',
+      ),
+      'Download https://example.com/file?sig=[REDACTED]&Signature=[REDACTED]&X-Amz-Signature=[REDACTED]&oauth_signature=[REDACTED]&hmac=[REDACTED]',
+    );
+  });
 }
