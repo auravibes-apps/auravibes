@@ -24,7 +24,6 @@ import 'package:material_ui/material_ui.dart';
 
 const _selectorDialogWidth = 520.0;
 const _selectorLoadingHeight = 120.0;
-const _skillActionSpacing = 4.0;
 
 class const ConversationSkillSelectorModal({
   required final String workspaceId,
@@ -946,7 +945,7 @@ class const _LoadedSkillActions({
           actions: actions,
         ),
     ],
-    spacing: _skillActionSpacing,
+    spacing: .xs,
     crossAxisAlignment: .end,
   );
 }
@@ -969,7 +968,7 @@ class const _AvailableSkillActions({
           actions: actions,
         ),
     ],
-    spacing: _skillActionSpacing,
+    spacing: .xs,
     crossAxisAlignment: .end,
   );
 }
