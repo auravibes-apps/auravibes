@@ -108,20 +108,36 @@ class const _SidebarConversationsLoaded({
   required final List<ConversationEntity> chats,
   required final String workspaceId,
   required final String? currentChatId,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => chats.isEmpty
-      ? const Column(
-          children: [
-            _SidebarConversationsSectionHeader(),
-            _SidebarConversationsEmptyState(),
-          ],
-        )
-      : _SidebarConversationsList(
-          chats: chats,
-          workspaceId: workspaceId,
-          currentChatId: currentChatId,
-        );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeChatId = currentChatId;
+    final activeChat =
+        activeChatId == null || chats.any((chat) => chat.id == activeChatId)
+        ? null
+        : ref
+              .watch(
+                conversationByIdStreamProvider(
+                  workspaceId,
+                  conversationId: activeChatId,
+                ),
+              )
+              .value;
+    final visibleChats = activeChat == null ? chats : [activeChat, ...chats];
+
+    return visibleChats.isEmpty
+        ? const Column(
+            children: [
+              _SidebarConversationsSectionHeader(),
+              _SidebarConversationsEmptyState(),
+            ],
+          )
+        : _SidebarConversationsList(
+            chats: visibleChats,
+            workspaceId: workspaceId,
+            currentChatId: currentChatId,
+          );
+  }
 }
 
 class const _SidebarConversationsLoading() extends StatelessWidget {
