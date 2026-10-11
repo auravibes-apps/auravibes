@@ -77,10 +77,10 @@ extension _BackgroundWorkLookupOps on BackgroundWorkCoordinator {
         handle.isOperationCompleted()) {
       return null;
     }
-    final result = handle.operationResult;
-    if (result == null) return null;
+    final operationResult = handle.operationResult;
+    if (operationResult == null) return null;
 
-    return (handle: handle, result: result);
+    return (handle: handle, result: operationResult);
   }
 }
 

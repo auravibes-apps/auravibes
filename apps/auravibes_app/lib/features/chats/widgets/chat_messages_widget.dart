@@ -2269,7 +2269,7 @@ void _detachToolCallFromActivity({
 }) {
   unawaited(() async {
     try {
-      final detached = await runToolInBackground(
+      final detached = await BackgroundWorkActions.runToolInBackground((
         ref: ref,
         workspaceId: workspaceId,
         conversationId: conversationId,
@@ -2277,7 +2277,7 @@ void _detachToolCallFromActivity({
         toolKind: toolKind,
         originatingMessageId: originatingMessageId,
         isCloud: isCloud,
-      );
+      ));
       if (detached || !context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -58,21 +58,29 @@ AgentBackgroundWork _backgroundWorkFromView(
   BackgroundWorkView view,
   ({String workspaceId, String conversationId}) request,
 ) => AgentBackgroundWork(
-  identity: .new(
-    id: view.id,
-    workspaceId: request.workspaceId,
-    conversationId: view.conversationId,
-    toolCallId: view.toolCallId,
-    toolKind: view.toolKind,
-    originatingMessageId: view.originatingMessageId,
-  ),
-  state: .new(
-    status: .values.byName(view.status),
-    createdAt: view.createdAt,
-    updatedAt: view.updatedAt,
-    statusPreview: view.statusPreview,
-    resultContent: view.resultContent,
-    resultByteLength: view.resultByteLength,
-    errorCode: view.errorCode,
-  ),
+  identity: _backgroundWorkIdentityFromView(view, request),
+  state: _backgroundWorkStateFromView(view),
 );
+
+AgentBackgroundWorkIdentity _backgroundWorkIdentityFromView(
+  BackgroundWorkView view,
+  ({String workspaceId, String conversationId}) request,
+) => .new(
+  id: view.id,
+  workspaceId: request.workspaceId,
+  conversationId: view.conversationId,
+  toolCallId: view.toolCallId,
+  toolKind: view.toolKind,
+  originatingMessageId: view.originatingMessageId,
+);
+
+AgentBackgroundWorkState _backgroundWorkStateFromView(BackgroundWorkView view) =>
+    .new(
+      status: .values.byName(view.status),
+      createdAt: view.createdAt,
+      updatedAt: view.updatedAt,
+      statusPreview: view.statusPreview,
+      resultContent: view.resultContent,
+      resultByteLength: view.resultByteLength,
+      errorCode: view.errorCode,
+    );

@@ -168,7 +168,7 @@ BackgroundWorksCompanion _stopRequestUpdate() => BackgroundWorksCompanion(
 BackgroundWorksCompanion _completionUpdate(
   AgentBackgroundWorkCompletion completion,
   _BoundedCompletion bounded,
-) => .new(
+) => BackgroundWorksCompanion(
   updatedAt: .new(DateTime.now().toUtc()),
   status: .new(completion.status.name),
   statusPreview: .new(bounded.statusPreview),
@@ -225,7 +225,7 @@ AgentBackgroundWork _toAgentBackgroundWork(BackgroundWorkTable row) =>
 
 AgentBackgroundWorkIdentity _toBackgroundWorkIdentity(
   BackgroundWorkTable row,
-) => .new(
+) => AgentBackgroundWorkIdentity(
   id: row.id,
   workspaceId: row.workspaceId,
   conversationId: row.conversationId,
