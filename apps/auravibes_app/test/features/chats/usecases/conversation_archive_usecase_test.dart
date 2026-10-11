@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/background_work_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
@@ -10,6 +11,7 @@ import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_codec.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
@@ -124,6 +126,89 @@ void main() {
       expect(
         firstMessages.single.createdAt.isAtSameMomentAs(createdAt),
         isTrue,
+      );
+    },
+  );
+
+  test(
+    'archive import keeps delivered transcript but never revives detached work',
+    () async {
+      final workspace = await database.workspaceDao.insertWorkspace(
+        .insert(name: 'Archive test', type: .local),
+      );
+      final conversations = ConversationRepository(database);
+      final source = await conversations.createConversation(
+        .new(title: 'Active tool', workspaceId: workspace.id),
+      );
+      const workId = 'active-background-work-secret';
+      const toolCallId = 'active-tool-call-secret';
+      final backgroundWork = BackgroundWorkRepository(database);
+      final _ = await backgroundWork.create(
+        .new(
+          id: workId,
+          workspaceId: workspace.id,
+          conversationId: source.id,
+          toolCallId: toolCallId,
+          toolKind: 'skill.native',
+        ),
+      );
+      final messages = MessageRepository(database);
+      final _ = await messages.createMessage(
+        .new(
+          conversationId: source.id,
+          content: 'Running a search',
+          messageType: .text,
+          isUser: false,
+          status: .unfinished,
+          createdAt: DateTime.utc(2026, 1, 2),
+          metadata: jsonEncode(
+            const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: toolCallId,
+                  name: 'research-search',
+                  argumentsRaw: '{"query":"private query"}',
+                  userFacingDescription: 'Search',
+                  resultStatus: .running,
+                ),
+              ],
+            ).toJson(),
+          ),
+        ),
+      );
+
+      final usecase = _usecase(database);
+      final archiveJson = await usecase.exportConversation(
+        conversationId: source.id,
+      );
+      final imported = await usecase.importConversation(
+        workspaceId: workspace.id,
+        archiveJson: archiveJson,
+      );
+      final importedMessages = await messages.getMessagesByConversation(
+        imported.id,
+      );
+      final restoredMetadata = importedMessages.single.metadata;
+      if (restoredMetadata == null) fail('Imported call metadata is missing.');
+      final restoredCall = restoredMetadata.toolCalls.single;
+
+      expect(archiveJson, isNot(contains(workId)));
+      expect(archiveJson, isNot(contains(toolCallId)));
+      expect(archiveJson, isNot(contains('private query')));
+      expect(restoredCall.id, isNot(toolCallId));
+      expect(restoredCall.argumentsRaw, isEmpty);
+      const expectedResultStatus = ToolCallResultStatus.skippedByUser;
+      expect(restoredCall.resultStatus, expectedResultStatus);
+      expect(
+        await backgroundWork.find(conversationId: imported.id, workId: workId),
+        isNull,
+      );
+      expect(
+        (await backgroundWork.watchConversation(source.id).first)
+            .single
+            .identity
+            .id,
+        workId,
       );
     },
   );

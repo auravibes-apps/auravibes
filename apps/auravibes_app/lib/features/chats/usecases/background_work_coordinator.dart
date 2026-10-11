@@ -15,6 +15,11 @@ typedef _DetachableOperation = ({
   Future<Object?> result,
 });
 
+typedef _TrackedBackgroundWork = ({
+  String workspaceId,
+  AgentToolCancellationHandle handle,
+});
+
 typedef _CompletionDetails = ({
   AgentBackgroundWorkStatus status,
   String? resultContent,
@@ -30,16 +35,22 @@ class BackgroundWorkCoordinator(
   final BackgroundWorkWorkspaceResolver _resolveWorkspaceId,
 ) {
   final _handlesByConversation =
-      <String, Map<String, AgentToolCancellationHandle>>{};
+      <String, Map<String, _TrackedBackgroundWork>>{};
+  final _closingConversations = <String>{};
+  final _closingWorkspaces = <String>{};
 
   Future<AgentBackgroundWork?> runInBackground(
     BackgroundWorkDetachRequest request,
   ) async {
+    if (_closingConversations.contains(request.conversationId)) return null;
     final operation = _findDetachableOperation(request);
     if (operation == null) return null;
 
     final workspaceId = await _resolveWorkspaceId(request.conversationId);
-    if (workspaceId == null) return null;
+    if (workspaceId == null ||
+        _isClosing(request.conversationId, workspaceId)) {
+      return null;
+    }
 
     return await _persistAndTransfer(request, operation, workspaceId);
   }
@@ -48,8 +59,58 @@ class BackgroundWorkCoordinator(
     required String conversationId,
     required String workId,
   }) async {
-    final handle = _handlesByConversation[conversationId]?[workId];
-    if (handle == null) return false;
+    final tracked = _handlesByConversation[conversationId]?[workId];
+    if (tracked == null) return false;
+
+    return await _requestStop(conversationId, workId, tracked.handle);
+  }
+
+  /// Requests cancellation before deleting a conversation and blocks new work.
+  Future<void> prepareConversationDeletion(String conversationId) async {
+    final _ = _closingConversations.add(conversationId);
+    final tracked = _handlesByConversation[conversationId];
+    if (tracked == null || tracked.isEmpty) return;
+    final _ = await Future.wait([
+      for (final entry in tracked.entries)
+        _requestStop(conversationId, entry.key, entry.value.handle),
+    ]);
+  }
+
+  /// Reopens background work if the conversation deletion did not complete.
+  void restoreConversationAfterFailedDeletion(String conversationId) {
+    final _ = _closingConversations.remove(conversationId);
+  }
+
+  /// Requests cancellation before deleting a workspace and blocks new work.
+  Future<void> prepareWorkspaceDeletion(String workspaceId) async {
+    final _ = _closingWorkspaces.add(workspaceId);
+    final entries = [
+      for (final conversationEntry in _handlesByConversation.entries)
+        for (final workEntry in conversationEntry.value.entries)
+          if (workEntry.value.workspaceId == workspaceId)
+            (
+              conversationId: conversationEntry.key,
+              workId: workEntry.key,
+              handle: workEntry.value.handle,
+            ),
+    ];
+    if (entries.isEmpty) return;
+    final _ = await Future.wait([
+      for (final entry in entries)
+        _requestStop(entry.conversationId, entry.workId, entry.handle),
+    ]);
+  }
+
+  /// Reopens background work if the workspace deletion did not complete.
+  void restoreWorkspaceAfterFailedDeletion(String workspaceId) {
+    final _ = _closingWorkspaces.remove(workspaceId);
+  }
+
+  Future<bool> _requestStop(
+    String conversationId,
+    String workId,
+    AgentToolCancellationHandle handle,
+  ) async {
     final requested = await _store.requestStop(
       conversationId: conversationId,
       workId: workId,
@@ -57,11 +118,15 @@ class BackgroundWorkCoordinator(
     if (!requested) return false;
 
     try {
-      return await handle.requestCancellation();
+      return await _cancellationRuntime.requestToolCancellation(handle);
     } on Object {
       return false;
     }
   }
+
+  bool _isClosing(String conversationId, String workspaceId) =>
+      _closingConversations.contains(conversationId) ||
+      _closingWorkspaces.contains(workspaceId);
 }
 
 extension _BackgroundWorkLookupOps on BackgroundWorkCoordinator {
@@ -91,6 +156,11 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
     String workspaceId,
   ) async {
     final provisional = await _createProvisional(request, workspaceId);
+    if (_isClosing(request.conversationId, workspaceId)) {
+      await _discardProvisional(request, provisional);
+
+      return null;
+    }
     if (!_transferCleanup(request, provisional)) {
       await _discardProvisional(request, provisional);
 
@@ -138,11 +208,14 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
     _DetachableOperation operation,
   ) {
     (_handlesByConversation[request.conversationId] ??=
-            {})[provisional.identity.id] =
-        operation.handle;
+        {})[provisional.identity.id] = (
+      workspaceId: provisional.identity.workspaceId,
+      handle: operation.handle,
+    );
     unawaited(
       _recordCompletion(
         request.conversationId,
+        provisional.identity.workspaceId,
         provisional.identity.id,
         operation.handle,
         operation.result,
@@ -154,11 +227,17 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
 extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
   Future<void> _recordCompletion(
     String conversationId,
+    String workspaceId,
     String workId,
     AgentToolCancellationHandle handle,
     Future<Object?> operationResult,
   ) async {
-    final details = await _captureCompletion(handle, operationResult);
+    final details = await _captureCompletion(
+      conversationId,
+      workspaceId,
+      handle,
+      operationResult,
+    );
     try {
       final _ = await _store.finish(
         .new(
@@ -177,28 +256,33 @@ extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
   }
 
   Future<_CompletionDetails> _captureCompletion(
+    String conversationId,
+    String workspaceId,
     AgentToolCancellationHandle handle,
     Future<Object?> operationResult,
   ) async {
     try {
       final result = await operationResult;
       final cancelled = await _wasCancellationConfirmed(handle);
+      if (cancelled) return _successfulCompletion(result, true);
+      if (_isClosing(conversationId, workspaceId)) {
+        return _unknownOutcomeCompletion();
+      }
 
-      return _successfulCompletion(result, cancelled);
+      return _successfulCompletion(result, false);
     } on Object {
-      return _failedCompletion(await _wasCancellationConfirmed(handle));
+      final cancelled = await _wasCancellationConfirmed(handle);
+      if (cancelled) return _failedCompletion(true);
+      if (_isClosing(conversationId, workspaceId)) {
+        return _unknownOutcomeCompletion();
+      }
+
+      return _failedCompletion(false);
     }
   }
 
-  Future<bool> _wasCancellationConfirmed(
-    AgentToolCancellationHandle handle,
-  ) async {
-    final cancellation = handle.cancellationCompletion;
-
-    return cancellation == null
-        ? handle.cancellationWasConfirmed
-        : await cancellation;
-  }
+  Future<bool> _wasCancellationConfirmed(AgentToolCancellationHandle handle) =>
+      _cancellationRuntime.waitForToolCancellationConfirmation(handle);
 
   _CompletionDetails _successfulCompletion(Object? result, bool cancelled) {
     if (cancelled) {
@@ -229,6 +313,14 @@ extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
     resultByteLength: 0,
     statusPreview: cancelled ? 'Stopped' : 'Failed',
     errorCode: cancelled ? null : 'operation_failed',
+  );
+
+  _CompletionDetails _unknownOutcomeCompletion() => (
+    status: AgentBackgroundWorkStatus.failed,
+    resultContent: null,
+    resultByteLength: 0,
+    statusPreview: 'Outcome unknown',
+    errorCode: 'outcome_unknown',
   );
 
   void _releaseHandle(

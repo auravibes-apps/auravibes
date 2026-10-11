@@ -1480,6 +1480,13 @@ class ServerToolRuntime({
   }) async {
     var backgroundCompleted = false;
     final detached = await session.db.transaction((transaction) async {
+      final workspace = await CloudWorkspace.db.findFirstRow(
+        session,
+        where: (table) => table.id.equals(call.workspaceId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (workspace == null) return false;
       final conversation = await Conversation.db.findFirstRow(
         session,
         where: (table) =>
@@ -1498,7 +1505,6 @@ class ServerToolRuntime({
       if (current == null) return false;
       final workStableId = current.backgroundWorkStableId;
       final now = DateTime.now().toUtc();
-      final projection = result == null ? null : projectToolOutput(result);
       if (workStableId != null) {
         final work = await BackgroundWorkRecord.db.findFirstRow(
           session,
@@ -1514,6 +1520,43 @@ class ServerToolRuntime({
             (work.status != 'running' && work.status != 'stopRequested')) {
           return true;
         }
+        final turn = await ConversationTurn.db.findById(
+          session,
+          current.turnId,
+          transaction: transaction,
+        );
+        if (turn == null) {
+          throw StateError('Background work source turn is missing.');
+        }
+        final activeMember = await WorkspaceMember.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(current.workspaceId) &
+              table.userId.equals(turn.initiatorUserId) &
+              table.removedAt.equals(null),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (workspace.deletedAt != null || activeMember == null) {
+          final cancellationConfirmed = status == 'cancelled';
+          await BackgroundWorkRecord.db.updateRow(
+            session,
+            work.copyWith(
+              status: cancellationConfirmed ? 'cancelled' : 'failed',
+              statusPreview: cancellationConfirmed
+                  ? 'Stopped'
+                  : 'Outcome unknown',
+              resultContent: null,
+              resultByteLength: 0,
+              errorCode: cancellationConfirmed ? null : 'outcome_unknown',
+              updatedAt: now,
+            ),
+            transaction: transaction,
+          );
+
+          return true;
+        }
+        final projection = result == null ? null : projectToolOutput(result);
         final workStatus = switch (status) {
           'success' || 'awaitingSubAgents' => 'completed',
           'cancelled' => 'cancelled',
@@ -1537,14 +1580,6 @@ class ServerToolRuntime({
           ),
           transaction: transaction,
         );
-        final turn = await ConversationTurn.db.findById(
-          session,
-          current.turnId,
-          transaction: transaction,
-        );
-        if (turn == null) {
-          throw StateError('Background work source turn is missing.');
-        }
         final eventId = 'background-work-completion:${work.stableId}';
         final sequence = conversation.eventSequence + 1;
         await Conversation.db.updateRow(
@@ -1619,6 +1654,7 @@ class ServerToolRuntime({
       if (turn == null || ConversationStatuses.isTerminal(turn.status)) {
         return false;
       }
+      final projection = result == null ? null : projectToolOutput(result);
       await ConversationToolCall.db.updateRow(
         session,
         current.copyWith(

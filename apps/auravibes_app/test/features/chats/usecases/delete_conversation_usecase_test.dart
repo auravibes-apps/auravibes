@@ -18,11 +18,31 @@ void main() {
     final usecase = DeleteConversationUsecase(
       repository,
       (_) async => calls.add('stop'),
+      prepareBackgroundWorkDeletion: (_) async => calls.add('cancel detached'),
+      restoreBackgroundWorkAfterFailedDeletion: (_) => calls.add('reopen'),
     );
 
     final deleted = await usecase.call('conversation-1');
 
     expect(deleted, isTrue);
-    expect(calls, ['stop', 'delete']);
+    expect(calls, ['cancel detached', 'stop', 'delete']);
+  });
+
+  test('reopens background work when deletion returns false', () async {
+    final repository = _Repository();
+    final calls = <String>[];
+    when(() => repository.deleteConversation('conversation-1'))
+        .thenAnswer((_) async => false);
+    final usecase = DeleteConversationUsecase(
+      repository,
+      (_) async => calls.add('stop'),
+      prepareBackgroundWorkDeletion: (_) async => calls.add('cancel detached'),
+      restoreBackgroundWorkAfterFailedDeletion: (_) => calls.add('reopen'),
+    );
+
+    final deleted = await usecase.call('conversation-1');
+
+    expect(deleted, isFalse);
+    expect(calls, ['cancel detached', 'stop', 'reopen']);
   });
 }

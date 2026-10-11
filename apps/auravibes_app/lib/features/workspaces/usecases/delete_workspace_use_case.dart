@@ -1,13 +1,22 @@
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'delete_workspace_use_case.g.dart';
 
 class DeleteWorkspaceUseCase {
-  const new({required this._repository});
+  const new({
+    required this._repository,
+    required this._prepareBackgroundWorkDeletion,
+    required this._restoreBackgroundWorkAfterFailedDeletion,
+  });
 
   final WorkspaceRepository _repository;
+  final Future<void> Function(String workspaceId)
+  _prepareBackgroundWorkDeletion;
+  final void Function(String workspaceId)
+  _restoreBackgroundWorkAfterFailedDeletion;
 
   // Null active workspace ID means there is no active workspace to protect.
   // ignore: unnecessary-nullable
@@ -23,7 +32,17 @@ class DeleteWorkspaceUseCase {
       activeWorkspaceId == null || activeWorkspaceId.isNotEmpty,
       'Active workspace ID must be null or non-empty.',
     );
-    final deletedWorkspace = await _repository.deleteWorkspace(id);
+    final bool deletedWorkspace;
+    try {
+      await _prepareBackgroundWorkDeletion(id);
+      deletedWorkspace = await _repository.deleteWorkspace(id);
+    } on Object {
+      _restoreBackgroundWorkAfterFailedDeletion(id);
+      rethrow;
+    }
+    if (!deletedWorkspace) {
+      _restoreBackgroundWorkAfterFailedDeletion(id);
+    }
     assert(deletedWorkspace, 'Workspace must be deleted.');
   }
 }
@@ -31,7 +50,15 @@ class DeleteWorkspaceUseCase {
 /// Provides a [DeleteWorkspaceUseCase] instance.
 @riverpod
 DeleteWorkspaceUseCase deleteWorkspaceUseCase(Ref ref) {
+  final backgroundWorkCoordinator = ref.watch(
+    backgroundWorkCoordinatorProvider,
+  );
+
   return DeleteWorkspaceUseCase(
     repository: ref.watch(workspaceRepositoryProvider),
+    prepareBackgroundWorkDeletion:
+        backgroundWorkCoordinator.prepareWorkspaceDeletion,
+    restoreBackgroundWorkAfterFailedDeletion:
+        backgroundWorkCoordinator.restoreWorkspaceAfterFailedDeletion,
   );
 }

@@ -1113,7 +1113,13 @@ void main() {
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
             deleteConversationUsecaseProvider.overrideWithValue(
-              DeleteConversationUsecase(repo, (_) => Future<void>.value()),
+              DeleteConversationUsecase(
+                repo,
+                (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
+              ),
             ),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
@@ -1172,7 +1178,13 @@ void main() {
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
             deleteConversationUsecaseProvider.overrideWithValue(
-              DeleteConversationUsecase(repo, (_) => Future<void>.value()),
+              DeleteConversationUsecase(
+                repo,
+                (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
+              ),
             ),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
@@ -1218,7 +1230,13 @@ void main() {
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
             deleteConversationUsecaseProvider.overrideWithValue(
-              DeleteConversationUsecase(repo, (_) => Future<void>.value()),
+              DeleteConversationUsecase(
+                repo,
+                (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
+              ),
             ),
             cloudConversationUsecaseProvider.overrideWithValue(.new(gateway)),
             streamingTitleProvider.overrideWith((ref, id) => null),
@@ -1261,7 +1279,13 @@ void main() {
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
             deleteConversationUsecaseProvider.overrideWithValue(
-              DeleteConversationUsecase(repo, (_) => Future<void>.value()),
+              DeleteConversationUsecase(
+                repo,
+                (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
+              ),
             ),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(

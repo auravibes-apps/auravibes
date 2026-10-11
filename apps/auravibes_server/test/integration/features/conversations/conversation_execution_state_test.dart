@@ -424,6 +424,158 @@ void main() {
     });
 
     test(
+      'Fork strips detached work state and keeps delivered tool history',
+      () async {
+        final fixture = await prepareExecution(
+          continueConversation: false,
+          seedCompletedTurn: true,
+        );
+        final now = DateTime.now().toUtc();
+        final turn = (await ConversationTurn.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ))!;
+        final assistant = (await ConversationMessage.db.findById(
+          fixture.database,
+          turn.assistantMessageId!,
+        ))!;
+        const detachedToolCallId = 'detached-tool-call';
+        const detachedWorkId = 'detached-work-id';
+        const deliveredToolCallId = 'delivered-tool-call';
+        final acknowledgement = jsonEncode({
+          'status': 'running_in_background',
+          'work_id': detachedWorkId,
+        });
+        final detachedCall = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            turnId: turn.id!,
+            messageId: assistant.id!,
+            stableId: detachedToolCallId,
+            name: 'background-search',
+            argumentsJson: '{"private":"search query"}',
+            argumentsDigest: 'detached-digest',
+            backgroundWorkStableId: detachedWorkId,
+            status: 'runningInBackground',
+            resultJson: acknowledgement,
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await BackgroundWorkRecord.db.insertRow(
+          fixture.database,
+          BackgroundWorkRecord(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            conversationToolCallId: detachedCall.id!,
+            originatingMessageId: assistant.id,
+            stableId: detachedWorkId,
+            toolCallId: detachedToolCallId,
+            toolKind: 'skill.native',
+            status: 'running',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            turnId: turn.id!,
+            messageId: assistant.id!,
+            stableId: deliveredToolCallId,
+            name: 'delivered-search',
+            argumentsJson: '{"query":"public history"}',
+            argumentsDigest: 'delivered-digest',
+            status: 'success',
+            resultJson: '{"answer":"already delivered"}',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.updateRow(
+          fixture.database,
+          assistant.copyWith(
+            metadataJson: jsonEncode({
+              'toolCalls': [
+                {
+                  'id': detachedToolCallId,
+                  'arguments': {'private': 'search query'},
+                  'result': jsonDecode(acknowledgement),
+                },
+                {
+                  'id': deliveredToolCallId,
+                  'arguments': {'query': 'public history'},
+                  'result': {'answer': 'already delivered'},
+                },
+              ],
+            }),
+            updatedAt: now,
+          ),
+        );
+
+        final useCases = decisionUseCases();
+        final fork = await useCases.fork(
+          fixture.database,
+          userId: fixture.userId,
+          request: ForkConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'fork-with-detached-work',
+            forkConversationId: 'fork-detached-work',
+            sourceConversationId: fixture.conversationId,
+          ),
+        );
+        await useCases.getConversationSnapshot(
+          fixture.database,
+          userId: fixture.userId,
+          request: GetConversationRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: fork.id,
+          ),
+        );
+
+        final forkConversation = (await Conversation.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(fork.id),
+        ))!;
+        final forkCalls = await ConversationToolCall.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(forkConversation.id),
+        );
+        final forkAssistant = (await ConversationMessage.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(forkConversation.id) &
+              table.role.equals('assistant'),
+        ))!;
+        final forkMetadata = jsonDecode(forkAssistant.metadataJson!) as Map;
+        final forkToolCalls = forkMetadata['toolCalls']! as List;
+        final sourceWork = await BackgroundWorkRecord.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(detachedWorkId),
+        );
+
+        expect(forkCalls, hasLength(1));
+        expect(forkCalls.single.name, 'delivered-search');
+        expect(forkToolCalls, hasLength(1));
+        expect(forkToolCalls.single['id'], deliveredToolCallId);
+        expect(forkAssistant.metadataJson, isNot(contains(detachedWorkId)));
+        expect(forkAssistant.metadataJson, isNot(contains('search query')));
+        expect(sourceWork?.status, 'running');
+      },
+    );
+
+    test(
       'Skip queues a continuation that replays the denied tool result',
       () async {
         final fixture = await prepareExecution();

@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
+import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
@@ -806,10 +807,18 @@ extension on ConversationRepository {
     String forkId,
     String? boundary,
   ) async {
+    final materializedRows = rows.toList();
+    final detachedToolCallIds = await _detachedForkToolCallIds(
+      materializedRows,
+    );
     final idMap = <String, String>{};
     String? mappedBoundary;
-    for (final row in rows) {
-      final messageId = await _copyForkMessage(row, forkId);
+    for (final row in materializedRows) {
+      final messageId = await _copyForkMessage(
+        row,
+        forkId,
+        detachedToolCallIds,
+      );
       idMap[row.table.id] = messageId;
       if (row.table.id == boundary) mappedBoundary = messageId;
     }
@@ -828,20 +837,70 @@ extension on ConversationRepository {
   Future<String> _copyForkMessage(
     ({MessagesTable table, bool isForkReference}) row,
     String forkId,
+    Map<String, Set<String>> detachedToolCallIds,
   ) async {
     final messageId = const UuidV7().generate();
+    final metadata = _metadataWithoutDetachedBackgroundCalls(
+      row.table,
+      detachedToolCallIds,
+    );
     final _ = await _database
         .into(_database.messages)
-        .insert(_forkMessageCompanion(row.table, messageId, forkId));
+        .insert(_forkMessageCompanion(row.table, messageId, forkId, metadata));
     await _copyForkAttachments(row.table.id, messageId);
 
     return messageId;
+  }
+
+  Future<Map<String, Set<String>>> _detachedForkToolCallIds(
+    List<({MessagesTable table, bool isForkReference})> rows,
+  ) async {
+    final conversationIds = rows.map((row) => row.table.conversationId).toSet();
+    if (conversationIds.isEmpty) return const {};
+    final activeWork = await (_database.select(
+      _database.backgroundWorks,
+    )..where((table) => table.conversationId.isIn(conversationIds))).get();
+    final activeIdsByConversation = <String, Set<String>>{};
+    for (final work in activeWork) {
+      final _ = activeIdsByConversation
+          .putIfAbsent(work.conversationId, () => <String>{})
+          .add(work.toolCallId);
+    }
+
+    return activeIdsByConversation;
+  }
+
+  String? _metadataWithoutDetachedBackgroundCalls(
+    MessagesTable message,
+    Map<String, Set<String>> detachedToolCallIds,
+  ) {
+    final metadataJson = message.metadata;
+    final detachedIds = detachedToolCallIds[message.conversationId];
+    if (metadataJson == null || detachedIds == null) return metadataJson;
+    final metadata = MessageMetadataEntity.fromJsonString(metadataJson);
+    if (metadata == null ||
+        !metadata.toolCalls.any(
+          (toolCall) => detachedIds.contains(toolCall.id),
+        )) {
+      return metadataJson;
+    }
+
+    return jsonEncode(
+      metadata
+          .copyWith(
+            toolCalls: metadata.toolCalls
+                .where((toolCall) => !detachedIds.contains(toolCall.id))
+                .toList(),
+          )
+          .toJson(),
+    );
   }
 
   MessagesCompanion _forkMessageCompanion(
     MessagesTable row,
     String messageId,
     String forkId,
+    String? metadata,
   ) => MessagesCompanion(
     id: .new(messageId),
     createdAt: .new(row.createdAt),
@@ -851,7 +910,7 @@ extension on ConversationRepository {
     messageType: .new(row.messageType),
     isUser: .new(row.isUser),
     status: .new(row.status),
-    metadata: .new(row.metadata),
+    metadata: .new(metadata),
   );
 
   Future<void> _copyForkAttachments(
