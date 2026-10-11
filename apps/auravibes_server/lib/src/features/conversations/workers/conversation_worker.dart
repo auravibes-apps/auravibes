@@ -1783,6 +1783,32 @@ class const ConversationWorker({
     );
     if (isActive != null && !isActive()) return;
     await _commitCompaction(session, job, leaseToken, result);
+    await _continueQueuedAfterCompaction(session, job);
+  }
+
+  Future<void> _continueQueuedAfterCompaction(
+    Session session,
+    ConversationJob job,
+  ) async {
+    final actorUserId = _jsonMap(job.payloadJson)['actorUserId'];
+    if (actorUserId is! String) {
+      throw const ConversationEngineConfigurationException('actorUserId');
+    }
+    final conversation = await Conversation.db.findById(
+      session,
+      job.conversationId,
+    );
+    if (conversation == null) {
+      throw const ConversationEngineConfigurationException('conversation');
+    }
+    await ConversationUseCases(
+      conversation_repo.ConversationRepository(),
+    ).continueOldestQueuedMessage(
+      session,
+      userId: actorUserId,
+      workspaceId: job.workspaceId,
+      conversationId: conversation.stableId,
+    );
   }
 
   Future<void> _commitCompaction(
