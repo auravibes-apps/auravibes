@@ -25,6 +25,27 @@ import 'package:material_ui/material_ui.dart';
 const _selectorDialogWidth = 520.0;
 const _selectorLoadingHeight = 120.0;
 
+/// Opens the conversation skill selector and restores the previous focus node
+/// after the dialog closes.
+Future<void> showConversationSkillSelectorModal({
+  required BuildContext context,
+  required String workspaceId,
+  required String conversationId,
+}) async {
+  final focusNode = FocusManager.instance.primaryFocus;
+  await showDialog<void>(
+    context: context,
+    builder: (_) => ConversationSkillSelectorModal(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+  );
+  if (!context.mounted) return;
+  final previousFocusNode = focusNode;
+  if (previousFocusNode == null || previousFocusNode.context == null) return;
+  previousFocusNode.requestFocus();
+}
+
 class const ConversationSkillSelectorModal({
   required final String workspaceId,
   required final String conversationId,

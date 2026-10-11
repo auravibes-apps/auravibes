@@ -1829,12 +1829,10 @@ void _showSkillsModal({
   if (!context.mounted) return;
 
   unawaited(
-    showDialog<void>(
+    showConversationSkillSelectorModal(
       context: context,
-      builder: (context) => ConversationSkillSelectorModal(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      ),
+      workspaceId: workspaceId,
+      conversationId: conversationId,
     ),
   );
 }

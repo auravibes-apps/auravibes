@@ -12,7 +12,6 @@ import 'package:auravibes_app/features/skills/widgets/conversation_skill_selecto
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/widgets.dart' show CustomPaint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -415,7 +414,7 @@ void main() {
     final _ = await tester.tap(preview);
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('Search sources'), findsOneWidget);
+    expect(find.text('Search sources'), findsNWidgets(2));
     expect(find.text('Search public sources for a topic.'), findsOneWidget);
     expect(find.text('Connection setup required'), findsOneWidget);
     expect(find.text('private-credential-id'), findsNothing);
@@ -464,6 +463,7 @@ void main() {
     addTearDown(container.dispose);
     await _pumpModal(tester, container);
 
+    await tester.ensureVisible(find.text('Use now'));
     final _ = await tester.tap(find.text('Use now'));
     final _ = await tester.pumpAndSettle();
 
@@ -493,13 +493,12 @@ void main() {
                     builder: (context) => Scaffold(
                       body: AuraButton(
                         onPressed: () {
-                          showDialog<void>(
-                            context: context,
-                            builder: (_) =>
-                                const ConversationSkillSelectorModal(
-                                  workspaceId: 'workspace',
-                                  conversationId: 'conversation',
-                                ),
+                          unawaited(
+                            showConversationSkillSelectorModal(
+                              context: context,
+                              workspaceId: 'workspace',
+                              conversationId: 'conversation',
+                            ),
                           );
                         },
                         child: const Text('Skills'),
