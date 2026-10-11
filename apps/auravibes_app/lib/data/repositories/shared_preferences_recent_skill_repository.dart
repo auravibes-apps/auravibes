@@ -21,19 +21,31 @@ class SharedPreferencesRecentSkillRepository(
   Future<void> recordUseNow({
     required String workspaceId,
     required String skillSlug,
-  }) => _enqueueWrite((preferences) async {
-    final key = _storageKey(workspaceId);
-    final recent = [
-      skillSlug,
-      for (final slug in _unique(preferences.getStringList(key) ?? []))
-        if (slug != skillSlug) slug,
-    ];
+  }) => _enqueueWrite(
+    (preferences) => _recordUseNow(preferences, workspaceId, skillSlug),
+  );
 
-    final didSave = await preferences.setStringList(key, recent);
-    if (!didSave) {
-      throw StateError('Unable to save recent skill usage.');
-    }
-  });
+  Future<void> _recordUseNow(
+    SharedPreferences preferences,
+    String workspaceId,
+    String skillSlug,
+  ) async {
+    final key = _storageKey(workspaceId);
+    final current = preferences.getStringList(key) ?? [];
+    final recent = _recentSkillsAfterUse(current, skillSlug);
+    await _writeRecentSkills(preferences, key, recent);
+  }
+
+  Future<void> _writeRecentSkills(
+    SharedPreferences preferences,
+    String key,
+    List<String> skills,
+  ) async {
+    final didSave = await preferences.setStringList(key, skills);
+    if (didSave) return;
+
+    throw StateError('Unable to save recent skill usage.');
+  }
 
   Future<void> _enqueueWrite(
     Future<void> Function(SharedPreferences preferences) write,
@@ -69,3 +81,9 @@ List<String> _unique(List<String> values) {
       if (seen.add(value)) value,
   ];
 }
+
+List<String> _recentSkillsAfterUse(List<String> current, String skillSlug) => [
+  skillSlug,
+  for (final slug in _unique(current))
+    if (slug != skillSlug) slug,
+];

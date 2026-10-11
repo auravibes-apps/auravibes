@@ -39,6 +39,13 @@ typedef _SkillSelectorStateRequest = ({
   ConversationSkillContextSnapshot? snapshot,
 });
 
+typedef _RecentSkillReadRequest = ({
+  RecentSkillUsageRepository repository,
+  String workspaceId,
+  List<AvailableSkill> loaded,
+  List<AvailableSkill> loadable,
+});
+
 typedef _SkillContextState = ({
   ConversationSkillContextStatus status,
   ConversationSkillContextFailure? failure,
@@ -83,50 +90,60 @@ Future<ConversationSkillSelectorState> _buildSelectorState(
     workspaceId: dependencies.workspaceId,
     conversationId: dependencies.conversationId,
   ));
+  final stateRequest = await _selectorStateRequest(dependencies, skills);
+
+  return _selectorState(stateRequest);
+}
+
+Future<_SkillSelectorStateRequest> _selectorStateRequest(
+  _SkillSelectorDependencies dependencies,
+  ({List<AvailableSkill> loaded, List<AvailableSkill> loadable}) skills,
+) async {
   final loaded = skills.loaded;
-  final recentSkills = await _readRecentSkills(
-    dependencies.recentSkillUsageRepository,
-    dependencies.workspaceId,
-    loaded,
-    skills.loadable,
-  );
+  final recentSkills = await _readRecentSkills((
+    repository: dependencies.recentSkillUsageRepository,
+    workspaceId: dependencies.workspaceId,
+    loaded: loaded,
+    loadable: skills.loadable,
+  ));
   final revisions = await _currentSkillRevisions(dependencies, loaded);
 
-  return _selectorState((
+  return (
     loaded: loaded,
     loadable: skills.loadable,
     recentSkills: recentSkills,
     revisions: revisions,
     snapshot: dependencies.snapshot,
-  ));
+  );
 }
 
 Future<List<AvailableSkill>> _readRecentSkills(
-  RecentSkillUsageRepository repository,
-  String workspaceId,
-  List<AvailableSkill> loaded,
-  List<AvailableSkill> loadable,
+  _RecentSkillReadRequest request,
 ) async {
   try {
-    final recentSlugs = await repository.readRecentSkillSlugs(workspaceId);
-    final skillsBySlug = <String, AvailableSkill>{
-      for (final skill in loadable) skill.slug: skill,
-      for (final skill in loaded) skill.slug: skill,
-    };
-    final recentSkills = <AvailableSkill>[];
-    final seenSlugs = <String>{};
-    for (final slug in recentSlugs) {
-      if (!seenSlugs.add(slug)) continue;
-      final skill = skillsBySlug[slug];
-      if (skill == null) continue;
-      recentSkills.add(skill);
-    }
+    final recentSlugs = await request.repository.readRecentSkillSlugs(
+      request.workspaceId,
+    );
 
-    return recentSkills;
+    return _skillsInRecentOrder(recentSlugs, _skillIndex(request));
   } on Object {
     return const [];
   }
 }
+
+Map<String, AvailableSkill> _skillIndex(_RecentSkillReadRequest request) => {
+  for (final skill in request.loadable) skill.slug: skill,
+  for (final skill in request.loaded) skill.slug: skill,
+};
+
+List<AvailableSkill> _skillsInRecentOrder(
+  List<String> recentSlugs,
+  Map<String, AvailableSkill> skillsBySlug,
+) => recentSlugs
+    .toSet()
+    .map((slug) => skillsBySlug[slug])
+    .whereType<AvailableSkill>()
+    .toList();
 
 Future<Map<String, String>> _currentSkillRevisions(
   _SkillSelectorDependencies dependencies,
