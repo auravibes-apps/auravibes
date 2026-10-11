@@ -1285,7 +1285,6 @@ void main() {
           );
           dispatcher.start(wakeups: wakes.stream, isActive: () => active);
           await listenerReady.future.timeout(const Duration(seconds: 2));
-          active = true;
           final useCases = ConversationUseCases(
             conversation_repo.ConversationRepository(),
             publishConversationJob: (session, job) async {
@@ -1309,6 +1308,25 @@ void main() {
             ),
           );
 
+          final currentConversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationDatabaseId,
+          ))!;
+          await endpoints.conversation.queueConversationMessage(
+            fixture.session,
+            QueueConversationMessageRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'queue-during-compaction',
+              conversationId: fixture.conversationId,
+              expectedProjectionRevision: currentConversation.projectionRevision,
+              clientMessageId: 'message-after-compaction',
+              content: 'Continue after compaction',
+              attachmentIds: const [],
+            ),
+          );
+          active = true;
+          wakes.add(null);
+
           await host.compactionStarted.future.timeout(
             const Duration(seconds: 2),
           );
@@ -1328,9 +1346,18 @@ void main() {
                 table.stableId.equals('compact-1:compaction-summary'),
           );
 
+          final followUpTurn = await ConversationTurn.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.requestId.equals('queued:message-after-compaction'),
+          );
+
           expect(host.compactionCalls, 1);
+          expect(host.calls, 1);
           expect(job!.status, 'completed');
           expect(summary!.content, 'Compacted');
+          expect(followUpTurn!.status, ConversationStatuses.completed);
         },
       );
 
