@@ -7,6 +7,27 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
+AgentToolCancellationHandle _registerToolCancellationHandleForTest(
+  AgentCancellationRuntime runtime, {
+  required String conversationId,
+  required String toolCallId,
+  required bool isSupported,
+  required Future<void> Function() cancel,
+  required Future<Object?> operationResult,
+}) {
+  final registration = (
+    conversationId: conversationId,
+    toolCallId: toolCallId,
+    isSupported: isSupported,
+    cancel: cancel,
+  );
+
+  return runtime.registerToolCancellationHandle(
+    registration,
+    operationResult: operationResult,
+  );
+}
+
 void main() {
   group('AgentCancellationRuntime', () {
     test(
@@ -24,11 +45,11 @@ void main() {
       final runtime = AgentCancellationRuntime();
       var cleanupCount = 0;
 
-      runtime.start('conversation-1').registerCleanup(() {
+      final _ = runtime.start('conversation-1').registerCleanup(() {
         cleanupCount += 1;
       });
       final replacement = runtime.start('conversation-1');
-      replacement.registerCleanup(() => cleanupCount += 10);
+      final _ = replacement.registerCleanup(() => cleanupCount += 10);
       runtime.requestStop('conversation-1');
 
       expect(cleanupCount, 11);
@@ -48,8 +69,10 @@ void main() {
     test('tool cancellation distinguishes request from confirmation', () async {
       final runtime = AgentCancellationRuntime()..start('conversation-1');
       final cancellationRelease = Completer<void>();
+      final operationResult = Completer<Object?>();
       var cancelCalls = 0;
-      final handle = runtime.registerToolCancellationHandle((
+      final handle = _registerToolCancellationHandleForTest(
+        runtime,
         conversationId: 'conversation-1',
         toolCallId: 'call-1',
         isSupported: true,
@@ -58,7 +81,8 @@ void main() {
 
           return cancellationRelease.future;
         },
-      ));
+        operationResult: operationResult.future,
+      );
 
       expect(handle.status, AgentToolCancellationStatus.running);
       final firstRequest = handle.requestCancellation();
@@ -87,32 +111,39 @@ void main() {
             .listen(values.add);
         addTearDown(subscription.cancel);
         addTearDown(runtime.dispose);
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
         expect(values, [false]);
 
         final operation = Completer<Object?>();
-        final handle = runtime.registerToolCancellationHandle((
+        final handle = _registerToolCancellationHandleForTest(
+          runtime,
           conversationId: 'conversation-1',
           toolCallId: 'call-1',
           isSupported: true,
-          cancel: () async {},
-        ), operationResult: operation.future);
-        await Future<void>.delayed(Duration.zero);
+          cancel: Future<void>.value,
+          operationResult: operation.future,
+        );
+        await Future<void>.delayed(.zero);
         expect(values, [false, true]);
 
         expect(handle.tryDetach(workId: 'work-1'), isTrue);
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
         expect(values, [false, true, false]);
 
         operation.complete('done');
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
         expect(values.last, isFalse);
       },
     );
 
     test('unsupported tool cancellation never reports confirmation', () async {
+      final runtime = AgentCancellationRuntime()..start('conversation-1');
+      addTearDown(runtime.dispose);
+      final operationResult = Completer<Object?>();
       var cancelCalls = 0;
-      final handle = AgentToolCancellationHandle(
+      final handle = _registerToolCancellationHandleForTest(
+        runtime,
+        conversationId: 'conversation-1',
         toolCallId: 'mcp-1',
         isSupported: false,
         cancel: () {
@@ -120,6 +151,7 @@ void main() {
 
           return Future<void>.value();
         },
+        operationResult: operationResult.future,
       );
 
       expect(handle.status, AgentToolCancellationStatus.unsupported);
@@ -127,6 +159,9 @@ void main() {
       expect(handle.status, AgentToolCancellationStatus.unsupported);
       expect(handle.status, AgentToolCancellationStatus.unsupported);
       expect(cancelCalls, 0);
+      operationResult.complete('done');
+      await Future<void>.delayed(.zero);
+      expect(handle.status, AgentToolCancellationStatus.completed);
     });
 
     test(
@@ -135,12 +170,14 @@ void main() {
         final runtime = AgentCancellationRuntime()..start('conversation-1');
         final operationResult = Completer<Object?>();
         var cancelCalls = 0;
-        final handle = runtime.registerToolCancellationHandle((
+        final handle = _registerToolCancellationHandleForTest(
+          runtime,
           conversationId: 'conversation-1',
           toolCallId: 'call-1',
           isSupported: true,
           cancel: () async => cancelCalls++,
-        ), operationResult: operationResult.future);
+          operationResult: operationResult.future,
+        );
 
         expect(
           runtime.detachToolCall(
@@ -150,8 +187,10 @@ void main() {
           ),
           isTrue,
         );
-        await handle.detached;
-        final scope = runtime.current('conversation-1')!;
+        expect(await handle.detached, 'work-1');
+        final scope =
+            runtime.current('conversation-1') ??
+            fail('Expected the active conversation scope to be registered.');
         runtime.clear('conversation-1', scope);
         await runtime.waitForCompletion('conversation-1');
 
@@ -161,12 +200,13 @@ void main() {
       },
     );
 
-    test('detach loses to foreground stop once cancellation begins', () async {
+    test('detach loses to foreground stop once cancellation begins', () {
       final runtime = AgentCancellationRuntime()..start('conversation-1');
       final cancellationRelease = Completer<void>();
       final operationResult = Completer<Object?>();
       var cancelCalls = 0;
-      final handle = runtime.registerToolCancellationHandle((
+      final handle = _registerToolCancellationHandleForTest(
+        runtime,
         conversationId: 'conversation-1',
         toolCallId: 'call-1',
         isSupported: true,
@@ -175,7 +215,8 @@ void main() {
 
           return cancellationRelease.future;
         },
-      ), operationResult: operationResult.future);
+        operationResult: operationResult.future,
+      );
 
       runtime.requestStop('conversation-1');
 
@@ -194,12 +235,15 @@ void main() {
 
     test('normal tool completion is distinct from cancellation', () {
       final runtime = AgentCancellationRuntime();
-      final handle = runtime.registerToolCancellationHandle((
+      final operationResult = Completer<Object?>();
+      final handle = _registerToolCancellationHandleForTest(
+        runtime,
         conversationId: 'conversation-1',
         toolCallId: 'call-1',
         isSupported: true,
         cancel: Future<void>.value,
-      ));
+        operationResult: operationResult.future,
+      );
 
       runtime.completeToolCancellationHandle(
         conversationId: 'conversation-1',
@@ -245,7 +289,7 @@ void main() {
       final runtime = AgentCancellationRuntime();
       final cleanupRelease = Completer<void>();
       final scope = runtime.start('c1');
-      scope.registerCleanup(() => cleanupRelease.future);
+      final _ = scope.registerCleanup(() => cleanupRelease.future);
 
       runtime.forceClear('c1');
       var completed = false;
@@ -264,7 +308,7 @@ void main() {
       final runtime = AgentCancellationRuntime();
       final cleanupRelease = Completer<void>();
       final scope = runtime.start('c1');
-      scope.registerCleanup(() => cleanupRelease.future);
+      final _ = scope.registerCleanup(() => cleanupRelease.future);
 
       runtime.forceClear('c1');
       final wait = runtime.waitForCompletion('c1');
@@ -280,7 +324,7 @@ void main() {
       );
       final cleanupRelease = Completer<void>();
       final scope = runtime.start('c1');
-      scope.registerCleanup(() => cleanupRelease.future);
+      final _ = scope.registerCleanup(() => cleanupRelease.future);
 
       runtime.forceClear('c1');
 
@@ -373,7 +417,7 @@ void main() {
       final runtime = AgentCancellationRuntime();
       final cleanupRelease = Completer<void>();
       final oldScope = runtime.start('c1');
-      oldScope.registerCleanup(() => cleanupRelease.future);
+      final _ = oldScope.registerCleanup(() => cleanupRelease.future);
       final oldCompletion = runtime.waitForCompletion('c1');
 
       final replacement = runtime.start('c1');

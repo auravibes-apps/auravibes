@@ -542,18 +542,20 @@ Future<Object?> _registerAndAwaitCancelableOperation(
   _CancelableOperationRequest request,
 ) async {
   final operationResult = request.operation.valueOrCancellation();
-  final handle = request.runtime.registerToolCancellationHandle((
+  final registration = (
     conversationId: request.conversationId,
     toolCallId: request.toolCallId,
     isSupported: request.isCancellationSupported,
     cancel: request.operation.cancel,
-  ), operationResult: operationResult);
+  );
+  final handle = request.runtime.registerToolCancellationHandle(
+    registration,
+    operationResult: operationResult,
+  );
   try {
     return await Future.any<Object?>([
       operationResult,
-      handle.detached.then<Object?>(
-        (workId) => _backgroundWorkAcknowledgement(workId),
-      ),
+      _detachedBackgroundAcknowledgement(handle.detached),
     ]);
   } finally {
     if (handle.backgroundWorkId == null) {
@@ -570,6 +572,10 @@ Map<String, Object> _backgroundWorkAcknowledgement(String workId) => {
   'status': 'running_in_background',
   'work_id': workId,
 };
+
+Future<Object?> _detachedBackgroundAcknowledgement(
+  Future<String> detached,
+) async => _backgroundWorkAcknowledgement(await detached);
 
 Future<String> _workspaceIdFor({
   required ConversationRepository? conversationRepository,
@@ -734,9 +740,7 @@ Future<Object?> _awaitSubAgentOperation({
   try {
     return await Future.any<Object?>([
       operation,
-      handle.detached.then<Object?>(
-        (workId) => _backgroundWorkAcknowledgement(workId),
-      ),
+      _detachedBackgroundAcknowledgement(handle.detached),
     ]);
   } finally {
     if (handle.backgroundWorkId == null) {
@@ -749,12 +753,19 @@ AgentToolCancellationHandle _registerSubAgentCancellationHandle(
   AgentCancellationRuntime runtime,
   _SkillNativeToolRequest request,
   _SubAgentCancellationRequest cancellationRequest,
-) => runtime.registerToolCancellationHandle((
-  conversationId: request.conversationId,
-  toolCallId: request.toolCallId,
-  isSupported: true,
-  cancel: () => _cancelSubAgentOperation(runtime, cancellationRequest),
-), operationResult: cancellationRequest.operation);
+) {
+  final registration = (
+    conversationId: request.conversationId,
+    toolCallId: request.toolCallId,
+    isSupported: true,
+    cancel: () => _cancelSubAgentOperation(runtime, cancellationRequest),
+  );
+
+  return runtime.registerToolCancellationHandle(
+    registration,
+    operationResult: cancellationRequest.operation,
+  );
+}
 
 void _completeSubAgentCancellationHandle(
   AgentCancellationRuntime runtime,

@@ -13,6 +13,7 @@ final backgroundWorkCoordinatorProvider = Provider<BackgroundWorkCoordinator>((
   ref,
 ) {
   final conversationRepository = ref.watch(conversationRepositoryProvider);
+
   return BackgroundWorkCoordinator(
     ref.watch(backgroundWorkRepositoryProvider),
     ref.watch(agentCancellationRuntimeProvider),

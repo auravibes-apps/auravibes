@@ -77,10 +77,8 @@ extension _BackgroundWorkLookupOps on BackgroundWorkCoordinator {
         handle.operationCompleted) {
       return null;
     }
-    final result = handle.operationResult;
-    if (result == null) return null;
 
-    return (handle: handle, result: result);
+    return (handle: handle, result: handle.operationResult);
   }
 }
 
@@ -105,13 +103,13 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
     BackgroundWorkDetachRequest request,
     String workspaceId,
   ) => _store.create(
-    AgentBackgroundWorkCreateRequest(
+    .new(
       id: const UuidV7().generate(),
       workspaceId: workspaceId,
       conversationId: request.conversationId,
-      originatingMessageId: request.originatingMessageId,
       toolCallId: request.toolCallId,
       toolKind: request.toolKind,
+      originatingMessageId: request.originatingMessageId,
     ),
   );
 
@@ -160,8 +158,8 @@ extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
   ) async {
     final details = await _captureCompletion(handle, operationResult);
     try {
-      await _store.finish(
-        AgentBackgroundWorkCompletion(
+      final _ = await _store.finish(
+        .new(
           conversationId: conversationId,
           workId: workId,
           status: details.status,
@@ -224,9 +222,9 @@ extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
       handle: handle,
     );
     final handles = _handlesByConversation[conversationId];
-    handles?.remove(workId);
+    final _ = handles?.remove(workId);
     if (handles?.isEmpty ?? false) {
-      _handlesByConversation.remove(conversationId);
+      final _ = _handlesByConversation.remove(conversationId);
     }
   }
 }

@@ -1,12 +1,9 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/repositories/background_work_repository.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/background_work_coordinator.dart';
-import 'package:auravibes_app/features/chats/usecases/background_work_detach_request.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -20,59 +17,94 @@ QueryExecutor _createTestConnection() => DatabaseConnection.delayed(
   }),
 );
 
-void main() {
-  late AppDatabase database;
-  late String workspaceId;
-  late String conversationId;
-  late AgentCancellationRuntime runtime;
-  late BackgroundWorkRepository repository;
+typedef _BackgroundWorkFixture = ({
+  AppDatabase database,
+  String workspaceId,
+  String conversationId,
+  AgentCancellationRuntime runtime,
+  BackgroundWorkRepository repository,
+});
 
-  setUp(() async {
-    database = AppDatabase(connection: _createTestConnection());
-    final workspace = await database.workspaceDao.insertWorkspace(
-      .insert(name: 'Background work coordinator', type: WorkspaceType.local),
-    );
-    workspaceId = workspace.id;
-    final conversation = await database.conversationDao.insertConversation(
-      .insert(workspaceId: workspaceId, title: 'Coordinator test'),
-    );
-    conversationId = conversation.id;
-    runtime = AgentCancellationRuntime()..start(conversationId);
-    repository = BackgroundWorkRepository(database);
-  });
-
-  tearDown(() => database.close());
-
-  BackgroundWorkCoordinator _coordinator() => BackgroundWorkCoordinator(
-    repository,
-    runtime,
-    (id) async => id == conversationId ? workspaceId : null,
+Future<_BackgroundWorkFixture> _createFixture() async {
+  final database = AppDatabase(connection: _createTestConnection());
+  final workspace = await database.workspaceDao.insertWorkspace(
+    .insert(name: 'Background work coordinator', type: .local),
   );
+  final conversation = await database.conversationDao.insertConversation(
+    .insert(workspaceId: workspace.id, title: 'Coordinator test'),
+  );
+  final runtime = AgentCancellationRuntime()..start(conversation.id);
+
+  return (
+    database: database,
+    workspaceId: workspace.id,
+    conversationId: conversation.id,
+    runtime: runtime,
+    repository: BackgroundWorkRepository(database),
+  );
+}
+
+AgentToolCancellationHandle _registerToolCancellationHandleForTest(
+  AgentCancellationRuntime runtime, {
+  required String conversationId,
+  required String toolCallId,
+  required bool isSupported,
+  required Future<void> Function() cancel,
+  required Future<Object?> operationResult,
+}) {
+  final registration = (
+    conversationId: conversationId,
+    toolCallId: toolCallId,
+    isSupported: isSupported,
+    cancel: cancel,
+  );
+
+  return runtime.registerToolCancellationHandle(
+    registration,
+    operationResult: operationResult,
+  );
+}
+
+void main() {
+  BackgroundWorkCoordinator _coordinator(_BackgroundWorkFixture fixture) =>
+      BackgroundWorkCoordinator(
+        fixture.repository,
+        fixture.runtime,
+        (id) async => id == fixture.conversationId ? fixture.workspaceId : null,
+      );
 
   test(
     'detach persists work and foreground cleanup leaves it running',
     () async {
+      final fixture = await _createFixture();
+      addTearDown(fixture.database.close);
+      final database = fixture.database;
+      final conversationId = fixture.conversationId;
+      final runtime = fixture.runtime;
+      final repository = fixture.repository;
       final originatingMessage = await database.messageDao.insertMessage(
-        MessagesCompanion.insert(
+        .insert(
           conversationId: conversationId,
           content: 'Originating user message',
-          messageType: MessagesTableType.text,
+          messageType: .text,
           isUser: true,
-          status: MessageTableStatus.sent,
+          status: .sent,
         ),
       );
       final operation = Completer<Object?>();
       var cancelCalls = 0;
-      final handle = runtime.registerToolCancellationHandle((
+      final handle = _registerToolCancellationHandleForTest(
+        runtime,
         conversationId: conversationId,
         toolCallId: 'tool-call-1',
         isSupported: true,
         cancel: () async => cancelCalls++,
-      ), operationResult: operation.future);
-      final coordinator = _coordinator();
+        operationResult: operation.future,
+      );
+      final coordinator = _coordinator(fixture);
 
       final work = await coordinator.runInBackground(
-        BackgroundWorkDetachRequest(
+        .new(
           conversationId: conversationId,
           toolCallId: 'tool-call-1',
           toolKind: 'skill.native',
@@ -83,17 +115,16 @@ void main() {
       expect(work?.identity.originatingMessageId, originatingMessage.id);
       expect(await handle.detached, work?.identity.id);
 
-      final scope = runtime.current(conversationId)!;
+      final scope =
+          runtime.current(conversationId) ??
+          fail('Expected the active conversation scope to be registered.');
       runtime.clear(conversationId, scope);
       await runtime.waitForCompletion(conversationId);
       expect(cancelCalls, 0);
 
       final terminal = repository
           .watchConversation(conversationId)
-          .firstWhere(
-            (items) =>
-                items.single.state.status != AgentBackgroundWorkStatus.running,
-          );
+          .firstWhere((items) => items.single.state.status != .running);
       operation.complete({'answer': 'ready'});
       final saved = await terminal;
       expect(saved.single.state.status, AgentBackgroundWorkStatus.completed);
@@ -104,22 +135,31 @@ void main() {
   test(
     'stop is reported confirmed only after operation cancellation',
     () async {
+      final fixture = await _createFixture();
+      addTearDown(fixture.database.close);
+      final conversationId = fixture.conversationId;
+      final runtime = fixture.runtime;
+      final repository = fixture.repository;
       final operation = Completer<Object?>();
       final cancellation = Completer<void>();
-      final handle = runtime.registerToolCancellationHandle((
+      final handle = _registerToolCancellationHandleForTest(
+        runtime,
         conversationId: conversationId,
         toolCallId: 'tool-call-2',
         isSupported: true,
         cancel: () => cancellation.future,
-      ), operationResult: operation.future);
-      final coordinator = _coordinator();
-      final work = await coordinator.runInBackground(
-        BackgroundWorkDetachRequest(
-          conversationId: conversationId,
-          toolCallId: 'tool-call-2',
-          toolKind: 'skill.native',
-        ),
+        operationResult: operation.future,
       );
+      final coordinator = _coordinator(fixture);
+      final work =
+          await coordinator.runInBackground(
+            .new(
+              conversationId: conversationId,
+              toolCallId: 'tool-call-2',
+              toolKind: 'skill.native',
+            ),
+          ) ??
+          fail('Expected background work to be created.');
       final requested = repository
           .watchConversation(conversationId)
           .firstWhere(
@@ -129,7 +169,7 @@ void main() {
           );
       final stop = coordinator.requestStop(
         conversationId: conversationId,
-        workId: work!.identity.id,
+        workId: work.identity.id,
       );
 
       expect(
@@ -156,15 +196,23 @@ void main() {
   );
 
   test('completion wins while detachment is resolving its workspace', () async {
+    final fixture = await _createFixture();
+    addTearDown(fixture.database.close);
+    final workspaceId = fixture.workspaceId;
+    final conversationId = fixture.conversationId;
+    final runtime = fixture.runtime;
+    final repository = fixture.repository;
     final operation = Completer<Object?>();
     final workspaceLookup = Completer<void>();
     final workspaceResolved = Completer<String?>();
-    final handle = runtime.registerToolCancellationHandle((
+    final handle = _registerToolCancellationHandleForTest(
+      runtime,
       conversationId: conversationId,
       toolCallId: 'tool-call-3',
       isSupported: true,
-      cancel: () async {},
-    ), operationResult: operation.future);
+      cancel: Future<void>.value,
+      operationResult: operation.future,
+    );
     final coordinator = BackgroundWorkCoordinator(repository, runtime, (_) {
       workspaceLookup.complete();
 
@@ -172,7 +220,7 @@ void main() {
     });
 
     final detaching = coordinator.runInBackground(
-      BackgroundWorkDetachRequest(
+      .new(
         conversationId: conversationId,
         toolCallId: 'tool-call-3',
         toolKind: 'skill.native',
@@ -180,8 +228,8 @@ void main() {
     );
     await workspaceLookup.future;
     operation.complete('already complete');
-    await operation.future;
-    await Future<void>.delayed(Duration.zero);
+    expect(await operation.future, 'already complete');
+    await Future<void>.delayed(.zero);
     workspaceResolved.complete(workspaceId);
     final work = await detaching;
 
