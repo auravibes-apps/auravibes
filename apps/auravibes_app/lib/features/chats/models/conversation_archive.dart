@@ -46,6 +46,11 @@ class ConversationArchiveAgentContext({
   );
 }
 
+class const ConversationArchiveImportPreview({
+  required final String title,
+  required final bool hasIncompleteAgentContext,
+});
+
 class const ConversationArchiveAgentContextEntry({
   required final int? afterMessageIndex,
   required final DateTime createdAt,
@@ -207,6 +212,14 @@ abstract final class ConversationArchiveCodec {
 
     return _decodeArchiveBundle(root);
   }
+
+  static List<ConversationArchiveImportPreview> previewImport(String json) => [
+    for (final archive in decodeMany(json))
+      ConversationArchiveImportPreview(
+        title: archive.title,
+        hasIncompleteAgentContext: archive.agentContext?.isComplete == false,
+      ),
+  ];
 }
 
 List<Map<String, Object?>> _encodeArchives(List<ConversationArchive> archives) {
