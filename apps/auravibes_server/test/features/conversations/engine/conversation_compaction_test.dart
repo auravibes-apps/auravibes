@@ -40,11 +40,9 @@ void main() {
         ),
       ];
 
-      final range =
-          selectConversationCompactionRange(
-                messages,
-              )
-              as AgentCompactionRangeSelected;
+      final range = selectConversationCompactionRange(
+        messages,
+      ) as AgentCompactionRangeSelected;
 
       expect(range.messageIds, ['1', '2']);
       expect(range.keptTailMessageIds, ['3']);
@@ -85,11 +83,9 @@ void main() {
       _message(6, 'user', 'keep'),
     ];
 
-    final range =
-        selectConversationCompactionRange(
-              messages,
-            )
-            as AgentCompactionRangeSelected;
+    final range = selectConversationCompactionRange(
+      messages,
+    ) as AgentCompactionRangeSelected;
 
     expect(range.messageIds, ['1', '2', '4', '5']);
     expect(range.throughMessageId, '5');
