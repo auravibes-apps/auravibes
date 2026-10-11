@@ -531,7 +531,7 @@ void main() {
       );
     });
     final _ = await tester.pumpAndSettle();
-    await tester.sendKeyEvent(.tab);
+    expect(await tester.sendKeyEvent(.tab), isTrue);
     expect(
       tester
           .getSemantics(find.bySemanticsIdentifier('skills-control'))
@@ -540,7 +540,7 @@ void main() {
           .isFocused,
       ui.Tristate.isTrue,
     );
-    await tester.sendKeyEvent(.enter);
+    expect(await tester.sendKeyEvent(.enter), isTrue);
     final _ = await tester.pumpAndSettle();
     expect(find.text('Conversation skills'), findsOneWidget);
 
