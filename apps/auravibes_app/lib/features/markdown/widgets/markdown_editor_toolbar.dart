@@ -1113,9 +1113,20 @@ _ToolbarActionState _inlineFormattingState(
       ? value.selection
       : TextSelection.collapsed(offset: value.text.length);
   final bounds = _selectionBounds(selection, value.text);
-  final spans = [
-    for (final marker in markers) ..._inlineFormattingSpans(value.text, marker),
-  ];
+  final inlineCodeSpans = action == .code
+      ? const <({int start, int contentStart, int contentEnd, int end})>[]
+      : _inlineFormattingSpans(value.text, '`');
+  final spans =
+      [
+        for (final marker in markers)
+          ..._inlineFormattingSpans(value.text, marker),
+      ]..removeWhere(
+        (span) => inlineCodeSpans.any(
+          (codeSpan) =>
+              span.start >= codeSpan.contentStart &&
+              span.end <= codeSpan.contentEnd,
+        ),
+      );
 
   if (selection.isCollapsed) {
     return spans.any(

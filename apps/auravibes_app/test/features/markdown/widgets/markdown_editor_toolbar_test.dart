@@ -622,6 +622,49 @@ void main() {
       }
     });
 
+    testWidgets('ignores emphasis markers inside inline code', (tester) async {
+      const text = '`**bold** and _italic_`';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_bold, text: 'bold'),
+        (icon: Icons.format_italic, text: 'italic'),
+      ]) {
+        final contentStart = text.indexOf(action.text);
+        controller.selection = .collapsed(offset: contentStart + 1);
+        await tester.pump();
+
+        expect(
+          tester.widget<AuraIconButton>(toolbarButton(action.icon)).variant,
+          AuraIconButtonVariant.outlined,
+        );
+        expect(
+          tester.widget<AuraIconButton>(toolbarButton(Icons.code)).variant,
+          AuraIconButtonVariant.filled,
+        );
+      }
+
+      final boldMarkersStart = text.indexOf('**bold**');
+      controller.selection = .new(
+        baseOffset: boldMarkersStart,
+        extentOffset: boldMarkersStart + '**bold**'.length,
+      );
+      await tester.pump();
+
+      expect(
+        tester.widget<AuraIconButton>(toolbarButton(Icons.format_bold)).variant,
+        AuraIconButtonVariant.outlined,
+      );
+    });
+
     testWidgets('updates inline state when undoing and redoing formatting', (
       tester,
     ) async {
@@ -745,6 +788,55 @@ void main() {
             baseOffset: action.prefix.length,
             extentOffset: action.prefix.length + content.length,
           ),
+        );
+      }
+    });
+
+    testWidgets('formats only the current line at a collapsed caret', (
+      tester,
+    ) async {
+      for (final action in [
+        (icon: Icons.title, prefix: '# '),
+        (icon: Icons.format_quote, prefix: '> '),
+      ]) {
+        const text = 'before\ncurrent line\nafter';
+        final currentLineOffset = text.indexOf('current line');
+        final caretOffset = currentLineOffset + 3;
+        final controller = TextEditingController(text: text);
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+        controller.selection = .collapsed(offset: caretOffset);
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+
+        final formattedText = 'before\n${action.prefix}current line\nafter';
+        expect(controller.text, formattedText);
+        expect(
+          controller.selection,
+          TextSelection.collapsed(offset: caretOffset + action.prefix.length),
+        );
+
+        await tester.tap(find.byIcon(Icons.undo));
+        await tester.pump();
+        expect(controller.text, text);
+        expect(
+          controller.selection,
+          TextSelection.collapsed(offset: caretOffset),
+        );
+
+        await tester.tap(find.byIcon(Icons.redo));
+        await tester.pump();
+        expect(controller.text, formattedText);
+        expect(
+          controller.selection,
+          TextSelection.collapsed(offset: caretOffset + action.prefix.length),
         );
       }
     });
