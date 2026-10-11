@@ -200,11 +200,6 @@ class const _SidebarConversationListItem({
     final isCompacting =
         ref.watch(compactionExecutionProvider)[chat.id]?.status ==
         CompactionExecutionStatus.running;
-    final isResponseStreaming = ref.watch(
-      conversationStreamingProvider.select(
-        (conversationIds) => conversationIds.contains(chat.id),
-      ),
-    );
 
     return Column(
       children: [
@@ -212,7 +207,6 @@ class const _SidebarConversationListItem({
           chat: chat,
           workspaceId: workspaceId,
           isActive: chat.id == currentChatId,
-          isResponseStreaming: isResponseStreaming,
         ),
         if (isCompacting) const _CompactingRow(),
       ],
@@ -306,7 +300,6 @@ class const _SidebarConversationTile({
   required final ConversationEntity chat,
   required final String workspaceId,
   required final bool isActive,
-  required final bool isResponseStreaming,
 }) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_SidebarConversationTile> createState() =>
@@ -350,10 +343,8 @@ extension on _SidebarConversationTileState {
 
   Widget _buildTileContent(ConversationEntity chat) =>
       _SidebarConversationTileContent(
+        chat: chat,
         isActive: widget.isActive,
-        isPinned: chat.isPinned,
-        isResponseStreaming: widget.isResponseStreaming,
-        conversationId: chat.id,
         title: ref.watch(streamingTitleProvider(chat.id)) ?? chat.title,
         controller: _menuController,
         onFork: _forkConversation,
@@ -383,10 +374,8 @@ class const _SidebarConversationTileView({required final Widget child})
 }
 
 class const _SidebarConversationTileContent({
+  required final ConversationEntity chat,
   required final bool isActive,
-  required final bool isPinned,
-  required final bool isResponseStreaming,
-  required final String conversationId,
   required final String title,
   required final AuraPopupMenuController controller,
   required final VoidCallback onFork,
@@ -394,58 +383,73 @@ class const _SidebarConversationTileContent({
   required final VoidCallback onTogglePin,
   required final VoidCallback onRename,
   required final VoidCallback onTap,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isResponseStreaming = ref.watch(
+      conversationStreamingProvider.select(
+        (conversationIds) => conversationIds.contains(chat.id),
+      ),
+    );
+
+    return _SidebarConversationTileBody(
+      content: this,
+      isResponseStreaming: isResponseStreaming,
+    );
+  }
+}
+
+class const _SidebarConversationTileTrailing({
+  required final _SidebarConversationTileContent content,
+  required final bool isResponseStreaming,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _SidebarConversationTileBody(
-    isActive: isActive,
-    isResponseStreaming: isResponseStreaming,
-    conversationId: conversationId,
-    title: title,
-    label: _SidebarConversationTileLabel(
-      title: title,
-      isActive: isActive,
-      isPinned: isPinned,
-    ),
-    menu: _SidebarConversationTileMenu(
-      isPinned: isPinned,
-      controller: controller,
-      onFork: onFork,
-      onDelete: onDelete,
-      onTogglePin: onTogglePin,
-      onRename: onRename,
-    ),
-    onTap: onTap,
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      if (isResponseStreaming)
+        _SidebarResponseStreamingStatus(conversationId: content.chat.id),
+      _SidebarConversationTileMenu(
+        isPinned: content.chat.isPinned,
+        controller: content.controller,
+        onFork: content.onFork,
+        onDelete: content.onDelete,
+        onTogglePin: content.onTogglePin,
+        onRename: content.onRename,
+      ),
+    ],
   );
 }
 
 class const _SidebarConversationTileBody({
-  required final bool isActive,
+  required final _SidebarConversationTileContent content,
   required final bool isResponseStreaming,
-  required final String conversationId,
-  required final String title,
-  required final Widget label,
-  required final Widget menu,
-  required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraTile(
-    child: label,
-    onTap: onTap,
-    variant: isActive ? AuraTileVariant.selected : AuraTileVariant.ghost,
+    child: _SidebarConversationTileLabel(content: content),
+    onTap: content.onTap,
+    variant: content.isActive
+        ? AuraTileVariant.selected
+        : AuraTileVariant.ghost,
     size: .small,
-    leading: _SidebarConversationTileLeading(isActive: isActive),
-    trailing: AuraRow(
-      children: [
-        if (isResponseStreaming)
-          _SidebarResponseStreamingStatus(conversationId: conversationId),
-        menu,
-      ],
+    leading: _SidebarConversationTileLeading(isActive: content.isActive),
+    trailing: _SidebarConversationTileTrailing(
+      content: content,
+      isResponseStreaming: isResponseStreaming,
     ),
-    semanticLabel: isResponseStreaming
-        ? '$title, ${LocaleKeys.sidebar_response_in_progress.tr()}'
-        : title,
+    semanticLabel: _sidebarConversationTileSemanticLabel(
+      content.title,
+      isResponseStreaming,
+    ),
   );
 }
+
+String _sidebarConversationTileSemanticLabel(
+  String title,
+  bool isResponseStreaming,
+) => isResponseStreaming
+    ? '$title, ${LocaleKeys.sidebar_response_in_progress.tr()}'
+    : title;
 
 class const _SidebarResponseStreamingStatus({
   required final String conversationId,
@@ -460,25 +464,28 @@ class const _SidebarResponseStreamingStatus({
 }
 
 class const _SidebarConversationTileLabel({
-  required final String title,
-  required final bool isActive,
-  required final bool isPinned,
+  required final _SidebarConversationTileContent content,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraRow(
     children: [
-      if (isPinned) ...[
+      if (content.chat.isPinned) ...[
         const AuraIcon(Icons.push_pin_outlined, size: .small, tint: .warning),
         const SizedBox(width: 8),
       ],
-      Expanded(
-        child: AuraText(
-          child: Text(title, overflow: .ellipsis, maxLines: 1),
-          style: .bodySmall,
-          tint: isActive ? AuraTint.primary : null,
-        ),
-      ),
+      Expanded(child: _SidebarConversationTileLabelText(content: content)),
     ],
+  );
+}
+
+class const _SidebarConversationTileLabelText({
+  required final _SidebarConversationTileContent content,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(content.title, overflow: .ellipsis, maxLines: 1),
+    style: .bodySmall,
+    tint: content.isActive ? AuraTint.primary : null,
   );
 }
 
