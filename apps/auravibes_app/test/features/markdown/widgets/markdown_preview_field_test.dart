@@ -16,6 +16,7 @@ void main() {
     final launchedUrls = <String>[];
     _mockUrlLauncher(tester, (call) async {
       launchedUrls.add((call.arguments as Map)['url'] as String);
+
       return true;
     });
     final controller = TextEditingController(
@@ -62,6 +63,7 @@ void main() {
     var launchCount = 0;
     _mockUrlLauncher(tester, (_) async {
       launchCount++;
+
       return true;
     });
     final controller = TextEditingController(
@@ -154,7 +156,7 @@ void _mockUrlLauncher(
   Future<Object?> Function(MethodCall call) handler,
 ) {
   const channel = MethodChannel('plugins.flutter.io/url_launcher');
-  final messenger = tester.binding.defaultBinaryMessenger;
-  messenger.setMockMethodCallHandler(channel, handler);
+  final messenger = tester.binding.defaultBinaryMessenger
+    ..setMockMethodCallHandler(channel, handler);
   addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
 }

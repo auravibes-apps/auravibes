@@ -5,7 +5,6 @@ import 'package:auravibes_app/features/markdown/screens/markdown_editor_screen.d
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -269,8 +268,8 @@ void main() {
     });
     await _openMarkdownEditor(
       tester,
-      initialMarkdown: '[Open docs](https://docs.example.com/reference)',
       onResult: (value) => fail('Unexpected editor close: $value'),
+      initialMarkdown: '[Open docs](https://docs.example.com/reference)',
     );
 
     expect(find.byType(GptMarkdown), findsNothing);
@@ -281,7 +280,7 @@ void main() {
         .state<EditableTextState>(_markdownEditorInput)
         .renderEditable;
     final linkTapPosition = renderEditable
-        .getLocalRectForCaret(ui.TextPosition(offset: linkOffset + 12))
+        .getLocalRectForCaret(.new(offset: linkOffset + 12))
         .center;
     await tester.tapAt(renderEditable.localToGlobal(linkTapPosition));
     final _ = await tester.pumpAndSettle();
@@ -578,8 +577,8 @@ void _mockUrlLauncher(
   Future<Object?> Function(MethodCall call) handler,
 ) {
   const channel = MethodChannel('plugins.flutter.io/url_launcher');
-  final messenger = tester.binding.defaultBinaryMessenger;
-  messenger.setMockMethodCallHandler(channel, handler);
+  final messenger = tester.binding.defaultBinaryMessenger
+    ..setMockMethodCallHandler(channel, handler);
   addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
 }
 

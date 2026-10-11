@@ -36,7 +36,7 @@ Future<void> _openExternalLink(BuildContext context, String url) async {
         namedArgs: {'host': uri.host, 'url': uri.toString()},
       ),
     ),
-    actions: AuraConfirmDialogActions(
+    actions: .new(
       confirmLabel: Text(LocaleKeys.markdown_editor_external_link_open.tr()),
       cancelLabel: Text(LocaleKeys.common_cancel.tr()),
     ),
@@ -48,10 +48,10 @@ Future<void> _openExternalLink(BuildContext context, String url) async {
   } on Object {
     if (!context.mounted) return;
     unawaited(AuraHaptics.error());
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: TextLocale(LocaleKeys.markdown_editor_external_link_error),
-      ),
+    const TextLocale errorMessage = .new(
+      LocaleKeys.markdown_editor_external_link_error,
     );
+    final _ = ScaffoldMessenger.of(context)
+        .showSnackBar(.new(content: errorMessage));
   }
 }
