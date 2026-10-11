@@ -27,8 +27,8 @@ class const ConversationDraftCleanupUsecase({
         await attachmentUsecase.deleteAttachment(path);
       } on Object catch (error, stackTrace) {
         _logger.warning(
-          'Failed to delete temporary draft attachment $path',
-          error,
+          'Failed to delete a temporary draft attachment',
+          error.runtimeType,
           stackTrace,
         );
       }
