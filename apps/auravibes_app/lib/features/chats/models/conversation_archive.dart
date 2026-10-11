@@ -46,10 +46,16 @@ class ConversationArchiveAgentContext({
   );
 }
 
-class const ConversationArchiveImportPreview({
-  required final String title,
-  required final bool hasIncompleteAgentContext,
-});
+@freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
+abstract class ConversationArchiveImportPreview
+    with _$ConversationArchiveImportPreview {
+  const factory({
+    required String title,
+    required bool hasIncompleteAgentContext,
+  }) = _ConversationArchiveImportPreview;
+}
 
 class const ConversationArchiveAgentContextEntry({
   required final int? afterMessageIndex,

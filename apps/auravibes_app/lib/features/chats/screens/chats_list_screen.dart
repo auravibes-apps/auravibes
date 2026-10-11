@@ -181,26 +181,23 @@ Future<bool> _showIncompleteAgentContextImportDialog(
 ) async {
   if (!context.mounted) return false;
 
-  return await showDialog<bool>(
-        context: context,
-        builder: (context) =>
-            _IncompleteAgentContextImportDialog(affected: affected),
-      ) ??
-      false;
-}
-
-class const _IncompleteAgentContextImportDialog({
-  required final List<ConversationArchiveImportPreview> affected,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AlertDialog(
+  final result = await AuraDialogs.confirm(
+    context: context,
     title: const TextLocale(
       LocaleKeys.chats_screens_chats_list_archive_incomplete_title,
     ),
-    content: _IncompleteAgentContextImportContent(affected: affected),
-    actions: const [_IncompleteAgentContextImportActions()],
-    scrollable: true,
+    message: _IncompleteAgentContextImportContent(affected: affected),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(
+        LocaleKeys.chats_screens_chats_list_archive_import_continue,
+      ),
+      cancelLabel: TextLocale(
+        LocaleKeys.chats_screens_chats_list_archive_import_cancel,
+      ),
+    ),
   );
+
+  return result == true;
 }
 
 class const _IncompleteAgentContextImportContent({
@@ -224,27 +221,6 @@ class const _IncompleteAgentContextImportContent({
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(conversation.title),
         ),
-    ],
-  );
-}
-
-class const _IncompleteAgentContextImportActions() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisAlignment: .end,
-    children: [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(false),
-        child: const TextLocale(
-          LocaleKeys.chats_screens_chats_list_archive_import_cancel,
-        ),
-      ),
-      FilledButton(
-        onPressed: () => Navigator.of(context).pop(true),
-        child: const TextLocale(
-          LocaleKeys.chats_screens_chats_list_archive_import_continue,
-        ),
-      ),
     ],
   );
 }

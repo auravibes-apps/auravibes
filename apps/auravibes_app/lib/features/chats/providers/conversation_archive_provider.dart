@@ -6,8 +6,10 @@ import 'package:auravibes_app/features/chats/services/local_chat_attachment_serv
 import 'package:auravibes_app/features/chats/usecases/conversation_archive_usecase.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'conversation_archive_provider.g.dart';
 
 final conversationArchiveFileServiceProvider =
     Provider<ConversationArchiveFileService>(
@@ -36,27 +38,27 @@ typedef ConversationArchiveIncompleteContextKey = ({
   String conversationId,
 });
 
-final StreamProviderFamily<bool, ConversationArchiveIncompleteContextKey>
-conversationArchiveIncompleteContextProvider =
-    StreamProvider.family<bool, ConversationArchiveIncompleteContextKey>((
-      ref,
-      key,
-    ) {
-      final session = ref
-          .watch(workspaceSessionForRouteProvider(key.workspaceId))
-          .value;
-      if (session?.cloud != null) return Stream.value(false);
+@riverpod
+Stream<bool> conversationArchiveIncompleteContext(
+  Ref ref,
+  ConversationArchiveIncompleteContextKey key,
+) {
+  final session = ref
+      .watch(workspaceSessionForRouteProvider(key.workspaceId))
+      .value;
+  if (session?.cloud != null) return Stream.value(false);
 
-      return ref
-          .watch(messageRepositoryProvider)
-          .watchTranscriptMessagesByConversation(key.conversationId)
-          .map(
-            (messages) => messages.any(
-              (message) =>
-                  message.isAgentTranscriptContextUpdate &&
-                  message.metadata?.modelMetadata[MessageMetadataEntity
-                          .incompleteArchivedAgentContextMetadataKey] ==
-                      true,
-            ),
-          );
-    });
+  return ref
+      .watch(messageRepositoryProvider)
+      .watchTranscriptMessagesByConversation(key.conversationId)
+      .map(_containsIncompleteArchivedAgentContext);
+}
+
+bool _containsIncompleteArchivedAgentContext(List<MessageEntity> messages) =>
+    messages.any(_isIncompleteArchivedAgentContextUpdate);
+
+bool _isIncompleteArchivedAgentContextUpdate(MessageEntity message) =>
+    message.isAgentTranscriptContextUpdate &&
+    message.metadata?.modelMetadata[MessageMetadataEntity
+            .incompleteArchivedAgentContextMetadataKey] ==
+        true;
