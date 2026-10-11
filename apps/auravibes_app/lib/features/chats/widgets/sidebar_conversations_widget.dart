@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
@@ -199,6 +200,11 @@ class const _SidebarConversationListItem({
     final isCompacting =
         ref.watch(compactionExecutionProvider)[chat.id]?.status ==
         CompactionExecutionStatus.running;
+    final isResponseStreaming = ref.watch(
+      conversationStreamingProvider.select(
+        (conversationIds) => conversationIds.contains(chat.id),
+      ),
+    );
 
     return Column(
       children: [
@@ -206,6 +212,7 @@ class const _SidebarConversationListItem({
           chat: chat,
           workspaceId: workspaceId,
           isActive: chat.id == currentChatId,
+          isResponseStreaming: isResponseStreaming,
         ),
         if (isCompacting) const _CompactingRow(),
       ],
@@ -299,6 +306,7 @@ class const _SidebarConversationTile({
   required final ConversationEntity chat,
   required final String workspaceId,
   required final bool isActive,
+  required final bool isResponseStreaming,
 }) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_SidebarConversationTile> createState() =>
@@ -344,6 +352,8 @@ extension on _SidebarConversationTileState {
       _SidebarConversationTileContent(
         isActive: widget.isActive,
         isPinned: chat.isPinned,
+        isResponseStreaming: widget.isResponseStreaming,
+        conversationId: chat.id,
         title: ref.watch(streamingTitleProvider(chat.id)) ?? chat.title,
         controller: _menuController,
         onFork: _forkConversation,
@@ -375,6 +385,8 @@ class const _SidebarConversationTileView({required final Widget child})
 class const _SidebarConversationTileContent({
   required final bool isActive,
   required final bool isPinned,
+  required final bool isResponseStreaming,
+  required final String conversationId,
   required final String title,
   required final AuraPopupMenuController controller,
   required final VoidCallback onFork,
@@ -386,6 +398,9 @@ class const _SidebarConversationTileContent({
   @override
   Widget build(BuildContext context) => _SidebarConversationTileBody(
     isActive: isActive,
+    isResponseStreaming: isResponseStreaming,
+    conversationId: conversationId,
+    title: title,
     label: _SidebarConversationTileLabel(
       title: title,
       isActive: isActive,
@@ -405,6 +420,9 @@ class const _SidebarConversationTileContent({
 
 class const _SidebarConversationTileBody({
   required final bool isActive,
+  required final bool isResponseStreaming,
+  required final String conversationId,
+  required final String title,
   required final Widget label,
   required final Widget menu,
   required final VoidCallback onTap,
@@ -416,7 +434,28 @@ class const _SidebarConversationTileBody({
     variant: isActive ? AuraTileVariant.selected : AuraTileVariant.ghost,
     size: .small,
     leading: _SidebarConversationTileLeading(isActive: isActive),
-    trailing: menu,
+    trailing: AuraRow(
+      children: [
+        if (isResponseStreaming)
+          _SidebarResponseStreamingStatus(conversationId: conversationId),
+        menu,
+      ],
+    ),
+    semanticLabel: isResponseStreaming
+        ? '$title, ${LocaleKeys.sidebar_response_in_progress.tr()}'
+        : title,
+  );
+}
+
+class const _SidebarResponseStreamingStatus({
+  required final String conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIcon(
+    Icons.sync,
+    key: ValueKey('sidebar-streaming-status-$conversationId'),
+    size: .small,
+    tint: .primary,
   );
 }
 
