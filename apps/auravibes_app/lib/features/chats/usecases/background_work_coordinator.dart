@@ -20,6 +20,19 @@ typedef _TrackedBackgroundWork = ({
   AgentToolCancellationHandle handle,
 });
 
+typedef _WorkspaceStopRequest = ({
+  String conversationId,
+  String workId,
+  AgentToolCancellationHandle handle,
+});
+
+typedef _BackgroundWorkCompletionRequest = ({
+  String conversationId,
+  String workspaceId,
+  String workId,
+  AgentToolCancellationHandle handle,
+});
+
 typedef _CompletionDetails = ({
   AgentBackgroundWorkStatus status,
   String? resultContent,
@@ -84,21 +97,7 @@ class BackgroundWorkCoordinator(
   /// Requests cancellation before deleting a workspace and blocks new work.
   Future<void> prepareWorkspaceDeletion(String workspaceId) async {
     final _ = _closingWorkspaces.add(workspaceId);
-    final entries = [
-      for (final conversationEntry in _handlesByConversation.entries)
-        for (final workEntry in conversationEntry.value.entries)
-          if (workEntry.value.workspaceId == workspaceId)
-            (
-              conversationId: conversationEntry.key,
-              workId: workEntry.key,
-              handle: workEntry.value.handle,
-            ),
-    ];
-    if (entries.isEmpty) return;
-    final _ = await Future.wait([
-      for (final entry in entries)
-        _requestStop(entry.conversationId, entry.workId, entry.handle),
-    ]);
+    await _requestWorkspaceStops(workspaceId);
   }
 
   /// Reopens background work if the workspace deletion did not complete.
@@ -127,6 +126,28 @@ class BackgroundWorkCoordinator(
   bool _isClosing(String conversationId, String workspaceId) =>
       _closingConversations.contains(conversationId) ||
       _closingWorkspaces.contains(workspaceId);
+}
+
+extension _BackgroundWorkWorkspaceDeletionOps on BackgroundWorkCoordinator {
+  Future<void> _requestWorkspaceStops(String workspaceId) async {
+    final requests = _workspaceStopRequests(workspaceId);
+    if (requests.isEmpty) return;
+    final _ = await Future.wait(requests.map(_requestTrackedStop));
+  }
+
+  List<_WorkspaceStopRequest> _workspaceStopRequests(String workspaceId) => [
+    for (final conversationEntry in _handlesByConversation.entries)
+      for (final workEntry in conversationEntry.value.entries)
+        if (workEntry.value.workspaceId == workspaceId)
+          (
+            conversationId: conversationEntry.key,
+            workId: workEntry.key,
+            handle: workEntry.value.handle,
+          ),
+  ];
+
+  Future<bool> _requestTrackedStop(_WorkspaceStopRequest request) =>
+      _requestStop(request.conversationId, request.workId, request.handle);
 }
 
 extension _BackgroundWorkLookupOps on BackgroundWorkCoordinator {
@@ -213,46 +234,49 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
       handle: operation.handle,
     );
     unawaited(
-      _recordCompletion(
-        request.conversationId,
-        provisional.identity.workspaceId,
-        provisional.identity.id,
-        operation.handle,
-        operation.result,
-      ),
+      _recordCompletion((
+        conversationId: request.conversationId,
+        workspaceId: provisional.identity.workspaceId,
+        workId: provisional.identity.id,
+        handle: operation.handle,
+      ), operation.result),
     );
   }
 }
 
 extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
   Future<void> _recordCompletion(
-    String conversationId,
-    String workspaceId,
-    String workId,
-    AgentToolCancellationHandle handle,
+    _BackgroundWorkCompletionRequest request,
     Future<Object?> operationResult,
   ) async {
     final details = await _captureCompletion(
-      conversationId,
-      workspaceId,
-      handle,
+      request.conversationId,
+      request.workspaceId,
+      request.handle,
       operationResult,
     );
     try {
-      final _ = await _store.finish(
-        .new(
-          conversationId: conversationId,
-          workId: workId,
-          status: details.status,
-          resultContent: details.resultContent,
-          resultByteLength: details.resultByteLength,
-          statusPreview: details.statusPreview,
-          errorCode: details.errorCode,
-        ),
-      );
+      await _persistCompletion(request, details);
     } finally {
-      _releaseHandle(conversationId, workId, handle);
+      _releaseHandle(request.conversationId, request.workId, request.handle);
     }
+  }
+
+  Future<void> _persistCompletion(
+    _BackgroundWorkCompletionRequest request,
+    _CompletionDetails details,
+  ) async {
+    final _ = await _store.finish(
+      .new(
+        conversationId: request.conversationId,
+        workId: request.workId,
+        status: details.status,
+        resultContent: details.resultContent,
+        resultByteLength: details.resultByteLength,
+        statusPreview: details.statusPreview,
+        errorCode: details.errorCode,
+      ),
+    );
   }
 
   Future<_CompletionDetails> _captureCompletion(

@@ -21,22 +21,32 @@ class DeleteConversationUsecase {
   Future<bool> call(String conversationId) async {
     final boundaries = await _captureForkBoundaries?.call(conversationId);
     try {
-      await _prepareBackgroundWorkDeletion(conversationId);
-      await _stopConversation(conversationId);
-      final deleted = boundaries == null
-          ? await _repository.deleteConversation(conversationId)
-          : await _repository.deleteConversationWithFrozenForkBoundaries(
-              conversationId,
-              frozenForkBoundaries: boundaries,
-            );
-      if (!deleted) {
-        _restoreBackgroundWorkAfterFailedDeletion(conversationId);
-      }
-
-      return deleted;
+      return await _deleteAfterPreparation(conversationId, boundaries);
     } on Object {
       _restoreBackgroundWorkAfterFailedDeletion(conversationId);
       rethrow;
     }
   }
+
+  Future<bool> _deleteAfterPreparation(
+    String conversationId,
+    Map<String, String?>? boundaries,
+  ) async {
+    await _prepareBackgroundWorkDeletion(conversationId);
+    await _stopConversation(conversationId);
+    final deleted = await _deleteConversation(conversationId, boundaries);
+    if (!deleted) _restoreBackgroundWorkAfterFailedDeletion(conversationId);
+
+    return deleted;
+  }
+
+  Future<bool> _deleteConversation(
+    String conversationId,
+    Map<String, String?>? boundaries,
+  ) => boundaries == null
+      ? _repository.deleteConversation(conversationId)
+      : _repository.deleteConversationWithFrozenForkBoundaries(
+          conversationId,
+          frozenForkBoundaries: boundaries,
+        );
 }

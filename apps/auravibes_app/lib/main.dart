@@ -43,9 +43,7 @@ Future<void> main() async {
 
   _configureSystemUi();
   final container = ProviderContainer();
-  await container
-      .read(recoverInterruptedBackgroundWorkUseCaseProvider)
-      .call(startedAt: DateTime.now().toUtc());
+  await _recoverInterruptedBackgroundWork(container);
   if (marionetteInstanceId != null) {
     MarionetteExtensionRegistration.register(
       MarionetteExtensionBootstrap.createState(container),
@@ -55,6 +53,11 @@ Future<void> main() async {
   _runApp(container);
   _scheduleModelSync(container);
 }
+
+Future<void> _recoverInterruptedBackgroundWork(ProviderContainer container) =>
+    container
+        .read(recoverInterruptedBackgroundWorkUseCaseProvider)
+        .call(startedAt: DateTime.now().toUtc());
 
 void _configureFlavor() =>
     AppFlavorConfig.instance.setAppFlavor(AppFlavorResolver.resolve(appFlavor));
