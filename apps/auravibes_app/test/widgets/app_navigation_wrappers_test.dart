@@ -848,6 +848,17 @@ void main() {
         expect(find.byTooltip('Collapse sidebar'), findsOneWidget);
         expect(_sidebarPanelWidth(tester), 320);
         expect(find.byType(SidebarConversationsWidget), findsOneWidget);
+        final toggleRect = tester.getRect(find.byTooltip('Collapse sidebar'));
+        final workspaceSelectorRect = tester.getRect(
+          find.byKey(const ValueKey<String>('workspace_choice')),
+        );
+        expect(toggleRect.left, greaterThan(workspaceSelectorRect.right));
+        expect(
+          toggleRect.center.dy,
+          closeTo(workspaceSelectorRect.center.dy, 1),
+        );
+        expect(toggleRect.width, greaterThanOrEqualTo(48));
+        expect(toggleRect.height, greaterThanOrEqualTo(48));
 
         final semantics = tester.ensureSemantics();
         try {

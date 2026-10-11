@@ -16,8 +16,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Shared shell control. WorkspaceSwitcher owns confirmation and persistence.
-class const WorkspaceSelector({required final String workspaceId, super.key})
-    extends HookConsumerWidget {
+class const WorkspaceSelector({
+  required final String workspaceId,
+  final Widget? trailingAction,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final focus = useFocusNode();
@@ -27,6 +30,7 @@ class const WorkspaceSelector({required final String workspaceId, super.key})
       workspaceId: workspaceId,
       focus: focus,
       pending: pending,
+      trailingAction: trailingAction,
     );
   }
 }
@@ -35,6 +39,7 @@ class const _WorkspaceSelectorRuntime({
   required final String workspaceId,
   required final FocusNode focus,
   required final ValueNotifier<bool> pending,
+  required final Widget? trailingAction,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,6 +49,7 @@ class const _WorkspaceSelectorRuntime({
       workspaceId: workspaceId,
       focus: focus,
       pending: pending,
+      trailingAction: trailingAction,
     );
   }
 }
@@ -52,6 +58,7 @@ class const _WorkspaceSelectorViewState({
   required final String workspaceId,
   required final FocusNode focus,
   required final ValueNotifier<bool> pending,
+  required final Widget? trailingAction,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -64,6 +71,7 @@ class const _WorkspaceSelectorViewState({
       pending: pending,
       switchState: switchState,
       workspaces: workspaces,
+      trailingAction: trailingAction,
     );
   }
 }
@@ -74,6 +82,7 @@ class const _WorkspaceSelectorActionsView({
   required final ValueNotifier<bool> pending,
   required final WorkspaceSwitchState switchState,
   required final AsyncValue<List<WorkspaceEntity>> workspaces,
+  required final Widget? trailingAction,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -92,6 +101,7 @@ class const _WorkspaceSelectorActionsView({
       isNavigationPending: pending.value,
       onSwitch: controller.switchWorkspace,
       onNavigate: controller.selectAction,
+      trailingAction: trailingAction,
     );
   }
 }
@@ -124,6 +134,7 @@ class const _WorkspaceSelectorSemantics({
   required final bool isNavigationPending,
   required final ValueChanged<String?> onSwitch,
   required final ValueChanged<String?> onNavigate,
+  required final Widget? trailingAction,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
@@ -136,6 +147,7 @@ class const _WorkspaceSelectorSemantics({
       isNavigationPending: isNavigationPending,
       onSwitch: onSwitch,
       onNavigate: onNavigate,
+      trailingAction: trailingAction,
     ),
     identifier: 'workspace_selector',
   );
@@ -212,6 +224,7 @@ class const _WorkspaceSelectorContent({
   required final bool isNavigationPending,
   required final ValueChanged<String?> onSwitch,
   required final ValueChanged<String?> onNavigate,
+  required final Widget? trailingAction,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -222,6 +235,7 @@ class const _WorkspaceSelectorContent({
         switchState: switchState,
         focus: focus,
         onSwitch: onSwitch,
+        trailingAction: trailingAction,
       ),
       _WorkspaceActionSelector(
         switchState: switchState,
@@ -239,18 +253,31 @@ class const _WorkspaceSwitchControl({
   required final WorkspaceSwitchState switchState,
   required final FocusNode focus,
   required final ValueChanged<String?> onSwitch,
+  required final Widget? trailingAction,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => switch (switchState.status) {
-    .loading => const _WorkspaceSwitchLoading(),
-    _ => _WorkspaceSwitchOptions(
-      workspaces: workspaces,
-      workspaceId: workspaceId,
-      switchState: switchState,
-      focus: focus,
-      onSwitch: onSwitch,
-    ),
-  };
+  Widget build(BuildContext context) {
+    final control = switch (switchState.status) {
+      .loading => const _WorkspaceSwitchLoading(),
+      _ => _WorkspaceSwitchOptions(
+        workspaces: workspaces,
+        workspaceId: workspaceId,
+        switchState: switchState,
+        focus: focus,
+        onSwitch: onSwitch,
+      ),
+    };
+    final action = trailingAction;
+    if (action == null) return control;
+
+    return Row(
+      children: [
+        Expanded(child: control),
+        const AuraSizedBox(width: .sm),
+        action,
+      ],
+    );
+  }
 }
 
 class const _WorkspaceSwitchLoading() extends StatelessWidget {

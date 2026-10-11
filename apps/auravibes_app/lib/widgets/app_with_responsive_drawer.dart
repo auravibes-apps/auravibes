@@ -197,19 +197,23 @@ class const _WorkspaceHeaderContent({
   @override
   Widget build(BuildContext context) {
     final toggleTooltip = _sidebarToggleTooltip(isExpanded, context);
+    final desktopToggle = _DesktopSidebarToggle(
+      isExpanded: isExpanded,
+      onToggle: onToggle,
+      tooltip: toggleTooltip,
+    );
 
     return SafeArea(
       bottom: false,
       child: Column(
         mainAxisSize: .min,
         children: [
-          if (isDesktop)
-            _DesktopSidebarToggle(
-              isExpanded: isExpanded,
-              onToggle: onToggle,
-              tooltip: toggleTooltip,
+          if (isExpanded)
+            _WorkspaceSelectorHeader(
+              workspaceId: workspaceId,
+              trailingAction: isDesktop ? desktopToggle : null,
             ),
-          if (isExpanded) _WorkspaceSelectorHeader(workspaceId: workspaceId),
+          if (isDesktop && !isExpanded) desktopToggle,
         ],
       ),
     );
@@ -236,11 +240,16 @@ class const _DesktopSidebarToggle({
   );
 }
 
-class const _WorkspaceSelectorHeader({required final String workspaceId})
-    extends StatelessWidget {
+class const _WorkspaceSelectorHeader({
+  required final String workspaceId,
+  required final Widget? trailingAction,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraPadding(
-    child: WorkspaceSelector(workspaceId: workspaceId),
+    child: WorkspaceSelector(
+      workspaceId: workspaceId,
+      trailingAction: trailingAction,
+    ),
     padding: .small,
   );
 }
