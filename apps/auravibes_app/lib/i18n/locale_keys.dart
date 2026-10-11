@@ -757,6 +757,46 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.error_not_found';
   static const chats_screens_chat_conversation_view_sub_agent_run =
       'chats_screens.chat_conversation.view_sub_agent_run';
+  static const chats_screens_chat_conversation_model_usage_open =
+      'chats_screens.chat_conversation.model_usage.open';
+  static const chats_screens_chat_conversation_model_usage_title =
+      'chats_screens.chat_conversation.model_usage.title';
+  static const chats_screens_chat_conversation_model_usage_summary =
+      'chats_screens.chat_conversation.model_usage.summary';
+  static const chats_screens_chat_conversation_model_usage_request_count =
+      'chats_screens.chat_conversation.model_usage.request_count';
+  static const chats_screens_chat_conversation_model_usage_estimated_cost =
+      'chats_screens.chat_conversation.model_usage.estimated_cost';
+  static const chats_screens_chat_conversation_model_usage_prompt_tokens =
+      'chats_screens.chat_conversation.model_usage.prompt_tokens';
+  static const chats_screens_chat_conversation_model_usage_response_tokens =
+      'chats_screens.chat_conversation.model_usage.response_tokens';
+  static const chats_screens_chat_conversation_model_usage_total_tokens =
+      'chats_screens.chat_conversation.model_usage.total_tokens';
+  static const chats_screens_chat_conversation_model_usage_cache_read_tokens =
+      'chats_screens.chat_conversation.model_usage.cache_read_tokens';
+  static const chats_screens_chat_conversation_model_usage_cache_creation_tokens =
+      'chats_screens.chat_conversation.model_usage.cache_creation_tokens';
+  static const chats_screens_chat_conversation_model_usage_unknown =
+      'chats_screens.chat_conversation.model_usage.unknown';
+  static const chats_screens_chat_conversation_model_usage_empty =
+      'chats_screens.chat_conversation.model_usage.empty';
+  static const chats_screens_chat_conversation_model_usage_load_error =
+      'chats_screens.chat_conversation.model_usage.load_error';
+  static const chats_screens_chat_conversation_model_usage_retry =
+      'chats_screens.chat_conversation.model_usage.retry';
+  static const chats_screens_chat_conversation_model_usage_kind_generation =
+      'chats_screens.chat_conversation.model_usage.kind_generation';
+  static const chats_screens_chat_conversation_model_usage_kind_compaction =
+      'chats_screens.chat_conversation.model_usage.kind_compaction';
+  static const chats_screens_chat_conversation_model_usage_kind_cache_warm =
+      'chats_screens.chat_conversation.model_usage.kind_cache_warm';
+  static const chats_screens_chat_conversation_model_usage_outcome =
+      'chats_screens.chat_conversation.model_usage.outcome';
+  static const chats_screens_chat_conversation_model_usage_outcome_succeeded =
+      'chats_screens.chat_conversation.model_usage.outcome_succeeded';
+  static const chats_screens_chat_conversation_model_usage_outcome_failed =
+      'chats_screens.chat_conversation.model_usage.outcome_failed';
   static const chats_screens_chat_conversation_context_usage_label =
       'chats_screens.chat_conversation.context_usage.label';
   static const chats_screens_chat_conversation_context_usage_label_unavailable =
