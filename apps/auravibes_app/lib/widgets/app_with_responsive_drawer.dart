@@ -97,22 +97,42 @@ class const _ResponsiveDrawerView({
     );
     final isCompact = isDesktop && state._isSidebarCompact;
 
-    return ResponsiveSlidingDrawer(
-      drawer: _AppDrawerNavigation(
-        state: state,
-        isDesktop: isDesktop,
-        isExpanded: !isCompact,
-      ),
-      body: ResponsiveSlidingDrawerProvider(
-        controller: state._controller,
-        child: state.widget.child,
-      ),
-      isDarkMode: Theme.of(context).brightness == Brightness.dark,
-      controller: state._controller,
-      initiallyOpen: isDesktop,
-      isDesktopCompact: isCompact,
+    return _ResponsiveDrawerShell(
+      state: state,
+      isDesktop: isDesktop,
+      isCompact: isCompact,
     );
   }
+}
+
+class const _ResponsiveDrawerShell({
+  required final _AppWithResponsiveDrawerState state,
+  required final bool isDesktop,
+  required final bool isCompact,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ResponsiveSlidingDrawer(
+    drawer: _AppDrawerNavigation(
+      state: state,
+      isDesktop: isDesktop,
+      isExpanded: !isCompact,
+    ),
+    body: _ResponsiveDrawerBody(state: state),
+    isDarkMode: Theme.of(context).brightness == Brightness.dark,
+    controller: state._controller,
+    initiallyOpen: isDesktop,
+    isDesktopCompact: isCompact,
+  );
+}
+
+class const _ResponsiveDrawerBody({
+  required final _AppWithResponsiveDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ResponsiveSlidingDrawerProvider(
+    controller: state._controller,
+    child: state.widget.child,
+  );
 }
 
 class const _AppDrawerNavigation({
@@ -127,16 +147,29 @@ class const _AppDrawerNavigation({
       onNavigationTap: state.widget.onNavigationTap,
       isExpanded: isExpanded,
       selectedIndex: state.widget.selectedIndex,
-      header: _WorkspaceHeader(
-        workspaceId: state.widget.workspaceId,
+      header: _AppDrawerHeader(
+        state: state,
         isDesktop: isDesktop,
         isExpanded: isExpanded,
-        onToggle: state._toggleDesktopSidebar,
       ),
       middleSection: isExpanded
-          ? SidebarConversationsWidget(workspaceId: state.widget.workspaceId)
+          ? _SidebarConversationsSection(workspaceId: state.widget.workspaceId)
           : null,
     ),
+  );
+}
+
+class const _AppDrawerHeader({
+  required final _AppWithResponsiveDrawerState state,
+  required final bool isDesktop,
+  required final bool isExpanded,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => _WorkspaceHeader(
+    workspaceId: state.widget.workspaceId,
+    isDesktop: isDesktop,
+    isExpanded: isExpanded,
+    onToggle: state._toggleDesktopSidebar,
   );
 }
 
@@ -145,9 +178,24 @@ class const _WorkspaceHeader({
   required final bool isDesktop,
   required final bool isExpanded,
   required final VoidCallback onToggle,
-}) extends ConsumerWidget {
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) => _WorkspaceHeaderContent(
+    workspaceId: workspaceId,
+    isDesktop: isDesktop,
+    isExpanded: isExpanded,
+    onToggle: onToggle,
+  );
+}
+
+class const _WorkspaceHeaderContent({
+  required final String workspaceId,
+  required final bool isDesktop,
+  required final bool isExpanded,
+  required final VoidCallback onToggle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final toggleTooltip = _sidebarToggleTooltip(isExpanded, context);
 
     return SafeArea(
@@ -156,27 +204,52 @@ class const _WorkspaceHeader({
         mainAxisSize: .min,
         children: [
           if (isDesktop)
-            AuraPadding(
-              child: Align(
-                alignment: .centerRight,
-                child: AuraIconButton(
-                  icon: isExpanded ? Icons.menu_open : Icons.menu,
-                  onPressed: onToggle,
-                  semanticLabel: toggleTooltip,
-                  tooltip: toggleTooltip,
-                ),
-              ),
-              padding: .small,
+            _DesktopSidebarToggle(
+              isExpanded: isExpanded,
+              onToggle: onToggle,
+              tooltip: toggleTooltip,
             ),
-          if (isExpanded)
-            AuraPadding(
-              child: WorkspaceSelector(workspaceId: workspaceId),
-              padding: .small,
-            ),
+          if (isExpanded) _WorkspaceSelectorHeader(workspaceId: workspaceId),
         ],
       ),
     );
   }
+}
+
+class const _DesktopSidebarToggle({
+  required final bool isExpanded,
+  required final VoidCallback onToggle,
+  required final String tooltip,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPadding(
+    child: Align(
+      alignment: .centerRight,
+      child: AuraIconButton(
+        icon: isExpanded ? Icons.menu_open : Icons.menu,
+        onPressed: onToggle,
+        semanticLabel: tooltip,
+        tooltip: tooltip,
+      ),
+    ),
+    padding: .small,
+  );
+}
+
+class const _WorkspaceSelectorHeader({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPadding(
+    child: WorkspaceSelector(workspaceId: workspaceId),
+    padding: .small,
+  );
+}
+
+class const _SidebarConversationsSection({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      SidebarConversationsWidget(workspaceId: workspaceId);
 }
 
 String _sidebarToggleTooltip(bool isExpanded, BuildContext context) =>
