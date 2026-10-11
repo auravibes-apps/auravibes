@@ -806,7 +806,7 @@ Future<void> _recordSubAgentChildConversationWhenStarted({
     _subAgentCompletesBeforeStart(operation),
   ]);
   if (childConversationId == null) return;
-  handle.recordChildConversationId(childConversationId);
+  handle.childConversation.record(childConversationId);
 }
 
 void _completeSubAgentCancellationHandle(

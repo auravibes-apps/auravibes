@@ -44,20 +44,11 @@ extension BackgroundWorksDaoOperations on BackgroundWorksDao {
     required String conversationId,
     required String workId,
     required String childConversationId,
-  }) async {
-    final _ =
-        await (update(backgroundWorks)..where(
-              (table) =>
-                  table.conversationId.equals(conversationId) &
-                  table.id.equals(workId),
-            ))
-            .write(
-              BackgroundWorksCompanion(
-                updatedAt: .new(DateTime.now().toUtc()),
-                childConversationId: .new(childConversationId),
-              ),
-            );
-  }
+  }) => this._writeChildConversationLink(
+    conversationId: conversationId,
+    workId: workId,
+    childConversationId: childConversationId,
+  );
 
   Future<void> discard({
     required String conversationId,
@@ -191,6 +182,33 @@ extension _BackgroundWorksDaoCompletionOps on BackgroundWorksDao {
     return updated.isEmpty ? null : updated.single;
   }
 }
+
+extension _BackgroundWorksDaoChildConversationOps on BackgroundWorksDao {
+  Future<void> _writeChildConversationLink({
+    required String conversationId,
+    required String workId,
+    required String childConversationId,
+  }) async {
+    final _ =
+        await (update(backgroundWorks)..where(
+              (table) => _childConversationWork(table, conversationId, workId),
+            ))
+            .write(_childConversationLinkUpdate(childConversationId));
+  }
+}
+
+Expression<bool> _childConversationWork(
+  $BackgroundWorksTable table,
+  String conversationId,
+  String workId,
+) => table.conversationId.equals(conversationId) & table.id.equals(workId);
+
+BackgroundWorksCompanion _childConversationLinkUpdate(
+  String childConversationId,
+) => BackgroundWorksCompanion(
+  updatedAt: .new(DateTime.now().toUtc()),
+  childConversationId: .new(childConversationId),
+);
 
 const _activeStatuses = ['running', 'stopRequested'];
 const _terminalStatuses = ['completed', 'failed', 'cancelled'];

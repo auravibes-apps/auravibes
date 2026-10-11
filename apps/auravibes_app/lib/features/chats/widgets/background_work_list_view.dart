@@ -383,21 +383,36 @@ class const _BackgroundWorkTileActions({
   @override
   Widget build(BuildContext context) {
     final workId = data.identity.id;
-    final openChild = onOpenChild;
 
     return Wrap(
       spacing: _backgroundWorkActionSpacing,
       runSpacing: _backgroundWorkActionRunSpacing,
-      children: [
-        if (data.status == .running)
-          _BackgroundWorkStopButton(workId: workId, action: onStop),
-        if (data.identity.childConversationId != null && openChild != null)
-          _BackgroundWorkOpenChildButton(workId: workId, action: openChild),
-        if (data.hasResult)
-          _BackgroundWorkOpenResultButton(workId: workId, action: onOpenResult),
-      ],
+      children: _actions(workId),
     );
   }
+
+  List<Widget> _actions(String workId) => [
+    ..._stopAction(workId),
+    ..._openChildAction(workId),
+    ..._openResultAction(workId),
+  ];
+
+  List<Widget> _stopAction(String workId) => data.status == .running
+      ? [_BackgroundWorkStopButton(workId: workId, action: onStop)]
+      : const [];
+
+  List<Widget> _openChildAction(String workId) {
+    final openChild = onOpenChild;
+    if (data.identity.childConversationId == null || openChild == null) {
+      return const [];
+    }
+
+    return [_BackgroundWorkOpenChildButton(workId: workId, action: openChild)];
+  }
+
+  List<Widget> _openResultAction(String workId) => data.hasResult
+      ? [_BackgroundWorkOpenResultButton(workId: workId, action: onOpenResult)]
+      : const [];
 }
 
 class const _BackgroundWorkStopButton({

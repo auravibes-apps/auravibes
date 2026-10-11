@@ -210,7 +210,7 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
       toolCallId: request.toolCallId,
       toolKind: request.toolKind,
       originatingMessageId: request.originatingMessageId,
-      childConversationId: handle.childConversationId,
+      childConversationId: handle.childConversation.id,
     ),
   );
 
@@ -255,16 +255,30 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
     AgentBackgroundWork work,
     AgentToolCancellationHandle handle,
   ) {
-    unawaited(() async {
-      final childConversationId = await handle.childConversationIdWhenAvailable;
-      if (childConversationId == null) return;
-      await _store.linkChildConversation(
+    unawaited(
+      _persistChildConversationLink(
+        store: _store,
         conversationId: request.conversationId,
         workId: work.identity.id,
-        childConversationId: childConversationId,
-      );
-    }());
+        childConversationId: handle.childConversation.whenAvailable,
+      ),
+    );
   }
+}
+
+Future<void> _persistChildConversationLink({
+  required AgentBackgroundWorkStore store,
+  required String conversationId,
+  required String workId,
+  required Future<String?> childConversationId,
+}) async {
+  final childId = await childConversationId;
+  if (childId == null) return;
+  await store.linkChildConversation(
+    conversationId: conversationId,
+    workId: workId,
+    childConversationId: childId,
+  );
 }
 
 extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
