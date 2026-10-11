@@ -44,7 +44,7 @@ extension BackgroundWorksDaoOperations on BackgroundWorksDao {
     required String conversationId,
     required String workId,
     required String childConversationId,
-  }) => this._writeChildConversationLink(
+  }) => _writeChildConversationLink(
     conversationId: conversationId,
     workId: workId,
     childConversationId: childConversationId,

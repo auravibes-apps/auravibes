@@ -185,6 +185,7 @@ class AgentToolCancellationHandle {
   final String toolCallId;
   final Future<Object?>? operationResult;
   final bool Function()? isCancellationConfirmed;
+  final childConversation = AgentToolChildConversationTracker();
   final Future<void> Function() _cancel;
   final void Function()? _onChanged;
   final bool _isSupported;
@@ -193,7 +194,6 @@ class AgentToolCancellationHandle {
   Future<void>? _cancellation;
   String? _backgroundWorkId;
   final _detachedCompleter = Completer<String>();
-  final childConversation = AgentToolChildConversationTracker();
   bool _operationCompleted = false;
   bool _cancellationWasConfirmed = false;
 

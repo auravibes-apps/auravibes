@@ -295,21 +295,21 @@ class const _BackgroundWorkListContent({
   required final String conversationId,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => works.isEmpty
-      ? _emptyBackgroundWorkMessage()
-      : _buildBackgroundWorkList(context, ref);
-
-  Widget _emptyBackgroundWorkMessage() => const _BackgroundWorkMessage(
-    localeKey: LocaleKeys.chats_screens_chat_conversation_background_work_empty,
-  );
-
-  Widget _buildBackgroundWorkList(BuildContext context, WidgetRef ref) =>
-      BackgroundWorkListView(
-        works: _sortBackgroundWorks(works),
-        onStop: (work) => _stopBackgroundWork(ref, work),
-        onOpenResult: (work) async => _showBackgroundWorkResult(context, work),
-        onOpenChild: (work) => _openChildConversation(context, work),
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (works.isEmpty) {
+      return const _BackgroundWorkMessage(
+        localeKey:
+            LocaleKeys.chats_screens_chat_conversation_background_work_empty,
       );
+    }
+
+    return BackgroundWorkListView(
+      works: _sortBackgroundWorks(works),
+      onStop: (work) => _stopBackgroundWork(ref, work),
+      onOpenResult: (work) async => _showBackgroundWorkResult(context, work),
+      onOpenChild: (work) => _openChildConversation(context, work),
+    );
+  }
 
   Future<void> _openChildConversation(
     BuildContext context,
