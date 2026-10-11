@@ -196,28 +196,51 @@ class const _WorkspaceHeaderContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final toggleTooltip = _sidebarToggleTooltip(isExpanded, context);
-    final desktopToggle = _DesktopSidebarToggle(
-      isExpanded: isExpanded,
-      onToggle: onToggle,
-      tooltip: toggleTooltip,
-    );
-
     return SafeArea(
       bottom: false,
       child: Column(
         mainAxisSize: .min,
         children: [
           if (isExpanded)
-            _WorkspaceSelectorHeader(
+            _ExpandedWorkspaceHeader(
               workspaceId: workspaceId,
-              trailingAction: isDesktop ? desktopToggle : null,
+              isDesktop: isDesktop,
+              onToggle: onToggle,
             ),
-          if (isDesktop && !isExpanded) desktopToggle,
+          if (isDesktop && !isExpanded)
+            _CompactWorkspaceHeader(onToggle: onToggle),
         ],
       ),
     );
   }
+}
+
+class const _ExpandedWorkspaceHeader({
+  required final String workspaceId,
+  required final bool isDesktop,
+  required final VoidCallback onToggle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkspaceSelectorHeader(
+    workspaceId: workspaceId,
+    trailingAction: isDesktop
+        ? _DesktopSidebarToggle(
+            isExpanded: true,
+            onToggle: onToggle,
+            tooltip: _sidebarToggleTooltip(true, context),
+          )
+        : null,
+  );
+}
+
+class const _CompactWorkspaceHeader({required final VoidCallback onToggle})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _DesktopSidebarToggle(
+    isExpanded: false,
+    onToggle: onToggle,
+    tooltip: _sidebarToggleTooltip(false, context),
+  );
 }
 
 class const _DesktopSidebarToggle({
