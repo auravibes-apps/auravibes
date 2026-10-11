@@ -1879,15 +1879,11 @@ class const _AttachmentMenu({required final _ChatInputState state})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      key: const ValueKey<String>('chat_attachment_options_button'),
-      child: AuraPopupMenuButton(
-        items: _attachmentMenuItems(state),
-        icon: Icons.tune_rounded,
-        tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
-            .tr(),
-      ),
+    return AuraPopupMenuButton(
+      items: _attachmentMenuItems(state),
+      icon: Icons.tune_rounded,
       identifier: 'chat_attachment_options_button',
+      tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip.tr(),
     );
   }
 }
@@ -1921,19 +1917,16 @@ class const _RecordingButton({
   Widget build(BuildContext context) {
     final selectorId = this.selectorId;
 
-    return Semantics(
-      key: selectorId == null ? null : ValueKey<String>(selectorId),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: AuraIconButton(
-          icon: icon,
-          onPressed: onPressed,
-          disabled: disabled,
-          tint: tint,
-          tooltip: tooltip,
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: AuraIconButton(
+        icon: icon,
+        onPressed: onPressed,
+        disabled: disabled,
+        tint: tint,
+        identifier: selectorId,
+        tooltip: tooltip,
       ),
-      identifier: selectorId,
     );
   }
 }
@@ -1993,15 +1986,12 @@ class const _StopGenerationButtonContent({required final VoidCallback onStop})
   Widget build(BuildContext context) {
     return AuraTooltip(
       message: LocaleKeys.chats_screens_chat_conversation_stop_generation.tr(),
-      child: Semantics(
-        key: const ValueKey<String>('chat_stop_generation'),
-        child: AuraButton(
-          onPressed: onStop,
-          child: const AuraIcon(Icons.stop_rounded),
-          variant: .outlined,
-          tint: .error,
-          size: .small,
-        ),
+      child: AuraButton(
+        onPressed: onStop,
+        child: const AuraIcon(Icons.stop_rounded),
+        variant: .outlined,
+        tint: .error,
+        size: .small,
         identifier: 'chat_stop_generation',
       ),
     );
@@ -2023,14 +2013,11 @@ class const _ChatInputSendButtonView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      key: const ValueKey<String>('chat_send_button'),
-      child: AuraButton(
-        onPressed: onPressed,
-        child: const AuraIcon(Icons.arrow_upward),
-        size: .small,
-        disabled: disabled,
-      ),
+    return AuraButton(
+      onPressed: onPressed,
+      child: const AuraIcon(Icons.arrow_upward),
+      size: .small,
+      disabled: disabled,
       identifier: 'chat_send_button',
     );
   }
