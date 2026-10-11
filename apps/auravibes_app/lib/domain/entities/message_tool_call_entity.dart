@@ -22,6 +22,7 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
     @JsonKey(includeIfNull: false) String? argumentsDigest,
     @JsonKey(includeIfNull: false) String? turnId,
     @JsonKey(includeIfNull: false) int? turnRevision,
+    @Default(false) bool backgroundEligible,
 
     /// The raw response from tool execution, if successful.
     String? responseRaw,

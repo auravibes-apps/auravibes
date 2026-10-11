@@ -523,7 +523,26 @@
         "semantic_elevated": "{usage}, {percent} percent, approaching limit",
         "semantic_warning": "{usage}, {percent} percent, near limit",
         "semantic_overflow": "{usage}, {percent} percent, over limit by {overflow} tokens"
-      }
+      },
+      "background_work_title": "Background work",
+      "background_work_accessible_label": "Background work, {} active",
+      "background_work_empty": "No background work in this conversation.",
+      "background_work_load_error": "Could not load background work. Reopen this list to try again.",
+      "background_work_elapsed": "Elapsed: {}",
+      "background_work_elapsed_seconds": "{}s",
+      "background_work_elapsed_minutes": "{}m {}s",
+      "background_work_elapsed_hours": "{}h {}m",
+      "background_work_status_running": "Running",
+      "background_work_status_stop_requested": "Stop requested",
+      "background_work_status_completed": "Completed",
+      "background_work_status_failed": "Failed",
+      "background_work_status_stopped": "Stopped",
+      "background_work_run": "Run in background",
+      "background_work_stop": "Stop",
+      "background_work_open_result": "Open result",
+      "background_work_detach_error": "Could not move this tool call to background. It may have finished already.",
+      "background_work_stop_error": "Could not stop this background task. Check its status and try again.",
+      "background_work_open_error": "Could not open the background result."
     }
   },
   "tools_screen": {
