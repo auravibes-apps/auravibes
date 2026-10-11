@@ -233,14 +233,13 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
       workspaceId: provisional.identity.workspaceId,
       handle: operation.handle,
     );
-    unawaited(
-      _recordCompletion((
-        conversationId: request.conversationId,
-        workspaceId: provisional.identity.workspaceId,
-        workId: provisional.identity.id,
-        handle: operation.handle,
-      ), operation.result),
+    final completionRequest = (
+      conversationId: request.conversationId,
+      workspaceId: provisional.identity.workspaceId,
+      workId: provisional.identity.id,
+      handle: operation.handle,
     );
+    unawaited(_recordCompletion(completionRequest, operation.result));
   }
 }
 

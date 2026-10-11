@@ -818,6 +818,7 @@ extension on ConversationRepository {
     final detachedToolCallIds = await _detachedForkToolCallIds(
       materializedRows,
     );
+
     return await _copyRowsWithDetachedCalls((
       rows: materializedRows,
       forkId: forkId,
