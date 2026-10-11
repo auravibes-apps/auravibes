@@ -1308,19 +1308,44 @@ class const _ChatConversationStatus({
   required final ValueChanged<ChatDraft>? onEditDraft,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _BackgroundWorkStatus(data: data),
+      _OtherConversationStatus(data: data, onEditDraft: onEditDraft),
+    ],
+    mainAxisSize: .min,
+  );
+}
+
+class const _BackgroundWorkStatus({
+  required final _LoadedChatConversationData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      BackgroundWorkDetachControls(
+        workspaceId: data.workspaceId,
+        conversationId: data.conversation.id,
+      ),
+      BackgroundWorkContinuationStatus(
+        workspaceId: data.workspaceId,
+        conversationId: data.conversation.id,
+      ),
+    ],
+    mainAxisSize: .min,
+  );
+}
+
+class const _OtherConversationStatus({
+  required final _LoadedChatConversationData data,
+  required final ValueChanged<ChatDraft>? onEditDraft,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
     final retryAt = data.state.rateLimitRetryAt;
 
     return AuraColumn(
       children: [
-        BackgroundWorkDetachControls(
-          workspaceId: data.workspaceId,
-          conversationId: data.conversation.id,
-        ),
-        BackgroundWorkContinuationStatus(
-          workspaceId: data.workspaceId,
-          conversationId: data.conversation.id,
-        ),
         if (retryAt != null && !data.hidesStoppedRun)
           _RateLimitRetryIndicator(retryAt: retryAt),
         if (data.state.queuedDrafts.isNotEmpty)

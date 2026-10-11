@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/chats/models/background_work_continuation_preview.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -9,10 +10,6 @@ typedef BackgroundWorkContinuationKey = ({
   String workspaceId,
   String conversationId,
 });
-
-const backgroundWorkQueuedForContinuation = 'queued_for_continuation';
-const backgroundWorkContinuationInProgress = 'continuation_in_progress';
-const backgroundWorkContinuationFailed = 'continuation_failed';
 
 typedef BackgroundWorkDetachCommand = Future<BackgroundWorkView> Function({
   required String requestId,
@@ -110,7 +107,7 @@ backgroundWorkContinuationsProvider = FutureProvider.autoDispose
     });
 
 const Set<String> _inspectableContinuationPreviews = {
-  backgroundWorkQueuedForContinuation,
-  backgroundWorkContinuationInProgress,
-  backgroundWorkContinuationFailed,
+  BackgroundWorkContinuationPreview.queued,
+  BackgroundWorkContinuationPreview.inProgress,
+  BackgroundWorkContinuationPreview.failed,
 };

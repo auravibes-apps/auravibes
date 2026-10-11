@@ -23,6 +23,9 @@ class _BackgroundWorkDetachControlsState
   final Set<String> _pendingToolCallIds = {};
   VoidCallback? _closeSnackBar;
 
+  BackgroundWorkContinuationKey get _conversationKey =>
+      (workspaceId: widget.workspaceId, conversationId: widget.conversationId);
+
   @override
   void dispose() {
     _closeSnackBar?.call();
@@ -31,39 +34,13 @@ class _BackgroundWorkDetachControlsState
 
   @override
   Widget build(BuildContext context) {
-    final key = (
-      workspaceId: widget.workspaceId,
-      conversationId: widget.conversationId,
-    );
+    final key = _conversationKey;
     final calls = ref.watch(backgroundDetachableToolCallsProvider(key));
-    if (calls.isEmpty) return const SizedBox.shrink();
 
-    return Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .stretch,
-      children: [
-        for (final call in calls)
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.open_in_new),
-              title: Text(_toolCallTitle(call)),
-              subtitle: Text(
-                'chats_screens.chat_conversation.background_work.detach_hint'
-                    .tr(),
-              ),
-              trailing: TextButton(
-                onPressed: _pendingToolCallIds.contains(call.id)
-                    ? null
-                    : () => _detach(key, call.id),
-                child: Text(
-                  _backgroundWorkDetachLabel(
-                    _pendingToolCallIds.contains(call.id),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+    return _BackgroundWorkDetachCardList(
+      calls: calls,
+      pendingToolCallIds: _pendingToolCallIds,
+      onDetach: (toolCallId) => _detach(key, toolCallId),
     );
   }
 
@@ -73,38 +50,101 @@ class _BackgroundWorkDetachControlsState
   ) async {
     setState(() => _pendingToolCallIds.add(toolCallId));
     try {
-      final detach = ref.read(backgroundWorkDetachCommandProvider(key));
-      final detachedWork = await detach(
-        requestId: const UuidV7().generate(),
-        toolCallId: toolCallId,
-      );
-      if (detachedWork.toolCallId != toolCallId) {
-        throw StateError('The server detached a different tool call.');
-      }
+      await _performDetach(key, toolCallId);
       if (!mounted) return;
-      _closeSnackBar?.call();
-      _closeSnackBar = AuraSnackBars.show(
-        context: context,
-        content: Text(
-          'chats_screens.chat_conversation.background_work.detached'.tr(),
-        ),
-        variant: .success,
-      ).close;
+      _showDetachSuccess();
     } on Object catch (error) {
       if (!mounted) return;
-      _closeSnackBar?.call();
-      _closeSnackBar = AuraSnackBars.show(
-        context: context,
-        content: Text(CloudAppErrors.localizationKey(error).tr()),
-        variant: .error,
-      ).close;
+      _showDetachError(error);
     } finally {
-      if (mounted) {
-        ref.invalidate(cloudConversationStateProvider(key));
-        setState(() => _pendingToolCallIds.remove(toolCallId));
-      }
+      _finishDetach(key, toolCallId);
     }
   }
+
+  Future<void> _performDetach(
+    BackgroundWorkContinuationKey key,
+    String toolCallId,
+  ) async {
+    final detach = ref.read(backgroundWorkDetachCommandProvider(key));
+    final detachedWork = await detach(
+      requestId: const UuidV7().generate(),
+      toolCallId: toolCallId,
+    );
+    if (detachedWork.toolCallId != toolCallId) {
+      throw StateError('The server detached a different tool call.');
+    }
+  }
+
+  void _showDetachSuccess() {
+    _closeSnackBar?.call();
+    _closeSnackBar = AuraSnackBars.show(
+      context: context,
+      content: Text(
+        'chats_screens.chat_conversation.background_work.detached'.tr(),
+      ),
+      variant: .success,
+    ).close;
+  }
+
+  void _showDetachError(Object error) {
+    _closeSnackBar?.call();
+    _closeSnackBar = AuraSnackBars.show(
+      context: context,
+      content: Text(CloudAppErrors.localizationKey(error).tr()),
+      variant: .error,
+    ).close;
+  }
+
+  void _finishDetach(BackgroundWorkContinuationKey key, String toolCallId) {
+    if (!mounted) return;
+    ref.invalidate(cloudConversationStateProvider(key));
+    setState(() => _pendingToolCallIds.remove(toolCallId));
+  }
+}
+
+class const _BackgroundWorkDetachCardList({
+  required final List<ConversationToolCallView> calls,
+  required final Set<String> pendingToolCallIds,
+  required final ValueChanged<String> onDetach,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (calls.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .stretch,
+      children: [
+        for (final call in calls)
+          _BackgroundWorkDetachCard(
+            call: call,
+            isPending: pendingToolCallIds.contains(call.id),
+            onDetach: () => onDetach(call.id),
+          ),
+      ],
+    );
+  }
+}
+
+class const _BackgroundWorkDetachCard({
+  required final ConversationToolCallView call,
+  required final bool isPending,
+  required final VoidCallback onDetach,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListTile(
+      leading: const Icon(Icons.open_in_new),
+      title: Text(_toolCallTitle(call)),
+      subtitle: Text(
+        'chats_screens.chat_conversation.background_work.detach_hint'.tr(),
+      ),
+      trailing: TextButton(
+        onPressed: isPending ? null : onDetach,
+        child: Text(_backgroundWorkDetachLabel(isPending)),
+      ),
+    ),
+  );
 }
 
 String _toolCallTitle(ConversationToolCallView call) {

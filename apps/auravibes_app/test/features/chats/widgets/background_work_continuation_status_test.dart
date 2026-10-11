@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/chats/models/background_work_continuation_preview.dart';
 import 'package:auravibes_app/features/chats/providers/background_work_continuation_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_continuation_status.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_detach_controls.dart';
@@ -21,7 +22,7 @@ void main() {
       toolCallId: 'tool-call-1',
       toolKind: 'skillTemplate',
       status: 'completed',
-      statusPreview: backgroundWorkQueuedForContinuation,
+      statusPreview: BackgroundWorkContinuationPreview.queued,
       resultContent: result,
       resultByteLength: result.length,
       createdAt: .utc(2026),
@@ -81,8 +82,8 @@ void main() {
     }
 
     final works = [
-      work('work-in-progress', backgroundWorkContinuationInProgress),
-      work('work-failed', backgroundWorkContinuationFailed),
+      work('work-in-progress', BackgroundWorkContinuationPreview.inProgress),
+      work('work-failed', BackgroundWorkContinuationPreview.failed),
     ];
 
     await pumpLocalized(
