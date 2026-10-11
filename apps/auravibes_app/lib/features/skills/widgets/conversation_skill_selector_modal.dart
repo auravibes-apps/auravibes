@@ -25,8 +25,7 @@ import 'package:material_ui/material_ui.dart';
 const _selectorDialogWidth = 520.0;
 const _selectorLoadingHeight = 120.0;
 
-void _restoreSelectorFocus(BuildContext context, FocusNode? focusNode) {
-  if (!context.mounted) return;
+void _restoreSelectorFocus(FocusNode? focusNode) {
   if (focusNode == null || focusNode.context == null) return;
   focusNode.requestFocus();
 }
@@ -50,7 +49,8 @@ class const ConversationSkillSelectorModal({
         conversationId: conversationId,
       ),
     );
-    _restoreSelectorFocus(context, focusNode);
+    if (!context.mounted) return;
+    _restoreSelectorFocus(focusNode);
   }
 
   @override
@@ -679,35 +679,34 @@ class const _SkillTileLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (_, constraints) => _SkillTileComposition(
-      child: child,
-      actions: actions,
-      actionsBelow: constraints.maxWidth < _selectorDialogWidth,
-    ),
+    builder: (_, constraints) => constraints.maxWidth < _selectorDialogWidth
+        ? _CompactSkillTile(child: child, actions: actions)
+        : _WideSkillTile(child: child, actions: actions),
   );
 }
 
-class const _SkillTileComposition({
+class const _CompactSkillTile({
   required final Widget child,
   required final Widget actions,
-  required final bool actionsBelow,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraTile(
-    child: _tileContent(),
+    child: AuraColumn(
+      children: [child, actions],
+      spacing: .sm,
+      crossAxisAlignment: .stretch,
+    ),
     variant: .ghost,
-    trailing: _tileActions(),
   );
+}
 
-  Widget _tileContent() => actionsBelow
-      ? AuraColumn(
-          children: [child, actions],
-          spacing: .sm,
-          crossAxisAlignment: .stretch,
-        )
-      : child;
-
-  Widget? _tileActions() => actionsBelow ? null : actions;
+class const _WideSkillTile({
+  required final Widget child,
+  required final Widget actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      AuraTile(child: child, variant: .ghost, trailing: actions);
 }
 
 class _SkillTileContents extends StatelessWidget {
