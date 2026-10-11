@@ -12,7 +12,10 @@ abstract final class ResolveCloudAccountUsecase {
     };
     final serverUrl = request.serverUrl;
     if (serverUrl != null) {
-      final explicit = cloudAccountKey(serverUrl, request.accountId);
+      final explicit = CloudAccountKeyFactory.fromIdentity(
+        serverUrl,
+        request.accountId,
+      );
       if (candidates.contains(explicit)) return explicit;
     } else if (candidates.length == 1) {
       return candidates.single;

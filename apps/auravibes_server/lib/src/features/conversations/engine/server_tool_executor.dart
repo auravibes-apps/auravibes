@@ -24,6 +24,7 @@ import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
 import 'conversation_host_effects.dart';
 import 'server_tool_runtime.dart';
+import 'background_work_result_reader.dart';
 
 String cloudServiceConnectionId(String credentialId) =>
     credentialId.startsWith('service:')
@@ -299,6 +300,11 @@ class const ServerToolExecutorService({
         request.arguments,
         isCancelled: request.isCancelled,
       ),
+      AgentResolvedToolKind.builtIn
+          when tool.descriptor.tableId == backgroundWorkResultReaderTableId &&
+              tool.descriptor.toolIdentifier ==
+                  backgroundWorkResultReaderToolName =>
+        _readBackgroundWorkResult(session, turn, request.arguments),
       AgentResolvedToolKind.skillNative
           when tool.descriptor.skillSlug == agentsSkillSlug =>
         _runSubAgentTool(session, turn, tool, request),
@@ -310,6 +316,40 @@ class const ServerToolExecutorService({
       ),
       _ => throw const ServerToolNotConfiguredException(),
     };
+  }
+
+  Future<Map<String, Object?>> _readBackgroundWorkResult(
+    Session session,
+    ConversationTurn turn,
+    Map<String, dynamic> arguments,
+  ) async {
+    final workId = arguments['work_id'];
+    final offset = arguments['offset'];
+    final maxBytes = arguments['max_bytes'];
+    if (workId is! String ||
+        workId.isEmpty ||
+        offset is! int ||
+        maxBytes is! int) {
+      throw const FormatException('Invalid background result request.');
+    }
+    final work = await BackgroundWorkRecord.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(turn.workspaceId) &
+          table.conversationId.equals(turn.conversationId) &
+          table.stableId.equals(workId),
+    );
+    if (work == null) {
+      throw const FormatException('Background result is not available.');
+    }
+    return backgroundWorkResultPage(
+      workId: work.stableId,
+      status: work.status,
+      resultContent: work.resultContent,
+      resultByteLength: work.resultByteLength,
+      offset: offset,
+      maxBytes: maxBytes,
+    );
   }
 
   Future<Object?> _runSkillControl(

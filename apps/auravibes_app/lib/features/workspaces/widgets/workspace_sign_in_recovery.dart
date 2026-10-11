@@ -76,7 +76,10 @@ String _workspaceLoginLocation(
   String workspaceId,
   CloudWorkspaceRef cloud,
 ) {
-  final key = cloudAccountKey(cloud.serverUrl, cloud.accountId);
+  final key = CloudAccountKeyFactory.fromIdentity(
+    cloud.serverUrl,
+    cloud.accountId,
+  );
   final route = CloudAccountLoginRoute(
     workspaceId: workspaceId,
     returnPath: TaskReturn.validate(uri.toString(), workspaceId: workspaceId),

@@ -458,8 +458,11 @@ void main() {
   testWidgets('transient retry invalidates only the owning account health', (
     tester,
   ) async {
-    final key = cloudAccountKey(origin, account);
-    final other = cloudAccountKey('https://other.example', account);
+    final key = CloudAccountKeyFactory.fromIdentity(origin, account);
+    final other = CloudAccountKeyFactory.fromIdentity(
+      'https://other.example',
+      account,
+    );
     var checks = 0;
     var otherChecks = 0;
     final router = GoRouter(

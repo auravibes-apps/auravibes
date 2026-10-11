@@ -28,6 +28,7 @@ enum ConversationEventType implements _isc.SerializableModel {
   toolApprovalRequested,
   toolDecisionRecorded,
   toolResolved,
+  backgroundWorkCompleted,
   a2uiMessage;
 
   static ConversationEventType fromJson(String name) {
@@ -62,6 +63,8 @@ enum ConversationEventType implements _isc.SerializableModel {
         return ConversationEventType.toolDecisionRecorded;
       case 'toolResolved':
         return ConversationEventType.toolResolved;
+      case 'backgroundWorkCompleted':
+        return ConversationEventType.backgroundWorkCompleted;
       case 'a2uiMessage':
         return ConversationEventType.a2uiMessage;
       default:

@@ -6,7 +6,7 @@ extension CloudAccountSessionIdentity on CloudAccountSession {
   CloudAccountKey get key => keyForUser(userId);
 
   CloudAccountKey keyForUser(String userId) =>
-      cloudAccountKey(serverUrl, userId);
+      CloudAccountKeyFactory.fromIdentity(serverUrl, userId);
 }
 
 extension WorkspaceCloudAccountIdentity on WorkspaceEntity {
@@ -21,7 +21,7 @@ extension WorkspaceCloudAccountIdentity on WorkspaceEntity {
     final origin = url;
     if (origin == null) return null;
     try {
-      return cloudAccountKey(origin, accountId);
+      return CloudAccountKeyFactory.fromIdentity(origin, accountId);
     } on FormatException {
       // Invalid mirrors remain visible for management and removal.
       return null;

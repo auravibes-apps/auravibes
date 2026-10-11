@@ -128,7 +128,7 @@ List<ServiceConnectionListItem> _sortedCloudConnections(
 ServiceConnectionListItem _cloudMcpConnectionItem(WorkspaceResource resource) {
   final fields = _cloudMcpConnectionFields(resource);
 
-  return serviceConnectionListItemFromCloudMcp(fields);
+  return ServiceConnectionListItem.fromCloudMcp(fields);
 }
 
 ServiceConnectionCloudMcp _cloudMcpConnectionFields(

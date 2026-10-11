@@ -139,7 +139,7 @@ Future<WorkspaceAvailability> _checkCloudWorkspaceAvailability(
 ) async {
   final health = await ref.watch(
     cloudAccountHealthProvider(
-      cloudAccountKey(cloud.serverUrl, cloud.accountId),
+      CloudAccountKeyFactory.fromIdentity(cloud.serverUrl, cloud.accountId),
     ).future,
   );
 

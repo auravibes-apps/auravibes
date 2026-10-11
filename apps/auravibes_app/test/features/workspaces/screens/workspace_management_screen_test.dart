@@ -293,7 +293,9 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
       serverUrl: serverUrl,
     );
     if (mirror == null) return false;
-    removedMirrors.add(cloudAccountKey(serverUrl, cloudAccountId));
+    removedMirrors.add(
+      CloudAccountKeyFactory.fromIdentity(serverUrl, cloudAccountId),
+    );
     final _ = _workspaces.remove(mirror);
     _emit();
 
@@ -556,7 +558,10 @@ void main() {
               email: 'two@example.test',
             ),
           ];
-          final first = cloudAccountKey('https://one.example', 'same');
+          final first = CloudAccountKeyFactory.fromIdentity(
+            'https://one.example',
+            'same',
+          );
           final second = accounts.last.key;
           final checks = <CloudAccountKey>[];
           var expired = false;
@@ -835,7 +840,7 @@ void main() {
         final _ = await tester.pumpAndSettle();
         expect(await repository.getWorkspaceById(cloud.id), isNull);
         expect(repository.removedMirrors, [
-          cloudAccountKey('https://one.example', 'same'),
+          CloudAccountKeyFactory.fromIdentity('https://one.example', 'same'),
         ]);
       });
     }
@@ -865,7 +870,10 @@ void main() {
               ),
             ],
             cloudLoaders: {
-              cloudAccountKey('https://one.example', 'same'): () async {
+              CloudAccountKeyFactory.fromIdentity(
+                'https://one.example',
+                'same',
+              ): () async {
                 discoveryCalls++;
 
                 return const CloudWorkspaceViewState(
@@ -928,10 +936,16 @@ void main() {
               ),
             ],
             cloudWorkspaceStatesByAccount: {
-              cloudAccountKey('https://one.example', 'same'): state(
+              CloudAccountKeyFactory.fromIdentity(
+                'https://one.example',
+                'same',
+              ): state(
                 'One Attached',
               ),
-              cloudAccountKey('https://two.example', 'same'): state(
+              CloudAccountKeyFactory.fromIdentity(
+                'https://two.example',
+                'same',
+              ): state(
                 'Two Available',
               ),
             },
@@ -1363,7 +1377,7 @@ void main() {
         ),
       ];
       final cloudWorkspaceStates = {
-        cloudAccountKey(
+        CloudAccountKeyFactory.fromIdentity(
           'http://localhost:8080',
           'account-1',
         ): CloudWorkspaceViewState(
@@ -1380,7 +1394,7 @@ void main() {
           ],
           pendingInvites: const [],
         ),
-        cloudAccountKey(
+        CloudAccountKeyFactory.fromIdentity(
           'http://localhost:8080',
           'account-2',
         ): CloudWorkspaceViewState(
@@ -1668,13 +1682,19 @@ void main() {
           accounts: accounts,
           connectView: true,
           cloudLoaders: {
-            cloudAccountKey('http://localhost:8080', 'account-1'): () async {
+            CloudAccountKeyFactory.fromIdentity(
+              'http://localhost:8080',
+              'account-1',
+            ): () async {
               firstLoads++;
               if (firstLoads == 1) throw StateError('temporary failure');
 
               return state('Cloud One', 1);
             },
-            cloudAccountKey('http://localhost:8080', 'account-2'): () async {
+            CloudAccountKeyFactory.fromIdentity(
+              'http://localhost:8080',
+              'account-2',
+            ): () async {
               secondLoads++;
 
               return state('Cloud Two', 2);

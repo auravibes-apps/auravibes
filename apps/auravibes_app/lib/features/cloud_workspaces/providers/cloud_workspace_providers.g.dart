@@ -232,7 +232,7 @@ final class CloudWorkspaceDetailProvider
 }
 
 String _$cloudWorkspaceDetailHash() =>
-    r'c4aa0dcc9ff9f81facff9bbfd85d5194bb7a6483';
+    r'abb26320bd143e636c9f74c62c24e5bdef966b4b';
 
 final class CloudWorkspaceDetailFamily extends $Family
     with

@@ -255,9 +255,11 @@ final cloudAccountUseCasesProvider = Provider<CloudAccountUseCases>((ref) {
     },
     invalidateAccount: (serverUrl, userId) {
       ref.invalidate(
-        cloudAccountHealthProvider(cloudAccountKey(serverUrl, userId)),
+        cloudAccountHealthProvider(
+          CloudAccountKeyFactory.fromIdentity(serverUrl, userId),
+        ),
       );
-      final key = cloudAccountKey(serverUrl, userId);
+      final key = CloudAccountKeyFactory.fromIdentity(serverUrl, userId);
       ref
         ..invalidate(cloudAccountsProvider)
         ..invalidate(cloudWorkspaceStateProvider(key))

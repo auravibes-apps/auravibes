@@ -759,6 +759,10 @@ class ConversationUseCases {
       'agentId': request.agentId,
     });
     final attachmentIds = request.attachmentIds.map(_parseObjectId).toSet();
+    final contentDigest = base64UrlEncode(
+      (await Sha256().hash(utf8.encode(content))).bytes,
+    );
+    final sortedAttachmentIds = attachmentIds.toList()..sort();
     final result = await _mutate(
       session,
       userId: userId,
@@ -828,7 +832,42 @@ class ConversationUseCases {
           now: now,
           transaction: transaction,
         );
-        return _Mutation(started, 'turnStarted', request.conversationId);
+        final eventSequence = conversation.eventSequence + 1;
+        await Conversation.db.updateRow(
+          session,
+          conversation.copyWith(
+            revision: conversation.revision + 1,
+            projectionRevision: conversation.projectionRevision + 1,
+            eventSequence: eventSequence,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+        await ConversationEvent.db.insertRow(
+          session,
+          ConversationEvent(
+            workspaceId: request.workspaceId,
+            conversationId: conversation.id!,
+            sequence: eventSequence,
+            eventId: 'user-message:${request.clientMessageId}',
+            actorUserId: userId,
+            requestId: request.requestId,
+            kind: ConversationEventType.messageQueued,
+            payloadJson: jsonEncode({
+              'messageId': request.clientMessageId,
+              'contentDigest': contentDigest,
+              'attachmentIds': sortedAttachmentIds,
+            }),
+            createdAt: now,
+          ),
+          transaction: transaction,
+        );
+        return _Mutation(
+          started,
+          'turnStarted',
+          request.conversationId,
+          affectedConversationIds: [request.conversationId],
+        );
       },
     );
     session.log(
@@ -930,6 +969,89 @@ class ConversationUseCases {
     );
     if (job != null) await _publishConversationJob(session, job);
     return result;
+  }
+
+  /// Starts one turn for the oldest pending message after a turn completes.
+  Future<bool> continueOldestQueuedMessage(
+    Session session, {
+    required String userId,
+    required int workspaceId,
+    required String conversationId,
+  }) async {
+    while (true) {
+      final queued = await session.db.transaction((transaction) async {
+        final conversation = await _repository.findConversationByStableId(
+          session,
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          transaction: transaction,
+          lock: true,
+        );
+        if (conversation == null ||
+            conversation.activeExecutionId != null ||
+            await _repository.hasActiveMutation(
+              session,
+              workspaceId: workspaceId,
+              conversationId: conversation.id!,
+              transaction: transaction,
+            )) {
+          return null;
+        }
+        final pending = await _repository.listPendingMessages(
+          session,
+          workspaceId: workspaceId,
+          conversationId: conversation.id!,
+          transaction: transaction,
+        );
+        if (pending.isEmpty) return null;
+        final recentEvents = await ConversationEvent.db.find(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(workspaceId) &
+              table.conversationId.equals(conversation.id!) &
+              table.kind.inSet({
+                ConversationEventType.executionStarted,
+                ConversationEventType.executionStopped,
+                ConversationEventType.executionCompleted,
+                ConversationEventType.executionFailed,
+              }),
+          orderBy: (table) => table.sequence.desc(),
+          limit: 1,
+          transaction: transaction,
+        );
+        if (recentEvents.firstOrNull?.kind ==
+            ConversationEventType.executionStopped) {
+          return null;
+        }
+        if (conversation.executionState != 'idle' &&
+            conversation.executionState != ConversationStatuses.failed &&
+            conversation.executionState !=
+                ConversationStatuses.awaitingUserAction) {
+          return null;
+        }
+        return (conversation: conversation, message: pending.first);
+      });
+      if (queued == null) return false;
+
+      try {
+        await continueConversation(
+          session,
+          userId: userId,
+          request: ContinueConversationRequest(
+            workspaceId: workspaceId,
+            requestId: 'queued:${queued.message.stableId}',
+            conversationId: conversationId,
+            expectedProjectionRevision: queued.conversation.projectionRevision,
+            a2uiSupportedComponents: const [],
+          ),
+        );
+        return true;
+      } on ConversationException catch (error) {
+        if (error.code == ConversationErrorCode.staleRevision) continue;
+        if (error.code == ConversationErrorCode.turnConflict) return false;
+        rethrow;
+      }
+    }
   }
 
   Future<TurnSnapshot> getTurn(
@@ -1190,6 +1312,7 @@ class ConversationUseCases {
           toolKind:
               const AgentToolNameResolver().resolve(call.name)?.kind.name ??
               'unknown',
+          runtimeServerId: session.serverpod.serverId,
           status: 'running',
           createdAt: now,
           updatedAt: now,
@@ -1371,14 +1494,29 @@ class ConversationUseCases {
       _fail(ConversationErrorCode.validationFailed);
     }
     final attachmentIds = request.attachmentIds.map(_parseObjectId).toSet();
+    final contentDigest = base64UrlEncode(
+      (await Sha256().hash(utf8.encode(content))).bytes,
+    );
+    final metadataDigest = request.metadataJson == null
+        ? null
+        : base64UrlEncode(
+            (await Sha256().hash(utf8.encode(request.metadataJson!))).bytes,
+          );
+    final sortedAttachmentIds = attachmentIds.toList()..sort();
     await ConversationEventWriter().write(
       session,
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
       requestId: request.requestId,
+      eventId: 'user-message:${request.clientMessageId}',
       kind: ConversationEventType.messageQueued,
-      payloadJson: jsonEncode({'messageId': request.clientMessageId}),
+      payloadJson: jsonEncode({
+        'messageId': request.clientMessageId,
+        'contentDigest': contentDigest,
+        'attachmentIds': sortedAttachmentIds,
+        'metadataDigest': ?metadataDigest,
+      }),
       persist: (transaction, conversation, now) async {
         await _requireMember(
           session,
@@ -1703,6 +1841,10 @@ class ConversationUseCases {
             conversationId: conversation.id!,
             transaction: transaction,
           );
+          final nextPendingMessage = pendingMessages.firstOrNull;
+          final turnMessages = nextPendingMessage == null
+              ? const <ConversationMessage>[]
+              : [nextPendingMessage];
           execution = await ConversationExecution.db.insertRow(
             session,
             ConversationExecution(
@@ -1717,12 +1859,10 @@ class ConversationUseCases {
                 'parentTurnId': ?parentTurnId,
                 'parentToolCallId': ?parentToolCallId,
               }),
-              claimedMessageIdsJson: pendingMessages.isEmpty
+              claimedMessageIdsJson: turnMessages.isEmpty
                   ? jsonEncode(const <String>[])
                   : jsonEncode(
-                      pendingMessages
-                          .map((message) => message.stableId)
-                          .toList(),
+                      turnMessages.map((message) => message.stableId).toList(),
                     ),
               attempt: 0,
               createdByUserId: userId,
@@ -1761,9 +1901,9 @@ class ConversationUseCases {
               requestId: execution.stableId,
               requestHash: jsonEncode({'executionId': execution.stableId}),
               initiatorUserId: userId,
-              userMessageId: pendingMessages.isEmpty
+              userMessageId: turnMessages.isEmpty
                   ? null
-                  : pendingMessages.first.id,
+                  : turnMessages.first.id,
               assistantMessageId: assistant.id,
               status: ConversationStatuses.queued,
               revision: 1,
@@ -1778,7 +1918,7 @@ class ConversationUseCases {
             assistant.copyWith(turnId: turn.id),
             transaction: transaction,
           );
-          for (final message in pendingMessages) {
+          for (final message in turnMessages) {
             final metadata = message.metadataJson == null
                 ? <String, dynamic>{}
                 : Map<String, dynamic>.from(
