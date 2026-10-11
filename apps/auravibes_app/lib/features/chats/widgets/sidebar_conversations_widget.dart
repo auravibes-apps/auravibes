@@ -9,12 +9,11 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_draft_cleanup_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
@@ -520,21 +519,7 @@ Future<void> _deleteSidebarConversationInStorage(
   WidgetRef ref,
   ConversationEntity chat,
 ) async {
-  final cloud = await ref.read(
-    cloudConversationUsecaseProvider(chat.workspaceId).future,
-  );
-  if (cloud != null) {
-    await cloud.delete(chat);
-    await ref
-        .read(conversationDraftCleanupUsecaseProvider)
-        .clearConversation(chat.workspaceId, chat.id);
-
-    return;
-  }
-
-  final _ = await ref
-      .read(deleteConversationUsecaseProvider)
-      .call(workspaceId: chat.workspaceId, conversationId: chat.id);
+  final _ = await ref.read(bulkConversationActionsUsecaseProvider).delete(chat);
 }
 
 void _showSidebarDeleteSnack(BuildContext context, Object error) {
