@@ -39,6 +39,7 @@ import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -867,6 +868,44 @@ void main() {
     expect(status, findsNothing);
   });
 
+  testWidgets('resizes active sub-agent action with Aura target updates', (
+    tester,
+  ) async {
+    final theme = ValueNotifier(AuraTheme.light);
+    addTearDown(theme.dispose);
+    final container = await _pumpActiveSubAgentStatusWidget(
+      tester,
+      childConversations: [_childConversation('child-1', 'Research')],
+      themeListenable: theme,
+    );
+    final request = container
+        .read(activeSubAgentRuntimeProvider.notifier)
+        .start(parentId: _chatId, childId: 'child-1');
+    await tester.pump();
+
+    final status = find.byKey(const ValueKey<String>('chat_active_sub_agents'));
+    final badge = find.descendant(
+      of: status,
+      matching: find.byType(AuraContainer),
+    );
+    expect(status, findsOneWidget);
+    final initialTargetSize = tester.getSize(status);
+    expect(initialTargetSize.width, greaterThanOrEqualTo(48));
+    expect(initialTargetSize.height, greaterThanOrEqualTo(48));
+    final compactBadgeSize = tester.getSize(badge);
+
+    theme.value = AuraTheme.light.copyWith(
+      interactionSizes: const AuraInteractionSizeScale(minimumTargetSize: 72),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    final updatedTargetSize = tester.getSize(status);
+    expect(updatedTargetSize.width, greaterThanOrEqualTo(72));
+    expect(updatedTargetSize.height, greaterThanOrEqualTo(72));
+    expect(tester.getSize(badge), compactBadgeSize);
+    final _ = request.finish();
+  });
+
   testWidgets('keeps input busy while busy state refreshes', (tester) async {
     final conversation = ConversationEntity(
       id: _chatId,
@@ -1344,6 +1383,7 @@ void main() {
 Future<ProviderContainer> _pumpActiveSubAgentStatusWidget(
   WidgetTester tester, {
   required List<ConversationEntity> childConversations,
+  ValueListenable<AuraTheme>? themeListenable,
 }) async {
   final router = GoRouter(
     routes: [
@@ -1389,12 +1429,33 @@ Future<ProviderContainer> _pumpActiveSubAgentStatusWidget(
         child: UncontrolledProviderScope(
           container: container,
           child: Builder(
-            builder: (context) => MaterialApp.router(
-              routerConfig: router,
-              locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-            ),
+            builder: (context) {
+              final listenable = themeListenable;
+              if (listenable == null) {
+                return MaterialApp.router(
+                  routerConfig: router,
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                );
+              }
+
+              Widget appForTheme(AuraTheme theme) => MaterialApp.router(
+                routerConfig: router,
+                builder: (context, child) => AuraThemeScope(
+                  theme: theme,
+                  child: child ?? const SizedBox.shrink(),
+                ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+              );
+
+              return ValueListenableBuilder<AuraTheme>(
+                valueListenable: listenable,
+                builder: (context, theme, _) => appForTheme(theme),
+              );
+            },
           ),
         ),
         supportedLocales: const [Locale('en'), Locale('es')],

@@ -123,7 +123,13 @@ class const _ActiveSubAgentTapTarget({
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
     child: InkWell(
-      child: _ActiveSubAgentBadge(count: count),
+      child: ConstrainedBox(
+        constraints: .new(
+          minWidth: context.auraTheme.interactionSizes.minimumTargetSize,
+          minHeight: context.auraTheme.interactionSizes.minimumTargetSize,
+        ),
+        child: Center(child: _ActiveSubAgentBadge(count: count)),
+      ),
       onTap: onTap,
       borderRadius: .circular(context.auraTheme.fromBorderRadius(.full)),
     ),

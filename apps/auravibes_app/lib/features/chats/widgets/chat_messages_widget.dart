@@ -1562,7 +1562,13 @@ class const _ForkBoundaryDivider({
               workspaceId: source.workspaceId,
               chatId: source.id,
             ).go(context),
-            child: row,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: context.auraTheme.interactionSizes.minimumTargetSize,
+                minHeight: context.auraTheme.interactionSizes.minimumTargetSize,
+              ),
+              child: Center(child: row),
+            ),
           );
   }
 }
