@@ -653,7 +653,7 @@ class const _AvailableSkillTile({
 }
 
 class _SkillTileContents extends StatelessWidget {
-  _SkillTileContents({
+  new({
     required AvailableSkill skill,
     required _SelectorActions actions,
     required bool selected,
