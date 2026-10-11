@@ -1635,31 +1635,38 @@ class const _ChatTileUpdatedAt({required final DateTime updatedAt})
 class const _ChatTileTitleRow({
   required final ConversationEntity chat,
   required final String title,
-}) extends ConsumerWidget {
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      if (chat.isPinned) ...[
+        const AuraIcon(Icons.push_pin_outlined, size: .small, tint: .warning),
+        const SizedBox(width: 8),
+      ],
+      Expanded(
+        child: AuraText(
+          child: Text(title, overflow: .ellipsis),
+          style: .heading6,
+        ),
+      ),
+      _ChatTileDraftMarker(chat: chat),
+    ],
+  );
+}
+
+class const _ChatTileDraftMarker({required final ConversationEntity chat})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasDraft =
-        ref
-            .watch(conversationDraftProvider(chat.workspaceId, chat.id))
-            ?.isEmpty ==
-        false;
+    final draft = ref.watch(
+      conversationDraftProvider(chat.workspaceId, chat.id),
+    );
+    if (draft == null || draft.isEmpty) return const SizedBox.shrink();
 
     return AuraRow(
       children: [
-        if (chat.isPinned) ...[
-          const AuraIcon(Icons.push_pin_outlined, size: .small, tint: .warning),
-          const SizedBox(width: 8),
-        ],
-        Expanded(
-          child: AuraText(
-            child: Text(title, overflow: .ellipsis),
-            style: .heading6,
-          ),
-        ),
-        if (hasDraft) ...[
-          const SizedBox(width: 8),
-          ConversationDraftBadge(conversationId: chat.id),
-        ],
+        const SizedBox(width: 8),
+        ConversationDraftBadge(conversationId: chat.id),
       ],
     );
   }

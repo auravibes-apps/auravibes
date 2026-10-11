@@ -388,23 +388,37 @@ class const _SidebarConversationTileContent({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isResponseStreaming = ref.watch(
-      conversationStreamingProvider.select(
-        (conversationIds) => conversationIds.contains(chat.id),
-      ),
-    );
-    final hasDraft =
-        ref
-            .watch(conversationDraftProvider(chat.workspaceId, chat.id))
-            ?.isEmpty ==
-        false;
+    final isResponseStreaming = _isResponseStreaming(ref);
+    final hasDraft = _hasDraft(ref);
 
     return _SidebarConversationTileBody(
       content: this,
       isResponseStreaming: isResponseStreaming,
       hasDraft: hasDraft,
+      semanticLabel: _semanticLabel(isResponseStreaming, hasDraft),
     );
   }
+
+  bool _isResponseStreaming(WidgetRef ref) => ref.watch(
+    conversationStreamingProvider.select(
+      (conversationIds) => conversationIds.contains(chat.id),
+    ),
+  );
+
+  bool _hasDraft(WidgetRef ref) {
+    final draft = ref.watch(
+      conversationDraftProvider(chat.workspaceId, chat.id),
+    );
+
+    return draft?.isEmpty == false;
+  }
+
+  String _semanticLabel(bool isResponseStreaming, bool hasDraft) =>
+      _sidebarConversationTileSemanticLabel(
+        title,
+        isResponseStreaming,
+        hasDraft,
+      );
 }
 
 class const _SidebarConversationTileTrailing({
@@ -432,6 +446,7 @@ class const _SidebarConversationTileBody({
   required final _SidebarConversationTileContent content,
   required final bool isResponseStreaming,
   required final bool hasDraft,
+  required final String semanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraTile(
@@ -446,11 +461,7 @@ class const _SidebarConversationTileBody({
       content: content,
       isResponseStreaming: isResponseStreaming,
     ),
-    semanticLabel: _sidebarConversationTileSemanticLabel(
-      content.title,
-      isResponseStreaming,
-      hasDraft,
-    ),
+    semanticLabel: semanticLabel,
   );
 }
 
