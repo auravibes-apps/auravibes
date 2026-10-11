@@ -1235,12 +1235,37 @@ List<({int start, int end})> _fencedCodeBlockContentRanges(String text) {
   int lineEnd,
 ) {
   var markerStart = lineStart;
-  while (markerStart < lineEnd &&
-      markerStart - lineStart < 4 &&
-      text.codeUnitAt(markerStart) == 0x20) {
-    markerStart++;
+  while (markerStart < lineEnd) {
+    var indentation = 0;
+    while (markerStart < lineEnd &&
+        indentation < 3 &&
+        text.codeUnitAt(markerStart) == 0x20) {
+      markerStart++;
+      indentation++;
+    }
+
+    if (markerStart < lineEnd && text.codeUnitAt(markerStart) == 0x3e) {
+      markerStart++;
+      if (markerStart < lineEnd &&
+          _isMarkdownWhitespace(text.codeUnitAt(markerStart))) {
+        markerStart++;
+      }
+      continue;
+    }
+
+    final listMarkerEnd = _markdownListMarkerEnd(text, markerStart, lineEnd);
+    if (listMarkerEnd != null) {
+      markerStart = listMarkerEnd;
+      if (markerStart < lineEnd &&
+          _isMarkdownWhitespace(text.codeUnitAt(markerStart))) {
+        markerStart++;
+      }
+      continue;
+    }
+
+    break;
   }
-  if (markerStart - lineStart > 3 || markerStart >= lineEnd) return null;
+  if (markerStart >= lineEnd) return null;
 
   final markerCharacter = text.codeUnitAt(markerStart);
   if (markerCharacter != 0x60 && markerCharacter != 0x7e) return null;
@@ -1258,6 +1283,45 @@ List<({int start, int end})> _fencedCodeBlockContentRanges(String text) {
     infoStart: markerEnd,
   );
 }
+
+int? _markdownListMarkerEnd(String text, int start, int end) {
+  if (start >= end) return null;
+
+  final firstCharacter = text.codeUnitAt(start);
+  if (firstCharacter == 0x2b ||
+      firstCharacter == 0x2d ||
+      firstCharacter == 0x2a) {
+    final markerEnd = start + 1;
+    if (markerEnd == end || _isMarkdownWhitespace(text.codeUnitAt(markerEnd))) {
+      return markerEnd;
+    }
+
+    return null;
+  }
+
+  if (firstCharacter < 0x30 || firstCharacter > 0x39) return null;
+  var markerEnd = start;
+  while (markerEnd < end) {
+    final character = text.codeUnitAt(markerEnd);
+    if (character < 0x30 || character > 0x39) break;
+    markerEnd++;
+    if (markerEnd - start > 9) return null;
+  }
+  if (markerEnd == end) return null;
+
+  final delimiter = text.codeUnitAt(markerEnd);
+  if (delimiter != 0x2e && delimiter != 0x29) return null;
+  markerEnd++;
+
+  if (markerEnd != end && !_isMarkdownWhitespace(text.codeUnitAt(markerEnd))) {
+    return null;
+  }
+
+  return markerEnd;
+}
+
+bool _isMarkdownWhitespace(int codeUnit) =>
+    codeUnit == 0x20 || codeUnit == 0x09;
 
 bool _containsCodeUnit(String text, int start, int end, int target) {
   for (var offset = start; offset < end; offset++) {

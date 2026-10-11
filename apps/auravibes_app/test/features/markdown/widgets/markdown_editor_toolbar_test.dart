@@ -696,6 +696,36 @@ void main() {
       }
     });
 
+    testWidgets('ignores fenced code inside blockquotes and list items', (
+      tester,
+    ) async {
+      for (final text in [
+        '> ```\n> **literal**\n> ```',
+        '- ```\n  **literal**\n  ```',
+      ]) {
+        final controller = TextEditingController(text: text);
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+
+        final literalStart = text.indexOf('literal');
+        controller.selection = .collapsed(offset: literalStart + 1);
+        await tester.pump();
+
+        expect(
+          tester
+              .widget<AuraIconButton>(toolbarButton(Icons.format_bold))
+              .variant,
+          AuraIconButtonVariant.outlined,
+        );
+      }
+    });
+
     testWidgets('updates inline state when undoing and redoing formatting', (
       tester,
     ) async {
