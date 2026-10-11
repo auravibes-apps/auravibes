@@ -1828,7 +1828,6 @@ void _showSkillsModal({
 }) {
   if (!context.mounted) return;
 
-  FocusManager.instance.primaryFocus?.unfocus();
   unawaited(
     showDialog<void>(
       context: context,

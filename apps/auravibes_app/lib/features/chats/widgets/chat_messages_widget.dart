@@ -500,7 +500,6 @@ void _showConversationSkillPicker(
   String workspaceId,
   String conversationId,
 ) {
-  FocusManager.instance.primaryFocus?.unfocus();
   unawaited(
     showDialog<void>(
       context: context,

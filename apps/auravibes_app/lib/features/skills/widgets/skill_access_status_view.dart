@@ -42,6 +42,7 @@ class const SkillAccessStatusView({
   final bool isAppSkill = false,
   final VoidCallback? onChanged,
   final bool recoveryEnabled = true,
+  final String? credentialSetupSemanticLabel,
   super.key,
 }) extends ConsumerWidget {
   @override
@@ -52,6 +53,7 @@ class const SkillAccessStatusView({
       summary: summary,
       showDependencies: showDependencies,
       recoveryEnabled: recoveryEnabled,
+      credentialSetupSemanticLabel: credentialSetupSemanticLabel,
       onSetup: (value) => _setupAccess((
         view: this,
         context: context,
@@ -221,6 +223,7 @@ class const _SkillAccessStatusContent({
   required final AsyncValue<SkillAccessSummary?> summary,
   required final bool showDependencies,
   required final bool recoveryEnabled,
+  final String? credentialSetupSemanticLabel,
   required final _SkillAccessSetup onSetup,
 }) extends StatelessWidget {
   @override
@@ -229,6 +232,7 @@ class const _SkillAccessStatusContent({
       summary: value,
       showDependencies: showDependencies,
       recoveryEnabled: recoveryEnabled,
+      credentialSetupSemanticLabel: credentialSetupSemanticLabel,
       onSetup: onSetup(value),
     ),
     AsyncLoading() => const TextLocale(LocaleKeys.skill_access_checking),
@@ -249,6 +253,7 @@ class const _SkillAccessSummaryContent({
   required final SkillAccessSummary summary,
   required final bool showDependencies,
   required final bool recoveryEnabled,
+  final String? credentialSetupSemanticLabel,
   required final VoidCallback onSetup,
 }) extends StatelessWidget {
   @override
@@ -259,6 +264,7 @@ class const _SkillAccessSummaryContent({
         _SkillAccessDependencies(
           summary: summary,
           recoveryEnabled: recoveryEnabled,
+          credentialSetupSemanticLabel: credentialSetupSemanticLabel,
           onSetup: onSetup,
         ),
     ],
@@ -270,6 +276,7 @@ class const _SkillAccessSummaryContent({
 class const _SkillAccessDependencies({
   required final SkillAccessSummary summary,
   required final bool recoveryEnabled,
+  final String? credentialSetupSemanticLabel,
   required final VoidCallback onSetup,
 }) extends StatelessWidget {
   @override
@@ -281,6 +288,7 @@ class const _SkillAccessDependencies({
       if (_requiresSetup(summary))
         _SkillAccessSetupButton(
           recoveryEnabled: recoveryEnabled,
+          semanticLabel: credentialSetupSemanticLabel,
           onPressed: onSetup,
         ),
     ],
@@ -294,6 +302,7 @@ bool _requiresSetup(SkillAccessSummary summary) =>
 
 class const _SkillAccessSetupButton({
   required final bool recoveryEnabled,
+  final String? semanticLabel,
   required final VoidCallback onPressed,
 }) extends StatelessWidget {
   @override
@@ -302,6 +311,7 @@ class const _SkillAccessSetupButton({
     child: const TextLocale(LocaleKeys.skills_selector_credential_setup),
     variant: .text,
     disabled: !recoveryEnabled,
+    semanticLabel: semanticLabel,
   );
 }
 

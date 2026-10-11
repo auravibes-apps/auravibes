@@ -11,6 +11,8 @@ import 'package:auravibes_app/features/skills/widgets/conversation_skill_selecto
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -19,6 +21,8 @@ void main() {
   testWidgets('shows selected skill and current context separately', (
     tester,
   ) async {
+    final semanticsHandle = tester.ensureSemantics();
+    addTearDown(semanticsHandle.dispose);
     final container = ProviderContainer(
       overrides: [
         skillAccessSummaryProvider.overrideWith((_, _) async => null),
@@ -85,6 +89,12 @@ void main() {
     expect(find.text('Instruction requirements met'), findsOneWidget);
     expect(find.text('Use now'), findsOneWidget);
     expect(find.byIcon(Icons.remove_circle_outline), findsNothing);
+    final semantics = tester
+        .getSemantics(find.byKey(const ValueKey('skill-row-research')))
+        .getSemanticsData();
+    expect(semantics.label, contains('Ready in context'));
+    expect(semantics.label, contains('Instruction requirements met'));
+    expect(semantics.hasFlag(SemanticsFlag.isSelected), isTrue);
   });
 
   testWidgets('all access statuses remain separate from ready context', (
@@ -142,6 +152,8 @@ void main() {
   });
 
   testWidgets('search filters both sections by description', (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
     final container = _container(
       state: const ConversationSkillSelectorState(
         loaded: [_research],
@@ -159,6 +171,59 @@ void main() {
     final _ = await tester.enterText(find.byType(EditableText), 'no match');
     final _ = await tester.pumpAndSettle();
     expect(find.text('No skills match your search'), findsNWidgets(2));
+    expect(
+      tester
+          .getSemantics(find.text('No skills match your search').first)
+          .getSemanticsData()
+          .label,
+      'No skills match your search',
+    );
+  });
+
+  testWidgets('loading selector has a localized live-region label', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+    final selector = Completer<ConversationSkillSelectorState>();
+    final container = ProviderContainer(
+      overrides: [
+        skillAccessSummaryProvider.overrideWith((_, _) async => null),
+        conversationSkillSelectorProvider(
+          'workspace',
+          'conversation',
+        ).overrideWith((_) => selector.future),
+      ],
+    );
+    addTearDown(container.dispose);
+    await _pumpModal(tester, container, settle: false);
+
+    expect(
+      find.bySemanticsLabel('Loading conversation skills…'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('connection lookup announces its loading state', (tester) async {
+    final access = Completer<SkillAccessSummary?>();
+    final container = ProviderContainer(
+      overrides: [
+        skillAccessSummaryProvider.overrideWith((_, _) => access.future),
+        conversationSkillSelectorProvider(
+          'workspace',
+          'conversation',
+        ).overrideWith(
+          (_) async => const ConversationSkillSelectorState(
+            loaded: [_research],
+            loadable: [],
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await _pumpModal(tester, container);
+
+    expect(find.text('Checking saved access…'), findsOneWidget);
   });
 
   testWidgets('shows preparing while context retry is in progress', (
@@ -181,7 +246,67 @@ void main() {
     expect(find.text('Retry'), findsNothing);
   });
 
+  testWidgets('skill row semantics announce selection and readiness', (
+    tester,
+  ) async {
+    final semanticsHandle = tester.ensureSemantics();
+    addTearDown(semanticsHandle.dispose);
+    final container = _container(
+      state: const ConversationSkillSelectorState(
+        loaded: [_research],
+        loadable: [],
+        contextStatusBySlug: {'research': .error},
+        failureBySlug: {'research': .missingCredentials},
+      ),
+      access: const SkillAccessSummary(
+        status: .partial,
+        instructionsAvailable: true,
+        tools: [
+          SkillToolAccess(id: 'search', title: 'Search', status: .missing),
+        ],
+      ),
+    );
+    addTearDown(container.dispose);
+    await _pumpModal(tester, container);
+
+    final semantics = tester
+        .getSemantics(find.byKey(const ValueKey('skill-row-research')))
+        .getSemanticsData();
+    expect(semantics.label, contains('Research'));
+    expect(semantics.label, contains('Added to this conversation'));
+    expect(semantics.label, contains('Instruction requirements met'));
+    expect(semantics.label, contains('Context error'));
+    expect(
+      semantics.label,
+      contains('Set up skill credentials before using it.'),
+    );
+    expect(semantics.hasFlag(SemanticsFlag.isSelected), isTrue);
+    expect(semantics.hasFlag(SemanticsFlag.isButton), isTrue);
+    expect(find.text('Set up credentials'), findsNWidgets(2));
+  });
+
+  testWidgets('retryable context errors label their recovery action', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+    final container = _container(
+      state: const ConversationSkillSelectorState(
+        loaded: [_research],
+        loadable: [],
+        contextStatusBySlug: {'research': .error},
+        failureBySlug: {'research': .preparationFailed},
+      ),
+    );
+    addTearDown(container.dispose);
+    await _pumpModal(tester, container);
+
+    expect(find.bySemanticsLabel('Retry preparing Research'), findsOneWidget);
+  });
+
   testWidgets('Add stays promptless and shows pending state', (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
     final loadStarted = Completer<void>();
     final finishLoad = Completer<void>();
     var sends = 0;
@@ -198,7 +323,10 @@ void main() {
         },
         send: (_, _, _) async => sends++,
       ),
-      access: const .new(status: .partial, instructionsAvailable: true),
+      access: const SkillAccessSummary(
+        status: .partial,
+        instructionsAvailable: true,
+      ),
     );
     addTearDown(container.dispose);
     await _pumpModal(tester, container);
@@ -212,11 +340,114 @@ void main() {
     expect(find.textContaining('Adding'), findsOneWidget);
     expect(sends, 0);
     expect(loadStarted.isCompleted, isTrue);
+    expect(
+      tester
+          .getSemantics(find.byKey(const ValueKey('skill-row-research')))
+          .getSemanticsData()
+          .label,
+      contains('Action in progress'),
+    );
 
     finishLoad.complete();
     final _ = await tester.pumpAndSettle();
     expect(sends, 0);
     expect(find.byIcon(Icons.remove_circle_outline), findsNothing);
+  });
+
+  testWidgets('previews skill capabilities without invoking the skill', (
+    tester,
+  ) async {
+    var loads = 0;
+    var sends = 0;
+    final container = _container(
+      state: const ConversationSkillSelectorState(
+        loaded: [],
+        loadable: [_research],
+      ),
+      actionUsecase: _actionUsecase(
+        load: (_, _, _) async => loads++,
+        send: (_, _, _) async => sends++,
+      ),
+      access: const .new(status: .partial, instructionsAvailable: true),
+    );
+    addTearDown(container.dispose);
+    await _pumpModal(tester, container);
+
+    final preview = find.widgetWithText(AuraButton, 'Preview');
+    expect(preview, findsOneWidget);
+    await tester.ensureVisible(preview);
+    final _ = await tester.tap(preview);
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      find.text('No tool details are available for this skill.'),
+      findsOneWidget,
+    );
+    expect(loads, 0);
+    expect(sends, 0);
+  });
+
+  testWidgets('preview lists saved descriptions and connection readiness', (
+    tester,
+  ) async {
+    final container = _container(
+      state: const ConversationSkillSelectorState(
+        loaded: [],
+        loadable: [_research],
+      ),
+      access: const SkillAccessSummary(
+        status: .partial,
+        instructionsAvailable: true,
+        tools: [
+          SkillToolAccess(
+            id: 'search',
+            title: 'Search sources',
+            description: 'Search public sources for a topic.',
+            status: .missing,
+            credentialDefinitionId: 'private-credential-id',
+          ),
+        ],
+      ),
+    );
+    addTearDown(container.dispose);
+    await _pumpModal(tester, container);
+
+    final _ = await tester.tap(find.text('Preview'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Search sources'), findsOneWidget);
+    expect(find.text('Search public sources for a topic.'), findsOneWidget);
+    expect(find.text('Connection setup required'), findsOneWidget);
+    expect(find.text('private-credential-id'), findsNothing);
+  });
+
+  testWidgets('keyboard can focus and open a skill row preview', (
+    tester,
+  ) async {
+    final container = _container(
+      state: const ConversationSkillSelectorState(
+        loaded: [],
+        loadable: [_research],
+      ),
+      access: const SkillAccessSummary(
+        status: .partial,
+        instructionsAvailable: true,
+      ),
+    );
+    addTearDown(container.dispose);
+    await _pumpModal(tester, container);
+
+    final search = tester.widget<EditableText>(find.byType(EditableText));
+    expect(search.focusNode.hasFocus, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Skill preview'), findsOneWidget);
+    expect(
+      find.text('No tool details are available for this skill.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Use now sends one localized visible request', (tester) async {
@@ -239,6 +470,76 @@ void main() {
     expect(drafts.map((draft) => draft.text), [
       'Use the Research skill to answer my latest request.',
     ]);
+  });
+
+  testWidgets('returns focus to the composer Skills control on dismissal', (
+    tester,
+  ) async {
+    final container = _container(
+      state: const ConversationSkillSelectorState(loaded: [], loadable: []),
+    );
+    addTearDown(container.dispose);
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) => UncontrolledProviderScope(
+              container: container,
+              child: MaterialApp(
+                home: AuraThemeScope(
+                  theme: .light,
+                  child: Builder(
+                    builder: (context) => Scaffold(
+                      body: AuraButton(
+                        onPressed: () {
+                          showDialog<void>(
+                            context: context,
+                            builder: (_) =>
+                                const ConversationSkillSelectorModal(
+                                  workspaceId: 'workspace',
+                                  conversationId: 'conversation',
+                                ),
+                          );
+                        },
+                        semanticLabel: 'Skills control',
+                        child: const Text('Skills'),
+                      ),
+                    ),
+                  ),
+                ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+              ),
+            ),
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Skills control'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Conversation skills'), findsOneWidget);
+
+    await tester.tap(find.text('Close'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .getSemantics(find.bySemanticsLabel('Skills control'))
+          .getSemanticsData()
+          .hasFlag(SemanticsFlag.isFocused),
+      isTrue,
+    );
   });
 }
 
@@ -282,8 +583,9 @@ ApplyConversationSkillActionUsecase _actionUsecase({
 
 Future<void> _pumpModal(
   WidgetTester tester,
-  ProviderContainer container,
-) async {
+  ProviderContainer container, {
+  bool settle = true,
+}) async {
   final _ = await tester.runAsync(() async {
     await tester.pumpWidget(
       EasyLocalization(
@@ -315,7 +617,12 @@ Future<void> _pumpModal(
       ),
     );
   });
-  final _ = await tester.pumpAndSettle();
+  if (settle) {
+    final _ = await tester.pumpAndSettle();
+  } else {
+    final _ = await tester.pump();
+    final _ = await tester.pump(const Duration(milliseconds: 100));
+  }
 }
 
 const _research = AvailableSkill(

@@ -6,12 +6,14 @@ import 'package:auravibes_app/features/chats/providers/conversation_skill_contex
 import 'package:auravibes_app/features/chats/usecases/prepare_conversation_skill_context_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
+import 'package:auravibes_app/features/skills/models/skill_access_summary.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/skills/providers/skill_access_summary_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
 import 'package:auravibes_app/features/skills/widgets/skill_access_status_view.dart';
+import 'package:auravibes_app/features/skills/widgets/skill_capability_preview_dialog.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -116,6 +118,18 @@ class _ConversationSkillSelectorModalState
 
     if (!mounted) return;
     _refreshSelector();
+  }
+
+  void _showPreview(AvailableSkill skill) {
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (_) => SkillCapabilityPreviewDialog(
+          workspaceId: widget.workspaceId,
+          skill: skill,
+        ),
+      ),
+    );
   }
 
   ConversationSkillContextFailure _runtimeFailure(
@@ -269,6 +283,7 @@ _SelectorActions _selectorActions(_ConversationSkillSelectorModalState state) =>
       onRetry: (skill) => unawaited(state._retryContext(skill)),
       onRefresh: state._refreshSelector,
       onCredentialSetup: state._startCredentialSetup,
+      onPreview: state._showPreview,
     );
 
 ValueChanged<AvailableSkill> _skillActionHandler(
@@ -288,6 +303,7 @@ class const _SelectorActions({
   required final ValueChanged<AvailableSkill> onRetry,
   required final VoidCallback onRefresh,
   required final ValueChanged<AvailableSkill> onCredentialSetup,
+  required final ValueChanged<AvailableSkill> onPreview,
 });
 
 class const _SelectorDialog({
@@ -390,13 +406,22 @@ class const _SelectorAsyncFallback({required final bool isLoading})
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const SizedBox(
-        height: _selectorLoadingHeight,
-        child: Center(child: AuraSpinner()),
+      return Semantics(
+        liveRegion: true,
+        label: LocaleKeys.skills_selector_loading.tr(context: context),
+        child: const ExcludeSemantics(
+          child: SizedBox(
+            height: _selectorLoadingHeight,
+            child: Center(child: AuraSpinner()),
+          ),
+        ),
       );
     }
 
-    return const TextLocale(LocaleKeys.skills_selector_error);
+    return Semantics(
+      liveRegion: true,
+      child: const TextLocale(LocaleKeys.skills_selector_error),
+    );
   }
 }
 
@@ -544,6 +569,7 @@ class const _SelectorSearch({required final ValueChanged<String> onChanged})
     prefixIcon: const AuraIcon(Icons.search),
     size: .small,
     textInputAction: .search,
+    autofocus: true,
     onChanged: onChanged,
   );
 }
@@ -580,6 +606,7 @@ class const _LoadedSkillTile({
     child: _SkillTileContents(
       skill: skill,
       actions: actions,
+      selected: true,
       pending: pending,
       contextStatus: contextStatus,
       contextFailure: contextFailure,
@@ -608,6 +635,7 @@ class const _AvailableSkillTile({
     child: _SkillTileContents(
       skill: skill,
       actions: actions,
+      selected: false,
       pending: pending,
       actionResult: actionResult,
     ),
@@ -624,6 +652,7 @@ class const _AvailableSkillTile({
 class const _SkillTileContents({
   required final AvailableSkill skill,
   required final _SelectorActions actions,
+  required final bool selected,
   required final bool pending,
   final ConversationSkillContextStatus? contextStatus,
   final ConversationSkillContextFailure? contextFailure,
@@ -632,7 +661,15 @@ class const _SkillTileContents({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      _SkillTileIdentity(skill: skill, contextStatus: contextStatus),
+      _SkillTileIdentity(
+        skill: skill,
+        selected: selected,
+        contextStatus: contextStatus,
+        contextFailure: contextFailure,
+        pending: pending,
+        actionResult: actionResult,
+        onPreview: actions.onPreview,
+      ),
       _SkillTileAccessStatus(skill: skill, actions: actions, pending: pending),
       _SkillTileMessages(
         description: skill.description,
@@ -658,24 +695,121 @@ class const _SkillTileAccessStatus({
     isAppSkill: skill.source == .app,
     onChanged: actions.onRefresh,
     recoveryEnabled: !pending,
+    credentialSetupSemanticLabel: LocaleKeys
+        .skills_selector_semantics_credentials
+        .tr(namedArgs: {'skill': skill.title}),
   );
 }
 
 class const _SkillTileIdentity({
   required final AvailableSkill skill,
+  required final bool selected,
   final ConversationSkillContextStatus? contextStatus,
-}) extends StatelessWidget {
+  final ConversationSkillContextFailure? contextFailure,
+  required final bool pending,
+  final ConversationSkillActionResult? actionResult,
+  required final ValueChanged<AvailableSkill> onPreview,
+}) extends StatefulWidget {
   @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      AuraText(child: Text(skill.title)),
-      _SkillCredentialBadge(readiness: skill.credentialReadiness),
-      if (contextStatus case final status?) _SkillContextBadge(status: status),
-    ],
-    spacing: .xs,
-    crossAxisAlignment: .start,
-  );
+  State<_SkillTileIdentity> createState() => _SkillTileIdentityState();
 }
+
+class _SkillTileIdentityState extends State<_SkillTileIdentity> {
+  bool _showFocusHighlight = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final skill = widget.skill;
+
+    return Semantics(
+      key: ValueKey('skill-row-${skill.slug}'),
+      container: true,
+      button: true,
+      selected: widget.selected,
+      label: _skillIdentitySemanticsLabel(context, widget),
+      onTap: () => widget.onPreview(skill),
+      child: FocusableActionDetector(
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              widget.onPreview(skill);
+
+              return null;
+            },
+          ),
+        },
+        onShowFocusHighlight: _setFocusHighlight,
+        mouseCursor: SystemMouseCursors.click,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: _showFocusHighlight
+                ? Border.all(color: context.auraColors.primary, width: 2)
+                : null,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: ExcludeSemantics(
+            child: AuraColumn(
+              children: [
+                AuraText(child: Text(skill.title)),
+                _SkillCredentialBadge(readiness: skill.credentialReadiness),
+                if (widget.contextStatus case final status?)
+                  _SkillContextBadge(status: status),
+              ],
+              spacing: .xs,
+              crossAxisAlignment: .start,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _setFocusHighlight(bool value) {
+    if (_showFocusHighlight == value) return;
+    setState(() => _showFocusHighlight = value);
+  }
+}
+
+String _skillIdentitySemanticsLabel(
+  BuildContext context,
+  _SkillTileIdentity identity,
+) {
+  final values = [
+    identity.skill.title,
+    (identity.selected
+            ? LocaleKeys.skills_selector_semantics_loaded
+            : LocaleKeys.skills_selector_semantics_available)
+        .tr(context: context),
+    _credentialReadinessKey(identity.skill.credentialReadiness)
+        .tr(context: context),
+    if (identity.contextStatus case final status?)
+      _contextStatusKey(status).tr(context: context),
+    if (identity.contextFailure case final failure?)
+      _contextFailureKey(failure).tr(context: context),
+    if (identity.pending)
+      LocaleKeys.skills_selector_semantics_pending.tr(context: context),
+    if (identity.actionResult case final result?)
+      if (_actionResultKey(result) case final key?) key.tr(context: context),
+  ];
+
+  return values.join(', ');
+}
+
+String _credentialReadinessKey(SkillCredentialReadiness readiness) =>
+    switch (readiness) {
+      .ready => LocaleKeys.skills_selector_credentials_ready,
+      .missing => LocaleKeys.skills_selector_credentials_missing,
+      .unknown => LocaleKeys.skills_selector_credentials_unknown,
+    };
+
+String _contextStatusKey(ConversationSkillContextStatus status) =>
+    switch (status) {
+      .added => LocaleKeys.skills_selector_context_added,
+      .preparing => LocaleKeys.skills_selector_context_preparing,
+      .ready => LocaleKeys.skills_selector_context_ready,
+      .needsContext => LocaleKeys.skills_selector_context_needs_context,
+      .error => LocaleKeys.skills_selector_context_error,
+    };
 
 class const _SkillTileMessages({
   required final String description,
@@ -692,7 +826,8 @@ class const _SkillTileMessages({
         AuraText(child: Text(description)),
         if (contextFailure case final failure?)
           _SkillContextFailureMessage(failure: failure),
-        if (resultKey != null) TextLocale(resultKey),
+        if (resultKey != null)
+          Semantics(liveRegion: true, child: TextLocale(resultKey)),
       ],
       spacing: .xs,
       crossAxisAlignment: .start,
@@ -704,7 +839,10 @@ class const _SkillContextFailureMessage({
   required final ConversationSkillContextFailure failure,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => TextLocale(_contextFailureKey(failure));
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    child: TextLocale(_contextFailureKey(failure)),
+  );
 }
 
 class const _LoadedSkillActions({
@@ -720,6 +858,7 @@ class const _LoadedSkillActions({
     spacing: _skillActionSpacing,
     runSpacing: _skillActionSpacing,
     children: [
+      _PreviewSkillButton(skill: skill, onPressed: actions.onPreview),
       _UseNowButton(
         skill: skill,
         pending: pending,
@@ -747,11 +886,15 @@ class const _AvailableSkillActions({
   Widget build(BuildContext context) => Wrap(
     spacing: _skillActionSpacing,
     children: [
+      _PreviewSkillButton(skill: skill, onPressed: actions.onPreview),
       _AddSkillButton(skill: skill, pending: pending, onPressed: actions.onAdd),
       if (skill.credentialReadiness == .missing ||
           actionResult == .credentialsMissing)
         _CredentialSetupButton(
           onPressed: pending ? null : () => actions.onCredentialSetup(skill),
+          semanticLabel: LocaleKeys.skills_selector_semantics_credentials.tr(
+            namedArgs: {'skill': skill.title},
+          ),
         ),
     ],
   );
@@ -774,6 +917,25 @@ class const _UseNowButton({
     ),
     size: .small,
     disabled: pending,
+    semanticLabel: LocaleKeys.skills_selector_semantics_use_now.tr(
+      namedArgs: {'skill': skill.title},
+    ),
+  );
+}
+
+class const _PreviewSkillButton({
+  required final AvailableSkill skill,
+  required final ValueChanged<AvailableSkill> onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => onPressed(skill),
+    child: const TextLocale(LocaleKeys.skills_selector_preview),
+    variant: .outlined,
+    size: .small,
+    semanticLabel: LocaleKeys.skills_selector_semantics_preview.tr(
+      namedArgs: {'skill': skill.title},
+    ),
   );
 }
 
@@ -794,6 +956,9 @@ class const _AddSkillButton({
     ),
     size: .small,
     disabled: pending,
+    semanticLabel: LocaleKeys.skills_selector_semantics_add.tr(
+      namedArgs: {'skill': skill.title},
+    ),
   );
 }
 
@@ -810,12 +975,26 @@ class const _RecoveryButton({
     if (action == .credentials) {
       return _CredentialSetupButton(
         onPressed: disabled ? null : () => actions.onCredentialSetup(skill),
+        semanticLabel: LocaleKeys.skills_selector_semantics_credentials.tr(
+          namedArgs: {'skill': skill.title},
+        ),
       );
     }
 
     return _RecoveryActionButton(
       textKey: _recoveryTextKey(action),
       onPressed: disabled ? null : _recoveryCallback(action, skill, actions),
+      semanticLabel: switch (action) {
+        .credentials => LocaleKeys.skills_selector_semantics_credentials.tr(
+          namedArgs: {'skill': skill.title},
+        ),
+        .refresh => LocaleKeys.skills_selector_semantics_refresh.tr(
+          namedArgs: {'skill': skill.title},
+        ),
+        .retry => LocaleKeys.skills_selector_semantics_retry.tr(
+          namedArgs: {'skill': skill.title},
+        ),
+      },
     );
   }
 }
@@ -852,6 +1031,7 @@ _RecoveryAction _recoveryAction(
 class const _RecoveryActionButton({
   required final String textKey,
   required final VoidCallback? onPressed,
+  required final String semanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
@@ -860,11 +1040,14 @@ class const _RecoveryActionButton({
     variant: .outlined,
     size: .small,
     disabled: onPressed == null,
+    semanticLabel: semanticLabel,
   );
 }
 
-class const _CredentialSetupButton({required final VoidCallback? onPressed})
-    extends StatelessWidget {
+class const _CredentialSetupButton({
+  required final VoidCallback? onPressed,
+  final String? semanticLabel,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
     onPressed: () => onPressed?.call(),
@@ -872,6 +1055,7 @@ class const _CredentialSetupButton({required final VoidCallback? onPressed})
     variant: .outlined,
     size: .small,
     disabled: onPressed == null,
+    semanticLabel: semanticLabel,
   );
 }
 
