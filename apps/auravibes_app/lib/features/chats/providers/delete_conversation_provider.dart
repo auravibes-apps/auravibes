@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_draft_cleanup_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
@@ -19,10 +20,14 @@ final deleteConversationUsecaseProvider = Provider<DeleteConversationUsecase>((
     retryRuntime: ref.watch(conversationRateLimitRetryRuntimeProvider),
     activeSubAgents: ref.watch(activeSubAgentRuntimeProvider.notifier),
   );
+  final conversationRepository = ref.watch(conversationRepositoryProvider);
 
   return DeleteConversationUsecase(
-    ref.watch(conversationRepositoryProvider),
+    conversationRepository,
     stop.call,
-    (id) => ref.watch(conversationRepositoryProvider).captureForkBoundaries(id),
+    clearConversationDraft: ref
+        .watch(conversationDraftCleanupUsecaseProvider)
+        .clearConversation,
+    captureForkBoundaries: conversationRepository.captureForkBoundaries,
   );
 });

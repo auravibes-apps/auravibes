@@ -11,6 +11,7 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_draft_cleanup_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
@@ -524,11 +525,16 @@ Future<void> _deleteSidebarConversationInStorage(
   );
   if (cloud != null) {
     await cloud.delete(chat);
+    await ref
+        .read(conversationDraftCleanupUsecaseProvider)
+        .clearConversation(chat.workspaceId, chat.id);
 
     return;
   }
 
-  final _ = await ref.read(deleteConversationUsecaseProvider).call(chat.id);
+  final _ = await ref
+      .read(deleteConversationUsecaseProvider)
+      .call(workspaceId: chat.workspaceId, conversationId: chat.id);
 }
 
 void _showSidebarDeleteSnack(BuildContext context, Object error) {
