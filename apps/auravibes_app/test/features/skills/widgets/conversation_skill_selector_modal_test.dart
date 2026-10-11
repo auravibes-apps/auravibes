@@ -472,75 +472,85 @@ void main() {
     ]);
   });
 
-  testWidgets('returns focus to the composer Skills control on dismissal', (
-    tester,
-  ) async {
-    final container = _container(
-      state: const ConversationSkillSelectorState(loaded: [], loadable: []),
-    );
-    addTearDown(container.dispose);
+  testWidgets(
+    'keyboard dismissal returns focus to the composer Skills control',
+    (tester) async {
+      final container = _container(
+        state: const ConversationSkillSelectorState(loaded: [], loadable: []),
+      );
+      addTearDown(container.dispose);
 
-    await tester.runAsync(() async {
-      await tester.pumpWidget(
-        EasyLocalization(
-          child: Builder(
-            builder: (context) => UncontrolledProviderScope(
-              container: container,
-              child: MaterialApp(
-                home: AuraThemeScope(
-                  theme: .light,
-                  child: Builder(
-                    builder: (context) => Scaffold(
-                      body: AuraButton(
-                        onPressed: () {
-                          unawaited(
-                            ConversationSkillSelectorModal.show(
-                              context: context,
-                              workspaceId: 'workspace',
-                              conversationId: 'conversation',
-                            ),
-                          );
-                        },
-                        child: const Text('Skills'),
-                        identifier: 'skills-control',
-                        semanticLabel: 'Skills control',
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          EasyLocalization(
+            child: Builder(
+              builder: (context) => UncontrolledProviderScope(
+                container: container,
+                child: MaterialApp(
+                  home: AuraThemeScope(
+                    theme: .light,
+                    child: Builder(
+                      builder: (context) => Scaffold(
+                        body: AuraButton(
+                          onPressed: () {
+                            unawaited(
+                              ConversationSkillSelectorModal.show(
+                                context: context,
+                                workspaceId: 'workspace',
+                                conversationId: 'conversation',
+                              ),
+                            );
+                          },
+                          child: const Text('Skills'),
+                          identifier: 'skills-control',
+                          semanticLabel: 'Skills control',
+                        ),
                       ),
                     ),
                   ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
                 ),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
               ),
             ),
+            supportedLocales: const [Locale('en')],
+            path: 'assets/i18n',
+            fallbackLocale: const Locale('en'),
+            startLocale: const Locale('en'),
+            useOnlyLangCode: true,
+            useFallbackTranslations: true,
           ),
-          supportedLocales: const [Locale('en')],
-          path: 'assets/i18n',
-          fallbackLocale: const Locale('en'),
-          startLocale: const Locale('en'),
-          useOnlyLangCode: true,
-          useFallbackTranslations: true,
-        ),
+        );
+      });
+      final _ = await tester.pumpAndSettle();
+      final focusRing = find.descendant(
+        of: find.widgetWithText(AuraButton, 'Skills'),
+        matching: find.byType(CustomPaint),
       );
-    });
-    final _ = await tester.pumpAndSettle();
-    final focusRing = find.descendant(
-      of: find.widgetWithText(AuraButton, 'Skills'),
-      matching: find.byType(CustomPaint),
-    );
-    expect(tester.widget<CustomPaint>(focusRing).foregroundPainter, isNull);
-    expect(await tester.sendKeyEvent(.tab), isTrue);
-    await tester.pump();
-    expect(tester.widget<CustomPaint>(focusRing).foregroundPainter, isNotNull);
-    expect(await tester.sendKeyEvent(.enter), isTrue);
-    final _ = await tester.pumpAndSettle();
-    expect(find.text('Conversation skills'), findsOneWidget);
+      expect(tester.widget<CustomPaint>(focusRing).foregroundPainter, isNull);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      await tester.pump();
+      expect(
+        tester.widget<CustomPaint>(focusRing).foregroundPainter,
+        isNotNull,
+      );
+      final skillsFocusNode = FocusManager.instance.primaryFocus;
+      expect(skillsFocusNode, isNotNull);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Conversation skills'), findsOneWidget);
 
-    await tester.tap(find.text('Close'));
-    final _ = await tester.pumpAndSettle();
+      expect(await tester.sendKeyEvent(.escape), isTrue);
+      final _ = await tester.pumpAndSettle();
 
-    expect(tester.widget<CustomPaint>(focusRing).foregroundPainter, isNotNull);
-  });
+      expect(FocusManager.instance.primaryFocus, same(skillsFocusNode));
+      expect(
+        tester.widget<CustomPaint>(focusRing).foregroundPainter,
+        isNotNull,
+      );
+    },
+  );
 }
 
 ProviderContainer _container({
