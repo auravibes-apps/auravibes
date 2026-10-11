@@ -7,6 +7,8 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -270,6 +272,7 @@ void main() {
       final selectedConversation = _conversation(
         'chat-1',
         title: 'Selected Chat',
+        isPinned: true,
       );
       final otherConversation = _conversation('chat-2', title: 'Other Chat');
       final repository = _SeededConversationRepository([
@@ -296,6 +299,23 @@ void main() {
       final streamingNotifier = container.read(
         conversationStreamingProvider.notifier,
       );
+      container
+          .read(
+            conversationDraftProvider(
+              selectedConversation.workspaceId,
+              selectedConversation.id,
+            ).notifier,
+          )
+          .save(const ChatDraft(text: 'Unsent message'));
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('conversation-draft-marker-chat-1')),
+        findsOneWidget,
+      );
+      expect(find.text('Draft'), findsOneWidget);
+      expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
+
       final startStreaming = streamingNotifier.start;
       final stopStreaming = streamingNotifier.remove;
 
@@ -335,6 +355,19 @@ void main() {
             .first,
       );
       expect(selectedTile.variant, AuraTileVariant.selected);
+      expect(
+        tester
+            .getSemantics(
+              find
+                  .ancestor(
+                    of: find.text(selectedConversation.title),
+                    matching: find.byType(AuraTile),
+                  )
+                  .first,
+            )
+            .label,
+        contains('Draft'),
+      );
 
       stopStreaming(otherConversation.id);
       await tester.pump();
@@ -659,15 +692,18 @@ class _TestCompactionExecution(
   }
 }
 
-ConversationEntity _conversation(String id, {required String title}) =>
-    ConversationEntity(
-      id: id,
-      title: title,
-      workspaceId: 'workspace-1',
-      isPinned: false,
-      createdAt: .new(2025),
-      updatedAt: .new(2025),
-    );
+ConversationEntity _conversation(
+  String id, {
+  required String title,
+  bool isPinned = false,
+}) => ConversationEntity(
+  id: id,
+  title: title,
+  workspaceId: 'workspace-1',
+  isPinned: isPinned,
+  createdAt: .new(2025),
+  updatedAt: .new(2025),
+);
 
 Future<void> _pumpSidebarAtConversation(
   WidgetTester tester, {

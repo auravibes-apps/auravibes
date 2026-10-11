@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
@@ -13,6 +14,7 @@ import 'package:auravibes_app/features/chats/usecases/bulk_conversation_actions_
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_feedback.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_draft_badge.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -1633,22 +1635,34 @@ class const _ChatTileUpdatedAt({required final DateTime updatedAt})
 class const _ChatTileTitleRow({
   required final ConversationEntity chat,
   required final String title,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => AuraRow(
-    children: [
-      if (chat.isPinned) ...[
-        const AuraIcon(Icons.push_pin_outlined, size: .small, tint: .warning),
-        const SizedBox(width: 8),
-      ],
-      Expanded(
-        child: AuraText(
-          child: Text(title, overflow: .ellipsis),
-          style: .heading6,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasDraft =
+        ref
+            .watch(conversationDraftProvider(chat.workspaceId, chat.id))
+            ?.isEmpty ==
+        false;
+
+    return AuraRow(
+      children: [
+        if (chat.isPinned) ...[
+          const AuraIcon(Icons.push_pin_outlined, size: .small, tint: .warning),
+          const SizedBox(width: 8),
+        ],
+        Expanded(
+          child: AuraText(
+            child: Text(title, overflow: .ellipsis),
+            style: .heading6,
+          ),
         ),
-      ),
-    ],
-  );
+        if (hasDraft) ...[
+          const SizedBox(width: 8),
+          ConversationDraftBadge(conversationId: chat.id),
+        ],
+      ],
+    );
+  }
 }
 
 class const _ChatTileMenu({

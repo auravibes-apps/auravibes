@@ -344,6 +344,7 @@
     "chats_list": {
       "title": "Chats",
       "add_chat": "Agregar Chat",
+      "draft_marker": "Borrador",
       "archive_import": "Importar archivo",
       "search_placeholder": "Buscar conversaciones...",
       "search_no_results": "Ninguna conversación coincide con tu búsqueda",
