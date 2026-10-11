@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
@@ -11,7 +12,6 @@ import 'package:auravibes_app/features/skills/widgets/conversation_skill_selecto
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -94,7 +94,7 @@ void main() {
         .getSemanticsData();
     expect(semantics.label, contains('Ready in context'));
     expect(semantics.label, contains('Instruction requirements met'));
-    expect(semantics.hasFlag(SemanticsFlag.isSelected), isTrue);
+    expect(semantics.flagsCollection.isSelected, ui.Tristate.isTrue);
   });
 
   testWidgets('all access statuses remain separate from ready context', (
@@ -199,7 +199,9 @@ void main() {
     await _pumpModal(tester, container, settle: false);
 
     expect(
-      find.bySemanticsLabel('Loading conversation skills…'),
+      find.bySemanticsLabel(
+        'Loading conversation skills${String.fromCharCode(0x2026)}',
+      ),
       findsOneWidget,
     );
   });
@@ -223,7 +225,10 @@ void main() {
     addTearDown(container.dispose);
     await _pumpModal(tester, container);
 
-    expect(find.text('Checking saved access…'), findsOneWidget);
+    expect(
+      find.text('Checking saved access${String.fromCharCode(0x2026)}'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows preparing while context retry is in progress', (
@@ -280,8 +285,8 @@ void main() {
       semantics.label,
       contains('Set up skill credentials before using it.'),
     );
-    expect(semantics.hasFlag(SemanticsFlag.isSelected), isTrue);
-    expect(semantics.hasFlag(SemanticsFlag.isButton), isTrue);
+    expect(semantics.flagsCollection.isSelected, ui.Tristate.isTrue);
+    expect(semantics.flagsCollection.isButton, isTrue);
     expect(find.text('Set up credentials'), findsNWidgets(2));
   });
 
@@ -402,8 +407,8 @@ void main() {
           SkillToolAccess(
             id: 'search',
             title: 'Search sources',
-            description: 'Search public sources for a topic.',
             status: .missing,
+            description: 'Search public sources for a topic.',
             credentialDefinitionId: 'private-credential-id',
           ),
         ],
@@ -439,8 +444,8 @@ void main() {
 
     final search = tester.widget<EditableText>(find.byType(EditableText));
     expect(search.focusNode.hasFocus, isTrue);
-    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    final _ = await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    final _ = await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Skill preview'), findsOneWidget);
@@ -504,8 +509,8 @@ void main() {
                                 ),
                           );
                         },
-                        semanticLabel: 'Skills control',
                         child: const Text('Skills'),
+                        semanticLabel: 'Skills control',
                       ),
                     ),
                   ),
@@ -537,8 +542,9 @@ void main() {
       tester
           .getSemantics(find.bySemanticsLabel('Skills control'))
           .getSemanticsData()
-          .hasFlag(SemanticsFlag.isFocused),
-      isTrue,
+          .flagsCollection
+          .isFocused,
+      ui.Tristate.isTrue,
     );
   });
 }

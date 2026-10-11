@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/chats/providers/conversation_skill_contex
 import 'package:auravibes_app/features/chats/usecases/prepare_conversation_skill_context_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
-import 'package:auravibes_app/features/skills/models/skill_access_summary.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/skills/providers/skill_access_summary_provider.dart';
@@ -407,20 +406,20 @@ class const _SelectorAsyncFallback({required final bool isLoading})
   Widget build(BuildContext context) {
     if (isLoading) {
       return Semantics(
-        liveRegion: true,
-        label: LocaleKeys.skills_selector_loading.tr(context: context),
         child: const ExcludeSemantics(
           child: SizedBox(
             height: _selectorLoadingHeight,
             child: Center(child: AuraSpinner()),
           ),
         ),
+        liveRegion: true,
+        label: LocaleKeys.skills_selector_loading.tr(context: context),
       );
     }
 
     return Semantics(
-      liveRegion: true,
       child: const TextLocale(LocaleKeys.skills_selector_error),
+      liveRegion: true,
     );
   }
 }
@@ -664,11 +663,11 @@ class const _SkillTileContents({
       _SkillTileIdentity(
         skill: skill,
         selected: selected,
+        pending: pending,
+        onPreview: actions.onPreview,
         contextStatus: contextStatus,
         contextFailure: contextFailure,
-        pending: pending,
         actionResult: actionResult,
-        onPreview: actions.onPreview,
       ),
       _SkillTileAccessStatus(skill: skill, actions: actions, pending: pending),
       _SkillTileMessages(
@@ -704,11 +703,11 @@ class const _SkillTileAccessStatus({
 class const _SkillTileIdentity({
   required final AvailableSkill skill,
   required final bool selected,
+  required final bool pending,
+  required final ValueChanged<AvailableSkill> onPreview,
   final ConversationSkillContextStatus? contextStatus,
   final ConversationSkillContextFailure? contextFailure,
-  required final bool pending,
   final ConversationSkillActionResult? actionResult,
-  required final ValueChanged<AvailableSkill> onPreview,
 }) extends StatefulWidget {
   @override
   State<_SkillTileIdentity> createState() => _SkillTileIdentityState();
@@ -723,11 +722,6 @@ class _SkillTileIdentityState extends State<_SkillTileIdentity> {
 
     return Semantics(
       key: ValueKey('skill-row-${skill.slug}'),
-      container: true,
-      button: true,
-      selected: widget.selected,
-      label: _skillIdentitySemanticsLabel(context, widget),
-      onTap: () => widget.onPreview(skill),
       child: FocusableActionDetector(
         actions: {
           ActivateIntent: CallbackAction<ActivateIntent>(
@@ -745,7 +739,7 @@ class _SkillTileIdentityState extends State<_SkillTileIdentity> {
             border: _showFocusHighlight
                 ? Border.all(color: context.auraColors.primary, width: 2)
                 : null,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: const BorderRadius.all(Radius.circular(4)),
           ),
           child: ExcludeSemantics(
             child: AuraColumn(
@@ -761,6 +755,11 @@ class _SkillTileIdentityState extends State<_SkillTileIdentity> {
           ),
         ),
       ),
+      container: true,
+      selected: widget.selected,
+      button: true,
+      label: _skillIdentitySemanticsLabel(context, widget),
+      onTap: () => widget.onPreview(skill),
     );
   }
 
@@ -827,7 +826,7 @@ class const _SkillTileMessages({
         if (contextFailure case final failure?)
           _SkillContextFailureMessage(failure: failure),
         if (resultKey != null)
-          Semantics(liveRegion: true, child: TextLocale(resultKey)),
+          Semantics(child: TextLocale(resultKey), liveRegion: true),
       ],
       spacing: .xs,
       crossAxisAlignment: .start,
@@ -840,8 +839,8 @@ class const _SkillContextFailureMessage({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
-    liveRegion: true,
     child: TextLocale(_contextFailureKey(failure)),
+    liveRegion: true,
   );
 }
 

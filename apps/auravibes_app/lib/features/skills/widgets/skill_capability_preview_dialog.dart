@@ -98,29 +98,23 @@ class const _SkillCapabilityPreviewTool({required final SkillToolAccess tool})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final title = tool.titleKey == null
-        ? Text(tool.title)
-        : TextLocale(tool.titleKey!);
+    final titleKey = tool.titleKey;
+    final title = titleKey == null ? Text(tool.title) : TextLocale(titleKey);
     final description = tool.description.trim();
-    final descriptionWidget = tool.descriptionKey != null
-        ? TextLocale(tool.descriptionKey!)
-        : description.isEmpty
-        ? const TextLocale(LocaleKeys.skills_selector_preview_description_empty)
-        : Text(description);
+    final descriptionKey = tool.descriptionKey;
+    final Widget descriptionWidget;
+    if (descriptionKey != null) {
+      descriptionWidget = TextLocale(descriptionKey);
+    } else if (description.isEmpty) {
+      descriptionWidget = const TextLocale(
+        LocaleKeys.skills_selector_preview_description_empty,
+      );
+    } else {
+      descriptionWidget = Text(description);
+    }
     final statusKey = _previewToolStatusKey(tool.status);
 
     return Semantics(
-      container: true,
-      label: [
-        tool.titleKey?.tr(context: context) ?? tool.title,
-        tool.descriptionKey?.tr(context: context) ??
-            (description.isEmpty
-                ? LocaleKeys.skills_selector_preview_description_empty.tr(
-                    context: context,
-                  )
-                : description),
-        statusKey.tr(context: context),
-      ].join(', '),
       child: ExcludeSemantics(
         child: AuraColumn(
           children: [
@@ -139,6 +133,17 @@ class const _SkillCapabilityPreviewTool({required final SkillToolAccess tool})
           crossAxisAlignment: .start,
         ),
       ),
+      container: true,
+      label: [
+        tool.titleKey?.tr(context: context) ?? tool.title,
+        tool.descriptionKey?.tr(context: context) ??
+            (description.isEmpty
+                ? LocaleKeys.skills_selector_preview_description_empty.tr(
+                    context: context,
+                  )
+                : description),
+        statusKey.tr(context: context),
+      ].join(', '),
     );
   }
 }
