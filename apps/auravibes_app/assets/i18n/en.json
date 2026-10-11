@@ -656,6 +656,10 @@
     "title": "Markdown editor",
     "editor_label": "Markdown",
     "preview_label": "Preview",
+    "external_link_title": "Open external link?",
+    "external_link_message": "Check that you trust this destination before opening it.\n\nHost: {host}\nURL: {url}",
+    "external_link_open": "Open link",
+    "external_link_error": "Could not open link.",
     "empty": "Nothing to preview yet",
     "toolbar": {
       "bold": "Bold",
