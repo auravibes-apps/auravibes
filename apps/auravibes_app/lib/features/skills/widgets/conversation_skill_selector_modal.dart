@@ -25,25 +25,10 @@ import 'package:material_ui/material_ui.dart';
 const _selectorDialogWidth = 520.0;
 const _selectorLoadingHeight = 120.0;
 
-/// Opens the conversation skill selector and restores the previous focus node
-/// after the dialog closes.
-Future<void> showConversationSkillSelectorModal({
-  required BuildContext context,
-  required String workspaceId,
-  required String conversationId,
-}) async {
-  final focusNode = FocusManager.instance.primaryFocus;
-  await showDialog<void>(
-    context: context,
-    builder: (_) => ConversationSkillSelectorModal(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-    ),
-  );
+void _restoreSelectorFocus(BuildContext context, FocusNode? focusNode) {
   if (!context.mounted) return;
-  final previousFocusNode = focusNode;
-  if (previousFocusNode == null || previousFocusNode.context == null) return;
-  previousFocusNode.requestFocus();
+  if (focusNode == null || focusNode.context == null) return;
+  focusNode.requestFocus();
 }
 
 class const ConversationSkillSelectorModal({
@@ -51,6 +36,23 @@ class const ConversationSkillSelectorModal({
   required final String conversationId,
   super.key,
 }) extends ConsumerStatefulWidget {
+  /// Opens the selector and restores the previous focus node when it closes.
+  static Future<void> show({
+    required BuildContext context,
+    required String workspaceId,
+    required String conversationId,
+  }) async {
+    final focusNode = FocusManager.instance.primaryFocus;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => ConversationSkillSelectorModal(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+    );
+    _restoreSelectorFocus(context, focusNode);
+  }
+
   @override
   ConsumerState<ConversationSkillSelectorModal> createState() =>
       _ConversationSkillSelectorModalState();
@@ -677,22 +679,35 @@ class const _SkillTileLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final actionsBelow = constraints.maxWidth < _selectorDialogWidth;
-
-      return AuraTile(
-        child: actionsBelow
-            ? AuraColumn(
-                children: [child, actions],
-                spacing: .sm,
-                crossAxisAlignment: .stretch,
-              )
-            : child,
-        variant: .ghost,
-        trailing: actionsBelow ? null : actions,
-      );
-    },
+    builder: (_, constraints) => _SkillTileComposition(
+      child: child,
+      actions: actions,
+      actionsBelow: constraints.maxWidth < _selectorDialogWidth,
+    ),
   );
+}
+
+class const _SkillTileComposition({
+  required final Widget child,
+  required final Widget actions,
+  required final bool actionsBelow,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTile(
+    child: _tileContent(),
+    variant: .ghost,
+    trailing: _tileActions(),
+  );
+
+  Widget _tileContent() => actionsBelow
+      ? AuraColumn(
+          children: [child, actions],
+          spacing: .sm,
+          crossAxisAlignment: .stretch,
+        )
+      : child;
+
+  Widget? _tileActions() => actionsBelow ? null : actions;
 }
 
 class _SkillTileContents extends StatelessWidget {

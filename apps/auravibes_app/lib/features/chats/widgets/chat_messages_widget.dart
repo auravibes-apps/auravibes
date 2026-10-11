@@ -503,7 +503,7 @@ void _showConversationSkillPicker(
   if (!context.mounted) return;
 
   unawaited(
-    showConversationSkillSelectorModal(
+    ConversationSkillSelectorModal.show(
       context: context,
       workspaceId: workspaceId,
       conversationId: conversationId,

@@ -494,7 +494,7 @@ void main() {
                       body: AuraButton(
                         onPressed: () {
                           unawaited(
-                            showConversationSkillSelectorModal(
+                            ConversationSkillSelectorModal.show(
                               context: context,
                               workspaceId: 'workspace',
                               conversationId: 'conversation',
