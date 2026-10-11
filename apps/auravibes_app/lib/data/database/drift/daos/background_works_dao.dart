@@ -36,6 +36,7 @@ extension BackgroundWorksDaoOperations on BackgroundWorksDao {
   ) async {
     final existing = await _findByRequest(request);
     if (existing != null) return existing;
+
     return _toAgentBackgroundWork(await _insertRequest(request));
   }
 
@@ -43,7 +44,7 @@ extension BackgroundWorksDaoOperations on BackgroundWorksDao {
     required String conversationId,
     required String workId,
   }) async {
-    await (delete(
+    final _ = await (delete(
       backgroundWorks,
     )..where((table) => _provisionalWork(table, conversationId, workId))).go();
   }
@@ -84,10 +85,10 @@ extension _BackgroundWorksDaoQueryOps on BackgroundWorksDao {
     AgentBackgroundWorkCreateRequest request,
   ) => into(backgroundWorks).insertReturning(
     BackgroundWorksCompanion.insert(
-      id: Value(request.id),
+      id: .new(request.id),
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
-      originatingMessageId: Value(request.originatingMessageId),
+      originatingMessageId: .new(request.originatingMessageId),
       toolCallId: request.toolCallId,
       toolKind: request.toolKind,
       status: AgentBackgroundWorkStatus.running.name,
@@ -110,6 +111,7 @@ extension _BackgroundWorksDaoCompletionOps on BackgroundWorksDao {
 
     final bounded = _boundedCompletion(completion);
     final updated = await _writeCompletion(completion, bounded);
+
     return updated == null ? null : _toAgentBackgroundWork(updated);
   }
 
@@ -121,6 +123,7 @@ extension _BackgroundWorksDaoCompletionOps on BackgroundWorksDao {
         await (update(backgroundWorks)
               ..where((table) => _activeWork(table, completion)))
             .writeReturning(_completionUpdate(completion, bounded));
+
     return updated.isEmpty ? null : updated.single;
   }
 }
@@ -158,20 +161,20 @@ Expression<bool> _activeWork(
     table.status.isIn(_activeStatuses);
 
 BackgroundWorksCompanion _stopRequestUpdate() => BackgroundWorksCompanion(
-  status: Value(AgentBackgroundWorkStatus.stopRequested.name),
-  updatedAt: Value(DateTime.now().toUtc()),
+  updatedAt: .new(DateTime.now().toUtc()),
+  status: .new(AgentBackgroundWorkStatus.stopRequested.name),
 );
 
 BackgroundWorksCompanion _completionUpdate(
   AgentBackgroundWorkCompletion completion,
   _BoundedCompletion bounded,
-) => BackgroundWorksCompanion(
-  status: Value(completion.status.name),
-  statusPreview: Value(bounded.statusPreview),
-  resultContent: Value(bounded.resultContent),
-  resultByteLength: Value(completion.resultByteLength),
-  updatedAt: Value(DateTime.now().toUtc()),
-  errorCode: Value(completion.errorCode),
+) => .new(
+  updatedAt: .new(DateTime.now().toUtc()),
+  status: .new(completion.status.name),
+  statusPreview: .new(bounded.statusPreview),
+  resultContent: .new(bounded.resultContent),
+  resultByteLength: .new(completion.resultByteLength),
+  errorCode: .new(completion.errorCode),
 );
 
 _BoundedCompletion _boundedCompletion(
@@ -222,13 +225,13 @@ AgentBackgroundWork _toAgentBackgroundWork(BackgroundWorkTable row) =>
 
 AgentBackgroundWorkIdentity _toBackgroundWorkIdentity(
   BackgroundWorkTable row,
-) => AgentBackgroundWorkIdentity(
+) => .new(
   id: row.id,
   workspaceId: row.workspaceId,
   conversationId: row.conversationId,
-  originatingMessageId: row.originatingMessageId,
   toolCallId: row.toolCallId,
   toolKind: row.toolKind,
+  originatingMessageId: row.originatingMessageId,
 );
 
 AgentBackgroundWorkState _toBackgroundWorkState(BackgroundWorkTable row) =>

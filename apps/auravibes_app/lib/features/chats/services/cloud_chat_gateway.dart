@@ -453,7 +453,7 @@ extension CloudChatGatewayBackgroundWorkOps on CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.detachToolCall(
-      DetachToolCallRequest(
+      .new(
         workspaceId: _workspaceId,
         requestId: requestId,
         conversationId: conversationId,
@@ -466,10 +466,7 @@ extension CloudChatGatewayBackgroundWorkOps on CloudChatGateway {
       CloudAppErrors.guardCall(
         .conversation,
         () => _client.conversation.listBackgroundWorks(
-          ListBackgroundWorksRequest(
-            workspaceId: _workspaceId,
-            conversationId: conversationId,
-          ),
+          .new(workspaceId: _workspaceId, conversationId: conversationId),
         ),
       );
 
@@ -480,7 +477,7 @@ extension CloudChatGatewayBackgroundWorkOps on CloudChatGateway {
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.stopBackgroundWork(
-      StopBackgroundWorkRequest(
+      .new(
         requestId: requestId,
         workspaceId: _workspaceId,
         conversationId: conversationId,

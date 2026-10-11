@@ -1184,7 +1184,7 @@ void main() {
   test(
     'returns one background acknowledgement and keeps the call running',
     () async {
-      cancellationRuntime.start('conversation-1');
+      final _ = cancellationRuntime.start('conversation-1');
       final appSkillTool = _MockRunAppSkillToolUsecase();
       final specs = _currentAppSkillSpecs(
         'skill__app_native__duckduckgo__search',
@@ -1217,7 +1217,7 @@ void main() {
         toolSlug: 'search',
         arguments: {'query': 'dart'},
       ));
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
       expect(
         cancellationRuntime.detachToolCall(
           conversationId: 'conversation-1',
@@ -1232,7 +1232,7 @@ void main() {
         'work_id': 'work-1',
       });
       operation.complete('eventual result');
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
       expect(operation.isCanceled, isFalse);
     },
   );
