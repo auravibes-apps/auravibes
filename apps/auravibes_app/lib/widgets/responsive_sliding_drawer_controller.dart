@@ -165,28 +165,33 @@ class _ResponsiveSlidingDrawerState
       ? _DesktopDrawerLayout(state: this)
       : _MobileDrawerLayout(state: this);
 
+  void _rebuild(VoidCallback callback) => setState(callback);
+}
+
+extension _ResponsiveSlidingDrawerPreferences on _ResponsiveSlidingDrawerState {
   Future<void> _restoreDesktopDrawerWidth() async {
+    final savedWidth = await _readSavedDesktopDrawerWidth();
+    if (!mounted || _hasResizedDesktopDrawer || savedWidth == null) return;
+
+    final restoredWidth = savedWidth.clamp(
+      _ResponsiveSlidingDrawerState._desktopMinDrawerWidth,
+      _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth,
+    );
+    if (restoredWidth == _desktopDrawerWidth) return;
+    _rebuild(() => _desktopDrawerWidth = restoredWidth);
+  }
+
+  Future<double?> _readSavedDesktopDrawerWidth() async {
     try {
       final preferences = await ref.read(sharedPreferencesProvider.future);
       final savedWidth = preferences.getDouble(
-        _desktopDrawerWidthPreferenceKey,
+        _ResponsiveSlidingDrawerState._desktopDrawerWidthPreferenceKey,
       );
-      if (!mounted ||
-          _hasResizedDesktopDrawer ||
-          savedWidth == null ||
-          !savedWidth.isFinite) {
-        return;
-      }
 
-      final restoredWidth = savedWidth.clamp(
-        _desktopMinDrawerWidth,
-        _desktopMaxDrawerWidth,
-      );
-      if (restoredWidth == _desktopDrawerWidth) return;
-      _rebuild(() => _desktopDrawerWidth = restoredWidth);
+      return savedWidth?.isFinite == true ? savedWidth : null;
     } on Object {
       // Keep the responsive default when local preferences are unavailable.
-      return;
+      return null;
     }
   }
 
@@ -194,7 +199,7 @@ class _ResponsiveSlidingDrawerState
     try {
       final preferences = await ref.read(sharedPreferencesProvider.future);
       final _ = await preferences.setDouble(
-        _desktopDrawerWidthPreferenceKey,
+        _ResponsiveSlidingDrawerState._desktopDrawerWidthPreferenceKey,
         width,
       );
     } on Object {
@@ -211,8 +216,6 @@ class _ResponsiveSlidingDrawerState
     final width = _desktopDrawerWidth;
     if (width != null) unawaited(_persistDesktopDrawerWidth(width));
   }
-
-  void _rebuild(VoidCallback callback) => setState(callback);
 }
 
 extension _ResponsiveSlidingDrawerAppearance on _ResponsiveSlidingDrawerState {
