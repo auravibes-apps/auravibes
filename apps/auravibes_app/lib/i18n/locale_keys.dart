@@ -1055,6 +1055,7 @@ abstract class LocaleKeys {
       'skills_selector.suggestion_unavailable';
   static const skills_selector_suggestion_open_picker =
       'skills_selector.suggestion_open_picker';
+  static const skills_selector_recent_title = 'skills_selector.recent_title';
   static const skills_selector_actions_hint = 'skills_selector.actions_hint';
   static const skills_selector_preview = 'skills_selector.preview';
   static const skills_selector_preview_title = 'skills_selector.preview_title';

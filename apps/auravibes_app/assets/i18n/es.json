@@ -747,6 +747,7 @@
     "suggestion": "Habilidad sugerida",
     "suggestion_unavailable": "Esta sugerencia de habilidad no está disponible.",
     "suggestion_open_picker": "Abrir habilidades",
+    "recent_title": "Habilidades recientes",
     "actions_hint": "Para este chat: Añadir prepara las instrucciones sin enviar una solicitud. Usar ahora pide al asistente que use la habilidad para tu última tarea.",
     "preview": "Vista previa",
     "preview_title": "Vista previa de la habilidad",

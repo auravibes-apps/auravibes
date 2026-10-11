@@ -14,9 +14,11 @@ void main() {
     test('Add persists selection without sending a message', () async {
       var loads = 0;
       var sends = 0;
+      final recentSkills = <String>[];
       final usecase = _usecase(
         load: (_, _, _) async => loads++,
         send: (_, _, _) async => sends++,
+        recordRecentSkillUse: (_, _, slug) async => recentSkills.add(slug),
       );
 
       final result = await _call(
@@ -31,7 +33,36 @@ void main() {
       expect(result, ConversationSkillActionResult.added);
       expect(loads, 1);
       expect(sends, 0);
+      expect(recentSkills, isEmpty);
     });
+
+    test(
+      'Use now records the workspace skill before sending its request',
+      () async {
+        final events = <String>[];
+        final usecase = _usecase(
+          send: (_, _, _) {
+            events.add('send');
+
+            return Future<void>.value();
+          },
+          recordRecentSkillUse: (workspaceId, conversationId, slug) async =>
+              events.add('recent:$workspaceId:$conversationId:$slug'),
+        );
+
+        final result = await _call(
+          usecase,
+          workspaceId: 'workspace-1',
+          conversationId: 'conversation-1',
+          slug: 'research',
+          action: .useNow,
+          userRequestForSkill: _requestForSkill,
+        );
+
+        expect(result, ConversationSkillActionResult.used);
+        expect(events, ['recent:workspace-1:conversation-1:research', 'send']);
+      },
+    );
 
     test(
       'stale catalog revision prevents selection and continuation',
@@ -320,6 +351,12 @@ ApplyConversationSkillActionUsecase _usecase({
     ChatDraft draft,
   )?
   send,
+  Future<void> Function(
+    String workspaceId,
+    String conversationId,
+    String skillSlug,
+  )?
+  recordRecentSkillUse,
   String catalogRevision = 'current-revision',
 }) => ApplyConversationSkillActionUsecase(
   workspaceIdForConversation:
@@ -341,6 +378,8 @@ ApplyConversationSkillActionUsecase _usecase({
   ],
   loadSkill: load ?? (_, _, _) => Future<void>.value(),
   sendMessage: send ?? (_, _, _) => Future<void>.value(),
+  recordRecentSkillUse:
+      recordRecentSkillUse ?? (_, _, _) => Future<void>.value(),
 );
 
 const _skill = AvailableSkill(
