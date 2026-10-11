@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.da
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -147,20 +148,33 @@ class const _BackgroundWorkListSheet({
       conversationId: conversationId,
     );
 
-    return _BackgroundWorkListSheetView(worksAsync: worksAsync);
+    return _BackgroundWorkListSheetView(
+      worksAsync: worksAsync,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    );
   }
 }
 
 class const _BackgroundWorkListSheetView({
   required final AsyncValue<List<AgentBackgroundWork>> worksAsync,
+  required final String workspaceId,
+  required final String conversationId,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      SafeArea(child: _BackgroundWorkSheetLayout(worksAsync: worksAsync));
+  Widget build(BuildContext context) => SafeArea(
+    child: _BackgroundWorkSheetLayout(
+      worksAsync: worksAsync,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+  );
 }
 
 class const _BackgroundWorkSheetLayout({
   required final AsyncValue<List<AgentBackgroundWork>> worksAsync,
+  required final String workspaceId,
+  required final String conversationId,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ConstrainedBox(
@@ -168,12 +182,18 @@ class const _BackgroundWorkSheetLayout({
       maxHeight:
           MediaQuery.sizeOf(context).height * _backgroundWorkSheetHeightFactor,
     ),
-    child: _BackgroundWorkSheetColumn(worksAsync: worksAsync),
+    child: _BackgroundWorkSheetColumn(
+      worksAsync: worksAsync,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
   );
 }
 
 class const _BackgroundWorkSheetColumn({
   required final AsyncValue<List<AgentBackgroundWork>> worksAsync,
+  required final String workspaceId,
+  required final String conversationId,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
@@ -183,7 +203,13 @@ class const _BackgroundWorkSheetColumn({
       children: [
         const _BackgroundWorkSheetHeader(),
         const Divider(height: 1),
-        Flexible(child: _BackgroundWorkListStateView(worksAsync: worksAsync)),
+        Flexible(
+          child: _BackgroundWorkListStateView(
+            worksAsync: worksAsync,
+            workspaceId: workspaceId,
+            conversationId: conversationId,
+          ),
+        ),
       ],
     ),
   );
@@ -224,12 +250,18 @@ class const _BackgroundWorkSheetCloseButton() extends StatelessWidget {
 
 class const _BackgroundWorkListStateView({
   required final AsyncValue<List<AgentBackgroundWork>> worksAsync,
+  required final String workspaceId,
+  required final String conversationId,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final display = _backgroundWorkListDisplay(worksAsync);
     if (display.works case final works?) {
-      return _BackgroundWorkListContent(works: works);
+      return _BackgroundWorkListContent(
+        works: works,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      );
     }
     if (display.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -259,6 +291,8 @@ _BackgroundWorkListDisplay _backgroundWorkListDisplay(
 
 class const _BackgroundWorkListContent({
   required final List<AgentBackgroundWork> works,
+  required final String workspaceId,
+  required final String conversationId,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => works.isEmpty
@@ -271,7 +305,21 @@ class const _BackgroundWorkListContent({
           onStop: (work) => _stopBackgroundWork(ref, work),
           onOpenResult: (work) async =>
               _showBackgroundWorkResult(context, work),
+          onOpenChild: (work) => _openChildConversation(context, work),
         );
+
+  Future<void> _openChildConversation(
+    BuildContext context,
+    AgentBackgroundWork work,
+  ) async {
+    final childConversationId = work.identity.childConversationId;
+    if (childConversationId == null) return;
+    final _ = await SubAgentConversationRoute(
+      workspaceId: workspaceId,
+      chatId: conversationId,
+      subAgentConversationId: childConversationId,
+    ).push<void>(context);
+  }
 }
 
 class const _BackgroundWorkMessage({required final String localeKey})

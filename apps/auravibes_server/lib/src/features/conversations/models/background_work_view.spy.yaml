@@ -3,6 +3,7 @@ fields:
   id: String
   workspaceId: int
   conversationId: String
+  childConversationId: String?
   originatingMessageId: String?
   toolCallId: String
   toolKind: String

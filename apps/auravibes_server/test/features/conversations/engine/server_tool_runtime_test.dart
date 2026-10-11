@@ -87,7 +87,7 @@ void main() {
     expect(serverToolIsReplayableSkillKind(AgentResolvedToolKind.mcp), isFalse);
   });
 
-  test('only cancellable template calls can run in background', () {
+  test('only cancellable top-level tools can run in background', () {
     ServerResolvedTool tool(AgentResolvedToolName descriptor) =>
         ServerResolvedTool(
           descriptor: descriptor,
@@ -132,6 +132,27 @@ void main() {
             mcpSlug: 'list',
           ),
         ),
+      ),
+      isFalse,
+    );
+    final runSubAgent = tool(
+      AgentResolvedToolName.skillNative(
+        tableId: 'skill__app_native__agents__run_sub_agent',
+        skillSlug: agentsSkillSlug,
+        toolIdentifier: runSubAgentToolName,
+      ),
+    );
+    expect(
+      serverToolCanRunInBackground(
+        runSubAgent,
+        isTopLevelConversation: true,
+      ),
+      isTrue,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        runSubAgent,
+        isTopLevelConversation: false,
       ),
       isFalse,
     );

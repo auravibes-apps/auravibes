@@ -40,6 +40,25 @@ extension BackgroundWorksDaoOperations on BackgroundWorksDao {
     return _toAgentBackgroundWork(await _insertRequest(request));
   }
 
+  Future<void> linkChildConversation({
+    required String conversationId,
+    required String workId,
+    required String childConversationId,
+  }) async {
+    final _ =
+        await (update(backgroundWorks)..where(
+              (table) =>
+                  table.conversationId.equals(conversationId) &
+                  table.id.equals(workId),
+            ))
+            .write(
+              BackgroundWorksCompanion(
+                updatedAt: .new(DateTime.now().toUtc()),
+                childConversationId: .new(childConversationId),
+              ),
+            );
+  }
+
   Future<void> discard({
     required String conversationId,
     required String workId,
@@ -125,6 +144,7 @@ extension _BackgroundWorksDaoQueryOps on BackgroundWorksDao {
       id: .new(request.id),
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
+      childConversationId: .new(request.childConversationId),
       originatingMessageId: .new(request.originatingMessageId),
       toolCallId: request.toolCallId,
       toolKind: request.toolKind,
@@ -276,6 +296,7 @@ AgentBackgroundWorkIdentity _toBackgroundWorkIdentity(
   toolCallId: row.toolCallId,
   toolKind: row.toolKind,
   originatingMessageId: row.originatingMessageId,
+  childConversationId: row.childConversationId,
 );
 
 AgentBackgroundWorkState _toBackgroundWorkState(BackgroundWorkTable row) =>

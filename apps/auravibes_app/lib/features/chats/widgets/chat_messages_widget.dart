@@ -3023,6 +3023,19 @@ String? _subAgentConversationId(MessageToolCallEntity toolCall) {
     if (decoded case {'conversationId': final String conversationId}) {
       return conversationId;
     }
+    if (decoded case {
+      'childConversationId': final String childConversationId,
+    }) {
+      return childConversationId;
+    }
+    if (decoded case {'children': final List children}) {
+      final childIds = children
+          .whereType<Map>()
+          .map((child) => child['conversationId'])
+          .whereType<String>()
+          .toSet();
+      return childIds.length == 1 ? childIds.single : null;
+    }
   } on Object {
     return null;
   }

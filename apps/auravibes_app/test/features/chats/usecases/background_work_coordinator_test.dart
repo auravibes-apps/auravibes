@@ -92,6 +92,10 @@ void main() {
           status: .sent,
         ),
       );
+      final childConversation = await database.conversationDao
+          .insertConversation(
+            .insert(workspaceId: fixture.workspaceId, title: 'Child'),
+          );
       final operation = Completer<Object?>();
       var cancelCalls = 0;
       final handle = _registerToolCancellationHandleForTest(
@@ -101,7 +105,7 @@ void main() {
         isSupported: true,
         cancel: () async => cancelCalls++,
         operationResult: operation.future,
-      );
+      )..recordChildConversationId(childConversation.id);
       final coordinator = _coordinator(fixture);
 
       final work = await coordinator.runInBackground(
@@ -114,6 +118,7 @@ void main() {
       );
       expect(work?.state.status, AgentBackgroundWorkStatus.running);
       expect(work?.identity.originatingMessageId, originatingMessage.id);
+      expect(work?.identity.childConversationId, childConversation.id);
       expect(await handle.detached, work?.identity.id);
 
       final scope =
@@ -132,6 +137,53 @@ void main() {
       expect(saved.single.state.resultContent, '{"answer":"ready"}');
     },
   );
+
+  test('links a child conversation created after detachment', () async {
+    final fixture = await _createFixture();
+    addTearDown(fixture.database.close);
+    final childConversation = await fixture.database.conversationDao
+        .insertConversation(
+          .insert(workspaceId: fixture.workspaceId, title: 'Child'),
+        );
+    final operation = Completer<Object?>();
+    final handle = _registerToolCancellationHandleForTest(
+      fixture.runtime,
+      conversationId: fixture.conversationId,
+      toolCallId: 'tool-call-child-linked-later',
+      isSupported: true,
+      cancel: Future<void>.value,
+      operationResult: operation.future,
+    );
+    final work = await _coordinator(fixture).runInBackground(
+      .new(
+        conversationId: fixture.conversationId,
+        toolCallId: 'tool-call-child-linked-later',
+        toolKind: 'skill.native',
+      ),
+    );
+    expect(work?.identity.childConversationId, isNull);
+
+    final linked = fixture.repository
+        .watchConversation(fixture.conversationId)
+        .firstWhere(
+          (items) =>
+              items.single.identity.childConversationId == childConversation.id,
+        );
+    handle.recordChildConversationId(childConversation.id);
+    expect(
+      (await linked).single.identity.childConversationId,
+      childConversation.id,
+    );
+
+    final terminal = fixture.repository
+        .watchConversation(fixture.conversationId)
+        .firstWhere((items) => items.single.state.status != .running);
+    operation.complete({'answer': 'ready'});
+    expect(
+      (await terminal).single.state.status,
+      AgentBackgroundWorkStatus.completed,
+    );
+  });
 
   test(
     'stop is reported confirmed only after operation cancellation',

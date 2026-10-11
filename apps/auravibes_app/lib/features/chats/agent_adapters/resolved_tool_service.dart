@@ -776,14 +776,38 @@ AgentToolCancellationHandle _registerSubAgentCancellationHandle(
   AgentCancellationRuntime runtime,
   _SkillNativeToolRequest request,
   _SubAgentCancellationRequest cancellationRequest,
-) => runtime.registerToolCancellationHandle((
-  conversationId: request.conversationId,
-  toolCallId: request.toolCallId,
-  isSupported: true,
-  cancel: () => _cancelSubAgentOperation(runtime, cancellationRequest),
-  operationResult: cancellationRequest.operation,
-  isCancellationConfirmed: () => true,
-));
+) {
+  final handle = runtime.registerToolCancellationHandle((
+    conversationId: request.conversationId,
+    toolCallId: request.toolCallId,
+    isSupported: true,
+    cancel: () => _cancelSubAgentOperation(runtime, cancellationRequest),
+    operationResult: cancellationRequest.operation,
+    isCancellationConfirmed: () => true,
+  ));
+  unawaited(
+    _recordSubAgentChildConversationWhenStarted(
+      childStartedId: cancellationRequest.childStartedId,
+      operation: cancellationRequest.operation,
+      handle: handle,
+    ),
+  );
+
+  return handle;
+}
+
+Future<void> _recordSubAgentChildConversationWhenStarted({
+  required Completer<String> childStartedId,
+  required Future<Object?> operation,
+  required AgentToolCancellationHandle handle,
+}) async {
+  final childConversationId = await Future.any<String?>([
+    childStartedId.future,
+    _subAgentCompletesBeforeStart(operation),
+  ]);
+  if (childConversationId == null) return;
+  handle.recordChildConversationId(childConversationId);
+}
 
 void _completeSubAgentCancellationHandle(
   AgentCancellationRuntime runtime,

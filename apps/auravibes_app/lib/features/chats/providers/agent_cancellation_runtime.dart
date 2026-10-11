@@ -193,12 +193,17 @@ class AgentToolCancellationHandle {
   Future<void>? _cancellation;
   String? _backgroundWorkId;
   final _detachedCompleter = Completer<String>();
+  final _childConversationIdCompleter = Completer<String?>();
+  String? _childConversationId;
   bool _operationCompleted = false;
   bool _cancellationWasConfirmed = false;
 
   AgentToolCancellationStatus get status => _status;
   Future<String> get detached => _detachedCompleter.future;
   String? get backgroundWorkId => _backgroundWorkId;
+  String? get childConversationId => _childConversationId;
+  Future<String?> get childConversationIdWhenAvailable =>
+      _childConversationIdCompleter.future;
   bool get cancellationWasConfirmed => _cancellationWasConfirmed;
   Future<bool>? get cancellationCompletion {
     final cancellation = _cancellation;
@@ -220,7 +225,19 @@ class AgentToolCancellationHandle {
   void markOperationCompleted() {
     _operationCompleted = true;
     _status = .completed;
+    if (!_childConversationIdCompleter.isCompleted) {
+      _childConversationIdCompleter.complete(_childConversationId);
+    }
     _onChanged?.call();
+  }
+
+  void recordChildConversationId(String childConversationId) {
+    final normalized = childConversationId.trim();
+    if (normalized.isEmpty) return;
+    _childConversationId = normalized;
+    if (!_childConversationIdCompleter.isCompleted) {
+      _childConversationIdCompleter.complete(normalized);
+    }
   }
 
   Future<bool> requestCancellation() async {

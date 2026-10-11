@@ -1186,16 +1186,36 @@ void main() {
           );
         }
 
+        final beforeQueue = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!;
+        await endpoints.conversation.queueConversationMessage(
+          fixture.session,
+          QueueConversationMessageRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'queue-before-parent-stop',
+            conversationId: 'conversation-1',
+            expectedProjectionRevision: beforeQueue.projectionRevision,
+            clientMessageId: 'queued-after-parent-stop',
+            content: 'Continue after the current work.',
+            attachmentIds: const [],
+          ),
+        );
+        final beforeStop = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!;
         await ConversationUseCases(
           conversation_repo.ConversationRepository(),
-        ).cancelTurn(
+        ).stopConversation(
           fixture.database,
           userId: fixture.userId,
-          request: CancelTurnRequest(
+          request: StopConversationRequest(
             workspaceId: fixture.workspaceId,
             requestId: 'stop-before-restart-reconciliation',
-            turnId: fixture.turn.requestId,
-            expectedTurnRevision: fixture.turn.revision,
+            conversationId: 'conversation-1',
+            expectedProjectionRevision: beforeStop.projectionRevision,
           ),
         );
 
@@ -1243,6 +1263,12 @@ void main() {
               table.workspaceId.equals(fixture.workspaceId) &
               table.conversationId.equals(fixture.conversationId),
         );
+        final queuedMessage = await ConversationMessage.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.conversationId.equals(fixture.conversationId) &
+              table.stableId.equals('queued-after-parent-stop'),
+        );
 
         expect(completed, hasLength(2));
         expect(
@@ -1286,7 +1312,8 @@ void main() {
           );
         }
         expect(turns, hasLength(1));
-        expect(turns.single.status, ConversationStatuses.cancelled);
+        expect(turns.single.cancellationRequestedAt, isNotNull);
+        expect(queuedMessage?.status, ConversationStatuses.queued);
       },
     );
 

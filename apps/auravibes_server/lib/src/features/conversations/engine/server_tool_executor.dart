@@ -7,6 +7,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../sync/stream/sync_wakeups.dart';
 import '../../agents/agent_catalog_repository.dart';
 import '../../agents/agent_catalog_use_cases.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
@@ -918,6 +919,12 @@ class const ServerToolExecutorService({
           parentConversationId: parent.stableId,
         ),
       );
+      await _recordSubAgentChildConversation(
+        session,
+        turn: turn,
+        toolCallId: request.id,
+        childConversationId: child.id,
+      );
       logLifecycle(
         _runCreateChildPhase,
         childId: child.id,
@@ -1126,6 +1133,90 @@ class const ServerToolExecutorService({
     if (message?.metadataJson == null) return null;
     final selectionId = _jsonMap(message!.metadataJson!)['modelSelectionId'];
     return selectionId is String && selectionId.isNotEmpty ? selectionId : null;
+  }
+
+  Future<void> _recordSubAgentChildConversation(
+    Session session, {
+    required ConversationTurn turn,
+    required String toolCallId,
+    required String childConversationId,
+  }) async {
+    var detached = false;
+    var stopRequested = false;
+    await session.db.transaction((transaction) async {
+      final call = await ConversationToolCall.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(turn.workspaceId) &
+            table.turnId.equals(turn.id!) &
+            table.stableId.equals(toolCallId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (call == null) return;
+      detached = call.backgroundWorkStableId != null;
+      final workId = call.backgroundWorkStableId;
+      if (workId != null) {
+        final work = await BackgroundWorkRecord.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(turn.workspaceId) &
+              table.conversationId.equals(turn.conversationId) &
+              table.conversationToolCallId.equals(call.id) &
+              table.stableId.equals(workId),
+          transaction: transaction,
+        );
+        stopRequested = work?.status == 'stopRequested';
+      }
+      final resultJson = call.resultJson;
+      final acknowledgement = detached && resultJson != null
+          ? _withChildConversationAcknowledgement(
+              resultJson,
+              childConversationId,
+            )
+          : resultJson;
+      await ConversationToolCall.db.updateRow(
+        session,
+        call.copyWith(
+          childConversationStableId: childConversationId,
+          resultJson: acknowledgement,
+          revision: call.revision + 1,
+          updatedAt: DateTime.now().toUtc(),
+        ),
+        transaction: transaction,
+      );
+    });
+    if (stopRequested) {
+      await ConversationUseCases(
+        conversation_repo.ConversationRepository(),
+      ).stopBackgroundSubAgentChild(
+        session,
+        userId: turn.initiatorUserId,
+        workspaceId: turn.workspaceId,
+        childConversationId: childConversationId,
+        requestId: 'background-work-stop:$toolCallId:child',
+      );
+    }
+    if (!detached) return;
+    final parent = await Conversation.db.findById(session, turn.conversationId);
+    if (parent == null) return;
+    await SyncWakeups.publishConversation(
+      session,
+      workspaceId: turn.workspaceId,
+      conversationId: parent.stableId,
+    );
+  }
+
+  String? _withChildConversationAcknowledgement(
+    String resultJson,
+    String childConversationId,
+  ) {
+    final decoded = jsonDecode(resultJson);
+    if (decoded is! Map<String, dynamic> ||
+        decoded['status'] != 'running_in_background') {
+      return resultJson;
+    }
+    return jsonEncode({...decoded, 'childConversationId': childConversationId});
   }
 
   Future<void> _compensateCancelledChild(
