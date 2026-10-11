@@ -1113,18 +1113,19 @@ _ToolbarActionState _inlineFormattingState(
       ? value.selection
       : TextSelection.collapsed(offset: value.text.length);
   final bounds = _selectionBounds(selection, value.text);
-  final inlineCodeSpans = action == .code
-      ? const <({int start, int contentStart, int contentEnd, int end})>[]
-      : _inlineFormattingSpans(value.text, '`');
+  final codeContentRanges = <({int start, int end})>[
+    if (action != .code)
+      for (final span in _inlineFormattingSpans(value.text, '`'))
+        (start: span.contentStart, end: span.contentEnd),
+    ..._fencedCodeBlockContentRanges(value.text),
+  ];
   final spans =
       [
         for (final marker in markers)
           ..._inlineFormattingSpans(value.text, marker),
       ]..removeWhere(
-        (span) => inlineCodeSpans.any(
-          (codeSpan) =>
-              span.start >= codeSpan.contentStart &&
-              span.end <= codeSpan.contentEnd,
+        (span) => codeContentRanges.any(
+          (range) => span.start >= range.start && span.end <= range.end,
         ),
       );
 
@@ -1178,4 +1179,99 @@ _inlineFormattingSpans(String text, String marker) {
   }
 
   return spans;
+}
+
+List<({int start, int end})> _fencedCodeBlockContentRanges(String text) {
+  final ranges = <({int start, int end})>[];
+  int? contentStart;
+  int? fenceCharacter;
+  var fenceLength = 0;
+  var lineStart = 0;
+
+  while (lineStart <= text.length) {
+    final newlineOffset = text.indexOf('\n', lineStart);
+    final lineEnd = newlineOffset == -1 ? text.length : newlineOffset;
+    final fence = _fencedCodeFenceAt(text, lineStart, lineEnd);
+
+    if (fenceCharacter == null) {
+      if (fence == null ||
+          (fence.markerCharacter == 0x60 &&
+              _containsCodeUnit(text, fence.infoStart, lineEnd, 0x60))) {
+        if (newlineOffset == -1) break;
+        lineStart = newlineOffset + 1;
+        continue;
+      }
+
+      fenceCharacter = fence.markerCharacter;
+      fenceLength = fence.markerLength;
+      contentStart = lineEnd < text.length ? lineEnd + 1 : text.length;
+    } else if (fence != null &&
+        fence.markerCharacter == fenceCharacter &&
+        fence.markerLength >= fenceLength &&
+        _isCodeFenceWhitespace(text, fence.infoStart, lineEnd)) {
+      final activeContentStart = contentStart;
+      if (activeContentStart != null) {
+        ranges.add((start: activeContentStart, end: lineStart));
+      }
+      contentStart = null;
+      fenceCharacter = null;
+      fenceLength = 0;
+    }
+
+    if (newlineOffset == -1) break;
+    lineStart = newlineOffset + 1;
+  }
+
+  if (contentStart != null) {
+    ranges.add((start: contentStart, end: text.length));
+  }
+
+  return ranges;
+}
+
+({int markerCharacter, int markerLength, int infoStart})? _fencedCodeFenceAt(
+  String text,
+  int lineStart,
+  int lineEnd,
+) {
+  var markerStart = lineStart;
+  while (markerStart < lineEnd &&
+      markerStart - lineStart < 4 &&
+      text.codeUnitAt(markerStart) == 0x20) {
+    markerStart++;
+  }
+  if (markerStart - lineStart > 3 || markerStart >= lineEnd) return null;
+
+  final markerCharacter = text.codeUnitAt(markerStart);
+  if (markerCharacter != 0x60 && markerCharacter != 0x7e) return null;
+
+  var markerEnd = markerStart;
+  while (markerEnd < lineEnd && text.codeUnitAt(markerEnd) == markerCharacter) {
+    markerEnd++;
+  }
+  final markerLength = markerEnd - markerStart;
+  if (markerLength < 3) return null;
+
+  return (
+    markerCharacter: markerCharacter,
+    markerLength: markerLength,
+    infoStart: markerEnd,
+  );
+}
+
+bool _containsCodeUnit(String text, int start, int end, int target) {
+  for (var offset = start; offset < end; offset++) {
+    if (text.codeUnitAt(offset) == target) return true;
+  }
+
+  return false;
+}
+
+bool _isCodeFenceWhitespace(String text, int start, int end) {
+  for (var offset = start; offset < end; offset++) {
+    final codeUnit = text.codeUnitAt(offset);
+    if (codeUnit != 0x20 && codeUnit != 0x09 && codeUnit != 0x0d) return false;
+  }
+
+  return true;
 }

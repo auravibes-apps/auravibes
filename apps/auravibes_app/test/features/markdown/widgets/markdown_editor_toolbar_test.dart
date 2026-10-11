@@ -665,6 +665,37 @@ void main() {
       );
     });
 
+    testWidgets('ignores emphasis markers inside fenced code blocks', (
+      tester,
+    ) async {
+      const text =
+          'before\n```\n**bold** and _italic_ and `literal`\n```\nafter';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_bold, text: 'bold'),
+        (icon: Icons.format_italic, text: 'italic'),
+        (icon: Icons.code, text: 'literal'),
+      ]) {
+        final contentStart = text.indexOf(action.text);
+        controller.selection = .collapsed(offset: contentStart + 1);
+        await tester.pump();
+
+        expect(
+          tester.widget<AuraIconButton>(toolbarButton(action.icon)).variant,
+          AuraIconButtonVariant.outlined,
+        );
+      }
+    });
+
     testWidgets('updates inline state when undoing and redoing formatting', (
       tester,
     ) async {
