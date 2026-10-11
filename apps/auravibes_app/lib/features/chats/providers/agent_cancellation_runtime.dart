@@ -127,7 +127,6 @@ class AgentToolCancellationHandle {
   AgentToolCancellationStatus get status => _status;
   Future<String> get detached => _detachedCompleter.future;
   String? get backgroundWorkId => _backgroundWorkId;
-  bool isOperationCompleted() => _operationCompleted;
   bool get cancellationWasConfirmed => _cancellationWasConfirmed;
   Future<bool>? get cancellationCompletion {
     final cancellation = _cancellation;
@@ -135,6 +134,8 @@ class AgentToolCancellationHandle {
 
     return _awaitCancellationCompletion(this, cancellation);
   }
+
+  bool isOperationCompleted() => _operationCompleted;
 
   bool tryDetach({required String workId}) {
     if (!_isSupported ||

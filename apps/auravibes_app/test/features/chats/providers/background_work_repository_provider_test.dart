@@ -17,17 +17,12 @@ QueryExecutor _testConnection() => DatabaseConnection.delayed(
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
-  late AppDatabase database;
-  late ProviderContainer container;
+  final database = AppDatabase(connection: _testConnection());
+  final container = ProviderContainer(
+    overrides: [appDatabaseProvider.overrideWithValue(database)],
+  );
 
-  setUp(() {
-    database = AppDatabase(connection: _testConnection());
-    container = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(database)],
-    );
-  });
-
-  tearDown(() async {
+  tearDownAll(() async {
     container.dispose();
     await database.close();
   });
