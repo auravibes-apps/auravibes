@@ -10,62 +10,75 @@ import 'package:material_ui/material_ui.dart';
 class const ModelUsageDetailsSheet({
   required final String conversationId,
   super.key,
-}) extends ConsumerWidget {
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _ModelUsageSheetViewport(conversationId: conversationId);
+}
+
+class const _ModelUsageSheetViewport({required final String conversationId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: MediaQuery.sizeOf(context).height * 0.8,
+    child: SafeArea(
+      top: false,
+      child: _ModelUsageSheetBody(conversationId: conversationId),
+    ),
+  );
+}
+
+class const _ModelUsageSheetBody({required final String conversationId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        const _ModelUsageSheetTitle(),
+        const SizedBox(height: 12),
+        Expanded(child: _ModelUsageContent(conversationId: conversationId)),
+      ],
+    ),
+  );
+}
+
+class const _ModelUsageSheetTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    LocaleKeys.chats_screens_chat_conversation_model_usage_title.tr(),
+    style: Theme.of(context).textTheme.titleLarge,
+  );
+}
+
+class const _ModelUsageContent({required final String conversationId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final records = ref.watch(
-      modelUsageRecordsForConversationProvider(conversationId),
-    );
-    final totals = ref.watch(
-      modelUsageTotalsForConversationProvider(conversationId),
+    final usage = ref.watch(
+      modelUsageDetailsForConversationProvider(conversationId),
     );
 
-    return SizedBox(
-      height: MediaQuery.sizeOf(context).height * 0.8,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: .stretch,
-            children: [
-              Text(
-                LocaleKeys.chats_screens_chat_conversation_model_usage_title
-                    .tr(),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: switch ((records: records, totals: totals)) {
-                  (
-                    records: AsyncData<List<ModelUsageRecord>>(
-                      value: final recordValues,
-                    ),
-                    totals: AsyncData<ModelUsageTotals>(
-                      value: final totalValues,
-                    ),
-                  ) =>
-                    _ModelUsageData(records: recordValues, totals: totalValues),
-                  (records: AsyncError(), totals: _) ||
-                  (
-                    records: _,
-                    totals: AsyncError(),
-                  ) => _ModelUsageLoadError(onRetry: () => _retry(ref)),
-                  _ => const Center(child: CircularProgressIndicator()),
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return _ModelUsageContentState(usage: usage, onRetry: () => _retry(ref));
   }
 
   void _retry(WidgetRef ref) {
-    ref
-      ..invalidate(modelUsageRecordsForConversationProvider(conversationId))
-      ..invalidate(modelUsageTotalsForConversationProvider(conversationId));
+    ref.invalidate(modelUsageDetailsForConversationProvider(conversationId));
   }
+}
+
+class const _ModelUsageContentState({
+  required final AsyncValue<ModelUsageConversationDetails> usage,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (usage) {
+    AsyncData<ModelUsageConversationDetails>(value: final details) =>
+      _ModelUsageData(records: details.records, totals: details.totals),
+    AsyncError() => _ModelUsageLoadError(onRetry: onRetry),
+    AsyncLoading() => const Center(child: CircularProgressIndicator()),
+  };
 }
 
 class const _ModelUsageData({
@@ -80,20 +93,7 @@ class const _ModelUsageData({
       children: [
         _ModelUsageSummaryCard(totals: totals, locale: locale),
         const SizedBox(height: 12),
-        if (records.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                LocaleKeys.chats_screens_chat_conversation_model_usage_empty
-                    .tr(),
-                textAlign: .center,
-              ),
-            ),
-          )
-        else
-          for (final record in records)
-            _ModelUsageRequestCard(record: record, locale: locale),
+        ..._ModelUsageRequestRows.widgets(records, locale),
       ],
     );
   }
@@ -114,46 +114,7 @@ class const _ModelUsageSummaryCard({
             LocaleKeys.chats_screens_chat_conversation_model_usage_summary.tr(),
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_request_count
-                .tr(),
-            value: NumberFormatter.count(totals.requestCount, locale),
-          ),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_estimated_cost
-                .tr(),
-            value: _costValue(totals.costStatus, totals.costUsd, locale),
-          ),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_prompt_tokens
-                .tr(),
-            value: _tokenValue(totals.promptTokens, locale),
-          ),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_response_tokens
-                .tr(),
-            value: _tokenValue(totals.responseTokens, locale),
-          ),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_total_tokens
-                .tr(),
-            value: _tokenValue(totals.totalTokens, locale),
-          ),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_cache_read_tokens
-                .tr(),
-            value: _tokenValue(totals.cacheReadInputTokens, locale),
-          ),
-          _ModelUsageMetric(
-            label: _cacheCreationTokenLabel(),
-            value: _tokenValue(totals.cacheCreationInputTokens, locale),
-          ),
+          ..._ModelUsageMetricRows.summary(totals, locale),
         ],
       ),
     ),
@@ -172,50 +133,11 @@ class const _ModelUsageRequestCard({
         crossAxisAlignment: .stretch,
         children: [
           Text(
-            _requestKindLabel(record.requestKind),
+            _ModelUsageValueFormatter.requestKindLabel(record.requestKind),
             style: Theme.of(context).textTheme.titleSmall,
           ),
           Text('${record.providerId} / ${record.modelId}'),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_outcome
-                .tr(),
-            value: _requestOutcomeLabel(record.outcome),
-          ),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_prompt_tokens
-                .tr(),
-            value: _tokenValue(record.usage?.promptTokens, locale),
-          ),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_response_tokens
-                .tr(),
-            value: _tokenValue(record.usage?.responseTokens, locale),
-          ),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_total_tokens
-                .tr(),
-            value: _tokenValue(record.usage?.totalTokens, locale),
-          ),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_cache_read_tokens
-                .tr(),
-            value: _tokenValue(record.usage?.cacheReadInputTokens, locale),
-          ),
-          _ModelUsageMetric(
-            label: _cacheCreationTokenLabel(),
-            value: _tokenValue(record.usage?.cacheCreationInputTokens, locale),
-          ),
-          _ModelUsageMetric(
-            label: LocaleKeys
-                .chats_screens_chat_conversation_model_usage_estimated_cost
-                .tr(),
-            value: _costValue(record.costStatus, record.costUsd, locale),
-          ),
+          ..._ModelUsageMetricRows.request(record, locale),
         ],
       ),
     ),
@@ -263,41 +185,157 @@ class const _ModelUsageLoadError({required final VoidCallback onRetry})
   );
 }
 
-String _tokenValue(int? value, Locale locale) => value == null
-    ? LocaleKeys.chats_screens_chat_conversation_model_usage_unknown.tr()
-    : NumberFormatter.count(value, locale);
+class _ModelUsageRequestRows {
+  static List<Widget> widgets(List<ModelUsageRecord> records, Locale locale) =>
+      records.isEmpty
+      ? [_empty()]
+      : [
+          for (final record in records)
+            _ModelUsageRequestCard(record: record, locale: locale),
+        ];
 
-String _cacheCreationTokenLabel() => LocaleKeys
-    .chats_screens_chat_conversation_model_usage_cache_creation_tokens
-    .tr();
+  static Widget _empty() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Text(
+        LocaleKeys.chats_screens_chat_conversation_model_usage_empty.tr(),
+        textAlign: .center,
+      ),
+    ),
+  );
+}
 
-String _costValue(
-  ModelUsageCostStatus status,
-  double? costUsd,
-  Locale locale,
-) => status != ModelUsageCostStatus.known || costUsd == null
-    ? LocaleKeys.chats_screens_chat_conversation_model_usage_unknown.tr()
-    : NumberFormat.currency(
-        locale: locale.toLanguageTag(),
-        name: 'USD',
-        decimalDigits: 6,
-      ).format(costUsd);
+class _ModelUsageMetricRows {
+  static List<Widget> summary(ModelUsageTotals totals, Locale locale) => [
+    _metric(
+      LocaleKeys.chats_screens_chat_conversation_model_usage_request_count,
+      NumberFormatter.count(totals.requestCount, locale),
+    ),
+    _costMetric(totals.costStatus, totals.costUsd, locale),
+    ..._promptRows(
+      totals.promptTokens,
+      totals.responseTokens,
+      totals.totalTokens,
+      locale,
+    ),
+    ..._cacheRows(
+      totals.cacheReadInputTokens,
+      totals.cacheCreationInputTokens,
+      locale,
+    ),
+  ];
 
-String _requestKindLabel(ModelUsageRequestKind kind) => switch (kind) {
-  .generation =>
-    LocaleKeys.chats_screens_chat_conversation_model_usage_kind_generation.tr(),
-  .compaction =>
-    LocaleKeys.chats_screens_chat_conversation_model_usage_kind_compaction.tr(),
-  .cacheWarm =>
-    LocaleKeys.chats_screens_chat_conversation_model_usage_kind_cache_warm.tr(),
-};
+  static List<Widget> request(ModelUsageRecord record, Locale locale) => [
+    _outcome(record.outcome),
+    ..._promptRows(
+      record.usage?.promptTokens,
+      record.usage?.responseTokens,
+      record.usage?.totalTokens,
+      locale,
+    ),
+    ..._cacheRows(
+      record.usage?.cacheReadInputTokens,
+      record.usage?.cacheCreationInputTokens,
+      locale,
+    ),
+    _costMetric(record.costStatus, record.costUsd, locale),
+  ];
 
-String _requestOutcomeLabel(ModelUsageRequestOutcome outcome) =>
-    switch (outcome) {
-      .succeeded =>
-        LocaleKeys.chats_screens_chat_conversation_model_usage_outcome_succeeded
-            .tr(),
-      .failed =>
-        LocaleKeys.chats_screens_chat_conversation_model_usage_outcome_failed
-            .tr(),
-    };
+  static List<Widget> _promptRows(
+    int? prompt,
+    int? response,
+    int? total,
+    Locale locale,
+  ) => [
+    _tokenMetric(
+      LocaleKeys.chats_screens_chat_conversation_model_usage_prompt_tokens,
+      prompt,
+      locale,
+    ),
+    _tokenMetric(
+      LocaleKeys.chats_screens_chat_conversation_model_usage_response_tokens,
+      response,
+      locale,
+    ),
+    _tokenMetric(
+      LocaleKeys.chats_screens_chat_conversation_model_usage_total_tokens,
+      total,
+      locale,
+    ),
+  ];
+
+  static List<Widget> _cacheRows(int? read, int? creation, Locale locale) => [
+    _tokenMetric(
+      LocaleKeys.chats_screens_chat_conversation_model_usage_cache_read_tokens,
+      read,
+      locale,
+    ),
+    _tokenMetric(
+      LocaleKeys
+          .chats_screens_chat_conversation_model_usage_cache_creation_tokens,
+      creation,
+      locale,
+    ),
+  ];
+
+  static Widget _tokenMetric(String label, int? value, Locale locale) =>
+      _metric(label, _ModelUsageValueFormatter.tokenValue(value, locale));
+
+  static Widget _costMetric(
+    ModelUsageCostStatus status,
+    double? costUsd,
+    Locale locale,
+  ) => _metric(
+    LocaleKeys.chats_screens_chat_conversation_model_usage_estimated_cost,
+    _ModelUsageValueFormatter.costValue(status, costUsd, locale),
+  );
+
+  static Widget _outcome(ModelUsageRequestOutcome outcome) => _metric(
+    LocaleKeys.chats_screens_chat_conversation_model_usage_outcome,
+    _ModelUsageValueFormatter.outcomeLabel(outcome),
+  );
+
+  static Widget _metric(String key, String value) =>
+      _ModelUsageMetric(label: key.tr(), value: value);
+}
+
+class _ModelUsageValueFormatter {
+  static String tokenValue(int? value, Locale locale) => value == null
+      ? LocaleKeys.chats_screens_chat_conversation_model_usage_unknown.tr()
+      : NumberFormatter.count(value, locale);
+
+  static String costValue(
+    ModelUsageCostStatus status,
+    double? costUsd,
+    Locale locale,
+  ) => status != ModelUsageCostStatus.known || costUsd == null
+      ? LocaleKeys.chats_screens_chat_conversation_model_usage_unknown.tr()
+      : NumberFormat.currency(
+          locale: locale.toLanguageTag(),
+          name: 'USD',
+          decimalDigits: 6,
+        ).format(costUsd);
+
+  static String requestKindLabel(ModelUsageRequestKind kind) => switch (kind) {
+    .generation =>
+      LocaleKeys.chats_screens_chat_conversation_model_usage_kind_generation
+          .tr(),
+    .compaction =>
+      LocaleKeys.chats_screens_chat_conversation_model_usage_kind_compaction
+          .tr(),
+    .cacheWarm =>
+      LocaleKeys.chats_screens_chat_conversation_model_usage_kind_cache_warm
+          .tr(),
+  };
+
+  static String outcomeLabel(ModelUsageRequestOutcome outcome) =>
+      switch (outcome) {
+        .succeeded =>
+          LocaleKeys
+              .chats_screens_chat_conversation_model_usage_outcome_succeeded
+              .tr(),
+        .failed =>
+          LocaleKeys.chats_screens_chat_conversation_model_usage_outcome_failed
+              .tr(),
+      };
+}
