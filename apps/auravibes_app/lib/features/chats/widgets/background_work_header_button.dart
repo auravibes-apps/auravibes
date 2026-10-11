@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_list_view.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -61,40 +62,68 @@ class const BackgroundWorkHeaderButton({
 }
 
 class const _BackgroundWorkHeaderButtonView({
-  required this.activeCount,
-  required this.workspaceId,
-  required this.conversationId,
+  required final int activeCount,
+  required final String workspaceId,
+  required final String conversationId,
 }) extends StatelessWidget {
-  final int activeCount;
-  final String workspaceId;
-  final String conversationId;
-
   @override
   Widget build(BuildContext context) => Semantics(
-    child: Tooltip(
-      message: _backgroundWorkTitleKey.tr(),
-      child: AuraButton(
-        onPressed: () => _showBackgroundWorkList(
-          context: context,
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ),
-        child: AuraRow(
-          children: [
-            const AuraIcon(Icons.work_outline, size: .small, tint: .primary),
-            if (activeCount > 0) Text('$activeCount'),
-          ],
-          spacing: .xs,
-          mainAxisSize: .min,
-        ),
-        key: const ValueKey('background_work_header_button'),
-        variant: .ghost,
-        size: .small,
-      ),
+    child: _BackgroundWorkHeaderButtonControl(
+      activeCount: activeCount,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
     ),
     button: true,
     identifier: 'background_work_header_button',
     label: _backgroundWorkAccessibleLabel(activeCount),
+  );
+}
+
+class const _BackgroundWorkHeaderButtonControl({
+  required final int activeCount,
+  required final String workspaceId,
+  required final String conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: _backgroundWorkTitleKey.tr(),
+    child: _BackgroundWorkButton(
+      activeCount: activeCount,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+  );
+}
+
+class const _BackgroundWorkButton({
+  required final int activeCount,
+  required final String workspaceId,
+  required final String conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => _showBackgroundWorkList(
+      context: context,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+    child: _BackgroundWorkButtonContent(activeCount: activeCount),
+    key: const ValueKey('background_work_header_button'),
+    variant: .ghost,
+    size: .small,
+  );
+}
+
+class const _BackgroundWorkButtonContent({required final int activeCount})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      const AuraIcon(Icons.work_outline, size: .small, tint: .primary),
+      if (activeCount > 0) Text('$activeCount'),
+    ],
+    spacing: .xs,
+    mainAxisSize: .min,
   );
 }
 
@@ -118,63 +147,78 @@ class const _BackgroundWorkListSheet({
       conversationId: conversationId,
     );
 
-    return _BackgroundWorkListSheetView(
-      worksAsync: worksAsync,
-    );
+    return _BackgroundWorkListSheetView(worksAsync: worksAsync);
   }
 }
 
 class const _BackgroundWorkListSheetView({
-  required this.worksAsync,
+  required final AsyncValue<List<AgentBackgroundWork>> worksAsync,
 }) extends StatelessWidget {
-  final AsyncValue<List<AgentBackgroundWork>> worksAsync;
-
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height *
-            _backgroundWorkSheetHeightFactor,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.only(top: _backgroundWorkSheetTopInset),
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            const _BackgroundWorkSheetHeader(),
-            const Divider(height: 1),
-            Flexible(
-              child: _BackgroundWorkListStateView(worksAsync: worksAsync),
-            ),
-          ],
-        ),
-      ),
+  Widget build(BuildContext context) =>
+      SafeArea(child: _BackgroundWorkSheetLayout(worksAsync: worksAsync));
+}
+
+class const _BackgroundWorkSheetLayout({
+  required final AsyncValue<List<AgentBackgroundWork>> worksAsync,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: BoxConstraints(
+      maxHeight:
+          MediaQuery.sizeOf(context).height * _backgroundWorkSheetHeightFactor,
+    ),
+    child: _BackgroundWorkSheetColumn(worksAsync: worksAsync),
+  );
+}
+
+class const _BackgroundWorkSheetColumn({
+  required final AsyncValue<List<AgentBackgroundWork>> worksAsync,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: _backgroundWorkSheetTopInset),
+    child: Column(
+      mainAxisSize: .min,
+      children: [
+        const _BackgroundWorkSheetHeader(),
+        const Divider(height: 1),
+        Flexible(child: _BackgroundWorkListStateView(worksAsync: worksAsync)),
+      ],
     ),
   );
 }
 
 class const _BackgroundWorkSheetHeader() extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(
-      horizontal: _backgroundWorkSheetHorizontalInset,
-    ),
+  Widget build(BuildContext context) => const Padding(
+    padding: .symmetric(horizontal: _backgroundWorkSheetHorizontalInset),
     child: Row(
       children: [
-        Expanded(
-          child: TextLocale(
-            _backgroundWorkTitleKey,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-        ),
-        IconButton(
-          key: const ValueKey('background_work_close'),
-          onPressed: () => Navigator.of(context).pop(),
-          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-          icon: const Icon(Icons.close),
-        ),
+        _BackgroundWorkSheetTitle(),
+        _BackgroundWorkSheetCloseButton(),
       ],
     ),
+  );
+}
+
+class const _BackgroundWorkSheetTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: TextLocale(
+      _backgroundWorkTitleKey,
+      style: Theme.of(context).textTheme.titleMedium,
+    ),
+  );
+}
+
+class const _BackgroundWorkSheetCloseButton() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => IconButton(
+    key: const ValueKey('background_work_close'),
+    onPressed: () => Navigator.of(context).pop(),
+    tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+    icon: const Icon(Icons.close),
   );
 }
 
@@ -182,47 +226,62 @@ class const _BackgroundWorkListStateView({
   required final AsyncValue<List<AgentBackgroundWork>> worksAsync,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => switch (worksAsync) {
-    AsyncData<List<AgentBackgroundWork>>(:final value) =>
-      _buildBackgroundWorkList(context, ref, value),
-    AsyncLoading<List<AgentBackgroundWork>>(:final value?) =>
-      _buildBackgroundWorkList(context, ref, value),
-    AsyncLoading<List<AgentBackgroundWork>>() => const Center(
-      child: CircularProgressIndicator(),
-    ),
-    AsyncError<List<AgentBackgroundWork>>() => const _BackgroundWorkMessage(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final display = _backgroundWorkListDisplay(worksAsync);
+    if (display.works case final works?) {
+      return _BackgroundWorkListContent(works: works);
+    }
+    if (display.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return const _BackgroundWorkMessage(
       localeKey:
           LocaleKeys.chats_screens_chat_conversation_background_work_load_error,
-    ),
-  };
+    );
+  }
 }
 
-class const _BackgroundWorkMessage({required this.localeKey})
-    extends StatelessWidget {
-  final String localeKey;
+typedef _BackgroundWorkListDisplay = ({
+  List<AgentBackgroundWork>? works,
+  bool isLoading,
+});
 
+_BackgroundWorkListDisplay _backgroundWorkListDisplay(
+  AsyncValue<List<AgentBackgroundWork>> worksAsync,
+) {
+  if (worksAsync is AsyncError<List<AgentBackgroundWork>>) {
+    return (works: null, isLoading: false);
+  }
+  return (works: worksAsync.value, isLoading: worksAsync.isLoading);
+}
+
+class const _BackgroundWorkListContent({
+  required final List<AgentBackgroundWork> works,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => works.isEmpty
+      ? const _BackgroundWorkMessage(
+          localeKey:
+              LocaleKeys.chats_screens_chat_conversation_background_work_empty,
+        )
+      : BackgroundWorkListView(
+          works: _sortBackgroundWorks(works),
+          onStop: (work) => _stopBackgroundWork(ref, work),
+          onOpenResult: (work) async =>
+              _showBackgroundWorkResult(context, work),
+        );
+}
+
+class const _BackgroundWorkMessage({required final String localeKey})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: Padding(
-      padding: .all(_backgroundWorkMessagePadding),
+      padding: const .all(_backgroundWorkMessagePadding),
       child: TextLocale(localeKey, textAlign: .center),
     ),
   );
 }
-
-Widget _buildBackgroundWorkList(
-  BuildContext context,
-  WidgetRef ref,
-  List<AgentBackgroundWork> works,
-) => works.isEmpty
-    ? const _BackgroundWorkMessage(
-        localeKey: LocaleKeys.chats_screens_chat_conversation_background_work_empty,
-      )
-    : BackgroundWorkListView(
-        works: _sortBackgroundWorks(works),
-        onStop: (work) => _stopBackgroundWork(ref, work),
-        onOpenResult: (work) => _showBackgroundWorkResult(context, work),
-      );
 
 void _showBackgroundWorkResult(
   BuildContext context,
@@ -272,13 +331,11 @@ bool _isActiveBackgroundWork(AgentBackgroundWorkStatus status) =>
 abstract final class BackgroundWorkActions {
   static Future<bool> runToolInBackground(BackgroundWorkRunRequest request) =>
       request.isCloud
-          ? _runCloudToolInBackground(request)
-          : _runLocalToolInBackground(request);
+      ? _runCloudToolInBackground(request)
+      : _runLocalToolInBackground(request);
 }
 
-Future<bool> _runLocalToolInBackground(
-  BackgroundWorkRunRequest request,
-) async {
+Future<bool> _runLocalToolInBackground(BackgroundWorkRunRequest request) async {
   final work = await request.ref
       .read(backgroundWorkCoordinatorProvider)
       .runInBackground(
@@ -293,9 +350,7 @@ Future<bool> _runLocalToolInBackground(
   return work != null;
 }
 
-Future<bool> _runCloudToolInBackground(
-  BackgroundWorkRunRequest request,
-) async {
+Future<bool> _runCloudToolInBackground(BackgroundWorkRunRequest request) async {
   final gateway = await request.ref.read(
     cloudWorkspaceStateGatewayForWorkspaceProvider(request.workspaceId).future,
   );
@@ -368,20 +423,36 @@ Future<void> _stopCloudBackgroundWork(
   AgentBackgroundWork work,
 ) async {
   final identity = work.identity;
-  final gateway = await ref.read(
-    cloudWorkspaceStateGatewayForWorkspaceProvider(identity.workspaceId).future,
-  );
+  final gateway = await _cloudGatewayFor(ref, identity.workspaceId);
   if (gateway == null) return;
-  final _ = await CloudChatGateway(gateway).stopBackgroundWork(
-    requestId: const UuidV7().generate(),
-    conversationId: identity.conversationId,
-    workId: identity.id,
-  );
+  await _sendCloudBackgroundWorkStop((gateway: gateway, identity: identity));
   ref.invalidate(
     cloudConversationBackgroundWorksProvider((
       workspaceId: identity.workspaceId,
       conversationId: identity.conversationId,
     )),
+  );
+}
+
+Future<CloudWorkspaceStateGateway?> _cloudGatewayFor(
+  WidgetRef ref,
+  String workspaceId,
+) => ref.read(
+  cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
+);
+
+typedef _CloudBackgroundWorkStopRequest = ({
+  CloudWorkspaceStateGateway gateway,
+  AgentBackgroundWorkIdentity identity,
+});
+
+Future<void> _sendCloudBackgroundWorkStop(
+  _CloudBackgroundWorkStopRequest request,
+) async {
+  final _ = await CloudChatGateway(request.gateway).stopBackgroundWork(
+    requestId: const UuidV7().generate(),
+    conversationId: request.identity.conversationId,
+    workId: request.identity.id,
   );
 }
 

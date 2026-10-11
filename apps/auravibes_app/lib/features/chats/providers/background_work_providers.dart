@@ -74,13 +74,14 @@ AgentBackgroundWorkIdentity _backgroundWorkIdentityFromView(
   originatingMessageId: view.originatingMessageId,
 );
 
-AgentBackgroundWorkState _backgroundWorkStateFromView(BackgroundWorkView view) =>
-    .new(
-      status: .values.byName(view.status),
-      createdAt: view.createdAt,
-      updatedAt: view.updatedAt,
-      statusPreview: view.statusPreview,
-      resultContent: view.resultContent,
-      resultByteLength: view.resultByteLength,
-      errorCode: view.errorCode,
-    );
+AgentBackgroundWorkState _backgroundWorkStateFromView(
+  BackgroundWorkView view,
+) => .new(
+  status: .values.byName(view.status),
+  createdAt: view.createdAt,
+  updatedAt: view.updatedAt,
+  statusPreview: view.statusPreview,
+  resultContent: view.resultContent,
+  resultByteLength: view.resultByteLength,
+  errorCode: view.errorCode,
+);

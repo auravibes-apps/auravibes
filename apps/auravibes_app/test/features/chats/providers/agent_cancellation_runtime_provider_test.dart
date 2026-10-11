@@ -98,7 +98,9 @@ void main() {
           toolCallId: 'call-1',
           isSupported: true,
           cancel: () async {},
-        ), operationResult: operation.future);
+          operationResult: operation.future,
+          isCancellationConfirmed: null,
+        ));
         await Future<void>.delayed(Duration.zero);
         expect(values, [false, true]);
 
