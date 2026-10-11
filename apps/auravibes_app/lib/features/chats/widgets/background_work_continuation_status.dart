@@ -1,7 +1,7 @@
 import 'package:auravibes_app/features/chats/providers/background_work_continuation_provider.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const BackgroundWorkContinuationStatus({
