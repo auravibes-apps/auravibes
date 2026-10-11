@@ -145,7 +145,7 @@ extension on _MarkdownEditorToolbarState {
   void _applyLineAction(_ToolbarActionKind action) {
     switch (action) {
       case .heading:
-        _prefixLines('# ');
+        _toggleBlockPrefix(action);
       case .bullets:
         _prefixLines('- ');
       case .numberedList:
@@ -153,7 +153,7 @@ extension on _MarkdownEditorToolbarState {
       case .taskList:
         _formatTaskList();
       case .quote:
-        _prefixLines('> ');
+        _toggleBlockPrefix(action);
       case .bold || .italic || .link || .code:
         break;
     }
@@ -206,7 +206,53 @@ extension on _MarkdownEditorToolbarState {
       .collapsed(offset: range.start + replacement.length),
     );
   }
+
+  void _toggleBlockPrefix(_ToolbarActionKind action) {
+    final selection = _safeSelection;
+    final text = _controller.text;
+    final range = _lineRange(selection, text);
+    final lines = range.textInside(text).split('\n');
+    final markerLengths = lines
+        .map((line) => _blockMarkerLength(line, action))
+        .toList();
+    final removeMarkers = markerLengths.every((length) => length > 0);
+    final edits = <_LinePrefixEdit>[];
+    final replacementLines = <String>[];
+    var lineOffset = range.start;
+
+    for (final entry in lines.indexed) {
+      final line = entry.$2;
+      final markerLength = markerLengths[entry.$1];
+      if (removeMarkers) {
+        replacementLines.add(line.characters.skip(markerLength).toString());
+        edits.add((
+          start: lineOffset,
+          removedLength: markerLength,
+          insertedLength: 0,
+        ));
+      } else if (markerLength > 0) {
+        replacementLines.add(line);
+      } else {
+        final prefix = _blockPrefix(action);
+        replacementLines.add('$prefix$line');
+        edits.add((
+          start: lineOffset,
+          removedLength: 0,
+          insertedLength: prefix.length,
+        ));
+      }
+      lineOffset += line.length + 1;
+    }
+
+    _replace(
+      range,
+      replacementLines.join('\n'),
+      _selectionAfterLinePrefixEdits(selection, edits),
+    );
+  }
 }
+
+typedef _LinePrefixEdit = ({int start, int removedLength, int insertedLength});
 
 typedef _InlineToggleResult = ({bool matchedSpan, _InlineUnwrapEdit? edit});
 
@@ -384,6 +430,46 @@ String _prefixReplacement(String selected, String prefix) => selected
     .split('\n')
     .map((line) => line.startsWith(prefix) ? line : '$prefix$line')
     .join('\n');
+
+final _headingMarker = RegExp(r'^#{1,6}[ \t]+');
+
+int _blockMarkerLength(String line, _ToolbarActionKind action) =>
+    switch (action) {
+      .heading => _headingMarker.matchAsPrefix(line)?.group(0)?.length ?? 0,
+      .quote => line.startsWith('> ') ? 2 : 0,
+      _ => 0,
+    };
+
+String _blockPrefix(_ToolbarActionKind action) => switch (action) {
+  .heading => '# ',
+  .quote => '> ',
+  _ => '',
+};
+
+TextSelection _selectionAfterLinePrefixEdits(
+  TextSelection selection,
+  List<_LinePrefixEdit> edits,
+) => TextSelection(
+  baseOffset: _linePrefixSelectionOffset(selection.baseOffset, edits),
+  extentOffset: _linePrefixSelectionOffset(selection.extentOffset, edits),
+  affinity: selection.affinity,
+  isDirectional: selection.isDirectional,
+);
+
+int _linePrefixSelectionOffset(int offset, List<_LinePrefixEdit> edits) {
+  var shift = 0;
+  for (final edit in edits) {
+    if (offset < edit.start) break;
+
+    final removedEnd = edit.start + edit.removedLength;
+    if (offset <= removedEnd) {
+      return edit.start + shift + edit.insertedLength;
+    }
+    shift += edit.insertedLength - edit.removedLength;
+  }
+
+  return offset + shift;
+}
 
 String _numberedReplacement(String selected) {
   final existingPrefix = RegExp(r'^\d+\. ');
@@ -860,7 +946,7 @@ class const _ToolbarActions({
 
       return SingleChildScrollView(
         scrollDirection: .horizontal,
-        child: _ToolbarActionList(toolbar: toolbar),
+        child: _ToolbarActionList(toolbar: toolbar, value: value),
       );
     },
   );
@@ -868,6 +954,7 @@ class const _ToolbarActions({
 
 class const _ToolbarActionList({
   required final _MarkdownEditorToolbarState toolbar,
+  required final TextEditingValue value,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraRow(
@@ -875,7 +962,7 @@ class const _ToolbarActionList({
       _ToolbarHistoryButton(toolbar: toolbar, isUndo: true),
       _ToolbarHistoryButton(toolbar: toolbar, isUndo: false),
       for (final action in _ToolbarActionKind.values)
-        _ToolbarAction(toolbar: toolbar, action: action),
+        _ToolbarAction(toolbar: toolbar, action: action, value: value),
     ],
     spacing: .xs,
   );
@@ -909,14 +996,27 @@ VoidCallback? _historyCallback(
 class const _ToolbarAction({
   required final _MarkdownEditorToolbarState toolbar,
   required final _ToolbarActionKind action,
+  required final TextEditingValue value,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _ToolbarButton(
-    icon: action.icon,
-    label: action.labelKey.tr(context: context),
-    onPressed: () => toolbar._applyAction(action, context),
-  );
+  Widget build(BuildContext context) {
+    final toggleState = switch (action) {
+      .bold || .italic || .code => _inlineFormattingState(action, value),
+      _ => null,
+    };
+
+    return _ToolbarButton(
+      icon: action.icon,
+      label: action.labelKey.tr(context: context),
+      onPressed: () => toolbar._applyAction(action, context),
+      variant: toggleState == .active ? .filled : .outlined,
+      toggleState: toggleState,
+      toggleName: toggleState == null ? null : action.name,
+    );
+  }
 }
+
+enum _ToolbarActionState { inactive, active, mixed }
 
 enum _ToolbarActionKind {
   bold(Icons.format_bold, LocaleKeys.markdown_editor_toolbar_bold),
@@ -945,18 +1045,126 @@ class const _ToolbarButton({
   required final IconData icon,
   required final String label,
   required final VoidCallback? onPressed,
+  final AuraIconButtonVariant variant = .outlined,
+  final _ToolbarActionState? toggleState,
+  final String? toggleName,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ExcludeFocus(
-      child: AuraIconButton(
-        icon: icon,
-        onPressed: onPressed,
-        disabled: onPressed == null,
-        variant: .outlined,
-        semanticLabel: label,
-        tooltip: label,
-      ),
+    final button = AuraIconButton(
+      icon: icon,
+      onPressed: onPressed,
+      disabled: onPressed == null,
+      variant: variant,
+      semanticLabel: label,
+      tooltip: label,
     );
+    final isMixed = toggleState == .mixed;
+    final content = isMixed
+        ? Stack(
+            clipBehavior: .none,
+            children: [
+              button,
+              Positioned(
+                right: 6,
+                bottom: 6,
+                child: IgnorePointer(
+                  child: ExcludeSemantics(
+                    child: DecoratedBox(
+                      key: ValueKey(
+                        'markdown-toolbar-mixed-indicator-$toggleName',
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.auraColors.colorFor(.primary),
+                        borderRadius: const BorderRadius.all(.circular(1)),
+                      ),
+                      child: const SizedBox(width: 8, height: 2),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          )
+        : button;
+    final statefulContent = switch (toggleState) {
+      null => content,
+      .mixed => Semantics(child: content, mixed: true),
+      .active => Semantics(child: content, toggled: true),
+      .inactive => Semantics(child: content, toggled: false),
+    };
+
+    return ExcludeFocus(child: statefulContent);
   }
+}
+
+_ToolbarActionState _inlineFormattingState(
+  _ToolbarActionKind action,
+  TextEditingValue value,
+) {
+  final markers = switch (action) {
+    .bold => const ['**'],
+    .italic => const ['*', '_'],
+    .code => const ['`'],
+    _ => const <String>[],
+  };
+  if (markers.isEmpty) return .inactive;
+
+  final selection = value.selection.isValid
+      ? value.selection
+      : TextSelection.collapsed(offset: value.text.length);
+  final bounds = _selectionBounds(selection, value.text);
+  final spans = [
+    for (final marker in markers) ..._inlineFormattingSpans(value.text, marker),
+  ];
+
+  if (selection.isCollapsed) {
+    return spans.any(
+          (span) =>
+              bounds.start >= span.contentStart &&
+              bounds.start <= span.contentEnd,
+        )
+        ? .active
+        : .inactive;
+  }
+
+  for (final span in spans) {
+    final selectionIsInsideContent =
+        bounds.start >= span.contentStart && bounds.end <= span.contentEnd;
+    final selectionContainsSpan =
+        bounds.start <= span.start && bounds.end >= span.end;
+    if (selectionIsInsideContent || selectionContainsSpan) return .active;
+  }
+
+  return spans.any(
+        (span) =>
+            span.contentStart < bounds.end && span.contentEnd > bounds.start,
+      )
+      ? .mixed
+      : .inactive;
+}
+
+List<({int start, int contentStart, int contentEnd, int end})>
+_inlineFormattingSpans(String text, String marker) {
+  final spans = <({int start, int contentStart, int contentEnd, int end})>[];
+  var searchOffset = 0;
+  while (searchOffset < text.length) {
+    final span = _inlineSpanAt(text, marker, searchOffset);
+    if (span != null) {
+      spans.add(span);
+      searchOffset = span.end;
+      continue;
+    }
+
+    final unmatchedStart = _nextInlineMarker(
+      text,
+      marker,
+      searchOffset,
+      opening: true,
+    );
+    if (unmatchedStart == -1) break;
+
+    searchOffset = unmatchedStart + marker.length;
+  }
+
+  return spans;
 }
