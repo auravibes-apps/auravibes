@@ -17,41 +17,56 @@ class const SkillCapabilityPreviewDialog({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summary = ref.watch(
-      skillAccessSummaryProvider(workspaceId, skill.id),
-    );
-    final message = switch (summary) {
-      AsyncData(value: final value?) => _SkillCapabilitiesPreviewContents(
-        summary: value,
-      ),
-      AsyncLoading() => const TextLocale(
-        LocaleKeys.skills_selector_preview_loading,
-      ),
-      AsyncData() || AsyncError() => const TextLocale(
-        LocaleKeys.skills_selector_preview_error,
-      ),
-    };
-
     return AuraAlertDialog(
-      title: AuraColumn(
-        children: [
-          const AuraText(
-            child: TextLocale(LocaleKeys.skills_selector_preview_title),
-            style: .heading4,
-          ),
-          Text(skill.title),
-        ],
-        spacing: .xs,
-        crossAxisAlignment: .start,
-      ),
-      message: SizedBox(
-        width: _previewDialogWidth,
-        child: SingleChildScrollView(child: message),
+      title: _SkillCapabilityPreviewHeader(skill: skill),
+      message: _SkillCapabilityPreviewBody(
+        summary: ref.watch(skillAccessSummaryProvider(workspaceId, skill.id)),
       ),
       dismissLabel: const TextLocale(LocaleKeys.common_close),
     );
   }
 }
+
+class const _SkillCapabilityPreviewHeader({required final AvailableSkill skill})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const AuraText(
+        child: TextLocale(LocaleKeys.skills_selector_preview_title),
+        style: .heading4,
+      ),
+      Text(skill.title),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillCapabilityPreviewBody({
+  required final AsyncValue<SkillAccessSummary?> summary,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: _previewDialogWidth,
+    child: SingleChildScrollView(
+      child: _skillCapabilityPreviewContent(summary),
+    ),
+  );
+}
+
+Widget _skillCapabilityPreviewContent(
+  AsyncValue<SkillAccessSummary?> summary,
+) => switch (summary) {
+  AsyncData(value: final value?) => _SkillCapabilitiesPreviewContents(
+    summary: value,
+  ),
+  AsyncLoading() => const TextLocale(
+    LocaleKeys.skills_selector_preview_loading,
+  ),
+  AsyncData() ||
+  AsyncError() => const TextLocale(LocaleKeys.skills_selector_preview_error),
+};
 
 class const _SkillCapabilitiesPreviewContents({
   required final SkillAccessSummary summary,
@@ -59,37 +74,48 @@ class const _SkillCapabilitiesPreviewContents({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      AuraColumn(
-        children: [
-          const AuraText(
-            child: TextLocale(
-              LocaleKeys.skills_selector_preview_connections_title,
-            ),
-            style: .heading4,
-          ),
-          TextLocale(_previewAccessStatusKey(summary.status)),
-          const TextLocale(LocaleKeys.skill_access_verification_hint),
-        ],
-        spacing: .xs,
-        crossAxisAlignment: .start,
-      ),
-      AuraColumn(
-        children: [
-          const AuraText(
-            child: TextLocale(LocaleKeys.skills_selector_preview_tools_title),
-            style: .heading4,
-          ),
-          if (summary.tools.isEmpty)
-            const TextLocale(LocaleKeys.skills_selector_preview_no_tools)
-          else
-            for (final tool in summary.tools)
-              _SkillCapabilityPreviewTool(tool: tool),
-        ],
-        spacing: .sm,
-        crossAxisAlignment: .start,
-      ),
+      _SkillCapabilityConnectionsPreview(status: summary.status),
+      _SkillCapabilityToolsPreview(tools: summary.tools),
     ],
     spacing: .md,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillCapabilityConnectionsPreview({
+  required final SkillAccessStatus status,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const AuraText(
+        child: TextLocale(LocaleKeys.skills_selector_preview_connections_title),
+        style: .heading4,
+      ),
+      TextLocale(_previewAccessStatusKey(status)),
+      const TextLocale(LocaleKeys.skill_access_verification_hint),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillCapabilityToolsPreview({
+  required final List<SkillToolAccess> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const AuraText(
+        child: TextLocale(LocaleKeys.skills_selector_preview_tools_title),
+        style: .heading4,
+      ),
+      if (tools.isEmpty)
+        const TextLocale(LocaleKeys.skills_selector_preview_no_tools)
+      else
+        for (final tool in tools) _SkillCapabilityPreviewTool(tool: tool),
+    ],
+    spacing: .sm,
     crossAxisAlignment: .start,
   );
 }
@@ -97,55 +123,82 @@ class const _SkillCapabilitiesPreviewContents({
 class const _SkillCapabilityPreviewTool({required final SkillToolAccess tool})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final titleKey = tool.titleKey;
-    final title = titleKey == null ? Text(tool.title) : TextLocale(titleKey);
-    final description = tool.description.trim();
-    final descriptionKey = tool.descriptionKey;
-    final Widget descriptionWidget;
-    if (descriptionKey != null) {
-      descriptionWidget = TextLocale(descriptionKey);
-    } else if (description.isEmpty) {
-      descriptionWidget = const TextLocale(
-        LocaleKeys.skills_selector_preview_description_empty,
-      );
-    } else {
-      descriptionWidget = Text(description);
-    }
-    final statusKey = _previewToolStatusKey(tool.status);
+  Widget build(BuildContext context) => Semantics(
+    child: ExcludeSemantics(
+      child: _SkillCapabilityPreviewToolContent(tool: tool),
+    ),
+    container: true,
+    label: _skillCapabilityToolSemanticsLabel(context, tool),
+  );
+}
 
-    return Semantics(
-      child: ExcludeSemantics(
-        child: AuraColumn(
-          children: [
-            AuraRow(
-              children: [
-                Expanded(
-                  child: AuraText(child: title, style: .heading5),
-                ),
-                TextLocale(statusKey),
-              ],
-              spacing: .sm,
-            ),
-            descriptionWidget,
-          ],
-          spacing: .xs,
-          crossAxisAlignment: .start,
-        ),
-      ),
-      container: true,
-      label: [
-        tool.titleKey?.tr(context: context) ?? tool.title,
-        tool.descriptionKey?.tr(context: context) ??
-            (description.isEmpty
-                ? LocaleKeys.skills_selector_preview_description_empty.tr(
-                    context: context,
-                  )
-                : description),
-        statusKey.tr(context: context),
-      ].join(', '),
-    );
-  }
+class const _SkillCapabilityPreviewToolContent({
+  required final SkillToolAccess tool,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _SkillCapabilityPreviewToolHeader(tool: tool),
+      _skillCapabilityToolDescription(tool),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillCapabilityPreviewToolHeader({
+  required final SkillToolAccess tool,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      AuraText(child: _skillCapabilityToolTitle(tool), style: .heading5),
+      TextLocale(_previewToolStatusKey(tool.status)),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+  );
+}
+
+Widget _skillCapabilityToolTitle(SkillToolAccess tool) =>
+    switch (tool.titleKey) {
+      final key? => TextLocale(key),
+      null => Text(tool.title),
+    };
+
+Widget _skillCapabilityToolDescription(SkillToolAccess tool) {
+  if (tool.descriptionKey case final key?) return TextLocale(key);
+  final description = tool.description.trim();
+  if (description.isNotEmpty) return Text(description);
+
+  return const TextLocale(LocaleKeys.skills_selector_preview_description_empty);
+}
+
+String _skillCapabilityToolSemanticsLabel(
+  BuildContext context,
+  SkillToolAccess tool,
+) => [
+  _skillCapabilityToolTitleLabel(context, tool),
+  _skillCapabilityToolDescriptionLabel(context, tool),
+  _previewToolStatusKey(tool.status).tr(context: context),
+].join(', ');
+
+String _skillCapabilityToolTitleLabel(
+  BuildContext context,
+  SkillToolAccess tool,
+) => tool.titleKey?.tr(context: context) ?? tool.title;
+
+String _skillCapabilityToolDescriptionLabel(
+  BuildContext context,
+  SkillToolAccess tool,
+) {
+  if (tool.descriptionKey case final key?) return key.tr(context: context);
+  final description = tool.description.trim();
+  if (description.isNotEmpty) return description;
+
+  return LocaleKeys.skills_selector_preview_description_empty.tr(
+    context: context,
+  );
 }
 
 String _previewAccessStatusKey(SkillAccessStatus status) => switch (status) {

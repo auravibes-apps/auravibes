@@ -509,6 +509,7 @@ void main() {
                           );
                         },
                         child: const Text('Skills'),
+                        identifier: 'skills-control',
                         semanticLabel: 'Skills control',
                       ),
                     ),
@@ -530,7 +531,7 @@ void main() {
       );
     });
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsLabel('Skills control'));
+    await tester.tap(find.bySemanticsIdentifier('skills-control'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Conversation skills'), findsOneWidget);
 
@@ -539,7 +540,7 @@ void main() {
 
     expect(
       tester
-          .getSemantics(find.bySemanticsLabel('Skills control'))
+          .getSemantics(find.bySemanticsIdentifier('skills-control'))
           .getSemanticsData()
           .flagsCollection
           .isFocused,
