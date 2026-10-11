@@ -74,7 +74,7 @@ extension _BackgroundWorkLookupOps on BackgroundWorkCoordinator {
     );
     if (handle == null ||
         handle.status != AgentToolCancellationStatus.running ||
-        handle.operationCompleted) {
+        handle.isOperationCompleted()) {
       return null;
     }
     final result = handle.operationResult;

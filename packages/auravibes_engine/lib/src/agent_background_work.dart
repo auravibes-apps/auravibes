@@ -1,5 +1,5 @@
-import 'package:auravibes_engine/src/tool_output_policy.dart';
 import 'package:auravibes_engine/src/agent_background_work_status.dart';
+import 'package:auravibes_engine/src/tool_output_policy.dart';
 
 /// Durable, provider-neutral description of detached work.
 class const AgentBackgroundWork({

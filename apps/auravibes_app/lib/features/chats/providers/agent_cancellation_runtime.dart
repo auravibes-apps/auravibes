@@ -127,13 +127,13 @@ class AgentToolCancellationHandle {
   AgentToolCancellationStatus get status => _status;
   Future<String> get detached => _detachedCompleter.future;
   String? get backgroundWorkId => _backgroundWorkId;
-  bool get operationCompleted => _operationCompleted;
+  bool isOperationCompleted() => _operationCompleted;
   bool get cancellationWasConfirmed => _cancellationWasConfirmed;
   Future<bool>? get cancellationCompletion {
     final cancellation = _cancellation;
     if (cancellation == null) return null;
 
-    return _awaitCancellationCompletion(cancellation);
+    return _awaitCancellationCompletion(this, cancellation);
   }
 
   bool tryDetach({required String workId}) {
@@ -176,15 +176,18 @@ class AgentToolCancellationHandle {
 
     return _cancellationWasConfirmed;
   }
+}
 
-  Future<bool> _awaitCancellationCompletion(Future<void> cancellation) async {
-    try {
-      await cancellation;
+Future<bool> _awaitCancellationCompletion(
+  AgentToolCancellationHandle handle,
+  Future<void> cancellation,
+) async {
+  try {
+    await cancellation;
 
-      return _cancellationWasConfirmed;
-    } on Object {
-      return false;
-    }
+    return handle._cancellationWasConfirmed;
+  } on Object {
+    return false;
   }
 }
 
@@ -255,7 +258,9 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
     required String toolCallId,
     required AgentToolCancellationHandle handle,
   }) {
-    if (handle.backgroundWorkId != null && !handle.operationCompleted) return;
+    if (handle.backgroundWorkId != null && !handle.isOperationCompleted()) {
+      return;
+    }
     _markToolCancellationCompleted(handle);
     final handles = _toolCancellationHandles[conversationId];
     if (handles == null || !identical(handles[toolCallId], handle)) return;
@@ -267,7 +272,9 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
 
   bool isCancellationRequested(String conversationId) =>
       current(conversationId)?.isCancellationRequested ?? false;
+}
 
+extension AgentCancellationScopeHelpers on AgentCancellationRuntime {
   AgentCancellationScope _startScope(String conversationId) {
     final scope = AgentCancellationScope();
     _replaceScope(conversationId);
