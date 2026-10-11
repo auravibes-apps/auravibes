@@ -20,7 +20,7 @@ void main() {
       resultContent: 'a🙂bc',
       resultByteLength: 7,
       offset: 0,
-      maxBytes: 3,
+      maxBytes: 4,
     );
     expect(first['content'], 'a');
     expect(first['next_offset'], 1);
