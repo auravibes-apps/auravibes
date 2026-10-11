@@ -547,13 +547,13 @@ Future<Object?> _registerAndAwaitCancelableOperation(
     toolCallId: request.toolCallId,
     isSupported: request.isCancellationSupported,
     cancel: request.operation.cancel,
-  ), operationResult: operationResult);
+    operationResult: operationResult,
+    isCancellationConfirmed: () => request.operation.isCanceled,
+  ));
   try {
     return await Future.any<Object?>([
       operationResult,
-      handle.detached.then<Object?>(
-        (workId) => _backgroundWorkAcknowledgement(workId),
-      ),
+      _backgroundWorkAcknowledgementAfterDetach(handle.detached),
     ]);
   } finally {
     if (handle.backgroundWorkId == null) {
@@ -570,6 +570,10 @@ Map<String, Object> _backgroundWorkAcknowledgement(String workId) => {
   'status': 'running_in_background',
   'work_id': workId,
 };
+
+Future<Object?> _backgroundWorkAcknowledgementAfterDetach(
+  Future<String> workId,
+) async => _backgroundWorkAcknowledgement(await workId);
 
 Future<String> _workspaceIdFor({
   required ConversationRepository? conversationRepository,
@@ -734,9 +738,7 @@ Future<Object?> _awaitSubAgentOperation({
   try {
     return await Future.any<Object?>([
       operation,
-      handle.detached.then<Object?>(
-        (workId) => _backgroundWorkAcknowledgement(workId),
-      ),
+      _backgroundWorkAcknowledgementAfterDetach(handle.detached),
     ]);
   } finally {
     if (handle.backgroundWorkId == null) {
@@ -754,7 +756,9 @@ AgentToolCancellationHandle _registerSubAgentCancellationHandle(
   toolCallId: request.toolCallId,
   isSupported: true,
   cancel: () => _cancelSubAgentOperation(runtime, cancellationRequest),
-), operationResult: cancellationRequest.operation);
+  operationResult: cancellationRequest.operation,
+  isCancellationConfirmed: () => true,
+));
 
 void _completeSubAgentCancellationHandle(
   AgentCancellationRuntime runtime,

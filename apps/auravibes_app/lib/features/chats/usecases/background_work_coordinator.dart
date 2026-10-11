@@ -105,13 +105,13 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
     BackgroundWorkDetachRequest request,
     String workspaceId,
   ) => _store.create(
-    AgentBackgroundWorkCreateRequest(
+    .new(
       id: const UuidV7().generate(),
       workspaceId: workspaceId,
       conversationId: request.conversationId,
-      originatingMessageId: request.originatingMessageId,
       toolCallId: request.toolCallId,
       toolKind: request.toolKind,
+      originatingMessageId: request.originatingMessageId,
     ),
   );
 
@@ -160,8 +160,8 @@ extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
   ) async {
     final details = await _captureCompletion(handle, operationResult);
     try {
-      await _store.finish(
-        AgentBackgroundWorkCompletion(
+      final _ = await _store.finish(
+        .new(
           conversationId: conversationId,
           workId: workId,
           status: details.status,
@@ -182,23 +182,41 @@ extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
   ) async {
     try {
       final result = await operationResult;
+      final cancelled = await _wasCancellationConfirmed(handle);
 
-      return _successfulCompletion(result, handle.cancellationWasConfirmed);
+      return _successfulCompletion(result, cancelled);
     } on Object {
-      return _failedCompletion(handle.cancellationWasConfirmed);
+      return _failedCompletion(await _wasCancellationConfirmed(handle));
     }
   }
 
+  Future<bool> _wasCancellationConfirmed(
+    AgentToolCancellationHandle handle,
+  ) async {
+    final cancellation = handle.cancellationCompletion;
+
+    return cancellation == null
+        ? handle.cancellationWasConfirmed
+        : await cancellation;
+  }
+
   _CompletionDetails _successfulCompletion(Object? result, bool cancelled) {
+    if (cancelled) {
+      return (
+        status: AgentBackgroundWorkStatus.cancelled,
+        resultContent: null,
+        resultByteLength: 0,
+        statusPreview: 'Stopped',
+        errorCode: null,
+      );
+    }
     final resultContent = jsonEncode(result);
 
     return (
-      status: cancelled
-          ? AgentBackgroundWorkStatus.cancelled
-          : AgentBackgroundWorkStatus.completed,
+      status: AgentBackgroundWorkStatus.completed,
       resultContent: resultContent,
       resultByteLength: utf8.encode(resultContent).length,
-      statusPreview: cancelled ? 'Stopped' : 'Completed',
+      statusPreview: 'Completed',
       errorCode: null,
     );
   }
@@ -224,9 +242,9 @@ extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
       handle: handle,
     );
     final handles = _handlesByConversation[conversationId];
-    handles?.remove(workId);
+    final _ = handles?.remove(workId);
     if (handles?.isEmpty ?? false) {
-      _handlesByConversation.remove(conversationId);
+      final _ = _handlesByConversation.remove(conversationId);
     }
   }
 }
