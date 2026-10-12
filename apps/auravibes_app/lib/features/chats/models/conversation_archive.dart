@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:path/path.dart' as p;
 
@@ -1433,7 +1434,7 @@ abstract class const MalformedConversationArchiveException._()
   const factory() = _MalformedConversationArchiveException;
 
   String get localizationKey =>
-      'chats.screens.chat_conversation.archive_invalid';
+      LocaleKeys.chats_screens_chat_conversation_archive_invalid;
 }
 
 @freezed
@@ -1445,5 +1446,5 @@ abstract class const UnsupportedArchiveVersionException._()
   const factory(int version) = _UnsupportedArchiveVersionException;
 
   String get localizationKey =>
-      'chats.screens.chat_conversation.archive_unsupported_version';
+      LocaleKeys.chats_screens_chat_conversation_archive_unsupported_version;
 }

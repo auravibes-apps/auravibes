@@ -68,18 +68,22 @@ Future<void> _runPendingAgentTabNavigation(
 }
 
 List<AuraTabOption<AgentDestination>> _agentsSkillsTabOptions() => [
-  _agentTabOption(.agents, LocaleKeys.related_lists_agents),
-  _agentTabOption(.skills, LocaleKeys.related_lists_skills),
+  _agentTabOption(.agents),
+  _agentTabOption(.skills),
 ];
 
-AuraTabOption<AgentDestination> _agentTabOption(
-  AgentDestination destination,
-  String titleKey,
-) => AuraTabOption(
-  value: destination,
-  title: TextLocale(titleKey),
-  semanticLabel: titleKey.tr(),
-);
+AuraTabOption<AgentDestination> _agentTabOption(AgentDestination destination) =>
+    AuraTabOption(
+      value: destination,
+      title: TextLocale(switch (destination) {
+        .agents => LocaleKeys.related_lists_agents,
+        .skills => LocaleKeys.related_lists_skills,
+      }),
+      semanticLabel: (switch (destination) {
+        .agents => LocaleKeys.related_lists_agents,
+        .skills => LocaleKeys.related_lists_skills,
+      }).tr(),
+    );
 
 typedef _AgentTabNavigation = ({
   BuildContext context,

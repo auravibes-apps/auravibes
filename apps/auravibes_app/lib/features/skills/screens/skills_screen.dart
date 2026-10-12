@@ -1792,14 +1792,10 @@ class _DeleteSkillDialog extends StatelessWidget {
     return AuraConfirmDialog(
       title: const TextLocale(LocaleKeys.skills_screen_delete),
       message: const TextLocale(LocaleKeys.skills_screen_delete_confirm),
-      confirmLabel: Text(_label(context, LocaleKeys.common_delete)),
-      cancelLabel: Text(_label(context, LocaleKeys.common_cancel)),
+      confirmLabel: Text(LocaleKeys.common_delete.tr(context: context)),
+      cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
       isDestructive: true,
     );
-  }
-
-  String _label(BuildContext context, String key) {
-    return key.tr(context: context);
   }
 }
 
