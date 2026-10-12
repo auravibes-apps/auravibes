@@ -8,6 +8,7 @@ import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/restore_compaction_checkpoint_usecase.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -57,8 +58,20 @@ void main() {
       );
   var restore = createRestore();
 
+  CompactionCheckpointRestoreRequest restoreRequest({
+    int? expectedConversationRevision,
+    List<MessageEntity>? expectedMessages,
+  }) => (
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+    checkpointMessageId: checkpointId,
+    expectedConversationRevision: expectedConversationRevision,
+    expectedMessages: expectedMessages,
+  );
+
   setUpAll(() {
     registerFallbackValue(const ConversationPatch());
+    registerFallbackValue(const MessagePatch());
   });
 
   setUp(() {
@@ -84,11 +97,7 @@ void main() {
   test(
     'restores an existing sent checkpoint without changing messages',
     () async {
-      await restore.call(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        checkpointMessageId: checkpointId,
-      );
+      await restore.call(restoreRequest());
 
       verify(
         () => conversations.patchConversation(
@@ -96,6 +105,115 @@ void main() {
           const .new(activeCompactionCheckpointId: checkpointId),
         ),
       ).called(1);
+      final _ = verifyNever(() => messages.patchMessage(any(), any()));
+    },
+  );
+
+  test(
+    'rejects a local preview when the source transcript has changed',
+    () async {
+      when(() => messages.getMessagesByConversation(conversationId)).thenAnswer(
+        (_) async => [checkpoint.copyWith(content: 'updated after preview')],
+      );
+
+      await expectLater(
+        restore.call(restoreRequest(expectedMessages: [checkpoint])),
+        throwsA(isA<CompactionStalePreviewException>()),
+      );
+      final _ = verifyNever(
+        () => conversations.patchConversation(any(), any()),
+      );
+    },
+  );
+
+  test(
+    'restores an inherited fork checkpoint within the child boundary',
+    () async {
+      when(() => conversations.getConversationById(conversationId)).thenAnswer(
+        (_) async => conversation.copyWith(
+          forkSourceConversationId: 'source-conversation',
+          forkThroughMessageId: checkpointId,
+        ),
+      );
+      when(
+        () => messages.getMessagesByConversation(conversationId),
+      ).thenAnswer((_) async => [checkpoint.copyWith(isForkReference: true)]);
+
+      await restore.call(restoreRequest());
+
+      verify(
+        () => conversations.patchConversation(
+          conversationId,
+          const .new(activeCompactionCheckpointId: checkpointId),
+        ),
+      ).called(1);
+    },
+  );
+
+  test('passes the preview revision to cloud restore unchanged', () async {
+    int? expectedRevision;
+    final usecase = RestoreCompactionCheckpointUsecase(
+      conversationRepository: conversations,
+      messageRepository: messages,
+      getConversationBusyState: busyState,
+      isCompacting: (_) => false,
+      conversationActivityGate: activityGate,
+      restoreCloudCheckpoint:
+          ({
+            required workspaceId,
+            required conversationId,
+            required checkpointMessageId,
+            expectedConversationRevision,
+          }) async {
+            expectedRevision = expectedConversationRevision;
+
+            return true;
+          },
+    );
+
+    await usecase.call(
+      restoreRequest(
+        expectedConversationRevision: 17,
+        expectedMessages: [checkpoint],
+      ),
+    );
+
+    expect(expectedRevision, 17);
+  });
+
+  test(
+    'maps a cloud stale revision to an explicit stale preview error',
+    () async {
+      final usecase = RestoreCompactionCheckpointUsecase(
+        conversationRepository: conversations,
+        messageRepository: messages,
+        getConversationBusyState: busyState,
+        isCompacting: (_) => false,
+        conversationActivityGate: activityGate,
+        restoreCloudCheckpoint:
+            ({
+              required workspaceId,
+              required conversationId,
+              required checkpointMessageId,
+              expectedConversationRevision,
+            }) async {
+              throw const CloudAppException(
+                localizationKey: 'cloud.errors.conflict',
+                context: .conversation,
+                code: 'staleRevision',
+              );
+            },
+      );
+
+      await expectLater(
+        usecase.call(
+          restoreRequest(
+            expectedConversationRevision: 17,
+            expectedMessages: [checkpoint],
+          ),
+        ),
+        throwsA(isA<CompactionStalePreviewException>()),
+      );
     },
   );
 
@@ -108,11 +226,7 @@ void main() {
       return releaseBusyCheck.future;
     });
 
-    final restoreFuture = restore.call(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-      checkpointMessageId: checkpointId,
-    );
+    final restoreFuture = restore.call(restoreRequest());
     await busyCheckStarted.future;
 
     expect(activityGate.tryBeginActivity(conversationId), isFalse);
@@ -137,11 +251,7 @@ void main() {
       );
 
       await expectLater(
-        restore.call(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-          checkpointMessageId: checkpointId,
-        ),
+        restore.call(restoreRequest()),
         throwsA(isA<CompactionCheckpointRestoreException>()),
       );
       final _ = verifyNever(
@@ -158,11 +268,7 @@ void main() {
     );
 
     await expectLater(
-      restore.call(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        checkpointMessageId: checkpointId,
-      ),
+      restore.call(restoreRequest()),
       throwsA(isA<CompactionCheckpointRestoreException>()),
     );
     final _ = verifyNever(() => conversations.patchConversation(any(), any()));
@@ -183,6 +289,7 @@ void main() {
               required workspaceId,
               required conversationId,
               required checkpointMessageId,
+              expectedConversationRevision,
             }) async {
               capturedWorkspaceId = workspaceId;
               expect(conversationId, 'conversation-1');
@@ -194,11 +301,7 @@ void main() {
       when(() => conversations.getConversationById(conversationId))
           .thenAnswer((_) async => null);
 
-      await usecase.call(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        checkpointMessageId: checkpointId,
-      );
+      await usecase.call(restoreRequest());
 
       expect(capturedWorkspaceId, workspaceId);
     },

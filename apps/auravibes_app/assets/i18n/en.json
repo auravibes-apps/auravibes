@@ -1246,6 +1246,7 @@
       "details_title": "Compaction Details",
       "details_origin": "Origin",
       "details_range": "Compacted Range",
+      "details_range_separator": "to",
       "details_created": "Created",
       "details_messages": "Messages compacted",
       "details_content_label": "Summary Content",
@@ -1253,10 +1254,26 @@
       "details_unknown": "Unknown",
       "history_action": "Checkpoint history",
       "history_active": "Active checkpoint",
-      "history_restore": "Use this checkpoint",
+      "history_restore": "Preview restore",
       "history_empty": "No checkpoints available.",
       "history_loading": "Loading checkpoint history…",
-      "history_unavailable": "Checkpoint history is unavailable."
+      "history_unavailable": "Checkpoint history is unavailable.",
+      "history_preview_title": "Restore checkpoint preview",
+      "history_preview_summary": "Checkpoint summary",
+      "history_preview_created": "Created: {}",
+      "history_preview_replay_boundary": "Replay starts after message {}",
+      "history_preview_replay_count": "Messages that will be replayed: {}",
+      "history_preview_replay_empty": "No messages will be replayed after this checkpoint.",
+      "history_preview_message_heading": "{} · Message {}",
+      "history_preview_role_user": "You",
+      "history_preview_role_assistant": "Assistant",
+      "history_preview_role_system": "System",
+      "history_preview_attachment": "Attachment: {}",
+      "history_preview_tool_call": "Tool call: {}",
+      "history_preview_tool_arguments": "Arguments: {}",
+      "history_preview_tool_result": "Result: {}",
+      "history_preview_cancel": "Cancel",
+      "history_preview_confirm": "Restore checkpoint"
     },
     "manual": {
       "button_tooltip": "Compact conversation",
@@ -1276,7 +1293,8 @@
       "context_overflow_retry_failed": "Context overflow occurred and recovery compaction failed. Please try compacting manually.",
       "auto_blocked": "Automatic compaction is required but failed. Assistant continuation is blocked. Try compacting manually.",
       "settings_invalid": "Invalid compaction settings. Please check your values.",
-      "checkpoint_restore_unavailable": "Checkpoint is invalid or cannot be restored while conversation activity is pending."
+      "checkpoint_restore_unavailable": "Checkpoint is invalid or cannot be restored while conversation activity is pending.",
+      "checkpoint_restore_stale": "This preview is out of date because the conversation changed while you reviewed it. Open a new preview before restoring."
     }
   },
   "workspace_archive": {

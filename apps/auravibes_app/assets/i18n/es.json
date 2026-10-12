@@ -1246,6 +1246,7 @@
       "details_title": "Detalles de Compresión",
       "details_origin": "Origen",
       "details_range": "Rango Comprimido",
+      "details_range_separator": "a",
       "details_created": "Creado",
       "details_messages": "Mensajes comprimidos",
       "details_content_label": "Contenido del Resumen",
@@ -1253,10 +1254,26 @@
       "details_unknown": "Desconocido",
       "history_action": "Historial de puntos de control",
       "history_active": "Punto de control activo",
-      "history_restore": "Usar este punto de control",
+      "history_restore": "Vista previa de restauración",
       "history_empty": "No hay puntos de control disponibles.",
       "history_loading": "Cargando historial de puntos de control…",
-      "history_unavailable": "El historial de puntos de control no está disponible."
+      "history_unavailable": "El historial de puntos de control no está disponible.",
+      "history_preview_title": "Vista previa de restauración del punto de control",
+      "history_preview_summary": "Resumen del punto de control",
+      "history_preview_created": "Creado: {}",
+      "history_preview_replay_boundary": "La reproducción comienza después del mensaje {}",
+      "history_preview_replay_count": "Mensajes que se volverán a incluir: {}",
+      "history_preview_replay_empty": "No se volverán a incluir mensajes después de este punto de control.",
+      "history_preview_message_heading": "{} · Mensaje {}",
+      "history_preview_role_user": "Tú",
+      "history_preview_role_assistant": "Asistente",
+      "history_preview_role_system": "Sistema",
+      "history_preview_attachment": "Adjunto: {}",
+      "history_preview_tool_call": "Llamada a herramienta: {}",
+      "history_preview_tool_arguments": "Argumentos: {}",
+      "history_preview_tool_result": "Resultado: {}",
+      "history_preview_cancel": "Cancelar",
+      "history_preview_confirm": "Restaurar punto de control"
     },
     "manual": {
       "button_tooltip": "Comprimir conversación",
@@ -1276,7 +1293,8 @@
       "context_overflow_retry_failed": "Se produjo un desbordamiento de contexto y la compresión de recuperación falló. Intenta comprimir manualmente.",
       "auto_blocked": "La compresión automática es necesaria pero falló. La continuación del asistente está bloqueada. Intenta comprimir manualmente.",
       "settings_invalid": "Configuración de compresión inválida. Verifica tus valores.",
-      "checkpoint_restore_unavailable": "El punto de control no es válido o no se puede restaurar mientras haya actividad pendiente en la conversación."
+      "checkpoint_restore_unavailable": "El punto de control no es válido o no se puede restaurar mientras haya actividad pendiente en la conversación.",
+      "checkpoint_restore_stale": "Esta vista previa quedó desactualizada porque la conversación cambió mientras la revisabas. Abre una nueva vista previa antes de restaurar."
     }
   },
   "workspace_archive": {

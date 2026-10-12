@@ -1596,6 +1596,8 @@ abstract class LocaleKeys {
       'compaction.compacted.details_origin';
   static const compaction_compacted_details_range =
       'compaction.compacted.details_range';
+  static const compaction_compacted_details_range_separator =
+      'compaction.compacted.details_range_separator';
   static const compaction_compacted_details_created =
       'compaction.compacted.details_created';
   static const compaction_compacted_details_messages =
@@ -1618,6 +1620,38 @@ abstract class LocaleKeys {
       'compaction.compacted.history_loading';
   static const compaction_compacted_history_unavailable =
       'compaction.compacted.history_unavailable';
+  static const compaction_compacted_history_preview_title =
+      'compaction.compacted.history_preview_title';
+  static const compaction_compacted_history_preview_summary =
+      'compaction.compacted.history_preview_summary';
+  static const compaction_compacted_history_preview_created =
+      'compaction.compacted.history_preview_created';
+  static const compaction_compacted_history_preview_replay_boundary =
+      'compaction.compacted.history_preview_replay_boundary';
+  static const compaction_compacted_history_preview_replay_count =
+      'compaction.compacted.history_preview_replay_count';
+  static const compaction_compacted_history_preview_replay_empty =
+      'compaction.compacted.history_preview_replay_empty';
+  static const compaction_compacted_history_preview_message_heading =
+      'compaction.compacted.history_preview_message_heading';
+  static const compaction_compacted_history_preview_role_user =
+      'compaction.compacted.history_preview_role_user';
+  static const compaction_compacted_history_preview_role_assistant =
+      'compaction.compacted.history_preview_role_assistant';
+  static const compaction_compacted_history_preview_role_system =
+      'compaction.compacted.history_preview_role_system';
+  static const compaction_compacted_history_preview_attachment =
+      'compaction.compacted.history_preview_attachment';
+  static const compaction_compacted_history_preview_tool_call =
+      'compaction.compacted.history_preview_tool_call';
+  static const compaction_compacted_history_preview_tool_arguments =
+      'compaction.compacted.history_preview_tool_arguments';
+  static const compaction_compacted_history_preview_tool_result =
+      'compaction.compacted.history_preview_tool_result';
+  static const compaction_compacted_history_preview_cancel =
+      'compaction.compacted.history_preview_cancel';
+  static const compaction_compacted_history_preview_confirm =
+      'compaction.compacted.history_preview_confirm';
   static const compaction_manual_button_tooltip =
       'compaction.manual.button_tooltip';
   static const compaction_manual_disabled_tooltip_busy =
@@ -1647,6 +1681,8 @@ abstract class LocaleKeys {
       'compaction.errors.settings_invalid';
   static const compaction_errors_checkpoint_restore_unavailable =
       'compaction.errors.checkpoint_restore_unavailable';
+  static const compaction_errors_checkpoint_restore_stale =
+      'compaction.errors.checkpoint_restore_stale';
   static const workspace_archive_export = 'workspace_archive.export';
   static const workspace_archive_export_selection_title =
       'workspace_archive.export_selection_title';
