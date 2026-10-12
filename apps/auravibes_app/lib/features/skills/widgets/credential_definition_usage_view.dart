@@ -141,22 +141,28 @@ class const _UsageData({
   );
 
   List<_UsageGroupData> _groups(BuildContext context) => [
-    (
-      dependencies: usage.credentials,
-      kind: .credential,
-      open: (item) => _openCredential(context, item),
-    ),
-    (
-      dependencies: usage.skills,
-      kind: .skill,
-      open: (item) => _openSkill(context, item),
-    ),
-    (
-      dependencies: usage.tools,
-      kind: .tool,
-      open: (item) => _openTool(context, item),
-    ),
+    _credentialsGroup(context),
+    _skillsGroup(context),
+    _toolsGroup(context),
   ];
+
+  _UsageGroupData _credentialsGroup(BuildContext context) => (
+    dependencies: usage.credentials,
+    kind: .credential,
+    open: (item) => _openCredential(context, item),
+  );
+
+  _UsageGroupData _skillsGroup(BuildContext context) => (
+    dependencies: usage.skills,
+    kind: .skill,
+    open: (item) => _openSkill(context, item),
+  );
+
+  _UsageGroupData _toolsGroup(BuildContext context) => (
+    dependencies: usage.tools,
+    kind: .tool,
+    open: (item) => _openTool(context, item),
+  );
 
   Future<void> _openCredential(
     BuildContext context,

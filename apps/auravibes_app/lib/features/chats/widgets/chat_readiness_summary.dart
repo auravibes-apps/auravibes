@@ -48,16 +48,7 @@ class const _ChatReadinessContent({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      TextLocale(switch (state) {
-        .attention => LocaleKeys.chat_readiness_attention,
-        .loading => LocaleKeys.chat_readiness_loading,
-        .noProvider => LocaleKeys.chat_readiness_no_provider,
-        .authorization => LocaleKeys.chat_readiness_authorization,
-        .unavailable => LocaleKeys.chat_readiness_unavailable,
-        .noModels => LocaleKeys.chat_readiness_no_models,
-        .chooseModel => LocaleKeys.chat_readiness_choose_model,
-        .selected => LocaleKeys.chat_readiness_selected,
-      }),
+      TextLocale(_localeKey(state)),
       if (state == _ChatReadinessState.noProvider)
         _ChatAddProviderButton(workspaceId: workspaceId),
       _ChatReadinessActions(workspaceId: workspaceId, state: state),
@@ -70,6 +61,17 @@ class const _ChatReadinessContent({
     ],
     mainAxisSize: .min,
   );
+
+  static String _localeKey(_ChatReadinessState state) => switch (state) {
+    .attention => LocaleKeys.chat_readiness_attention,
+    .loading => LocaleKeys.chat_readiness_loading,
+    .noProvider => LocaleKeys.chat_readiness_no_provider,
+    .authorization => LocaleKeys.chat_readiness_authorization,
+    .unavailable => LocaleKeys.chat_readiness_unavailable,
+    .noModels => LocaleKeys.chat_readiness_no_models,
+    .chooseModel => LocaleKeys.chat_readiness_choose_model,
+    .selected => LocaleKeys.chat_readiness_selected,
+  };
 }
 
 class const _ChatReadinessActions({
