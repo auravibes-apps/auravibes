@@ -148,4 +148,14 @@ void main() {
   test('bounds persisted provider details', () {
     expect(sanitizeProviderErrorDetail('x' * 600), hasLength(500));
   });
+
+  test('does not persist arbitrary exception text as provider detail', () {
+    final unknown = StateError('Bearer private-token from user input');
+    final transport = ProviderTransientFailureException(
+      StateError('request URL contains a private query'),
+    );
+
+    expect(ProviderFailureRecovery.safeDetail(unknown), 'StateError');
+    expect(ProviderFailureRecovery.safeDetail(transport), 'StateError');
+  });
 }

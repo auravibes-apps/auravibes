@@ -26,7 +26,6 @@ import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:genkit/plugin.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -622,13 +621,28 @@ Future<bool> _hasBlockedProviderFailure(
   String conversationId,
   MessageRepository repository,
 ) async {
-  final messages = await repository.getMessagesByStatus(conversationId, .error);
+  final messages = await repository.getMessagesByConversation(conversationId);
+  final latestUserMessage = _latestCurrentUserMessage(messages);
 
-  return messages.any(_isBlockedProviderFailure);
+  return latestUserMessage != null &&
+      _isBlockedProviderFailure(latestUserMessage);
+}
+
+MessageEntity? _latestCurrentUserMessage(Iterable<MessageEntity> messages) {
+  MessageEntity? latest;
+  for (final message in messages) {
+    if (!message.isUser || message.isForkReference) continue;
+    if (latest == null || message.createdAt.isAfter(latest.createdAt)) {
+      latest = message;
+    }
+  }
+
+  return latest;
 }
 
 bool _isBlockedProviderFailure(MessageEntity message) =>
     message.isUser &&
+    message.status == .error &&
     ProviderRecoveryMetadata.isProviderError(message) &&
     !ProviderRecoveryMetadata.isRetryEligible(message);
 
@@ -659,29 +673,9 @@ AgentIterationContext? _contextWithRetryUsers(
 }
 
 String? _providerErrorDetail(Object error) {
-  final candidates = switch (error) {
-    ProviderTransientFailureException(:final cause) => [cause.toString()],
-    GenkitException(:final details, :final cause, :final message) => [
-      details,
-      if (cause is GenkitException) cause.details,
-      message,
-      error.toString(),
-    ],
-    _ => [error.toString()],
-  };
-  final content = _firstNonEmptyProviderDetail(candidates);
-  if (content == null) return null;
+  final detail = ProviderFailureRecovery.safeDetail(error);
 
-  return LogRedaction.redact(content);
-}
-
-String? _firstNonEmptyProviderDetail(Iterable<String?> candidates) {
-  for (final candidate in candidates) {
-    final detail = candidate?.trim();
-    if (detail != null && detail.isNotEmpty) return detail;
-  }
-
-  return null;
+  return LogRedaction.redact(detail);
 }
 
 String? _providerErrorMetadataJson(ProviderFailureRecovery recovery) =>

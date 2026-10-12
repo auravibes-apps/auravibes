@@ -2256,7 +2256,19 @@ bool _canContinueCloudState(CloudConversationState state) {
 
 bool _hasNonRetryableCloudProviderFailure(
   Iterable<ConversationMessageView> messages,
-) => messages.any(_isNonRetryableCloudProviderFailure);
+) {
+  ConversationMessageView? latestUserMessage;
+  for (final message in messages) {
+    if (message.role != 'user' || message.isForkReference) continue;
+    if (latestUserMessage == null ||
+        message.createdAt.isAfter(latestUserMessage.createdAt)) {
+      latestUserMessage = message;
+    }
+  }
+
+  return latestUserMessage != null &&
+      _isNonRetryableCloudProviderFailure(latestUserMessage);
+}
 
 bool _isNonRetryableCloudProviderFailure(ConversationMessageView message) {
   if (message.role != 'user' ||

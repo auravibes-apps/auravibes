@@ -1540,8 +1540,8 @@ void main() {
             expect(
               created.last.content,
               hasDetails
-                  ? 'Quota exceeded. Bearer [REDACTED]; [REDACTED]'
-                  : 'Provider rejected request. Bearer [REDACTED]',
+                  ? 'Quota exceeded. [REDACTED]; [REDACTED]'
+                  : 'Provider rejected request. [REDACTED]',
             );
           },
         );
@@ -1707,6 +1707,8 @@ void main() {
       when(
         () => messageRepository.getMessagesByStatus('conversation-1', .error),
       ).thenAnswer((_) async => [failedUserMessage]);
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer((_) async => [failedUserMessage]);
 
       await expectLater(
         usecase.call(
@@ -1724,6 +1726,84 @@ void main() {
         ),
       );
     });
+
+    test(
+      'does not let an older non-retryable provider error block a newer turn',
+      () async {
+        final olderFailure = _userMessage.copyWith(
+          id: 'older-user-message',
+          status: .error,
+          createdAt: .utc(2025),
+          metadata: const MessageMetadataEntity(
+            modelMetadata: {
+              'providerError': true,
+              'providerRecovery': {
+                'classification': 'authentication',
+                'retryable': false,
+              },
+            },
+          ),
+        );
+        final latestUserMessage = _userMessage.copyWith(
+          id: 'latest-user-message',
+          status: .sent,
+          createdAt: .utc(2026),
+        );
+        when(
+          () => messageRepository.getMessagesByConversation('conversation-1'),
+        ).thenAnswer((_) async => [olderFailure, latestUserMessage]);
+        when(
+          () => messageRepository.getMessagesByStatus('conversation-1', .error),
+        ).thenAnswer((_) async => [olderFailure]);
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            options: any(named: 'options'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.value(
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Continued'),
+              finishReason: .stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ),
+        );
+        when(() => conversationRepository.getConversationById('conversation-1'))
+            .thenAnswer((_) async => _conversation);
+        when(
+          () => workspaceModelSelectionsRepository
+              .getWorkspaceModelSelectionById('model-1'),
+        ).thenAnswer((_) async => _model);
+        when(
+          () => loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => const []);
+        when(() => selectPromptMessagesUsecase.call('conversation-1'))
+            .thenAnswer((_) async => [latestUserMessage]);
+        when(() => messageRepository.createMessage(any()))
+            .thenAnswer((_) async => _unfinishedAssistantMessage);
+        when(() => messageRepository.patchMessage(any(), any()))
+            .thenAnswer((_) async => _unfinishedAssistantMessage);
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(origin: .manualContinue),
+        );
+
+        expect(result.messageId, 'assistant-1');
+        verify(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            options: any(named: 'options'),
+          ),
+        ).called(1);
+      },
+    );
 
     test(
       'clears the previous inline error only after retry succeeds',

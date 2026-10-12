@@ -121,8 +121,9 @@ final class const ProviderFailureRecovery({
         details ?? message,
       GenkitException(:final details, :final cause, :final message) =>
         details ?? (cause is GenkitException ? cause.details : null) ?? message,
-      ProviderTransientFailureException(:final cause) => cause.toString(),
-      _ => error.toString(),
+      ProviderTransientFailureException(:final cause) =>
+        cause.runtimeType.toString(),
+      _ => error.runtimeType.toString(),
     };
 
     return sanitizeProviderErrorDetail(detail);

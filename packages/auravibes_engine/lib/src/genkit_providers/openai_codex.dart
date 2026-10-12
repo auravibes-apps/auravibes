@@ -405,29 +405,7 @@ Map<String, dynamic> _failedEventDetails(Map<String, dynamic> event) {
 
 bool isRetryableCodexError(GenkitException error) {
   return error.status == StatusCode.internal &&
-      _isStructuredServerError(error.details);
-}
-
-bool _isStructuredServerError(String? details) {
-  if (details == null || details.trim().isEmpty) return false;
-  if (details.trim() == 'server_error') return true;
-
-  late final Object? decoded;
-  try {
-    decoded = jsonDecode(details);
-  } on FormatException {
-    return false;
-  }
-
-  if (decoded == 'server_error') return true;
-  if (decoded is! Map<String, dynamic>) return false;
-  final error = decoded['error'];
-  if (error == 'server_error') return true;
-  if (error case {'type': 'server_error'} || {'code': 'server_error'}) {
-    return true;
-  }
-
-  return decoded['type'] == 'server_error' || decoded['code'] == 'server_error';
+      ProviderFailureRecovery.fromError(error).retryable;
 }
 
 String? _retryableErrorDetail(String body) {
