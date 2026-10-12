@@ -40,6 +40,18 @@ void main() {
         database,
         conversation.id!,
       ))!;
+      final workspaceAfterFirstStart = (await CloudWorkspace.db.findById(
+        database,
+        workspace.id!,
+      ))!;
+      final workspaceEventsAfterFirstStart = await WorkspaceEvent.db.find(
+        database,
+        where: (table) => table.workspaceId.equals(workspace.id),
+      );
+      final auditRecordsAfterFirstStart = await WorkspaceAuditRecord.db.find(
+        database,
+        where: (table) => table.workspaceId.equals(workspace.id),
+      );
       expect(storedConversation.eventSequence, 1);
       expect(storedConversation.projectionRevision, 2);
       final events = await ConversationEvent.db.find(
@@ -55,6 +67,155 @@ void main() {
       expect(eventPayload['messageId'], 'message-direct');
 
       await endpoints.conversation.startTurn(session, request);
+      final reconnect = await endpoints.conversation.startTurn(
+        session,
+        StartTurnRequest(
+          workspaceId: request.workspaceId,
+          requestId: 'start-turn-reconnect',
+          conversationId: request.conversationId,
+          expectedConversationRevision: request.expectedConversationRevision,
+          clientMessageId: request.clientMessageId,
+          content: request.content,
+          attachmentIds: request.attachmentIds,
+        ),
+      );
+      expect(reconnect.turnId, result.turnId);
+      await endpoints.conversation.startTurn(
+        session,
+        StartTurnRequest(
+          workspaceId: request.workspaceId,
+          requestId: 'start-turn-reconnect',
+          conversationId: request.conversationId,
+          expectedConversationRevision: request.expectedConversationRevision,
+          clientMessageId: request.clientMessageId,
+          content: request.content,
+          attachmentIds: request.attachmentIds,
+        ),
+      );
+      await expectLater(
+        endpoints.conversation.startTurn(
+          session,
+          StartTurnRequest(
+            workspaceId: request.workspaceId,
+            requestId: 'start-turn-conflicting-replay',
+            conversationId: request.conversationId,
+            expectedConversationRevision: request.expectedConversationRevision,
+            clientMessageId: request.clientMessageId,
+            content: 'Different payload',
+            attachmentIds: request.attachmentIds,
+          ),
+        ),
+        throwsA(
+          isA<ConversationException>().having(
+            (error) => error.code,
+            'code',
+            ConversationErrorCode.idempotencyConflict,
+          ),
+        ),
+      );
+      expect(
+        (await CloudWorkspace.db.findById(database, workspace.id!))!.sequence,
+        workspaceAfterFirstStart.sequence,
+      );
+      expect(
+        await WorkspaceEvent.db.find(
+          database,
+          where: (table) => table.workspaceId.equals(workspace.id),
+        ),
+        hasLength(workspaceEventsAfterFirstStart.length),
+      );
+      expect(
+        await WorkspaceAuditRecord.db.find(
+          database,
+          where: (table) => table.workspaceId.equals(workspace.id),
+        ),
+        hasLength(auditRecordsAfterFirstStart.length),
+      );
+      expect(
+        await ConversationEvent.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        ),
+        hasLength(1),
+      );
+      expect(
+        await ConversationTurn.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        ),
+        hasLength(1),
+      );
+      expect(
+        await ConversationMessage.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        ),
+        hasLength(2),
+      );
+    });
+
+    test('startTurn cannot jump ahead of an older queued message', () async {
+      final userId = const Uuid().v4().toString();
+      final session = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final database = session.build();
+      await _insertUser(database, userId);
+      final workspace = await _workspace(database, userId);
+      final conversation = await _conversation(database, workspace.id!);
+
+      await endpoints.conversation.queueConversationMessage(
+        session,
+        QueueConversationMessageRequest(
+          workspaceId: workspace.id!,
+          requestId: 'queue-older-message',
+          conversationId: conversation.stableId,
+          expectedProjectionRevision: conversation.projectionRevision,
+          clientMessageId: 'message-older',
+          content: 'Older pending message',
+          attachmentIds: const [],
+        ),
+      );
+
+      await expectLater(
+        endpoints.conversation.startTurn(
+          session,
+          StartTurnRequest(
+            workspaceId: workspace.id!,
+            requestId: 'start-turn-newer-message',
+            conversationId: conversation.stableId,
+            expectedConversationRevision: conversation.revision,
+            clientMessageId: 'message-newer',
+            content: 'Newer direct message',
+            attachmentIds: const [],
+          ),
+        ),
+        throwsA(
+          isA<ConversationException>().having(
+            (error) => error.code,
+            'code',
+            ConversationErrorCode.turnConflict,
+          ),
+        ),
+      );
+
+      final messages = await ConversationMessage.db.find(
+        database,
+        where: (table) => table.conversationId.equals(conversation.id),
+      );
+      expect(messages, hasLength(1));
+      expect(messages.single.stableId, 'message-older');
+      expect(messages.single.pendingOrder, 1);
+      expect(
+        await ConversationTurn.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        ),
+        isEmpty,
+      );
       expect(
         await ConversationEvent.db.find(
           database,
