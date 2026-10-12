@@ -83,6 +83,74 @@ void main() {
     expect(selected.messageIds, ['old-user', 'old-model', 'recent-user']);
   });
 
+  test(
+    'retains forked constraints, decisions, pending tasks, and tool context',
+    () {
+      final selected = selectAgentCompactionRange(
+        .new([
+          message('parent-constraint', textCharacters: 72),
+          message('parent-decision', role: .model, textCharacters: 50),
+          message(
+            'parent-tool-exchange',
+            role: .model,
+            toolArgumentCharacters: 20,
+            toolResultCharacters: 42,
+          ),
+          message('parent-pending-task', textCharacters: 64),
+          message('parent-fork-boundary', role: .model, textCharacters: 40),
+          message('child-continuation', textCharacters: 48),
+          message('child-decision', role: .model, textCharacters: 40),
+          message('child-current-user', textCharacters: 56),
+          message('child-latest-model', role: .model, textCharacters: 48),
+        ]),
+        limitContext: 128,
+        limitOutput: 64,
+        reserveTokens: 16,
+        keepRecentTokens: 20,
+      ) as AgentCompactionRangeSelected;
+
+      expect(selected.messageIds, [
+        'parent-constraint',
+        'parent-decision',
+        'parent-tool-exchange',
+        'parent-pending-task',
+        'parent-fork-boundary',
+        'child-continuation',
+        'child-decision',
+      ]);
+      expect(selected.keptTailMessageIds, [
+        'child-current-user',
+        'child-latest-model',
+      ]);
+    },
+  );
+
+  test(
+    'rejects a recent tool exchange that exceeds the reserved context budget',
+    () {
+      expect(
+        selectAgentCompactionRange(
+          .new([
+            message('old-user', textCharacters: 40),
+            message('old-model', role: .model, textCharacters: 40),
+            message('recent-user', textCharacters: 48),
+            message(
+              'recent-tool-exchange',
+              role: .model,
+              toolArgumentCharacters: 24,
+              toolResultCharacters: 280,
+            ),
+          ]),
+          limitContext: 64,
+          limitOutput: 32,
+          reserveTokens: 16,
+          keepRecentTokens: 8,
+        ),
+        isA<AgentCompactionNoRange>(),
+      );
+    },
+  );
+
   test('returns no range when protected tail plus reserve cannot fit', () {
     expect(
       selectAgentCompactionRange(

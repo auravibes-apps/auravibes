@@ -261,6 +261,47 @@ void main() {
     expect(find.text('Nothing to preview yet'), findsOneWidget);
   });
 
+  testWidgets('only rendered preview opens Markdown links', (tester) async {
+    final launchedUrls = <String>[];
+    _mockUrlLauncher(tester, (call) async {
+      launchedUrls.add((call.arguments as Map)['url'] as String);
+
+      return true;
+    });
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+      initialMarkdown: '[Open docs](https://docs.example.com/reference)',
+    );
+
+    expect(find.byType(GptMarkdown), findsNothing);
+    final input = tester.widget<EditableText>(_markdownEditorInput);
+    final linkOffset = input.controller.text.indexOf('https://');
+    expect(linkOffset, isNonNegative);
+    final renderEditable = tester
+        .state<EditableTextState>(_markdownEditorInput)
+        .renderEditable;
+    final linkTapPosition = renderEditable
+        .getLocalRectForCaret(.new(offset: linkOffset + 12))
+        .center;
+    await tester.tapAt(renderEditable.localToGlobal(linkTapPosition));
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(AuraConfirmDialog), findsNothing);
+    expect(launchedUrls, isEmpty);
+
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(GptMarkdown), findsOneWidget);
+    await tester.tap(find.text('Open docs'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('Host: docs.example.com'), findsOneWidget);
+    expect(launchedUrls, isEmpty);
+
+    await tester.tap(find.text('Open link'));
+    final _ = await tester.pumpAndSettle();
+    expect(launchedUrls, ['https://docs.example.com/reference']);
+  });
+
   testWidgets('source preview restores selection and accessible toggle state', (
     tester,
   ) async {
@@ -575,6 +616,16 @@ Finder get _markdownEditorInput => find.descendant(
   of: find.byType(MarkdownEditorScreen),
   matching: find.byType(EditableText),
 );
+
+void _mockUrlLauncher(
+  WidgetTester tester,
+  Future<Object?> Function(MethodCall call) handler,
+) {
+  const channel = MethodChannel('plugins.flutter.io/url_launcher');
+  final messenger = tester.binding.defaultBinaryMessenger
+    ..setMockMethodCallHandler(channel, handler);
+  addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+}
 
 Future<void> _showMarkdownEditor(
   BuildContext context, {

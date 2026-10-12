@@ -254,16 +254,13 @@ class const _ReasoningHeader({
         ),
       ),
       if (canReset)
-        Semantics(
-          key: const ValueKey<String>('chat_reasoning_reset'),
-          child: AuraIconButton(
-            icon: Icons.restore,
-            onPressed: onReset,
-            tooltip: LocaleKeys
-                .chats_screens_chat_conversation_reasoning_restore_default
-                .tr(),
-          ),
+        AuraIconButton(
+          icon: Icons.restore,
+          onPressed: onReset,
           identifier: 'chat_reasoning_reset',
+          tooltip: LocaleKeys
+              .chats_screens_chat_conversation_reasoning_restore_default
+              .tr(),
         ),
     ],
   );

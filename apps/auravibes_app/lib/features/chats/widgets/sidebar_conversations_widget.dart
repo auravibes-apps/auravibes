@@ -9,11 +9,11 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
@@ -108,20 +108,53 @@ class const _SidebarConversationsLoaded({
   required final List<ConversationEntity> chats,
   required final String workspaceId,
   required final String? currentChatId,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => chats.isEmpty
-      ? const Column(
-          children: [
-            _SidebarConversationsSectionHeader(),
-            _SidebarConversationsEmptyState(),
-          ],
-        )
-      : _SidebarConversationsList(
-          chats: chats,
-          workspaceId: workspaceId,
-          currentChatId: currentChatId,
-        );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final visibleChats = _sidebarVisibleConversations(
+      ref,
+      workspaceId: workspaceId,
+      currentChatId: currentChatId,
+      recentChats: chats,
+    );
+
+    return visibleChats.isEmpty
+        ? const Column(
+            children: [
+              _SidebarConversationsSectionHeader(),
+              _SidebarConversationsEmptyState(),
+            ],
+          )
+        : _SidebarConversationsList(
+            chats: visibleChats,
+            workspaceId: workspaceId,
+            currentChatId: currentChatId,
+          );
+  }
+}
+
+List<ConversationEntity> _sidebarVisibleConversations(
+  WidgetRef ref, {
+  required String workspaceId,
+  required String? currentChatId,
+  required List<ConversationEntity> recentChats,
+}) {
+  final activeChatId = currentChatId;
+  if (activeChatId == null ||
+      recentChats.any((chat) => chat.id == activeChatId)) {
+    return recentChats;
+  }
+
+  final activeChat = ref
+      .watch(
+        conversationByIdStreamProvider(
+          workspaceId,
+          conversationId: activeChatId,
+        ),
+      )
+      .value;
+
+  return activeChat == null ? recentChats : [activeChat, ...recentChats];
 }
 
 class const _SidebarConversationsLoading() extends StatelessWidget {
@@ -519,16 +552,7 @@ Future<void> _deleteSidebarConversationInStorage(
   WidgetRef ref,
   ConversationEntity chat,
 ) async {
-  final cloud = await ref.read(
-    cloudConversationUsecaseProvider(chat.workspaceId).future,
-  );
-  if (cloud != null) {
-    await cloud.delete(chat);
-
-    return;
-  }
-
-  final _ = await ref.read(deleteConversationUsecaseProvider).call(chat.id);
+  final _ = await ref.read(bulkConversationActionsUsecaseProvider).delete(chat);
 }
 
 void _showSidebarDeleteSnack(BuildContext context, Object error) {

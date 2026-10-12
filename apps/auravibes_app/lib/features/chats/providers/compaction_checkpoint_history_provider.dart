@@ -6,6 +6,8 @@ import 'package:riverpod/riverpod.dart';
 
 typedef CompactionCheckpointHistory = ({
   String? activeCheckpointId,
+  int conversationRevision,
+  List<MessageEntity> messages,
   List<MessageEntity> summaries,
 });
 
@@ -28,16 +30,22 @@ final compactionCheckpointHistoryProvider =
         ).future,
       );
       if (conversation == null) {
-        return (activeCheckpointId: null, summaries: const <MessageEntity>[]);
+        return (
+          activeCheckpointId: null,
+          conversationRevision: 0,
+          messages: const <MessageEntity>[],
+          summaries: const <MessageEntity>[],
+        );
       }
 
+      final messages = await ref.watch(
+        chatMessagesByConversationProvider(
+          key.workspaceId,
+          key.conversationId,
+        ).future,
+      );
       final summaries =
-          (await ref.watch(
-                chatMessagesByConversationProvider(
-                  key.workspaceId,
-                  key.conversationId,
-                ).future,
-              ))
+          messages
               .where(
                 (message) =>
                     message.conversationId == key.conversationId &&
@@ -49,6 +57,8 @@ final compactionCheckpointHistoryProvider =
 
       return (
         activeCheckpointId: conversation.activeCompactionCheckpointId,
+        conversationRevision: conversation.revision,
+        messages: List<MessageEntity>.unmodifiable(messages),
         summaries: summaries,
       );
     });

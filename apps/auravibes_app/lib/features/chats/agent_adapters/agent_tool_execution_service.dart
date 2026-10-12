@@ -142,11 +142,13 @@ class const AppAllowedToolsDataProvider({
   @override
   Future<Object?> runResolvedTool({
     required String conversationId,
+    required String toolCallId,
     required ResolvedTool tool,
     required Map<String, dynamic> arguments,
   }) {
     return resolvedToolService(
       conversationId: conversationId,
+      toolCallId: toolCallId,
       tool: tool,
       arguments: arguments,
     );

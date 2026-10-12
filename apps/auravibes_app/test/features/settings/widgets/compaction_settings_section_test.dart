@@ -164,7 +164,7 @@ void main() {
         await pumpSubject(tester, guard: guard);
         await tester.enterText(find.byType(EditableText).first, '321');
         final save = tester.widget<AuraButton>(
-          find.descendant(
+          find.ancestor(
             of: find.byKey(const ValueKey<String>('settings_compaction_save')),
             matching: find.byType(AuraButton),
           ),
@@ -216,7 +216,7 @@ void main() {
       await pumpSubject(tester, guard: guard);
       await tester.enterText(find.byType(EditableText).first, 'reset draft');
       final reset = tester.widget<AuraButton>(
-        find.descendant(
+        find.ancestor(
           of: find.byKey(const ValueKey<String>('settings_compaction_reset')),
           matching: find.byType(AuraButton),
         ),
