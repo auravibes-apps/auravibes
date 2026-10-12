@@ -2708,10 +2708,19 @@ class const _ActivityToolCallDetails({
     final persistedProjection = responseRaw == null
         ? null
         : readToolOutputProjectionMetadata(responseRaw);
+    final truncationMetadata = contextProjection ?? persistedProjection;
     final truncationKey = persistedProjection == null
         ? LocaleKeys.chats_screens_chat_conversation_activity_context_truncated
         : LocaleKeys
               .chats_screens_chat_conversation_activity_persisted_truncated;
+    final truncationMessage = truncationMetadata == null
+        ? null
+        : truncationKey.tr(
+            namedArgs: {
+              'originalBytes': truncationMetadata.originalBytes.toString(),
+              'limitBytes': truncationMetadata.limitBytes.toString(),
+            },
+          );
 
     return Padding(
       padding: EdgeInsets.only(
@@ -2736,20 +2745,20 @@ class const _ActivityToolCallDetails({
                   ),
                 ),
               ),
-            if (contextProjection != null)
-              Text(
-                truncationKey.tr(
-                  namedArgs: {
-                    'originalBytes': contextProjection.originalBytes.toString(),
-                    'limitBytes': contextProjection.limitBytes.toString(),
-                  },
+            if (truncationMessage case final value?)
+              Semantics(
+                child: Text(
+                  value,
+                  key: ValueKey('activity_tool_truncation_${toolCall.id}'),
+                  style: TextStyle(
+                    color: colors.onSurfaceVariant,
+                    fontSize: theme.typography.fontSizeXs,
+                    fontFamily: theme.typography.bodyFontFamily,
+                  ),
                 ),
-                key: ValueKey('activity_tool_truncation_${toolCall.id}'),
-                style: TextStyle(
-                  color: colors.onSurfaceVariant,
-                  fontSize: theme.typography.fontSizeXs,
-                  fontFamily: theme.typography.bodyFontFamily,
-                ),
+                container: true,
+                excludeSemantics: true,
+                label: value,
               ),
             if (decodedResponse case final value? when value.isNotEmpty)
               Padding(
@@ -2765,6 +2774,7 @@ class const _ActivityToolCallDetails({
                     child: ToolCallResponsePreview(
                       toolName: toolCall.name,
                       content: value,
+                      inspectionStatus: truncationMessage,
                     ),
                   ),
                 ),
