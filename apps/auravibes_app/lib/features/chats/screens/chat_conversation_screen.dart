@@ -826,6 +826,7 @@ class const _LoadedChatConversationData({
   required final ConversationEntity conversation,
   required final _LoadedChatConversationState state,
   required final bool hidesStoppedRun,
+  required final bool isStopRequested,
   required final bool showInputComposer,
   required final _LoadedChatConversationCallbackState callbacks,
   required final Widget? leading,
@@ -835,6 +836,7 @@ class const _LoadedChatConversationRuntimeState({
   required final _LoadedChatConversationCallbackState callbacks,
   required final _LoadedChatConversationState state,
   required final bool hidesStoppedRun,
+  required final bool isStopRequested,
 });
 
 _LoadedChatConversationRuntimeState _useLoadedChatConversationRuntimeState(
@@ -893,6 +895,7 @@ _LoadedChatConversationRuntimeState _loadedChatConversationRuntimeState(
     request.conversationId,
     request.state.isInputBusy,
   ),
+  isStopRequested: request.stopRequested.value,
 );
 
 class const _LoadedChatConversationRender({
@@ -909,6 +912,7 @@ class const _LoadedChatConversationRender({
       conversation: conversation,
       state: runtimeState.state,
       hidesStoppedRun: runtimeState.hidesStoppedRun,
+      isStopRequested: runtimeState.isStopRequested,
       showInputComposer: showInputComposer,
       callbacks: runtimeState.callbacks,
       leading: leading,
@@ -1220,16 +1224,20 @@ class const _ChatConversationStatusAndComposerView({
 class const _ChatConversationMessageList({
   required final _LoadedChatConversationData data,
 }) extends StatelessWidget {
+  Future<void> Function(MessageEntity message)? get _onRetryMessage =>
+      data.state.isInputBusy ? null : data.callbacks.hooks.onRetryMessage;
+
+  bool get _showThinking => data.state.isGenerating && !data.hidesStoppedRun;
+
   @override
   Widget build(BuildContext context) => Expanded(
     child: _ChatList(
       workspaceId: data.workspaceId,
       conversationId: data.conversation.id,
       pendingToolCalls: data.state.pendingCalls,
-      onRetryMessage: data.state.isInputBusy
-          ? null
-          : data.callbacks.hooks.onRetryMessage,
-      showThinking: data.state.isGenerating && !data.hidesStoppedRun,
+      isStopRequested: data.isStopRequested,
+      onRetryMessage: _onRetryMessage,
+      showThinking: _showThinking,
     ),
   );
 }
@@ -2520,6 +2528,7 @@ class const _ChatList({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingToolCalls,
+  required final bool isStopRequested,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
   final bool showThinking = false,
 }) extends ConsumerWidget {
@@ -2534,6 +2543,7 @@ class const _ChatList({
       workspaceId: workspaceId,
       conversationId: conversationId,
       pendingToolCalls: pendingToolCalls,
+      isStopRequested: isStopRequested,
       showThinking: showThinking,
       onRetryMessage: onRetryMessage,
     );
@@ -2545,6 +2555,7 @@ class const _ChatListContent({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingToolCalls,
+  required final bool isStopRequested,
   required final bool showThinking,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
@@ -2557,6 +2568,7 @@ class const _ChatListContent({
       workspaceId: workspaceId,
       conversationId: conversationId,
       pendingToolCalls: pendingToolCalls,
+      isStopRequested: isStopRequested,
       showThinking: showThinking,
       onRetryMessage: onRetryMessage,
     );
@@ -2568,6 +2580,7 @@ class const _ChatListErrorOrResult({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingToolCalls,
+  required final bool isStopRequested,
   required final bool showThinking,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
@@ -2586,6 +2599,7 @@ class const _ChatListErrorOrResult({
       conversationId: conversationId,
       messages: chatMessages.value ?? const <MessageEntity>[],
       pendingToolCalls: pendingToolCalls,
+      isStopRequested: isStopRequested,
       showThinking: showThinking,
       onRetryMessage: onRetryMessage,
     );
@@ -2614,6 +2628,7 @@ class const _ChatListResult({
   required final String conversationId,
   required final Iterable<MessageEntity> messages,
   required final List<PendingToolCall> pendingToolCalls,
+  required final bool isStopRequested,
   required final bool showThinking,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
@@ -2628,6 +2643,7 @@ class const _ChatListResult({
       messageEntitiesById: messageData.entitiesById,
       pendingToolCalls: pendingToolCalls,
       showThinking: showThinking,
+      isStopRequested: isStopRequested,
       onRetryMessage: onRetryMessage,
     );
   }

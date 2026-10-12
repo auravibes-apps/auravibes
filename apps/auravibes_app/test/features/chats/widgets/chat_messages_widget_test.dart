@@ -4,7 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ui' show Offset, PointerDeviceKind;
+import 'dart:ui' show Offset, PointerDeviceKind, Tristate;
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -16,6 +16,7 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
+import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
@@ -25,9 +26,9 @@ import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
+import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
-import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
@@ -57,9 +58,10 @@ import 'package:flutter_localizations/flutter_localizations.dart'
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show DataPath;
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:rxdart/rxdart.dart' show CompositeSubscription;
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -70,6 +72,7 @@ Widget buildSubject({
   String conversationId = 'conv-1',
   List<PendingToolCall> pendingToolCalls = const [],
   bool showThinking = false,
+  bool isStopRequested = false,
   Future<void> Function(MessageEntity message)? onRetryMessage,
   ConversationEntity? conversation,
   AuraTheme? theme,
@@ -82,6 +85,7 @@ Widget buildSubject({
     overrides: overrides,
     pendingToolCalls: pendingToolCalls,
     showThinking: showThinking,
+    isStopRequested: isStopRequested,
     onRetryMessage: onRetryMessage,
     messageEntitiesById: messageEntitiesById,
     conversation: conversation,
@@ -3419,6 +3423,431 @@ void main() {
       );
     });
 
+    testWidgets(
+      'announces a response once across tokens, activity reclassification, and transcript rebuilds',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        final focusNode = FocusNode();
+        addTearDown(focusNode.dispose);
+
+        const toolCall = MessageToolCallEntity(
+          id: 'tc-intermediate',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{}',
+          resultStatus: ToolCallResultStatus.running,
+        );
+        final initialMessage = _createMessage(
+          id: 'intermediate',
+          content: '',
+          isUser: false,
+          status: MessageStatus.unfinished,
+        );
+        final finalMessage = _createMessage(
+          id: 'final',
+          content: 'Final response',
+          isUser: false,
+        );
+        var messagesById = <String, MessageEntity>{
+          'intermediate': initialMessage,
+        };
+        var visibleIds = <String>['intermediate'];
+        late StateSetter updateTimeline;
+
+        await pumpAndInit(
+          tester,
+          StatefulBuilder(
+            builder: (context, setState) {
+              updateTimeline = setState;
+              return buildSubject(
+                messages: visibleIds,
+                messageEntitiesById: messagesById,
+                overrides: [
+                  messageConversationByIdProvider.overrideWith(
+                    (ref, id) => null,
+                  ),
+                  messagesStreamingProvider.overrideWith(
+                    MessagesStreamingNotifier.new,
+                  ),
+                  conversationBusyStateProvider.overrideWith(
+                    (ref, _) async => const ConversationBusyState(
+                      isStreaming: false,
+                      hasPendingTools: false,
+                    ),
+                  ),
+                ],
+                appBuilder: (context, child) => MaterialApp(
+                  home: ChatPrimaryScrollController(
+                    child: Focus(focusNode: focusNode, child: child),
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: [
+                    ...GlobalMaterialLocalizations.delegates,
+                    sdk_localizations.GlobalMaterialLocalizations.delegate,
+                    ...context.localizationDelegates,
+                  ],
+                  supportedLocales: context.supportedLocales,
+                ),
+              );
+            },
+          ),
+        );
+
+        final statusFinder = find.byKey(
+          const ValueKey('assistant_response_status_conv-1'),
+        );
+        final context = tester.element(find.byType(ChatMessagesWidget));
+        final container = ProviderScope.containerOf(context, listen: false);
+        final streamingNotifier = container.read(
+          messagesStreamingProvider.notifier,
+        );
+        streamingNotifier.startSubscription(
+          CompositeSubscription(),
+          'intermediate',
+        );
+        await tester.pump();
+        expect(statusFinder, findsOneWidget);
+        final startedStatus = tester.getSemantics(statusFinder);
+        expect(startedStatus.label, 'Assistant response started.');
+        expect(startedStatus.flagsCollection.isLiveRegion, isTrue);
+        expect(startedStatus.flagsCollection.isFocused, Tristate.none);
+        final statusNodeId = startedStatus.id;
+        focusNode.requestFocus();
+        await tester.pump();
+        final focusedNode = FocusManager.instance.primaryFocus;
+        expect(focusedNode, same(focusNode));
+
+        updateTimeline(() {
+          messagesById = {
+            'intermediate': _createMessage(
+              id: 'intermediate',
+              content: 'Partial response with another token',
+              isUser: false,
+              status: MessageStatus.unfinished,
+            ),
+          };
+        });
+        await tester.pump();
+        expect(
+          tester.getSemantics(statusFinder).label,
+          'Assistant response started.',
+        );
+        expect(tester.getSemantics(statusFinder).id, statusNodeId);
+        expect(FocusManager.instance.primaryFocus, same(focusedNode));
+
+        updateTimeline(() {
+          messagesById = {
+            'intermediate': _createMessage(
+              id: 'intermediate',
+              content: 'Intermediate response',
+              isUser: false,
+              status: MessageStatus.unfinished,
+              metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+            ),
+            'final': finalMessage,
+          };
+          visibleIds = ['intermediate', 'final'];
+        });
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('activity_trace_toggle_intermediate')),
+          findsOneWidget,
+        );
+        expect(
+          tester.getSemantics(statusFinder).label,
+          'Assistant response started.',
+        );
+        expect(tester.getSemantics(statusFinder).id, statusNodeId);
+        expect(FocusManager.instance.primaryFocus, same(focusedNode));
+
+        updateTimeline(() {
+          messagesById = {
+            'intermediate': _createMessage(
+              id: 'intermediate',
+              content: 'Intermediate response',
+              isUser: false,
+              metadata: const MessageMetadataEntity(
+                toolCalls: [
+                  MessageToolCallEntity(
+                    id: 'tc-intermediate',
+                    name: 'built_in_1_read_file',
+                    argumentsRaw: '{}',
+                    resultStatus: ToolCallResultStatus.success,
+                  ),
+                ],
+              ),
+            ),
+            'final': finalMessage,
+          };
+        });
+        await streamingNotifier.remove('intermediate');
+        await tester.pump();
+        expect(
+          tester.getSemantics(statusFinder).label,
+          'Assistant response completed.',
+        );
+        expect(tester.getSemantics(statusFinder).id, statusNodeId);
+
+        updateTimeline(() {});
+        await tester.pump();
+        expect(statusFinder, findsOneWidget);
+        expect(
+          tester.getSemantics(statusFinder).label,
+          'Assistant response completed.',
+        );
+        expect(tester.getSemantics(statusFinder).id, statusNodeId);
+        semantics.dispose();
+      },
+    );
+
+    for (final terminal in [
+      (
+        status: MessageStatus.error,
+        isStopRequested: false,
+        label: 'Assistant response failed.',
+      ),
+      (
+        status: MessageStatus.sent,
+        isStopRequested: true,
+        label: 'Assistant response cancelled.',
+      ),
+    ]) {
+      testWidgets('announces ${terminal.label}', (tester) async {
+        final semantics = tester.ensureSemantics();
+        var message = _createMessage(
+          id: 'response',
+          content: 'Working',
+          isUser: false,
+          status: MessageStatus.unfinished,
+        );
+        var isStopRequested = false;
+        late StateSetter updateTimeline;
+
+        await pumpAndInit(
+          tester,
+          StatefulBuilder(
+            builder: (context, setState) {
+              updateTimeline = setState;
+              return buildSubject(
+                messages: ['response'],
+                isStopRequested: isStopRequested,
+                messageEntitiesById: {'response': message},
+                overrides: [
+                  messageConversationByIdProvider.overrideWith(
+                    (ref, id) => null,
+                  ),
+                  messagesStreamingProvider.overrideWith(
+                    MessagesStreamingNotifier.new,
+                  ),
+                  conversationBusyStateProvider.overrideWith(
+                    (ref, _) async => const ConversationBusyState(
+                      isStreaming: false,
+                      hasPendingTools: false,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+
+        final statusFinder = find.byKey(
+          const ValueKey('assistant_response_status_conv-1'),
+        );
+        final context = tester.element(find.byType(ChatMessagesWidget));
+        final container = ProviderScope.containerOf(context, listen: false);
+        final streamingNotifier = container.read(
+          messagesStreamingProvider.notifier,
+        );
+        streamingNotifier.startSubscription(
+          CompositeSubscription(),
+          'response',
+        );
+        await tester.pump();
+        expect(
+          tester.getSemantics(statusFinder).label,
+          'Assistant response started.',
+        );
+
+        updateTimeline(() {
+          message = _createMessage(
+            id: 'response',
+            content: 'Working',
+            isUser: false,
+            status: terminal.status,
+          );
+          isStopRequested = terminal.isStopRequested;
+        });
+        await tester.pump();
+        await streamingNotifier.remove('response');
+        await tester.pump();
+        expect(tester.getSemantics(statusFinder).label, terminal.label);
+        semantics.dispose();
+      });
+    }
+
+    testWidgets('localizes response start status', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final message = _createMessage(
+        id: 'response',
+        content: '',
+        isUser: false,
+        status: MessageStatus.unfinished,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          locale: const Locale('es'),
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => true),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        tester
+            .getSemantics(
+              find.byKey(const ValueKey('assistant_response_status_conv-1')),
+            )
+            .label,
+        'La respuesta del asistente comenzó.',
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('announces rich A2UI intermediate responses', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-rich-intermediate',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.running,
+      );
+      final intermediateMessage = _createMessage(
+        id: 'intermediate',
+        content: '',
+        isUser: false,
+        status: MessageStatus.sent,
+        metadata: MessageMetadataEntity(
+          a2uiMessages: [
+            for (final operation in [
+              {
+                'createSurface': {
+                  'surfaceId': 'main',
+                  'catalogId': 'urn:auravibes:a2ui:chat:v1',
+                },
+              },
+              {
+                'updateComponents': {
+                  'surfaceId': 'main',
+                  'components': [
+                    {
+                      'id': 'root',
+                      'component': 'Text',
+                      'text': 'A2UI intermediate response',
+                    },
+                  ],
+                },
+              },
+            ])
+              jsonEncode({
+                'protocolVersion': 'v1',
+                'interactionMode': 'passive',
+                'message': {'version': 'v0.9', ...operation},
+              }),
+          ],
+        ),
+      );
+      final finalMessage = _createMessage(
+        id: 'final',
+        content: 'Final response',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+      final messagesById = {
+        'intermediate': intermediateMessage,
+        'final': finalMessage,
+      };
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['intermediate', 'final'],
+          messageEntitiesById: messagesById,
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messagesById[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith(
+              (ref, id) => id == 'intermediate',
+            ),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_intermediate')),
+        findsOneWidget,
+      );
+      expect(find.text('A2UI intermediate response'), findsOneWidget);
+      expect(
+        tester
+            .getSemantics(
+              find.byKey(const ValueKey('assistant_response_status_conv-1')),
+            )
+            .label,
+        'Assistant response started.',
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('activity_trace_toggle_intermediate')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('A2UI intermediate response'), findsNothing);
+      expect(
+        tester
+            .getSemantics(
+              find.byKey(const ValueKey('assistant_response_status_conv-1')),
+            )
+            .label,
+        'Assistant response started.',
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('activity_trace_toggle_intermediate')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('A2UI intermediate response'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
+
     for (final later in [
       (status: MessageStatus.sent, isStreaming: true),
       (status: MessageStatus.unfinished, isStreaming: false),
@@ -5220,6 +5649,7 @@ class const _ChatMessagesTestSubject({
   required final List<PendingToolCall> pendingToolCalls,
   final Map<String, MessageEntity>? messageEntitiesById,
   final bool showThinking = false,
+  final bool isStopRequested = false,
   final Future<void> Function(MessageEntity message)? onRetryMessage,
   final ConversationEntity? conversation,
   final AuraTheme? theme,
@@ -5264,6 +5694,7 @@ class const _ChatMessagesTestSubject({
                       messageEntitiesById: messageEntitiesById,
                       pendingToolCalls: pendingToolCalls,
                       showThinking: showThinking,
+                      isStopRequested: isStopRequested,
                       onRetryMessage: onRetryMessage,
                     ),
                   ),

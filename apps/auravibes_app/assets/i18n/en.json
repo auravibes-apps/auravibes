@@ -468,6 +468,10 @@
       "turn_awaiting_approval": "Awaiting approval...",
       "turn_failed": "Generation failed.",
       "turn_cancelled": "Generation cancelled.",
+      "assistant_response_started": "Assistant response started.",
+      "assistant_response_completed": "Assistant response completed.",
+      "assistant_response_failed": "Assistant response failed.",
+      "assistant_response_cancelled": "Assistant response cancelled.",
       "activity_tools_count": {
         "one": "1 tool",
         "other": "{} tools"

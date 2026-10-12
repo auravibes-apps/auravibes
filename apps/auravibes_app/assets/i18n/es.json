@@ -468,6 +468,10 @@
       "turn_awaiting_approval": "Esperando aprobación...",
       "turn_failed": "La generación falló.",
       "turn_cancelled": "La generación se canceló.",
+      "assistant_response_started": "La respuesta del asistente comenzó.",
+      "assistant_response_completed": "La respuesta del asistente se completó.",
+      "assistant_response_failed": "La respuesta del asistente falló.",
+      "assistant_response_cancelled": "La respuesta del asistente se canceló.",
       "activity_tools_count": {
         "one": "1 herramienta",
         "other": "{} herramientas"
