@@ -360,6 +360,11 @@
       "bulk_delete": "Delete selected",
       "bulk_archive_export": "Export selected",
       "archive_imported_many": "Imported {} conversations.",
+      "archive_incomplete_title": "Some conversations have incomplete agent context",
+      "archive_incomplete_description": "These conversations may be missing their original prompt or tool state. Their visible history can still be imported, but the agent cannot safely continue from incomplete context.",
+      "archive_incomplete_affected": "Conversations with incomplete context:",
+      "archive_import_cancel": "Cancel",
+      "archive_import_continue": "Continue import",
       "bulk_delete_title": "Delete selected conversations",
       "bulk_delete_confirm": "Delete all selected conversations? This action cannot be undone.",
       "bulk_pin_failures": "Could not update pin for: {}",
@@ -377,6 +382,8 @@
       "archive_invalid": "This conversation archive is invalid or corrupted.",
       "archive_unsupported_version": "This conversation archive uses an unsupported version.",
       "archive_error": "Could not export or import this conversation.",
+      "context_incomplete_title": "Incomplete agent context",
+      "context_incomplete_description": "This imported conversation has incomplete agent context. Its visible history is available, but the agent cannot safely continue using missing or stale context.",
       "reasoning": {
         "title": "Reasoning",
         "enabled": "Enable reasoning",
@@ -457,6 +464,13 @@
       "transcript_context_unsupported": "This conversation uses an unsupported agent context format. Its history is still available to export.",
       "transcript_context_malformed": "Saved agent context could not be read. Conversation history is still available to export.",
       "retry_error": "Could not retry this message. Its original content was kept.",
+      "provider_recovery": {
+        "authentication": "Check the provider sign-in or API key, then try again.",
+        "quota_rate_limit": "The provider quota or rate limit was reached. Check its usage and limits before retrying.",
+        "transient_outage": "The provider is temporarily unavailable. Try again later.",
+        "configuration": "The provider rejected this request configuration. Review the selected model and request settings.",
+        "unknown": "The provider request failed. Review the details or contact support."
+      },
       "generation_credits_error": "This request needs more credits or a lower maximum token limit. Add credits or lower the model's maximum tokens, then try again.",
       "rate_limit_retry": "Rate limit reached. Retrying in {seconds}s.",
       "waiting_for_tools": "Waiting for tools to connect...",
@@ -476,8 +490,8 @@
       "activity_thinking": "Thinking",
       "activity_arguments": "Arguments",
       "activity_result": "Result",
-      "activity_context_truncated": "Tool response: {originalBytes} bytes. Model context limit: {limitBytes} bytes; full output remains stored.",
-      "activity_persisted_truncated": "Tool response: {originalBytes} bytes. Model context limit: {limitBytes} bytes; stored output was also clipped.",
+      "activity_context_truncated": "Tool response: {originalBytes} bytes. Only the model context was truncated to {limitBytes} bytes; the full response remains stored.",
+      "activity_persisted_truncated": "Tool response: {originalBytes} bytes. The model context was limited to {limitBytes} bytes; saved output was also truncated, so removed content is unavailable.",
       "activity_open_sub_agent": "Open sub-agent",
       "active_sub_agents_count": {
         "one": "1 sub-agent running",
@@ -1296,6 +1310,7 @@
       "details_title": "Compaction Details",
       "details_origin": "Origin",
       "details_range": "Compacted Range",
+      "details_range_separator": "to",
       "details_created": "Created",
       "details_messages": "Messages compacted",
       "details_content_label": "Summary Content",
@@ -1303,10 +1318,26 @@
       "details_unknown": "Unknown",
       "history_action": "Checkpoint history",
       "history_active": "Active checkpoint",
-      "history_restore": "Use this checkpoint",
+      "history_restore": "Preview restore",
       "history_empty": "No checkpoints available.",
       "history_loading": "Loading checkpoint history…",
-      "history_unavailable": "Checkpoint history is unavailable."
+      "history_unavailable": "Checkpoint history is unavailable.",
+      "history_preview_title": "Restore checkpoint preview",
+      "history_preview_summary": "Checkpoint summary",
+      "history_preview_created": "Created: {}",
+      "history_preview_replay_boundary": "Replay starts after message {}",
+      "history_preview_replay_count": "Messages that will be replayed: {}",
+      "history_preview_replay_empty": "No messages will be replayed after this checkpoint.",
+      "history_preview_message_heading": "{} · Message {}",
+      "history_preview_role_user": "You",
+      "history_preview_role_assistant": "Assistant",
+      "history_preview_role_system": "System",
+      "history_preview_attachment": "Attachment: {}",
+      "history_preview_tool_call": "Tool call: {}",
+      "history_preview_tool_arguments": "Arguments: {}",
+      "history_preview_tool_result": "Result: {}",
+      "history_preview_cancel": "Cancel",
+      "history_preview_confirm": "Restore checkpoint"
     },
     "manual": {
       "button_tooltip": "Compact conversation",
@@ -1326,7 +1357,8 @@
       "context_overflow_retry_failed": "Context overflow occurred and recovery compaction failed. Please try compacting manually.",
       "auto_blocked": "Automatic compaction is required but failed. Assistant continuation is blocked. Try compacting manually.",
       "settings_invalid": "Invalid compaction settings. Please check your values.",
-      "checkpoint_restore_unavailable": "Checkpoint is invalid or cannot be restored while conversation activity is pending."
+      "checkpoint_restore_unavailable": "Checkpoint is invalid or cannot be restored while conversation activity is pending.",
+      "checkpoint_restore_stale": "This preview is out of date because the conversation changed while you reviewed it. Open a new preview before restoring."
     }
   },
   "workspace_archive": {

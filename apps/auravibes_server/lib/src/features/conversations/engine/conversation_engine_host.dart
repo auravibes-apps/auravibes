@@ -1576,28 +1576,80 @@ final class const ServerConversationEngineHost({
       final response = await request.close().timeout(
         const Duration(seconds: 90),
       );
+      final responseBody = response.timeout(const Duration(seconds: 90));
+      final providerStream = session == null || turnId == null
+          ? _closeClientAfter(responseBody, client, transportDone)
+          : cancellationCheckedStream(
+              _closeClientAfter(responseBody, client, transportDone),
+              () => cancellationProbe.isCancelled(session, turnId),
+            );
       return ProviderTransportResponse(
         statusCode: response.statusCode,
-        body: session == null || turnId == null
-            ? _closeClientAfter(
-                response.timeout(const Duration(seconds: 90)),
-                client,
-                transportDone,
-              )
-            : cancellationCheckedStream(
-                _closeClientAfter(
-                  response.timeout(const Duration(seconds: 90)),
-                  client,
-                  transportDone,
-                ),
-                () => cancellationProbe.isCancelled(session, turnId),
-              ),
+        retryAfter: _providerRetryAfter(response.headers.value('retry-after')),
+        body: _classifyProviderTransportStream(providerStream),
+      );
+    } on SocketException catch (error, stackTrace) {
+      client.close(force: true);
+      if (!transportDone.isCompleted) transportDone.complete();
+      Error.throwWithStackTrace(
+        ProviderTransientFailureException(error),
+        stackTrace,
+      );
+    } on HttpException catch (error, stackTrace) {
+      client.close(force: true);
+      if (!transportDone.isCompleted) transportDone.complete();
+      Error.throwWithStackTrace(
+        ProviderTransientFailureException(error),
+        stackTrace,
       );
     } on Object {
       client.close(force: true);
       if (!transportDone.isCompleted) transportDone.complete();
       rethrow;
     }
+  }
+}
+
+Stream<List<int>> _classifyProviderTransportStream(
+  Stream<List<int>> stream,
+) async* {
+  try {
+    yield* stream;
+  } on SocketException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      ProviderTransientFailureException(error),
+      stackTrace,
+    );
+  } on HttpException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      ProviderTransientFailureException(error),
+      stackTrace,
+    );
+  }
+}
+
+Duration? _providerRetryAfter(String? value) {
+  final header = value?.trim();
+  if (header == null || header.isEmpty) return null;
+
+  const maximumDelay = Duration(seconds: 60);
+  final seconds = int.tryParse(header);
+  if (seconds != null) {
+    if (seconds <= 0) return .zero;
+    if (seconds > 60) return maximumDelay;
+    final delay = Duration(seconds: seconds);
+
+    return delay > maximumDelay ? maximumDelay : delay;
+  }
+
+  try {
+    final difference = HttpDate.parse(header)
+        .difference(DateTime.now().toUtc());
+    if (difference <= Duration.zero) return .zero;
+
+    return difference > maximumDelay ? maximumDelay : difference;
+  } on FormatException {
+    return null;
   }
 }
 

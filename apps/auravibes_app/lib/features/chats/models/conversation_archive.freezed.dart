@@ -298,6 +298,273 @@ as ConversationArchiveAgentContext?,
 }
 
 /// @nodoc
+mixin _$ConversationArchiveImportPreview {
+
+ String get title; bool get hasIncompleteAgentContext;
+/// Create a copy of ConversationArchiveImportPreview
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationArchiveImportPreviewCopyWith<ConversationArchiveImportPreview> get copyWith => _$ConversationArchiveImportPreviewCopyWithImpl<ConversationArchiveImportPreview>(this as ConversationArchiveImportPreview, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as ConversationArchiveImportPreview;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchiveImportPreview&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.hasIncompleteAgentContext, _this.hasIncompleteAgentContext) || other.hasIncompleteAgentContext == _this.hasIncompleteAgentContext));
+}
+
+
+@override
+int get hashCode {
+  final _this = this as ConversationArchiveImportPreview;
+  return Object.hash(runtimeType,_this.title,_this.hasIncompleteAgentContext);
+}
+
+@override
+String toString() {
+  final _this = this as ConversationArchiveImportPreview;
+  return 'ConversationArchiveImportPreview(title: ${_this.title}, hasIncompleteAgentContext: ${_this.hasIncompleteAgentContext})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $ConversationArchiveImportPreviewCopyWith<$Res>  {
+  factory $ConversationArchiveImportPreviewCopyWith(ConversationArchiveImportPreview value, $Res Function(ConversationArchiveImportPreview) _then) = _$ConversationArchiveImportPreviewCopyWithImpl;
+@useResult
+$Res call({
+ String title, bool hasIncompleteAgentContext
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationArchiveImportPreviewCopyWithImpl<$Res>
+    implements $ConversationArchiveImportPreviewCopyWith<$Res> {
+  _$ConversationArchiveImportPreviewCopyWithImpl(this._self, this._then);
+
+  final ConversationArchiveImportPreview _self;
+  final $Res Function(ConversationArchiveImportPreview) _then;
+
+/// Create a copy of ConversationArchiveImportPreview
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? hasIncompleteAgentContext = null,}) {
+  return _then(ConversationArchiveImportPreview(
+title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String,hasIncompleteAgentContext: null == hasIncompleteAgentContext ? _self.hasIncompleteAgentContext : hasIncompleteAgentContext // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [ConversationArchiveImportPreview].
+extension ConversationArchiveImportPreviewPatterns on ConversationArchiveImportPreview {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ConversationArchiveImportPreview value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ConversationArchiveImportPreview value)  $default,){
+final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ConversationArchiveImportPreview value)?  $default,){
+final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  bool hasIncompleteAgentContext)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview() when $default != null:
+return $default(_that.title,_that.hasIncompleteAgentContext);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  bool hasIncompleteAgentContext)  $default,) {final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview():
+return $default(_that.title,_that.hasIncompleteAgentContext);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  bool hasIncompleteAgentContext)?  $default,) {final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview() when $default != null:
+return $default(_that.title,_that.hasIncompleteAgentContext);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _ConversationArchiveImportPreview implements ConversationArchiveImportPreview {
+  const _ConversationArchiveImportPreview({required this.title, required this.hasIncompleteAgentContext});
+  
+
+@override final  String title;
+@override final  bool hasIncompleteAgentContext;
+
+/// Create a copy of ConversationArchiveImportPreview
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$ConversationArchiveImportPreviewCopyWith<_ConversationArchiveImportPreview> get copyWith => __$ConversationArchiveImportPreviewCopyWithImpl<_ConversationArchiveImportPreview>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchiveImportPreview&&(identical(other.title, title) || other.title == title)&&(identical(other.hasIncompleteAgentContext, hasIncompleteAgentContext) || other.hasIncompleteAgentContext == hasIncompleteAgentContext));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,title,hasIncompleteAgentContext);
+}
+
+@override
+String toString() {
+    return 'ConversationArchiveImportPreview(title: $title, hasIncompleteAgentContext: $hasIncompleteAgentContext)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$ConversationArchiveImportPreviewCopyWith<$Res> implements $ConversationArchiveImportPreviewCopyWith<$Res> {
+  factory _$ConversationArchiveImportPreviewCopyWith(_ConversationArchiveImportPreview value, $Res Function(_ConversationArchiveImportPreview) _then) = __$ConversationArchiveImportPreviewCopyWithImpl;
+@override @useResult
+$Res call({
+ String title, bool hasIncompleteAgentContext
+});
+
+
+
+
+}
+/// @nodoc
+class __$ConversationArchiveImportPreviewCopyWithImpl<$Res>
+    implements _$ConversationArchiveImportPreviewCopyWith<$Res> {
+  __$ConversationArchiveImportPreviewCopyWithImpl(this._self, this._then);
+
+  final _ConversationArchiveImportPreview _self;
+  final $Res Function(_ConversationArchiveImportPreview) _then;
+
+/// Create a copy of ConversationArchiveImportPreview
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? hasIncompleteAgentContext = null,}) {
+  return _then(_ConversationArchiveImportPreview(
+title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String,hasIncompleteAgentContext: null == hasIncompleteAgentContext ? _self.hasIncompleteAgentContext : hasIncompleteAgentContext // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$ConversationArchiveMessage {
 
  String get content; MessageType get messageType; bool get isUser; MessageStatus get status; DateTime get createdAt; ConversationArchiveMetadata get metadata; List<ConversationArchiveAttachment> get attachments;

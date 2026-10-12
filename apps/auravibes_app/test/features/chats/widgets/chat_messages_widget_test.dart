@@ -730,6 +730,48 @@ void main() {
       );
     });
 
+    testWidgets('hides retry for a non-retryable provider failure', (
+      tester,
+    ) async {
+      final message = _createMessage(
+        id: 'auth-failed-user',
+        status: MessageStatus.error,
+        metadata: const MessageMetadataEntity(
+          modelMetadata: {
+            'providerError': true,
+            'providerRecovery': {
+              'classification': 'authentication',
+              'retryable': false,
+            },
+          },
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          onRetryMessage: (_) async {},
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('retry_message_auth-failed-user')),
+        findsNothing,
+      );
+    });
+
     testWidgets('renders user message with text content', (tester) async {
       await pumpAndInit(
         tester,
@@ -2162,10 +2204,25 @@ void main() {
           text,
           contains(
             persistedClipped
-                ? 'stored output was also clipped'
-                : 'full output remains stored',
+                ? 'removed content is unavailable'
+                : 'Only the model context was truncated',
           ),
         );
+
+        final semantics = tester.ensureSemantics();
+        await tester.tap(find.text('Show more'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.descendant(
+            of: find.byType(Dialog),
+            matching: find.bySemanticsLabel(text),
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Close'));
+        await tester.pumpAndSettle();
+        semantics.dispose();
       });
     }
 
@@ -2234,6 +2291,176 @@ void main() {
         find.byKey(const ValueKey('activity_tool_truncation_tc-malformed')),
         findsNothing,
       );
+      expect(find.text('Show more'), findsNothing);
+    });
+
+    testWidgets(
+      'offers inspection when retained output fits the visual preview',
+      (tester) async {
+        const responseRaw =
+            '**stored** <b>text</b> [link](https://example.test)';
+        const modelResponse = 'The model response stays unchanged.';
+        final originalBytes = defaultToolOutputBytes + 128;
+        final contextStatus =
+            'Tool response: $originalBytes bytes. Only the model context was '
+            'truncated to $defaultToolOutputBytes bytes; the full response '
+            'remains stored.';
+        final responseContextRaw = jsonEncode({
+          '_toolOutput': {
+            'format': 'auravibes.tool-output-projection.v1',
+            'notice': '[tool output truncated]',
+            'truncated': true,
+            'originalBytes': originalBytes,
+            'limitBytes': defaultToolOutputBytes,
+          },
+          'content': 'model context excerpt',
+        });
+        final toolCall = MessageToolCallEntity(
+          id: 'tc-inspect-short',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{}',
+          responseRaw: responseRaw,
+          responseContextRaw: responseContextRaw,
+          outputTruncated: true,
+          originalResponseBytes: originalBytes,
+          resultStatus: ToolCallResultStatus.success,
+        );
+        final message = _createMessage(
+          content: modelResponse,
+          isUser: false,
+          metadata: MessageMetadataEntity(toolCalls: [toolCall]),
+        );
+        final semantics = tester.ensureSemantics();
+        String? copiedText;
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          (call) async {
+            if (call.method == 'Clipboard.setData') {
+              copiedText = (call.arguments as Map)['text'] as String?;
+            }
+
+            return null;
+          },
+        );
+        addTearDown(
+          () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            SystemChannels.platform,
+            null,
+          ),
+        );
+
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: [message.id],
+            overrides: _messageOverrides({message.id: message}),
+          ),
+        );
+        await revealActivityToolCalls(tester);
+        await tester.tap(
+          find.byKey(const ValueKey('activity_tool_tc-inspect-short')),
+        );
+        await tester.pump();
+
+        expect(find.text('Show more'), findsOneWidget);
+        expect(find.byTooltip('Copy tool response'), findsOneWidget);
+        expect(find.text(modelResponse), findsOneWidget);
+
+        await tester.tap(find.text('Show more'));
+        await tester.pumpAndSettle();
+
+        final modal = find.byType(Dialog);
+        expect(
+          find.descendant(of: modal, matching: find.text(responseRaw)),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: modal,
+            matching: find.bySemanticsLabel(contextStatus),
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Close'));
+        await tester.pumpAndSettle();
+        expect(find.text(modelResponse), findsOneWidget);
+
+        await tester.tap(find.byTooltip('Copy tool response'));
+        await tester.pump();
+
+        expect(copiedText, responseRaw);
+        expect(find.text(modelResponse), findsOneWidget);
+        semantics.dispose();
+      },
+    );
+
+    testWidgets('localizes accessible stored-output controls in Spanish', (
+      tester,
+    ) async {
+      final originalBytes = defaultToolOutputBytes + 128;
+      final responseContextRaw = jsonEncode({
+        '_toolOutput': {
+          'format': 'auravibes.tool-output-projection.v1',
+          'notice': '[tool output truncated]',
+          'truncated': true,
+          'originalBytes': originalBytes,
+          'limitBytes': defaultToolOutputBytes,
+        },
+        'content': 'vista previa del modelo',
+      });
+      final toolCall = MessageToolCallEntity(
+        id: 'tc-inspect-spanish',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        responseRaw: 'respuesta guardada',
+        responseContextRaw: responseContextRaw,
+        outputTruncated: true,
+        originalResponseBytes: originalBytes,
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: 'La respuesta del modelo no cambia.',
+        isUser: false,
+        metadata: MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+      final expectedStatus =
+          'Respuesta de la herramienta: $originalBytes bytes. Solo se recortó '
+          'el contexto del modelo a $defaultToolOutputBytes bytes; la '
+          'respuesta completa sigue guardada.';
+      final semantics = tester.ensureSemantics();
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          locale: const Locale('es'),
+          overrides: _messageOverrides({message.id: message}),
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.tap(
+        find.byKey(const ValueKey('activity_tool_tc-inspect-spanish')),
+      );
+      await tester.pump();
+
+      expect(find.text('Ver más'), findsOneWidget);
+      expect(
+        find.byTooltip('Copiar respuesta de la herramienta'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel(expectedStatus), findsOneWidget);
+
+      await tester.tap(find.text('Ver más'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(Dialog),
+          matching: find.bySemanticsLabel(expectedStatus),
+        ),
+        findsOneWidget,
+      );
+      semantics.dispose();
     });
 
     testWidgets('hides pending tool arguments from the activity details', (
@@ -5350,9 +5577,16 @@ void main() {
         content: providerDetails,
         isUser: false,
         status: MessageStatus.error,
-        messageType: MessageType.system,
+        messageType: MessageType.text,
         metadata: const MessageMetadataEntity(
-          modelMetadata: {'providerError': true},
+          modelMetadata: {
+            'providerError': true,
+            'providerRecovery': {
+              'classification': 'quota_rate_limit',
+              'retryable': false,
+              'providerStatus': 'RESOURCE_EXHAUSTED',
+            },
+          },
         ),
       );
 
@@ -5375,6 +5609,13 @@ void main() {
 
       expect(find.text(safeDetails), findsOneWidget);
       expect(find.text(providerDetails), findsNothing);
+      expect(
+        find.text(
+          'The provider quota or rate limit was reached. '
+          'Check its usage and limits before retrying.',
+        ),
+        findsOneWidget,
+      );
       expect(find.byType(AuraSelectableText), findsOneWidget);
       final selectable = tester.widget<AuraSelectableText>(
         find.byType(AuraSelectableText),

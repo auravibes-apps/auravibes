@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
@@ -22,6 +23,7 @@ import 'package:auravibes_app/features/chats/providers/aura_agent_service_provid
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
@@ -1173,6 +1175,7 @@ class const _ChatConversationBody({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       _ConversationOrientation(data: data),
+      _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(data: data),
       if (_hasChatConversationStatus(data) || data.showInputComposer)
@@ -1184,6 +1187,45 @@ class const _ChatConversationBody({
           )),
         ),
     ],
+  );
+}
+
+class const _IncompleteImportedAgentContextNotice({
+  required final _LoadedChatConversationData data,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!_hasIncompleteAgentContext(ref)) return const SizedBox.shrink();
+
+    return const _IncompleteAgentContextNoticeContent();
+  }
+
+  bool _hasIncompleteAgentContext(WidgetRef ref) =>
+      ref
+          .watch(
+            conversationArchiveIncompleteContextProvider((
+              workspaceId: data.workspaceId,
+              conversationId: data.conversation.id,
+            )),
+          )
+          .value ==
+      true;
+}
+
+class const _IncompleteAgentContextNoticeContent() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPadding(
+    child: AuraCallout(
+      title: LocaleKeys.chats_screens_chat_conversation_context_incomplete_title
+          .tr(context: context),
+      key: const ValueKey<String>('chat_incomplete_agent_context_notice'),
+      description: LocaleKeys
+          .chats_screens_chat_conversation_context_incomplete_description
+          .tr(context: context),
+      icon: Icons.warning_amber_outlined,
+      tint: .warning,
+    ),
+    padding: const .horizontal(.md),
   );
 }
 
@@ -2097,6 +2139,8 @@ Future<void> _retryMessage(_RetryMessageRequest request) async {
 }
 
 bool _canRetryMessage(_RetryMessageRequest request) {
+  if (!_canRetryProviderMessage(request.message)) return false;
+
   final busyState = request.ref.read(
     conversationBusyStateProvider(request.workspaceId, request.conversationId),
   );
@@ -2112,6 +2156,14 @@ bool _canRetryMessage(_RetryMessageRequest request) {
 
   return true;
 }
+
+bool _canRetryProviderMessage(MessageEntity message) =>
+    message.isUser &&
+    !message.isForkReference &&
+    message.hasValidContent &&
+    (message.status == .unfinished ||
+        (message.status == .error &&
+            ProviderRecoveryMetadata.isRetryEligible(message)));
 
 Future<void> _runRetryMessage(_RetryMessageRequest request) async {
   final cloud = await request.ref.read(
@@ -2239,9 +2291,41 @@ CloudConversationState? _readCloudConversationState(
     .value;
 
 bool _canContinueCloudState(CloudConversationState state) {
+  if (_hasNonRetryableCloudProviderFailure(state.messages)) return false;
+
   final executionState = state.conversation.executionState;
 
   return executionState == 'idle' || executionState == 'failed';
+}
+
+bool _hasNonRetryableCloudProviderFailure(
+  Iterable<ConversationMessageView> messages,
+) {
+  ConversationMessageView? latestUserMessage;
+  for (final message in messages) {
+    if (message.role != 'user' || message.isForkReference) continue;
+    if (latestUserMessage == null ||
+        message.createdAt.isAfter(latestUserMessage.createdAt)) {
+      latestUserMessage = message;
+    }
+  }
+
+  return latestUserMessage != null &&
+      _isNonRetryableCloudProviderFailure(latestUserMessage);
+}
+
+bool _isNonRetryableCloudProviderFailure(ConversationMessageView message) {
+  if (message.role != 'user' ||
+      message.status != 'error' ||
+      message.isForkReference) {
+    return false;
+  }
+  final modelMetadata = MessageMetadataEntity.fromJsonString(
+    message.metadataJson,
+  )?.modelMetadata;
+
+  return ProviderRecoveryMetadata.isProviderErrorMetadata(modelMetadata) &&
+      !ProviderRecoveryMetadata.isRetryEligibleMetadata(modelMetadata);
 }
 
 Future<void> _stopConversation(_ConversationContextRequest request) async {

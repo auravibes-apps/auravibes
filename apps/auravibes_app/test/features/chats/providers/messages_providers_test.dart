@@ -107,6 +107,11 @@ class _FakeMessageRepository implements MessageRepository {
   ) async => const [];
 
   @override
+  Stream<List<MessageEntity>> watchTranscriptMessagesByConversation(
+    String conversationId,
+  ) => Stream.value(const []);
+
+  @override
   Future<List<MessageEntity>> getMessagesByConversationPaginated(
     String conversationId,
     int limit,
