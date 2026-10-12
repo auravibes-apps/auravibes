@@ -8,24 +8,28 @@ class ModelConnectionRepository {
     Session session, {
     required int workspaceId,
     required String userId,
+    Transaction? transaction,
   }) => WorkspaceMember.db.findFirstRow(
     session,
     where: (table) =>
         table.workspaceId.equals(workspaceId) &
         table.userId.equals(userId) &
         table.removedAt.equals(null),
+    transaction: transaction,
   );
 
   Future<WorkspaceModelConnection?> findConnection(
     Session session, {
     required int workspaceId,
     required String connectionId,
+    Transaction? transaction,
   }) => WorkspaceModelConnection.db.findFirstRow(
     session,
     where: (table) =>
         table.workspaceId.equals(workspaceId) &
         table.connectionId.equals(connectionId) &
         table.deletedAt.equals(null),
+    transaction: transaction,
   );
 
   Future<List<WorkspaceModelConnection>> listConnections(
@@ -189,6 +193,7 @@ class ModelConnectionRepository {
     required int workspaceId,
     required String userId,
     required String connectionId,
+    Transaction? transaction,
   }) => const WorkspaceSecretResolver().findForInitiator(
     session,
     workspaceId: workspaceId,
@@ -196,5 +201,6 @@ class ModelConnectionRepository {
     initiatorUserId: userId,
     resourceId: connectionId,
     allowWorkspaceFallback: true,
+    transaction: transaction,
   );
 }
