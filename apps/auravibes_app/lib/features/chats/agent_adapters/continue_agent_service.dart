@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -33,7 +34,6 @@ final _logger = Logger('continue_agent_service');
 
 const String _legacyCreditsErrorMessageKey =
     LocaleKeys.chats_screens_chat_conversation_generation_credits_error;
-const String _providerErrorMetadataKey = 'providerError';
 
 typedef _ContinueAgentA2uiMessage = ({
   ChatA2uiRuntime? runtime,
@@ -278,6 +278,12 @@ mixin _ContinueAgentCall on _ContinueAgentServiceDependencies {
       conversationId,
       context,
     );
+    await _ensureManualContinueRetryIsEligible(
+      conversationId,
+      context,
+      retryUserMessageIds,
+      this.messageRepository,
+    );
     final request = await _prepareContinuationRequest(
       conversationId: conversationId,
       context: context,
@@ -313,7 +319,11 @@ mixin _ContinueAgentCall on _ContinueAgentServiceDependencies {
     try {
       return await _continueWithValidatedInput(request);
     } on Object catch (error, stackTrace) {
-      await _persistInlineGenerationErrorSafely(request.conversationId, error);
+      await _persistInlineGenerationErrorSafely(
+        request.conversationId,
+        error,
+        request.context?.ackMessageIds ?? const <String>[],
+      );
       Error.throwWithStackTrace(error, stackTrace);
     }
   }
@@ -428,7 +438,9 @@ extension _ContinueAgentFailurePersistence
       message.isUser &&
       !message.isForkReference &&
       message.hasValidContent &&
-      (message.status == .error || message.status == .unfinished);
+      (message.status == .unfinished ||
+          (message.status == .error &&
+              ProviderRecoveryMetadata.isRetryEligible(message)));
 
   Future<void> _markRetryUsersSending(List<String> messageIds) async {
     try {
@@ -467,9 +479,14 @@ extension _ContinueAgentFailurePersistence
   Future<void> _persistInlineGenerationErrorSafely(
     String conversationId,
     Object error,
+    List<String> userMessageIds,
   ) async {
     try {
-      await _persistInlineGenerationError(conversationId, error);
+      await _persistInlineGenerationError(
+        conversationId,
+        error,
+        userMessageIds,
+      );
     } on Object catch (persistError, persistStackTrace) {
       monitoringService.trackError(
         'Failed to persist inline generation error',
@@ -482,31 +499,145 @@ extension _ContinueAgentFailurePersistence
   Future<void> _persistInlineGenerationError(
     String conversationId,
     Object error,
+    List<String> userMessageIds,
   ) async {
+    final recovery = ProviderFailureRecovery.fromError(error);
     final content = _providerErrorDetail(error);
-    if (content == null) return;
-
-    final created = await this.messageRepository.createMessage(
+    await _ProviderRecoveryPersistence.persist(
       .new(
+        repository: this.messageRepository,
         conversationId: conversationId,
-        content: content,
-        messageType: .system,
-        isUser: false,
-        status: .sending,
-        metadata: _providerErrorMetadataJson(),
+        userMessageIds: userMessageIds,
+        errorDetail: content,
+        recovery: recovery,
       ),
-    );
-    final _ = await this.messageRepository.patchMessage(
-      created.id,
-      const MessagePatch(status: .error),
     );
   }
 }
 
+class const _ProviderRecoveryPersistenceRequest({
+  required final MessageRepository repository,
+  required final String conversationId,
+  required final List<String> userMessageIds,
+  required final String? errorDetail,
+  required final ProviderFailureRecovery recovery,
+});
+
+abstract final class _ProviderRecoveryPersistence {
+  static Future<void> persist(
+    _ProviderRecoveryPersistenceRequest request,
+  ) async {
+    await _createErrorMessage(request);
+    await _markUserMessages(request);
+  }
+
+  static Future<void> _createErrorMessage(
+    _ProviderRecoveryPersistenceRequest request,
+  ) async {
+    final created = await _createProviderErrorMessage(request);
+    await _markProviderErrorAsFailed(request.repository, created.id);
+  }
+
+  static Future<MessageEntity> _createProviderErrorMessage(
+    _ProviderRecoveryPersistenceRequest request,
+  ) => request.repository.createMessage(
+    .new(
+      conversationId: request.conversationId,
+      content: request.errorDetail ?? '',
+      messageType: .system,
+      isUser: false,
+      status: .sending,
+      metadata: _providerErrorMetadataJson(request.recovery),
+    ),
+  );
+
+  static Future<void> _markProviderErrorAsFailed(
+    MessageRepository repository,
+    String messageId,
+  ) async {
+    final _ = await repository.patchMessage(
+      messageId,
+      const MessagePatch(status: .error),
+    );
+  }
+
+  static Future<void> _markUserMessages(
+    _ProviderRecoveryPersistenceRequest request,
+  ) async {
+    for (final messageId in request.userMessageIds) {
+      await _markUserMessage(request, messageId);
+    }
+  }
+
+  static Future<void> _markUserMessage(
+    _ProviderRecoveryPersistenceRequest request,
+    String messageId,
+  ) async {
+    final message = await request.repository.getMessageById(messageId);
+    final userMessage = _matchingUserMessage(message, request.conversationId);
+    if (userMessage == null) return;
+
+    final _ = await request.repository.patchMessage(
+      messageId,
+      .new(
+        metadata: ProviderRecoveryMetadata.attach(
+          userMessage.metadata,
+          request.recovery,
+        ),
+        status: .error,
+      ),
+    );
+  }
+
+  static MessageEntity? _matchingUserMessage(
+    MessageEntity? message,
+    String conversationId,
+  ) => switch (message) {
+    final value?
+        when value.conversationId == conversationId &&
+            value.isUser &&
+            !value.isForkReference =>
+      value,
+    _ => null,
+  };
+}
+
+Future<void> _ensureManualContinueRetryIsEligible(
+  String conversationId,
+  AgentIterationContext? context,
+  List<String> retryUserMessageIds,
+  MessageRepository repository,
+) async {
+  if (context?.origin != AgentIterationOrigin.manualContinue ||
+      retryUserMessageIds.isNotEmpty) {
+    return;
+  }
+  if (context?.ackMessageIds.isNotEmpty == true ||
+      await _hasBlockedProviderFailure(conversationId, repository)) {
+    throw StateError('Message cannot be retried');
+  }
+}
+
+Future<bool> _hasBlockedProviderFailure(
+  String conversationId,
+  MessageRepository repository,
+) async {
+  final messages = await repository.getMessagesByStatus(conversationId, .error);
+
+  return messages.any(_isBlockedProviderFailure);
+}
+
+bool _isBlockedProviderFailure(MessageEntity message) =>
+    message.isUser &&
+    ProviderRecoveryMetadata.isProviderError(message) &&
+    !ProviderRecoveryMetadata.isRetryEligible(message);
+
 bool _isInlineGenerationErrorMessage(MessageEntity message) =>
     message.messageType == .system &&
     message.status == .error &&
-    (message.metadata?.modelMetadata[_providerErrorMetadataKey] == true ||
+    (message.metadata?.modelMetadata[ProviderRecoveryMetadata
+                .providerErrorKey] ==
+            true ||
         message.content == _legacyCreditsErrorMessageKey);
 
 AgentIterationContext? _contextWithRetryUsers(
@@ -528,13 +659,17 @@ AgentIterationContext? _contextWithRetryUsers(
 }
 
 String? _providerErrorDetail(Object error) {
-  if (error is! GenkitException) return null;
-  final cause = error.cause;
-  final content = _firstNonEmptyProviderDetail([
-    error.details,
-    if (cause is GenkitException) cause.details,
-    error.message,
-  ]);
+  final candidates = switch (error) {
+    ProviderTransientFailureException(:final cause) => [cause.toString()],
+    GenkitException(:final details, :final cause, :final message) => [
+      details,
+      if (cause is GenkitException) cause.details,
+      message,
+      error.toString(),
+    ],
+    _ => [error.toString()],
+  };
+  final content = _firstNonEmptyProviderDetail(candidates);
   if (content == null) return null;
 
   return LogRedaction.redact(content);
@@ -549,10 +684,8 @@ String? _firstNonEmptyProviderDetail(Iterable<String?> candidates) {
   return null;
 }
 
-String? _providerErrorMetadataJson() => JsonCodec.encode(
-  const MessageMetadataEntity(modelMetadata: {_providerErrorMetadataKey: true})
-      .toJson(),
-);
+String? _providerErrorMetadataJson(ProviderFailureRecovery recovery) =>
+    JsonCodec.encode(ProviderRecoveryMetadata.attach(null, recovery).toJson());
 
 extension _ContinueAgentCleanup on _ContinueAgentServiceDependencies {
   MessageMetadataEntity? _markPendingToolsStopped(

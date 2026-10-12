@@ -37,7 +37,8 @@ export 'src/genkit_providers/chat_completions_provider.dart'
         ToolSamplingPolicy,
         ToolSamplingResult,
         ToolSamplingValidationException,
-        ToolSamplingValidationReason;
+        ToolSamplingValidationReason,
+        sanitizeProviderErrorDetail;
 export 'src/genkit_providers/openai_codex.dart'
     show OpenAICodexCodec, isRetryableCodexError, openAICodexModel;
 export 'src/genkit_providers/openai_compat_chat_options.dart';
@@ -51,6 +52,7 @@ export 'src/namespaces/agent_namespace.dart';
 export 'src/namespaces/conversations_namespace.dart';
 export 'src/namespaces/tools_namespace.dart';
 export 'src/prompt_messages.dart';
+export 'src/provider_failure_recovery.dart';
 export 'src/provider_profile.dart';
 export 'src/provider_tool_exchange.dart';
 export 'src/providers/agent_data_provider.dart';

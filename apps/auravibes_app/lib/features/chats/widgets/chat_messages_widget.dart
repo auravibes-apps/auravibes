@@ -7,9 +7,21 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+
+import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+import 'package:material_ui/material_ui.dart';
+
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
@@ -24,18 +36,18 @@ import 'package:auravibes_app/features/chats/providers/tool_display_name_provide
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
-import 'package:auravibes_app/features/skills/models/available_skill.dart';
-import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
-import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
-import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
-import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
-import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
+import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
@@ -43,18 +55,9 @@ import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
-import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
+import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:logging/logging.dart';
-import 'package:material_ui/material_ui.dart';
 
 final _a2uiLogger = Logger('chat_a2ui_actions');
 const _latestMessageScrollThreshold = 64.0;
@@ -907,13 +910,21 @@ bool _isTimelineBoundary(MessageEntity message) =>
     message.status == MessageStatus.error ||
     message.metadata?.isCompactionSummary == true;
 
+bool _isErrorMessage(MessageEntity message) =>
+    _isErrorSystemMessage(message) ||
+    (!message.isUser &&
+        message.status == MessageStatus.error &&
+        _isProviderErrorMessage(message));
+
 bool _isErrorSystemMessage(MessageEntity message) =>
     !message.isUser &&
     message.messageType == MessageType.system &&
     message.status == MessageStatus.error;
 
 bool _isProviderErrorMessage(MessageEntity message) =>
-    message.metadata?.modelMetadata['providerError'] == true;
+    message.metadata?.modelMetadata[ProviderRecoveryMetadata
+        .providerErrorKey] ==
+    true;
 
 String? _retryableUserMessageId(List<_ResolvedChatMessage?> messages) {
   for (final source in messages.reversed) {
@@ -930,8 +941,9 @@ bool _canRetryUserMessage(MessageEntity message) =>
     message.isUser &&
     !message.isForkReference &&
     message.hasValidContent &&
-    (message.status == MessageStatus.error ||
-        message.status == MessageStatus.unfinished);
+    (message.status == MessageStatus.unfinished ||
+        (message.status == MessageStatus.error &&
+            ProviderRecoveryMetadata.isRetryEligible(message)));
 
 class const _ChatMessageTimelineItem({
   required final _ResolvedChatMessage source,
@@ -959,10 +971,11 @@ class const _ChatMessageTimelineItem({
       );
     }
 
-    if (_isErrorSystemMessage(message)) {
+    if (_isErrorMessage(message)) {
       return _ErrorMessageWidget(
         content: message.content,
         isProviderError: _isProviderErrorMessage(message),
+        providerFailureCategory: ProviderRecoveryMetadata.categoryFor(message),
         key: ValueKey(message.id),
       );
     }
@@ -2865,6 +2878,7 @@ class const _CompactedMessageWidget({
 class const _ErrorMessageWidget({
   required final String content,
   required final bool isProviderError,
+  required final ProviderFailureCategory? providerFailureCategory,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -2873,6 +2887,9 @@ class const _ErrorMessageWidget({
     final visibleContent = isProviderError
         ? LogRedaction.redact(content)
         : content.tr(context: context);
+    final guidanceKey = isProviderError
+        ? _providerRecoveryGuidanceKey(providerFailureCategory)
+        : null;
     const iconSize = 16.0;
     const containerBorderRadius = 10.0;
 
@@ -2880,6 +2897,11 @@ class const _ErrorMessageWidget({
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (guidanceKey case final key?)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(key.tr(context: context)),
+            ),
           Row(
             children: [
               Icon(
@@ -2891,7 +2913,8 @@ class const _ErrorMessageWidget({
               Flexible(child: AuraSelectableText(visibleContent)),
             ],
           ),
-          _MessageCopyAction(resolveContent: () => visibleContent),
+          if (visibleContent.isNotEmpty)
+            _MessageCopyAction(resolveContent: () => visibleContent),
         ],
       ),
       padding: .medium,
@@ -2902,6 +2925,23 @@ class const _ErrorMessageWidget({
     );
   }
 }
+
+String _providerRecoveryGuidanceKey(
+  ProviderFailureCategory? category,
+) => switch (category) {
+  .authentication =>
+    LocaleKeys.chats_screens_chat_conversation_provider_recovery_authentication,
+  .quotaRateLimit =>
+    LocaleKeys
+        .chats_screens_chat_conversation_provider_recovery_quota_rate_limit,
+  .transientOutage =>
+    LocaleKeys
+        .chats_screens_chat_conversation_provider_recovery_transient_outage,
+  .configuration =>
+    LocaleKeys.chats_screens_chat_conversation_provider_recovery_configuration,
+  .unknown ||
+  null => LocaleKeys.chats_screens_chat_conversation_provider_recovery_unknown,
+};
 
 class const _CompactingIndicator() extends StatelessWidget {
   @override

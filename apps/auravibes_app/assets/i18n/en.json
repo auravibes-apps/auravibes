@@ -456,6 +456,13 @@
       "transcript_context_unsupported": "This conversation uses an unsupported agent context format. Its history is still available to export.",
       "transcript_context_malformed": "Saved agent context could not be read. Conversation history is still available to export.",
       "retry_error": "Could not retry this message. Its original content was kept.",
+      "provider_recovery": {
+        "authentication": "Check the provider sign-in or API key, then try again.",
+        "quota_rate_limit": "The provider quota or rate limit was reached. Check its usage and limits before retrying.",
+        "transient_outage": "The provider is temporarily unavailable. Try again later.",
+        "configuration": "The provider rejected this request configuration. Review the selected model and request settings.",
+        "unknown": "The provider request failed. Review the details or contact support."
+      },
       "generation_credits_error": "This request needs more credits or a lower maximum token limit. Add credits or lower the model's maximum tokens, then try again.",
       "rate_limit_retry": "Rate limit reached. Retrying in {seconds}s.",
       "waiting_for_tools": "Waiting for tools to connect...",

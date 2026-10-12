@@ -731,8 +731,12 @@ void main() {
           fail('Expected provider request to fail');
         } on GenkitException catch (error) {
           expect(error.message, 'Provider API request failed (HTTP 502).');
-          expect(error.status, StatusCode.unknown);
+          expect(error.status, StatusCode.unavailable);
           expect(error.details, isNull);
+          final recovery = ProviderFailureRecovery.fromError(error);
+          expect(recovery.category, ProviderFailureCategory.transientOutage);
+          expect(recovery.httpStatusCode, 502);
+          expect(recovery.retryable, isTrue);
         }
       }
     },

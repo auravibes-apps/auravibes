@@ -456,6 +456,13 @@
       "transcript_context_unsupported": "Esta conversación usa un formato de contexto del agente no compatible. El historial todavía se puede exportar.",
       "transcript_context_malformed": "No se pudo leer el contexto guardado del agente. El historial de la conversación todavía se puede exportar.",
       "retry_error": "No se pudo reintentar este mensaje. Se conservó su contenido original.",
+      "provider_recovery": {
+        "authentication": "Comprueba el acceso al proveedor o la clave API y vuelve a intentarlo.",
+        "quota_rate_limit": "Se alcanzó la cuota o el límite de uso del proveedor. Revisa el consumo y los límites antes de reintentar.",
+        "transient_outage": "El proveedor no está disponible temporalmente. Vuelve a intentarlo más tarde.",
+        "configuration": "El proveedor rechazó la configuración de esta solicitud. Revisa el modelo y los ajustes de la solicitud.",
+        "unknown": "Falló la solicitud al proveedor. Revisa los detalles o contacta con soporte."
+      },
       "generation_credits_error": "Esta solicitud necesita más créditos o un límite máximo de tokens menor. Añade créditos o reduce los tokens máximos del modelo y vuelve a intentarlo.",
       "rate_limit_retry": "Se alcanzó el límite de uso. Reintentando en {seconds}s.",
       "waiting_for_tools": "Esperando a que las herramientas se conecten...",

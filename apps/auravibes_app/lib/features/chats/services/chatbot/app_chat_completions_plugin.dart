@@ -152,6 +152,7 @@ extension on AppChatCompletionsPlugin {
     statusCode: response.statusCode,
     body: _responseBody(response.stream, client, stopwatch),
     contentLength: response.contentLength,
+    retryAfter: _retryAfterDelay(response.headers['retry-after']),
   );
 
   Stream<List<int>> _responseBody(
@@ -274,13 +275,19 @@ Future<void> _retryOrThrow(
   );
   if (delay == null) {
     return Future<void>.error(
-      attempt.rateLimitRetryException(error) ?? error,
+      attempt.rateLimitRetryException(error) ??
+          _providerFailureForClassification(error),
       stackTrace,
     );
   }
 
   return _waitForRetry(delay, request.context, request.plugin.retryWait);
 }
+
+Object _providerFailureForClassification(Object error) => switch (error) {
+  http.ClientException() => ProviderTransientFailureException(error),
+  _ => error,
+};
 
 Future<ModelResponse> _generateModelAttempt(
   AppChatCompletionsPlugin plugin,

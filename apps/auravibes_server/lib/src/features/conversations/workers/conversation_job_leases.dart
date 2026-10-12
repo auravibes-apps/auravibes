@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
@@ -150,6 +152,9 @@ class const ConversationJobLeases() {
     required String leaseToken,
     required String errorCode,
     required DateTime now,
+    bool retryable = false,
+    Map<String, Object?>? providerRecovery,
+    String? errorDetails,
     Duration retryDelay = const Duration(seconds: 10),
   }) => session.db.transaction((transaction) async {
     final job = await _requireLease(
@@ -161,13 +166,14 @@ class const ConversationJobLeases() {
     );
     final safeErrorCode = _safeErrorCode(errorCode);
     final exhausted = job.attempt >= job.maxAttempts;
+    final failed = !retryable || exhausted;
     final updated = await ConversationJob.db.updateRow(
       session,
       job.copyWith(
-        status: exhausted
+        status: failed
             ? ConversationJobStatuses.failed
             : ConversationJobStatuses.queued,
-        availableAt: exhausted ? job.availableAt : now.add(retryDelay),
+        availableAt: failed ? job.availableAt : now.add(retryDelay),
         leaseOwner: null,
         leaseToken: null,
         leaseExpiresAt: null,
@@ -176,11 +182,13 @@ class const ConversationJobLeases() {
       ),
       transaction: transaction,
     );
-    if (exhausted) {
+    if (failed) {
       await _failTurn(
         session,
         job,
         errorCode: safeErrorCode,
+        providerRecovery: providerRecovery,
+        errorDetails: errorDetails,
         now: now,
         transaction: transaction,
       );
@@ -192,6 +200,8 @@ class const ConversationJobLeases() {
     Session session,
     ConversationJob job, {
     required String errorCode,
+    Map<String, Object?>? providerRecovery,
+    String? errorDetails,
     required DateTime now,
     required Transaction transaction,
   }) async {
@@ -204,6 +214,14 @@ class const ConversationJobLeases() {
       lockMode: LockMode.forUpdate,
     );
     if (turn == null || ConversationStatuses.isTerminal(turn.status)) return;
+    final user = turn.userMessageId == null
+        ? null
+        : await ConversationMessage.db.findById(
+            session,
+            turn.userMessageId!,
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+          );
     final assistant = turn.assistantMessageId == null
         ? null
         : await ConversationMessage.db.findById(
@@ -217,10 +235,30 @@ class const ConversationJobLeases() {
       await ConversationMessage.db.updateRow(
         session,
         assistant.copyWith(
-          content: '',
+          content: errorDetails ?? '',
           status: ConversationStatuses.failed,
-          metadataJson: '{"errorCode":"$errorCode"}',
+          metadataJson: _failureMetadataJson(
+            assistant.metadataJson,
+            errorCode,
+            providerRecovery,
+          ),
           revision: assistant.revision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+    }
+    if (user != null && user.role == 'user') {
+      await ConversationMessage.db.updateRow(
+        session,
+        user.copyWith(
+          status: 'error',
+          metadataJson: _failureMetadataJson(
+            user.metadataJson,
+            errorCode,
+            providerRecovery,
+          ),
+          revision: user.revision + 1,
           updatedAt: now,
         ),
         transaction: transaction,
@@ -240,10 +278,55 @@ class const ConversationJobLeases() {
 
   String _safeErrorCode(String value) => switch (value) {
     'configuration' => value,
+    'authentication' => value,
+    'quota_rate_limit' => value,
     'provider_unavailable' => value,
+    'unknown' => value,
     'retry_exhausted' => value,
     _ => 'provider_unavailable',
   };
+
+  String _failureMetadataJson(
+    String? existing,
+    String errorCode,
+    Map<String, Object?>? providerRecovery,
+  ) {
+    final metadata = switch (existing) {
+      final value? => _decodeMetadata(value),
+      _ => <String, Object?>{},
+    };
+    metadata['errorCode'] = errorCode;
+    if (providerRecovery != null) {
+      _attachProviderRecovery(metadata, providerRecovery);
+    }
+
+    return jsonEncode(metadata);
+  }
+
+  void _attachProviderRecovery(
+    Map<String, Object?> metadata,
+    Map<String, Object?> providerRecovery,
+  ) {
+    final existingModelMetadata = metadata['modelMetadata'];
+    final modelMetadata = switch (existingModelMetadata) {
+      final Map value => Map<String, Object?>.from(value),
+      _ => <String, Object?>{},
+    };
+    modelMetadata['providerError'] = true;
+    modelMetadata['providerRecovery'] = providerRecovery;
+    metadata['modelMetadata'] = modelMetadata;
+  }
+
+  Map<String, Object?> _decodeMetadata(String value) {
+    try {
+      final decoded = jsonDecode(value);
+      if (decoded is Map) return Map<String, Object?>.from(decoded);
+    } on FormatException {
+      // Invalid historical metadata is replaced by the safe failure fields.
+    }
+
+    return <String, Object?>{};
+  }
 
   Future<ConversationJob> _requireLease(
     Session session, {

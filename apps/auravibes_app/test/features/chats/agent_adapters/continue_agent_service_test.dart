@@ -1425,9 +1425,22 @@ void main() {
         fail('Should have thrown');
         // ignore: avoid_catching_errors - Required to assert propagated StateError.
       } on StateError {
-        final _ = verifyNever(
-          () => messageRepository.patchMessage(any(), any()),
+        final created = verify(
+          () => messageRepository.createMessage(captureAny()),
+        ).captured.cast<MessageToCreate>();
+        expect(created, hasLength(1));
+        final metadata = MessageMetadataEntity.fromJsonString(
+          created.single.metadata,
         );
+        expect(metadata?.modelMetadata['providerError'], isTrue);
+        final recovery = metadata?.modelMetadata['providerRecovery'] as Map?;
+        expect(recovery?['classification'], 'unknown');
+        verify(
+          () => messageRepository.patchMessage(
+            'assistant-1',
+            const MessagePatch(status: .error),
+          ),
+        ).called(1);
       }
 
       verify(
@@ -1564,6 +1577,8 @@ void main() {
       when(
         () => messageRepository.getMessagesByStatus('conversation-1', .error),
       ).thenAnswer((_) async => [previousUserError]);
+      when(() => messageRepository.getMessageById(previousUserError.id))
+          .thenAnswer((_) async => previousUserError);
       when(() => messageRepository.deleteMessage(any()))
           .thenAnswer((_) async => true);
       when(() => messageRepository.getMessagesByConversation('conversation-1'))
@@ -1642,6 +1657,11 @@ void main() {
             ?.modelMetadata['providerError'],
         isTrue,
       );
+      final recovery =
+          MessageMetadataEntity.fromJsonString(created.single.metadata)
+                  ?.modelMetadata['providerRecovery']
+              as Map?;
+      expect(recovery?['classification'], 'unknown');
       verify(
         () => messageRepository.patchMessage(
           'system-error-1',
@@ -1654,14 +1674,54 @@ void main() {
           const MessagePatch(status: .sending),
         ),
       ).called(1);
-      verify(
+      final failedUserPatch = verify(
         () => messageRepository.patchMessage(
           'previous-user-error-1',
-          const MessagePatch(status: .error),
+          captureAny(),
         ),
-      ).called(1);
+      ).captured.cast<MessagePatch>().last;
+      expect(failedUserPatch.status, MessageStatus.error);
+      expect(failedUserPatch.metadata?.modelMetadata['providerRecovery'], {
+        'classification': 'unknown',
+        'retryable': false,
+        'providerStatus': 'INTERNAL',
+      });
       final _ = verifyNever(
         () => messageRepository.deleteMessage('previous-system-error-1'),
+      );
+    });
+
+    test('blocks manual continue for non-retryable provider errors', () async {
+      final failedUserMessage = _userMessage.copyWith(
+        status: .error,
+        metadata: const MessageMetadataEntity(
+          modelMetadata: {
+            'providerError': true,
+            'providerRecovery': {
+              'classification': 'authentication',
+              'retryable': false,
+            },
+          },
+        ),
+      );
+      when(
+        () => messageRepository.getMessagesByStatus('conversation-1', .error),
+      ).thenAnswer((_) async => [failedUserMessage]);
+
+      await expectLater(
+        usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(origin: .manualContinue),
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      final _ = verifyNever(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          options: any(named: 'options'),
+        ),
       );
     });
 

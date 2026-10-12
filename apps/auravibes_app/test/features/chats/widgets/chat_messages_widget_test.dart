@@ -660,6 +660,48 @@ void main() {
       );
     });
 
+    testWidgets('hides retry for a non-retryable provider failure', (
+      tester,
+    ) async {
+      final message = _createMessage(
+        id: 'auth-failed-user',
+        status: MessageStatus.error,
+        metadata: const MessageMetadataEntity(
+          modelMetadata: {
+            'providerError': true,
+            'providerRecovery': {
+              'classification': 'authentication',
+              'retryable': false,
+            },
+          },
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          onRetryMessage: (_) async {},
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('retry_message_auth-failed-user')),
+        findsNothing,
+      );
+    });
+
     testWidgets('renders user message with text content', (tester) async {
       await pumpAndInit(
         tester,
@@ -5169,9 +5211,16 @@ void main() {
         content: providerDetails,
         isUser: false,
         status: MessageStatus.error,
-        messageType: MessageType.system,
+        messageType: MessageType.text,
         metadata: const MessageMetadataEntity(
-          modelMetadata: {'providerError': true},
+          modelMetadata: {
+            'providerError': true,
+            'providerRecovery': {
+              'classification': 'quota_rate_limit',
+              'retryable': false,
+              'providerStatus': 'RESOURCE_EXHAUSTED',
+            },
+          },
         ),
       );
 
@@ -5194,6 +5243,13 @@ void main() {
 
       expect(find.text(safeDetails), findsOneWidget);
       expect(find.text(providerDetails), findsNothing);
+      expect(
+        find.text(
+          'The provider quota or rate limit was reached. '
+          'Check its usage and limits before retrying.',
+        ),
+        findsOneWidget,
+      );
       expect(find.byType(AuraSelectableText), findsOneWidget);
       final selectable = tester.widget<AuraSelectableText>(
         find.byType(AuraSelectableText),
