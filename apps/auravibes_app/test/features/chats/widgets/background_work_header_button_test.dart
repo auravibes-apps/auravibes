@@ -8,6 +8,54 @@ import 'package:material_ui/material_ui.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
+  testWidgets('active elapsed time refreshes and terminal duration freezes', (
+    tester,
+  ) async {
+    final createdAt = DateTime.utc(2026, 10, 11, 12);
+    var clockNow = createdAt.add(const Duration(seconds: 5));
+    var works = [_work('elapsed-work', .running, createdAt)];
+
+    Widget buildList() => TestableApp(
+      child: SizedBox(
+        width: 420,
+        height: 480,
+        child: BackgroundWorkListView(
+          works: works,
+          onStop: (_) => Future<void>.value(),
+          onOpenResult: (_) => Future<void>.value(),
+          clock: () => clockNow,
+        ),
+      ),
+    );
+
+    final _ = await tester.runAsync(() => tester.pumpWidget(buildList()));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Elapsed: 5s'), findsOneWidget);
+
+    clockNow = createdAt.add(const Duration(seconds: 9));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    expect(find.text('Elapsed: 9s'), findsOneWidget);
+
+    works = [
+      _work(
+        'elapsed-work',
+        .completed,
+        createdAt,
+        updatedAt: createdAt.add(const Duration(seconds: 12)),
+        resultContent: 'ready',
+      ),
+    ];
+    await tester.pumpWidget(buildList());
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Elapsed: 12s'), findsOneWidget);
+
+    clockNow = createdAt.add(const Duration(seconds: 80));
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+    expect(find.text('Elapsed: 12s'), findsOneWidget);
+  });
+
   testWidgets('header shows count, orders FIFO, and reopens the scoped list', (
     tester,
   ) async {
@@ -208,6 +256,7 @@ AgentBackgroundWork _work(
   String id,
   AgentBackgroundWorkStatus status,
   DateTime createdAt, {
+  DateTime? updatedAt,
   String? resultContent,
   String? statusPreview,
 }) => .new(
@@ -222,7 +271,7 @@ AgentBackgroundWork _work(
   state: .new(
     status: status,
     createdAt: createdAt,
-    updatedAt: createdAt,
+    updatedAt: updatedAt ?? createdAt,
     statusPreview: statusPreview,
     resultContent: resultContent,
     resultByteLength: resultContent?.length ?? 0,

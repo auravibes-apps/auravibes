@@ -5,6 +5,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 const double _backgroundWorkListPadding = 12;
@@ -20,21 +21,43 @@ const int _maximumElapsedSeconds = 999999;
 const int _secondsPerMinute = 60;
 const int _minutesPerHour = 60;
 const int _ellipsisCodePoint = 0x2026;
+const Duration _elapsedTimeRefreshInterval = Duration(seconds: 1);
 
 class const BackgroundWorkListView({
   required final List<AgentBackgroundWork> works,
   required final Future<void> Function(AgentBackgroundWork work) onStop,
   required final Future<void> Function(AgentBackgroundWork work) onOpenResult,
   final DateTime? now,
+  @visibleForTesting final DateTime Function()? clock,
   super.key,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _BackgroundWorkScrollableList(
-    works: works,
-    now: now ?? DateTime.now(),
-    onStop: onStop,
-    onOpenResult: onOpenResult,
-  );
+  Widget build(BuildContext context) {
+    final readNow = clock ?? DateTime.now;
+    final initialNow = now ?? readNow();
+    if (now != null || !_hasActiveBackgroundWork(works)) {
+      return _BackgroundWorkScrollableList(
+        works: works,
+        now: initialNow,
+        onStop: onStop,
+        onOpenResult: onOpenResult,
+      );
+    }
+
+    return StreamBuilder<DateTime>(
+      initialData: initialNow,
+      stream: Stream<DateTime>.periodic(
+        _elapsedTimeRefreshInterval,
+        (_) => readNow(),
+      ),
+      builder: (context, snapshot) => _BackgroundWorkScrollableList(
+        works: works,
+        now: snapshot.data ?? readNow(),
+        onStop: onStop,
+        onOpenResult: onOpenResult,
+      ),
+    );
+  }
 }
 
 class const _BackgroundWorkScrollableList({
@@ -107,6 +130,7 @@ class const _BackgroundWorkTile({
 typedef _BackgroundWorkTileData = ({
   AgentBackgroundWorkIdentity identity,
   DateTime createdAt,
+  DateTime updatedAt,
   AgentBackgroundWorkStatus status,
   bool hasResult,
   String? preview,
@@ -120,6 +144,7 @@ _BackgroundWorkTileData _backgroundWorkTileData(AgentBackgroundWork work) {
   return (
     identity: work.identity,
     createdAt: state.createdAt,
+    updatedAt: state.updatedAt,
     status: state.status,
     hasResult: result?.isNotEmpty ?? false,
     preview: previewSource == null ? null : _boundedPreview(previewSource),
@@ -194,7 +219,7 @@ class const _BackgroundWorkTileDetailsSection({
         _BackgroundWorkTileElapsed(
           workId: workId,
           createdAt: data.createdAt,
-          now: now,
+          endAt: _isActiveBackgroundWork(data.status) ? now : data.updatedAt,
         ),
         _BackgroundWorkTilePreviewSection(
           workId: workId,
@@ -262,13 +287,13 @@ class const _BackgroundWorkTileStatus({
 class const _BackgroundWorkTileElapsed({
   required final String workId,
   required final DateTime createdAt,
-  required final DateTime now,
+  required final DateTime endAt,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextLocale(
     LocaleKeys.chats_screens_chat_conversation_background_work_elapsed,
     key: ValueKey('background_work_elapsed_$workId'),
-    args: [_elapsedLabel(createdAt, now)],
+    args: [_elapsedLabel(createdAt, endAt)],
   );
 }
 
@@ -374,6 +399,12 @@ String _backgroundWorkStatusLocaleKey(
   .cancelled =>
     LocaleKeys.chats_screens_chat_conversation_background_work_status_stopped,
 };
+
+bool _hasActiveBackgroundWork(List<AgentBackgroundWork> works) =>
+    works.any((work) => _isActiveBackgroundWork(work.state.status));
+
+bool _isActiveBackgroundWork(AgentBackgroundWorkStatus status) =>
+    status == .running || status == .stopRequested;
 
 String _boundedPreview(String value) {
   final characters = value.characters;
