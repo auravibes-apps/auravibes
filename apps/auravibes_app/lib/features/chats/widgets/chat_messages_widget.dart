@@ -14,6 +14,7 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
+import 'package:auravibes_app/features/chats/notifiers/activity_run_expansion_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
@@ -50,6 +51,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -1774,15 +1776,47 @@ class const _AssistantActivityRun({
           .map((item) => item.toolCall)
           .toList(growable: false),
     );
-    final traceExpanded = useState(isLive);
-    final expandedToolGroupIds = useState<Set<String>>(
-      isLive
+    final initialExpansionState = (
+      isLive: isLive,
+      traceExpanded: isLive,
+      expandedToolGroupIds: isLive
           ? liveToolGroupIds.where(expandableToolGroupIds.contains).toSet()
           : <String>{},
+      expandedToolIds: latestPendingToolId == null
+          ? <String>{}
+          : <String>{latestPendingToolId},
     );
-    final expandedToolIds = useState(
-      latestPendingToolId == null ? <String>{} : <String>{latestPendingToolId},
-    );
+    final expansionState =
+        ref.watch(
+          activityRunExpansionProvider.select(
+            (state) => state[parentConversationId]?[run.id],
+          ),
+        ) ??
+        initialExpansionState;
+    final renderedExpansionState = !isLive && expansionState.isLive
+        ? initialExpansionState
+        : expansionState;
+
+    void updateExpansionState(
+      ActivityRunExpansionState Function(ActivityRunExpansionState) update,
+    ) => ref
+        .read(activityRunExpansionProvider.notifier)
+        .updateExpansion(
+          conversationId: parentConversationId,
+          activityRunId: run.id,
+          initialState: initialExpansionState,
+          update: update,
+        );
+
+    void updateExpansionStateAfterBuild(
+      ActivityRunExpansionState Function(ActivityRunExpansionState) update,
+    ) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        updateExpansionState(update);
+      });
+    }
+
     final previousIsLive = useRef(isLive);
     final previousToolSignature = useRef(toolSignature);
     final previousPendingToolId = useRef(latestPendingToolId);
@@ -1793,25 +1827,43 @@ class const _AssistantActivityRun({
         final hasNewTool = previousToolSignature.value != toolSignature;
         final hasNewPendingTool =
             previousPendingToolId.value != latestPendingToolId;
-        if (isLive && (!wasLive || hasNewTool || hasNewPendingTool)) {
+        if (!isLive && expansionState.isLive) {
           onDisclosureChanged(() {
-            traceExpanded.value = true;
-            expandedToolGroupIds.value = {
-              ...expandedToolGroupIds.value,
-              ...liveToolGroupIds.where(expandableToolGroupIds.contains),
-            };
-            if (latestPendingToolId != null) {
-              expandedToolIds.value = {
-                ...expandedToolIds.value,
-                latestPendingToolId,
-              };
-            }
+            updateExpansionStateAfterBuild(
+              (_) => (
+                isLive: false,
+                traceExpanded: false,
+                expandedToolGroupIds: const {},
+                expandedToolIds: const {},
+              ),
+            );
+          });
+        } else if (isLive && (!wasLive || hasNewTool || hasNewPendingTool)) {
+          onDisclosureChanged(() {
+            updateExpansionStateAfterBuild(
+              (current) => (
+                isLive: true,
+                traceExpanded: true,
+                expandedToolGroupIds: {
+                  ...current.expandedToolGroupIds,
+                  ...liveToolGroupIds.where(expandableToolGroupIds.contains),
+                },
+                expandedToolIds: latestPendingToolId == null
+                    ? current.expandedToolIds
+                    : {...current.expandedToolIds, latestPendingToolId},
+              ),
+            );
           });
         } else if (!isLive && wasLive) {
           onDisclosureChanged(() {
-            traceExpanded.value = false;
-            expandedToolGroupIds.value = <String>{};
-            expandedToolIds.value = <String>{};
+            updateExpansionStateAfterBuild(
+              (_) => (
+                isLive: false,
+                traceExpanded: false,
+                expandedToolGroupIds: const {},
+                expandedToolIds: const {},
+              ),
+            );
           });
         }
         previousIsLive.value = isLive;
@@ -1821,6 +1873,7 @@ class const _AssistantActivityRun({
       },
       [
         expandableToolGroupIds.length,
+        expansionState.isLive,
         isLive,
         latestPendingToolId,
         liveToolGroupSignature,
@@ -1861,15 +1914,22 @@ class const _AssistantActivityRun({
             toolCall: activityToolCall.toolCall,
             displayName: activityToolCall.displayName,
             showArguments: activityToolCall.showArguments,
-            isExpanded: expandedToolIds.value.contains(
+            isExpanded: renderedExpansionState.expandedToolIds.contains(
               activityToolCall.toolCall.id,
             ),
-            onToggle: () => onDisclosureChanged(
-              () => expandedToolIds.value = _toggledToolIds(
-                expandedToolIds.value,
-                activityToolCall.toolCall.id,
-              ),
-            ),
+            onToggle: () => onDisclosureChanged(() {
+              updateExpansionState(
+                (current) => (
+                  isLive: current.isLive,
+                  traceExpanded: current.traceExpanded,
+                  expandedToolGroupIds: current.expandedToolGroupIds,
+                  expandedToolIds: _toggledToolIds(
+                    current.expandedToolIds,
+                    activityToolCall.toolCall.id,
+                  ),
+                ),
+              );
+            }),
             openSubAgent: activityToolCall.openSubAgent,
           ),
       ];
@@ -1887,14 +1947,23 @@ class const _AssistantActivityRun({
                 Localizations.localeOf(context),
               ),
               color: context.auraColors.secondary,
-              isExpanded: expandedToolGroupIds.value.contains(groupId),
+              isExpanded: renderedExpansionState.expandedToolGroupIds.contains(
+                groupId,
+              ),
               onPressed: () => onDisclosureChanged(() {
-                final next = {...expandedToolGroupIds.value};
-                if (!next.remove(groupId)) next.add(groupId);
-                expandedToolGroupIds.value = next;
+                updateExpansionState((current) {
+                  final next = {...current.expandedToolGroupIds};
+                  if (!next.remove(groupId)) next.add(groupId);
+                  return (
+                    isLive: current.isLive,
+                    traceExpanded: current.traceExpanded,
+                    expandedToolGroupIds: next,
+                    expandedToolIds: current.expandedToolIds,
+                  );
+                });
               }),
             ),
-            if (expandedToolGroupIds.value.contains(groupId))
+            if (renderedExpansionState.expandedToolGroupIds.contains(groupId))
               Padding(
                 padding: EdgeInsets.only(
                   left: context.auraTheme.fromSpacing(.sm),
@@ -1984,13 +2053,20 @@ class const _AssistantActivityRun({
             label: activityLabel,
             color: context.auraColors.onSurfaceVariant,
             isActivity: true,
-            isExpanded: traceExpanded.value,
-            onPressed: () => onDisclosureChanged(
-              () => traceExpanded.value = !traceExpanded.value,
-            ),
+            isExpanded: renderedExpansionState.traceExpanded,
+            onPressed: () => onDisclosureChanged(() {
+              updateExpansionState(
+                (current) => (
+                  isLive: current.isLive,
+                  traceExpanded: !current.traceExpanded,
+                  expandedToolGroupIds: current.expandedToolGroupIds,
+                  expandedToolIds: current.expandedToolIds,
+                ),
+              );
+            }),
           ),
         if (hasOuterDisclosure &&
-            traceExpanded.value &&
+            renderedExpansionState.traceExpanded &&
             entriesBeforeResponse.isNotEmpty)
           Padding(
             padding: EdgeInsets.only(
@@ -2006,7 +2082,7 @@ class const _AssistantActivityRun({
         if (responseContent != null) responseContent,
         if (responseSource != null &&
             hasOuterDisclosure &&
-            traceExpanded.value &&
+            renderedExpansionState.traceExpanded &&
             entriesAfterResponse.isNotEmpty)
           Padding(
             padding: EdgeInsets.only(
