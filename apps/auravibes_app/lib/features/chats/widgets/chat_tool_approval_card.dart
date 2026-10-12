@@ -50,6 +50,9 @@ typedef _BatchApprovalErrorRequest = ({
   StackTrace stackTrace,
 });
 
+typedef _ApprovalToolDisplay = ({String name, String? description});
+typedef _ApprovalDisplayContext = ({BuildContext context, WidgetRef ref});
+
 void _showApprovalActionError(_ActionErrorRequest request) {
   _logApprovalActionError(request);
   _showApprovalActionErrorSnack(request);
@@ -714,30 +717,74 @@ class const _ApprovalCardDisplay({
   required final _ApprovalCardRequest request,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _ApprovalCardFrame(
-    child: _ApprovalCardBody(
-      request: request,
-      displayName: _approvalDisplayName(context, ref, request),
+  Widget build(BuildContext context) {
+    final display = _approvalToolDisplay((context: context, ref: ref), request);
+
+    return _ApprovalCardFrame(
+      child: _ApprovalCardBody(
+        request: request,
+        displayName: display.name,
+        description: display.description,
+      ),
+    );
+  }
+}
+
+_ApprovalToolDisplay _approvalToolDisplay(
+  _ApprovalDisplayContext displayContext,
+  _ApprovalCardRequest request,
+) {
+  final target = SkillToolCallDisplay.parseTarget(request.current.toolCall);
+  if (target == null) {
+    return _standardApprovalToolDisplay(displayContext, request);
+  }
+
+  return _skillApprovalToolDisplay(displayContext, request, target);
+}
+
+_ApprovalToolDisplay _standardApprovalToolDisplay(
+  _ApprovalDisplayContext displayContext,
+  _ApprovalCardRequest request,
+) {
+  final toolCall = request.current.toolCall;
+
+  return (
+    name: _toolDisplayName(
+      displayContext.ref,
+      request.source.workspaceId,
+      toolCall.name,
+    ),
+    description: SkillToolCallDisplay.description(
+      context: displayContext.context,
+      titles: null,
+      userFacingDescription: toolCall.userFacingDescription,
     ),
   );
 }
 
-String _approvalDisplayName(
-  BuildContext context,
-  WidgetRef ref,
+_ApprovalToolDisplay _skillApprovalToolDisplay(
+  _ApprovalDisplayContext displayContext,
   _ApprovalCardRequest request,
+  SkillToolCallTarget target,
 ) {
   final toolCall = request.current.toolCall;
-  final workspaceId = request.source.workspaceId;
-  final target = SkillToolCallDisplay.parseTarget(toolCall);
-  if (target == null) {
-    return _toolDisplayName(ref, workspaceId, toolCall.name);
-  }
+  final titles = _skillToolCallDisplayTitles(
+    displayContext.ref,
+    request.source.workspaceId,
+    target,
+  );
 
-  return SkillToolCallDisplay.displayName(
-    context: context,
-    titles: _skillToolCallDisplayTitles(ref, workspaceId, target),
-    target: target,
+  return (
+    name: SkillToolCallDisplay.displayName(
+      context: displayContext.context,
+      titles: titles,
+      target: target,
+    ),
+    description: SkillToolCallDisplay.description(
+      context: displayContext.context,
+      titles: titles,
+      userFacingDescription: toolCall.userFacingDescription,
+    ),
   );
 }
 
@@ -799,54 +846,60 @@ BoxDecoration _approvalCardDecoration(AuraColorScheme colors, AuraTheme theme) {
 class const _ApprovalCardBody({
   required final _ApprovalCardRequest request,
   required final String displayName,
+  required final String? description,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: _ApprovalCardBodyChildren(
       request: request,
       displayName: displayName,
+      description: description,
     ).values,
     spacing: .sm,
   );
 }
 
 class _ApprovalCardBodyChildren {
-  new({required _ApprovalCardRequest request, required String displayName})
-    : values = [
-        _NavigationHeader(
-          currentIndex: request.currentIndex,
-          totalCount: request.totalCount,
-          hasPrev: request.hasPrev,
-          hasNext: request.hasNext,
-          onPrev: request.actions.onPrev,
-          onNext: request.actions.onNext,
-        ),
-        _ToolCallInfo(
-          displayName: displayName,
-          argumentsRaw: request.current.toolCall.argumentsRaw,
-          sourceLabel: request.current.sourceLabel,
-        ),
-        if (request.source.pendingCalls.length > 1)
-          _BatchApprovalButtons(
-            workspaceId: request.source.workspaceId,
-            conversationId: request.conversationId,
-            pendingCalls: request.source.pendingCalls,
-            onHideCalls: request.source.onHideCalls,
-            onRestoreCalls: request.source.onRestoreCalls,
-          ),
-        _ConfirmationButtons(
-          workspaceId: request.source.workspaceId,
-          conversationId: _pendingToolCallSourceConversationId(
-            request.current,
-            request.conversationId,
-          ),
-          toolCall: request.current.toolCall,
-          messageId: request.current.messageId,
-          onDecisionStarted: request.actions.onDecisionStarted,
-          onStopAllStarted: request.actions.onStopAllStarted,
-          onDecisionFailed: request.actions.onDecisionFailed,
-        ),
-      ];
+  new({
+    required _ApprovalCardRequest request,
+    required String displayName,
+    required String? description,
+  }) : values = [
+         _NavigationHeader(
+           currentIndex: request.currentIndex,
+           totalCount: request.totalCount,
+           hasPrev: request.hasPrev,
+           hasNext: request.hasNext,
+           onPrev: request.actions.onPrev,
+           onNext: request.actions.onNext,
+         ),
+         _ToolCallInfo(
+           displayName: displayName,
+           description: description,
+           argumentsRaw: request.current.toolCall.argumentsRaw,
+           sourceLabel: request.current.sourceLabel,
+         ),
+         if (request.source.pendingCalls.length > 1)
+           _BatchApprovalButtons(
+             workspaceId: request.source.workspaceId,
+             conversationId: request.conversationId,
+             pendingCalls: request.source.pendingCalls,
+             onHideCalls: request.source.onHideCalls,
+             onRestoreCalls: request.source.onRestoreCalls,
+           ),
+         _ConfirmationButtons(
+           workspaceId: request.source.workspaceId,
+           conversationId: _pendingToolCallSourceConversationId(
+             request.current,
+             request.conversationId,
+           ),
+           toolCall: request.current.toolCall,
+           messageId: request.current.messageId,
+           onDecisionStarted: request.actions.onDecisionStarted,
+           onStopAllStarted: request.actions.onStopAllStarted,
+           onDecisionFailed: request.actions.onDecisionFailed,
+         ),
+       ];
 
   final List<Widget> values;
 }
@@ -1004,6 +1057,7 @@ class const _NavButton({
 
 class const _ToolCallInfo({
   required final String displayName,
+  required final String? description,
   required final String argumentsRaw,
   required final String? sourceLabel,
 }) extends StatelessWidget {
@@ -1015,6 +1069,7 @@ class const _ToolCallInfo({
     return _ToolCallInfoFrame(
       child: _ToolCallInfoContent(
         displayName: displayName,
+        description: description,
         sourceLabel: sourceLabel,
         argumentLines: argumentLines,
         copyableArgs: copyableArgs,
@@ -1058,6 +1113,7 @@ BoxDecoration _toolCallInfoDecoration(BuildContext context) {
 
 class const _ToolCallInfoContent({
   required final String displayName,
+  required final String? description,
   required final String? sourceLabel,
   required final List<_ApprovalArgumentLine>? argumentLines,
   required final String? copyableArgs,
@@ -1067,6 +1123,7 @@ class const _ToolCallInfoContent({
     crossAxisAlignment: .start,
     children: _ToolCallInfoChildren(
       displayName: displayName,
+      description: description,
       sourceLabel: sourceLabel,
       argumentLines: argumentLines,
       copyableArgs: copyableArgs,
@@ -1077,12 +1134,16 @@ class const _ToolCallInfoContent({
 class _ToolCallInfoChildren {
   new({
     required String displayName,
+    required String? description,
     required String? sourceLabel,
     required List<_ApprovalArgumentLine>? argumentLines,
     required String? copyableArgs,
   }) : values = [
          _ToolCallName(displayName: displayName),
-         _ToolCallDescription(displayName: displayName),
+         _ToolCallDescription(
+           displayName: displayName,
+           description: description,
+         ),
          _ToolCallSource(sourceLabel: sourceLabel),
          if (argumentLines case final lines? when lines.isNotEmpty)
            _ToolCallArgumentsPreview(
@@ -1095,8 +1156,15 @@ class _ToolCallInfoChildren {
   final List<Widget> values;
 }
 
-class const _ToolCallDescription({required final String displayName})
-    extends StatelessWidget {
+class const _ToolCallDescription({
+  required final String displayName,
+  required final String? description,
+}) extends StatelessWidget {
+  String get _text =>
+      description ??
+      LocaleKeys.chats_screens_chat_conversation_tool_call_fallback_description
+          .tr(namedArgs: {'tool': displayName});
+
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(
@@ -1104,8 +1172,7 @@ class const _ToolCallDescription({required final String displayName})
       bottom: context.auraTheme.fromSpacing(.xs),
     ),
     child: Text(
-      LocaleKeys.chats_screens_chat_conversation_tool_call_fallback_description
-          .tr(namedArgs: {'tool': displayName}),
+      _text,
       style: .new(
         color: context.auraColors.onSurface,
         fontSize: context.auraTheme.typography.fontSizeXs,

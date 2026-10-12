@@ -237,4 +237,75 @@ final static = 'menu.' 'new_chat'.tr();
       },
     );
   });
+
+  test('matching named and positional placeholders pass', () {
+    File('${translationsDir.path}/en.json').writeAsStringSync('''
+{"menu":{"greeting":"Hello {name}, you have {} items"}}
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"menu":{"greeting":"Hola {name}, tienes {} elementos"}}
+''');
+
+    expect(
+      findPlaceholderMismatches(translationsDir: translationsDir),
+      isEmpty,
+    );
+  });
+
+  test('reports placeholder mismatches by locale and key', () {
+    File('${translationsDir.path}/en.json').writeAsStringSync('''
+{"menu":{"greeting":"Hello {name}","selected_count":"{} selected"}}
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"menu":{"greeting":"Hola {user}","selected_count":"Seleccionados"}}
+''');
+
+    final issues = findPlaceholderMismatches(translationsDir: translationsDir);
+
+    expect(
+      issues,
+      contains(
+        'es: menu.greeting (named placeholders: expected {name}, found {user})',
+      ),
+    );
+    expect(
+      issues,
+      contains(
+        'es: menu.selected_count '
+        '(positional placeholders: expected 1, found 0)',
+      ),
+    );
+  });
+
+  test('compares placeholder signatures for matching plural branches', () {
+    File('${translationsDir.path}/en.json').writeAsStringSync('''
+{"items":{"one":"{} item","other":"{} items"}}
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"items":{"one":"{} elemento","other":"{count} elementos"}}
+''');
+
+    expect(
+      findPlaceholderMismatches(translationsDir: translationsDir),
+      contains(
+        'es: items [branch: other] '
+        '(named placeholders: expected {}, found {count}; '
+        'positional placeholders: expected 1, found 0)',
+      ),
+    );
+  });
+
+  test('reports unused nested catalog keys missing from another locale', () {
+    File('${translationsDir.path}/en.json').writeAsStringSync('''
+{"menu":{"new_chat":"New chat","unused":{"label":"Unused"}}}
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"menu":{"new_chat":"Nuevo chat"}}
+''');
+
+    expect(
+      findLocaleKeyParityIssues(translationsDir: translationsDir),
+      contains('es: menu.unused.label (missing catalog key)'),
+    );
+  });
 }

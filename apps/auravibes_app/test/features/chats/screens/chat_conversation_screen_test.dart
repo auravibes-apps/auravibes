@@ -4,10 +4,13 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/model_usage_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/model_usage_aggregation.dart';
+import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
@@ -22,6 +25,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/providers/model_usage_provider.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -39,6 +43,7 @@ import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -544,9 +549,47 @@ void main() {
     expect(entity.isPinned, isTrue);
   });
 
-  testWidgets('renders ChatConversationScreen when ConversationFound', (
+  testWidgets('opens usage details for the loaded conversation', (
     tester,
   ) async {
+    final modelUsageRepository = _ModelUsageRepositoryMock();
+    final usageRecords = [
+      ModelUsageRecord(
+        id: 'generation',
+        conversationId: _chatId,
+        providerId: 'anthropic',
+        modelId: 'claude-sonnet-5-5',
+        requestKind: .generation,
+        outcome: .succeeded,
+        usage: const .new(
+          promptTokens: 12,
+          responseTokens: 4,
+          totalTokens: 16,
+          cacheReadInputTokens: 2,
+          cacheCreationInputTokens: 1,
+        ),
+        costStatus: .known,
+        costUsd: 0.005,
+        createdAt: .utc(2026),
+      ),
+      ModelUsageRecord(
+        id: 'compaction',
+        conversationId: _chatId,
+        providerId: 'anthropic',
+        modelId: 'claude-sonnet-5-5',
+        requestKind: .compaction,
+        outcome: .failed,
+        usage: null,
+        costStatus: .unknown,
+        costUsd: null,
+        createdAt: .utc(2026, 1, 2),
+      ),
+    ];
+    when(() => modelUsageRepository.getRecordsForConversation(_chatId))
+        .thenAnswer((_) async => usageRecords);
+    when(() => modelUsageRepository.getTotalsForConversation(_chatId))
+        .thenAnswer((_) async => ModelUsageAggregation.aggregate(usageRecords));
+
     final conversation = ConversationEntity(
       id: _chatId,
       title: 'Chat',
@@ -583,6 +626,9 @@ void main() {
                   conversationSelectedProvider.overrideWithValue(_chatId),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
+                  ),
+                  modelUsageRepositoryProvider.overrideWithValue(
+                    modelUsageRepository,
                   ),
                   conversationChatProvider(_workspaceId, _chatId).overrideWith(
                     () => _ResultChatNotifier(ConversationFound(conversation)),
@@ -640,6 +686,37 @@ void main() {
     await tester.pump();
 
     expect(find.text('Chat'), findsOneWidget);
+    final usageButton = find.byKey(
+      const ValueKey<String>('model-usage-button'),
+    );
+    expect(usageButton, findsOneWidget);
+    await tester.tap(usageButton);
+    expect(await tester.pumpAndSettle(), greaterThan(0));
+
+    expect(find.text('Model usage'), findsOneWidget);
+    expect(find.text('Generation'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Compaction'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('Compaction'), findsOneWidget);
+    expect(find.text('Failed'), findsOneWidget);
+    expect(find.text('Unknown'), findsWidgets);
+    final aggregateCostRow = find
+        .ancestor(
+          of: find.text('Estimated cost (USD)').first,
+          matching: find.byType(Row),
+        )
+        .first;
+    expect(
+      find.descendant(of: aggregateCostRow, matching: find.text('Unknown')),
+      findsOneWidget,
+    );
+    verify(() => modelUsageRepository.getRecordsForConversation(_chatId))
+        .called(1);
+    verify(() => modelUsageRepository.getTotalsForConversation(_chatId))
+        .called(1);
   });
 
   testWidgets('passes running compaction state to chat input', (tester) async {
@@ -865,6 +942,44 @@ void main() {
     secondRequest.finish();
     await tester.pump();
     expect(status, findsNothing);
+  });
+
+  testWidgets('resizes active sub-agent action with Aura target updates', (
+    tester,
+  ) async {
+    final theme = ValueNotifier(AuraTheme.light);
+    addTearDown(theme.dispose);
+    final container = await _pumpActiveSubAgentStatusWidget(
+      tester,
+      childConversations: [_childConversation('child-1', 'Research')],
+      themeListenable: theme,
+    );
+    final request = container
+        .read(activeSubAgentRuntimeProvider.notifier)
+        .start(parentId: _chatId, childId: 'child-1');
+    await tester.pump();
+
+    final status = find.byKey(const ValueKey<String>('chat_active_sub_agents'));
+    final badge = find.descendant(
+      of: status,
+      matching: find.byType(AuraContainer),
+    );
+    expect(status, findsOneWidget);
+    final initialTargetSize = tester.getSize(status);
+    expect(initialTargetSize.width, greaterThanOrEqualTo(48));
+    expect(initialTargetSize.height, greaterThanOrEqualTo(48));
+    final compactBadgeSize = tester.getSize(badge);
+
+    theme.value = AuraTheme.light.copyWith(
+      interactionSizes: const AuraInteractionSizeScale(minimumTargetSize: 72),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    final updatedTargetSize = tester.getSize(status);
+    expect(updatedTargetSize.width, greaterThanOrEqualTo(72));
+    expect(updatedTargetSize.height, greaterThanOrEqualTo(72));
+    expect(tester.getSize(badge), compactBadgeSize);
+    final _ = request.finish();
   });
 
   testWidgets('keeps input busy while busy state refreshes', (tester) async {
@@ -1344,6 +1459,7 @@ void main() {
 Future<ProviderContainer> _pumpActiveSubAgentStatusWidget(
   WidgetTester tester, {
   required List<ConversationEntity> childConversations,
+  ValueListenable<AuraTheme>? themeListenable,
 }) async {
   final router = GoRouter(
     routes: [
@@ -1389,12 +1505,33 @@ Future<ProviderContainer> _pumpActiveSubAgentStatusWidget(
         child: UncontrolledProviderScope(
           container: container,
           child: Builder(
-            builder: (context) => MaterialApp.router(
-              routerConfig: router,
-              locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-            ),
+            builder: (context) {
+              final listenable = themeListenable;
+              if (listenable == null) {
+                return MaterialApp.router(
+                  routerConfig: router,
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                );
+              }
+
+              Widget appForTheme(AuraTheme theme) => MaterialApp.router(
+                routerConfig: router,
+                builder: (context, child) => AuraThemeScope(
+                  theme: theme,
+                  child: child ?? const SizedBox.shrink(),
+                ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+              );
+
+              return ValueListenableBuilder<AuraTheme>(
+                valueListenable: listenable,
+                builder: (context, theme, _) => appForTheme(theme),
+              );
+            },
           ),
         ),
         supportedLocales: const [Locale('en'), Locale('es')],
@@ -1672,6 +1809,8 @@ class _CloudWorkspaceGateway extends Mock implements CloudWorkspaceStateGateway;
 class _CloudClient extends Mock implements Client;
 
 class _CloudConversationEndpoint extends Mock implements EndpointConversation;
+
+class _ModelUsageRepositoryMock extends Mock implements ModelUsageRepository;
 
 class _ContinueConversationRequestFake extends Fake
     implements ContinueConversationRequest;
