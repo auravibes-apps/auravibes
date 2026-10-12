@@ -128,6 +128,42 @@ class ConversationEndpoint extends Endpoint {
     );
   }
 
+  Future<BackgroundWorkView> detachToolCall(
+    Session session,
+    DetachToolCallRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.detachToolCall(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<List<BackgroundWorkView>> listBackgroundWorks(
+    Session session,
+    ListBackgroundWorksRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.listBackgroundWorks(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<BackgroundWorkView> stopBackgroundWork(
+    Session session,
+    StopBackgroundWorkRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.stopBackgroundWork(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
   Future<ConversationSnapshot> queueConversationMessage(
     Session session,
     QueueConversationMessageRequest request,

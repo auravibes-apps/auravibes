@@ -12,6 +12,7 @@ abstract final class CloudMessageTools {
     'pending' || 'needsConfirmation' => null,
     'approved' ||
     'running' ||
+    'runningInBackground' ||
     'granted' ||
     'awaitingSubAgents' => ToolCallResultStatus.running,
     'success' => ToolCallResultStatus.success,

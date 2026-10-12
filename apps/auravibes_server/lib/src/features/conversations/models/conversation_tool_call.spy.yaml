@@ -10,6 +10,8 @@ fields:
   argumentsJson: String
   argumentsDigest: String
   userFacingDescription: String?
+  backgroundEligible: bool, default=false
+  backgroundWorkStableId: String?
   status: String
   decision: String?
   decisionByUserId: String?

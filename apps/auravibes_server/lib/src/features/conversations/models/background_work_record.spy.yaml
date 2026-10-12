@@ -1,0 +1,24 @@
+class: BackgroundWorkRecord
+table: background_work_record
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  conversationId: int, relation(parent=conversation, onDelete=Cascade)
+  conversationToolCallId: int, relation(parent=conversation_tool_call, onDelete=Cascade)
+  originatingMessageId: int?, relation(parent=conversation_message, onDelete=SetNull)
+  stableId: String
+  toolCallId: String
+  toolKind: String
+  status: String
+  statusPreview: String?
+  resultContent: String?
+  resultByteLength: int, default=0
+  errorCode: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  background_work_record_workspace_stable_idx:
+    fields: workspaceId, stableId
+    unique: true
+  background_work_record_call_idx:
+    fields: workspaceId, conversationId, conversationToolCallId
+    unique: true
