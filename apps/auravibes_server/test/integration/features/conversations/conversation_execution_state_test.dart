@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:cryptography/cryptography.dart';
 import 'package:genkit/plugin.dart' show GenkitException;
 import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
@@ -235,89 +236,12 @@ void main() {
       stageAwaitingApproval(
         _ExecutionFixture fixture, {
         required int calls,
-      }) async {
-        final now = DateTime.now().toUtc();
-        final conversation = (await Conversation.db.findById(
-          fixture.database,
-          fixture.conversationDatabaseId,
-        ))!;
-        final turn = (await ConversationTurn.db.findFirstRow(
-          fixture.database,
-          where: (table) =>
-              table.workspaceId.equals(fixture.workspaceId) &
-              table.conversationId.equals(fixture.conversationDatabaseId),
-        ))!;
-        final assistant = (await ConversationMessage.db.findById(
-          fixture.database,
-          turn.assistantMessageId!,
-        ))!;
-        final execution = (await ConversationExecution.db.findById(
-          fixture.database,
-          conversation.activeExecutionId!,
-        ))!;
-        final initialJob = (await ConversationJob.db.findFirstRow(
-          fixture.database,
-          where: (table) =>
-              table.workspaceId.equals(fixture.workspaceId) &
-              table.turnId.equals(turn.id),
-        ))!;
-        await ConversationJob.db.updateRow(
-          fixture.database,
-          initialJob.copyWith(status: 'completed', updatedAt: now),
-        );
-        await ConversationTurn.db.updateRow(
-          fixture.database,
-          turn.copyWith(
-            status: ConversationStatuses.awaitingApproval,
-            revision: 2,
-            updatedAt: now,
-          ),
-        );
-        await ConversationMessage.db.updateRow(
-          fixture.database,
-          assistant.copyWith(
-            status: ConversationStatuses.awaitingApproval,
-            updatedAt: now,
-          ),
-        );
-        await ConversationExecution.db.updateRow(
-          fixture.database,
-          execution.copyWith(
-            status: ConversationStatuses.awaitingApproval,
-            updatedAt: now,
-          ),
-        );
-        await Conversation.db.updateRow(
-          fixture.database,
-          conversation.copyWith(
-            executionState: ConversationStatuses.awaitingApproval,
-            updatedAt: now,
-          ),
-        );
-        final toolCallIds = <String>[];
-        for (var index = 0; index < calls; index++) {
-          final stableId = 'tool-call-${index + 1}';
-          toolCallIds.add(stableId);
-          await ConversationToolCall.db.insertRow(
-            fixture.database,
-            ConversationToolCall(
-              workspaceId: fixture.workspaceId,
-              conversationId: fixture.conversationDatabaseId,
-              turnId: turn.id!,
-              messageId: assistant.id!,
-              stableId: stableId,
-              name: 'tool',
-              argumentsJson: '{}',
-              argumentsDigest: 'digest-${index + 1}',
-              status: 'pending',
-              revision: 1,
-              createdAt: now,
-              updatedAt: now,
-            ),
-          );
-        }
-        return (turn: turn, toolCallIds: toolCallIds);
-      }
+        String? argumentsDigest,
+      }) => _stageAwaitingApproval(
+        fixture,
+        calls: calls,
+        argumentsDigest: argumentsDigest,
+      );
 
       ConversationUseCases decisionUseCases() => ConversationUseCases(
         conversation_repo.ConversationRepository(),
@@ -904,7 +828,14 @@ void main() {
         'Stop all applies after a prior Skip replay for the same call',
         () async {
           final fixture = await prepareExecution();
-          final staged = await stageAwaitingApproval(fixture, calls: 2);
+          final argumentsDigest = base64UrlEncode(
+            (await Sha256().hash(utf8.encode('{}'))).bytes,
+          );
+          final staged = await stageAwaitingApproval(
+            fixture,
+            calls: 2,
+            argumentsDigest: argumentsDigest,
+          );
 
           await decisionUseCases().submitToolDecision(
             fixture.database,
@@ -915,7 +846,7 @@ void main() {
               conversationId: fixture.conversationId,
               turnId: staged.turn.requestId,
               toolCallId: staged.toolCallIds.first,
-              argumentsDigest: 'digest-1',
+              argumentsDigest: argumentsDigest,
               expectedTurnRevision: 2,
               decision: 'deny',
             ),
@@ -929,7 +860,7 @@ void main() {
               conversationId: fixture.conversationId,
               turnId: staged.turn.requestId,
               toolCallId: staged.toolCallIds.first,
-              argumentsDigest: 'digest-1',
+              argumentsDigest: argumentsDigest,
               // A replay carries the revision from the original prompt.
               expectedTurnRevision: 2,
               decision: 'deny',
@@ -1004,6 +935,7 @@ void main() {
             jsonEncode({
               'actorUserId': fixture.userId,
               'executionId': execution.id,
+              'reasoningConfigJson': null,
             }),
           );
 
@@ -1615,67 +1547,6 @@ void main() {
       );
 
       test(
-        'approval pause and decision submission complete without lock inversion',
-        () async {
-          final fixture = await prepareExecution();
-          final staged = await stageAwaitingApproval(fixture, calls: 1);
-          final job = (await ConversationJob.db.findFirstRow(
-            fixture.database,
-            where: (table) => table.turnId.equals(staged.turn.id),
-          ))!;
-          await ConversationJob.db.updateRow(
-            fixture.database,
-            job.copyWith(
-              status: ConversationJobStatuses.queued,
-              availableAt: DateTime.now().toUtc(),
-              updatedAt: DateTime.now().toUtc(),
-            ),
-          );
-          final pauseTurnLocked = Completer<void>();
-          final releasePause = Completer<void>();
-          final worker = ConversationWorker(
-            host: _AwaitingApprovalHost(),
-            afterApprovalTurnLock: () async {
-              pauseTurnLocked.complete();
-              await releasePause.future;
-            },
-          );
-
-          final running = runConversationWorker(
-            fixture.database,
-            isActive: () => true,
-            worker: worker,
-          );
-          await pauseTurnLocked.future.timeout(const Duration(seconds: 2));
-          final decision = decisionUseCases().submitToolDecision(
-            fixture.database,
-            userId: fixture.userId,
-            request: SubmitToolDecisionRequest(
-              workspaceId: fixture.workspaceId,
-              requestId: 'approve-racing-pause',
-              conversationId: fixture.conversationId,
-              turnId: staged.turn.requestId,
-              toolCallId: staged.toolCallIds.single,
-              argumentsDigest: 'digest-1',
-              expectedTurnRevision: 3,
-              decision: 'approve',
-            ),
-          );
-          await Future<void>.delayed(const Duration(milliseconds: 20));
-          releasePause.complete();
-
-          await Future.wait([running, decision]).timeout(
-            const Duration(seconds: 2),
-          );
-          final turn = (await ConversationTurn.db.findById(
-            fixture.database,
-            staged.turn.id!,
-          ))!;
-          expect(turn.status, ConversationStatuses.queued);
-        },
-      );
-
-      test(
         'a second approval pause belongs to its resumed phase assistant',
         () async {
           final fixture = await prepareExecution();
@@ -2164,8 +2035,97 @@ void main() {
   );
 
   withServerpod(
-    'ConversationExecutionState concurrent same-request',
+    'ConversationExecutionState concurrent transactions',
     (sessionBuilder, endpoints) {
+      test(
+        'approval pause and decision submission complete without lock inversion',
+        () async {
+          final fixture = await _preparePromptlessExecution(sessionBuilder);
+          await endpoints.conversation.continueConversation(
+            fixture.session,
+            ContinueConversationRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'approval-race-continue-1',
+              conversationId: fixture.conversationId,
+              expectedProjectionRevision: 1,
+            ),
+          );
+          final argumentsDigest = base64UrlEncode(
+            (await Sha256().hash(utf8.encode('{}'))).bytes,
+          );
+          final staged = await _stageAwaitingApproval(
+            fixture,
+            calls: 1,
+            argumentsDigest: argumentsDigest,
+          );
+          final job = (await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          ))!;
+          await ConversationJob.db.updateRow(
+            fixture.database,
+            job.copyWith(
+              status: ConversationJobStatuses.queued,
+              availableAt: DateTime.now().toUtc(),
+              updatedAt: DateTime.now().toUtc(),
+            ),
+          );
+          final pauseTurnLocked = Completer<void>();
+          final releasePause = Completer<void>();
+          final worker = ConversationWorker(
+            host: _AwaitingApprovalHost(),
+            afterApprovalTurnLock: () async {
+              pauseTurnLocked.complete();
+              await releasePause.future;
+            },
+          );
+
+          final running = runConversationWorker(
+            fixture.session.build(),
+            isActive: () => true,
+            worker: worker,
+          );
+          await pauseTurnLocked.future.timeout(const Duration(seconds: 2));
+          final decisionDatabase = sessionBuilder
+              .copyWith(
+                authentication: AuthenticationOverride.authenticationInfo(
+                  fixture.userId,
+                  const {},
+                ),
+              )
+              .build();
+          final decision =
+              ConversationUseCases(
+                conversation_repo.ConversationRepository(),
+                publishConversationJob: (_, _) async {},
+              ).submitToolDecision(
+                decisionDatabase,
+                userId: fixture.userId,
+                request: SubmitToolDecisionRequest(
+                  workspaceId: fixture.workspaceId,
+                  requestId: 'approve-racing-pause',
+                  conversationId: fixture.conversationId,
+                  turnId: staged.turn.requestId,
+                  toolCallId: staged.toolCallIds.single,
+                  argumentsDigest: argumentsDigest,
+                  expectedTurnRevision: 3,
+                  decision: 'approve',
+                ),
+              );
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          releasePause.complete();
+
+          await Future.wait([running, decision]).timeout(
+            const Duration(seconds: 2),
+          );
+          final turn = (await ConversationTurn.db.findById(
+            fixture.database,
+            staged.turn.id!,
+          ))!;
+          expect(turn.status, ConversationStatuses.queued);
+        },
+      );
+
       test(
         'concurrent Continue requests from independent sessions replay once',
         () async {
@@ -2246,6 +2206,96 @@ void main() {
     },
     rollbackDatabase: RollbackDatabase.disabled,
   );
+}
+
+Future<({ConversationTurn turn, List<String> toolCallIds})>
+_stageAwaitingApproval(
+  _ExecutionFixture fixture, {
+  required int calls,
+  String? argumentsDigest,
+}) async {
+  final now = DateTime.now().toUtc();
+  final conversation = (await Conversation.db.findById(
+    fixture.database,
+    fixture.conversationDatabaseId,
+  ))!;
+  final execution = (await ConversationExecution.db.findById(
+    fixture.database,
+    conversation.activeExecutionId!,
+  ))!;
+  final turn = (await ConversationTurn.db.findFirstRow(
+    fixture.database,
+    where: (table) =>
+        table.workspaceId.equals(fixture.workspaceId) &
+        table.conversationId.equals(fixture.conversationDatabaseId) &
+        table.requestId.equals(execution.stableId),
+  ))!;
+  final assistant = (await ConversationMessage.db.findById(
+    fixture.database,
+    turn.assistantMessageId!,
+  ))!;
+  final initialJob = (await ConversationJob.db.findFirstRow(
+    fixture.database,
+    where: (table) =>
+        table.workspaceId.equals(fixture.workspaceId) &
+        table.turnId.equals(turn.id),
+  ))!;
+  await ConversationJob.db.updateRow(
+    fixture.database,
+    initialJob.copyWith(status: 'completed', updatedAt: now),
+  );
+  await ConversationTurn.db.updateRow(
+    fixture.database,
+    turn.copyWith(
+      status: ConversationStatuses.awaitingApproval,
+      revision: 2,
+      updatedAt: now,
+    ),
+  );
+  await ConversationMessage.db.updateRow(
+    fixture.database,
+    assistant.copyWith(
+      status: ConversationStatuses.awaitingApproval,
+      updatedAt: now,
+    ),
+  );
+  await ConversationExecution.db.updateRow(
+    fixture.database,
+    execution.copyWith(
+      status: ConversationStatuses.awaitingApproval,
+      updatedAt: now,
+    ),
+  );
+  await Conversation.db.updateRow(
+    fixture.database,
+    conversation.copyWith(
+      executionState: ConversationStatuses.awaitingApproval,
+      updatedAt: now,
+    ),
+  );
+  final toolCallIds = <String>[];
+  for (var index = 0; index < calls; index++) {
+    final stableId = 'tool-call-${index + 1}';
+    toolCallIds.add(stableId);
+    await ConversationToolCall.db.insertRow(
+      fixture.database,
+      ConversationToolCall(
+        workspaceId: fixture.workspaceId,
+        conversationId: fixture.conversationDatabaseId,
+        turnId: turn.id!,
+        messageId: assistant.id!,
+        stableId: stableId,
+        name: 'tool',
+        argumentsJson: '{}',
+        argumentsDigest: argumentsDigest ?? 'digest-${index + 1}',
+        status: 'pending',
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+  }
+  return (turn: turn, toolCallIds: toolCallIds);
 }
 
 Future<_ExecutionFixture> _preparePromptlessExecution(
