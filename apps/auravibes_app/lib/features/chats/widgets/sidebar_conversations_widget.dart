@@ -388,15 +388,8 @@ class const _SidebarConversationTileContent({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isResponseStreaming = ref.watch(
-      conversationStreamingProvider.select(
-        (conversationIds) => conversationIds.contains(chat.id),
-      ),
-    );
-    final draft = ref.watch(
-      conversationDraftProvider(chat.workspaceId, chat.id),
-    );
-    final hasDraft = draft?.isEmpty == false;
+    final isResponseStreaming = _isResponseStreaming(ref);
+    final hasDraft = _hasDraft(ref);
 
     return _SidebarConversationTileBody(
       content: this,
@@ -409,6 +402,18 @@ class const _SidebarConversationTileContent({
       ),
     );
   }
+
+  bool _isResponseStreaming(WidgetRef ref) => ref.watch(
+    conversationStreamingProvider.select(
+      (conversationIds) => conversationIds.contains(chat.id),
+    ),
+  );
+
+  bool _hasDraft(WidgetRef ref) =>
+      ref
+          .watch(conversationDraftProvider(chat.workspaceId, chat.id))
+          ?.isEmpty ==
+      false;
 }
 
 class const _SidebarConversationTileTrailing({
