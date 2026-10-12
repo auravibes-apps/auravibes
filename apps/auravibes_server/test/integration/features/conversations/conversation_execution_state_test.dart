@@ -2112,11 +2112,18 @@ void main() {
                   decision: 'approve',
                 ),
               );
-          await Future<void>.delayed(const Duration(milliseconds: 20));
+          final decisionWaitObserved = await _waitForConversationLockWait(
+            fixture.database,
+          );
           releasePause.complete();
 
           await Future.wait([running, decision]).timeout(
             const Duration(seconds: 2),
+          );
+          expect(
+            decisionWaitObserved,
+            isTrue,
+            reason: 'The decision should wait on the worker-held conversation lock.',
           );
           final turn = (await ConversationTurn.db.findById(
             fixture.database,
@@ -2206,6 +2213,27 @@ void main() {
     },
     rollbackDatabase: RollbackDatabase.disabled,
   );
+}
+
+Future<bool> _waitForConversationLockWait(Session session) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 2));
+  while (DateTime.now().isBefore(deadline)) {
+    final rows = await session.db.unsafeQuery('''
+      SELECT EXISTS (
+        SELECT 1
+        FROM pg_stat_activity
+        WHERE datname = current_database()
+          AND pid <> pg_backend_pid()
+          AND wait_event_type = 'Lock'
+          AND state = 'active'
+          AND query ILIKE '%conversation%'
+      ) AS "waiting"
+    ''');
+    if (rows.single.toColumnMap()['waiting'] as bool) return true;
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
+
+  return false;
 }
 
 Future<({ConversationTurn turn, List<String> toolCallIds})>
