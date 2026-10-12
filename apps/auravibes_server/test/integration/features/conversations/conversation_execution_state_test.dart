@@ -2072,10 +2072,12 @@ void main() {
           );
           final pauseTurnLocked = Completer<void>();
           final releasePause = Completer<void>();
+          var approvalLockBarrierCalls = 0;
           final worker = ConversationWorker(
             host: _AwaitingApprovalHost(),
             afterApprovalTurnLock: () async {
-              pauseTurnLocked.complete();
+              approvalLockBarrierCalls++;
+              if (!pauseTurnLocked.isCompleted) pauseTurnLocked.complete();
               await releasePause.future;
             },
           );
@@ -2130,6 +2132,18 @@ void main() {
             staged.turn.id!,
           ))!;
           expect(turn.status, ConversationStatuses.queued);
+
+          await runConversationWorker(
+            fixture.session.build(),
+            isActive: () => true,
+            worker: worker,
+          );
+          expect(
+            approvalLockBarrierCalls,
+            greaterThan(1),
+            reason:
+                'The worker should re-enter this barrier for the continuation.',
+          );
         },
       );
 
