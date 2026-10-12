@@ -312,7 +312,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.11.0
+          node-version: 24.21.0
 
       - name: Validate Renovate configuration
         run: npx --yes --package renovate@44.149.0 -- renovate-config-validator --strict
@@ -394,7 +394,7 @@ jobs:
           fi
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            if ! dart run tool/changed_test_selector.dart select \
+            if ! dart tool/changed_test_selector.dart select \
               --base "${{ github.event.pull_request.base.sha }}" \
               --head HEAD \
               --output "$manifest"; then
@@ -415,7 +415,7 @@ jobs:
           if [ -s "$timings" ]; then
             matrix_args+=(--timings "$timings")
           fi
-          matrix="$(dart run tool/changed_test_selector.dart "${matrix_args[@]}")"
+          matrix="$(dart tool/changed_test_selector.dart "${matrix_args[@]}")"
           printf '%s\n' "$matrix" > "$matrix_file"
           report_count="$(ruby -rjson -e 'puts JSON.parse(ARGF.read).fetch("include").length' <<< "$matrix")"
           timing_source="fixed shard fallback"
