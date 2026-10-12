@@ -1686,6 +1686,7 @@ void main() {
         sendMessage: (_, _, _) async {
           sendCalls++;
         },
+        recordRecentSkillUse: (_, _, _) async {},
       );
 
       final result = await pumpCopySurface(
