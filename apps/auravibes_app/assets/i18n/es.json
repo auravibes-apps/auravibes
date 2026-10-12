@@ -408,6 +408,7 @@
       "clear_all_attachments": "Quitar todos los archivos adjuntos",
       "play_voice_attachment": "Reproducir nota de voz",
       "stop_voice_attachment": "Detener reproducción de audio",
+      "audio_preview_error": "No se pudo reproducir el audio. Puedes volver a intentarlo o eliminar este adjunto.",
       "microphone_permission_denied": "Se denegó el permiso del micrófono. Permite el acceso en los ajustes del sistema e inténtalo de nuevo.",
       "attachment_file_model_unsupported": "El modelo seleccionado no admite archivos. Cambia a un modelo que acepte archivos.",
       "attachment_file_local_unavailable": "Los archivos adjuntos no están disponibles en esta plataforma o espacio de trabajo.",
