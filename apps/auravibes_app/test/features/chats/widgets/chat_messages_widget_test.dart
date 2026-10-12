@@ -282,6 +282,75 @@ void main() {
   }
 
   group('ChatMessagesWidget', () {
+    testWidgets('sizes the fork boundary action from Aura target updates', (
+      tester,
+    ) async {
+      final message = _createMessage();
+      final source = ConversationEntity(
+        id: 'source-1',
+        title: 'Original',
+        workspaceId: 'ws-1',
+        isPinned: false,
+        createdAt: DateTime(2025),
+        updatedAt: DateTime(2025),
+      );
+      final fork = ConversationEntity(
+        id: 'conv-1',
+        title: 'Fork',
+        workspaceId: 'ws-1',
+        isPinned: false,
+        createdAt: DateTime(2025),
+        updatedAt: DateTime(2025),
+        forkSourceConversationId: source.id,
+        forkSourceTitle: source.title,
+        forkThroughMessageId: message.id,
+      );
+      final theme = ValueNotifier(AuraTheme.light);
+      addTearDown(theme.dispose);
+
+      Widget subject(AuraTheme theme) => buildSubject(
+        messages: [message.id],
+        messageEntitiesById: {message.id: message},
+        conversation: fork,
+        theme: theme,
+        overrides: [
+          ..._messageOverrides({message.id: message}),
+          conversationByIdStreamProvider(
+            'ws-1',
+            conversationId: source.id,
+          ).overrideWith((ref) => Stream.value(source)),
+        ],
+      );
+
+      await pumpAndInit(
+        tester,
+        ValueListenableBuilder<AuraTheme>(
+          valueListenable: theme,
+          builder: (context, theme, _) => subject(theme),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final label = find.text('Forked from Original');
+      expect(label, findsOneWidget);
+      final target = find.ancestor(of: label, matching: find.byType(InkWell));
+      expect(target, findsOneWidget);
+      final initialTargetSize = tester.getSize(target);
+      expect(initialTargetSize.width, greaterThanOrEqualTo(48));
+      expect(initialTargetSize.height, greaterThanOrEqualTo(48));
+      final labelSize = tester.getSize(label);
+
+      theme.value = AuraTheme.light.copyWith(
+        interactionSizes: const AuraInteractionSizeScale(minimumTargetSize: 72),
+      );
+      await tester.pumpAndSettle();
+
+      final updatedTargetSize = tester.getSize(target);
+      expect(updatedTargetSize.width, greaterThanOrEqualTo(72));
+      expect(updatedTargetSize.height, greaterThanOrEqualTo(72));
+      expect(tester.getSize(label), labelSize);
+    });
+
     testWidgets('keeps unfinished form fields editable without final actions', (
       tester,
     ) async {

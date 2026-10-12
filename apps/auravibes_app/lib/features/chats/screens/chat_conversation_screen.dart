@@ -22,6 +22,7 @@ import 'package:auravibes_app/features/chats/providers/aura_agent_service_provid
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
@@ -39,6 +40,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
+import 'package:auravibes_app/features/chats/widgets/model_usage_header_button.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
@@ -1141,6 +1143,7 @@ class const _LoadedChatConversationView({
         child: _ChatConversationBody(data: data),
         appBar: _ChatConversationAppBar(
           title: data.conversation.title,
+          conversationId: data.conversation.id,
           leading: data.leading,
         ),
       ),
@@ -1150,14 +1153,18 @@ class const _LoadedChatConversationView({
 
 class const _ChatConversationAppBar({
   required final String title,
+  required final String conversationId,
   required final Widget? leading,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) =>
-      AuraAppBarWithDrawer(title: Text(title), leading: leading);
+  Widget build(BuildContext context) => AuraAppBarWithDrawer(
+    title: Text(title),
+    actions: [ModelUsageHeaderButton(conversationId: conversationId)],
+    leading: leading,
+  );
 }
 
 class const _ChatConversationBody({
@@ -1167,6 +1174,7 @@ class const _ChatConversationBody({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       _ConversationOrientation(data: data),
+      _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(data: data),
       if (_hasChatConversationStatus(data) || data.showInputComposer)
@@ -1178,6 +1186,45 @@ class const _ChatConversationBody({
           )),
         ),
     ],
+  );
+}
+
+class const _IncompleteImportedAgentContextNotice({
+  required final _LoadedChatConversationData data,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!_hasIncompleteAgentContext(ref)) return const SizedBox.shrink();
+
+    return const _IncompleteAgentContextNoticeContent();
+  }
+
+  bool _hasIncompleteAgentContext(WidgetRef ref) =>
+      ref
+          .watch(
+            conversationArchiveIncompleteContextProvider((
+              workspaceId: data.workspaceId,
+              conversationId: data.conversation.id,
+            )),
+          )
+          .value ==
+      true;
+}
+
+class const _IncompleteAgentContextNoticeContent() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPadding(
+    child: AuraCallout(
+      title: LocaleKeys.chats_screens_chat_conversation_context_incomplete_title
+          .tr(context: context),
+      key: const ValueKey<String>('chat_incomplete_agent_context_notice'),
+      description: LocaleKeys
+          .chats_screens_chat_conversation_context_incomplete_description
+          .tr(context: context),
+      icon: Icons.warning_amber_outlined,
+      tint: .warning,
+    ),
+    padding: const .horizontal(.md),
   );
 }
 
