@@ -16,4 +16,5 @@ values:
   - toolApprovalRequested
   - toolDecisionRecorded
   - toolResolved
+  - backgroundWorkCompleted
   - a2uiMessage

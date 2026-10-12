@@ -5,12 +5,14 @@ import 'package:serverpod_auth_idp_server/providers/email.dart';
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
 import 'src/features/codex_oauth/codex_oauth_callback_route.dart';
+import 'src/features/conversations/engine/server_tool_runtime.dart';
 import 'src/features/workers/recurring_worker_coordinator.dart';
 
 /// The starting point of the Serverpod server.
 void run(List<String> args) async {
   // Initialize Serverpod and connect it with your generated code.
   final pod = Serverpod(args, Protocol(), Endpoints());
+  final serverStartedAt = DateTime.now().toUtc();
 
   // Initialize authentication services for the server.
   // Token managers will be used to validate and issue authentication keys,
@@ -36,6 +38,15 @@ void run(List<String> args) async {
 
   // Start the server.
   await pod.start();
+  final session = await pod.createSession();
+  try {
+    await ServerToolRuntime().reconcileInterruptedBackgroundWork(
+      session,
+      startedAt: serverStartedAt,
+    );
+  } finally {
+    await session.close();
+  }
   final coordinator = RecurringWorkerCoordinator(pod)..start();
   pod.experimental.shutdownTasks.addTask(
     #stopRecurringWorkerCoordinator,

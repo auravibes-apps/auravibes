@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
-import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
     as conversation_repo;
 import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
@@ -212,6 +212,1083 @@ void main() {
         orderBy: (table) => table.id,
       );
     }
+
+    test(
+      'cloud detach preserves its acknowledgement and runs past turn stop',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        Future<void> insert(
+          WorkspaceResourceKind kind,
+          String id,
+          Map<String, Object?> data,
+        ) => WorkspaceResource.db
+            .insertRow(
+              fixture.database,
+              WorkspaceResource(
+                workspaceId: fixture.workspaceId,
+                resourceKind: kind,
+                resourceId: id,
+                data: jsonEncode(data),
+                revision: 1,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            )
+            .then((_) {});
+
+        await insert(WorkspaceResourceKind.skill, 'research', const {
+          'id': 'research',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Search primary sources.',
+          'isEnabled': true,
+        });
+        await insert(
+          WorkspaceResourceKind.skillTemplateTool,
+          'research-search',
+          const {
+            'id': 'research-search',
+            'skillId': 'research',
+            'skillSlug': 'research',
+            'toolSlug': 'search',
+            'description': 'Search.',
+            'isEnabled': true,
+            'requiresCredential': false,
+            'inputsJson': '[]',
+            'templateJson': '{}',
+          },
+        );
+        await insert(
+          WorkspaceResourceKind.conversationSkillSelection,
+          'conversation-1:research',
+          const {'conversationId': 'conversation-1', 'skillId': 'research'},
+        );
+        await insert(
+          WorkspaceResourceKind.toolPermission,
+          'research-search-permission',
+          const {
+            'toolId': 'research-search',
+            'permissionMode': 'alwaysAllow',
+            'isEnabled': true,
+          },
+        );
+
+        final entered = Completer<void>();
+        final release = Completer<void>();
+        bool? cancelledAfterDetach;
+        final runtime = ServerToolRuntime(
+          executor: (_, _, _, request) async {
+            entered.complete();
+            await release.future;
+            cancelledAfterDetach = await request.isCancelled?.call();
+            return {'ok': true};
+          },
+        );
+        final tool =
+            (await runtime.loadTools(
+              fixture.database,
+              workspaceId: fixture.workspaceId,
+              conversationStableId: 'conversation-1',
+            )).singleWhere(
+              (candidate) =>
+                  candidate.spec.name == 'skill__user__research__search',
+            );
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        final handling = runtime.handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: ServerToolRequest(
+            id: 'background-cloud-call',
+            name: tool.spec.name,
+            arguments: const {},
+          ),
+        );
+        await entered.future.timeout(const Duration(seconds: 2));
+
+        final request = DetachToolCallRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'detach-background-cloud-call',
+          conversationId: 'conversation-1',
+          toolCallId: 'background-cloud-call',
+        );
+        await expectLater(
+          ConversationUseCases(
+            conversation_repo.ConversationRepository(),
+          ).detachToolCall(
+            fixture.database,
+            userId: 'not-a-workspace-member',
+            request: request,
+          ),
+          throwsA(
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'code',
+              ConversationErrorCode.permissionDenied,
+            ),
+          ),
+        );
+
+        final work = await endpoints.conversation.detachToolCall(
+          fixture.session,
+          request,
+        );
+        expect(work.status, 'running');
+        await handling.timeout(const Duration(seconds: 2));
+        final callAfterAcknowledgement = (await ConversationToolCall.db
+            .findFirstRow(
+              fixture.database,
+              where: (table) => table.stableId.equals('background-cloud-call'),
+            ))!;
+        final acknowledgement = jsonEncode({
+          'status': 'running_in_background',
+          'work_id': work.id,
+        });
+        expect(callAfterAcknowledgement.backgroundEligible, isTrue);
+        expect(callAfterAcknowledgement.status, 'runningInBackground');
+        expect(callAfterAcknowledgement.resultJson, acknowledgement);
+        expect(
+          (await endpoints.conversation.listBackgroundWorks(
+            fixture.session,
+            ListBackgroundWorksRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: 'conversation-1',
+            ),
+          )).map((item) => item.id),
+          [work.id],
+        );
+
+        await ConversationUseCases(
+          conversation_repo.ConversationRepository(),
+        ).cancelTurn(
+          fixture.database,
+          userId: fixture.userId,
+          request: CancelTurnRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'stop-after-detach',
+            turnId: fixture.turn.requestId,
+            expectedTurnRevision: fixture.turn.revision,
+          ),
+        );
+        release.complete();
+
+        BackgroundWorkRecord? completed;
+        for (var attempt = 0; attempt < 40; attempt++) {
+          completed = await BackgroundWorkRecord.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.stableId.equals(work.id),
+          );
+          if (completed?.status != 'running') break;
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+        expect(cancelledAfterDetach, isFalse);
+        expect(completed?.status, 'completed');
+        expect(
+          completed?.statusPreview,
+          BackgroundWorkPreviews.queuedForContinuation,
+        );
+        expect(completed?.resultContent, contains('"ok":true'));
+        final visibleWorks = await endpoints.conversation.listBackgroundWorks(
+          fixture.session,
+          ListBackgroundWorksRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: 'conversation-1',
+          ),
+        );
+        expect(visibleWorks.single.id, work.id);
+        expect(visibleWorks.single.resultContent, contains('"ok":true'));
+        final completionEvents = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId) &
+              table.eventId.equals(
+                'background-work-completion:${work.id}',
+              ),
+        );
+        final completionMessages = await ConversationMessage.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId) &
+              table.stableId.equals('background_work:${work.id}'),
+        );
+        expect(completionEvents, hasLength(1));
+        expect(completionMessages, hasLength(1));
+        expect(completionMessages.single.status, ConversationStatuses.queued);
+        final immutableCall = (await ConversationToolCall.db.findById(
+          fixture.database,
+          callAfterAcknowledgement.id!,
+        ))!;
+        expect(immutableCall.status, 'runningInBackground');
+        expect(immutableCall.resultJson, acknowledgement);
+        final turns = await ConversationTurn.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId),
+          orderBy: (table) => table.acceptedSequence,
+        );
+        expect(turns, hasLength(1));
+        expect(turns.single.status, ConversationStatuses.cancelled);
+      },
+    );
+
+    test(
+      'claimed continuation clears the queued marker without losing the result',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        final message = fixture.messages.singleWhere(
+          (candidate) => candidate.role == 'user',
+        );
+        const workId = 'background-work-queued-marker';
+        const toolCallId = 'background-call-queued-marker';
+        final toolCall = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            turnId: fixture.turn.id!,
+            messageId: message.id!,
+            stableId: toolCallId,
+            name: 'skill__user__research__search',
+            argumentsJson: '{}',
+            argumentsDigest: 'digest',
+            backgroundEligible: true,
+            backgroundWorkStableId: workId,
+            status: 'runningInBackground',
+            revision: 2,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await BackgroundWorkRecord.db.insertRow(
+          fixture.database,
+          BackgroundWorkRecord(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            conversationToolCallId: toolCall.id!,
+            originatingMessageId: message.id,
+            stableId: workId,
+            toolCallId: toolCallId,
+            toolKind: 'skillTemplate',
+            status: 'completed',
+            statusPreview: BackgroundWorkPreviews.queuedForContinuation,
+            resultContent: '{"answer":"saved"}',
+            resultByteLength: 18,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.updateRow(
+          fixture.database,
+          message.copyWith(
+            metadataJson: jsonEncode({
+              'isBackgroundWorkCompletion': true,
+              'backgroundWorkId': workId,
+            }),
+          ),
+        );
+
+        await runConversationWorker(
+          fixture.database,
+          isActive: () => true,
+          worker: ConversationWorker(host: const _CompletingHost()),
+        );
+
+        final stored = await BackgroundWorkRecord.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(workId),
+        );
+        expect(stored?.status, 'completed');
+        expect(stored?.statusPreview, 'Completed');
+        expect(stored?.resultContent, '{"answer":"saved"}');
+        final continuationEvents = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId),
+          orderBy: (table) => table.sequence,
+        );
+        expect(
+          _backgroundWorkStatusPreviews(continuationEvents, workId),
+          [
+            BackgroundWorkPreviews.continuationInProgress,
+            'Completed',
+          ],
+        );
+      },
+    );
+
+    test(
+      'retrying a continuation keeps its completed result inspectable',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        final message = fixture.messages.singleWhere(
+          (candidate) => candidate.role == 'user',
+        );
+        const workId = 'background-work-retry-marker';
+        const toolCallId = 'background-call-retry-marker';
+        final toolCall = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            turnId: fixture.turn.id!,
+            messageId: message.id!,
+            stableId: toolCallId,
+            name: 'skill__user__research__search',
+            argumentsJson: '{}',
+            argumentsDigest: 'digest',
+            backgroundEligible: true,
+            backgroundWorkStableId: workId,
+            status: 'runningInBackground',
+            revision: 2,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await BackgroundWorkRecord.db.insertRow(
+          fixture.database,
+          BackgroundWorkRecord(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            conversationToolCallId: toolCall.id!,
+            originatingMessageId: message.id,
+            stableId: workId,
+            toolCallId: toolCallId,
+            toolKind: 'skillTemplate',
+            status: 'completed',
+            statusPreview: BackgroundWorkPreviews.queuedForContinuation,
+            resultContent: '{"answer":"saved before retry"}',
+            resultByteLength: 31,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.updateRow(
+          fixture.database,
+          message.copyWith(
+            metadataJson: jsonEncode({
+              'isBackgroundWorkCompletion': true,
+              'backgroundWorkId': workId,
+            }),
+          ),
+        );
+
+        await runConversationWorker(
+          fixture.database,
+          isActive: () => true,
+          worker: ConversationWorker(host: const _ConfigurationFailingHost()),
+        );
+
+        final stored = await BackgroundWorkRecord.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(workId),
+        );
+        final retriedJob = await ConversationJob.db.findById(
+          fixture.database,
+          fixture.job.id!,
+        );
+        expect(retriedJob?.status, ConversationJobStatuses.queued);
+        expect(
+          stored?.statusPreview,
+          BackgroundWorkPreviews.queuedForContinuation,
+        );
+        expect(stored?.resultContent, '{"answer":"saved before retry"}');
+        final continuationEvents = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId),
+        );
+        expect(
+          _backgroundWorkStatusPreviews(continuationEvents, workId),
+          [
+            BackgroundWorkPreviews.continuationInProgress,
+            BackgroundWorkPreviews.queuedForContinuation,
+          ],
+        );
+        final visibleWorks = await endpoints.conversation.listBackgroundWorks(
+          fixture.session,
+          ListBackgroundWorksRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: 'conversation-1',
+          ),
+        );
+        expect(visibleWorks.single.id, workId);
+      },
+    );
+
+    test(
+      'cloud detachment is rejected at the global limit and recovers capacity',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        final message = fixture.messages.first;
+        final activeWorks = <BackgroundWorkRecord>[];
+        for (
+          var index = 0;
+          index < ConversationLimits.maxConcurrentDetachedWork;
+          index++
+        ) {
+          final workId = 'background-capacity-$index';
+          final toolCall = await ConversationToolCall.db.insertRow(
+            fixture.database,
+            ConversationToolCall(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+              turnId: fixture.turn.id!,
+              messageId: message.id!,
+              stableId: 'background-capacity-call-$index',
+              name: 'skill__user__research__search',
+              argumentsJson: '{}',
+              argumentsDigest: 'digest',
+              backgroundEligible: true,
+              backgroundWorkStableId: workId,
+              status: 'runningInBackground',
+              resultJson: jsonEncode({
+                'status': 'running_in_background',
+                'work_id': workId,
+              }),
+              revision: 2,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          activeWorks.add(
+            await BackgroundWorkRecord.db.insertRow(
+              fixture.database,
+              BackgroundWorkRecord(
+                workspaceId: fixture.workspaceId,
+                conversationId: fixture.conversationId,
+                conversationToolCallId: toolCall.id!,
+                originatingMessageId: message.id,
+                stableId: workId,
+                toolCallId: toolCall.stableId,
+                toolKind: 'skillTemplate',
+                status: 'running',
+                createdAt: now,
+                updatedAt: now,
+              ),
+            ),
+          );
+        }
+        final target = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            turnId: fixture.turn.id!,
+            messageId: message.id!,
+            stableId: 'background-capacity-target',
+            name: 'skill__user__research__search',
+            argumentsJson: '{}',
+            argumentsDigest: 'digest',
+            backgroundEligible: true,
+            status: 'running',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final useCases = ConversationUseCases(
+          conversation_repo.ConversationRepository(),
+        );
+        final request = DetachToolCallRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'detach-over-capacity',
+          conversationId: 'conversation-1',
+          toolCallId: target.stableId,
+        );
+
+        await expectLater(
+          useCases.detachToolCall(
+            fixture.database,
+            userId: fixture.userId,
+            request: request,
+          ),
+          throwsA(
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'code',
+              ConversationErrorCode.turnConflict,
+            ),
+          ),
+        );
+        final unchangedTarget = await ConversationToolCall.db.findById(
+          fixture.database,
+          target.id!,
+        );
+        expect(unchangedTarget?.status, 'running');
+        expect(unchangedTarget?.backgroundWorkStableId, isNull);
+
+        await BackgroundWorkRecord.db.updateRow(
+          fixture.database,
+          activeWorks.first.copyWith(status: 'completed'),
+        );
+        final admitted = await useCases.detachToolCall(
+          fixture.database,
+          userId: fixture.userId,
+          request: request.copyWith(requestId: 'detach-after-capacity'),
+        );
+
+        expect(admitted.status, 'running');
+        expect(admitted.statusPreview, isNull);
+        expect(
+          await BackgroundWorkRecord.db.count(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.status.equals('running'),
+          ),
+          ConversationLimits.maxConcurrentDetachedWork,
+        );
+      },
+    );
+
+    test(
+      'concurrent detaches across conversations share one global capacity',
+      () async {
+        final fixtures = <_Fixture>[];
+        final requestCount = ConversationLimits.maxConcurrentDetachedWork + 2;
+        for (var index = 0; index < requestCount; index++) {
+          fixtures.add(await prepare());
+        }
+        final useCases = ConversationUseCases(
+          conversation_repo.ConversationRepository(),
+        );
+        final requests =
+            <
+              ({
+                _Fixture fixture,
+                DetachToolCallRequest request,
+              })
+            >[];
+        final now = DateTime.now().toUtc();
+        for (var index = 0; index < fixtures.length; index++) {
+          final fixture = fixtures[index];
+          final message = fixture.messages.first;
+          final toolCall = await ConversationToolCall.db.insertRow(
+            fixture.database,
+            ConversationToolCall(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+              turnId: fixture.turn.id!,
+              messageId: message.id!,
+              stableId: 'background-global-capacity-$index',
+              name: 'skill__user__research__search',
+              argumentsJson: '{}',
+              argumentsDigest: 'digest',
+              backgroundEligible: true,
+              status: 'running',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          requests.add((
+            fixture: fixture,
+            request: DetachToolCallRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'detach-global-capacity-$index',
+              conversationId: 'conversation-1',
+              toolCallId: toolCall.stableId,
+            ),
+          ));
+        }
+
+        Future<Object> attemptDetach(
+          _Fixture fixture,
+          DetachToolCallRequest request,
+        ) async {
+          try {
+            return await useCases.detachToolCall(
+              fixture.database,
+              userId: fixture.userId,
+              request: request,
+            );
+          } on ConversationException catch (error) {
+            return error;
+          }
+        }
+
+        final outcomes = await Future.wait([
+          for (final item in requests)
+            attemptDetach(item.fixture, item.request),
+        ]);
+        final admitted = outcomes.whereType<BackgroundWorkView>();
+        final rejected = outcomes.whereType<ConversationException>();
+
+        expect(
+          admitted,
+          hasLength(ConversationLimits.maxConcurrentDetachedWork),
+        );
+        expect(rejected, hasLength(requestCount - admitted.length));
+        expect(
+          rejected.map((error) => error.code),
+          everyElement(ConversationErrorCode.turnConflict),
+        );
+        expect(
+          await BackgroundWorkRecord.db.count(
+            fixtures.first.database,
+            where: (table) =>
+                table.workspaceId.inSet(
+                  fixtures.map((fixture) => fixture.workspaceId).toSet(),
+                ) &
+                table.status.equals('running'),
+          ),
+          ConversationLimits.maxConcurrentDetachedWork,
+        );
+      },
+    );
+
+    test('cloud stop request is scoped and idempotent', () async {
+      final fixture = await prepare();
+      final now = DateTime.now().toUtc();
+      final message = fixture.messages.first;
+      const workId = 'background-work-stop';
+      const toolCallId = 'background-call-stop';
+      const acknowledgement = '{"status":"running_in_background"}';
+      final call = await ConversationToolCall.db.insertRow(
+        fixture.database,
+        ConversationToolCall(
+          workspaceId: fixture.workspaceId,
+          conversationId: fixture.conversationId,
+          turnId: fixture.turn.id!,
+          messageId: message.id!,
+          stableId: toolCallId,
+          name: 'skill__user__research__search',
+          argumentsJson: '{}',
+          argumentsDigest: 'digest',
+          backgroundEligible: true,
+          backgroundWorkStableId: workId,
+          status: 'runningInBackground',
+          resultJson: acknowledgement,
+          revision: 2,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await BackgroundWorkRecord.db.insertRow(
+        fixture.database,
+        BackgroundWorkRecord(
+          workspaceId: fixture.workspaceId,
+          conversationId: fixture.conversationId,
+          conversationToolCallId: call.id!,
+          originatingMessageId: message.id!,
+          stableId: workId,
+          toolCallId: toolCallId,
+          toolKind: 'skillTemplate',
+          status: 'running',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final request = StopBackgroundWorkRequest(
+        requestId: 'stop-background-work',
+        workspaceId: fixture.workspaceId,
+        conversationId: 'conversation-1',
+        workId: workId,
+      );
+      final requested = await endpoints.conversation.stopBackgroundWork(
+        fixture.session,
+        request,
+      );
+      expect(requested.status, 'stopRequested');
+      final retried = await endpoints.conversation.stopBackgroundWork(
+        fixture.session,
+        request.copyWith(requestId: 'stop-background-work-retry'),
+      );
+      expect(retried.status, 'stopRequested');
+      final storedCall = await ConversationToolCall.db.findById(
+        fixture.database,
+        call.id!,
+      );
+      expect(storedCall?.resultJson, acknowledgement);
+      expect(storedCall?.backgroundWorkStableId, workId);
+    });
+
+    test(
+      'workspace removal hides late detached output and leaves queued work idle',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        Future<void> insert(
+          WorkspaceResourceKind kind,
+          String id,
+          Map<String, Object?> data,
+        ) => WorkspaceResource.db
+            .insertRow(
+              fixture.database,
+              WorkspaceResource(
+                workspaceId: fixture.workspaceId,
+                resourceKind: kind,
+                resourceId: id,
+                data: jsonEncode(data),
+                revision: 1,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            )
+            .then((_) {});
+
+        await insert(WorkspaceResourceKind.skill, 'research', const {
+          'id': 'research',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Search primary sources.',
+          'isEnabled': true,
+        });
+        await insert(
+          WorkspaceResourceKind.skillTemplateTool,
+          'research-search',
+          const {
+            'id': 'research-search',
+            'skillId': 'research',
+            'skillSlug': 'research',
+            'toolSlug': 'search',
+            'description': 'Search.',
+            'isEnabled': true,
+            'requiresCredential': false,
+            'inputsJson': '[]',
+            'templateJson': '{}',
+          },
+        );
+        await insert(
+          WorkspaceResourceKind.conversationSkillSelection,
+          'conversation-1:research',
+          const {'conversationId': 'conversation-1', 'skillId': 'research'},
+        );
+        await insert(
+          WorkspaceResourceKind.toolPermission,
+          'research-search-permission',
+          const {
+            'toolId': 'research-search',
+            'permissionMode': 'alwaysAllow',
+            'isEnabled': true,
+          },
+        );
+
+        final entered = Completer<void>();
+        final release = Completer<void>();
+        final runtime = ServerToolRuntime(
+          executor: (_, _, _, _) async {
+            entered.complete();
+            await release.future;
+            return {'secret': 'late output'};
+          },
+        );
+        final tool =
+            (await runtime.loadTools(
+              fixture.database,
+              workspaceId: fixture.workspaceId,
+              conversationStableId: 'conversation-1',
+            )).singleWhere(
+              (candidate) =>
+                  candidate.spec.name == 'skill__user__research__search',
+            );
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        final handling = runtime.handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: ServerToolRequest(
+            id: 'background-workspace-removal-call',
+            name: tool.spec.name,
+            arguments: const {},
+          ),
+        );
+        await entered.future.timeout(const Duration(seconds: 2));
+
+        final work = await endpoints.conversation.detachToolCall(
+          fixture.session,
+          DetachToolCallRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'detach-before-workspace-removal',
+            conversationId: 'conversation-1',
+            toolCallId: 'background-workspace-removal-call',
+          ),
+        );
+        await handling.timeout(const Duration(seconds: 2));
+        final acknowledgement = jsonEncode({
+          'status': 'running_in_background',
+          'work_id': work.id,
+        });
+        final call = (await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.stableId.equals('background-workspace-removal-call'),
+        ))!;
+
+        final conversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!;
+        await endpoints.conversation.queueConversationMessage(
+          fixture.session,
+          QueueConversationMessageRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'queue-behind-detached-work',
+            conversationId: 'conversation-1',
+            expectedProjectionRevision: conversation.projectionRevision,
+            clientMessageId: 'message-behind-detached-work',
+            content: 'Continue after the search.',
+            attachmentIds: const [],
+          ),
+        );
+
+        await endpoints.cloudWorkspace.deleteWorkspace(
+          fixture.session,
+          DeleteCloudWorkspaceRequest(
+            workspaceId: fixture.workspaceId,
+            confirmationName: 'Workspace',
+            requestId: 'delete-workspace-with-background-work',
+            expectedWorkspaceRevision: 1,
+          ),
+        );
+
+        var storedWork = (await BackgroundWorkRecord.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(work.id),
+        ))!;
+        expect(storedWork.status, 'stopRequested');
+        expect(storedWork.resultContent, isNull);
+        final eventSequenceAfterRemoval = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!.eventSequence;
+
+        release.complete();
+        for (var attempt = 0; attempt < 40; attempt++) {
+          storedWork = (await BackgroundWorkRecord.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.stableId.equals(work.id),
+          ))!;
+          if (storedWork.status != 'stopRequested') break;
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+
+        expect(storedWork.status, 'failed');
+        expect(storedWork.statusPreview, 'Outcome unknown');
+        expect(storedWork.errorCode, 'outcome_unknown');
+        expect(storedWork.resultContent, isNull);
+        expect(storedWork.resultByteLength, 0);
+        final completionEvents = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId) &
+              table.eventId.equals('background-work-completion:${work.id}'),
+        );
+        final completionMessages = await ConversationMessage.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId) &
+              table.stableId.equals('background_work:${work.id}'),
+        );
+        final queuedMessage = await ConversationMessage.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.conversationId.equals(fixture.conversationId) &
+              table.stableId.equals('message-behind-detached-work'),
+        );
+        final turns = await ConversationTurn.db.find(
+          fixture.database,
+          where: (table) => table.conversationId.equals(fixture.conversationId),
+        );
+        final jobs = await ConversationJob.db.find(
+          fixture.database,
+          where: (table) => table.turnId.equals(fixture.turn.id),
+        );
+        final immutableCall = (await ConversationToolCall.db.findById(
+          fixture.database,
+          call.id!,
+        ))!;
+        final finalConversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!;
+
+        expect(completionEvents, isEmpty);
+        expect(completionMessages, isEmpty);
+        expect(queuedMessage?.status, ConversationStatuses.queued);
+        expect(turns, hasLength(1));
+        expect(jobs, hasLength(1));
+        expect(finalConversation.eventSequence, eventSequenceAfterRemoval);
+        expect(immutableCall.status, 'runningInBackground');
+        expect(immutableCall.resultJson, acknowledgement);
+      },
+    );
+    test(
+      'restart reconciliation appends every unknown outcome once without replay',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        final message = fixture.messages.first;
+        final workIds = [
+          'background-work-restart-a',
+          'background-work-restart-b',
+        ];
+        final calls = <ConversationToolCall>[];
+        for (var index = 0; index < workIds.length; index++) {
+          final workId = workIds[index];
+          final callId = 'background-call-restart-$index';
+          final acknowledgement = jsonEncode({
+            'status': 'running_in_background',
+            'work_id': workId,
+          });
+          final call = await ConversationToolCall.db.insertRow(
+            fixture.database,
+            ConversationToolCall(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+              turnId: fixture.turn.id!,
+              messageId: message.id!,
+              stableId: callId,
+              name: 'skill__user__research__search',
+              argumentsJson: '{}',
+              argumentsDigest: 'digest',
+              backgroundEligible: true,
+              backgroundWorkStableId: workId,
+              status: 'runningInBackground',
+              resultJson: acknowledgement,
+              revision: 2,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          calls.add(call);
+          await BackgroundWorkRecord.db.insertRow(
+            fixture.database,
+            BackgroundWorkRecord(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+              conversationToolCallId: call.id!,
+              originatingMessageId: message.id!,
+              stableId: workId,
+              toolCallId: callId,
+              toolKind: 'skillTemplate',
+              runtimeServerId: fixture.database.serverpod.serverId,
+              status: 'running',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+        }
+
+        await ConversationUseCases(
+          conversation_repo.ConversationRepository(),
+        ).cancelTurn(
+          fixture.database,
+          userId: fixture.userId,
+          request: CancelTurnRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'stop-before-restart-reconciliation',
+            turnId: fixture.turn.requestId,
+            expectedTurnRevision: fixture.turn.revision,
+          ),
+        );
+
+        final runtime = ServerToolRuntime();
+        await Future.wait([
+          for (var attempt = 0; attempt < 2; attempt++)
+            runtime.reconcileInterruptedBackgroundWork(
+              fixture.database,
+              startedAt: now.add(const Duration(seconds: 1)),
+            ),
+        ]);
+
+        final completed = await BackgroundWorkRecord.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId) &
+              table.stableId.inSet(workIds.toSet()),
+        );
+        final events = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId) &
+              table.kind.equals(ConversationEventType.backgroundWorkCompleted),
+          orderBy: (table) => table.sequence,
+        );
+        final completionMessages = await ConversationMessage.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId) &
+              table.stableId.inSet(
+                workIds.map((id) => 'background_work:$id').toSet(),
+              ),
+        );
+        final storedCalls = await ConversationToolCall.db.find(
+          fixture.database,
+          where: (table) =>
+              table.id.inSet(calls.map((call) => call.id!).toSet()),
+        );
+        final turns = await ConversationTurn.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId),
+        );
+
+        expect(completed, hasLength(2));
+        expect(
+          completed.map((work) => (work.status, work.errorCode)),
+          everyElement(('failed', 'outcome_unknown')),
+        );
+        expect(
+          completed.map((work) => work.statusPreview),
+          everyElement(BackgroundWorkPreviews.queuedForContinuation),
+        );
+        expect(events, hasLength(2));
+        expect(events[0].sequence, lessThan(events[1].sequence));
+        expect(
+          events.map((event) => event.eventId).toSet(),
+          workIds.map((id) => 'background-work-completion:$id').toSet(),
+        );
+        expect(completionMessages, hasLength(2));
+        expect(
+          completionMessages.map((message) => message.status),
+          everyElement(ConversationStatuses.queued),
+        );
+        expect(
+          completionMessages.map((message) => message.stableId).toSet(),
+          workIds.map((id) => 'background_work:$id').toSet(),
+        );
+        expect(
+          completionMessages.map((message) => message.content),
+          everyElement(contains('outcome is unknown')),
+        );
+        for (var index = 0; index < calls.length; index++) {
+          final storedCall = storedCalls.singleWhere(
+            (call) => call.id == calls[index].id,
+          );
+          expect(storedCall.status, 'runningInBackground');
+          expect(
+            storedCall.resultJson,
+            jsonEncode({
+              'status': 'running_in_background',
+              'work_id': workIds[index],
+            }),
+          );
+        }
+        expect(turns, hasLength(1));
+        expect(turns.single.status, ConversationStatuses.cancelled);
+      },
+    );
 
     test(
       'resumed all-denied calls are sent to the provider as a terminal exchange',
@@ -1946,6 +3023,26 @@ class const _CompletingHost() implements ConversationEngineHost {
   }) => throw UnimplementedError();
 }
 
+class const _ConfigurationFailingHost() implements ConversationEngineHost {
+  @override
+  Future<ConversationEngineResult> executeTurn(
+    Session session, {
+    required ConversationJob job,
+    required ConversationTurn turn,
+    required List<ConversationMessage> messages,
+    required ConversationProgressPublisher liveTurns,
+    Future<void>? leaseLost,
+  }) => throw const ConversationEngineConfigurationException('test');
+
+  @override
+  Future<ConversationCompactionResult> compact(
+    Session session, {
+    required ConversationJob job,
+    required List<ConversationMessage> messages,
+    Future<void>? leaseLost,
+  }) => throw UnimplementedError();
+}
+
 class _EffectTrackingHost implements ConversationEngineHost {
   var calls = 0;
 
@@ -2003,6 +3100,21 @@ class _Fixture({
   required final ConversationJob job,
   required var List<ConversationMessage> messages,
 });
+
+List<String?> _backgroundWorkStatusPreviews(
+  List<ConversationEvent> events,
+  String workId,
+) {
+  final previews = <String?>[];
+  for (final event in events) {
+    final payload = jsonDecode(event.payloadJson);
+    if (payload is! Map<String, dynamic> || payload['workId'] != workId) {
+      continue;
+    }
+    previews.add(payload['statusPreview'] as String?);
+  }
+  return previews;
+}
 
 class const _ImmediateAdmissionGate() implements ConversationAdmissionGate {
   @override
