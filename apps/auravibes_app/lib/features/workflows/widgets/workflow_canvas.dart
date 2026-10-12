@@ -62,7 +62,7 @@ Size workflowCanvasSizeFor(WorkflowDefinition workflow) {
     math.max(maxNodeBottom, boundaryBottom) + _workflowCanvasPadding,
   );
 
-  return Size(width.toDouble(), height.toDouble());
+  return Size(width, height);
 }
 
 double _boundedCanvasPosition(double value) =>

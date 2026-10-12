@@ -19,15 +19,15 @@ void main() {
           label: 'Agent',
           x: 4000,
           y: 8040,
-          outputs: const [
+          outputs: [
             WorkflowPort(id: 'output-1', name: 'result', type: .any),
             WorkflowPort(id: 'output-2', name: 'summary', type: .string),
           ],
         ),
       ],
       connections: const [],
-      createdAt: DateTime.utc(2026),
-      updatedAt: DateTime.utc(2026),
+      createdAt: .utc(2026),
+      updatedAt: .utc(2026),
     );
 
     final size = workflowCanvasSizeFor(workflow);

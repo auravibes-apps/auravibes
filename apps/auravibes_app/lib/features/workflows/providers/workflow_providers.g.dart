@@ -73,7 +73,7 @@ final class WorkflowRepositoryProvider
 }
 
 String _$workflowRepositoryHash() =>
-    r'e430d264828ba4b72546b09894f7b99daf4da05a';
+    r'7ef088bc519c076e7550e0636a15e6147c75658b';
 
 final class WorkflowRepositoryFamily extends $Family
     with $FunctionalFamilyOverride<WorkflowRepository, String> {
