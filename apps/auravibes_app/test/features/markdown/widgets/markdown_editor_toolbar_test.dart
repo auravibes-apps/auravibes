@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/markdown/widgets/markdown_editor_shortcut_scope.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -11,7 +12,12 @@ void main() {
     required FocusNode focusNode,
     FocusNode? otherFocusNode,
     TargetPlatform? platform,
+    bool readOnly = false,
+    bool enabled = true,
+    bool shortcutsEnabled = true,
   }) {
+    final shortcutController = MarkdownEditorShortcutController();
+
     return EasyLocalization(
       child: Builder(
         builder: (context) {
@@ -21,16 +27,27 @@ void main() {
               child: Theme(
                 data: .new(platform: platform),
                 child: Scaffold(
-                  body: Column(
-                    children: [
-                      TextField(controller: controller, focusNode: focusNode),
-                      if (otherFocusNode case final otherFocusNode?)
-                        TextField(focusNode: otherFocusNode),
-                      MarkdownEditorToolbar(
-                        controller: controller,
-                        focusNode: focusNode,
-                      ),
-                    ],
+                  body: MarkdownEditorShortcutScope(
+                    controller: shortcutController,
+                    focusNode: focusNode,
+                    enabled: shortcutsEnabled && enabled && !readOnly,
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          readOnly: readOnly,
+                          enabled: enabled,
+                        ),
+                        if (otherFocusNode case final otherFocusNode?)
+                          TextField(focusNode: otherFocusNode),
+                        MarkdownEditorToolbar(
+                          controller: controller,
+                          focusNode: focusNode,
+                          shortcutController: shortcutController,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -67,11 +84,13 @@ void main() {
     bool meta = false,
     bool control = false,
     bool shift = false,
+    bool alt = false,
   }) async {
     final modifiers = [
       if (meta) LogicalKeyboardKey.metaLeft,
       if (control) LogicalKeyboardKey.controlLeft,
       if (shift) LogicalKeyboardKey.shiftLeft,
+      if (alt) LogicalKeyboardKey.altLeft,
     ];
     for (final modifier in modifiers) {
       final _ = await tester.sendKeyDownEvent(modifier);
@@ -128,6 +147,85 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(focusNode.hasFocus, isTrue);
       expect(controller.text, '**bold**');
+    });
+
+    testWidgets('does not replace the editor focus node key handler', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      KeyEventResult handleKeyEvent(FocusNode _, KeyEvent _) => .ignored;
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      focusNode.onKeyEvent = handleKeyEvent;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      expect(identical(focusNode.onKeyEvent, handleKeyEvent), isTrue);
+    });
+
+    testWidgets('does not apply formatting shortcuts to a read-only field', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'text');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          controller: controller,
+          focusNode: focusNode,
+          platform: .windows,
+          readOnly: true,
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+
+      await sendShortcut(tester, .keyB, control: true);
+
+      expect(focusNode.hasPrimaryFocus, isTrue);
+      expect(controller.text, 'text');
+    });
+
+    testWidgets('does not apply formatting shortcuts when editor is disabled', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'text');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          controller: controller,
+          focusNode: focusNode,
+          platform: .windows,
+          enabled: false,
+          shortcutsEnabled: false,
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+
+      await sendShortcut(tester, .keyB, control: true);
+
+      expect(focusNode.hasPrimaryFocus, isFalse);
+      expect(controller.text, 'text');
     });
 
     testWidgets('uses macOS Command shortcuts and records selection for undo', (
@@ -216,6 +314,10 @@ void main() {
 
         await sendShortcut(tester, .keyB, meta: true);
         expect(controller.text, 'text');
+        await sendShortcut(tester, .keyB, control: true, shift: true);
+        expect(controller.text, 'text');
+        await sendShortcut(tester, .keyB, control: true, alt: true);
+        expect(controller.text, 'text');
         await sendShortcut(tester, .keyB, control: true);
         expect(controller.text, '**text**');
 
@@ -263,6 +365,10 @@ void main() {
         tester.widget<TextField>(fields.at(1)).controller?.text,
         'Documentation',
       );
+      await tester.tap(fields.at(1));
+      await tester.pump();
+      await sendShortcut(tester, .keyB, meta: true);
+      expect(controller.text, 'Documentation');
       await tester.enterText(fields.last, 'https://docs.example.com');
       await tester.tap(find.text('Confirm'));
       final _ = await tester.pumpAndSettle();
