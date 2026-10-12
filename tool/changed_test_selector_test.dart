@@ -18,6 +18,36 @@ void main() {
     expect(result.packages, isEmpty);
   });
 
+  test('skill guidance and eval metadata select no Dart tests', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified('.agents/skills/example/SKILL.md'),
+        const ChangedFile.modified('.agents/skills/example/evals/evals.json'),
+      ],
+      headSources: {},
+      baseSources: {},
+      packageRoots: {},
+    );
+
+    expect(result.mode, SelectionMode.none);
+    expect(result.packages, isEmpty);
+  });
+
+  test('skill executable assets use conservative full selection', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified(
+          '.agents/skills/example/scripts/validate.py',
+        ),
+      ],
+      headSources: {},
+      baseSources: {},
+      packageRoots: {},
+    );
+
+    expect(result.mode, SelectionMode.full);
+  });
+
   test('non-Dart non-global diff returns none', () {
     final result = selectChangedTests(
       changes: [
@@ -70,6 +100,7 @@ void main() {
       changes: [
         const ChangedFile.modified('.pi/new-config.json'),
         const ChangedFile.modified('sonar-project.properties'),
+        const ChangedFile.modified('.agents/skills/example/evals/evals.json'),
         const ChangedFile.modified('packages/core/lib/leaf.dart'),
       ],
       headSources: _sources,
