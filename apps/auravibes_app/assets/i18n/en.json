@@ -408,6 +408,7 @@
       "clear_all_attachments": "Clear all attachments",
       "play_voice_attachment": "Play voice attachment",
       "stop_voice_attachment": "Stop voice playback",
+      "audio_preview_error": "Audio preview failed. Retry or remove this attachment.",
       "microphone_permission_denied": "Microphone permission denied. Allow microphone access in system settings, then try again.",
       "attachment_file_model_unsupported": "The selected model doesn't support file input. Switch to a model that accepts files.",
       "attachment_file_local_unavailable": "File attachments are unavailable on this platform or in this workspace.",
