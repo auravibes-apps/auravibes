@@ -485,6 +485,220 @@ void main() {
     });
 
     test(
+      'workspace removal hides late detached output and leaves queued work idle',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        Future<void> insert(
+          WorkspaceResourceKind kind,
+          String id,
+          Map<String, Object?> data,
+        ) => WorkspaceResource.db
+            .insertRow(
+              fixture.database,
+              WorkspaceResource(
+                workspaceId: fixture.workspaceId,
+                resourceKind: kind,
+                resourceId: id,
+                data: jsonEncode(data),
+                revision: 1,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            )
+            .then((_) {});
+
+        await insert(WorkspaceResourceKind.skill, 'research', const {
+          'id': 'research',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Search primary sources.',
+          'isEnabled': true,
+        });
+        await insert(
+          WorkspaceResourceKind.skillTemplateTool,
+          'research-search',
+          const {
+            'id': 'research-search',
+            'skillId': 'research',
+            'skillSlug': 'research',
+            'toolSlug': 'search',
+            'description': 'Search.',
+            'isEnabled': true,
+            'requiresCredential': false,
+            'inputsJson': '[]',
+            'templateJson': '{}',
+          },
+        );
+        await insert(
+          WorkspaceResourceKind.conversationSkillSelection,
+          'conversation-1:research',
+          const {'conversationId': 'conversation-1', 'skillId': 'research'},
+        );
+        await insert(
+          WorkspaceResourceKind.toolPermission,
+          'research-search-permission',
+          const {
+            'toolId': 'research-search',
+            'permissionMode': 'alwaysAllow',
+            'isEnabled': true,
+          },
+        );
+
+        final entered = Completer<void>();
+        final release = Completer<void>();
+        final runtime = ServerToolRuntime(
+          executor: (_, _, _, _) async {
+            entered.complete();
+            await release.future;
+            return {'secret': 'late output'};
+          },
+        );
+        final tool =
+            (await runtime.loadTools(
+              fixture.database,
+              workspaceId: fixture.workspaceId,
+              conversationStableId: 'conversation-1',
+            )).singleWhere(
+              (candidate) =>
+                  candidate.spec.name == 'skill__user__research__search',
+            );
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        final handling = runtime.handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: ServerToolRequest(
+            id: 'background-workspace-removal-call',
+            name: tool.spec.name,
+            arguments: const {},
+          ),
+        );
+        await entered.future.timeout(const Duration(seconds: 2));
+
+        final work = await endpoints.conversation.detachToolCall(
+          fixture.session,
+          DetachToolCallRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'detach-before-workspace-removal',
+            conversationId: 'conversation-1',
+            toolCallId: 'background-workspace-removal-call',
+          ),
+        );
+        await handling.timeout(const Duration(seconds: 2));
+        final acknowledgement = jsonEncode({
+          'status': 'running_in_background',
+          'work_id': work.id,
+        });
+        final call = (await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.stableId.equals('background-workspace-removal-call'),
+        ))!;
+
+        final conversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!;
+        await endpoints.conversation.queueConversationMessage(
+          fixture.session,
+          QueueConversationMessageRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'queue-behind-detached-work',
+            conversationId: 'conversation-1',
+            expectedProjectionRevision: conversation.projectionRevision,
+            clientMessageId: 'message-behind-detached-work',
+            content: 'Continue after the search.',
+            attachmentIds: const [],
+          ),
+        );
+
+        await endpoints.cloudWorkspace.deleteWorkspace(
+          fixture.session,
+          DeleteCloudWorkspaceRequest(
+            workspaceId: fixture.workspaceId,
+            confirmationName: 'Workspace',
+            requestId: 'delete-workspace-with-background-work',
+            expectedWorkspaceRevision: 1,
+          ),
+        );
+
+        var storedWork = (await BackgroundWorkRecord.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(work.id),
+        ))!;
+        expect(storedWork.status, 'stopRequested');
+        expect(storedWork.resultContent, isNull);
+        final eventSequenceAfterRemoval = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!.eventSequence;
+
+        release.complete();
+        for (var attempt = 0; attempt < 40; attempt++) {
+          storedWork = (await BackgroundWorkRecord.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.stableId.equals(work.id),
+          ))!;
+          if (storedWork.status != 'stopRequested') break;
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+
+        expect(storedWork.status, 'failed');
+        expect(storedWork.statusPreview, 'Outcome unknown');
+        expect(storedWork.errorCode, 'outcome_unknown');
+        expect(storedWork.resultContent, isNull);
+        expect(storedWork.resultByteLength, 0);
+        final completionEvents = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId) &
+              table.eventId.equals('background-work-completion:${work.id}'),
+        );
+        final completionMessages = await ConversationMessage.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId) &
+              table.stableId.equals('background_work:${work.id}'),
+        );
+        final queuedMessage = await ConversationMessage.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.conversationId.equals(fixture.conversationId) &
+              table.stableId.equals('message-behind-detached-work'),
+        );
+        final turns = await ConversationTurn.db.find(
+          fixture.database,
+          where: (table) => table.conversationId.equals(fixture.conversationId),
+        );
+        final jobs = await ConversationJob.db.find(
+          fixture.database,
+          where: (table) => table.turnId.equals(fixture.turn.id),
+        );
+        final immutableCall = (await ConversationToolCall.db.findById(
+          fixture.database,
+          call.id!,
+        ))!;
+        final finalConversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!;
+
+        expect(completionEvents, isEmpty);
+        expect(completionMessages, isEmpty);
+        expect(queuedMessage?.status, ConversationStatuses.queued);
+        expect(turns, hasLength(1));
+        expect(jobs, hasLength(1));
+        expect(finalConversation.eventSequence, eventSequenceAfterRemoval);
+        expect(immutableCall.status, 'runningInBackground');
+        expect(immutableCall.resultJson, acknowledgement);
+      },
+    );
+    test(
       'restart reconciliation appends every unknown outcome once without replay',
       () async {
         final fixture = await prepare();

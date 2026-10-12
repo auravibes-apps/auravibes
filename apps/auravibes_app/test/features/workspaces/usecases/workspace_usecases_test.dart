@@ -16,6 +16,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeRepository implements WorkspaceRepository {
+  Future<void> Function(String id)? beforeDeleteWorkspace;
   final List<WorkspaceEntity> _workspaces = [];
   var _nextId = 1;
 
@@ -82,6 +83,7 @@ class _FakeRepository implements WorkspaceRepository {
 
   @override
   Future<bool> deleteWorkspace(String id) async {
+    await beforeDeleteWorkspace?.call(id);
     final before = _workspaces.length;
     _workspaces.removeWhere((w) => w.id == id);
 
@@ -358,9 +360,12 @@ void main() {
       final _ = await fixture.repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS2', type: .local),
       );
+      fixture.repository.beforeDeleteWorkspace = (_) async =>
+          fixture.calls.add('delete');
 
       await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-2');
 
+      expect(fixture.calls, ['prepare', 'delete']);
       final remaining = await fixture.repository.getAllWorkspaces();
       expect(remaining, hasLength(1));
     });
@@ -443,13 +448,20 @@ class const _EditWorkspaceUseCaseFixture._(
 class const _DeleteWorkspaceUseCaseFixture._(
   final _FakeRepository repository,
   final DeleteWorkspaceUseCase usecase,
+  final List<String> calls,
 ) {
   factory() {
     final repository = _FakeRepository();
+    final calls = <String>[];
 
     return _DeleteWorkspaceUseCaseFixture._(
       repository,
-      .new(repository: repository),
+      .new(
+        repository: repository,
+        prepareBackgroundWorkDeletion: (_) async => calls.add('prepare'),
+        restoreBackgroundWorkAfterFailedDeletion: (_) => calls.add('restore'),
+      ),
+      calls,
     );
   }
 }
