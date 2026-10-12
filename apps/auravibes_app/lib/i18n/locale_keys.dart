@@ -1539,6 +1539,7 @@ abstract class LocaleKeys {
   static const sidebar_recent_chats = 'sidebar.recent_chats';
   static const sidebar_no_recent_chats = 'sidebar.no_recent_chats';
   static const sidebar_view_all_chats = 'sidebar.view_all_chats';
+  static const sidebar_response_in_progress = 'sidebar.response_in_progress';
   static const mcp_catalog_back = 'mcp_catalog.back';
   static const mcp_catalog_browse = 'mcp_catalog.browse';
   static const mcp_catalog_title = 'mcp_catalog.title';

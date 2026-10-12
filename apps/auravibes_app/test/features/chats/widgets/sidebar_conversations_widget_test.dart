@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
@@ -16,6 +17,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../helpers/test_provider_scope.dart';
@@ -259,6 +261,107 @@ void main() {
     expect(activeTile.onTap, isNotNull);
     expect(activeTile.trailing, isNotNull);
   });
+
+  testWidgets(
+    'updates stream indicators per conversation without changing selection',
+    (tester) async {
+      final semanticHandle = tester.ensureSemantics();
+
+      final selectedConversation = _conversation(
+        'chat-1',
+        title: 'Selected Chat',
+      );
+      final otherConversation = _conversation('chat-2', title: 'Other Chat');
+      final repository = _SeededConversationRepository([
+        selectedConversation,
+        otherConversation,
+      ]);
+      addTearDown(repository.close);
+
+      ProviderContainer? providerContainer;
+      await _pumpSidebarAtConversation(
+        tester,
+        conversationId: selectedConversation.id,
+        repository: repository,
+        onProviderContainer: (container) => providerContainer = container,
+      );
+
+      final container = providerContainer;
+      if (container == null) {
+        throw StateError(
+          'Provider container was not available in the sidebar.',
+        );
+      }
+
+      final streamingNotifier = container.read(
+        conversationStreamingProvider.notifier,
+      );
+      final startStreaming = streamingNotifier.start;
+      final stopStreaming = streamingNotifier.remove;
+
+      startStreaming(otherConversation.id);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        findsNothing,
+      );
+      expect(
+        find.bySemanticsLabel(RegExp('Assistant response in progress')),
+        findsOneWidget,
+      );
+
+      startStreaming(selectedConversation.id);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        findsOneWidget,
+      );
+      final selectedTile = tester.widget<AuraTile>(
+        find
+            .ancestor(
+              of: find.text(selectedConversation.title),
+              matching: find.byType(AuraTile),
+            )
+            .first,
+      );
+      expect(selectedTile.variant, AuraTileVariant.selected);
+
+      stopStreaming(otherConversation.id);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        findsNothing,
+      );
+
+      stopStreaming(selectedConversation.id);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        findsNothing,
+      );
+      semanticHandle.dispose();
+    },
+  );
 
   test('SidebarConversationsWidget stores properties', () {
     const widget = SidebarConversationsWidget(workspaceId: 'ws-1', limit: 5);
@@ -570,6 +673,7 @@ Future<void> _pumpSidebarAtConversation(
   WidgetTester tester, {
   required String conversationId,
   required _SeededConversationRepository repository,
+  void Function(ProviderContainer container)? onProviderContainer,
 }) async {
   final router = GoRouter(
     routes: [
@@ -611,11 +715,17 @@ Future<void> _pumpSidebarAtConversation(
                 ),
                 conversationRepositoryProvider.overrideWithValue(repository),
               ],
-              child: MaterialApp.router(
-                routerConfig: router,
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
+              child: Builder(
+                builder: (context) {
+                  onProviderContainer?.call(ProviderScope.containerOf(context));
+
+                  return MaterialApp.router(
+                    routerConfig: router,
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                  );
+                },
               ),
             ),
           ),
