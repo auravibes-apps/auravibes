@@ -2,6 +2,8 @@
 
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -86,6 +88,27 @@ class HarnessVerificationTest(unittest.TestCase):
     def test_reference_destination_can_follow_definition_line(self):
         text = "[guide][guide]\n\n[guide]:\n  docs/guide.md\n"
         self.assertEqual(list(markdown_links(text)), ["docs/guide.md"])
+
+    def test_malformed_reference_with_backslash_run_finishes(self):
+        source = (
+            "import sys\n"
+            f"sys.path.insert(0, {str(Path(__file__).parent)!r})\n"
+            "from verify_agent_harness import markdown_links\n"
+            "list(markdown_links('[' + chr(92) * 64 + ']missing-colon'))\n"
+        )
+
+        try:
+            result = subprocess.run(
+                [sys.executable, "-c", source],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=2,
+            )
+        except subprocess.TimeoutExpired:
+            self.fail("malformed reference with repeated backslashes did not finish")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_indented_raw_html_images_are_not_treated_as_code(self):
         text = (

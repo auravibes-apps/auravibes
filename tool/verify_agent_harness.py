@@ -241,8 +241,10 @@ def markdown_links(text):
     text = _without_code(text)
     yield from _inline_link_targets(text)
 
+    # Keep escaped characters and ordinary label characters disjoint to avoid
+    # exponential backtracking on long runs of backslashes.
     reference_definition = re.compile(
-        r"^ {0,3}\[(?:\\.|[^\]])+\]:[ \t]*(?:\n[ \t]{0,3})?"
+        r"^ {0,3}\[(?:\\.|[^\\\]])+\]:[ \t]*(?:\n[ \t]{0,3})?"
         r"(<[^>\n]*>|(?:\\.|[^ \t\n]+))",
         re.MULTILINE,
     )
