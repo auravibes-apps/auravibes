@@ -377,7 +377,7 @@ jobs:
           fi
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            if ! dart run tool/changed_test_selector.dart select \
+            if ! dart tool/changed_test_selector.dart select \
               --base "${{ github.event.pull_request.base.sha }}" \
               --head HEAD \
               --output "$manifest"; then
@@ -398,7 +398,7 @@ jobs:
           if [ -s "$timings" ]; then
             matrix_args+=(--timings "$timings")
           fi
-          matrix="$(dart run tool/changed_test_selector.dart "${matrix_args[@]}")"
+          matrix="$(dart tool/changed_test_selector.dart "${matrix_args[@]}")"
           printf '%s\n' "$matrix" > "$matrix_file"
           report_count="$(ruby -rjson -e 'puts JSON.parse(ARGF.read).fetch("include").length' <<< "$matrix")"
           timing_source="fixed shard fallback"
