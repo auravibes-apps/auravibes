@@ -1494,9 +1494,12 @@ void main() {
           isChildConversation: false,
         )).singleWhere((entry) => entry.slug == 'research').revision;
 
-        final beforeSpecs = {
-          for (final tool in controls) tool.spec.name: tool.spec,
+        final beforeSpecs = [for (final tool in controls) tool.spec];
+        final beforeSpecsByName = {
+          for (final spec in beforeSpecs) spec.name: spec,
         };
+        final beforeNames = beforeSpecs.map((spec) => spec.name).toList();
+        expect(beforeNames.toSet(), hasLength(beforeNames.length));
         final result = await const ServerToolExecutorService().call(
           fixture.database,
           fixture.turn,
@@ -1527,35 +1530,58 @@ void main() {
           workspaceId: fixture.workspaceId,
           conversationStableId: 'conversation-1',
         );
-        final selectedSpecs = {
-          for (final tool in selectedTools) tool.spec.name: tool.spec,
+        final selectedSpecs = [for (final tool in selectedTools) tool.spec];
+        final selectedSpecsByName = {
+          for (final spec in selectedSpecs) spec.name: spec,
         };
-        final beforeNames = beforeSpecs.keys.toList()..sort();
-        final selectedNames = selectedSpecs.keys.toList()..sort();
-        expect(selectedNames, beforeNames);
+        final selectedNames = selectedSpecs.map((spec) => spec.name).toList();
+        expect(selectedSpecs, hasLength(beforeSpecs.length));
+        expect(selectedNames.toSet(), hasLength(selectedNames.length));
+        expect(selectedNames.toSet(), beforeNames.toSet());
         expect(selectedNames, containsAll(skillCommandToolNames));
         for (final name in beforeNames) {
           if (name == callSkillToolName) continue;
           expect(
-            jsonEncode(selectedSpecs[name]!.inputJsonSchema),
-            jsonEncode(beforeSpecs[name]!.inputJsonSchema),
-            reason: '$name schema should not change when a skill is activated.',
+            selectedSpecsByName[name],
+            beforeSpecsByName[name],
+            reason: '$name spec should not change when a skill is activated.',
           );
         }
 
+        final beforeCallSpec = beforeSpecsByName[callSkillToolName]!;
+        final selectedCallSpec = selectedSpecsByName[callSkillToolName]!;
+        expect(selectedCallSpec.name, beforeCallSpec.name);
+        expect(selectedCallSpec.description, beforeCallSpec.description);
+        expect(
+          selectedCallSpec.requiresCredential,
+          beforeCallSpec.requiresCredential,
+        );
+
         final beforeCallProperties = Map<String, Object?>.from(
-          beforeSpecs[callSkillToolName]!.inputJsonSchema['properties']! as Map,
+          beforeCallSpec.inputJsonSchema['properties']! as Map,
         );
         final beforeArgumentsSchema = Map<String, Object?>.from(
           beforeCallProperties['args']! as Map,
+        );
+        final selectedCallSchema = Map<String, Object?>.from(
+          selectedCallSpec.inputJsonSchema,
+        );
+        final selectedCallProperties = Map<String, Object?>.from(
+          selectedCallSchema['properties']! as Map,
+        );
+        selectedCallProperties['args'] = beforeArgumentsSchema;
+        selectedCallSchema['properties'] = selectedCallProperties;
+        expect(
+          jsonEncode(selectedCallSchema),
+          jsonEncode(beforeCallSpec.inputJsonSchema),
+          reason: 'Only call_skill_tool args schema should change when a skill is activated.',
         );
         expect(beforeArgumentsSchema['type'], 'object');
         expect(beforeArgumentsSchema['properties'], isEmpty);
         expect(beforeArgumentsSchema['additionalProperties'], isFalse);
 
         final activatedCallProperties = Map<String, Object?>.from(
-          selectedSpecs[callSkillToolName]!.inputJsonSchema['properties']!
-              as Map,
+          selectedCallSpec.inputJsonSchema['properties']! as Map,
         );
         final activatedArgumentsSchema = Map<String, Object?>.from(
           activatedCallProperties['args']! as Map,
