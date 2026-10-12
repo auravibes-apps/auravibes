@@ -45,6 +45,7 @@ abstract interface class AgentToolExecutionProvider<TTool extends Object> {
 
   Future<Object?> runResolvedTool({
     required String conversationId,
+    required String toolCallId,
     required TTool tool,
     required Map<String, dynamic> arguments,
   });

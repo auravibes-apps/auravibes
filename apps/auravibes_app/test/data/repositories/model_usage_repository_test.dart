@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/model_usage_repository.dart';
 import 'package:auravibes_app/domain/entities/model_usage_record.dart';
@@ -150,4 +152,90 @@ void main() {
     expect(totals.failedRequestCount, 1);
     expect(totals.promptTokens, isNull);
   });
+
+  test('restores conversation usage after reopening the database', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'auravibes-model-usage-',
+    );
+    final file = File('${directory.path}/model-usage.sqlite');
+    AppDatabase reopenedDatabase = _ModelUsageDatabaseBeforeReopen(
+      connection: DatabaseConnection(NativeDatabase(file)),
+    );
+    addTearDown(() async {
+      await reopenedDatabase.close();
+      final _ = await directory.delete(recursive: true);
+    });
+
+    final workspace = await reopenedDatabase.workspaceDao.insertWorkspace(
+      .insert(name: 'Workspace', type: WorkspaceType.local),
+    );
+    final source = await reopenedDatabase.conversationDao.insertConversation(
+      .insert(workspaceId: workspace.id, title: 'Source'),
+    );
+    final fork = await reopenedDatabase.conversationDao.insertConversation(
+      .insert(
+        workspaceId: workspace.id,
+        title: 'Fork',
+        forkSourceConversationId: .new(source.id),
+      ),
+    );
+    final sourceRecord = await ModelUsageRepository(reopenedDatabase)
+        .recordRequest(
+          .new(
+            conversationId: source.id,
+            providerId: 'anthropic',
+            modelId: 'claude-sonnet-5-5',
+            requestKind: .generation,
+            outcome: .succeeded,
+            usage: const .new(
+              promptTokens: 12,
+              responseTokens: 4,
+              totalTokens: 16,
+              cacheReadInputTokens: 2,
+              cacheCreationInputTokens: 1,
+            ),
+            costStatus: .known,
+            costUsd: 0.02,
+          ),
+        );
+    final forkRecord = await ModelUsageRepository(reopenedDatabase)
+        .recordRequest(
+          .new(
+            conversationId: fork.id,
+            providerId: 'anthropic',
+            modelId: 'claude-sonnet-5-5',
+            requestKind: .generation,
+            outcome: .succeeded,
+            usage: const .new(
+              promptTokens: 3,
+              responseTokens: 1,
+              totalTokens: 4,
+            ),
+            costStatus: .known,
+            costUsd: 0.01,
+          ),
+        );
+    await reopenedDatabase.close();
+
+    reopenedDatabase = _ModelUsageDatabaseAfterReopen(
+      connection: DatabaseConnection(NativeDatabase(file)),
+    );
+    final repository = ModelUsageRepository(reopenedDatabase);
+    final restoredRecords = await repository.getRecordsForConversation(
+      source.id,
+    );
+    final restoredTotals = await repository.getTotalsForConversation(source.id);
+    final forkRecords = await repository.getRecordsForConversation(fork.id);
+
+    expect(restoredRecords.single.id, sourceRecord.id);
+    expect(restoredTotals.promptTokens, 12);
+    expect(restoredTotals.costUsd, 0.02);
+    expect(forkRecords.single.id, forkRecord.id);
+  });
 }
+
+class _ModelUsageDatabaseBeforeReopen({required super.connection})
+    extends AppDatabase;
+
+class _ModelUsageDatabaseAfterReopen({required super.connection})
+    extends AppDatabase;

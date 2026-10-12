@@ -23,7 +23,6 @@ import 'package:auravibes_app/router/workspace_navigation.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
-import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -527,33 +526,27 @@ class const _ModelCatalogSyncIconButton({
   required final bool isSyncing,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('service_connections_sync'),
-    child: AuraIconButton.custom(
-      child: isSyncing
-          ? const AuraSpinner(size: .small)
-          : const AuraIcon(Icons.sync),
-      onPressed: isSyncing ? null : onPressed,
-      disabled: isSyncing,
-      tooltip: LocaleKeys.models_screens_catalog_sync_tooltip.tr(
-        context: context,
-      ),
-    ),
+  Widget build(BuildContext context) => AuraIconButton.custom(
+    child: isSyncing
+        ? const AuraSpinner(size: .small)
+        : const AuraIcon(Icons.sync),
+    onPressed: isSyncing ? null : onPressed,
+    disabled: isSyncing,
     identifier: 'service_connections_sync',
+    tooltip: LocaleKeys.models_screens_catalog_sync_tooltip.tr(
+      context: context,
+    ),
   );
 }
 
 class const _ConnectionsAddButton({required final VoidCallback onPressed})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('service_connections_add'),
-    child: AuraIconButton(
-      icon: Icons.add,
-      onPressed: onPressed,
-      tooltip: LocaleKeys.service_connections_add.tr(context: context),
-    ),
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.add,
+    onPressed: onPressed,
     identifier: 'service_connections_add',
+    tooltip: LocaleKeys.service_connections_add.tr(context: context),
   );
 }
 
@@ -810,12 +803,9 @@ class const _EmptyConnectionsCopy() extends StatelessWidget {
 class const _ConnectionsAddAction({required final VoidCallback onPressed})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('service_connections_empty_add'),
-    child: AuraButton(
-      onPressed: onPressed,
-      child: const TextLocale(LocaleKeys.service_connections_add),
-    ),
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed,
+    child: const TextLocale(LocaleKeys.service_connections_add),
     identifier: 'service_connections_empty_add',
   );
 }
@@ -1631,21 +1621,14 @@ class const _ConnectionWarningActionButton({
   Widget build(BuildContext context, WidgetRef ref) {
     return Align(
       alignment: .centerRight,
-      child: StableUiSelector(
-        identifier: 'service_connection_warning_${connection.id}',
-        child: AuraButton(
-          onPressed: () => unawaited(
-            _runConnectionWarningAction(
-              context,
-              ref,
-              connection,
-              action.refresh,
-            ),
-          ),
-          child: TextLocale(action.labelKey),
-          variant: .outlined,
-          size: .small,
+      child: AuraButton(
+        onPressed: () => unawaited(
+          _runConnectionWarningAction(context, ref, connection, action.refresh),
         ),
+        child: TextLocale(action.labelKey),
+        variant: .outlined,
+        size: .small,
+        identifier: 'service_connection_warning_${connection.id}',
       ),
     );
   }
@@ -1719,16 +1702,14 @@ class const _ConnectionTileMenu({
     final menuController = AuraPopupMenuController();
     final selectorId = 'service_connection_menu_${connection.id}';
 
-    return StableUiSelector(
-      identifier: selectorId,
-      child: AuraPopupMenu(
-        child: AuraIconButton(
-          icon: Icons.more_vert,
-          onPressed: menuController.toggle,
-        ),
-        items: [..._connectionMenuItems(context, ref, connection)],
-        controller: menuController,
+    return AuraPopupMenu(
+      child: AuraIconButton(
+        icon: Icons.more_vert,
+        onPressed: menuController.toggle,
+        identifier: selectorId,
       ),
+      items: [..._connectionMenuItems(context, ref, connection)],
+      controller: menuController,
     );
   }
 }

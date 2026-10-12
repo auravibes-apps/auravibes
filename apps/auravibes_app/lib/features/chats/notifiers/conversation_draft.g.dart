@@ -58,7 +58,7 @@ final class ConversationDraftProvider
   }
 }
 
-String _$conversationDraftHash() => r'c475d71fc6d821d89eee58fc12de3313edf2abbf';
+String _$conversationDraftHash() => r'f2975ca6e1409a98d20e97222d5b3aef18fc7cd0';
 
 final class ConversationDraftFamily extends $Family
     with

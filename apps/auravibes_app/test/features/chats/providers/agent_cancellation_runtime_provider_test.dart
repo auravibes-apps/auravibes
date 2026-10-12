@@ -45,6 +45,83 @@ void main() {
       expect(runtime.start('c1').isCancellationRequested, isFalse);
     });
 
+    test('tool cancellation distinguishes request from confirmation', () async {
+      final runtime = AgentCancellationRuntime()..start('conversation-1');
+      final cancellationRelease = Completer<void>();
+      var cancelCalls = 0;
+      final handle = runtime.registerToolCancellationHandle((
+        conversationId: 'conversation-1',
+        toolCallId: 'call-1',
+        isSupported: true,
+        cancel: () {
+          cancelCalls += 1;
+
+          return cancellationRelease.future;
+        },
+      ));
+
+      expect(handle.status, AgentToolCancellationStatus.running);
+      final firstRequest = handle.requestCancellation();
+      final repeatedRequest = handle.requestCancellation();
+
+      expect(handle.status, AgentToolCancellationStatus.cancellationRequested);
+      expect(handle.status, AgentToolCancellationStatus.cancellationRequested);
+      expect(cancelCalls, 1);
+
+      cancellationRelease.complete();
+      expect(await firstRequest, isTrue);
+      expect(await repeatedRequest, isTrue);
+      expect(handle.status, AgentToolCancellationStatus.cancellationConfirmed);
+    });
+
+    test('unsupported tool cancellation never reports confirmation', () async {
+      var cancelCalls = 0;
+      final handle = AgentToolCancellationHandle(
+        toolCallId: 'mcp-1',
+        isSupported: false,
+        cancel: () {
+          cancelCalls += 1;
+
+          return Future<void>.value();
+        },
+      );
+
+      expect(handle.status, AgentToolCancellationStatus.unsupported);
+      expect(await handle.requestCancellation(), isFalse);
+      expect(handle.status, AgentToolCancellationStatus.unsupported);
+      expect(handle.status, AgentToolCancellationStatus.unsupported);
+      expect(cancelCalls, 0);
+    });
+
+    test('normal tool completion is distinct from cancellation', () {
+      final runtime = AgentCancellationRuntime();
+      final handle = runtime.registerToolCancellationHandle((
+        conversationId: 'conversation-1',
+        toolCallId: 'call-1',
+        isSupported: true,
+        cancel: Future<void>.value,
+      ));
+
+      runtime.completeToolCancellationHandle(
+        conversationId: 'conversation-1',
+        toolCallId: 'call-1',
+        handle: handle,
+      );
+
+      expect(handle.status, AgentToolCancellationStatus.completed);
+      expect(handle.status, AgentToolCancellationStatus.completed);
+    });
+
+    test('pending child stop waits for the child run to close', () async {
+      final runtime = AgentCancellationRuntime()..requestStopOnStart('child');
+      final wait = runtime.waitForCompletion('child');
+      final childScope = runtime.start('child');
+
+      expect(childScope.isCancellationRequested, isTrue);
+      runtime.clear('child', childScope);
+      await wait;
+    });
+
     test('stale clear cannot clear replacement', () {
       final runtime = AgentCancellationRuntime();
       final stale = runtime.start('c1');
