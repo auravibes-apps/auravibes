@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
+        AgentToolNameResolver,
         A2uiChatContract,
         a2uiChatFormSubmitActionName,
         a2uiChatFormSubmitComponentId,
@@ -1101,6 +1102,251 @@ class ConversationUseCases {
       ],
       sequence: conversation.eventSequence,
     );
+  }
+
+  Future<BackgroundWorkView> detachToolCall(
+    Session session, {
+    required String userId,
+    required DetachToolCallRequest request,
+  }) async {
+    _requireId(request.requestId);
+    _requireId(request.conversationId);
+    _requireId(request.toolCallId);
+    return session.db.transaction((transaction) async {
+      await _requireMember(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
+      final conversation = await _repository.findConversationByStableId(
+        session,
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (conversation == null) _fail(ConversationErrorCode.notFound);
+      final call = await ConversationToolCall.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.conversationId.equals(conversation.id) &
+            table.stableId.equals(request.toolCallId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (call == null) _fail(ConversationErrorCode.notFound);
+      final existingStableId = call.backgroundWorkStableId;
+      if (existingStableId != null) {
+        final existing = await BackgroundWorkRecord.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.conversationId.equals(conversation.id) &
+              table.conversationToolCallId.equals(call.id),
+          transaction: transaction,
+        );
+        if (existing == null || existing.stableId != existingStableId) {
+          _fail(ConversationErrorCode.turnConflict);
+        }
+        return _backgroundWorkView(
+          existing,
+          conversation: conversation,
+          message: existing.originatingMessageId == null
+              ? null
+              : await ConversationMessage.db.findById(
+                  session,
+                  existing.originatingMessageId!,
+                  transaction: transaction,
+                ),
+        );
+      }
+      final turn = await ConversationTurn.db.findById(
+        session,
+        call.turnId,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (turn == null ||
+          turn.cancellationRequestedAt != null ||
+          ConversationStatuses.isTerminal(turn.status)) {
+        _fail(ConversationErrorCode.turnConflict);
+      }
+      if (!call.backgroundEligible || call.status != 'running') {
+        _fail(ConversationErrorCode.turnConflict);
+      }
+      final now = DateTime.now().toUtc();
+      final stableId = const Uuid().v7();
+      final work = await BackgroundWorkRecord.db.insertRow(
+        session,
+        BackgroundWorkRecord(
+          workspaceId: request.workspaceId,
+          conversationId: conversation.id!,
+          conversationToolCallId: call.id!,
+          originatingMessageId: call.messageId,
+          stableId: stableId,
+          toolCallId: call.stableId,
+          toolKind:
+              const AgentToolNameResolver().resolve(call.name)?.kind.name ??
+              'unknown',
+          status: 'running',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      final acknowledgement = jsonEncode({
+        'status': 'running_in_background',
+        'work_id': stableId,
+      });
+      await ConversationToolCall.db.updateRow(
+        session,
+        call.copyWith(
+          status: 'runningInBackground',
+          resultJson: acknowledgement,
+          backgroundWorkStableId: stableId,
+          revision: call.revision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      final message = await ConversationMessage.db.findById(
+        session,
+        call.messageId,
+        transaction: transaction,
+      );
+      if (message == null) _fail(ConversationErrorCode.notFound);
+      return _backgroundWorkView(
+        work,
+        conversation: conversation,
+        message: message,
+      );
+    });
+  }
+
+  Future<List<BackgroundWorkView>> listBackgroundWorks(
+    Session session, {
+    required String userId,
+    required ListBackgroundWorksRequest request,
+  }) async {
+    await _requireMember(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+    );
+    final conversation = await _requireConversation(
+      session,
+      request.workspaceId,
+      request.conversationId,
+    );
+    final records = await BackgroundWorkRecord.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(request.workspaceId) &
+          table.conversationId.equals(conversation.id),
+      orderBy: (table) => table.createdAt,
+      limit: 100,
+    );
+    final messages = await ConversationMessage.db.find(
+      session,
+      where: (table) => table.id.inSet(
+        records
+            .map((record) => record.originatingMessageId)
+            .whereType<int>()
+            .toSet(),
+      ),
+    );
+    final messagesById = {for (final message in messages) message.id: message};
+    return [
+      for (final record in records)
+        _backgroundWorkView(
+          record,
+          conversation: conversation,
+          message: messagesById[record.originatingMessageId],
+        ),
+    ];
+  }
+
+  BackgroundWorkView _backgroundWorkView(
+    BackgroundWorkRecord record, {
+    required Conversation conversation,
+    ConversationMessage? message,
+  }) => BackgroundWorkView(
+    id: record.stableId,
+    workspaceId: record.workspaceId,
+    conversationId: conversation.stableId,
+    originatingMessageId: message?.stableId,
+    toolCallId: record.toolCallId,
+    toolKind: record.toolKind,
+    status: record.status,
+    statusPreview: record.statusPreview,
+    resultContent: record.resultContent,
+    resultByteLength: record.resultByteLength,
+    errorCode: record.errorCode,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  );
+
+  Future<BackgroundWorkView> stopBackgroundWork(
+    Session session, {
+    required String userId,
+    required StopBackgroundWorkRequest request,
+  }) async {
+    _requireId(request.requestId);
+    _requireId(request.conversationId);
+    _requireId(request.workId);
+    return session.db.transaction((transaction) async {
+      await _requireMember(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
+      final conversation = await _repository.findConversationByStableId(
+        session,
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (conversation == null) _fail(ConversationErrorCode.notFound);
+      final work = await BackgroundWorkRecord.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.conversationId.equals(conversation.id) &
+            table.stableId.equals(request.workId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (work == null) _fail(ConversationErrorCode.notFound);
+      final current = switch (work.status) {
+        'running' => await BackgroundWorkRecord.db.updateRow(
+          session,
+          work.copyWith(
+            status: 'stopRequested',
+            updatedAt: DateTime.now().toUtc(),
+          ),
+          transaction: transaction,
+        ),
+        'stopRequested' || 'completed' || 'failed' || 'cancelled' => work,
+        _ => _fail(ConversationErrorCode.turnConflict),
+      };
+      final messageId = current.originatingMessageId;
+      final message = messageId == null
+          ? null
+          : await ConversationMessage.db.findById(
+              session,
+              messageId,
+              transaction: transaction,
+            );
+      return _backgroundWorkView(
+        current,
+        conversation: conversation,
+        message: message,
+      );
+    });
   }
 
   Future<ConversationSnapshot> queueConversationMessage(
@@ -4863,6 +5109,8 @@ class ConversationUseCases {
       argumentsJson: call.argumentsJson,
       argumentsDigest: call.argumentsDigest,
       userFacingDescription: call.userFacingDescription,
+      backgroundEligible: call.backgroundEligible,
+      backgroundWorkStableId: call.backgroundWorkStableId,
       status: call.status,
       decision: call.decision,
       resultJson: result,

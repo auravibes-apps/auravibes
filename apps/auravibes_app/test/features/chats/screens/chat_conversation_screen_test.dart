@@ -116,6 +116,10 @@ void main() {
       ToolCallResultStatus.running,
     );
     expect(
+      CloudMessageTools.resultStatus('runningInBackground'),
+      ToolCallResultStatus.running,
+    );
+    expect(
       CloudMessageTools.resultStatus('success'),
       ToolCallResultStatus.success,
     );

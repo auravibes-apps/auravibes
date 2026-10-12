@@ -1156,7 +1156,8 @@
   "sidebar": {
     "recent_chats": "Chats Recientes",
     "no_recent_chats": "Los chats aparecerán aquí",
-    "view_all_chats": "Ver Todos"
+    "view_all_chats": "Ver Todos",
+    "response_in_progress": "Respuesta del asistente en curso"
   },
   "mcp_catalog": {
     "back": "Volver",

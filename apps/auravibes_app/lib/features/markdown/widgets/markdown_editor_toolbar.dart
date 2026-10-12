@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/markdown/widgets/markdown_link_dialog.dar
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const MarkdownEditorToolbar({
@@ -17,36 +18,44 @@ class const MarkdownEditorToolbar({
 }
 
 class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
-  final _undoHistory = <({TextEditingValue before, TextEditingValue after})>[];
-  final _redoHistory = <({TextEditingValue before, TextEditingValue after})>[];
+  final _history = _MarkdownToolbarHistory();
   String _lastText = '';
+  _MarkdownToolbarKeyEventHandler? _keyEventHandler;
 
   TextEditingController get _controller => widget.controller;
 
   FocusNode get _focusNode => widget.focusNode;
 
-  bool get _canUndo =>
-      _undoHistory.isNotEmpty &&
-      _controller.text == _undoHistory.last.after.text;
+  bool get _canUndo => _history.canUndo(_controller.text);
 
-  bool get _canRedo =>
-      _redoHistory.isNotEmpty &&
-      _controller.text == _redoHistory.last.before.text;
+  bool get _canRedo => _history.canRedo(_controller.text);
 
   @override
   void initState() {
     super.initState();
     _lastText = _controller.text;
+    _keyEventHandler = _MarkdownToolbarKeyEventHandler(
+      platform: () => Theme.of(context).platform,
+      onAction: (action) => _applyAction(action, context),
+    )..attach(_focusNode);
+  }
+
+  @override
+  void dispose() {
+    _keyEventHandler?.dispose();
+    super.dispose();
   }
 
   @override
   void didUpdateWidget(MarkdownEditorToolbar oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      _keyEventHandler?.attach(_focusNode);
+    }
     if (oldWidget.controller == widget.controller) return;
 
     _lastText = _controller.text;
-    _undoHistory.clear();
-    _redoHistory.clear();
+    _history.clear();
   }
 
   @override
@@ -56,32 +65,17 @@ class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
     allowMouseDrag: true,
   );
 
-  void _rememberAction(TextEditingValue before) {
-    final after = _controller.value;
-    if (after.text == before.text) return;
+  void _rememberAction(TextEditingValue before) =>
+      _history.remember(before, _controller.value, setState);
 
-    setState(() {
-      _undoHistory.add((before: before, after: after));
-      _redoHistory.clear();
-    });
-  }
-
-  void _undo() {
-    if (!_canUndo) return;
-
-    final action = _undoHistory.removeLast();
-    _toolbarEdit(() => _controller.value = action.before);
-    if (!_focusNode.hasFocus) _focusNode.requestFocus();
-    setState(() => _redoHistory.add(action));
-  }
-
-  void _redo() {
-    if (!_canRedo) return;
-
-    final action = _redoHistory.removeLast();
-    _toolbarEdit(() => _controller.value = action.after);
-    if (!_focusNode.hasFocus) _focusNode.requestFocus();
-    setState(() => _undoHistory.add(action));
+  void _changeHistory({required bool undo}) {
+    _history.change((
+      undo: undo,
+      controller: _controller,
+      focusNode: _focusNode,
+      onEdit: () => _lastText = _controller.text,
+      setState: setState,
+    ));
   }
 }
 
@@ -95,17 +89,14 @@ extension on _MarkdownEditorToolbarState {
     if (text == _lastText) return;
 
     _lastText = text;
-    _undoHistory.clear();
-    _redoHistory.clear();
+    _history.clear();
   }
 
   TextSelection get _safeSelection {
     final selection = _controller.selection;
     if (selection.isValid) return selection;
 
-    final length = _controller.text.length;
-
-    return TextSelection.collapsed(offset: length);
+    return TextSelection.collapsed(offset: _controller.text.length);
   }
 
   void _applyAction(_ToolbarActionKind action, BuildContext context) {
@@ -158,6 +149,159 @@ extension on _MarkdownEditorToolbarState {
         break;
     }
   }
+}
+
+class _MarkdownToolbarKeyEventHandler({
+  required final TargetPlatform Function() platform,
+  required final void Function(_ToolbarActionKind) onAction,
+}) {
+  FocusNode? _focusNode;
+  KeyEventResult Function(FocusNode, KeyEvent)? _previousHandler;
+  KeyEventResult Function(FocusNode, KeyEvent)? _handler;
+
+  void attach(FocusNode focusNode) {
+    _detach();
+    _focusNode = focusNode;
+    _previousHandler = focusNode.onKeyEvent;
+    final handler = _handle;
+    _handler = handler;
+    focusNode.onKeyEvent = handler;
+  }
+
+  void dispose() => _detach();
+
+  void _detach() {
+    final focusNode = _focusNode;
+    final handler = _handler;
+    if (focusNode != null &&
+        handler != null &&
+        identical(focusNode.onKeyEvent, handler)) {
+      focusNode.onKeyEvent = _previousHandler;
+    }
+    _focusNode = null;
+    _previousHandler = null;
+    _handler = null;
+  }
+
+  KeyEventResult _handle(FocusNode node, KeyEvent event) {
+    final action = _MarkdownToolbarShortcuts.actionFor(event, platform());
+    if (action != null) {
+      onAction(action);
+
+      return .handled;
+    }
+
+    return _previousHandler?.call(node, event) ?? .ignored;
+  }
+}
+
+abstract final class _MarkdownToolbarShortcuts {
+  static _ToolbarActionKind? actionFor(
+    KeyEvent event,
+    TargetPlatform platform,
+  ) {
+    if (event is! KeyDownEvent || !_hasPrimaryModifier(platform)) return null;
+
+    return _actionForKey(event.logicalKey);
+  }
+
+  static bool _hasPrimaryModifier(TargetPlatform platform) {
+    final keyboard = HardwareKeyboard.instance;
+    if (keyboard.isAltPressed || keyboard.isShiftPressed) return false;
+
+    // Use Command on macOS and Control elsewhere for the shared actions.
+    return platform == TargetPlatform.macOS
+        ? keyboard.isMetaPressed && !keyboard.isControlPressed
+        : keyboard.isControlPressed && !keyboard.isMetaPressed;
+  }
+
+  static _ToolbarActionKind? _actionForKey(LogicalKeyboardKey key) =>
+      switch (key) {
+        .keyB => .bold,
+        .keyI => .italic,
+        .keyE => .code,
+        .keyK => .link,
+        _ => null,
+      };
+}
+
+typedef _MarkdownHistoryAction = ({
+  TextEditingValue before,
+  TextEditingValue after,
+});
+
+typedef _MarkdownHistoryChange = ({
+  bool undo,
+  TextEditingController controller,
+  FocusNode focusNode,
+  void Function() onEdit,
+  void Function(void Function()) setState,
+});
+
+class _MarkdownToolbarHistory {
+  final _undoHistory = <_MarkdownHistoryAction>[];
+  final _redoHistory = <_MarkdownHistoryAction>[];
+
+  bool canUndo(String text) =>
+      _undoHistory.isNotEmpty && text == _undoHistory.last.after.text;
+
+  bool canRedo(String text) =>
+      _redoHistory.isNotEmpty && text == _redoHistory.last.before.text;
+
+  void clear() {
+    _undoHistory.clear();
+    _redoHistory.clear();
+  }
+
+  void remember(
+    TextEditingValue before,
+    TextEditingValue after,
+    void Function(void Function()) setState,
+  ) {
+    if (after.text == before.text) return;
+
+    setState(() {
+      _undoHistory.add((before: before, after: after));
+      _redoHistory.clear();
+    });
+  }
+
+  void change(_MarkdownHistoryChange change) {
+    final action = _take(change.undo, change.controller.text);
+    if (action == null) return;
+
+    _applyValue(action, change);
+    _restoreFocus(change.focusNode);
+    _pushAction(action, change);
+  }
+
+  void _applyValue(
+    _MarkdownHistoryAction action,
+    _MarkdownHistoryChange change,
+  ) {
+    change.controller.value = change.undo ? action.before : action.after;
+    change.onEdit();
+  }
+
+  void _restoreFocus(FocusNode focusNode) {
+    if (!focusNode.hasFocus) focusNode.requestFocus();
+  }
+
+  void _pushAction(
+    _MarkdownHistoryAction action,
+    _MarkdownHistoryChange change,
+  ) {
+    change.setState(() => _historyForDirection(change.undo).add(action));
+  }
+
+  _MarkdownHistoryAction? _take(bool undo, String text) {
+    if (!(undo ? canUndo(text) : canRedo(text))) return null;
+
+    return (undo ? _undoHistory : _redoHistory).removeLast();
+  }
+
+  List<_MarkdownHistoryAction> _historyForDirection(bool undo) =>
+      undo ? _redoHistory : _undoHistory;
 }
 
 extension on _MarkdownEditorToolbarState {
@@ -1079,9 +1223,11 @@ VoidCallback? _historyCallback(
   _MarkdownEditorToolbarState toolbar,
   bool isUndo,
 ) {
-  if (isUndo) return toolbar._canUndo ? toolbar._undo : null;
+  if (isUndo) {
+    return toolbar._canUndo ? () => toolbar._changeHistory(undo: true) : null;
+  }
 
-  return toolbar._canRedo ? toolbar._redo : null;
+  return toolbar._canRedo ? () => toolbar._changeHistory(undo: false) : null;
 }
 
 class const _ToolbarAction({

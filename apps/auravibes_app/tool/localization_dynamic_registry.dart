@@ -994,6 +994,32 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         keyExpression: 'titleKey',
       ),
       DynamicTranslationSite(
+        file: 'features/agents/screens/agent_detail_screen.dart',
+        method: 'TextLocale',
+        keyExpression: 'localizedTitle',
+      ),
+      DynamicTranslationSite(
+        file: 'features/skills/widgets/skill_capability_preview_dialog.dart',
+        method: 'TextLocale',
+        keyExpression: 'key',
+      ),
+      DynamicTranslationSite(
+        file: 'features/skills/widgets/skill_capability_preview_dialog.dart',
+        method: 'TextLocale',
+        keyExpression: 'key',
+        occurrence: 1,
+      ),
+      DynamicTranslationSite(
+        file: 'features/skills/widgets/skill_capability_preview_dialog.dart',
+        method: 'tr',
+        keyExpression: 'tool.titleKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/skills/widgets/skill_capability_preview_dialog.dart',
+        method: 'tr',
+        keyExpression: 'key',
+      ),
+      DynamicTranslationSite(
         file: 'features/skills/screens/skills_screen.dart',
         method: 'tr',
         keyExpression: 'skill.titleKey',
@@ -1319,6 +1345,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         file: 'features/chats/widgets/skill_tool_call_display.dart',
         method: 'tr',
         keyExpression: 'titleKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/agents/screens/agent_detail_screen.dart',
+        method: 'tr',
+        keyExpression: 'tool.titleKey',
       ),
     ],
     keys: {
@@ -1791,6 +1822,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         file: 'features/skills/widgets/conversation_skill_selector_modal.dart',
         method: 'TextLocale',
         keyExpression: 'resultKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/skills/widgets/conversation_skill_selector_modal.dart',
+        method: 'tr',
+        keyExpression: '_actionResultKey(result)',
       ),
       DynamicTranslationSite(
         file: 'features/skills/widgets/conversation_skill_selector_modal.dart',

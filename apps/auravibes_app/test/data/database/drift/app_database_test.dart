@@ -41,7 +41,27 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 24);
+      expect(fixture.database.schemaVersion, 25);
+    });
+
+    test('migration from schema 24 creates background work storage', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()..userVersion = 24;
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final table = await database
+          .customSelect(
+            'SELECT name FROM sqlite_master WHERE type = ? AND name = ?',
+            variables: [
+              const Variable<String>('table'),
+              const Variable<String>('background_works'),
+            ],
+          )
+          .get();
+
+      expect(table, hasLength(1));
     });
 
     test('migration defaults advanced capabilities to false', () async {
@@ -855,6 +875,8 @@ final class _MigrationCase13;
 final class _MigrationCase14;
 
 final class _MigrationCase15;
+
+final class _MigrationCase16;
 
 final class _RecreatedDatabase extends AppDatabase {
   new(QueryExecutor connection) : super(connection: connection);

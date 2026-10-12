@@ -72,6 +72,10 @@ bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
                   ),
             )));
 
+bool serverToolCanRunInBackground(ServerResolvedTool tool) =>
+    tool.descriptor.kind == AgentResolvedToolKind.skillTemplate ||
+    tool.descriptor.kind == AgentResolvedToolKind.skillAppTemplate;
+
 bool isCloudToolEnabled({
   required Map<String, dynamic> toolData,
   Map<String, dynamic>? toolGroupData,
@@ -775,6 +779,7 @@ class const ServerToolRequest({
   required final String name,
   required final Map<String, dynamic> arguments,
   final String? userFacingDescription,
+  final Future<bool> Function()? isCancelled,
 });
 
 class const ServerToolAwaitingSubAgents({
@@ -1218,6 +1223,7 @@ class ServerToolRuntime({
         argumentsJson: argumentsJson,
         digest: digest,
         status: 'pending',
+        backgroundEligible: serverToolCanRunInBackground(tool),
       );
       return ServerToolDisposition.awaitingApproval;
     }
@@ -1258,10 +1264,15 @@ class ServerToolRuntime({
         argumentsJson: argumentsJson,
         digest: digest,
         status: 'running',
+        backgroundEligible: serverToolCanRunInBackground(tool),
       );
     } else {
       await beforeApprovedClaim?.call();
-      call = await _claimApproved(session, existing);
+      call = await _claimApproved(
+        session,
+        existing,
+        backgroundEligible: serverToolCanRunInBackground(tool),
+      );
     }
     if (call == null) return ServerToolDisposition.completed;
     final executor = _executor;
@@ -1271,16 +1282,27 @@ class ServerToolRuntime({
     if (await cancellationProbe.isCancelled(session, turn.id!)) {
       throw const ConversationCancelledException();
     }
+    final executorRequest = ServerToolRequest(
+      id: executionRequest.id,
+      name: executionRequest.name,
+      arguments: executionRequest.arguments,
+    );
+    if (call.backgroundEligible) {
+      return _runCancellableTool(
+        session,
+        turn: turn,
+        call: call,
+        tool: tool,
+        request: executorRequest,
+        executor: executor,
+      );
+    }
     try {
       final result = await executor(
         session,
         turn,
         tool,
-        ServerToolRequest(
-          id: executionRequest.id,
-          name: executionRequest.name,
-          arguments: executionRequest.arguments,
-        ),
+        executorRequest,
       );
       if (result case ServerToolAwaitingSubAgents(:final children)) {
         await _finish(
@@ -1323,6 +1345,253 @@ class ServerToolRuntime({
       rethrow;
     }
     return ServerToolDisposition.completed;
+  }
+
+  Future<ServerToolDisposition> _runCancellableTool(
+    Session session, {
+    required ConversationTurn turn,
+    required ConversationToolCall call,
+    required ServerResolvedTool tool,
+    required ServerToolRequest request,
+    required ServerToolExecutor executor,
+  }) async {
+    final executionSession = await session.serverpod.createSession();
+    final cancellableRequest = ServerToolRequest(
+      id: request.id,
+      name: request.name,
+      arguments: request.arguments,
+      userFacingDescription: request.userFacingDescription,
+      isCancelled: () => _isCancellableToolCancelled(
+        executionSession,
+        turn: turn,
+        toolCallStableId: request.id,
+      ),
+    );
+    final execution = Future<Object?>.sync(
+      () => executor(executionSession, turn, tool, cancellableRequest),
+    );
+    final completion = _completeCancellableTool(
+      executionSession,
+      turn: turn,
+      call: call,
+      tool: tool,
+      execution: execution,
+    );
+    final detachment = _waitForBackgroundDetach(session, call.id!);
+    await Future.any<void>([
+      completion,
+      detachment.then<void>((_) {}),
+    ]);
+    return ServerToolDisposition.completed;
+  }
+
+  Future<void> _completeCancellableTool(
+    Session executionSession, {
+    required ConversationTurn turn,
+    required ConversationToolCall call,
+    required ServerResolvedTool tool,
+    required Future<Object?> execution,
+  }) async {
+    try {
+      final result = await execution;
+      final status = result is ServerToolAwaitingSubAgents
+          ? 'awaitingSubAgents'
+          : 'success';
+      final detached = await _completeCancellableToolRecord(
+        executionSession,
+        call,
+        status: status,
+        result: _boundedJson(
+          result is ServerToolAwaitingSubAgents
+              ? {'children': result.children}
+              : result,
+        ),
+      );
+      if (!detached && result is ServerToolAwaitingSubAgents) {
+        final waiting = await ConversationToolCall.db.findById(
+          executionSession,
+          call.id!,
+        );
+        if (waiting != null) {
+          await _reconcileAwaitingSubAgents(executionSession, waiting);
+        }
+      }
+    } on AgentToolExecutionFailure catch (failure) {
+      await _completeCancellableToolRecord(
+        executionSession,
+        call,
+        status: 'executionError',
+        result: _boundedRawJson(failure.responseRaw),
+        errorCode: serverToolExecutionFailureCode(failure),
+      );
+      executionSession.log(
+        'Conversation tool execution failed: tool=${tool.spec.name}, '
+        'turn=${turn.id}, failure=${serverToolExecutionFailureCode(failure)}, '
+        'phase=${failure.failurePhase}.',
+        level: LogLevel.warning,
+      );
+    } on ConversationCancelledException {
+      final detached = await _completeCancellableToolRecord(
+        executionSession,
+        call,
+        status: 'cancelled',
+        result: null,
+        errorCode: 'cancelled',
+      );
+      if (!detached) rethrow;
+    } on Object catch (error) {
+      final detached = await _completeCancellableToolRecord(
+        executionSession,
+        call,
+        status: 'executionError',
+        result: null,
+        errorCode: serverToolExecutionFailureCode(error),
+      );
+      executionSession.log(
+        'Conversation tool execution failed: tool=${tool.spec.name}, '
+        'turn=${turn.id}, failure=${serverToolExecutionFailureCode(error)}.',
+        level: LogLevel.warning,
+      );
+      if (!detached) rethrow;
+    } finally {
+      await executionSession.close();
+    }
+  }
+
+  Future<bool> _completeCancellableToolRecord(
+    Session session,
+    ConversationToolCall call, {
+    required String status,
+    required String? result,
+    String? errorCode,
+  }) => session.db.transaction((transaction) async {
+    final current = await ConversationToolCall.db.findById(
+      session,
+      call.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null) return false;
+    final workStableId = current.backgroundWorkStableId;
+    final now = DateTime.now().toUtc();
+    final projection = result == null ? null : projectToolOutput(result);
+    if (workStableId != null) {
+      final work = await BackgroundWorkRecord.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(current.workspaceId) &
+            table.conversationId.equals(current.conversationId) &
+            table.conversationToolCallId.equals(current.id) &
+            table.stableId.equals(workStableId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (work == null ||
+          (work.status != 'running' && work.status != 'stopRequested')) {
+        return true;
+      }
+      final workStatus = switch (status) {
+        'success' || 'awaitingSubAgents' => 'completed',
+        'cancelled' => 'cancelled',
+        _ => 'failed',
+      };
+      final workPreview = switch (workStatus) {
+        'completed' => 'Completed',
+        'cancelled' => 'Stopped',
+        _ => 'Failed',
+      };
+      await BackgroundWorkRecord.db.updateRow(
+        session,
+        work.copyWith(
+          status: workStatus,
+          statusPreview: workPreview,
+          resultContent: projection?.persistedText,
+          resultByteLength: projection?.originalBytes ?? 0,
+          errorCode: errorCode,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      return true;
+    }
+    if (!serverToolCallCanTransition(
+      currentStatus: current.status,
+      currentRevision: current.revision,
+      expectedStatus: call.status,
+      expectedRevision: call.revision,
+    )) {
+      return false;
+    }
+    final turn = await ConversationTurn.db.findById(
+      session,
+      current.turnId,
+      transaction: transaction,
+    );
+    if (turn == null || ConversationStatuses.isTerminal(turn.status)) {
+      return false;
+    }
+    await ConversationToolCall.db.updateRow(
+      session,
+      current.copyWith(
+        status: status,
+        resultJson: projection?.persistedText,
+        revision: current.revision + 1,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    return false;
+  });
+
+  Future<String?> _waitForBackgroundDetach(Session session, int callId) async {
+    while (true) {
+      final call = await ConversationToolCall.db.findById(session, callId);
+      if (call == null) return null;
+      final workId = call.backgroundWorkStableId;
+      if (workId != null) return workId;
+      if (call.status != 'running') return null;
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+  }
+
+  Future<bool> _isCancellableToolCancelled(
+    Session session, {
+    required ConversationTurn turn,
+    required String toolCallStableId,
+  }) async {
+    final call = await ConversationToolCall.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(turn.workspaceId) &
+          table.stableId.equals(toolCallStableId),
+    );
+    if (call == null) return true;
+    final workStableId = call.backgroundWorkStableId;
+    if (workStableId == null) {
+      return cancellationProbe.isCancelled(session, turn.id!);
+    }
+    final currentTurn = await ConversationTurn.db.findById(
+      session,
+      turn.id!,
+    );
+    if (currentTurn == null ||
+        !await hasActiveConversationAccess(
+          session,
+          workspaceId: turn.workspaceId,
+          userId: turn.initiatorUserId,
+        )) {
+      return true;
+    }
+    final work = await BackgroundWorkRecord.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(turn.workspaceId) &
+          table.conversationId.equals(turn.conversationId) &
+          table.stableId.equals(workStableId),
+    );
+    return work == null ||
+        work.status == 'stopRequested' ||
+        work.status == 'cancelled';
   }
 
   Future<AgentToolPermissionResult> _permission(
@@ -1411,6 +1680,7 @@ class ServerToolRuntime({
     required String argumentsJson,
     required String digest,
     required String status,
+    bool backgroundEligible = false,
   }) {
     final now = DateTime.now().toUtc();
     return ConversationToolCall.db.insertRow(
@@ -1427,6 +1697,7 @@ class ServerToolRuntime({
         userFacingDescription: normalizeToolCallUserFacingDescription(
           request.userFacingDescription,
         ),
+        backgroundEligible: backgroundEligible,
         status: status,
         revision: 1,
         createdAt: now,
@@ -1437,8 +1708,9 @@ class ServerToolRuntime({
 
   Future<ConversationToolCall?> _claimApproved(
     Session session,
-    ConversationToolCall call,
-  ) => session.db.transaction((transaction) async {
+    ConversationToolCall call, {
+    required bool backgroundEligible,
+  }) => session.db.transaction((transaction) async {
     final current = await ConversationToolCall.db.findFirstRow(
       session,
       where: (table) =>
@@ -1461,6 +1733,7 @@ class ServerToolRuntime({
       session,
       current.copyWith(
         status: 'running',
+        backgroundEligible: backgroundEligible,
         revision: current.revision + 1,
         updatedAt: DateTime.now().toUtc(),
       ),
