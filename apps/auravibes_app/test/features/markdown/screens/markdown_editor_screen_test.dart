@@ -230,14 +230,15 @@ void main() {
     expect(result, _editedMarkdown);
   });
 
-  testWidgets('preview renders the latest unsaved markdown and empty drafts', (
+  testWidgets('preview renders toolbar-formatted markdown and empty drafts', (
     tester,
   ) async {
     await _openMarkdownEditor(
       tester,
       onResult: (value) => fail('Unexpected editor close: $value'),
     );
-    await tester.enterText(_markdownEditorInput, '# Latest unsaved draft');
+    await tester.enterText(_markdownEditorInput, 'Latest unsaved draft');
+    await tester.tap(find.byIcon(Icons.title));
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.bySemanticsLabel('Preview'));
