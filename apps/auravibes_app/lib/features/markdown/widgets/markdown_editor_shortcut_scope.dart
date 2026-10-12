@@ -11,23 +11,27 @@ class const MarkdownEditorShortcutScope({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Actions(
-    actions: {
-      _MarkdownToolbarIntent: _MarkdownToolbarCallbackAction(
-        isEditorFocused: () => enabled && focusNode.hasPrimaryFocus,
-        onInvoke: (intent) {
-          controller.invoke(intent.action, context);
-
-          return null;
-        },
-      ),
-    },
-    child: Shortcuts(
-      shortcuts: _MarkdownToolbarShortcutBindings.forPlatform(
-        Theme.of(context).platform,
-      ),
-      child: child,
-    ),
+    actions: {_MarkdownToolbarIntent: _toolbarAction(context)},
+    child: Shortcuts(shortcuts: _shortcuts(context), child: child),
   );
+
+  _MarkdownToolbarCallbackAction _toolbarAction(BuildContext context) =>
+      _MarkdownToolbarCallbackAction(
+        isEditorFocused: _isEditorFocused,
+        onInvoke: _onInvoke(context),
+      );
+
+  Map<ShortcutActivator, Intent> _shortcuts(BuildContext context) =>
+      _MarkdownToolbarShortcutBindings.forPlatform(Theme.of(context).platform);
+
+  bool _isEditorFocused() => enabled && focusNode.hasPrimaryFocus;
+
+  OnInvokeCallback<_MarkdownToolbarIntent> _onInvoke(BuildContext context) =>
+      (intent) {
+        controller.invoke(intent.action, context);
+
+        return null;
+      };
 }
 
 class const _MarkdownToolbarIntent(final MarkdownEditorShortcutAction action)
