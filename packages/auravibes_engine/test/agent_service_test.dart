@@ -152,12 +152,38 @@ void main() {
     expect(dataProvider.allowedToolRuns, hasLength(3));
   });
 
+  test('does not retry rate limits inferred from message text', () async {
+    final error = Exception('RateLimitException: retry after 2 seconds');
+    final dataProvider = _FakeAgentConversationDataProvider(
+      continueErrors: [error],
+    );
+    final usecase = _buildAgentService(dataProvider);
+
+    await expectLater(
+      () => usecase(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(origin: .userMessage),
+      ),
+      throwsA(same(error)),
+    );
+
+    expect(dataProvider.continuationContexts, hasLength(1));
+  });
+
   test('retries rate limits using known delay', () async {
     var currentTime = DateTime(2026);
     final retryEvents = <String>[];
     final sleeps = <Duration>[];
     final dataProvider = _FakeAgentConversationDataProvider(
-      continueErrors: [Exception('RateLimitException: retry after 2 seconds')],
+      continueErrors: [
+        AgentRateLimitRetryException(
+          providerException: GenkitException(
+            'Provider rate limit.',
+            status: .resourceExhausted,
+          ),
+          retryAfter: const Duration(seconds: 2),
+        ),
+      ],
     );
     final usecase = _buildAgentService(
       dataProvider,
@@ -188,42 +214,44 @@ void main() {
     expect(dataProvider.continuationContexts, hasLength(2));
   });
 
-  test('retries resource exhausted errors using minute delay', () async {
-    var currentTime = DateTime(2026);
-    final sleeps = <Duration>[];
+  test('does not retry quota exhaustion without Retry-After', () async {
+    final error = GenkitException(
+      'RESOURCE_EXHAUSTED: try again in 1 minute',
+      status: .resourceExhausted,
+    );
     final dataProvider = _FakeAgentConversationDataProvider(
-      continueErrors: [Exception('RESOURCE_EXHAUSTED: try again in 1 minute')],
+      continueErrors: [error],
     );
-    final usecase = _buildAgentService(
-      dataProvider,
-      now: () => currentTime,
-      sleep: (duration) {
-        sleeps.add(duration);
-        currentTime = currentTime.add(duration);
+    final usecase = _buildAgentService(dataProvider);
 
-        return Future<void>.value();
-      },
-    );
-
-    final result = await usecase(
-      conversationId: 'conversation-1',
-      context: const AgentIterationContext(origin: .userMessage),
+    await expectLater(
+      () => usecase(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(origin: .userMessage),
+      ),
+      throwsA(same(error)),
     );
 
-    expect(result, AgentIterationDecision.done);
-    expect(sleeps, hasLength(60));
-    expect(sleeps.toSet(), {const Duration(seconds: 1)});
+    expect(dataProvider.continuationContexts, hasLength(1));
   });
 
   test('caps explicit Retry-After delays at 60 seconds', () async {
-    for (final message in [
-      'RateLimitException: retry after 120 seconds',
-      'RESOURCE_EXHAUSTED: try again in 10 minutes',
+    for (final retryAfter in [
+      const Duration(seconds: 120),
+      const Duration(minutes: 10),
     ]) {
       var currentTime = DateTime(2026);
       final retryAt = <DateTime>[];
       final dataProvider = _FakeAgentConversationDataProvider(
-        continueErrors: [Exception(message)],
+        continueErrors: [
+          AgentRateLimitRetryException(
+            providerException: GenkitException(
+              'Provider rate limit.',
+              status: .resourceExhausted,
+            ),
+            retryAfter: retryAfter,
+          ),
+        ],
       );
       final usecase = _buildAgentService(
         dataProvider,
@@ -249,32 +277,22 @@ void main() {
     }
   });
 
-  test('caps configured retry delay at 60 seconds', () async {
-    var currentTime = DateTime(2026);
-    final retryAt = <DateTime>[];
+  test('does not retry a bare HTTP 429 message', () async {
+    final error = Exception('HTTP 429');
     final dataProvider = _FakeAgentConversationDataProvider(
-      continueErrors: [Exception('429')],
+      continueErrors: [error],
     );
-    final usecase = _buildAgentService(
-      dataProvider,
-      rateLimitRetryDelay: const Duration(minutes: 2),
-      rateLimitRetryRuntime: .new(
-        start: (_, value) => retryAt.add(value),
-        clear: (_) {},
+    final usecase = _buildAgentService(dataProvider);
+
+    await expectLater(
+      () => usecase(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(origin: .userMessage),
       ),
-      now: () => currentTime,
-      sleep: (duration) {
-        currentTime = currentTime.add(duration);
-        return Future<void>.value();
-      },
+      throwsA(same(error)),
     );
 
-    await usecase(
-      conversationId: 'conversation-1',
-      context: const AgentIterationContext(origin: .userMessage),
-    );
-
-    expect(retryAt.single, DateTime(2026).add(const Duration(seconds: 60)));
+    expect(dataProvider.continuationContexts, hasLength(1));
   });
 
   test(
@@ -328,7 +346,7 @@ void main() {
   );
 
   test(
-    'rethrows original provider error after retry budget is exhausted',
+    'preserves provider Retry-After provenance after retry budget exhaustion',
     () async {
       var currentTime = DateTime(2026);
       final retryAt = <DateTime>[];
@@ -364,7 +382,7 @@ void main() {
           conversationId: 'conversation-1',
           context: const AgentIterationContext(origin: .userMessage),
         ),
-        throwsA(same(providerException)),
+        throwsA(same(retryError)),
       );
       expect(retryAt.single, DateTime(2026).add(const Duration(seconds: 2)));
       expect(dataProvider.continuationContexts, hasLength(2));
@@ -375,7 +393,16 @@ void main() {
   test('stops after one consecutive rate-limit retry', () async {
     var currentTime = DateTime(2026);
     final dataProvider = _FakeAgentConversationDataProvider(
-      continueErrors: [Exception('429'), Exception('429')],
+      continueErrors: [
+        for (var attempt = 0; attempt < 2; attempt++)
+          AgentRateLimitRetryException(
+            providerException: GenkitException(
+              'Provider rate limit.',
+              status: .resourceExhausted,
+            ),
+            retryAfter: const Duration(seconds: 1),
+          ),
+      ],
     );
     final usecase = _buildAgentService(
       dataProvider,
@@ -403,7 +430,15 @@ void main() {
     final retryEvents = <String>[];
     final cancellationRuntime = FakeCancellationEffects();
     final dataProvider = _FakeAgentConversationDataProvider(
-      continueErrors: [Exception('429')],
+      continueErrors: [
+        AgentRateLimitRetryException(
+          providerException: GenkitException(
+            'Provider rate limit.',
+            status: .resourceExhausted,
+          ),
+          retryAfter: const Duration(seconds: 1),
+        ),
+      ],
     );
     final sendQueue = _FakeAgentSendQueueRuntime(
       drafts: const [AgentQueuedDraft(content: 'queued')],

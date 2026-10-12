@@ -11,6 +11,14 @@ class const SelectPromptMessagesUsecase({
   required final MessageRepository messageRepository,
   final ConversationRepository? conversationRepository,
 }) {
+  static List<MessageEntity> promptEligibleMessages(
+    List<MessageEntity> messages,
+  ) => messages
+      .where(
+        (message) => message.messageType != .system || message.status != .error,
+      )
+      .toList();
+
   Future<List<MessageEntity>> call(String conversationId) async {
     final messages = await _promptMessages(conversationId);
 
@@ -26,9 +34,9 @@ class const SelectPromptMessagesUsecase({
   }
 
   Future<List<MessageEntity>> _promptMessages(String conversationId) async =>
-      (await messageRepository.getMessagesByConversation(conversationId))
-          .where((message) => !_isPromptExcludedMessage(message))
-          .toList();
+      SelectPromptMessagesUsecase.promptEligibleMessages(
+        await messageRepository.getMessagesByConversation(conversationId),
+      );
 }
 
 List<MessageEntity> _messagesInSelectionOrder(
@@ -39,9 +47,6 @@ List<MessageEntity> _messagesInSelectionOrder(
 
   return selectedIds.map((id) => messagesById[id]!).toList();
 }
-
-bool _isPromptExcludedMessage(MessageEntity message) =>
-    message.messageType == .system && message.status == .error;
 
 final selectPromptMessagesUsecaseProvider =
     Provider<SelectPromptMessagesUsecase>((ref) {

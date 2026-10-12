@@ -2,6 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/model_usage_repository.dart';
@@ -1273,6 +1274,117 @@ void main() {
         () => verifyNever(() => endpoint.continueConversation(any())),
         returnsNormally,
       );
+    },
+  );
+
+  testWidgets(
+    'does not route cloud Continue after a non-retryable provider failure',
+    (tester) async {
+      final endpoint = _CloudConversationEndpoint();
+      when(() => endpoint.continueConversation(any()))
+          .thenAnswer((_) async => _cloudSnapshot());
+      final failedMessage = ConversationMessageView(
+        id: 'failed-user-message',
+        conversationId: _chatId,
+        role: 'user',
+        kind: 'message',
+        status: 'error',
+        content: 'Original prompt',
+        metadataJson: jsonEncode(
+          const MessageMetadataEntity(
+            modelMetadata: {
+              'providerError': true,
+              'providerRecovery': {
+                'classification': 'authentication',
+                'retryable': false,
+              },
+            },
+          ).toJson(),
+        ),
+        toolCalls: const [],
+        revision: 1,
+        createdAt: .utc(2026),
+        updatedAt: .utc(2026),
+      );
+
+      await _pumpCloudConversationScreen(
+        tester,
+        initialState: _cloudState(
+          projectionRevision: 42,
+          executionState: 'failed',
+          messages: [failedMessage],
+        ),
+        updates: const Stream.empty(),
+        usecase: _cloudTurnUsecase(endpoint),
+      );
+
+      await tester.tap(find.byIcon(Icons.tune_rounded));
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.play_circle_outline));
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        () => verifyNever(() => endpoint.continueConversation(any())),
+        returnsNormally,
+      );
+    },
+  );
+
+  testWidgets(
+    'routes cloud Continue when a newer user turn follows a provider failure',
+    (tester) async {
+      final endpoint = _CloudConversationEndpoint();
+      when(() => endpoint.continueConversation(any()))
+          .thenAnswer((_) async => _cloudSnapshot());
+      final failedMessage = ConversationMessageView(
+        id: 'failed-user-message',
+        conversationId: _chatId,
+        role: 'user',
+        kind: 'message',
+        status: 'error',
+        content: 'Original prompt',
+        metadataJson: jsonEncode(
+          const MessageMetadataEntity(
+            modelMetadata: {
+              'providerError': true,
+              'providerRecovery': {
+                'classification': 'authentication',
+                'retryable': false,
+              },
+            },
+          ).toJson(),
+        ),
+        toolCalls: const [],
+        revision: 1,
+        createdAt: .utc(2026),
+        updatedAt: .utc(2026),
+      );
+      final latestUserMessage = failedMessage.copyWith(
+        id: 'latest-user-message',
+        status: 'sent',
+        createdAt: .utc(2026, 2),
+        updatedAt: .utc(2026, 2),
+      );
+
+      await _pumpCloudConversationScreen(
+        tester,
+        initialState: _cloudState(
+          projectionRevision: 42,
+          executionState: 'failed',
+          messages: [latestUserMessage, failedMessage],
+        ),
+        updates: const Stream.empty(),
+        usecase: _cloudTurnUsecase(endpoint),
+      );
+
+      await tester.tap(find.byIcon(Icons.tune_rounded));
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.play_circle_outline));
+      await tester.pump();
+      await tester.pump();
+
+      verify(() => endpoint.continueConversation(any())).called(1);
     },
   );
 

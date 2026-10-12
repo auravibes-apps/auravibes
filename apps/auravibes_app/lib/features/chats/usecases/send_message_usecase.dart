@@ -1,15 +1,15 @@
 // ignore_for_file: implementation_imports
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
+
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
-
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_chat_attachment_provider.dart';
-
 import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
@@ -21,7 +21,6 @@ import 'package:auravibes_app/features/chats/usecases/message_persisted_exceptio
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
-
 import 'package:riverpod/src/providers/provider.dart';
 
 typedef ContinueAgentTurn = Future<AgentIterationDecision> Function({
@@ -245,7 +244,9 @@ bool _isRetryableUserMessage(MessageEntity? message, String conversationId) {
     return false;
   }
 
-  return message.status == .error || message.status == .unfinished;
+  return message.status == .unfinished ||
+      (message.status == .error &&
+          ProviderRecoveryMetadata.isRetryEligible(message));
 }
 
 extension SendMessageUsecaseNewConversation on SendMessageUsecase {

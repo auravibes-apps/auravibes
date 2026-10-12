@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
@@ -2138,6 +2139,8 @@ Future<void> _retryMessage(_RetryMessageRequest request) async {
 }
 
 bool _canRetryMessage(_RetryMessageRequest request) {
+  if (!_canRetryProviderMessage(request.message)) return false;
+
   final busyState = request.ref.read(
     conversationBusyStateProvider(request.workspaceId, request.conversationId),
   );
@@ -2153,6 +2156,14 @@ bool _canRetryMessage(_RetryMessageRequest request) {
 
   return true;
 }
+
+bool _canRetryProviderMessage(MessageEntity message) =>
+    message.isUser &&
+    !message.isForkReference &&
+    message.hasValidContent &&
+    (message.status == .unfinished ||
+        (message.status == .error &&
+            ProviderRecoveryMetadata.isRetryEligible(message)));
 
 Future<void> _runRetryMessage(_RetryMessageRequest request) async {
   final cloud = await request.ref.read(
@@ -2280,9 +2291,41 @@ CloudConversationState? _readCloudConversationState(
     .value;
 
 bool _canContinueCloudState(CloudConversationState state) {
+  if (_hasNonRetryableCloudProviderFailure(state.messages)) return false;
+
   final executionState = state.conversation.executionState;
 
   return executionState == 'idle' || executionState == 'failed';
+}
+
+bool _hasNonRetryableCloudProviderFailure(
+  Iterable<ConversationMessageView> messages,
+) {
+  ConversationMessageView? latestUserMessage;
+  for (final message in messages) {
+    if (message.role != 'user' || message.isForkReference) continue;
+    if (latestUserMessage == null ||
+        message.createdAt.isAfter(latestUserMessage.createdAt)) {
+      latestUserMessage = message;
+    }
+  }
+
+  return latestUserMessage != null &&
+      _isNonRetryableCloudProviderFailure(latestUserMessage);
+}
+
+bool _isNonRetryableCloudProviderFailure(ConversationMessageView message) {
+  if (message.role != 'user' ||
+      message.status != 'error' ||
+      message.isForkReference) {
+    return false;
+  }
+  final modelMetadata = MessageMetadataEntity.fromJsonString(
+    message.metadataJson,
+  )?.modelMetadata;
+
+  return ProviderRecoveryMetadata.isProviderErrorMetadata(modelMetadata) &&
+      !ProviderRecoveryMetadata.isRetryEligibleMetadata(modelMetadata);
 }
 
 Future<void> _stopConversation(_ConversationContextRequest request) async {
