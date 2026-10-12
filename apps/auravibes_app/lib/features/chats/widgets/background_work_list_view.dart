@@ -33,6 +33,26 @@ class const BackgroundWorkListView({
   @override
   Widget build(BuildContext context) {
     final readNow = clock ?? DateTime.now;
+
+    return _BackgroundWorkListMode(
+      now: now,
+      readNow: readNow,
+      works: works,
+      onStop: onStop,
+      onOpenResult: onOpenResult,
+    );
+  }
+}
+
+class const _BackgroundWorkListMode({
+  required final DateTime? now,
+  required final DateTime Function() readNow,
+  required final List<AgentBackgroundWork> works,
+  required final Future<void> Function(AgentBackgroundWork work) onStop,
+  required final Future<void> Function(AgentBackgroundWork work) onOpenResult,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final initialNow = now ?? readNow();
     if (now != null || !_hasActiveBackgroundWork(works)) {
       return _BackgroundWorkScrollableList(
@@ -43,20 +63,40 @@ class const BackgroundWorkListView({
       );
     }
 
-    return StreamBuilder<DateTime>(
-      initialData: initialNow,
-      stream: Stream<DateTime>.periodic(
-        _elapsedTimeRefreshInterval,
-        (_) => readNow(),
-      ),
-      builder: (context, snapshot) => _BackgroundWorkScrollableList(
+    return _BackgroundWorkElapsedList(
+      initialNow: initialNow,
+      readNow: readNow,
+      works: works,
+      onStop: onStop,
+      onOpenResult: onOpenResult,
+    );
+  }
+}
+
+class const _BackgroundWorkElapsedList({
+  required final DateTime initialNow,
+  required final DateTime Function() readNow,
+  required final List<AgentBackgroundWork> works,
+  required final Future<void> Function(AgentBackgroundWork work) onStop,
+  required final Future<void> Function(AgentBackgroundWork work) onOpenResult,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => StreamBuilder<DateTime>(
+    initialData: initialNow,
+    stream: _elapsedTimes(),
+    builder: _buildList,
+  );
+
+  Stream<DateTime> _elapsedTimes() =>
+      Stream<DateTime>.periodic(_elapsedTimeRefreshInterval, (_) => readNow());
+
+  Widget _buildList(BuildContext _, AsyncSnapshot<DateTime> snapshot) =>
+      _BackgroundWorkScrollableList(
         works: works,
         now: snapshot.data ?? readNow(),
         onStop: onStop,
         onOpenResult: onOpenResult,
-      ),
-    );
-  }
+      );
 }
 
 class const _BackgroundWorkScrollableList({
@@ -138,7 +178,6 @@ typedef _BackgroundWorkTileData = ({
 _BackgroundWorkTileData _backgroundWorkTileData(AgentBackgroundWork work) {
   final state = work.state;
   final result = state.resultContent;
-  final previewSource = result ?? state.statusPreview;
 
   return (
     identity: work.identity,
@@ -146,8 +185,15 @@ _BackgroundWorkTileData _backgroundWorkTileData(AgentBackgroundWork work) {
     updatedAt: state.updatedAt,
     status: state.status,
     hasResult: result?.isNotEmpty ?? false,
-    preview: previewSource == null ? null : _boundedPreview(previewSource),
+    preview: _backgroundWorkTilePreview(result, state.statusPreview),
   );
+}
+
+String? _backgroundWorkTilePreview(String? result, String? statusPreview) {
+  final previewSource = result ?? statusPreview;
+  if (previewSource == null) return null;
+
+  return _boundedPreview(previewSource);
 }
 
 class const _BackgroundWorkTileContent({
