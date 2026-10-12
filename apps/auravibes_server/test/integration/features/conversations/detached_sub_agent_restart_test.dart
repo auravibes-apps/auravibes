@@ -178,6 +178,10 @@ void main() {
         database,
         startedAt: now.add(const Duration(seconds: 1)),
       );
+      await const ConversationWorker().runOnce(
+        database,
+        workerId: 'restart-sub-agent-test',
+      );
 
       final work = await BackgroundWorkRecord.db.findFirstRow(
         database,
@@ -443,5 +447,186 @@ void main() {
       expect(stoppedByParentWork?.status, 'cancelled');
       expect(parentStopEvents, hasLength(1));
     });
+    test(
+      'completed child is reconciled when detached before parent reconciliation',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final session = sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final database = session.build();
+        await AuthUser.db.insertRow(
+          database,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          database,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: '$userId@example.com',
+            passwordHash: 'unused',
+          ),
+        );
+        final now = DateTime.now().toUtc();
+        final workspace = await workspace_repo.CloudWorkspaceRepository()
+            .createWorkspace(
+              database,
+              name: 'Workspace',
+              ownerUserId: userId,
+              now: now,
+            );
+        final conversation = await Conversation.db.insertRow(
+          database,
+          Conversation(
+            workspaceId: workspace.id!,
+            stableId: 'completed-before-detach-parent',
+            title: 'Parent',
+            isPinned: false,
+            revision: 1,
+            projectionRevision: 1,
+            eventSequence: 0,
+            executionState: 'idle',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await endpoints.conversation.queueConversationMessage(
+          session,
+          QueueConversationMessageRequest(
+            workspaceId: workspace.id!,
+            requestId: 'queue-completed-before-detach-parent',
+            conversationId: conversation.stableId,
+            expectedProjectionRevision: 1,
+            clientMessageId: 'completed-before-detach-parent-message',
+            content: 'Continue.',
+            attachmentIds: const [],
+          ),
+        );
+        await endpoints.conversation.continueConversation(
+          session,
+          ContinueConversationRequest(
+            workspaceId: workspace.id!,
+            requestId: 'continue-completed-before-detach-parent',
+            conversationId: conversation.stableId,
+            expectedProjectionRevision: 2,
+          ),
+        );
+        final turn = (await ConversationTurn.db.findFirstRow(
+          database,
+          where: (table) =>
+              table.workspaceId.equals(workspace.id) &
+              table.conversationId.equals(conversation.id),
+        ))!;
+        final parentJob = (await ConversationJob.db.findFirstRow(
+          database,
+          where: (table) => table.turnId.equals(turn.id),
+        ))!;
+        await ConversationJob.db.updateRow(
+          database,
+          parentJob.copyWith(
+            status: ConversationJobStatuses.completed,
+            updatedAt: now,
+          ),
+        );
+        final message = (await ConversationMessage.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        )).first;
+        final parentTool = ServerResolvedTool(
+          descriptor: AgentResolvedToolName.skillNative(
+            tableId: runSubAgentToolName,
+            skillSlug: agentsSkillSlug,
+            toolIdentifier: runSubAgentToolName,
+          ),
+          spec: ToolSpec(
+            name: 'skill__app_native__agents__$runSubAgentToolName',
+            description: '',
+            inputJsonSchema: const {},
+          ),
+        );
+        final launched = await const ServerToolExecutorService().call(
+          database,
+          turn,
+          parentTool,
+          const ServerToolRequest(
+            id: 'completed-before-detach-child-call',
+            name: 'skill__app_native__agents__run_sub_agent',
+            arguments: {'title': 'Child', 'prompt': 'Do the work.'},
+          ),
+        );
+        final childLaunch = launched! as ServerToolAwaitingSubAgents;
+        final childConversationId =
+            childLaunch.children.single['conversationId']! as String;
+        final childExecutionId =
+            childLaunch.children.single['turnId']! as String;
+        final childExecution = (await ConversationExecution.db.findFirstRow(
+          database,
+          where: (table) =>
+              table.workspaceId.equals(workspace.id) &
+              table.stableId.equals(childExecutionId),
+        ))!;
+        await ConversationExecution.db.updateRow(
+          database,
+          childExecution.copyWith(
+            status: ConversationStatuses.completed,
+            terminalAt: now,
+          ),
+        );
+        final call = await ConversationToolCall.db.insertRow(
+          database,
+          ConversationToolCall(
+            workspaceId: workspace.id!,
+            conversationId: conversation.id!,
+            turnId: turn.id!,
+            messageId: message.id!,
+            stableId: 'completed-before-detach-parent-call',
+            name: 'skill__app_native__agents__run_sub_agent',
+            argumentsJson: '{}',
+            argumentsDigest: 'digest',
+            backgroundEligible: true,
+            childConversationStableId: childConversationId,
+            status: 'awaitingSubAgents',
+            resultJson: jsonEncode({'children': childLaunch.children}),
+            revision: 2,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        final detached = await endpoints.conversation.detachToolCall(
+          session,
+          DetachToolCallRequest(
+            requestId: 'detach-completed-before-parent-reconcile',
+            workspaceId: workspace.id!,
+            conversationId: conversation.stableId,
+            toolCallId: call.stableId,
+          ),
+        );
+
+        final work = await BackgroundWorkRecord.db.findFirstRow(
+          database,
+          where: (table) => table.stableId.equals(detached.id),
+        );
+        final completedCall = await ConversationToolCall.db.findById(
+          database,
+          call.id!,
+        );
+        final completionEvents = await ConversationEvent.db.find(
+          database,
+          where: (table) =>
+              table.workspaceId.equals(workspace.id) &
+              table.conversationId.equals(conversation.id) &
+              table.eventId.equals('background-work-completion:${detached.id}'),
+        );
+
+        expect(detached.childConversationId, childConversationId);
+        expect(work?.status, 'completed');
+        expect(completedCall?.status, 'runningInBackground');
+        expect(completionEvents, hasLength(1));
+      },
+    );
   });
 }

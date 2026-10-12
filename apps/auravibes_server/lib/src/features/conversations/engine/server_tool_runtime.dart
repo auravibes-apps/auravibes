@@ -1728,6 +1728,11 @@ class ServerToolRuntime({
       return false;
     });
     if (backgroundSubAgentStarted) {
+      await reconcileDetachedSubAgentWork(
+        session,
+        workspaceId: call.workspaceId,
+        toolCallId: call.stableId,
+      );
       final parent = await Conversation.db.findById(
         session,
         call.conversationId,
@@ -1809,6 +1814,71 @@ class ServerToolRuntime({
         errorCode: 'outcome_unknown',
       );
     }
+  }
+
+  /// Reconciles an already-terminal child immediately after detachment.
+  ///
+  /// The child can finish before the UI detaches its parent tool call, so its
+  /// worker callback may have run before a background-work record existed.
+  Future<void> reconcileDetachedSubAgentWork(
+    Session session, {
+    required int workspaceId,
+    required String toolCallId,
+  }) async {
+    final parentCall = await ConversationToolCall.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.stableId.equals(toolCallId),
+    );
+    if (parentCall == null) return;
+    final workId = parentCall.backgroundWorkStableId;
+    if (workId == null) return;
+    final work = await BackgroundWorkRecord.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(parentCall.conversationId) &
+          table.conversationToolCallId.equals(parentCall.id) &
+          table.stableId.equals(workId),
+    );
+    if (work == null ||
+        (work.status != 'running' && work.status != 'stopRequested')) {
+      return;
+    }
+    final metadata = parentCall.resultJson == null
+        ? const <String, dynamic>{}
+        : _jsonMap(parentCall.resultJson!);
+    final children = (metadata['children'] as List?)
+        ?.whereType<Map>()
+        .map((child) => Map<String, dynamic>.from(child))
+        .toList(growable: false);
+    if (children == null || children.isEmpty) return;
+    final results = <Map<String, Object?>>[];
+    for (final child in children) {
+      final result = await _childTerminalResult(
+        session,
+        workspaceId,
+        child,
+      );
+      if (result == null) return;
+      results.add(result);
+    }
+    final status = switch ((
+      results.every((result) => result['status'] == 'success'),
+      results.any((result) => result['status'] == 'cancelled'),
+    )) {
+      (true, _) => 'success',
+      (_, true) => 'cancelled',
+      _ => 'executionError',
+    };
+    await completeDetachedSubAgentWork(
+      session,
+      call: parentCall,
+      result: results.length == 1
+          ? results.single
+          : {'status': status, 'children': results},
+    );
   }
 
   /// Completes a detached top-level sub-agent after its child job is terminal.
