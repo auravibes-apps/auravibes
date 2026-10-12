@@ -933,6 +933,14 @@ abstract class LocaleKeys {
   static const markdown_editor_title = 'markdown_editor.title';
   static const markdown_editor_editor_label = 'markdown_editor.editor_label';
   static const markdown_editor_preview_label = 'markdown_editor.preview_label';
+  static const markdown_editor_external_link_title =
+      'markdown_editor.external_link_title';
+  static const markdown_editor_external_link_message =
+      'markdown_editor.external_link_message';
+  static const markdown_editor_external_link_open =
+      'markdown_editor.external_link_open';
+  static const markdown_editor_external_link_error =
+      'markdown_editor.external_link_error';
   static const markdown_editor_empty = 'markdown_editor.empty';
   static const markdown_editor_toolbar_bold = 'markdown_editor.toolbar.bold';
   static const markdown_editor_toolbar_italic =

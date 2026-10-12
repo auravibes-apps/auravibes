@@ -657,6 +657,10 @@
     "title": "Editor Markdown",
     "editor_label": "Markdown",
     "preview_label": "Vista previa",
+    "external_link_title": "¿Abrir enlace externo?",
+    "external_link_message": "Comprueba que confías en este destino antes de abrirlo.\n\nDominio: {host}\nURL: {url}",
+    "external_link_open": "Abrir enlace",
+    "external_link_error": "No se pudo abrir el enlace.",
     "empty": "Nada para previsualizar todavía",
     "toolbar": {
       "bold": "Negrita",
