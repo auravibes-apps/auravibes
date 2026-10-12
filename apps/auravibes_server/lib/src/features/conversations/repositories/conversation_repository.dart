@@ -97,6 +97,29 @@ String? conversationParentToolCallIdForExecutionSettings(String settingsJson) {
 class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
   final ObjectReferenceService _objectReferenceService =
       objectReferenceService ?? ObjectReferenceService();
+
+  Future<void> lockBackgroundWorkCapacity(
+    Session session, {
+    required Transaction transaction,
+  }) async {
+    await session.db.unsafeQuery(
+      'SELECT pg_advisory_xact_lock(hashtextextended(@lockKey, 0))',
+      parameters: QueryParameters.named({
+        'lockKey': 'conversation-background-work-capacity',
+      }),
+      transaction: transaction,
+    );
+  }
+
+  Future<int> countActiveBackgroundWork(
+    Session session, {
+    required Transaction transaction,
+  }) => BackgroundWorkRecord.db.count(
+    session,
+    where: (table) => table.status.inSet({'running', 'stopRequested'}),
+    transaction: transaction,
+  );
+
   Future<Conversation?> findConversationByStableId(
     Session session, {
     required int workspaceId,

@@ -1572,7 +1572,7 @@ class ServerToolRuntime({
           session,
           work.copyWith(
             status: workStatus,
-            statusPreview: workPreview,
+            statusPreview: BackgroundWorkPreviews.queuedForContinuation,
             resultContent: projection?.persistedText,
             resultByteLength: projection?.originalBytes ?? 0,
             errorCode: errorCode,

@@ -450,6 +450,25 @@ extension CloudChatGatewayBackgroundWorkOps on CloudChatGateway {
     required String requestId,
     required String conversationId,
     required String toolCallId,
+  }) async {
+    try {
+      return await _guardedDetachToolCall(
+        requestId: requestId,
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+      );
+    } on CloudAppException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        _backgroundWorkDetachmentError(error),
+        stackTrace,
+      );
+    }
+  }
+
+  Future<BackgroundWorkView> _guardedDetachToolCall({
+    required String requestId,
+    required String conversationId,
+    required String toolCallId,
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.detachToolCall(
@@ -484,6 +503,18 @@ extension CloudChatGatewayBackgroundWorkOps on CloudChatGateway {
         workId: workId,
       ),
     ),
+  );
+}
+
+CloudAppException _backgroundWorkDetachmentError(CloudAppException error) {
+  if (error.code != ConversationErrorCode.turnConflict.name) return error;
+
+  return CloudAppException(
+    localizationKey:
+        'chats_screens.chat_conversation.background_work.'
+        'detachment_unavailable',
+    context: .conversation,
+    code: error.code,
   );
 }
 
