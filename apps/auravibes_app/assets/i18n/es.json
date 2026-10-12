@@ -12,7 +12,9 @@
   "navigation_drawer": {
     "toggle_tooltip": "Alternar menú de navegación",
     "resize_handle_tooltip": "Redimensionar panel de navegación",
-    "resize_handle_hint": "Arrastra horizontalmente para cambiar el ancho del panel"
+    "resize_handle_hint": "Arrastra horizontalmente para cambiar el ancho del panel",
+    "collapse_sidebar_tooltip": "Contraer barra lateral",
+    "expand_sidebar_tooltip": "Expandir barra lateral"
   },
   "intro_flow": {
     "welcome": {
@@ -498,6 +500,10 @@
       "turn_awaiting_approval": "Esperando aprobación...",
       "turn_failed": "La generación falló.",
       "turn_cancelled": "La generación se canceló.",
+      "assistant_response_started": "La respuesta del asistente comenzó.",
+      "assistant_response_completed": "La respuesta del asistente se completó.",
+      "assistant_response_failed": "La respuesta del asistente falló.",
+      "assistant_response_cancelled": "La respuesta del asistente se canceló.",
       "activity_tools_count": {
         "one": "1 herramienta",
         "other": "{} herramientas"
@@ -822,6 +828,7 @@
     "suggestion": "Habilidad sugerida",
     "suggestion_unavailable": "Esta sugerencia de habilidad no está disponible.",
     "suggestion_open_picker": "Abrir habilidades",
+    "recent_title": "Habilidades recientes",
     "actions_hint": "Para este chat: Añadir prepara las instrucciones sin enviar una solicitud. Usar ahora pide al asistente que use la habilidad para tu última tarea.",
     "preview": "Vista previa",
     "preview_title": "Vista previa de la habilidad",
@@ -1188,7 +1195,8 @@
   "sidebar": {
     "recent_chats": "Chats Recientes",
     "no_recent_chats": "Los chats aparecerán aquí",
-    "view_all_chats": "Ver Todos"
+    "view_all_chats": "Ver Todos",
+    "response_in_progress": "Respuesta del asistente en curso"
   },
   "mcp_catalog": {
     "back": "Volver",

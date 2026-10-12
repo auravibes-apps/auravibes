@@ -82,6 +82,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Research'), findsOneWidget);
+    expect(find.text('Recent skills'), findsNothing);
     expect(find.text('Needs context'), findsOneWidget);
     expect(find.text('Instruction requirements met'), findsOneWidget);
     expect(find.text('Use now'), findsOneWidget);
@@ -153,6 +154,7 @@ void main() {
       state: const ConversationSkillSelectorState(
         loaded: [_research],
         loadable: [_weather],
+        recentSkills: [_research],
       ),
     );
     addTearDown(container.dispose);
@@ -163,6 +165,11 @@ void main() {
 
     expect(find.text('Research'), findsNothing);
     expect(find.text('Weather'), findsOneWidget);
+    expect(find.text('Recent skills'), findsNothing);
+    final _ = await tester.enterText(find.byType(EditableText), 'research');
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Research'), findsOneWidget);
+    expect(find.text('Recent skills'), findsNothing);
     final _ = await tester.enterText(find.byType(EditableText), 'no match');
     final _ = await tester.pumpAndSettle();
     expect(find.text('No skills match your search'), findsNWidgets(2));
@@ -173,6 +180,48 @@ void main() {
           .label,
       'No skills match your search',
     );
+  });
+
+  testWidgets('recent skills are newest first and need an explicit action', (
+    tester,
+  ) async {
+    var loads = 0;
+    var sends = 0;
+    final container = _container(
+      state: const ConversationSkillSelectorState(
+        loaded: [_research],
+        loadable: [_weather],
+        recentSkills: [_weather, _research, _weather],
+      ),
+      actionUsecase: _actionUsecase(
+        catalogSkills: const [_research, _weather],
+        load: (_, _, _) async => loads++,
+        send: (_, _, _) async => sends++,
+      ),
+    );
+    addTearDown(container.dispose);
+    await _pumpModal(tester, container);
+
+    final weatherRow = find.byKey(const ValueKey('skill-row-weather'));
+    final researchRow = find.byKey(const ValueKey('skill-row-research'));
+    expect(find.text('Recent skills'), findsOneWidget);
+    expect(weatherRow, findsOneWidget);
+    expect(researchRow, findsOneWidget);
+    expect(
+      tester.getTopLeft(weatherRow).dy,
+      lessThan(tester.getTopLeft(researchRow).dy),
+    );
+    expect(find.text('Add'), findsOneWidget);
+    expect(find.text('Use now'), findsOneWidget);
+    expect(loads, 0);
+    expect(sends, 0);
+
+    await tester.ensureVisible(find.text('Add'));
+    final _ = await tester.tap(find.text('Add'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(loads, 1);
+    expect(sends, 0);
   });
 
   testWidgets('loading selector has a localized live-region label', (
@@ -572,6 +621,7 @@ ProviderContainer _container({
 );
 
 ApplyConversationSkillActionUsecase _actionUsecase({
+  List<AvailableSkill> catalogSkills = const [_research],
   Future<void> Function(String workspaceId, String conversationId, String slug)?
   load,
   Future<void> Function(
@@ -584,11 +634,12 @@ ApplyConversationSkillActionUsecase _actionUsecase({
   workspaceIdForConversation: (_) async => 'workspace',
   listSkills: (_, _, filter) async => switch (filter) {
     .loaded => const [],
-    _ => const [_research],
+    _ => catalogSkills,
   },
   buildContextMessages: (_, _) async => const [],
   loadSkill: load ?? (_, _, _) => Future<void>.value(),
   sendMessage: send ?? (_, _, _) => Future<void>.value(),
+  recordRecentSkillUse: (_, _, _) => Future<void>.value(),
 );
 
 Future<void> _pumpModal(

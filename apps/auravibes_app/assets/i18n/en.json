@@ -12,7 +12,9 @@
   "navigation_drawer": {
     "toggle_tooltip": "Toggle navigation menu",
     "resize_handle_tooltip": "Resize navigation drawer",
-    "resize_handle_hint": "Drag horizontally to change the drawer width"
+    "resize_handle_hint": "Drag horizontally to change the drawer width",
+    "collapse_sidebar_tooltip": "Collapse sidebar",
+    "expand_sidebar_tooltip": "Expand sidebar"
   },
   "intro_flow": {
     "welcome": {
@@ -498,6 +500,10 @@
       "turn_awaiting_approval": "Awaiting approval...",
       "turn_failed": "Generation failed.",
       "turn_cancelled": "Generation cancelled.",
+      "assistant_response_started": "Assistant response started.",
+      "assistant_response_completed": "Assistant response completed.",
+      "assistant_response_failed": "Assistant response failed.",
+      "assistant_response_cancelled": "Assistant response cancelled.",
       "activity_tools_count": {
         "one": "1 tool",
         "other": "{} tools"
@@ -822,6 +828,7 @@
     "suggestion": "Suggested skill",
     "suggestion_unavailable": "This skill suggestion is unavailable.",
     "suggestion_open_picker": "Open skills",
+    "recent_title": "Recent skills",
     "actions_hint": "For this chat: Add prepares instructions without sending a request. Use now asks the assistant to use the skill for your latest task.",
     "preview": "Preview",
     "preview_title": "Skill preview",
@@ -1188,7 +1195,8 @@
   "sidebar": {
     "recent_chats": "Recent Chats",
     "no_recent_chats": "Chats will appear here",
-    "view_all_chats": "View All"
+    "view_all_chats": "View All",
+    "response_in_progress": "Assistant response in progress"
   },
   "mcp_catalog": {
     "back": "Back",
