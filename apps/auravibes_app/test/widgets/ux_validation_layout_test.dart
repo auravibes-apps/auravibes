@@ -30,7 +30,6 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
-import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
@@ -324,6 +323,31 @@ void main() {
       });
     }
   }
+  testWidgets('failed connections return to workspace start', (tester) async {
+    final fixture = await UxValidationFixture.create();
+    final router = await fixture.pump(
+      tester,
+      ServiceConnectionsRoute(workspaceId: fixture.workspaceId).location,
+      overrides: [
+        serviceConnectionsProvider(fixture.workspaceId).overrideWith(
+          (_) => Stream.error(StateError('Connections unavailable')),
+        ),
+      ],
+    );
+    expect(find.text('Retry'), findsOneWidget);
+    await tester.tap(find.text('Return to workspace'));
+    await fixture.settle(tester);
+
+    expect(find.byType(NewChatScreen), findsOneWidget);
+    expect(find.byType(ServiceConnectionsScreen), findsNothing);
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      NewChatRoute(workspaceId: fixture.workspaceId).location,
+    );
+    expect(tester.takeException(), isNull);
+    await fixture.close(tester);
+  });
+
   for (final name in _routeNames) {
     testWidgets('production direct route $name', (tester) async {
       final fixture = await UxValidationFixture.create(
@@ -622,9 +646,9 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
     ),
     'MoreRoute' => (
       location: '$base/more',
-      screen: MoreScreen,
-      selection: -1,
-      expected: null,
+      screen: NewChatScreen,
+      selection: 0,
+      expected: '$base/chat/new',
     ),
     'SettingsRoute' => (
       location: '$base/settings',

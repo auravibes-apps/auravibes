@@ -99,19 +99,30 @@ class const _BackgroundWorkButton({
   required final int activeCount,
   required final String workspaceId,
   required final String conversationId,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => AuraButton(
-    onPressed: () => _showBackgroundWorkList(
+  Widget build(BuildContext context, WidgetRef ref) {
+    void openList() => _openBackgroundWorkList(context, ref);
+
+    return AuraButton(
+      onPressed: openList,
+      child: _BackgroundWorkButtonContent(activeCount: activeCount),
+      key: const ValueKey('background_work_header_button'),
+      variant: .ghost,
+      size: .small,
+    );
+  }
+
+  void _openBackgroundWorkList(BuildContext context, WidgetRef ref) {
+    if (_backgroundWorksFailedToLoad(ref, workspaceId, conversationId)) {
+      _invalidateBackgroundWorks(ref, workspaceId, conversationId);
+    }
+    _showBackgroundWorkList(
       context: context,
       workspaceId: workspaceId,
       conversationId: conversationId,
-    ),
-    child: _BackgroundWorkButtonContent(activeCount: activeCount),
-    key: const ValueKey('background_work_header_button'),
-    variant: .ghost,
-    size: .small,
-  );
+    );
+  }
 }
 
 class const _BackgroundWorkButtonContent({required final int activeCount})
@@ -308,6 +319,43 @@ AsyncValue<List<AgentBackgroundWork>> _watchBackgroundWorks(
       )
     : ref.watch(conversationBackgroundWorksProvider(conversationId));
 
+bool _backgroundWorksFailedToLoad(
+  WidgetRef ref,
+  String workspaceId,
+  String conversationId,
+) => _isCloudWorkspace(ref, workspaceId)
+    ? ref
+          .read(
+            cloudConversationBackgroundWorksProvider((
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            )),
+          )
+          .hasError
+    : ref.read(conversationBackgroundWorksProvider(conversationId)).hasError;
+
+void _invalidateBackgroundWorks(
+  WidgetRef ref,
+  String workspaceId,
+  String conversationId,
+) {
+  if (_isCloudWorkspace(ref, workspaceId)) {
+    ref.invalidate(
+      cloudConversationBackgroundWorksProvider((
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      )),
+    );
+
+    return;
+  }
+  ref.invalidate(conversationBackgroundWorksProvider(conversationId));
+}
+
+bool _isCloudWorkspace(WidgetRef ref, String workspaceId) =>
+    ref.read(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
+    null;
+
 List<AgentBackgroundWork> _backgroundWorksValue(
   AsyncValue<List<AgentBackgroundWork>> worksAsync,
 ) => switch (worksAsync) {
@@ -319,10 +367,19 @@ List<AgentBackgroundWork> _backgroundWorksValue(
 
 List<AgentBackgroundWork> _sortBackgroundWorks(
   List<AgentBackgroundWork> works,
-) => [...works]
-  ..sort(
-    (first, second) => first.state.createdAt.compareTo(second.state.createdAt),
+) => [...works]..sort(_compareBackgroundWorks);
+
+int _compareBackgroundWorks(
+  AgentBackgroundWork first,
+  AgentBackgroundWork second,
+) {
+  final createdAtComparison = first.state.createdAt.compareTo(
+    second.state.createdAt,
   );
+  if (createdAtComparison != 0) return createdAtComparison;
+
+  return first.identity.id.compareTo(second.identity.id);
+}
 
 int _activeBackgroundWorkCount(List<AgentBackgroundWork> works) =>
     works.where((work) => _isActiveBackgroundWork(work.state.status)).length;

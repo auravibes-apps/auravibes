@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_list_view.dart';
@@ -60,8 +62,13 @@ void main() {
     tester,
   ) async {
     final now = DateTime.utc(2026, 10, 11, 12);
-    final older = _work('older', .completed, now);
-    final newer = _work('newer', .running, now.add(const Duration(seconds: 1)));
+    final older = _work('work-1', .completed, now);
+    final sameTime = _work('work-2', .completed, now);
+    final newer = _work(
+      'work-3',
+      .running,
+      now.add(const Duration(seconds: 1)),
+    );
     final watchedConversationIds = <String>[];
     final _ = await tester.runAsync(() async {
       await tester.pumpWidget(
@@ -81,7 +88,7 @@ void main() {
                 .overrideWith((ref) {
                   watchedConversationIds.add('conversation-1');
 
-                  return Stream.value([newer, older]);
+                  return Stream.value([newer, sameTime, older]);
                 }),
           ],
         ),
@@ -97,15 +104,23 @@ void main() {
     await tester.tap(header);
     final _ = await tester.pumpAndSettle();
     final olderTitle = find.byKey(
-      const ValueKey('background_work_title_older'),
+      const ValueKey('background_work_title_work-1'),
+    );
+    final sameTimeTitle = find.byKey(
+      const ValueKey('background_work_title_work-2'),
     );
     final newerTitle = find.byKey(
-      const ValueKey('background_work_title_newer'),
+      const ValueKey('background_work_title_work-3'),
     );
     expect(olderTitle, findsOneWidget);
+    expect(sameTimeTitle, findsOneWidget);
     expect(newerTitle, findsOneWidget);
     expect(
       tester.getTopLeft(olderTitle).dy,
+      lessThan(tester.getTopLeft(sameTimeTitle).dy),
+    );
+    expect(
+      tester.getTopLeft(sameTimeTitle).dy,
       lessThan(tester.getTopLeft(newerTitle).dy),
     );
 
@@ -114,10 +129,75 @@ void main() {
     await tester.tap(header);
     final _ = await tester.pumpAndSettle();
     expect(
-      find.byKey(const ValueKey('background_work_title_older')),
+      find.byKey(const ValueKey('background_work_title_work-1')),
       findsOneWidget,
     );
     expect(watchedConversationIds, isNotEmpty);
+  });
+
+  testWidgets('reopening the list retries a failed background work load', (
+    tester,
+  ) async {
+    final now = DateTime.utc(2026, 10, 11, 12);
+    final work = _work('work-1', .completed, now);
+    final failedLoad = StreamController<List<AgentBackgroundWork>>();
+    var attempts = 0;
+    final _ = await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: Scaffold(
+            appBar: AppBar(
+              actions: const [
+                BackgroundWorkHeaderButton(
+                  workspaceId: 'workspace-1',
+                  conversationId: 'conversation-1',
+                ),
+              ],
+            ),
+          ),
+          overrides: [
+            conversationBackgroundWorksProvider('conversation-1')
+                .overrideWith((ref) {
+                  attempts++;
+                  if (attempts == 1) {
+                    return failedLoad.stream;
+                  }
+
+                  return Stream.value([work]);
+                }),
+          ],
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey('background_work_header_button')),
+    );
+    await tester.pump();
+    failedLoad
+      ..addError(StateError('temporary failure'))
+      ..close();
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Could not load background work. Reopen this list to try again.',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('background_work_close')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('background_work_header_button')),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('background_work_title_work-1')),
+      findsOneWidget,
+    );
+    expect(attempts, 2);
   });
 
   testWidgets(
