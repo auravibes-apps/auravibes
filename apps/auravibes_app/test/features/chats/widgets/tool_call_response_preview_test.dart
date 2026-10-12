@@ -136,6 +136,29 @@ void main() {
       expect(find.text('Short text'), findsOneWidget);
     });
 
+    testWidgets('keeps Markdown and HTML literal in the response modal', (
+      tester,
+    ) async {
+      const content =
+          '**markdown stays literal**\n'
+          '<b>HTML stays literal</b>\n'
+          '[link stays literal](https://example.test)\n'
+          'Fourth line';
+      await pumpAndInit(
+        tester,
+        buildSubject(toolName: 'test_tool', content: content),
+      );
+
+      await tester.tap(find.text('Show more'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.byType(GptMarkdown), findsNothing);
+      expect(
+        find.descendant(of: find.byType(Dialog), matching: find.text(content)),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('uses inherited text scaling when detecting overflow', (
       tester,
     ) async {

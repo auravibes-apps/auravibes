@@ -6,10 +6,14 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Feature widgets keep closely related private widgets together.
 
+import 'dart:async';
+
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/widgets/responsive_shell_layout.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 export 'responsive_sliding_drawer_provider.dart';
@@ -52,20 +56,29 @@ class const ResponsiveSlidingDrawer({
 
   /// Whether the drawer starts open.
   final bool initiallyOpen = false,
+
+  /// Whether the desktop drawer is shown as a compact 80px navigation rail.
+  ///
+  /// The saved expanded width is kept separately and is not changed by this
+  /// presentation mode.
+  final bool isDesktopCompact = false,
   super.key,
-}) extends StatefulWidget {
+}) extends ConsumerStatefulWidget {
   @override
-  State<ResponsiveSlidingDrawer> createState() =>
+  ConsumerState<ResponsiveSlidingDrawer> createState() =>
       _ResponsiveSlidingDrawerState();
 }
 
-class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
+class _ResponsiveSlidingDrawerState
+    extends ConsumerState<ResponsiveSlidingDrawer>
     with SingleTickerProviderStateMixin {
   static const _scrimGradientStartOpacityDarkMode = 0.2;
   static const _openRatio = 0.8;
   static const _desktopOpenRatio = 0.3;
   static const _desktopMinDrawerWidth = 150.0;
   static const _desktopMaxDrawerWidth = 400.0;
+  static const _desktopCompactDrawerWidth = 80.0;
+  static const _desktopDrawerWidthPreferenceKey = 'app_desktop_drawer_width';
   static const _swipeVelocityThreshold = 500.0;
   static const _dragPercentageThreshold = 0.3;
   static const _dividerWidth = 5.0;
@@ -89,6 +102,9 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   double _resizeOvershoot = 0;
   bool _isHoveringDivider = false;
   bool _isResizing = false;
+  bool _hasStartedDesktopDrawerWidthLoad = false;
+  bool _hasResizedDesktopDrawer = false;
+  bool _shouldPersistDesktopDrawerWidth = false;
 
   bool _isOpen = false;
 
@@ -144,6 +160,10 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
         _desktopMinDrawerWidth,
         _desktopMaxDrawerWidth,
       );
+      if (!_hasStartedDesktopDrawerWidthLoad) {
+        _hasStartedDesktopDrawerWidthLoad = true;
+        unawaited(_restoreDesktopDrawerWidth());
+      }
     }
   }
 
@@ -153,6 +173,56 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       : _MobileDrawerLayout(state: this);
 
   void _rebuild(VoidCallback callback) => setState(callback);
+}
+
+extension _ResponsiveSlidingDrawerPreferences on _ResponsiveSlidingDrawerState {
+  Future<void> _restoreDesktopDrawerWidth() async {
+    final savedWidth = await _readSavedDesktopDrawerWidth();
+    if (!mounted || _hasResizedDesktopDrawer || savedWidth == null) return;
+
+    final restoredWidth = savedWidth.clamp(
+      _ResponsiveSlidingDrawerState._desktopMinDrawerWidth,
+      _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth,
+    );
+    if (restoredWidth == _desktopDrawerWidth) return;
+    _rebuild(() => _desktopDrawerWidth = restoredWidth);
+  }
+
+  Future<double?> _readSavedDesktopDrawerWidth() async {
+    try {
+      final preferences = await ref.read(sharedPreferencesProvider.future);
+      final savedWidth = preferences.getDouble(
+        _ResponsiveSlidingDrawerState._desktopDrawerWidthPreferenceKey,
+      );
+
+      return savedWidth?.isFinite == true ? savedWidth : null;
+    } on Object {
+      // Keep the responsive default when local preferences are unavailable.
+      return null;
+    }
+  }
+
+  Future<void> _persistDesktopDrawerWidth(double width) async {
+    try {
+      final preferences = await ref.read(sharedPreferencesProvider.future);
+      final _ = await preferences.setDouble(
+        _ResponsiveSlidingDrawerState._desktopDrawerWidthPreferenceKey,
+        width,
+      );
+    } on Object {
+      // Drawer resizing remains usable if local preferences cannot be written.
+      return;
+    }
+  }
+
+  void _finishDesktopResize() {
+    _setResizing(false);
+    if (!_shouldPersistDesktopDrawerWidth) return;
+
+    _shouldPersistDesktopDrawerWidth = false;
+    final width = _desktopDrawerWidth;
+    if (width != null) unawaited(_persistDesktopDrawerWidth(width));
+  }
 }
 
 extension _ResponsiveSlidingDrawerAppearance on _ResponsiveSlidingDrawerState {
@@ -180,13 +250,19 @@ extension _ResponsiveSlidingDrawerAppearance on _ResponsiveSlidingDrawerState {
   double get _currentDrawerWidth {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
-    return isDesktop
-        ? (_desktopDrawerWidth ??
-              (_ResponsiveSlidingDrawerState._desktopOpenRatio * screenWidth))
-        : (_ResponsiveSlidingDrawerState._openRatio * screenWidth).clamp(
-            0.0,
-            _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth,
-          );
+    if (isDesktop) {
+      if (widget.isDesktopCompact) {
+        return _ResponsiveSlidingDrawerState._desktopCompactDrawerWidth;
+      }
+
+      return _desktopDrawerWidth ??
+          (_ResponsiveSlidingDrawerState._desktopOpenRatio * screenWidth);
+    }
+
+    return (_ResponsiveSlidingDrawerState._openRatio * screenWidth).clamp(
+      0.0,
+      _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth,
+    );
   }
 
   bool get _drawerFullyOpen =>
@@ -249,9 +325,14 @@ extension _ResponsiveSlidingDrawerResize on _ResponsiveSlidingDrawerState {
   void _handleDividerPanUpdate(DragUpdateDetails details) {
     if (_requiredController.value < 0.99) return;
     final delta = details.delta.dx;
+    final previousWidth = _requiredDesktopDrawerWidth;
 
     _applyDesktopResizeDelta(delta);
     _clampDesktopDrawerWidth();
+    if (_requiredDesktopDrawerWidth != previousWidth) {
+      _hasResizedDesktopDrawer = true;
+      _shouldPersistDesktopDrawerWidth = true;
+    }
     _rebuild(() {
       final _ = Object();
     });
@@ -455,7 +536,8 @@ class const _DesktopDrawerLayout({
       _DesktopDrawerBody(state: state),
       _DesktopDrawerPanel(state: state),
       _DesktopDrawerDragArea(state: state),
-      if (state._drawerFullyOpen) _DesktopDrawerDivider(state: state),
+      if (state._drawerFullyOpen && !state.widget.isDesktopCompact)
+        _DesktopDrawerDivider(state: state),
     ],
   );
 }
@@ -677,8 +759,8 @@ class const _DesktopDividerGesture({
       child: _DesktopDividerIndicator(color: _color(context)),
       onPanStart: (_) => state._setResizing(true),
       onPanUpdate: state._handleDividerPanUpdate,
-      onPanEnd: (_) => state._setResizing(false),
-      onPanCancel: () => state._setResizing(false),
+      onPanEnd: (_) => state._finishDesktopResize(),
+      onPanCancel: state._finishDesktopResize,
       behavior: .opaque,
     );
   }

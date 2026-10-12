@@ -7,9 +7,21 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+
+import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+import 'package:material_ui/material_ui.dart';
+
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
@@ -24,19 +36,19 @@ import 'package:auravibes_app/features/chats/providers/tool_display_name_provide
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_announcement.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
+import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
+import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
+import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_announcement.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
-import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
-import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
-import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
@@ -44,21 +56,18 @@ import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
-import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
+import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:logging/logging.dart';
-import 'package:material_ui/material_ui.dart';
 
 final _a2uiLogger = Logger('chat_a2ui_actions');
 const _latestMessageScrollThreshold = 64.0;
+
+typedef _ActivityToolDisplay = ({
+  String displayName,
+  String? description,
+  VoidCallback? openSkillDetails,
+});
 
 class const ChatPrimaryScrollController({
   required final Widget child,
@@ -528,14 +537,13 @@ void _showConversationSkillPicker(
   String workspaceId,
   String conversationId,
 ) {
-  FocusManager.instance.primaryFocus?.unfocus();
+  if (!context.mounted) return;
+
   unawaited(
-    showDialog<void>(
+    ConversationSkillSelectorModal.show(
       context: context,
-      builder: (context) => ConversationSkillSelectorModal(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      ),
+      workspaceId: workspaceId,
+      conversationId: conversationId,
     ),
   );
 }
@@ -947,13 +955,21 @@ bool _isTimelineBoundary(MessageEntity message) =>
     message.status == MessageStatus.error ||
     message.metadata?.isCompactionSummary == true;
 
+bool _isErrorMessage(MessageEntity message) =>
+    _isErrorSystemMessage(message) ||
+    (!message.isUser &&
+        message.status == MessageStatus.error &&
+        _isProviderErrorMessage(message));
+
 bool _isErrorSystemMessage(MessageEntity message) =>
     !message.isUser &&
     message.messageType == MessageType.system &&
     message.status == MessageStatus.error;
 
 bool _isProviderErrorMessage(MessageEntity message) =>
-    message.metadata?.modelMetadata['providerError'] == true;
+    message.metadata?.modelMetadata[ProviderRecoveryMetadata
+        .providerErrorKey] ==
+    true;
 
 String? _retryableUserMessageId(List<_ResolvedChatMessage?> messages) {
   for (final source in messages.reversed) {
@@ -970,8 +986,9 @@ bool _canRetryUserMessage(MessageEntity message) =>
     message.isUser &&
     !message.isForkReference &&
     message.hasValidContent &&
-    (message.status == MessageStatus.error ||
-        message.status == MessageStatus.unfinished);
+    (message.status == MessageStatus.unfinished ||
+        (message.status == MessageStatus.error &&
+            ProviderRecoveryMetadata.isRetryEligible(message)));
 
 class const _ChatMessageTimelineItem({
   required final _ResolvedChatMessage source,
@@ -999,10 +1016,11 @@ class const _ChatMessageTimelineItem({
       );
     }
 
-    if (_isErrorSystemMessage(message)) {
+    if (_isErrorMessage(message)) {
       return _ErrorMessageWidget(
         content: message.content,
         isProviderError: _isProviderErrorMessage(message),
+        providerFailureCategory: ProviderRecoveryMetadata.categoryFor(message),
         key: ValueKey(message.id),
       );
     }
@@ -1602,7 +1620,13 @@ class const _ForkBoundaryDivider({
               workspaceId: source.workspaceId,
               chatId: source.id,
             ).go(context),
-            child: row,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: context.auraTheme.interactionSizes.minimumTargetSize,
+                minHeight: context.auraTheme.interactionSizes.minimumTargetSize,
+              ),
+              child: Center(child: row),
+            ),
           );
   }
 }
@@ -1871,35 +1895,51 @@ class const _AssistantActivityRun({
     final toolContents = <String, Widget>{};
     for (final entry in toolGroupEntries) {
       final groupId = _activityToolGroupId(entry);
-      final activityToolCalls = [
-        for (final item in entry.toolCalls)
-          (
-            messageId: item.messageId,
+      final activityToolCalls =
+          <
+            ({
+              String messageId,
+              MessageToolCallEntity toolCall,
+              bool isForkReference,
+              String displayName,
+              String? description,
+              bool showArguments,
+              VoidCallback? openSkillDetails,
+              VoidCallback? openSubAgent,
+            })
+          >[];
+      for (final item in entry.toolCalls) {
+        final display = _activityToolDisplay(
+          context: context,
+          ref: ref,
+          workspaceId: workspaceId,
+          toolCall: item.toolCall,
+        );
+        activityToolCalls.add((
+          messageId: item.messageId,
+          toolCall: item.toolCall,
+          isForkReference: item.isForkReference,
+          displayName: display.displayName,
+          description: display.description,
+          showArguments: !item.hideArguments,
+          openSkillDetails: display.openSkillDetails,
+          openSubAgent: _openSubAgent(
+            context: context,
+            ref: ref,
+            workspaceId: workspaceId,
+            parentConversationId: parentConversationId,
+            childConversations: childConversations,
             toolCall: item.toolCall,
-            isForkReference: item.isForkReference,
-            displayName: _activityToolCallDisplayName(
-              context: context,
-              ref: ref,
-              workspaceId: workspaceId,
-              toolCall: item.toolCall,
-            ),
-            showArguments: !item.hideArguments,
-            openSubAgent: _openSubAgent(
-              context: context,
-              ref: ref,
-              workspaceId: workspaceId,
-              parentConversationId: parentConversationId,
-              childConversations: childConversations,
-              toolCall: item.toolCall,
-            ),
           ),
-      ];
+        ));
+      }
       final toolRows = [
         for (final activityToolCall in activityToolCalls)
           _ActivityToolCallRow(
             key: ValueKey('activity_tool_row_${activityToolCall.toolCall.id}'),
             toolCall: activityToolCall.toolCall,
             displayName: activityToolCall.displayName,
+            description: activityToolCall.description,
             showArguments: activityToolCall.showArguments,
             isExpanded: expandedToolIds.value.contains(
               activityToolCall.toolCall.id,
@@ -1910,6 +1950,7 @@ class const _AssistantActivityRun({
                 activityToolCall.toolCall.id,
               ),
             ),
+            openSkillDetails: activityToolCall.openSkillDetails,
             openSubAgent: activityToolCall.openSubAgent,
           ),
       ];
@@ -2152,35 +2193,62 @@ String _toolCallDisplayName(
   ),
 );
 
-String _activityToolCallDisplayName({
+_ActivityToolDisplay _activityToolDisplay({
   required BuildContext context,
   required WidgetRef ref,
   required String workspaceId,
   required MessageToolCallEntity toolCall,
 }) {
   final target = SkillToolCallDisplay.parseTarget(toolCall);
-  if (target != null) {
-    final titlesAsync = ref.watch(
-      skillToolCallDisplayTitlesProvider(
-        workspaceId,
-        target.skillSlug,
-        target.toolSlug,
+  if (target == null) {
+    return (
+      displayName: _toolCallDisplayName(
+        ref.watch(toolDisplayNameProvider(workspaceId, toolCall.name)),
+        toolCall.name,
       ),
-    );
-
-    return SkillToolCallDisplay.displayName(
-      context: context,
-      titles: titlesAsync.maybeWhen(
-        data: (titles) => titles,
-        orElse: () => null,
+      description: SkillToolCallDisplay.description(
+        context: context,
+        titles: null,
+        userFacingDescription: toolCall.userFacingDescription,
       ),
-      target: target,
+      openSkillDetails: null,
     );
   }
 
-  return _toolCallDisplayName(
-    ref.watch(toolDisplayNameProvider(workspaceId, toolCall.name)),
-    toolCall.name,
+  final titlesAsync = ref.watch(
+    skillToolCallDisplayTitlesProvider(
+      workspaceId,
+      target.skillSlug,
+      target.toolSlug,
+    ),
+  );
+  final titles = titlesAsync.maybeWhen(
+    data: (value) => value,
+    orElse: () => null,
+  );
+  final skillId = titles?.skillId;
+
+  return (
+    displayName: SkillToolCallDisplay.displayName(
+      context: context,
+      titles: titles,
+      target: target,
+    ),
+    description: SkillToolCallDisplay.description(
+      context: context,
+      titles: titles,
+      userFacingDescription: toolCall.userFacingDescription,
+    ),
+    openSkillDetails: skillId == null || skillId.isEmpty
+        ? null
+        : () {
+            unawaited(
+              SkillDetailRoute(
+                workspaceId: workspaceId,
+                skillId: skillId,
+              ).push<void>(context),
+            );
+          },
   );
 }
 
@@ -2433,10 +2501,12 @@ void _toggleDisclosure({
 class const _ActivityToolCallRow({
   required final MessageToolCallEntity toolCall,
   required final String displayName,
+  required final String? description,
   required final bool showArguments,
   required final bool isExpanded,
   required final VoidCallback onToggle,
   required final VoidCallback? openSubAgent,
+  required final VoidCallback? openSkillDetails,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -2449,10 +2519,13 @@ class const _ActivityToolCallRow({
         decodedArgs?.isNotEmpty == true || decodedResponse?.isNotEmpty == true;
     final statusKey = _statusLocaleKey();
     final statusColor = _statusColor(context);
-    final description = normalizeToolCallUserFacingDescription(
-      toolCall.userFacingDescription,
-    );
     final onOpenSubAgent = openSubAgent;
+    final onOpenSkillDetails = openSkillDetails;
+    final statusBadge = _ActivityToolStatusBadge(
+      label: statusKey.tr(),
+      color: statusColor,
+      textKey: ValueKey('activity_tool_status_${toolCall.id}'),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2479,78 +2552,64 @@ class const _ActivityToolCallRow({
                   if (description != null) description,
                   statusKey.tr(),
                 ].join(' '),
-                child: Row(
-                  children: [
-                    Icon(_statusIcon(), size: 14, color: statusColor),
-                    const AuraSizedBox(width: .xs),
-                    Expanded(
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(text: displayName),
-                            if (description != null)
-                              TextSpan(
-                                text: ' · $description',
-                                style: TextStyle(
-                                  color: statusColor.withValues(alpha: .72),
-                                  fontSize:
-                                      context.auraTheme.typography.fontSizeXs,
-                                  fontFamily: context
-                                      .auraTheme
-                                      .typography
-                                      .bodyFontFamily,
-                                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isCompact = constraints.maxWidth < 240;
+
+                    return Row(
+                      children: [
+                        Icon(_statusIcon(), size: 14, color: statusColor),
+                        const AuraSizedBox(width: .xs),
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(text: displayName),
+                                if (description != null)
+                                  TextSpan(
+                                    text: ' · $description',
+                                    style: TextStyle(
+                                      color: statusColor.withValues(alpha: .72),
+                                      fontSize: context
+                                          .auraTheme
+                                          .typography
+                                          .fontSizeXs,
+                                      fontFamily: context
+                                          .auraTheme
+                                          .typography
+                                          .bodyFontFamily,
+                                    ),
+                                  ),
+                              ],
+                              style: TextStyle(
+                                color: statusColor,
+                                fontSize:
+                                    context.auraTheme.typography.fontSizeSm,
+                                fontFamily:
+                                    context.auraTheme.typography.bodyFontFamily,
                               ),
-                          ],
-                          style: TextStyle(
+                            ),
+                            key: ValueKey('activity_tool_label_${toolCall.id}'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const AuraSizedBox(width: .xs),
+                        if (isCompact)
+                          Flexible(child: statusBadge)
+                        else
+                          statusBadge,
+                        if (hasDetails)
+                          Icon(
+                            isExpanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            size: 18,
                             color: statusColor,
-                            fontSize: context.auraTheme.typography.fontSizeSm,
-                            fontFamily:
-                                context.auraTheme.typography.bodyFontFamily,
                           ),
-                        ),
-                        key: ValueKey('activity_tool_label_${toolCall.id}'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const AuraSizedBox(width: .xs),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 120),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: context.auraTheme.fromSpacing(.xs),
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: .12),
-                          borderRadius: BorderRadius.circular(
-                            context.auraTheme.fromBorderRadius(.sm),
-                          ),
-                        ),
-                        child: Text(
-                          statusKey.tr(),
-                          key: ValueKey('activity_tool_status_${toolCall.id}'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: context.auraTheme.typography.fontSizeXs,
-                            fontFamily:
-                                context.auraTheme.typography.bodyFontFamily,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (hasDetails)
-                      Icon(
-                        isExpanded
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down,
-                        size: 18,
-                        color: statusColor,
-                      ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -2564,6 +2623,21 @@ class const _ActivityToolCallRow({
                       LocaleKeys
                           .chats_screens_chat_conversation_view_sub_agent_run,
                     ),
+                    AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
+                  ],
+                  spacing: .xs,
+                  mainAxisSize: .min,
+                ),
+                variant: .ghost,
+                size: .small,
+              ),
+            if (onOpenSkillDetails != null)
+              AuraButton(
+                key: ValueKey('activity_open_skill_${toolCall.id}'),
+                onPressed: onOpenSkillDetails,
+                child: const AuraRow(
+                  children: [
+                    TextLocale(LocaleKeys.related_lists_view_skill),
                     AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
                   ],
                   spacing: .xs,
@@ -2634,6 +2708,40 @@ class const _ActivityToolCallRow({
   }
 }
 
+class const _ActivityToolStatusBadge({
+  required final String label,
+  required final Color color,
+  required final Key textKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 120),
+    child: Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: context.auraTheme.fromSpacing(.xs),
+        vertical: 1,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(
+          context.auraTheme.fromBorderRadius(.sm),
+        ),
+      ),
+      child: Text(
+        label,
+        key: textKey,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: context.auraTheme.typography.fontSizeXs,
+          fontFamily: context.auraTheme.typography.bodyFontFamily,
+        ),
+      ),
+    ),
+  );
+}
+
 class const _ActivityToolCallDetails({
   required final MessageToolCallEntity toolCall,
   required final String? decodedArgs,
@@ -2653,10 +2761,19 @@ class const _ActivityToolCallDetails({
     final persistedProjection = responseRaw == null
         ? null
         : readToolOutputProjectionMetadata(responseRaw);
+    final truncationMetadata = contextProjection ?? persistedProjection;
     final truncationKey = persistedProjection == null
         ? LocaleKeys.chats_screens_chat_conversation_activity_context_truncated
         : LocaleKeys
               .chats_screens_chat_conversation_activity_persisted_truncated;
+    final truncationMessage = truncationMetadata == null
+        ? null
+        : truncationKey.tr(
+            namedArgs: {
+              'originalBytes': truncationMetadata.originalBytes.toString(),
+              'limitBytes': truncationMetadata.limitBytes.toString(),
+            },
+          );
 
     return Padding(
       padding: EdgeInsets.only(
@@ -2681,20 +2798,20 @@ class const _ActivityToolCallDetails({
                   ),
                 ),
               ),
-            if (contextProjection != null)
-              Text(
-                truncationKey.tr(
-                  namedArgs: {
-                    'originalBytes': contextProjection.originalBytes.toString(),
-                    'limitBytes': contextProjection.limitBytes.toString(),
-                  },
+            if (truncationMessage case final value?)
+              Semantics(
+                child: Text(
+                  value,
+                  key: ValueKey('activity_tool_truncation_${toolCall.id}'),
+                  style: TextStyle(
+                    color: colors.onSurfaceVariant,
+                    fontSize: theme.typography.fontSizeXs,
+                    fontFamily: theme.typography.bodyFontFamily,
+                  ),
                 ),
-                key: ValueKey('activity_tool_truncation_${toolCall.id}'),
-                style: TextStyle(
-                  color: colors.onSurfaceVariant,
-                  fontSize: theme.typography.fontSizeXs,
-                  fontFamily: theme.typography.bodyFontFamily,
-                ),
+                container: true,
+                excludeSemantics: true,
+                label: value,
               ),
             if (decodedResponse case final value? when value.isNotEmpty)
               Padding(
@@ -2710,6 +2827,7 @@ class const _ActivityToolCallDetails({
                     child: ToolCallResponsePreview(
                       toolName: toolCall.name,
                       content: value,
+                      inspectionStatus: truncationMessage,
                     ),
                   ),
                 ),
@@ -2905,6 +3023,7 @@ class const _CompactedMessageWidget({
 class const _ErrorMessageWidget({
   required final String content,
   required final bool isProviderError,
+  required final ProviderFailureCategory? providerFailureCategory,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -2913,6 +3032,9 @@ class const _ErrorMessageWidget({
     final visibleContent = isProviderError
         ? LogRedaction.redact(content)
         : content.tr(context: context);
+    final guidanceKey = isProviderError
+        ? _providerRecoveryGuidanceKey(providerFailureCategory)
+        : null;
     const iconSize = 16.0;
     const containerBorderRadius = 10.0;
 
@@ -2920,6 +3042,11 @@ class const _ErrorMessageWidget({
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (guidanceKey case final key?)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(key.tr(context: context)),
+            ),
           Row(
             children: [
               Icon(
@@ -2931,7 +3058,8 @@ class const _ErrorMessageWidget({
               Flexible(child: AuraSelectableText(visibleContent)),
             ],
           ),
-          _MessageCopyAction(resolveContent: () => visibleContent),
+          if (visibleContent.isNotEmpty)
+            _MessageCopyAction(resolveContent: () => visibleContent),
         ],
       ),
       padding: .medium,
@@ -2942,6 +3070,23 @@ class const _ErrorMessageWidget({
     );
   }
 }
+
+String _providerRecoveryGuidanceKey(
+  ProviderFailureCategory? category,
+) => switch (category) {
+  .authentication =>
+    LocaleKeys.chats_screens_chat_conversation_provider_recovery_authentication,
+  .quotaRateLimit =>
+    LocaleKeys
+        .chats_screens_chat_conversation_provider_recovery_quota_rate_limit,
+  .transientOutage =>
+    LocaleKeys
+        .chats_screens_chat_conversation_provider_recovery_transient_outage,
+  .configuration =>
+    LocaleKeys.chats_screens_chat_conversation_provider_recovery_configuration,
+  .unknown ||
+  null => LocaleKeys.chats_screens_chat_conversation_provider_recovery_unknown,
+};
 
 class const _CompactingIndicator() extends StatelessWidget {
   @override

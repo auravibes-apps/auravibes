@@ -145,6 +145,8 @@ abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
 abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
   static const String agentTranscriptContextMetadataKey =
       'agentTranscriptContextUpdate';
+  static const String incompleteArchivedAgentContextMetadataKey =
+      'incompleteArchivedAgentContext';
 
   const factory({
     @Default(<MessageToolCallEntity>[]) List<MessageToolCallEntity> toolCalls,

@@ -13,5 +13,8 @@ class const SkillToolAccess({
   required final String id,
   required final String title,
   required final SkillToolAccessStatus status,
+  final String description = '',
+  final String? titleKey,
+  final String? descriptionKey,
   final String? credentialDefinitionId,
 });

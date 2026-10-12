@@ -692,6 +692,7 @@ void main() {
   testWidgets('syncs the local model catalog with visible progress', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
     _addWidgetTearDown(tester);
     final completer = Completer<void>();
     final usecase = _MockSyncApiModelsUseCase();
@@ -706,7 +707,9 @@ void main() {
       find.byKey(const ValueKey<String>('service_connections_sync')),
       findsOneWidget,
     );
-    await tester.tap(find.byIcon(Icons.sync));
+    await tester.tap(
+      find.bySemanticsIdentifier('service_connections_sync').hitTestable(),
+    );
     await tester.pump();
 
     expect(find.byType(AuraSpinner), findsOneWidget);
@@ -723,6 +726,7 @@ void main() {
     expect(find.text('Model catalog synced'), findsOneWidget);
     expect(find.text('Last refreshed'), findsOneWidget);
     await _unmountScreen(tester);
+    semantics.dispose();
   });
 
   testWidgets('shows sync failure and allows retry', (tester) async {

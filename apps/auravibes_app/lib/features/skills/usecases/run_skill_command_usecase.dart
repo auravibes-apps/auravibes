@@ -31,6 +31,7 @@ typedef LoadSkillResourceContent =
 
 typedef RunSkillNativeToolRequest = ({
   String conversationId,
+  String toolCallId,
   String workspaceId,
   AgentResolvedToolName target,
   Map<String, dynamic> arguments,
@@ -67,6 +68,7 @@ typedef RunSkillCommandDependencies = ({
 
 typedef RunSkillCommandRequest = ({
   String conversationId,
+  String toolCallId,
   String workspaceId,
   String commandName,
   Map<String, dynamic> arguments,
@@ -74,6 +76,7 @@ typedef RunSkillCommandRequest = ({
 
 typedef _SkillToolExecutionRequest = ({
   String conversationId,
+  String toolCallId,
   String workspaceId,
   AgentResolvedToolName target,
   SkillCommandTarget command,
@@ -438,6 +441,7 @@ Future<Object?> _executeCallTool(
 
   return await _RunSkillCommandExecution(usecase)._runSkillTool((
     conversationId: request.conversationId,
+    toolCallId: request.toolCallId,
     workspaceId: request.workspaceId,
     target: target,
     command: command,
@@ -639,6 +643,7 @@ class const _RunSkillCommandExecution(final RunSkillCommandUsecase _usecase) {
 
     return nativeRunner((
       conversationId: request.conversationId,
+      toolCallId: request.toolCallId,
       workspaceId: request.workspaceId,
       target: request.target,
       arguments: Map<String, dynamic>.from(request.command.args),

@@ -85,16 +85,13 @@ class const _AccentColorResetButton({required final VoidCallback onPressed})
   @override
   Widget build(BuildContext _) => Align(
     alignment: .centerRight,
-    child: Semantics(
-      key: const ValueKey<String>('settings_accent_color_reset'),
-      child: AuraButton(
-        onPressed: onPressed,
-        child: const TextLocale(
-          LocaleKeys.settings_screen_actions_reset_defaults,
-        ),
-        variant: .ghost,
-        size: .small,
+    child: AuraButton(
+      onPressed: onPressed,
+      child: const TextLocale(
+        LocaleKeys.settings_screen_actions_reset_defaults,
       ),
+      variant: .ghost,
+      size: .small,
       identifier: 'settings_accent_color_reset',
     ),
   );
@@ -125,18 +122,15 @@ class const _AccentColorTile({
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('settings_accent_color'),
-    child: AuraTile(
-      child: const AuraText(
-        child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
-        style: .bodyLarge,
-      ),
-      onTap: onTap,
-      variant: .ghost,
-      leading: const _AccentColorTileLeading(),
-      trailing: _AccentColorTileTrailing(hue: hue),
+  Widget build(BuildContext context) => AuraTile(
+    child: const AuraText(
+      child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
+      style: .bodyLarge,
     ),
+    onTap: onTap,
+    variant: .ghost,
+    leading: const _AccentColorTileLeading(),
+    trailing: _AccentColorTileTrailing(hue: hue),
     identifier: 'settings_accent_color',
   );
 }

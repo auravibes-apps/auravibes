@@ -42,6 +42,7 @@ class const SkillAccessStatusView({
   final bool isAppSkill = false,
   final VoidCallback? onChanged,
   final bool recoveryEnabled = true,
+  final String? credentialSetupSemanticLabel,
   super.key,
 }) extends ConsumerWidget {
   @override
@@ -58,6 +59,7 @@ class const SkillAccessStatusView({
         ref: ref,
         summary: value,
       )),
+      credentialSetupSemanticLabel: credentialSetupSemanticLabel,
     );
   }
 
@@ -222,6 +224,7 @@ class const _SkillAccessStatusContent({
   required final bool showDependencies,
   required final bool recoveryEnabled,
   required final _SkillAccessSetup onSetup,
+  final String? credentialSetupSemanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (summary) {
@@ -230,6 +233,7 @@ class const _SkillAccessStatusContent({
       showDependencies: showDependencies,
       recoveryEnabled: recoveryEnabled,
       onSetup: onSetup(value),
+      credentialSetupSemanticLabel: credentialSetupSemanticLabel,
     ),
     AsyncLoading() => const TextLocale(LocaleKeys.skill_access_checking),
     AsyncData() ||
@@ -250,6 +254,7 @@ class const _SkillAccessSummaryContent({
   required final bool showDependencies,
   required final bool recoveryEnabled,
   required final VoidCallback onSetup,
+  final String? credentialSetupSemanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -260,6 +265,7 @@ class const _SkillAccessSummaryContent({
           summary: summary,
           recoveryEnabled: recoveryEnabled,
           onSetup: onSetup,
+          credentialSetupSemanticLabel: credentialSetupSemanticLabel,
         ),
     ],
     spacing: .xs,
@@ -271,6 +277,7 @@ class const _SkillAccessDependencies({
   required final SkillAccessSummary summary,
   required final bool recoveryEnabled,
   required final VoidCallback onSetup,
+  final String? credentialSetupSemanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -282,6 +289,7 @@ class const _SkillAccessDependencies({
         _SkillAccessSetupButton(
           recoveryEnabled: recoveryEnabled,
           onPressed: onSetup,
+          semanticLabel: credentialSetupSemanticLabel,
         ),
     ],
     spacing: .xs,
@@ -295,6 +303,7 @@ bool _requiresSetup(SkillAccessSummary summary) =>
 class const _SkillAccessSetupButton({
   required final bool recoveryEnabled,
   required final VoidCallback onPressed,
+  final String? semanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
@@ -302,6 +311,7 @@ class const _SkillAccessSetupButton({
     child: const TextLocale(LocaleKeys.skills_selector_credential_setup),
     variant: .text,
     disabled: !recoveryEnabled,
+    semanticLabel: semanticLabel,
   );
 }
 

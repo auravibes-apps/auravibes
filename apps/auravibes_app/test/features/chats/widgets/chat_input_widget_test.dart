@@ -411,6 +411,7 @@ void main() {
   testWidgets('keeps failed send draft and clears successful send draft', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
     final activeConversation = ValueNotifier<String?>('chat-1');
     addTearDown(activeConversation.dispose);
     var attempts = 0;
@@ -427,7 +428,9 @@ void main() {
     );
     await tester.enterText(find.byType(EditableText), 'unsent message');
     await tester.pump();
-    await tester.tap(find.byIcon(Icons.arrow_upward).hitTestable());
+    await tester.tap(
+      find.bySemanticsIdentifier('chat_send_button').hitTestable(),
+    );
     await tester.pump();
     expect(attempts, 1);
     expect(
@@ -443,13 +446,9 @@ void main() {
       tester.widget<EditableText>(find.byType(EditableText)).controller.text,
       'unsent message',
     );
-    final sendButton = find.descendant(
-      of: find.byKey(const ValueKey<String>('chat_send_button')),
-      matching: find.byType(AuraButton),
-    );
-    expect(tester.widget<AuraButton>(sendButton).disabled, isFalse);
-
-    tester.widget<AuraButton>(sendButton).onPressed();
+    final sendButton = find.bySemanticsIdentifier('chat_send_button');
+    expect(sendButton, findsOneWidget);
+    await tester.tap(sendButton.hitTestable());
     final _ = await tester.pumpAndSettle();
     expect(attempts, 2);
     expect(
@@ -465,6 +464,7 @@ void main() {
       isEmpty,
     );
     expect(attempts, 2);
+    semantics.dispose();
   });
 
   testWidgets('renders without error', (tester) async {
@@ -509,7 +509,7 @@ void main() {
       'Edited message',
     );
     await tester.pump();
-    final sendButton = find.descendant(
+    final sendButton = find.ancestor(
       of: find.byKey(const ValueKey<String>('chat_send_button')),
       matching: find.byType(AuraButton),
     );
@@ -523,6 +523,7 @@ void main() {
   });
 
   testWidgets('exposes stable selectors for composer controls', (tester) async {
+    final semantics = tester.ensureSemantics();
     await pumpAndInit(
       tester,
       buildSubject(
@@ -550,6 +551,17 @@ void main() {
     ]) {
       expect(find.byKey(ValueKey<String>(selector)), findsOneWidget);
     }
+    for (final selector in [
+      'chat_attachment_options_button',
+      'chat_send_button',
+      'chat_stop_generation',
+    ]) {
+      expect(find.bySemanticsIdentifier(selector), findsOneWidget);
+      expect(
+        find.byKey(ValueKey<String>(selector)).evaluate().single,
+        find.bySemanticsIdentifier(selector).evaluate().single,
+      );
+    }
     expect(find.text('reasoning control'), findsOneWidget);
     final composerRadii = tester
         .widgetList<AuraCornerRadiusScope>(
@@ -568,6 +580,7 @@ void main() {
       find.byKey(const ValueKey<String>('chat_voice_button')),
       kIsWeb ? findsNothing : findsOneWidget,
     );
+    semantics.dispose();
   });
 
   testWidgets('clears text as soon as send is accepted', (tester) async {
@@ -1009,10 +1022,7 @@ void main() {
     expect(
       tester
           .widget<AuraIconButton>(
-            find.descendant(
-              of: micButton,
-              matching: find.byType(AuraIconButton),
-            ),
+            find.ancestor(of: micButton, matching: find.byType(AuraIconButton)),
           )
           .disabled,
       isTrue,

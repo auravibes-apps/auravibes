@@ -171,6 +171,47 @@ void main() {
     }
 
     test(
+      'does not dispatch a retry for a persisted non-retryable failure',
+      () async {
+        final message = MessageEntity(
+          id: 'auth-failure',
+          conversationId: 'conversation-1',
+          content: 'Original prompt',
+          messageType: .text,
+          isUser: true,
+          status: .error,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
+          metadata: const MessageMetadataEntity(
+            modelMetadata: {
+              'providerError': true,
+              'providerRecovery': {
+                'classification': 'authentication',
+                'retryable': false,
+              },
+            },
+          ),
+        );
+        when(() => fixture.messageRepository.getMessageById(message.id))
+            .thenAnswer((_) async => message);
+
+        await expectLater(
+          fixture.usecase.retryUserMessage(
+            conversationId: 'conversation-1',
+            messageId: message.id,
+          ),
+          throwsA(isA<StateError>()),
+        );
+        final _ = verifyNever(
+          () => fixture.runAgentIterationUsecase.call(
+            conversationId: any(named: 'conversationId'),
+            context: any(named: 'context'),
+          ),
+        );
+      },
+    );
+
+    test(
       'queues the draft instead of persisting when the conversation is busy',
       () async {
         when(

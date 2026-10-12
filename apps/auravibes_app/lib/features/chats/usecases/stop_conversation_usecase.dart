@@ -8,6 +8,14 @@ import 'package:auravibes_app/features/chats/providers/conversation_send_queue_r
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 
 typedef _StopResult = ({Object? error, StackTrace? stackTrace});
+typedef _StopRuntimeRequest = ({
+  String conversationId,
+  String? parentId,
+  AgentCancellationRuntime cancellationRuntime,
+  ConversationStreamingRuntime streamingRuntime,
+  ConversationSendQueueRuntime sendQueueRuntime,
+  ConversationRateLimitRetryRuntime retryRuntime,
+});
 
 class const StopConversationUsecase({
   required final ConversationRepository conversationRepository,
@@ -76,16 +84,23 @@ class const StopConversationUsecase({
 
   Future<void> _stopOne(String conversationId) async {
     final parentId = activeSubAgents.parentOf(conversationId);
-    await _stopRuntime(conversationId);
+    await _stopRuntime(conversationId, parentId: parentId);
     _releaseParent(conversationId, parentId);
   }
 
-  Future<void> _stopRuntime(String conversationId) async {
-    cancellationRuntime.requestStopOnStart(conversationId);
-    sendQueueRuntime.clear(conversationId);
-    retryRuntime.clear(conversationId);
-    final _ = streamingRuntime.remove(conversationId);
-    await cancellationRuntime.waitForCompletion(conversationId);
+  Future<void> _stopRuntime(String conversationId, {String? parentId}) async {
+    final request = (
+      conversationId: conversationId,
+      parentId: parentId,
+      cancellationRuntime: cancellationRuntime,
+      streamingRuntime: streamingRuntime,
+      sendQueueRuntime: sendQueueRuntime,
+      retryRuntime: retryRuntime,
+    );
+    final hasActiveScope = _prepareRuntimeStop(request);
+    if (hasActiveScope) {
+      await cancellationRuntime.waitForCompletion(conversationId);
+    }
     await _pendingToolStopper.call(conversationId);
   }
 
@@ -101,4 +116,34 @@ class const StopConversationUsecase({
       ));
     }
   }
+}
+
+bool _prepareRuntimeStop(_StopRuntimeRequest request) {
+  final conversationId = request.conversationId;
+  final cancellationRuntime = request.cancellationRuntime;
+  final hasActiveScope = cancellationRuntime.current(conversationId) != null;
+
+  if (_shouldRequestStop(request, hasActiveScope)) {
+    cancellationRuntime.requestStopOnStart(conversationId);
+  }
+  _clearStopRuntimeState(request);
+
+  return hasActiveScope;
+}
+
+bool _shouldRequestStop(_StopRuntimeRequest request, bool hasActiveScope) {
+  if (hasActiveScope) return true;
+  final isStreaming = request.streamingRuntime.isStreaming(
+    request.conversationId,
+  );
+  if (isStreaming) return true;
+
+  return request.parentId != null;
+}
+
+void _clearStopRuntimeState(_StopRuntimeRequest request) {
+  final conversationId = request.conversationId;
+  request.sendQueueRuntime.clear(conversationId);
+  request.retryRuntime.clear(conversationId);
+  final _ = request.streamingRuntime.remove(conversationId);
 }

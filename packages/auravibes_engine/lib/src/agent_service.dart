@@ -94,10 +94,7 @@ class const AgentService({
         final retryDelay = _rateLimitRetryDelayFor(error);
         if (retryDelay == null || rateLimitRetries >= rateLimitRetryCount) {
           await _markAckMessagesErrored(currentContext);
-          final providerError = error is AgentRateLimitRetryException
-              ? error.providerException
-              : error;
-          Error.throwWithStackTrace(providerError, stackTrace);
+          Error.throwWithStackTrace(error, stackTrace);
         }
         rateLimitRetries++;
 
@@ -280,42 +277,12 @@ class const AgentService({
   }
 
   Duration? _rateLimitRetryDelayFor(Object error) {
-    final message = error.toString().toLowerCase();
-    final isRateLimit =
-        error is AgentRateLimitRetryException ||
-        message.contains('ratelimitexception') ||
-        message.contains('resource_exhausted') ||
-        message.contains('rate limit') ||
-        message.contains('429');
-    if (!isRateLimit) return null;
+    if (error is! AgentRateLimitRetryException) return null;
 
-    final delay = error is AgentRateLimitRetryException
-        ? error.retryAfter
-        : _knownRateLimitDelay(message) ?? rateLimitRetryDelay;
-
+    final delay = error.retryAfter;
     return delay > defaultAgentRateLimitRetryDelay
         ? defaultAgentRateLimitRetryDelay
         : delay;
-  }
-
-  Duration? _knownRateLimitDelay(String message) {
-    final secondsMatch = RegExp(
-      r'(?:retry[- ]?after|try again in)\D+(\d+)\s*(?:s|sec|second|seconds)',
-    ).firstMatch(message);
-    if (secondsMatch != null) {
-      final seconds = int.tryParse(secondsMatch.group(1) ?? '');
-      if (seconds != null) return Duration(seconds: seconds);
-    }
-
-    final minutesMatch = RegExp(
-      r'(?:retry[- ]?after|try again in)\D+(\d+)\s*(?:m|min|minute|minutes)',
-    ).firstMatch(message);
-    if (minutesMatch != null) {
-      final minutes = int.tryParse(minutesMatch.group(1) ?? '');
-      if (minutes != null) return Duration(minutes: minutes);
-    }
-
-    return null;
   }
 }
 
