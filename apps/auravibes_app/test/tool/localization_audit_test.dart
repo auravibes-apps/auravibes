@@ -537,7 +537,9 @@ final example = "plural('menu.string_only')";
 class TextLocale {
   Widget build(BuildContext context) => Text(data.tr(context: context));
 }
+String translateOtherData(String data) => data.tr();
 ''');
+    addTearDown(() => wrapperDir.deleteSync(recursive: true));
 
     final issues = findDynamicTranslationIssues(
       translationsDir: translationsDir,
@@ -548,7 +550,15 @@ class TextLocale {
 
     expect(
       issues.where((issue) => issue.contains('unregistered dynamic tr key')),
-      hasLength(2),
+      hasLength(3),
+    );
+    expect(
+      issues.singleWhere(
+        (issue) => issue.startsWith('widgets/text_locale.dart:'),
+      ),
+      contains(
+        'widgets/text_locale.dart:4: unregistered dynamic tr key (data)',
+      ),
     );
     expect(
       issues.where(

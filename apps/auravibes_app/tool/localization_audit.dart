@@ -82,17 +82,7 @@ List<String> findDynamicTranslationIssues({
       relativePath,
       generatedKeys,
     );
-    // TextLocale call sites are audited directly above the wrapper layer.
-    // Skip only this implementation's forwarding `data.tr` to avoid counting
-    // the same key once at the widget and again inside its wrapper.
-    calls.addAll(
-      fileCalls.where(
-        (call) =>
-            call.file != 'widgets/text_locale.dart' ||
-            call.method != 'tr' ||
-            call.keyExpression != 'data',
-      ),
-    );
+    calls.addAll(fileCalls);
   }
 
   final issues = <String>[];
@@ -877,7 +867,16 @@ List<_DynamicTranslationCall> _findDynamicTranslationCalls(
   final resolver = LocalizationAudit(tokens, generatedKeys);
   final calls = <_DynamicTranslationCall>[];
   final occurrences = <({String method, String keyExpression}), int>{};
-  void addCall(String method, _TokenSpan expression, int callOffset) {
+  void addCall(String method, _TokenSpan expression, int callIndex) {
+    final callOffset = tokens[callIndex].start;
+    // TextLocale usages are audited above this wrapper. Exclude only its
+    // direct forwarding call so another dynamic helper in this file remains
+    // visible to the audit.
+    if (file == 'widgets/text_locale.dart' &&
+        method == 'tr' &&
+        _isTextLocaleForwardingCall(tokens, callIndex)) {
+      return;
+    }
     final keyExpression = _sourceSpanText(source, tokens, expression);
     final occurrenceKey = (method: method, keyExpression: keyExpression);
     final occurrence = occurrences[occurrenceKey] ?? 0;
@@ -902,7 +901,7 @@ List<_DynamicTranslationCall> _findDynamicTranslationCalls(
       final argumentEnd = _callArgumentEnd(tokens, argumentStart);
       if (resolver.resolve(argumentStart, argumentEnd) == null) {
         final argument = (start: argumentStart, end: argumentEnd);
-        addCall('TextLocale', argument, token.start);
+        addCall('TextLocale', argument, index);
       }
     }
     if (_isTranslationCall(token) &&
@@ -911,7 +910,7 @@ List<_DynamicTranslationCall> _findDynamicTranslationCalls(
       final keyExpression = _translationKeyExpression(tokens, index);
       if (keyExpression != null &&
           resolver.resolve(keyExpression.start, keyExpression.end) == null) {
-        addCall(token.value, keyExpression, token.start);
+        addCall(token.value, keyExpression, index);
       }
     }
   }
@@ -935,6 +934,81 @@ bool _isTextLocaleClassDeclaration(List<_Token> tokens, int index) {
   }
 
   return false;
+}
+
+bool _isTextLocaleForwardingCall(List<_Token> tokens, int callIndex) {
+  if (callIndex < 2 ||
+      tokens[callIndex].value != 'tr' ||
+      tokens[callIndex - 1].value != '.' ||
+      tokens[callIndex - 2].value != 'data') {
+    return false;
+  }
+
+  for (var classIndex = 0; classIndex < tokens.length; classIndex++) {
+    if (tokens[classIndex].value != 'TextLocale' ||
+        !_isTextLocaleClassDeclaration(tokens, classIndex)) {
+      continue;
+    }
+    final classBodyStart = _textLocaleClassBodyStart(tokens, classIndex);
+    if (classBodyStart == null) continue;
+    final classBodyEnd = _matchingClosing(tokens, classBodyStart, '{', '}');
+    if (classBodyEnd == null) continue;
+
+    for (
+      var methodIndex = classBodyStart + 1;
+      methodIndex < classBodyEnd;
+      methodIndex++
+    ) {
+      if (tokens[methodIndex].value != 'build' ||
+          methodIndex + 1 >= classBodyEnd ||
+          tokens[methodIndex + 1].value != '(') {
+        continue;
+      }
+      final parametersEnd = _matchingClosing(tokens, methodIndex + 1, '(', ')');
+      if (parametersEnd == null ||
+          parametersEnd >= classBodyEnd ||
+          parametersEnd + 4 >= classBodyEnd) {
+        continue;
+      }
+      final arrowIndex = parametersEnd + 1;
+      final textIndex = arrowIndex + 2;
+      if (tokens[arrowIndex].value != '=' ||
+          tokens[arrowIndex + 1].value != '>' ||
+          tokens[textIndex].value != 'Text' ||
+          tokens[textIndex + 1].value != '(') {
+        continue;
+      }
+
+      final firstArgument = textIndex + 2;
+      if (firstArgument + 2 >= classBodyEnd) continue;
+      if (firstArgument == callIndex - 2 &&
+          tokens[firstArgument].value == 'data' &&
+          tokens[firstArgument + 1].value == '.' &&
+          tokens[firstArgument + 2].value == 'tr') {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+int? _textLocaleClassBodyStart(List<_Token> tokens, int classIndex) {
+  var parentheses = 0;
+  for (var index = classIndex + 1; index < tokens.length; index++) {
+    switch (tokens[index].value) {
+      case '(':
+        parentheses++;
+      case ')':
+        parentheses--;
+      case '{':
+        if (parentheses == 0) return index;
+      case ';':
+        if (parentheses == 0) return null;
+    }
+  }
+
+  return null;
 }
 
 int _lineNumber(String source, int offset) {
