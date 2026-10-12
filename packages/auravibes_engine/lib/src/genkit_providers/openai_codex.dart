@@ -405,6 +405,7 @@ Map<String, dynamic> _failedEventDetails(Map<String, dynamic> event) {
 
 bool isRetryableCodexError(GenkitException error) {
   return error.status == StatusCode.internal &&
+      error.details != null &&
       ProviderFailureRecovery.fromError(error).retryable;
 }
 
