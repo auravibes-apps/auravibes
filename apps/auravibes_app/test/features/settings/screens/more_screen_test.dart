@@ -63,6 +63,7 @@ void main() {
     expect(find.text('Credential types'), findsOneWidget);
     expect(find.text('Tools'), findsOneWidget);
     expect(find.text('Skills'), findsOneWidget);
+    expect(find.text('Workflows'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('more_workspaces')),
       findsOneWidget,
@@ -71,11 +72,16 @@ void main() {
       find.byKey(const ValueKey<String>('more_serviceConnections')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const ValueKey<String>('more_workflows')),
+      findsOneWidget,
+    );
     expect(find.byIcon(Icons.workspaces_outlined), findsOneWidget);
     expect(find.byIcon(Icons.hub_outlined), findsOneWidget);
     expect(find.byIcon(Icons.key_outlined), findsOneWidget);
     expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
     expect(find.byIcon(Icons.psychology_alt_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.account_tree_outlined), findsOneWidget);
     expect(find.byIcon(Icons.chevron_right), findsAtLeast(5));
   });
 }

@@ -41,7 +41,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 25);
+      expect(fixture.database.schemaVersion, 26);
     });
 
     test('migration from schema 24 creates background work storage', () async {
@@ -62,6 +62,36 @@ void main() {
           .get();
 
       expect(table, hasLength(1));
+    });
+
+    test('migration from schema 25 creates workflow storage', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()..userVersion = 25;
+      final database = _MigrationAppDatabase<_MigrationCase17>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final columns = await database
+          .customSelect('PRAGMA table_info(workflows)')
+          .get();
+      final foreignKeys = await database
+          .customSelect('PRAGMA foreign_key_list(workflows)')
+          .get();
+
+      expect(
+        columns.map((row) => row.read<String>('name')),
+        containsAll([
+          'id',
+          'workspace_id',
+          'name',
+          'definition_json',
+          'created_at',
+          'updated_at',
+        ]),
+      );
+      expect(foreignKeys, hasLength(1));
+      expect(foreignKeys.single.read<String>('table'), 'workspaces');
+      expect(foreignKeys.single.read<String>('from'), 'workspace_id');
     });
 
     test('migration defaults advanced capabilities to false', () async {
@@ -877,6 +907,8 @@ final class _MigrationCase14;
 final class _MigrationCase15;
 
 final class _MigrationCase16;
+
+final class _MigrationCase17;
 
 final class _RecreatedDatabase extends AppDatabase {
   new(QueryExecutor connection) : super(connection: connection);

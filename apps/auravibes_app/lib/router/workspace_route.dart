@@ -26,6 +26,8 @@ import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen
 import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
+import 'package:auravibes_app/features/workflows/screens/workflow_editor_screen.dart';
+import 'package:auravibes_app/features/workflows/screens/workflows_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_route_failure.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -145,6 +147,13 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
               routes: [
                 TypedGoRoute<AgentCreateRoute>(path: 'new'),
                 TypedGoRoute<AgentDetailRoute>(path: ':agentId'),
+              ],
+            ),
+            TypedGoRoute<WorkflowsRoute>(
+              path: 'more/workflows',
+              routes: [
+                TypedGoRoute<WorkflowCreateRoute>(path: 'new'),
+                TypedGoRoute<WorkflowEditRoute>(path: ':workflowId'),
               ],
             ),
           ],
@@ -606,6 +615,43 @@ class AgentDetailRoute({
       key: ValueKey((workspaceId: workspaceId, agentId: agentId)),
     );
   }
+}
+
+class WorkflowsRoute({required final String workspaceId})
+    extends GoRouteData
+    with $WorkflowsRoute {
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      WorkflowsScreen(workspaceId: workspaceId);
+}
+
+class WorkflowCreateRoute({required final String workspaceId})
+    extends GoRouteData
+    with $WorkflowCreateRoute {
+  @override
+  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+      _canExitDraft(context, state);
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      WorkflowEditorScreen(workspaceId: workspaceId);
+}
+
+class WorkflowEditRoute({
+  required final String workspaceId,
+  required final String workflowId,
+}) extends GoRouteData with $WorkflowEditRoute {
+  @override
+  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+      _canExitDraft(context, state);
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      WorkflowEditorScreen(
+        workspaceId: workspaceId,
+        workflowId: workflowId,
+        key: ValueKey((workspaceId: workspaceId, workflowId: workflowId)),
+      );
 }
 
 class SkillDetailRoute({
