@@ -217,6 +217,37 @@ final receiver = 'menu.home'.tr();
     );
   });
 
+  test('collects raw-string constants used as extension translation keys', () {
+    File('${sourceDir.path}/screen.dart').writeAsStringSync('''
+const _rawMenuKey = 'menu.raw';
+final rawMenu = _rawMenuKey.tr();
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"menu":{"raw":"Crudo"}}
+''');
+
+    expect(
+      findMissingTranslations(
+        translationsDir: translationsDir,
+        sourceDir: sourceDir,
+        localeKeysFile: localeKeysFile,
+      ),
+      {
+        'en': {'menu.raw'},
+        'es': <String>{},
+      },
+    );
+    expect(
+      findDynamicTranslationIssues(
+        translationsDir: translationsDir,
+        sourceDir: sourceDir,
+        localeKeysFile: localeKeysFile,
+        registry: const [],
+      ),
+      isEmpty,
+    );
+  });
+
   test('rejects adjacent extension receivers with interpolation', () {
     File('${sourceDir.path}/screen.dart').writeAsStringSync(r'''
 final simple = 'menu.$name' 'home'.tr();
@@ -388,6 +419,108 @@ final title = _passThrough(dynamicKey).tr();
     expect(issues.join('\n'), contains('unregistered dynamic tr key'));
   });
 
+  test('treats nested conditional returns as part of a helper key', () {
+    File('${sourceDir.path}/screen.dart').writeAsStringSync('''
+String _menuKey(bool useDynamic) {
+  if (useDynamic) {
+    return serverKey;
+  }
+  return LocaleKeys.menu_home;
+}
+TextLocale(_menuKey(true));
+''');
+
+    final issues = findDynamicTranslationIssues(
+      translationsDir: translationsDir,
+      sourceDir: sourceDir,
+      localeKeysFile: localeKeysFile,
+      registry: const [],
+    );
+
+    expect(issues.join('\n'), contains('unregistered dynamic TextLocale key'));
+  });
+
+  test('ignores returns inside nested block function literals', () {
+    File('${sourceDir.path}/screen.dart').writeAsStringSync('''
+String _menuKey() {
+  final callback = () {
+    return serverKey;
+  };
+  return LocaleKeys.menu_home;
+}
+TextLocale(_menuKey());
+''');
+
+    expect(
+      findDynamicTranslationIssues(
+        translationsDir: translationsDir,
+        sourceDir: sourceDir,
+        localeKeysFile: localeKeysFile,
+        registry: const [],
+      ),
+      isEmpty,
+    );
+  });
+
+  test('keeps same-named class constants in separate registered families', () {
+    File('${sourceDir.path}/screen.dart').writeAsStringSync('''
+class FirstScreen {
+  static const _key = 'menu.first';
+  Widget build() => TextLocale(_key);
+}
+class SecondScreen {
+  static const _key = 'menu.second';
+  Widget build() => TextLocale(_key);
+}
+''');
+    File('${translationsDir.path}/en.json').writeAsStringSync('''
+{"menu":{"first":"First","second":"Second"}}
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"menu":{"first":"Primero"}}
+''');
+
+    final issues = findDynamicTranslationIssues(
+      translationsDir: translationsDir,
+      sourceDir: sourceDir,
+      localeKeysFile: localeKeysFile,
+      registry: const [
+        LocalizationDynamicRegistry(
+          family: 'first screen label',
+          sites: [
+            DynamicTranslationSite(
+              file: 'screen.dart',
+              method: 'TextLocale',
+              keyExpression: '_key',
+            ),
+          ],
+          keys: {'menu.first'},
+        ),
+        LocalizationDynamicRegistry(
+          family: 'second screen label',
+          sites: [
+            DynamicTranslationSite(
+              file: 'screen.dart',
+              method: 'TextLocale',
+              keyExpression: '_key',
+              occurrence: 1,
+            ),
+          ],
+          keys: {'menu.second'},
+        ),
+      ],
+    );
+
+    expect(
+      issues,
+      contains(
+        'es: menu.second (registered dynamic key missing translation; '
+        'family: second screen label)',
+      ),
+    );
+    expect(issues, hasLength(1));
+  });
+
   test('reports unregistered dynamic translation calls and wrapper keys', () {
     File('${sourceDir.path}/screen.dart').writeAsStringSync(r'''
 final direct = tr(key);
@@ -437,6 +570,7 @@ class TextLocale {
 
   test('checks registered dynamic family keys in every locale', () {
     File('${sourceDir.path}/screen.dart').writeAsStringSync('''
+// Line changes must not invalidate reviewed call sites.
 final title = tr(dynamicTitle);
 ''');
     File('${translationsDir.path}/en.json').writeAsStringSync('''
@@ -456,7 +590,6 @@ final title = tr(dynamicTitle);
           sites: [
             DynamicTranslationSite(
               file: 'screen.dart',
-              line: 1,
               method: 'tr',
               keyExpression: 'dynamicTitle',
             ),
@@ -468,7 +601,44 @@ final title = tr(dynamicTitle);
     expect(issues, isEmpty);
   });
 
-  test('checks every key in a registered dynamic catalog family', () {
+  test('disambiguates repeated dynamic expressions by occurrence', () {
+    File('${sourceDir.path}/screen.dart').writeAsStringSync('''
+final first = tr(dynamicTitle);
+final second = tr(dynamicTitle);
+''');
+    File('${translationsDir.path}/en.json').writeAsStringSync('''
+{"menu":{"dynamic":"Dynamic title"}}
+''');
+
+    final issues = findDynamicTranslationIssues(
+      translationsDir: translationsDir,
+      sourceDir: sourceDir,
+      localeKeysFile: localeKeysFile,
+      registry: const [
+        LocalizationDynamicRegistry(
+          family: 'screen title variants',
+          sites: [
+            DynamicTranslationSite(
+              file: 'screen.dart',
+              method: 'tr',
+              keyExpression: 'dynamicTitle',
+            ),
+            DynamicTranslationSite(
+              file: 'screen.dart',
+              method: 'tr',
+              keyExpression: 'dynamicTitle',
+              occurrence: 1,
+            ),
+          ],
+          keys: {'menu.dynamic'},
+        ),
+      ],
+    );
+
+    expect(issues, isEmpty);
+  });
+
+  test('checks every explicitly registered dynamic family key', () {
     File('${sourceDir.path}/screen.dart').writeAsStringSync('''
 final title = tr(dynamicTitle);
 ''');
@@ -484,12 +654,11 @@ final title = tr(dynamicTitle);
         sites: [
           DynamicTranslationSite(
             file: 'screen.dart',
-            line: 1,
             method: 'tr',
             keyExpression: 'dynamicTitle',
           ),
         ],
-        keyPrefixes: {'menu.'},
+        keys: {'menu.dynamic', 'menu.home'},
       ),
     ];
 
@@ -539,7 +708,6 @@ final title = tr(dynamicTitle);
           sites: [
             DynamicTranslationSite(
               file: 'screen.dart',
-              line: 1,
               method: 'tr',
               keyExpression: 'dynamicTitle',
             ),

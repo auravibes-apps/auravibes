@@ -98,12 +98,12 @@ List<String> findDynamicTranslationIssues({
   final issues = <String>[];
   final registrations =
       <
-        String,
+        _DynamicTranslationSiteIdentity,
         ({LocalizationDynamicRegistry family, DynamicTranslationSite site})
       >{};
   for (final registration in registry) {
-    if (registration.keys.isEmpty && registration.keyPrefixes.isEmpty) {
-      issues.add('${registration.family}: no keys or key prefixes registered');
+    if (registration.keys.isEmpty) {
+      issues.add('${registration.family}: no keys registered');
     }
     if (registration.sites.isEmpty) {
       issues.add('${registration.family}: no call sites registered');
@@ -111,8 +111,9 @@ List<String> findDynamicTranslationIssues({
     for (final registeredSite in registration.sites) {
       final site = _dynamicTranslationSite(
         registeredSite.file,
-        registeredSite.line,
         registeredSite.method,
+        registeredSite.keyExpression,
+        registeredSite.occurrence,
       );
       if (registrations.containsKey(site)) {
         issues.add(
@@ -124,10 +125,15 @@ List<String> findDynamicTranslationIssues({
     }
   }
 
-  final matchedRegistrations = <String>{};
+  final matchedRegistrations = <_DynamicTranslationSiteIdentity>{};
   final catalogs = _loadLocaleCatalogs(translationsDir);
   for (final call in calls) {
-    final site = _dynamicTranslationSite(call.file, call.line, call.method);
+    final site = _dynamicTranslationSite(
+      call.file,
+      call.method,
+      call.keyExpression,
+      call.occurrence,
+    );
     final registered = registrations[site];
     if (registered == null) {
       issues.add(
@@ -137,13 +143,6 @@ List<String> findDynamicTranslationIssues({
       continue;
     }
     final _ = matchedRegistrations.add(site);
-    if (registered.site.keyExpression != call.keyExpression) {
-      issues.add(
-        '${registered.family.family}: registered expression '
-        '${registered.site.keyExpression} changed to ${call.keyExpression} at '
-        '${call.file}:${call.line}',
-      );
-    }
   }
 
   for (final entry in registrations.entries) {
@@ -151,27 +150,16 @@ List<String> findDynamicTranslationIssues({
       final registration = entry.value;
       issues.add(
         '${registration.family.family}: no dynamic ${registration.site.method} '
-        'call at ${registration.site.file}:${registration.site.line}',
+        'call for ${registration.site.keyExpression} '
+        '(${registration.site.file}, occurrence '
+        '${registration.site.occurrence})',
       );
     }
   }
 
   for (final registration in registry) {
-    final familyKeys = <String>{...registration.keys};
-    for (final prefix in registration.keyPrefixes) {
-      final prefixKeys = catalogs.values
-          .expand((catalog) => catalog.translations.keys)
-          .where((key) => key.startsWith(prefix))
-          .toSet();
-      if (prefixKeys.isEmpty) {
-        issues.add(
-          '${registration.family}: key prefix $prefix matched no catalog keys',
-        );
-      }
-      familyKeys.addAll(prefixKeys);
-    }
     for (final locale in catalogs.keys.toList()..sort()) {
-      for (final key in familyKeys.toList()..sort()) {
+      for (final key in registration.keys.toList()..sort()) {
         if (!catalogs[locale]!.translations.containsKey(key)) {
           issues.add(
             '$locale: $key (registered dynamic key missing translation; '
@@ -451,15 +439,10 @@ void _collectUsedKeys(
                 tokens[argument.end].value == ')')) {
           usedKeys.addAll([argument.key]);
         }
-      } else {
-        final arguments = _callArguments(tokens, index + 1);
-        final firstArgument = arguments.firstOrNull;
-        if (firstArgument != null) {
-          usedKeys.addAll(
-            resolver.resolve(firstArgument.start, firstArgument.end) ??
-                const <String>{},
-          );
-        }
+      } else if (_translationKeyExpression(tokens, index) case final keySpan?) {
+        final resolved =
+            resolver.resolve(keySpan.start, keySpan.end) ?? const <String>{};
+        usedKeys.addAll(resolved);
       }
     }
   }
@@ -470,17 +453,26 @@ bool _isTranslationCall(_Token token) =>
 
 typedef _TokenSpan = ({int start, int end});
 
+typedef _DynamicTranslationSiteIdentity = ({
+  String file,
+  String method,
+  String keyExpression,
+  int occurrence,
+});
+
 typedef _DynamicTranslationCall = ({
   String file,
   int line,
   String method,
   String keyExpression,
+  int occurrence,
 });
 
 typedef _StaticTranslationDefinitions = ({
   Map<String, List<_TokenSpan>> constants,
   Map<String, List<_TokenSpan>> functions,
   Map<String, List<_TokenSpan>> getters,
+  Set<String> ambiguousNames,
   Set<String> parameterNames,
 });
 
@@ -548,6 +540,8 @@ class LocalizationAudit {
         _isIdentifierToken(tokens[start]) &&
         tokens[start].value.startsWith('_') &&
         !definitions.parameterNames.contains(tokens[start].value)) {
+      if (definitions.ambiguousNames.contains(tokens[start].value)) return null;
+
       return _resolveDefinition(
             tokens[start].value,
             definitions.constants,
@@ -565,6 +559,10 @@ class LocalizationAudit {
         tokens[start].value.startsWith('_') &&
         tokens[start + 1].value == '.' &&
         _isIdentifierToken(tokens[start + 2])) {
+      if (definitions.ambiguousNames.contains(tokens[start + 2].value)) {
+        return null;
+      }
+
       return _resolveDefinition(
             tokens[start + 2].value,
             definitions.constants,
@@ -581,6 +579,8 @@ class LocalizationAudit {
         _isIdentifierToken(tokens[start]) &&
         tokens[start + 1].value == '(' &&
         _matchingClosing(tokens, start + 1, '(', ')') == end - 1) {
+      if (definitions.ambiguousNames.contains(tokens[start].value)) return null;
+
       return _resolveDefinition(
         tokens[start].value,
         definitions.functions,
@@ -595,6 +595,10 @@ class LocalizationAudit {
         tokens[start + 2].value.startsWith('_') &&
         tokens[start + 3].value == '(' &&
         _matchingClosing(tokens, start + 3, '(', ')') == end - 1) {
+      if (definitions.ambiguousNames.contains(tokens[start + 2].value)) {
+        return null;
+      }
+
       return _resolveDefinition(
         tokens[start + 2].value,
         definitions.functions,
@@ -638,7 +642,17 @@ _StaticTranslationDefinitions _findStaticTranslationDefinitions(
   final constants = <String, List<_TokenSpan>>{};
   final functions = <String, List<_TokenSpan>>{};
   final getters = <String, List<_TokenSpan>>{};
+  final declaredNames = <String>{};
+  final ambiguousNames = <String>{};
   final parameterNames = <String>{};
+
+  // Definitions are file-scoped here; duplicate names may belong to different
+  // classes, so resolution must not union their values.
+  void markDeclaredName(String name) {
+    if (!declaredNames.add(name)) {
+      final _ = ambiguousNames.add(name);
+    }
+  }
 
   for (var index = 0; index < tokens.length; index++) {
     if (tokens[index].value == 'const') {
@@ -648,6 +662,7 @@ _StaticTranslationDefinitions _findStaticTranslationDefinitions(
         if (_isIdentifierToken(name)) {
           final valueEnd = _expressionEnd(tokens, equals + 1, tokens.length);
           if (valueEnd > equals + 1) {
+            markDeclaredName(name.value);
             constants.putIfAbsent(name.value, () => []).add((
               start: equals + 1,
               end: valueEnd,
@@ -669,6 +684,7 @@ _StaticTranslationDefinitions _findStaticTranslationDefinitions(
         tokens.length,
       );
       if (expressionEnd > expressionStart) {
+        markDeclaredName(tokens[index + 1].value);
         getters.putIfAbsent(tokens[index + 1].value, () => []).add((
           start: expressionStart,
           end: expressionEnd,
@@ -698,6 +714,7 @@ _StaticTranslationDefinitions _findStaticTranslationDefinitions(
     final hasBlockBody =
         bodyStart < tokens.length && tokens[bodyStart].value == '{';
     if (!hasArrowBody && !hasBlockBody) continue;
+    markDeclaredName(tokens[index].value);
 
     for (final parameter in _callArguments(tokens, index + 1)) {
       var parameterEnd = parameter.end;
@@ -731,19 +748,33 @@ _StaticTranslationDefinitions _findStaticTranslationDefinitions(
     } else if (bodyStart < tokens.length && tokens[bodyStart].value == '{') {
       final bodyEnd = _matchingClosing(tokens, bodyStart, '{', '}');
       if (bodyEnd == null) continue;
-      var braceDepth = 1;
-      for (var cursor = bodyStart + 1; cursor < bodyEnd; cursor++) {
-        if (tokens[cursor].value == '{') braceDepth++;
-        if (tokens[cursor].value == '}') braceDepth--;
-        if (braceDepth != 1 || tokens[cursor].value != 'return') continue;
+      var cursor = bodyStart + 1;
+      while (cursor < bodyEnd) {
+        if (tokens[cursor].value == '{' &&
+            _isNestedFunctionLiteralBody(tokens, cursor)) {
+          final closureEnd = _matchingClosing(tokens, cursor, '{', '}');
+          if (closureEnd == null || closureEnd >= bodyEnd) {
+            functions.putIfAbsent(tokens[index].value, () => []).add((
+              start: cursor,
+              end: cursor,
+            ));
+            break;
+          }
+          cursor = closureEnd + 1;
+          continue;
+        }
+        if (tokens[cursor].value != 'return') {
+          cursor++;
+          continue;
+        }
+
         final expressionStart = cursor + 1;
         final expressionEnd = _expressionEnd(tokens, expressionStart, bodyEnd);
-        if (expressionEnd > expressionStart) {
-          functions.putIfAbsent(tokens[index].value, () => []).add((
-            start: expressionStart,
-            end: expressionEnd,
-          ));
-        }
+        functions.putIfAbsent(tokens[index].value, () => []).add((
+          start: expressionStart,
+          end: expressionEnd,
+        ));
+        cursor = expressionEnd + 1;
       }
     }
   }
@@ -752,8 +783,31 @@ _StaticTranslationDefinitions _findStaticTranslationDefinitions(
     constants: constants,
     functions: functions,
     getters: getters,
+    ambiguousNames: ambiguousNames,
     parameterNames: parameterNames,
   );
+}
+
+bool _isNestedFunctionLiteralBody(List<_Token> tokens, int openingBrace) {
+  var previous = openingBrace - 1;
+  while (previous >= 0 &&
+      (tokens[previous].value == 'async' ||
+          tokens[previous].value == 'sync' ||
+          tokens[previous].value == '*')) {
+    previous--;
+  }
+  if (previous < 0 || tokens[previous].value != ')') return false;
+
+  final openingParenthesis = _matchingOpening(tokens, previous, '(', ')');
+  if (openingParenthesis == null || openingParenthesis == 0) return true;
+
+  return !const {
+    'if',
+    'for',
+    'while',
+    'switch',
+    'catch',
+  }.contains(tokens[openingParenthesis - 1].value);
 }
 
 int? _findDeclarationEquals(List<_Token> tokens, int start) {
@@ -802,8 +856,17 @@ int _expressionEnd(List<_Token> tokens, int start, int limit) {
   return limit;
 }
 
-String _dynamicTranslationSite(String file, int line, String method) =>
-    '$file:$line:$method';
+_DynamicTranslationSiteIdentity _dynamicTranslationSite(
+  String file,
+  String method,
+  String keyExpression,
+  int occurrence,
+) => (
+  file: file,
+  method: method,
+  keyExpression: keyExpression,
+  occurrence: occurrence,
+);
 
 List<_DynamicTranslationCall> _findDynamicTranslationCalls(
   String source,
@@ -812,7 +875,22 @@ List<_DynamicTranslationCall> _findDynamicTranslationCalls(
 ) {
   final tokens = _tokenize(source);
   final resolver = LocalizationAudit(tokens, generatedKeys);
-  final calls = <_DynamicTranslationCall>{};
+  final calls = <_DynamicTranslationCall>[];
+  final occurrences = <({String method, String keyExpression}), int>{};
+  void addCall(String method, _TokenSpan expression, int callOffset) {
+    final keyExpression = _sourceSpanText(source, tokens, expression);
+    final occurrenceKey = (method: method, keyExpression: keyExpression);
+    final occurrence = occurrences[occurrenceKey] ?? 0;
+    occurrences[occurrenceKey] = occurrence + 1;
+    calls.add((
+      file: file,
+      line: _lineNumber(source, callOffset),
+      method: method,
+      keyExpression: keyExpression,
+      occurrence: occurrence,
+    ));
+  }
+
   for (var index = 0; index < tokens.length; index++) {
     final token = tokens[index];
     if (token.value == 'TextLocale' &&
@@ -823,15 +901,8 @@ List<_DynamicTranslationCall> _findDynamicTranslationCalls(
       final argumentStart = index + 2;
       final argumentEnd = _callArgumentEnd(tokens, argumentStart);
       if (resolver.resolve(argumentStart, argumentEnd) == null) {
-        final _ = calls.add((
-          file: file,
-          line: _lineNumber(source, token.start),
-          method: 'TextLocale',
-          keyExpression: _sourceSpanText(source, tokens, (
-            start: argumentStart,
-            end: argumentEnd,
-          )),
-        ));
+        final argument = (start: argumentStart, end: argumentEnd);
+        addCall('TextLocale', argument, token.start);
       }
     }
     if (_isTranslationCall(token) &&
@@ -840,24 +911,12 @@ List<_DynamicTranslationCall> _findDynamicTranslationCalls(
       final keyExpression = _translationKeyExpression(tokens, index);
       if (keyExpression != null &&
           resolver.resolve(keyExpression.start, keyExpression.end) == null) {
-        final _ = calls.add((
-          file: file,
-          line: _lineNumber(source, token.start),
-          method: token.value,
-          keyExpression: _sourceSpanText(source, tokens, keyExpression),
-        ));
+        addCall(token.value, keyExpression, token.start);
       }
     }
   }
 
-  return calls.toList()..sort((left, right) {
-    final byFile = left.file.compareTo(right.file);
-    if (byFile != 0) return byFile;
-    final byLine = left.line.compareTo(right.line);
-    if (byLine != 0) return byLine;
-
-    return left.method.compareTo(right.method);
-  });
+  return calls;
 }
 
 String _sourceSpanText(String source, List<_Token> tokens, _TokenSpan span) {
@@ -893,13 +952,35 @@ _TokenSpan? _translationKeyExpression(List<_Token> tokens, int methodIndex) {
   final memberDot = _memberDotStart(tokens, methodIndex);
   if (memberDot != null &&
       _isExtensionTranslationCall(tokens, method, arguments)) {
-    final receiverStart = _expressionStart(tokens, memberDot);
-    if (receiverStart == null) return null;
+    final expressionStart = _expressionStart(tokens, memberDot);
+    if (expressionStart == null) return null;
+    final receiverStart = _adjacentStringSequenceStart(tokens, expressionStart);
 
     return (start: receiverStart, end: memberDot);
   }
 
   return arguments.firstOrNull;
+}
+
+int _adjacentStringSequenceStart(List<_Token> tokens, int start) {
+  var sequenceStart = start;
+  while (tokens[sequenceStart].isString &&
+      tokens[sequenceStart].followsString) {
+    final currentStart = tokens[sequenceStart].start;
+    var previousString = -1;
+    for (var index = 0; index < sequenceStart; index++) {
+      final token = tokens[index];
+      if (token.isString &&
+          token.end <= currentStart &&
+          (previousString < 0 || token.end > tokens[previousString].end)) {
+        previousString = index;
+      }
+    }
+    if (previousString < 0) break;
+    sequenceStart = previousString;
+  }
+
+  return sequenceStart;
 }
 
 List<_TokenSpan> _callArguments(List<_Token> tokens, int openParenthesis) {
