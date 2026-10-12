@@ -784,7 +784,12 @@ class ConversationUseCases {
             _fail(ConversationErrorCode.idempotencyConflict);
           }
           final replay = await _startResult(session, duplicate);
-          return _Mutation(replay, 'turnStarted', request.conversationId);
+          return _Mutation(
+            replay,
+            'turnStarted',
+            request.conversationId,
+            recordWorkspaceMutation: false,
+          );
         }
         final conversation = await _repository.findConversationByStableId(
           session,
@@ -794,6 +799,39 @@ class ConversationUseCases {
           lock: true,
         );
         if (conversation == null) _fail(ConversationErrorCode.notFound);
+
+        final existingMessage = await _repository.findMessageByStableId(
+          session,
+          workspaceId: request.workspaceId,
+          messageId: request.clientMessageId,
+          transaction: transaction,
+        );
+        if (existingMessage != null) {
+          if (existingMessage.conversationId != conversation.id ||
+              existingMessage.role != 'user' ||
+              existingMessage.turnId == null) {
+            _fail(ConversationErrorCode.idempotencyConflict);
+          }
+          final existingTurn = await _repository.findTurnByUserMessage(
+            session,
+            workspaceId: request.workspaceId,
+            userMessageId: existingMessage.id!,
+            transaction: transaction,
+          );
+          if (existingTurn == null ||
+              existingTurn.id != existingMessage.turnId ||
+              existingTurn.initiatorUserId != userId ||
+              existingTurn.requestHash != requestHash) {
+            _fail(ConversationErrorCode.idempotencyConflict);
+          }
+          final replay = await _startResult(session, existingTurn);
+          return _Mutation(
+            replay,
+            'turnStarted',
+            request.conversationId,
+            recordWorkspaceMutation: false,
+          );
+        }
         if (conversation.revision != request.expectedConversationRevision) {
           _fail(ConversationErrorCode.staleRevision);
         }
@@ -810,6 +848,14 @@ class ConversationUseCases {
           conversationId: conversation.id!,
           transaction: transaction,
         )) {
+          _fail(ConversationErrorCode.turnConflict);
+        }
+        if ((await _repository.listPendingMessages(
+          session,
+          workspaceId: request.workspaceId,
+          conversationId: conversation.id!,
+          transaction: transaction,
+        )).isNotEmpty) {
           _fail(ConversationErrorCode.turnConflict);
         }
         final attachmentBytes = await _repository.attachmentBytes(
@@ -871,6 +917,13 @@ class ConversationUseCases {
         );
       },
     );
+    if (result.turnId != request.requestId) {
+      session.log(
+        'Conversation turn replayed: workspace=${request.workspaceId}, '
+        'conversation=${request.conversationId}, turn=${result.turnId}.',
+      );
+      return result;
+    }
     session.log(
       'Conversation turn queued: workspace=${request.workspaceId}, '
       'conversation=${request.conversationId}, turn=${result.turnId}.',
@@ -5130,6 +5183,7 @@ class ConversationUseCases {
     run,
   }) async {
     var affectedConversationIds = const <String>[];
+    var publishWorkspaceWakeup = true;
     final result = await session.db.transaction((transaction) async {
       _requireId(requestId);
       final hash = base64UrlEncode(
@@ -5183,39 +5237,42 @@ class ConversationUseCases {
       }
       final now = DateTime.now().toUtc();
       final mutation = await run(transaction, now);
-      final sequence = workspace.sequence + 1;
-      await CloudWorkspace.db.updateRow(
-        session,
-        workspace.copyWith(sequence: sequence, updatedAt: now),
-        transaction: transaction,
-      );
-      await WorkspaceEvent.db.insertRow(
-        session,
-        WorkspaceEvent(
-          eventId: const Uuid().v7(),
-          workspaceId: workspaceId,
-          sequence: sequence,
-          actorUserId: userId,
-          kind: mutation.operation,
-          resourceKind: WorkspaceResourceKind.conversation.name,
-          resourceId: mutation.resourceId,
-          createdAt: now,
-        ),
-        transaction: transaction,
-      );
-      await WorkspaceAuditRecord.db.insertRow(
-        session,
-        WorkspaceAuditRecord(
-          workspaceId: workspaceId,
-          sequence: sequence,
-          actorUserId: userId,
-          operation: mutation.operation,
-          targetKind: WorkspaceResourceKind.conversation.name,
-          targetId: mutation.resourceId,
-          createdAt: now,
-        ),
-        transaction: transaction,
-      );
+      publishWorkspaceWakeup = mutation.recordWorkspaceMutation;
+      if (mutation.recordWorkspaceMutation) {
+        final sequence = workspace.sequence + 1;
+        await CloudWorkspace.db.updateRow(
+          session,
+          workspace.copyWith(sequence: sequence, updatedAt: now),
+          transaction: transaction,
+        );
+        await WorkspaceEvent.db.insertRow(
+          session,
+          WorkspaceEvent(
+            eventId: const Uuid().v7(),
+            workspaceId: workspaceId,
+            sequence: sequence,
+            actorUserId: userId,
+            kind: mutation.operation,
+            resourceKind: WorkspaceResourceKind.conversation.name,
+            resourceId: mutation.resourceId,
+            createdAt: now,
+          ),
+          transaction: transaction,
+        );
+        await WorkspaceAuditRecord.db.insertRow(
+          session,
+          WorkspaceAuditRecord(
+            workspaceId: workspaceId,
+            sequence: sequence,
+            actorUserId: userId,
+            operation: mutation.operation,
+            targetKind: WorkspaceResourceKind.conversation.name,
+            targetId: mutation.resourceId,
+            createdAt: now,
+          ),
+          transaction: transaction,
+        );
+      }
       await WorkspaceMutationReceipt.db.insertRow(
         session,
         WorkspaceMutationReceipt(
@@ -5233,7 +5290,9 @@ class ConversationUseCases {
       affectedConversationIds = mutation.affectedConversationIds;
       return mutation.value as T;
     });
-    await SyncWakeups.publishWorkspace(session, workspaceId);
+    if (publishWorkspaceWakeup) {
+      await SyncWakeups.publishWorkspace(session, workspaceId);
+    }
     for (final conversationId in affectedConversationIds) {
       await SyncWakeups.publishConversation(
         session,
@@ -5609,6 +5668,7 @@ class const _Mutation<T>(
   final String operation,
   final String resourceId, {
   final List<String> affectedConversationIds = const [],
+  final bool recordWorkspaceMutation = true,
 });
 
 String _batchCallSortKey(SubmitToolDecisionBatchCall call) =>

@@ -308,6 +308,19 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     transaction: transaction,
   );
 
+  Future<ConversationTurn?> findTurnByUserMessage(
+    Session session, {
+    required int workspaceId,
+    required int userMessageId,
+    Transaction? transaction,
+  }) => ConversationTurn.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.userMessageId.equals(userMessageId),
+    transaction: transaction,
+  );
+
   Future<ConversationTurn?> findTurnByStableId(
     Session session, {
     required int workspaceId,
@@ -708,6 +721,19 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     session,
     where: (table) =>
         table.id.equals(messageId) & table.workspaceId.equals(workspaceId),
+  );
+
+  Future<ConversationMessage?> findMessageByStableId(
+    Session session, {
+    required int workspaceId,
+    required String messageId,
+    Transaction? transaction,
+  }) => ConversationMessage.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.stableId.equals(messageId),
+    transaction: transaction,
   );
 
   Future<List<ConversationMessage>> listConversationMessages(
