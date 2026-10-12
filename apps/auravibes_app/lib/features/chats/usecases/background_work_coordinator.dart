@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/background_work_detach_request.dart';
+import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:uuid/v7.dart';
 
@@ -293,14 +294,14 @@ extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
       }
 
       return _successfulCompletion(result, false);
-    } on Object {
+    } on Object catch (error) {
       final cancelled = await _wasCancellationConfirmed(handle);
       if (cancelled) return _failedCompletion(true);
       if (_isClosing(conversationId, workspaceId)) {
         return _unknownOutcomeCompletion();
       }
 
-      return _failedCompletion(false);
+      return _failedCompletion(false, error: error);
     }
   }
 
@@ -328,15 +329,24 @@ extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {
     );
   }
 
-  _CompletionDetails _failedCompletion(bool cancelled) => (
+  _CompletionDetails _failedCompletion(bool cancelled, {Object? error}) => (
     status: cancelled
         ? AgentBackgroundWorkStatus.cancelled
         : AgentBackgroundWorkStatus.failed,
     resultContent: null,
     resultByteLength: 0,
-    statusPreview: cancelled ? 'Stopped' : 'Failed',
+    statusPreview: cancelled ? 'Stopped' : _safeFailurePreview(error),
     errorCode: cancelled ? null : 'operation_failed',
   );
+
+  String _safeFailurePreview(Object? error) {
+    final preview = LogRedaction.redact(error)
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (preview.isEmpty || preview == 'null') return 'Failed';
+
+    return preview;
+  }
 
   _CompletionDetails _unknownOutcomeCompletion() => (
     status: AgentBackgroundWorkStatus.failed,

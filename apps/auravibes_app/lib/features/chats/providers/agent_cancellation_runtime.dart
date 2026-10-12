@@ -392,39 +392,6 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
     ));
   }
 
-  void _removeToolCancellationHandle(
-    _CompletedToolCancellationRequest request,
-  ) {
-    final handles =
-        request.runtime._toolCancellationHandles[request.conversationId];
-    if (!_isCurrentCancellationHandle(handles, request)) return;
-    _removeCompletedCancellationEntry(request);
-    request.runtime._notifyToolCancellationHandleChanged(
-      request.conversationId,
-      request.toolCallId,
-    );
-  }
-
-  bool _isCurrentCancellationHandle(
-    Map<String, AgentToolCancellationHandle>? handles,
-    _CompletedToolCancellationRequest request,
-  ) =>
-      handles != null && identical(handles[request.toolCallId], request.handle);
-
-  void _removeCompletedCancellationEntry(
-    _CompletedToolCancellationRequest request,
-  ) {
-    final handles =
-        request.runtime._toolCancellationHandles[request.conversationId];
-    if (handles == null) return;
-    final _ = handles.remove(request.toolCallId);
-    if (handles.isEmpty) {
-      final _ = request.runtime._toolCancellationHandles.remove(
-        request.conversationId,
-      );
-    }
-  }
-
   bool isCancellationRequested(String conversationId) =>
       current(conversationId)?.isCancellationRequested ?? false;
 }
@@ -435,6 +402,36 @@ typedef _CompletedToolCancellationRequest = ({
   String toolCallId,
   AgentToolCancellationHandle handle,
 });
+
+void _removeToolCancellationHandle(_CompletedToolCancellationRequest request) {
+  final handles =
+      request.runtime._toolCancellationHandles[request.conversationId];
+  if (!_isCurrentCancellationHandle(handles, request)) return;
+  _removeCompletedCancellationEntry(request);
+  request.runtime._notifyToolCancellationHandleChanged(
+    request.conversationId,
+    request.toolCallId,
+  );
+}
+
+bool _isCurrentCancellationHandle(
+  Map<String, AgentToolCancellationHandle>? handles,
+  _CompletedToolCancellationRequest request,
+) => handles != null && identical(handles[request.toolCallId], request.handle);
+
+void _removeCompletedCancellationEntry(
+  _CompletedToolCancellationRequest request,
+) {
+  final handles =
+      request.runtime._toolCancellationHandles[request.conversationId];
+  if (handles == null) return;
+  final _ = handles.remove(request.toolCallId);
+  if (handles.isEmpty) {
+    final _ = request.runtime._toolCancellationHandles.remove(
+      request.conversationId,
+    );
+  }
+}
 
 extension AgentCancellationScopeHelpers on AgentCancellationRuntime {
   AgentCancellationScope _startScope(String conversationId) {

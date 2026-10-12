@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
@@ -484,6 +485,8 @@ class const _MessageSubject({
     ),
     overrides: [
       conversationSelectedProvider.overrideWithValue(criticalConversationId),
+      conversationBackgroundWorksProvider(criticalConversationId)
+          .overrideWith((ref) => const Stream.empty()),
       workspaceSessionForRouteProvider(criticalConversationWorkspaceId)
           .overrideWithValue(
             const AsyncData(
