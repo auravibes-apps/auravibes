@@ -17,6 +17,10 @@ abstract class LocaleKeys {
       'navigation_drawer.resize_handle_tooltip';
   static const navigation_drawer_resize_handle_hint =
       'navigation_drawer.resize_handle_hint';
+  static const navigation_drawer_collapse_sidebar_tooltip =
+      'navigation_drawer.collapse_sidebar_tooltip';
+  static const navigation_drawer_expand_sidebar_tooltip =
+      'navigation_drawer.expand_sidebar_tooltip';
   static const intro_flow_welcome_title = 'intro_flow.welcome.title';
   static const intro_flow_welcome_body = 'intro_flow.welcome.body';
   static const intro_flow_choice_title = 'intro_flow.choice.title';
@@ -717,6 +721,14 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.turn_failed';
   static const chats_screens_chat_conversation_turn_cancelled =
       'chats_screens.chat_conversation.turn_cancelled';
+  static const chats_screens_chat_conversation_assistant_response_started =
+      'chats_screens.chat_conversation.assistant_response_started';
+  static const chats_screens_chat_conversation_assistant_response_completed =
+      'chats_screens.chat_conversation.assistant_response_completed';
+  static const chats_screens_chat_conversation_assistant_response_failed =
+      'chats_screens.chat_conversation.assistant_response_failed';
+  static const chats_screens_chat_conversation_assistant_response_cancelled =
+      'chats_screens.chat_conversation.assistant_response_cancelled';
   static const chats_screens_chat_conversation_activity_tools_count =
       'chats_screens.chat_conversation.activity_tools_count';
   static const chats_screens_chat_conversation_activity_thinking =
@@ -1129,6 +1141,7 @@ abstract class LocaleKeys {
       'skills_selector.suggestion_unavailable';
   static const skills_selector_suggestion_open_picker =
       'skills_selector.suggestion_open_picker';
+  static const skills_selector_recent_title = 'skills_selector.recent_title';
   static const skills_selector_actions_hint = 'skills_selector.actions_hint';
   static const skills_selector_preview = 'skills_selector.preview';
   static const skills_selector_preview_title = 'skills_selector.preview_title';
@@ -1535,6 +1548,7 @@ abstract class LocaleKeys {
   static const sidebar_recent_chats = 'sidebar.recent_chats';
   static const sidebar_no_recent_chats = 'sidebar.no_recent_chats';
   static const sidebar_view_all_chats = 'sidebar.view_all_chats';
+  static const sidebar_response_in_progress = 'sidebar.response_in_progress';
   static const mcp_catalog_back = 'mcp_catalog.back';
   static const mcp_catalog_browse = 'mcp_catalog.browse';
   static const mcp_catalog_title = 'mcp_catalog.title';
