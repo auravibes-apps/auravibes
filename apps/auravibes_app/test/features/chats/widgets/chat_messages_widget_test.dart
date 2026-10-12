@@ -17,6 +17,7 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -280,6 +281,75 @@ void main() {
   }
 
   group('ChatMessagesWidget', () {
+    testWidgets('sizes the fork boundary action from Aura target updates', (
+      tester,
+    ) async {
+      final message = _createMessage();
+      final source = ConversationEntity(
+        id: 'source-1',
+        title: 'Original',
+        workspaceId: 'ws-1',
+        isPinned: false,
+        createdAt: DateTime(2025),
+        updatedAt: DateTime(2025),
+      );
+      final fork = ConversationEntity(
+        id: 'conv-1',
+        title: 'Fork',
+        workspaceId: 'ws-1',
+        isPinned: false,
+        createdAt: DateTime(2025),
+        updatedAt: DateTime(2025),
+        forkSourceConversationId: source.id,
+        forkSourceTitle: source.title,
+        forkThroughMessageId: message.id,
+      );
+      final theme = ValueNotifier(AuraTheme.light);
+      addTearDown(theme.dispose);
+
+      Widget subject(AuraTheme theme) => buildSubject(
+        messages: [message.id],
+        messageEntitiesById: {message.id: message},
+        conversation: fork,
+        theme: theme,
+        overrides: [
+          ..._messageOverrides({message.id: message}),
+          conversationByIdStreamProvider(
+            'ws-1',
+            conversationId: source.id,
+          ).overrideWith((ref) => Stream.value(source)),
+        ],
+      );
+
+      await pumpAndInit(
+        tester,
+        ValueListenableBuilder<AuraTheme>(
+          valueListenable: theme,
+          builder: (context, theme, _) => subject(theme),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final label = find.text('Forked from Original');
+      expect(label, findsOneWidget);
+      final target = find.ancestor(of: label, matching: find.byType(InkWell));
+      expect(target, findsOneWidget);
+      final initialTargetSize = tester.getSize(target);
+      expect(initialTargetSize.width, greaterThanOrEqualTo(48));
+      expect(initialTargetSize.height, greaterThanOrEqualTo(48));
+      final labelSize = tester.getSize(label);
+
+      theme.value = AuraTheme.light.copyWith(
+        interactionSizes: const AuraInteractionSizeScale(minimumTargetSize: 72),
+      );
+      await tester.pumpAndSettle();
+
+      final updatedTargetSize = tester.getSize(target);
+      expect(updatedTargetSize.width, greaterThanOrEqualTo(72));
+      expect(updatedTargetSize.height, greaterThanOrEqualTo(72));
+      expect(tester.getSize(label), labelSize);
+    });
+
     testWidgets('keeps unfinished form fields editable without final actions', (
       tester,
     ) async {
@@ -656,6 +726,48 @@ void main() {
 
       expect(
         find.byKey(const ValueKey('retry_message_failed-user')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('hides retry for a non-retryable provider failure', (
+      tester,
+    ) async {
+      final message = _createMessage(
+        id: 'auth-failed-user',
+        status: MessageStatus.error,
+        metadata: const MessageMetadataEntity(
+          modelMetadata: {
+            'providerError': true,
+            'providerRecovery': {
+              'classification': 'authentication',
+              'retryable': false,
+            },
+          },
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          onRetryMessage: (_) async {},
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('retry_message_auth-failed-user')),
         findsNothing,
       );
     });
@@ -2092,10 +2204,25 @@ void main() {
           text,
           contains(
             persistedClipped
-                ? 'stored output was also clipped'
-                : 'full output remains stored',
+                ? 'removed content is unavailable'
+                : 'Only the model context was truncated',
           ),
         );
+
+        final semantics = tester.ensureSemantics();
+        await tester.tap(find.text('Show more'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.descendant(
+            of: find.byType(Dialog),
+            matching: find.bySemanticsLabel(text),
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Close'));
+        await tester.pumpAndSettle();
+        semantics.dispose();
       });
     }
 
@@ -2164,6 +2291,176 @@ void main() {
         find.byKey(const ValueKey('activity_tool_truncation_tc-malformed')),
         findsNothing,
       );
+      expect(find.text('Show more'), findsNothing);
+    });
+
+    testWidgets(
+      'offers inspection when retained output fits the visual preview',
+      (tester) async {
+        const responseRaw =
+            '**stored** <b>text</b> [link](https://example.test)';
+        const modelResponse = 'The model response stays unchanged.';
+        final originalBytes = defaultToolOutputBytes + 128;
+        final contextStatus =
+            'Tool response: $originalBytes bytes. Only the model context was '
+            'truncated to $defaultToolOutputBytes bytes; the full response '
+            'remains stored.';
+        final responseContextRaw = jsonEncode({
+          '_toolOutput': {
+            'format': 'auravibes.tool-output-projection.v1',
+            'notice': '[tool output truncated]',
+            'truncated': true,
+            'originalBytes': originalBytes,
+            'limitBytes': defaultToolOutputBytes,
+          },
+          'content': 'model context excerpt',
+        });
+        final toolCall = MessageToolCallEntity(
+          id: 'tc-inspect-short',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{}',
+          responseRaw: responseRaw,
+          responseContextRaw: responseContextRaw,
+          outputTruncated: true,
+          originalResponseBytes: originalBytes,
+          resultStatus: ToolCallResultStatus.success,
+        );
+        final message = _createMessage(
+          content: modelResponse,
+          isUser: false,
+          metadata: MessageMetadataEntity(toolCalls: [toolCall]),
+        );
+        final semantics = tester.ensureSemantics();
+        String? copiedText;
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          (call) async {
+            if (call.method == 'Clipboard.setData') {
+              copiedText = (call.arguments as Map)['text'] as String?;
+            }
+
+            return null;
+          },
+        );
+        addTearDown(
+          () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            SystemChannels.platform,
+            null,
+          ),
+        );
+
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: [message.id],
+            overrides: _messageOverrides({message.id: message}),
+          ),
+        );
+        await revealActivityToolCalls(tester);
+        await tester.tap(
+          find.byKey(const ValueKey('activity_tool_tc-inspect-short')),
+        );
+        await tester.pump();
+
+        expect(find.text('Show more'), findsOneWidget);
+        expect(find.byTooltip('Copy tool response'), findsOneWidget);
+        expect(find.text(modelResponse), findsOneWidget);
+
+        await tester.tap(find.text('Show more'));
+        await tester.pumpAndSettle();
+
+        final modal = find.byType(Dialog);
+        expect(
+          find.descendant(of: modal, matching: find.text(responseRaw)),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: modal,
+            matching: find.bySemanticsLabel(contextStatus),
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Close'));
+        await tester.pumpAndSettle();
+        expect(find.text(modelResponse), findsOneWidget);
+
+        await tester.tap(find.byTooltip('Copy tool response'));
+        await tester.pump();
+
+        expect(copiedText, responseRaw);
+        expect(find.text(modelResponse), findsOneWidget);
+        semantics.dispose();
+      },
+    );
+
+    testWidgets('localizes accessible stored-output controls in Spanish', (
+      tester,
+    ) async {
+      final originalBytes = defaultToolOutputBytes + 128;
+      final responseContextRaw = jsonEncode({
+        '_toolOutput': {
+          'format': 'auravibes.tool-output-projection.v1',
+          'notice': '[tool output truncated]',
+          'truncated': true,
+          'originalBytes': originalBytes,
+          'limitBytes': defaultToolOutputBytes,
+        },
+        'content': 'vista previa del modelo',
+      });
+      final toolCall = MessageToolCallEntity(
+        id: 'tc-inspect-spanish',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        responseRaw: 'respuesta guardada',
+        responseContextRaw: responseContextRaw,
+        outputTruncated: true,
+        originalResponseBytes: originalBytes,
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: 'La respuesta del modelo no cambia.',
+        isUser: false,
+        metadata: MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+      final expectedStatus =
+          'Respuesta de la herramienta: $originalBytes bytes. Solo se recortó '
+          'el contexto del modelo a $defaultToolOutputBytes bytes; la '
+          'respuesta completa sigue guardada.';
+      final semantics = tester.ensureSemantics();
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          locale: const Locale('es'),
+          overrides: _messageOverrides({message.id: message}),
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.tap(
+        find.byKey(const ValueKey('activity_tool_tc-inspect-spanish')),
+      );
+      await tester.pump();
+
+      expect(find.text('Ver más'), findsOneWidget);
+      expect(
+        find.byTooltip('Copiar respuesta de la herramienta'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel(expectedStatus), findsOneWidget);
+
+      await tester.tap(find.text('Ver más'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(Dialog),
+          matching: find.bySemanticsLabel(expectedStatus),
+        ),
+        findsOneWidget,
+      );
+      semantics.dispose();
     });
 
     testWidgets('hides pending tool arguments from the activity details', (
@@ -2333,6 +2630,7 @@ void main() {
         label.textSpan?.toPlainText(),
         contains('Research Assistant / Search the web'),
       );
+      expect(label.textSpan?.toPlainText(), contains('Searches the web.'));
       expect(find.text('Call Skill Tool'), findsNothing);
       final status = tester.widget<Text>(
         find.byKey(const ValueKey('activity_tool_status_tc-skill')),
@@ -2343,10 +2641,113 @@ void main() {
         tester
             .getSemantics(find.byKey(const ValueKey('activity_tool_tc-skill')))
             .label,
-        contains('Research Assistant / Search the web Disabled in workspace'),
+        contains(
+          'Research Assistant / Search the web Searches the web. '
+          'Disabled in workspace',
+        ),
       );
       expect(tester.takeException(), isNull);
       semantics.dispose();
+    });
+
+    testWidgets('opens the owning skill from a separate activity action', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-open-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research","tool":"search_web"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+      Widget? mainChat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/chats/conv-1',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            builder: (_, _) => mainChat ?? const SizedBox.shrink(),
+          ),
+          GoRoute(
+            path: '/workspaces/:workspaceId/more/skills/:skillId',
+            builder: (_, state) => Material(
+              child: Text('Skill details ${state.pathParameters['skillId']}'),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          messageEntitiesById: {message.id: message},
+          overrides: [
+            ..._messageOverrides({message.id: message}),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => const [
+                WorkspaceSkill(
+                  id: 'skill-1',
+                  slug: 'research',
+                  title: 'Research Assistant',
+                  description: '',
+                  source: SkillSource.user,
+                  kind: SkillKind.template,
+                  isEnabled: true,
+                ),
+              ],
+            ),
+            skillTemplateToolsProvider('ws-1', 'skill-1').overrideWith(
+              (ref) async => [
+                SkillTemplateToolEntity(
+                  id: 'tool-1',
+                  skillId: 'skill-1',
+                  templateType: SkillTemplateToolType.url,
+                  title: 'Search the web',
+                  description: 'Searches the web.',
+                  slug: 'search_web',
+                  isEnabled: true,
+                  requiresCredential: false,
+                  createdAt: DateTime(2026),
+                  updatedAt: DateTime(2026),
+                ),
+              ],
+            ),
+          ],
+          appBuilder: (context, child) {
+            mainChat = ChatPrimaryScrollController(child: child);
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('activity_open_skill_tc-open-skill')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_tool_details_tc-open-skill')),
+        findsNothing,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('activity_open_skill_tc-open-skill')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Skill details skill-1'), findsOneWidget);
     });
 
     testWidgets('shows app skill and tool titles in activity rows', (
@@ -2412,10 +2813,17 @@ void main() {
       final skillTitle =
           appSkill.titleKey?.tr(context: context) ?? appSkill.title;
       final toolTitle = tool.titleKey?.tr(context: context) ?? tool.title;
+      final toolDescription =
+          tool.descriptionKey?.tr(context: context) ?? tool.description;
       final label = tester.widget<Text>(labelFinder);
       expect(
         label.textSpan?.toPlainText(),
         contains('$skillTitle / $toolTitle'),
+      );
+      expect(label.textSpan?.toPlainText(), contains(toolDescription));
+      expect(
+        find.byKey(const ValueKey('activity_open_skill_tc-app-skill')),
+        findsOneWidget,
       );
       expect(find.text('Completed'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);
@@ -5169,9 +5577,16 @@ void main() {
         content: providerDetails,
         isUser: false,
         status: MessageStatus.error,
-        messageType: MessageType.system,
+        messageType: MessageType.text,
         metadata: const MessageMetadataEntity(
-          modelMetadata: {'providerError': true},
+          modelMetadata: {
+            'providerError': true,
+            'providerRecovery': {
+              'classification': 'quota_rate_limit',
+              'retryable': false,
+              'providerStatus': 'RESOURCE_EXHAUSTED',
+            },
+          },
         ),
       );
 
@@ -5194,6 +5609,13 @@ void main() {
 
       expect(find.text(safeDetails), findsOneWidget);
       expect(find.text(providerDetails), findsNothing);
+      expect(
+        find.text(
+          'The provider quota or rate limit was reached. '
+          'Check its usage and limits before retrying.',
+        ),
+        findsOneWidget,
+      );
       expect(find.byType(AuraSelectableText), findsOneWidget);
       final selectable = tester.widget<AuraSelectableText>(
         find.byType(AuraSelectableText),

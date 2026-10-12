@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../helpers/test_provider_scope.dart';
@@ -187,6 +188,76 @@ void main() {
       repository.workspaceWatchCalls,
       equals([const _WorkspaceWatchCall(workspaceId: 'workspace-1', limit: 5)]),
     );
+  });
+
+  testWidgets('keeps an active recent conversation visible only once', (
+    tester,
+  ) async {
+    final conversations = List.generate(
+      10,
+      (index) => _conversation('chat-$index', title: 'Recent Chat $index'),
+    );
+    final activeConversation = conversations[3];
+    final repository = _SeededConversationRepository(conversations);
+    addTearDown(repository.close);
+
+    await _pumpSidebarAtConversation(
+      tester,
+      conversationId: activeConversation.id,
+      repository: repository,
+    );
+
+    expect(find.text(activeConversation.title), findsOneWidget);
+    final activeTile = tester.widget<AuraTile>(
+      find
+          .ancestor(
+            of: find.text(activeConversation.title),
+            matching: find.byType(AuraTile),
+          )
+          .first,
+    );
+    expect(activeTile.variant, AuraTileVariant.selected);
+    expect(activeTile.onTap, isNotNull);
+    expect(activeTile.trailing, isNotNull);
+    expect(repository.byIdWatchCalls, isEmpty);
+  });
+
+  testWidgets('keeps an active conversation outside the first ten visible', (
+    tester,
+  ) async {
+    final recentConversations = List.generate(
+      10,
+      (index) => _conversation('recent-$index', title: 'Recent Chat $index'),
+    );
+    final activeConversation = _conversation(
+      'active-chat',
+      title: 'Active Conversation',
+    );
+    final repository = _SeededConversationRepository(
+      recentConversations,
+      lookupConversations: [activeConversation],
+    );
+    addTearDown(repository.close);
+
+    await _pumpSidebarAtConversation(
+      tester,
+      conversationId: activeConversation.id,
+      repository: repository,
+    );
+
+    expect(repository.byIdWatchCalls, equals([activeConversation.id]));
+    expect(find.text(activeConversation.title), findsOneWidget);
+    final activeTile = tester.widget<AuraTile>(
+      find
+          .ancestor(
+            of: find.text(activeConversation.title),
+            matching: find.byType(AuraTile),
+          )
+          .first,
+    );
+    expect(activeTile.variant, AuraTileVariant.selected);
+    expect(activeTile.onTap, isNotNull);
+    expect(activeTile.trailing, isNotNull);
   });
 
   test('SidebarConversationsWidget stores properties', () {
@@ -433,8 +504,10 @@ void main() {
 }
 
 class _SeededConversationRepository(
-  final List<ConversationEntity> _conversations,
-) extends _RecordingConversationRepository {
+  final List<ConversationEntity> _conversations, {
+  final List<ConversationEntity> lookupConversations = const [],
+}) extends _RecordingConversationRepository {
+  final byIdWatchCalls = <String>[];
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
@@ -462,6 +535,16 @@ class _SeededConversationRepository(
 
     return activeController.stream;
   }
+
+  @override
+  Stream<ConversationEntity?> watchConversationById(String id) {
+    byIdWatchCalls.add(id);
+    for (final conversation in [..._conversations, ...lookupConversations]) {
+      if (conversation.id == id) return Stream.value(conversation);
+    }
+
+    return Stream.value(null);
+  }
 }
 
 class _TestCompactionExecution(
@@ -471,6 +554,82 @@ class _TestCompactionExecution(
   Map<String, CompactionExecutionState> build() {
     return Map.unmodifiable(_initialState);
   }
+}
+
+ConversationEntity _conversation(String id, {required String title}) =>
+    ConversationEntity(
+      id: id,
+      title: title,
+      workspaceId: 'workspace-1',
+      isPinned: false,
+      createdAt: .new(2025),
+      updatedAt: .new(2025),
+    );
+
+Future<void> _pumpSidebarAtConversation(
+  WidgetTester tester, {
+  required String conversationId,
+  required _SeededConversationRepository repository,
+}) async {
+  final router = GoRouter(
+    routes: [
+      GoRoute(
+        path: '/workspaces/:workspaceId/chats/:chatId',
+        builder: (_, _) => AuraThemeScope(
+          theme: .light,
+          child: Theme(
+            data: .new(),
+            child: Material(
+              child: SizedBox(
+                width: 300,
+                child: ListView(
+                  children: const [
+                    SidebarConversationsWidget(workspaceId: 'workspace-1'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+    initialLocation: '/workspaces/workspace-1/chats/$conversationId',
+  );
+  addTearDown(router.dispose);
+
+  await tester.runAsync(() async {
+    await tester.pumpWidget(
+      EasyLocalization(
+        child: Builder(
+          builder: (context) => Portal(
+            child: TestProviderScope(
+              overrides: [
+                workspaceSessionForRouteProvider.overrideWith(
+                  (_, workspaceId) async => WorkspaceSession(
+                    LocalWorkspaceRef(localWorkspaceId: workspaceId),
+                  ),
+                ),
+                conversationRepositoryProvider.overrideWithValue(repository),
+              ],
+              child: MaterialApp.router(
+                routerConfig: router,
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+              ),
+            ),
+          ),
+        ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+      ),
+    );
+  });
+  final _ = await tester.pumpAndSettle();
 }
 
 class const _SidebarWorkspaceHost() extends StatefulWidget {

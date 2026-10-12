@@ -158,6 +158,8 @@ void main() {
         locale: const Locale('es'),
         checkpointHistory: (
           activeCheckpointId: 'summary-1',
+          conversationRevision: 0,
+          messages: [checkpoint],
           summaries: [checkpoint],
         ),
       ),

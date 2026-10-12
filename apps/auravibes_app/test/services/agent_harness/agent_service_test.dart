@@ -274,7 +274,7 @@ void main() {
       },
     );
 
-    test('waits and retries when the model hits a rate limit', () async {
+    test('retries when the provider supplies Retry-After', () async {
       var callCount = 0;
       when(
         () => fixture.continueAgentUsecase.call(
@@ -284,7 +284,14 @@ void main() {
       ).thenAnswer((_) async {
         callCount += 1;
         if (callCount == 1) {
-          throw Exception('RateLimitException(429): RESOURCE_EXHAUSTED');
+          throw AgentRateLimitRetryException(
+            providerException: ProviderHttpFailureException(
+              429,
+              'Provider rate limit.',
+              retryAfter: const Duration(seconds: 1),
+            ),
+            retryAfter: const Duration(seconds: 1),
+          );
         }
 
         return const ContinueAgentResult(
@@ -318,7 +325,7 @@ void main() {
       );
     });
 
-    test('uses known retry delay from rate-limit errors', () async {
+    test('uses the explicit retry delay from rate-limit errors', () async {
       final startTime = DateTime(2026);
       var currentTime = startTime;
       final delays = <Duration>[];
@@ -361,7 +368,14 @@ void main() {
       ).thenAnswer((_) async {
         callCount += 1;
         if (callCount == 1) {
-          throw Exception('RateLimitException(429): try again in 3 seconds');
+          throw AgentRateLimitRetryException(
+            providerException: ProviderHttpFailureException(
+              429,
+              'Provider rate limit.',
+              retryAfter: const Duration(seconds: 3),
+            ),
+            retryAfter: const Duration(seconds: 3),
+          );
         }
 
         return const ContinueAgentResult(

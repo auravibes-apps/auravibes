@@ -126,12 +126,9 @@ class const _WorkspaceManagementAppBar()
     return AuraAppBarWithDrawer(
       title: const TextLocale(LocaleKeys.workspace_management_title),
       leading: Navigator.of(context).canPop()
-          ? Semantics(
-              key: const ValueKey<String>('workspace_management_back'),
-              child: AuraIconButton(
-                icon: Icons.arrow_back,
-                onPressed: () => Navigator.of(context).maybePop(),
-              ),
+          ? AuraIconButton(
+              icon: Icons.arrow_back,
+              onPressed: () => Navigator.of(context).maybePop(),
               identifier: 'workspace_management_back',
             )
           : null,
@@ -934,14 +931,8 @@ class _WorkspaceSearchInputState extends State<_WorkspaceSearchInput> {
 class const _WorkspaceSearchDecoration({required final Widget child})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 16),
-    child: Semantics(
-      key: const ValueKey<String>('workspace_search'),
-      child: child,
-      identifier: 'workspace_search',
-    ),
-  );
+  Widget build(BuildContext context) =>
+      Padding(padding: const EdgeInsets.only(bottom: 16), child: child);
 }
 
 class const _WorkspaceSearchField({
@@ -960,6 +951,7 @@ class const _WorkspaceSearchField({
     size: .small,
     textInputAction: .search,
     onChanged: onChanged,
+    identifier: 'workspace_search',
   );
 }
 
@@ -2079,14 +2071,9 @@ class const _CreateWorkspaceButton({required final VoidCallback onPressed})
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Semantics(
-        key: const ValueKey<String>('workspace_create'),
-        child: AuraButton(
-          onPressed: onPressed,
-          child: const TextLocale(
-            LocaleKeys.workspace_management_create_button,
-          ),
-        ),
+      child: AuraButton(
+        onPressed: onPressed,
+        child: const TextLocale(LocaleKeys.workspace_management_create_button),
         identifier: 'workspace_create',
       ),
     );
@@ -2722,20 +2709,17 @@ class const _LocalWorkspaceMenu({
   Widget build(BuildContext context) {
     final selectorId = 'workspace_menu_${workspace.id}';
 
-    return Semantics(
-      key: ValueKey<String>(selectorId),
-      child: AuraPopupMenuButton(
-        items: [
-          _editItem(),
-          _duplicateItem(),
-          _exportItem(),
-          _importItem(),
-          _copyIdItem(),
-          _deleteItem(),
-        ],
-        tooltip: LocaleKeys.common_show_more.tr(),
-      ),
+    return AuraPopupMenuButton(
+      items: [
+        _editItem(),
+        _duplicateItem(),
+        _exportItem(),
+        _importItem(),
+        _copyIdItem(),
+        _deleteItem(),
+      ],
       identifier: selectorId,
+      tooltip: LocaleKeys.common_show_more.tr(),
     );
   }
 
@@ -2884,19 +2868,16 @@ class const _ConnectedWorkspaceMenu({
   Widget build(BuildContext context) {
     final selectorId = 'workspace_menu_${workspace.id}';
 
-    return Semantics(
-      key: ValueKey<String>(selectorId),
-      child: AuraPopupMenuButton(
-        items: [
-          _detailsItem(),
-          _exportItem(),
-          _importItem(),
-          _copyIdItem(),
-          _removeItem(),
-        ],
-        tooltip: LocaleKeys.common_show_more.tr(),
-      ),
+    return AuraPopupMenuButton(
+      items: [
+        _detailsItem(),
+        _exportItem(),
+        _importItem(),
+        _copyIdItem(),
+        _removeItem(),
+      ],
       identifier: selectorId,
+      tooltip: LocaleKeys.common_show_more.tr(),
     );
   }
 
@@ -3117,28 +3098,22 @@ class const _WorkspaceSaveButton({
   required final ValueChanged<String> onSave,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('workspace_save'),
-    child: AuraIconButton(
-      icon: Icons.check,
-      onPressed: () => onSave(controller.text.trim()),
-      tooltip: LocaleKeys.common_save.tr(),
-    ),
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.check,
+    onPressed: () => onSave(controller.text.trim()),
     identifier: 'workspace_save',
+    tooltip: LocaleKeys.common_save.tr(),
   );
 }
 
 class const _WorkspaceCancelButton({required final VoidCallback onCancel})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('workspace_cancel'),
-    child: AuraIconButton(
-      icon: Icons.close,
-      onPressed: onCancel,
-      tooltip: LocaleKeys.common_cancel.tr(),
-    ),
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.close,
+    onPressed: onCancel,
     identifier: 'workspace_cancel',
+    tooltip: LocaleKeys.common_cancel.tr(),
   );
 }
 

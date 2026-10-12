@@ -2,6 +2,7 @@ import 'package:auravibes_engine/src/tool_name_resolver.dart';
 
 typedef SkillControlToolRequest = ({
   String conversationId,
+  String toolCallId,
   String workspaceId,
   String toolIdentifier,
   Map<String, dynamic> arguments,
@@ -9,6 +10,7 @@ typedef SkillControlToolRequest = ({
 
 typedef SkillTemplateToolRequest = ({
   String conversationId,
+  String toolCallId,
   String workspaceId,
   String skillSlug,
   String toolSlug,
@@ -17,6 +19,7 @@ typedef SkillTemplateToolRequest = ({
 
 typedef SkillNativeToolRequest = ({
   String conversationId,
+  String toolCallId,
   String workspaceId,
   String skillSlug,
   String toolSlug,
@@ -25,9 +28,18 @@ typedef SkillNativeToolRequest = ({
 
 typedef SkillAppTemplateToolRequest = ({
   String conversationId,
+  String toolCallId,
   String workspaceId,
   String skillSlug,
   String toolSlug,
+  Map<String, dynamic> arguments,
+});
+
+typedef McpToolCallRequest = ({
+  String conversationId,
+  String toolCallId,
+  String mcpServerId,
+  String toolIdentifier,
   Map<String, dynamic> arguments,
 });
 
@@ -36,21 +48,19 @@ abstract interface class ResolvedToolProvider<TTool> {
 
   Future<Object?> runBuiltInTool({
     required String conversationId,
+    required String toolCallId,
     required TTool tool,
     required Object input,
   });
 
   Future<Object?> runNativeTool({
     required String conversationId,
+    required String toolCallId,
     required TTool tool,
     required Object input,
   });
 
-  Future<Object?> runMcpTool({
-    required String mcpServerId,
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-  });
+  Future<Object?> runMcpTool(McpToolCallRequest request);
 
   Future<String> getConversationWorkspaceId(String conversationId);
 
@@ -66,15 +76,20 @@ abstract interface class ResolvedToolProvider<TTool> {
 class const AgentResolvedToolExecution<TTool>({
   required final AgentResolvedToolName descriptor,
   required final TTool tool,
+  final bool supportsCancellation = true,
 });
 
 class const ResolvedToolService<TTool>({
   required final ResolvedToolProvider<TTool> provider,
 }) {
+  bool supportsCancellation(TTool tool) =>
+      provider.toExecution(tool).supportsCancellation;
+
   Future<Object?> call({
     required String conversationId,
     required TTool tool,
     required Map<String, dynamic> arguments,
+    String toolCallId = '',
   }) async {
     final execution = provider.toExecution(tool);
     final descriptor = execution.descriptor;
@@ -82,6 +97,7 @@ class const ResolvedToolService<TTool>({
     return await switch (descriptor.kind) {
       .builtIn => _runInputTool(
         conversationId: conversationId,
+        toolCallId: toolCallId,
         tool: execution.tool,
         arguments: arguments,
         runner: provider.runBuiltInTool,
@@ -89,29 +105,34 @@ class const ResolvedToolService<TTool>({
       ),
       .native => _runInputTool(
         conversationId: conversationId,
+        toolCallId: toolCallId,
         tool: execution.tool,
         arguments: arguments,
         runner: provider.runNativeTool,
         missingInputMessage: 'Native tools require an input argument.',
       ),
-      .mcp => _runMcpTool(descriptor, arguments),
+      .mcp => _runMcpTool(conversationId, toolCallId, descriptor, arguments),
       .skillControl => _runSkillControlTool(
         conversationId,
+        toolCallId,
         descriptor,
         arguments,
       ),
       .skillTemplate => _runSkillTemplateTool(
         conversationId,
+        toolCallId,
         descriptor,
         arguments,
       ),
       .skillNative => _runSkillNativeTool(
         conversationId,
+        toolCallId,
         descriptor,
         arguments,
       ),
       .skillAppTemplate => _runSkillAppTemplateTool(
         conversationId,
+        toolCallId,
         descriptor,
         arguments,
       ),
@@ -120,10 +141,12 @@ class const ResolvedToolService<TTool>({
 
   Future<Object?> _runInputTool({
     required String conversationId,
+    required String toolCallId,
     required TTool tool,
     required Map<String, dynamic> arguments,
     required Future<Object?> Function({
       required String conversationId,
+      required String toolCallId,
       required TTool tool,
       required Object input,
     })
@@ -135,10 +158,17 @@ class const ResolvedToolService<TTool>({
       throw FormatException(missingInputMessage);
     }
 
-    return runner(conversationId: conversationId, tool: tool, input: input);
+    return runner(
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      tool: tool,
+      input: input,
+    );
   }
 
   Future<Object?> _runMcpTool(
+    String conversationId,
+    String toolCallId,
     AgentResolvedToolName descriptor,
     Map<String, dynamic> arguments,
   ) {
@@ -149,15 +179,18 @@ class const ResolvedToolService<TTool>({
       );
     }
 
-    return provider.runMcpTool(
+    return provider.runMcpTool((
+      conversationId: conversationId,
+      toolCallId: toolCallId,
       mcpServerId: mcpServerId,
       toolIdentifier: descriptor.toolIdentifier,
       arguments: arguments,
-    );
+    ));
   }
 
   Future<Object?> _runSkillControlTool(
     String conversationId,
+    String toolCallId,
     AgentResolvedToolName descriptor,
     Map<String, dynamic> arguments,
   ) async {
@@ -167,6 +200,7 @@ class const ResolvedToolService<TTool>({
 
     return await provider.runSkillControlTool((
       conversationId: conversationId,
+      toolCallId: toolCallId,
       workspaceId: workspaceId,
       toolIdentifier: descriptor.toolIdentifier,
       arguments: arguments,
@@ -175,6 +209,7 @@ class const ResolvedToolService<TTool>({
 
   Future<Object?> _runSkillTemplateTool(
     String conversationId,
+    String toolCallId,
     AgentResolvedToolName descriptor,
     Map<String, dynamic> arguments,
   ) async {
@@ -188,6 +223,7 @@ class const ResolvedToolService<TTool>({
 
     return await provider.runSkillTemplateTool((
       conversationId: conversationId,
+      toolCallId: toolCallId,
       workspaceId: workspaceId,
       skillSlug: skillSlug,
       toolSlug: descriptor.toolIdentifier,
@@ -197,6 +233,7 @@ class const ResolvedToolService<TTool>({
 
   Future<Object?> _runSkillNativeTool(
     String conversationId,
+    String toolCallId,
     AgentResolvedToolName descriptor,
     Map<String, dynamic> arguments,
   ) async {
@@ -214,6 +251,7 @@ class const ResolvedToolService<TTool>({
 
     return await provider.runSkillNativeTool((
       conversationId: conversationId,
+      toolCallId: toolCallId,
       workspaceId: workspaceId,
       skillSlug: skillSlug,
       toolSlug: toolSlug,
@@ -223,6 +261,7 @@ class const ResolvedToolService<TTool>({
 
   Future<Object?> _runSkillAppTemplateTool(
     String conversationId,
+    String toolCallId,
     AgentResolvedToolName descriptor,
     Map<String, dynamic> arguments,
   ) async {
@@ -236,6 +275,7 @@ class const ResolvedToolService<TTool>({
 
     return await provider.runSkillAppTemplateTool((
       conversationId: conversationId,
+      toolCallId: toolCallId,
       workspaceId: workspaceId,
       skillSlug: skillSlug,
       toolSlug: descriptor.toolIdentifier,

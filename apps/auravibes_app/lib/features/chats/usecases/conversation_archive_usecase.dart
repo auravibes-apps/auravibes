@@ -1018,6 +1018,7 @@ class const _ConversationArchiveTranscriptImporter(
         conversationId: conversationId,
         content: '{"version":1}',
         createdAt: createdAt,
+        isIncompleteArchiveContext: true,
       ),
     );
   }
@@ -1026,6 +1027,7 @@ class const _ConversationArchiveTranscriptImporter(
     required String conversationId,
     required String content,
     required DateTime createdAt,
+    bool isIncompleteArchiveContext = false,
   }) => MessageToCreate(
     conversationId: conversationId,
     content: content,
@@ -1035,9 +1037,12 @@ class const _ConversationArchiveTranscriptImporter(
     createdAt: createdAt,
     updatedAt: createdAt,
     metadata: jsonEncode(
-      const MessageMetadataEntity(
+      MessageMetadataEntity(
         modelMetadata: {
           MessageMetadataEntity.agentTranscriptContextMetadataKey: true,
+          if (isIncompleteArchiveContext)
+            MessageMetadataEntity.incompleteArchivedAgentContextMetadataKey:
+                true,
         },
       ).toJson(),
     ),

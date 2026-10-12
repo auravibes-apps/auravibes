@@ -34,14 +34,11 @@ class const _LegalLinkTile({
   required final String titleKey,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: ValueKey<String>('settings_$document'),
-    child: AuraTile(
-      child: TextLocale(titleKey),
-      onTap: () => _open(context),
-      variant: .ghost,
-      trailing: const Icon(Icons.open_in_new),
-    ),
+  Widget build(BuildContext context) => AuraTile(
+    child: TextLocale(titleKey),
+    onTap: () => _open(context),
+    variant: .ghost,
+    trailing: const Icon(Icons.open_in_new),
     identifier: 'settings_$document',
   );
 

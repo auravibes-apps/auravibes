@@ -70,6 +70,7 @@ class const SubAgentRunner({
     required String parentConversationId,
     required String workspaceId,
     required Map<String, dynamic> arguments,
+    SubAgentChildStarted? onChildStarted,
   }) async {
     final request = _SubAgentRunRequest.from(arguments);
     if (request.error != null) {
@@ -126,6 +127,10 @@ class const SubAgentRunner({
         childId: child.id,
       );
       failurePhase = 'run.childStarted';
+      this.onChildStarted?.call(
+        parentId: parentConversationId,
+        childId: child.id,
+      );
       onChildStarted?.call(parentId: parentConversationId, childId: child.id);
 
       failurePhase = 'run.createPrompt';
