@@ -683,6 +683,16 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.transcript_context_malformed';
   static const chats_screens_chat_conversation_retry_error =
       'chats_screens.chat_conversation.retry_error';
+  static const chats_screens_chat_conversation_provider_recovery_authentication =
+      'chats_screens.chat_conversation.provider_recovery.authentication';
+  static const chats_screens_chat_conversation_provider_recovery_quota_rate_limit =
+      'chats_screens.chat_conversation.provider_recovery.quota_rate_limit';
+  static const chats_screens_chat_conversation_provider_recovery_transient_outage =
+      'chats_screens.chat_conversation.provider_recovery.transient_outage';
+  static const chats_screens_chat_conversation_provider_recovery_configuration =
+      'chats_screens.chat_conversation.provider_recovery.configuration';
+  static const chats_screens_chat_conversation_provider_recovery_unknown =
+      'chats_screens.chat_conversation.provider_recovery.unknown';
   static const chats_screens_chat_conversation_generation_credits_error =
       'chats_screens.chat_conversation.generation_credits_error';
   static const chats_screens_chat_conversation_rate_limit_retry =
