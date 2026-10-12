@@ -37,4 +37,24 @@ abstract final class ConversationLimits {
   static const maxPinnedPerWorkspace = 10;
   static const maxPendingForksPerWorkspace = 32;
   static const maxForkHistoryMessages = 1000;
+
+  /// At most eight detached operations may run across all server workspaces.
+  /// A ninth detach stays attached to its foreground turn until capacity frees.
+  static const maxConcurrentDetachedWork = 8;
+
+  /// Completion turns remain durable and FIFO while the global job drain is busy.
+  /// This is a steady-state bound; failover may briefly overlap an in-flight
+  /// provider request before the previous worker observes lease loss.
+  static const maxConcurrentBackgroundContinuations = 1;
+}
+
+abstract final class BackgroundWorkPreviews {
+  /// Marker used while a durable completion message waits for its turn.
+  static const queuedForContinuation = 'queued_for_continuation';
+
+  /// Marker used while the completion follow-up is being executed.
+  static const continuationInProgress = 'continuation_in_progress';
+
+  /// Marker used when the completion follow-up ends without succeeding.
+  static const continuationFailed = 'continuation_failed';
 }

@@ -14,6 +14,9 @@ class BackgroundWorkRepository implements AgentBackgroundWorkStore {
     required String workId,
   }) => _dao.find(conversationId: conversationId, workId: workId);
 
+  Future<void> reconcileInterrupted({required DateTime startedAt}) =>
+      _dao.reconcileInterrupted(startedAt: startedAt);
+
   @override
   Stream<List<AgentBackgroundWork>> watchConversation(String conversationId) =>
       _dao.watchConversation(conversationId);

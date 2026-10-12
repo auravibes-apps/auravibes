@@ -459,6 +459,21 @@ class CloudWorkspaceRepository {
       ),
       transaction: transaction,
     );
+    final backgroundWorks = await BackgroundWorkRecord.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspace.id!) &
+          table.status.equals('running'),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    for (final work in backgroundWorks) {
+      await BackgroundWorkRecord.db.updateRow(
+        session,
+        work.copyWith(status: 'stopRequested', updatedAt: now),
+        transaction: transaction,
+      );
+    }
     final members = await WorkspaceMember.db.find(
       session,
       where: (t) =>

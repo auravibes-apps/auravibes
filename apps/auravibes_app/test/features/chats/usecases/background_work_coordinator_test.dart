@@ -224,6 +224,256 @@ void main() {
     },
   );
 
+  test(
+    'conversation deletion cancels detached work and blocks new detaches',
+    () async {
+      final operation = Completer<Object?>();
+      var cancelCalls = 0;
+      final _ = runtime.registerToolCancellationHandle((
+        conversationId: conversationId,
+        toolCallId: 'tool-call-delete-conversation',
+        isSupported: true,
+        cancel: () async => cancelCalls++,
+        operationResult: operation.future,
+        isCancellationConfirmed: null,
+      ));
+      final coordinator = _coordinator();
+      final work = await coordinator.runInBackground(
+        .new(
+          conversationId: conversationId,
+          toolCallId: 'tool-call-delete-conversation',
+          toolKind: 'skill.native',
+        ),
+      );
+
+      await coordinator.prepareConversationDeletion(conversationId);
+
+      expect(cancelCalls, 1);
+      expect(
+        (await repository.watchConversation(conversationId).first)
+            .single
+            .state
+            .status,
+        AgentBackgroundWorkStatus.stopRequested,
+      );
+      final blockedOperation = Completer<Object?>();
+      final blockedHandle = runtime.registerToolCancellationHandle((
+        conversationId: conversationId,
+        toolCallId: 'tool-call-after-conversation-delete-started',
+        isSupported: true,
+        cancel: Future<void>.value,
+        operationResult: blockedOperation.future,
+        isCancellationConfirmed: null,
+      ));
+      expect(
+        await coordinator.runInBackground(
+          .new(
+            conversationId: conversationId,
+            toolCallId: 'tool-call-after-conversation-delete-started',
+            toolKind: 'skill.native',
+          ),
+        ),
+        isNull,
+      );
+      expect(blockedHandle.status, AgentToolCancellationStatus.running);
+      blockedOperation.complete('still foreground');
+
+      expect(
+        await database.conversationDao.deleteConversation(conversationId),
+        isTrue,
+      );
+      operation.complete({'answer': 'late result'});
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(await repository.watchConversation(conversationId).first, isEmpty);
+      expect(work, isNotNull);
+    },
+  );
+
+  test(
+    'conversation deletion does not wait forever for cancellation',
+    () async {
+      final cancellationRuntime = AgentCancellationRuntime(
+        cleanupTimeout: const Duration(milliseconds: 10),
+      )..start(conversationId);
+      final cancellation = Completer<void>();
+      final operation = Completer<Object?>();
+      final handle = cancellationRuntime.registerToolCancellationHandle((
+        conversationId: conversationId,
+        toolCallId: 'tool-call-slow-cancellation',
+        isSupported: true,
+        cancel: () => cancellation.future,
+        operationResult: operation.future,
+        isCancellationConfirmed: null,
+      ));
+      final coordinator = BackgroundWorkCoordinator(
+        repository,
+        cancellationRuntime,
+        (id) async => id == conversationId ? workspaceId : null,
+      );
+      final work = await coordinator.runInBackground(
+        .new(
+          conversationId: conversationId,
+          toolCallId: 'tool-call-slow-cancellation',
+          toolKind: 'skill.native',
+        ),
+      );
+
+      await coordinator
+          .prepareConversationDeletion(conversationId)
+          .timeout(const Duration(seconds: 1));
+
+      expect(
+        (await repository.watchConversation(conversationId).first)
+            .single
+            .state
+            .status,
+        AgentBackgroundWorkStatus.stopRequested,
+      );
+      final cancellationCompletion = handle.cancellationCompletion;
+      if (cancellationCompletion == null) {
+        fail('Cancellation request was not started.');
+      }
+      cancellation.complete();
+      expect(await cancellationCompletion, isTrue);
+      operation.complete('late result');
+      final stopped = await repository
+          .watchConversation(conversationId)
+          .firstWhere(
+            (items) =>
+                items.single.state.status ==
+                AgentBackgroundWorkStatus.cancelled,
+          );
+
+      expect(work, isNotNull);
+      expect(stopped.single.state.resultContent, isNull);
+    },
+  );
+
+  test(
+    'conversation deletion drops a late result when cancellation never settles',
+    () async {
+      final cancellationRuntime = AgentCancellationRuntime(
+        cleanupTimeout: const Duration(milliseconds: 10),
+      )..start(conversationId);
+      final cancellation = Completer<void>();
+      final operation = Completer<Object?>();
+      final handle = cancellationRuntime.registerToolCancellationHandle((
+        conversationId: conversationId,
+        toolCallId: 'tool-call-unsettled-cancellation',
+        isSupported: true,
+        cancel: () => cancellation.future,
+        operationResult: operation.future,
+        isCancellationConfirmed: null,
+      ));
+      final coordinator = BackgroundWorkCoordinator(
+        repository,
+        cancellationRuntime,
+        (id) async => id == conversationId ? workspaceId : null,
+      );
+      final work = await coordinator.runInBackground(
+        .new(
+          conversationId: conversationId,
+          toolCallId: 'tool-call-unsettled-cancellation',
+          toolKind: 'skill.native',
+        ),
+      );
+      if (work == null) fail('Expected detached work.');
+
+      await coordinator
+          .prepareConversationDeletion(conversationId)
+          .timeout(const Duration(seconds: 1));
+      operation.complete({'secret': 'late result'});
+      final stopped = await repository
+          .watchConversation(conversationId)
+          .firstWhere(
+            (items) =>
+                items.single.state.status !=
+                AgentBackgroundWorkStatus.stopRequested,
+          )
+          .timeout(const Duration(seconds: 1));
+
+      expect(stopped.single.state.status, AgentBackgroundWorkStatus.failed);
+      expect(stopped.single.state.errorCode, 'outcome_unknown');
+      expect(stopped.single.state.resultContent, isNull);
+      expect(stopped.single.state.resultByteLength, 0);
+      expect(
+        cancellationRuntime.toolCancellationHandle(
+          conversationId: conversationId,
+          toolCallId: 'tool-call-unsettled-cancellation',
+        ),
+        isNull,
+      );
+      expect(handle.isOperationCompleted(), isTrue);
+      expect(
+        await database.conversationDao.deleteConversation(conversationId),
+        isTrue,
+      );
+      expect(await repository.watchConversation(conversationId).first, isEmpty);
+    },
+  );
+
+  test(
+    'workspace deletion cancels detached work and fences new detaches',
+    () async {
+      final operation = Completer<Object?>();
+      var cancelCalls = 0;
+      final _ = runtime.registerToolCancellationHandle((
+        conversationId: conversationId,
+        toolCallId: 'tool-call-delete-workspace',
+        isSupported: true,
+        cancel: () async => cancelCalls++,
+        operationResult: operation.future,
+        isCancellationConfirmed: null,
+      ));
+      final coordinator = _coordinator();
+      final work = await coordinator.runInBackground(
+        .new(
+          conversationId: conversationId,
+          toolCallId: 'tool-call-delete-workspace',
+          toolKind: 'skill.native',
+        ),
+      );
+
+      await coordinator.prepareWorkspaceDeletion(workspaceId);
+
+      expect(cancelCalls, 1);
+      expect(
+        (await repository.watchConversation(conversationId).first)
+            .single
+            .state
+            .status,
+        AgentBackgroundWorkStatus.stopRequested,
+      );
+      final blockedOperation = Completer<Object?>();
+      final blockedHandle = runtime.registerToolCancellationHandle((
+        conversationId: conversationId,
+        toolCallId: 'tool-call-after-workspace-delete-started',
+        isSupported: true,
+        cancel: Future<void>.value,
+        operationResult: blockedOperation.future,
+        isCancellationConfirmed: null,
+      ));
+      expect(
+        await coordinator.runInBackground(
+          .new(
+            conversationId: conversationId,
+            toolCallId: 'tool-call-after-workspace-delete-started',
+            toolKind: 'skill.native',
+          ),
+        ),
+        isNull,
+      );
+      expect(blockedHandle.status, AgentToolCancellationStatus.running);
+      blockedOperation.complete('still foreground');
+
+      expect(await database.workspaceDao.deleteWorkspace(workspaceId), isTrue);
+      operation.complete({'answer': 'late result'});
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(await repository.watchConversation(conversationId).first, isEmpty);
+      expect(work, isNotNull);
+    },
+  );
+
   test('completion wins while detachment is resolving its workspace', () async {
     final operation = Completer<Object?>();
     final workspaceLookup = Completer<void>();

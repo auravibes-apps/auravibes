@@ -1285,6 +1285,9 @@ void main() {
               DeleteConversationUsecase(
                 repo,
                 (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
                 clearConversationDraft: (_, _) => Future<void>.value(),
               ),
             ),
@@ -1348,6 +1351,9 @@ void main() {
               DeleteConversationUsecase(
                 repo,
                 (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
                 clearConversationDraft: (_, _) => Future<void>.value(),
               ),
             ),
@@ -1398,6 +1404,9 @@ void main() {
               DeleteConversationUsecase(
                 repo,
                 (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
                 clearConversationDraft: (_, _) => Future<void>.value(),
               ),
             ),
@@ -1454,6 +1463,9 @@ void main() {
               DeleteConversationUsecase(
                 repo,
                 (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
                 clearConversationDraft: (_, _) => Future<void>.value(),
               ),
             ),
@@ -1528,6 +1540,9 @@ void main() {
               return DeleteConversationUsecase(
                 repo,
                 (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
                 clearConversationDraft: cleanup.clearConversation,
               );
             }),

@@ -97,6 +97,29 @@ String? conversationParentToolCallIdForExecutionSettings(String settingsJson) {
 class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
   final ObjectReferenceService _objectReferenceService =
       objectReferenceService ?? ObjectReferenceService();
+
+  Future<void> lockBackgroundWorkCapacity(
+    Session session, {
+    required Transaction transaction,
+  }) async {
+    await session.db.unsafeQuery(
+      'SELECT pg_advisory_xact_lock(hashtextextended(@lockKey, 0))',
+      parameters: QueryParameters.named({
+        'lockKey': 'conversation-background-work-capacity',
+      }),
+      transaction: transaction,
+    );
+  }
+
+  Future<int> countActiveBackgroundWork(
+    Session session, {
+    required Transaction transaction,
+  }) => BackgroundWorkRecord.db.count(
+    session,
+    where: (table) => table.status.inSet({'running', 'stopRequested'}),
+    transaction: transaction,
+  );
+
   Future<Conversation?> findConversationByStableId(
     Session session, {
     required int workspaceId,
@@ -282,6 +305,19 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     where: (table) =>
         table.workspaceId.equals(workspaceId) &
         table.requestId.equals(requestId),
+    transaction: transaction,
+  );
+
+  Future<ConversationTurn?> findTurnByUserMessage(
+    Session session, {
+    required int workspaceId,
+    required int userMessageId,
+    Transaction? transaction,
+  }) => ConversationTurn.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.userMessageId.equals(userMessageId),
     transaction: transaction,
   );
 
@@ -577,6 +613,8 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     required String clientMessageId,
     required String content,
     required List<int> attachmentIds,
+    String role = 'user',
+    String kind = 'text',
     String? metadataJson,
     required DateTime now,
     required Transaction transaction,
@@ -603,8 +641,8 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         workspaceId: conversation.workspaceId,
         conversationId: conversation.id!,
         stableId: clientMessageId,
-        role: 'user',
-        kind: 'text',
+        role: role,
+        kind: kind,
         status: ConversationStatuses.queued,
         content: content,
         metadataJson: jsonEncode({
@@ -683,6 +721,19 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     session,
     where: (table) =>
         table.id.equals(messageId) & table.workspaceId.equals(workspaceId),
+  );
+
+  Future<ConversationMessage?> findMessageByStableId(
+    Session session, {
+    required int workspaceId,
+    required String messageId,
+    Transaction? transaction,
+  }) => ConversationMessage.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.stableId.equals(messageId),
+    transaction: transaction,
   );
 
   Future<List<ConversationMessage>> listConversationMessages(
