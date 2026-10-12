@@ -68,3 +68,11 @@ class const CompactionCheckpointRestoreException() extends CompactionException {
             LocaleKeys.compaction_errors_checkpoint_restore_unavailable,
       );
 }
+
+class const CompactionStalePreviewException() extends CompactionException {
+  this
+    : super(
+        LocaleKeys.compaction_errors_checkpoint_restore_stale,
+        recoveryHint: LocaleKeys.compaction_errors_checkpoint_restore_stale,
+      );
+}

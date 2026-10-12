@@ -2,6 +2,8 @@
 
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -20,6 +22,9 @@ class HarnessVerificationTest(unittest.TestCase):
             (folder / "CLAUDE.md").symlink_to("AGENTS.md")
         (self.root / "docs").mkdir()
         (self.root / "docs/ARCHITECTURE.md").write_text("# Architecture\n")
+        (self.root / "docs/agents").mkdir()
+        (self.root / "README.md").write_text("# README\n")
+        (self.root / "CONTRIBUTING.md").write_text("# Contributing\n")
         self.skill = self.root / ".agents/skills/example"
         self.skill.mkdir(parents=True)
         (self.skill / "SKILL.md").write_text(
@@ -44,6 +49,183 @@ class HarnessVerificationTest(unittest.TestCase):
     def test_multiple_links_and_example_code(self):
         text = '[one](a.md) [two](b.md#heading)\n`[sample](missing.md)`\n```md\n[example](missing.md)\n```\n[space](<a file.md>)\n'
         self.assertEqual(list(markdown_links(text)), ["a.md", "b.md#heading", "a file.md"])
+
+    def test_markdown_reference_and_html_image_targets_are_found(self):
+        text = (
+            "[guide][guide]\n"
+            "![logo][logo]\n"
+            "[guide]: docs/guide.md#start\n"
+            '[logo]: <images/logo mark.svg> "Logo"\n'
+            '<img alt="diagram" src="images/diagram.svg">\n'
+            '`<img src="inline-code.png">`\n'
+            '<!-- [hidden](comment-link.md) <img src="comment-image.png"> -->\n'
+            "```html\n<img src=\"fenced-code.png\">\n```\n"
+        )
+        self.assertEqual(
+            set(markdown_links(text)),
+            {
+                "docs/guide.md#start",
+                "images/logo mark.svg",
+                "images/diagram.svg",
+            },
+        )
+
+    def test_nested_list_links_are_not_discarded_as_code(self):
+        text = "- Parent\n    - [guide](missing-guide.md)\n"
+        self.assertEqual(set(markdown_links(text)), {"missing-guide.md"})
+
+    def test_indented_code_and_nested_fenced_code_are_ignored(self):
+        text = (
+            "    [indented](missing-indented.md)\n"
+            "- Parent\n"
+            "    - Child\n"
+            "        ```md\n"
+            "        [nested](missing-fenced.md)\n"
+            "        ```\n"
+        )
+        self.assertEqual(list(markdown_links(text)), [])
+
+    def test_reference_destination_can_follow_definition_line(self):
+        text = "[guide][guide]\n\n[guide]:\n  docs/guide.md\n"
+        self.assertEqual(list(markdown_links(text)), ["docs/guide.md"])
+
+    def test_malformed_reference_with_backslash_run_finishes(self):
+        source = (
+            "import sys\n"
+            f"sys.path.insert(0, {str(Path(__file__).parent)!r})\n"
+            "from verify_agent_harness import markdown_links\n"
+            "list(markdown_links('[' + chr(92) * 64 + ']missing-colon'))\n"
+        )
+
+        try:
+            result = subprocess.run(
+                [sys.executable, "-c", source],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=2,
+            )
+        except subprocess.TimeoutExpired:
+            self.fail("malformed reference with repeated backslashes did not finish")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_indented_raw_html_images_are_not_treated_as_code(self):
+        text = (
+            "<p>\n"
+            "    <img\n"
+            '        alt="diagram"\n'
+            '        src="missing-html.png"\n'
+            "    >\n"
+            "</p>\n"
+        )
+        self.assertEqual(list(markdown_links(text)), ["missing-html.png"])
+
+    def test_inline_html_examples_do_not_hide_following_fenced_code(self):
+        text = (
+            "The example tag is `<div>`.\n"
+            "```md\n"
+            "[example](missing-example.md)\n"
+            "```\n"
+        )
+        self.assertEqual(list(markdown_links(text)), [])
+
+    def test_blank_line_ends_raw_html_context_before_markdown_fence(self):
+        text = (
+            "<details>\n\n"
+            "```md\n"
+            "[example](missing-example.md)\n"
+            "```\n"
+            "</details>\n"
+        )
+        self.assertEqual(list(markdown_links(text)), [])
+
+    def test_linked_markdown_image_reports_outer_local_target(self):
+        (self.root / "README.md").write_text(
+            "[![badge](https://example.com/badge.svg)](missing-page.md)\n"
+        )
+
+        errors = verify(self.root)
+
+        self.assertTrue(
+            any("README.md: Dead reference: missing-page.md" in item for item in errors)
+        )
+
+    def test_escaped_inline_and_reference_destinations_resolve(self):
+        target = self.root / "docs/guide(v2).md"
+        target.write_text("# Guide\n")
+        (self.root / "README.md").write_text(
+            "[plain](docs/guide\\(v2\\).md)\n"
+            "[angle](<docs/guide\\(v2\\).md>)\n"
+            "[reference][guide]\n"
+            "[guide]: docs/guide\\(v2\\).md\n"
+        )
+
+        self.assertEqual(verify(self.root), [])
+
+    def test_contributor_documentation_sources_report_missing_targets(self):
+        (self.root / "README.md").write_text(
+            "[setup](docs/missing-setup.md)\n"
+            "![diagram](assets/missing.png)\n"
+            "[missing guide][guide]\n"
+            "[guide]: docs/missing-reference.md\n"
+            '<img alt="diagram" src="assets/missing-html.png">\n'
+        )
+        (self.root / "CONTRIBUTING.md").write_text(
+            "[agent guide](docs/agents/missing-guide.md)\n"
+        )
+        (self.root / "docs/agents/domain.md").write_text(
+            "[missing](../missing-domain.md)\n"
+        )
+        plugin_docs = self.root / ".agents/plugins/example"
+        plugin_docs.mkdir(parents=True)
+        (plugin_docs / "README.md").write_text(
+            "[missing](missing-plugin-doc.md)\n"
+        )
+
+        errors = verify(self.root)
+
+        self.assertTrue(
+            any("README.md: Dead reference: docs/missing-setup.md" in item for item in errors)
+        )
+        self.assertTrue(
+            any("README.md: Dead reference: assets/missing.png" in item for item in errors)
+        )
+        self.assertTrue(
+            any(
+                "README.md: Dead reference: docs/missing-reference.md" in item
+                for item in errors
+            )
+        )
+        self.assertTrue(
+            any(
+                "README.md: Dead reference: assets/missing-html.png" in item
+                for item in errors
+            )
+        )
+        self.assertTrue(
+            any(
+                "CONTRIBUTING.md: Dead reference: docs/agents/missing-guide.md" in item
+                for item in errors
+            )
+        )
+        self.assertTrue(
+            any("docs/agents/domain.md: Dead reference: ../missing-domain.md" in item for item in errors)
+        )
+        self.assertTrue(
+            any(
+                ".agents/plugins/example/README.md: Dead reference: missing-plugin-doc.md" in item
+                for item in errors
+            )
+        )
+
+    def test_external_and_fragment_only_targets_do_not_block(self):
+        (self.root / "README.md").write_text(
+            "[external](https://example.com/docs)\n"
+            "![remote](https://example.com/image.png)\n"
+            "[section](#current-section)\n"
+        )
+        self.assertEqual(verify(self.root), [])
 
     def test_alias_and_metadata_diagnostics(self):
         (self.root / "CLAUDE.md").unlink()

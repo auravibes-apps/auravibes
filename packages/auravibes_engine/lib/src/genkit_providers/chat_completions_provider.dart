@@ -7,6 +7,9 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/src/genkit_providers/media_input.dart';
 import 'package:auravibes_engine/src/model_capabilities.dart';
+import 'package:auravibes_engine/src/provider_error_sanitizer.dart'
+    as error_sanitizer;
+import 'package:auravibes_engine/src/provider_failure_recovery.dart';
 import 'package:auravibes_engine/src/strict_tool_sampling_profile.dart';
 import 'package:auravibes_engine/src/tool_schema_strict.dart';
 import 'package:genkit/plugin.dart';
@@ -16,6 +19,7 @@ class const ProviderTransportResponse({
   required final int statusCode,
   required final Stream<List<int>> body,
   final int? contentLength,
+  final Duration? retryAfter,
 });
 
 typedef ProviderTransport = Future<ProviderTransportResponse> Function(
@@ -172,7 +176,7 @@ class const ChatCompletionsCodec({
     final responseBody = await _boundedBody(response)
         .transform(utf8.decoder)
         .join();
-    _throwIfRawError(response.statusCode, responseBody);
+    _throwIfRawError(response.statusCode, responseBody, response.retryAfter);
 
     final json = jsonDecode(responseBody) as Map<String, dynamic>;
     final completion = sdk.ChatCompletion.fromJson(json);
@@ -203,7 +207,7 @@ class const ChatCompletionsCodec({
       final responseBody = await _boundedBody(response)
           .transform(utf8.decoder)
           .join();
-      _throwIfRawError(response.statusCode, responseBody);
+      _throwIfRawError(response.statusCode, responseBody, response.retryAfter);
     }
 
     await for (final line in _boundedBody(
@@ -290,13 +294,18 @@ class const ChatCompletionsCodec({
     strictToolSamplingProfile: strictToolSamplingProfile,
   );
 
-  void _throwIfRawError(int statusCode, String responseBody) {
+  void _throwIfRawError(
+    int statusCode,
+    String responseBody,
+    Duration? retryAfter,
+  ) {
     if (statusCode >= 200 && statusCode < 300) return;
 
-    throw GenkitException(
+    throw ProviderHttpFailureException(
+      statusCode,
       '$errorLabel API request failed (HTTP $statusCode).',
-      status: .fromHttpStatus(statusCode),
       details: _providerErrorDetail(responseBody),
+      retryAfter: retryAfter,
     );
   }
 }
@@ -323,22 +332,6 @@ Never _throwResponseLimit() => throw GenkitException(
   'Provider response exceeded the safe processing limit.',
   status: .resourceExhausted,
 );
-
-const _maxProviderErrorLength = 500;
-const _providerErrorTruncationSuffix = '... [truncated]';
-
-final _providerSecretPatterns = <RegExp>[
-  RegExp(
-    r"""([\"']?(?:authorization|proxy-authorization|x-api-key)[\"']?\s*[:=]\s*(?:[\"']?(?:[A-Za-z]+\s+)?))[^,\s}\"']+""",
-    caseSensitive: false,
-  ),
-  RegExp(
-    r"""([\"']?(?:api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|id[_-]?token|token|secret|password)[\"']?\s*[:=]\s*[\"']?)(?:Bearer\s+)?[^,\s}\"']+""",
-    caseSensitive: false,
-  ),
-  RegExp(r'''\bBearer\s+[^\s,;}"']+''', caseSensitive: false),
-  RegExp(r'\b(?:sk|rk)-[A-Za-z0-9][A-Za-z0-9_-]*', caseSensitive: false),
-];
 
 String? _providerErrorDetail(String body) {
   final trimmed = body.trim();
@@ -370,23 +363,11 @@ String? _providerErrorMessage(Map<String, dynamic> response) {
   return message is String ? message : null;
 }
 
-String _sanitizeProviderError(String message) {
-  var sanitized = message.replaceAll(RegExp(r'\s+'), ' ').trim();
-  for (final pattern in _providerSecretPatterns) {
-    sanitized = sanitized.replaceAllMapped(
-      pattern,
-      (match) =>
-          '${match.groupCount > 0 ? match.group(1) ?? '' : ''}[REDACTED]',
-    );
-  }
+String sanitizeProviderErrorDetail(String message) =>
+    _sanitizeProviderError(message);
 
-  if (sanitized.length <= _maxProviderErrorLength) return sanitized;
-
-  const prefixLength =
-      _maxProviderErrorLength - _providerErrorTruncationSuffix.length;
-  final prefix = sanitized.substring(0, prefixLength);
-  return '$prefix$_providerErrorTruncationSuffix';
-}
+String _sanitizeProviderError(String message) =>
+    error_sanitizer.sanitizeProviderErrorDetail(message);
 
 List<Map<String, dynamic>> _messageToJson(Message message) {
   if (message.role == Role.tool) {

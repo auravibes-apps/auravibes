@@ -300,8 +300,8 @@ class const _AuraSidebarItem({
 
 class _AuraSidebarItemButton extends StatelessWidget {
   new({
-    required AuraNavigationData item,
-    required bool isExpanded,
+    required this.item,
+    required this.isExpanded,
     required VoidCallback onTap,
     required bool selected,
     required AuraColorScheme colors,
@@ -331,10 +331,19 @@ class _AuraSidebarItemButton extends StatelessWidget {
          selected: selected,
        );
 
+  final AuraNavigationData item;
+  final bool isExpanded;
   final Widget _child;
 
   @override
-  Widget build(BuildContext context) => _child;
+  Widget build(BuildContext context) {
+    final semanticLabel = item.semanticLabel;
+    if (isExpanded || semanticLabel == null || semanticLabel.isEmpty) {
+      return _child;
+    }
+
+    return AuraTooltip(message: semanticLabel, child: _child);
+  }
 }
 
 class const _AuraSidebarItemContent({

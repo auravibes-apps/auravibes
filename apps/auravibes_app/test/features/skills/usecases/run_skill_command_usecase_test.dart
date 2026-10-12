@@ -1,3 +1,4 @@
+import 'package:async/async.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
@@ -76,6 +77,7 @@ void main() {
 
     final result = await usecase.call((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       commandName: activateSkillToolName,
       arguments: const {'slug': 'a2ui', 'revision': 'a2ui-r1'},
@@ -129,6 +131,7 @@ void main() {
 
     final result = await usecase.call((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       commandName: loadSkillResourceToolName,
       arguments: const {'skill': 'a2ui', 'resource': 'a2ui-core'},
@@ -173,6 +176,7 @@ void main() {
     await expectLater(
       usecase.call((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         commandName: loadSkillResourceToolName,
         arguments: const {'skill': 'a2ui', 'resource': 'a2ui-core'},
@@ -240,6 +244,7 @@ void main() {
 
     final result = await usecase.call((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       commandName: activateSkillToolName,
       arguments: const {'slug': 'research', 'revision': 'r1'},
@@ -296,6 +301,7 @@ void main() {
 
     final result = await usecase.call((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       commandName: loadSkillResourceToolName,
       arguments: const {'skill': 'research', 'resource': 'refund_policy'},
@@ -352,6 +358,7 @@ void main() {
     await expectLater(
       usecase.call((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         commandName: activateSkillToolName,
         arguments: const {'slug': 'research', 'revision': 'r1'},
@@ -395,6 +402,7 @@ void main() {
       await expectLater(
         usecase.call((
           conversationId: 'conversation-1',
+          toolCallId: 'call-1',
           workspaceId: 'workspace-1',
           commandName: activateSkillToolName,
           arguments: const {'slug': 'research', 'revision': 'stale'},
@@ -426,6 +434,7 @@ void main() {
     await expectLater(
       usecase.call((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         commandName: callSkillToolName,
         arguments: const {
@@ -497,6 +506,7 @@ void main() {
 
       final result = await usecase.call((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         commandName: callSkillToolName,
         arguments: {
@@ -567,6 +577,7 @@ void main() {
 
     final result = await usecase.call((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       commandName: callSkillToolName,
       arguments: const <String, Object?>{
@@ -754,6 +765,21 @@ class _TemplateRunner({final Map<String, int>? result})
 
     return result;
   }
+
+  @override
+  CancelableOperation<Object?> callCancelable({
+    required String workspaceId,
+    required String skillSlug,
+    required String toolSlug,
+    required Map<String, dynamic> arguments,
+  }) => CancelableOperation.fromFuture(
+    call(
+      workspaceId: workspaceId,
+      skillSlug: skillSlug,
+      toolSlug: toolSlug,
+      arguments: arguments,
+    ),
+  );
 }
 
 class _NativeRunner implements RunAppSkillToolUsecase {

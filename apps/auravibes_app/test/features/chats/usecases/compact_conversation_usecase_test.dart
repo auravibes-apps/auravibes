@@ -33,6 +33,8 @@ import 'package:genkit/genkit.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
+import 'compaction_context_fixture.dart';
+
 class MockMessageRepository extends Mock implements MessageRepository;
 
 class MockConversationRepository extends Mock implements ConversationRepository;
@@ -747,39 +749,26 @@ void main() {
     });
 
     test(
-      'preserves tool calls and resolved tool results in compaction prompt',
+      'sends required context through the fork boundary with tool pairs intact',
       () async {
-        final messages = [
-          _makeMessage(content: 'Need weather for Bogota'),
-          _makeMessage(
-            id: 'msg-2',
-            isUser: false,
-            content: '',
-            metadata: const MessageMetadataEntity(
-              toolCalls: [
-                MessageToolCallEntity(
-                  id: 'tool-1',
-                  name: 'weather_lookup',
-                  argumentsRaw: '{"city":"Bogota"}',
-                  responseRaw: '{"temperature":"18C"}',
-                  resultStatus: .success,
-                ),
-              ],
-            ),
-          ),
-          _makeMessage(id: 'msg-3', content: 'Summarize it'),
-          _makeMessage(id: 'msg-4', isUser: false, content: 'Done'),
-        ];
+        final transcript = CompactionContextFixture();
 
-        when(() => fixture.mockConversationRepo.getConversationById('conv-1'))
-            .thenAnswer((_) async => _makeConversation());
+        when(
+          () => fixture.mockConversationRepo.getConversationById('fork-conv'),
+        ).thenAnswer(
+          (_) async => _makeConversation(
+            forkSourceConversationId: 'source-conv',
+            forkThroughMessageId: transcript.forkThroughMessageId,
+          ).copyWith(id: 'fork-conv'),
+        );
         when(
           () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
             'model-1',
           ),
         ).thenAnswer((_) async => _makeModelSelection());
-        when(() => fixture.mockMessageRepo.getMessagesByConversation('conv-1'))
-            .thenAnswer((_) async => messages);
+        when(
+          () => fixture.mockMessageRepo.getMessagesByConversation('fork-conv'),
+        ).thenAnswer((_) async => transcript.messages);
         when(() => fixture.mockChatbotService.sendMessage(any(), any()))
             .thenAnswer(
               (_) => Stream.value(
@@ -791,7 +780,7 @@ void main() {
             );
 
         final _ = await fixture.usecase(
-          conversationId: 'conv-1',
+          conversationId: 'fork-conv',
           trigger: CompactionTrigger.manual,
         );
 
@@ -803,44 +792,46 @@ void main() {
                   ),
                 ).captured.single
                 as List<ChatMessage>;
+        final capturedText = captured.map((message) => message.text).join('\n');
+        final selectedTranscriptIds = captured
+            .map((message) => message.metadata['transcriptMessageId'])
+            .whereType<String>()
+            .toList();
 
-        final userMessage = captured
-            .where((message) => message.text == 'Need weather for Bogota')
-            .firstOrNull;
-        final toolCallMessage = captured
-            .where(
-              (message) => message.toolCalls.any(
-                (toolCall) => toolCall.toolName == 'weather_lookup',
-              ),
-            )
-            .firstOrNull;
-        final toolResultMessage = captured
-            .where(
-              (message) => message.parts.whereType<ToolResponsePart>().any(
-                (part) => part.toolResponse.output == '{"temperature":"18C"}',
-              ),
-            )
-            .firstOrNull;
+        expect(capturedText, contains(compactionUserConstraint));
+        expect(capturedText, contains(compactionPriorDecision));
+        expect(capturedText, contains(compactionPendingTask));
+        expect(capturedText, contains(compactionForkBoundary));
+        expect(capturedText, isNot(contains(compactionAfterForkBoundary)));
+        expect(selectedTranscriptIds, [
+          'parent-01-constraint',
+          'parent-02-decision',
+          'parent-03-tool-exchange',
+          'parent-03-tool-exchange',
+          'parent-04-pending-task',
+          transcript.forkThroughMessageId,
+          'child-01-continuation',
+          'child-02-decision',
+        ]);
 
-        expect(userMessage?.role, ChatMessageRole.user);
-        expect(toolCallMessage?.role, ChatMessageRole.model);
-        expect(toolCallMessage?.toolCalls, hasLength(1));
-        expect(
-          toolCallMessage?.toolCalls.firstOrNull?.toolName,
-          'weather_lookup',
+        final toolCallIndex = captured.indexWhere(
+          (message) => message.toolCalls.any(
+            (toolCall) => toolCall.toolName == 'schema_lookup',
+          ),
         );
-        expect(toolResultMessage?.role, ChatMessageRole.tool);
+        final toolResultIndex = captured.indexWhere(
+          (message) => message.parts.whereType<ToolResponsePart>().any(
+            (part) => part.toolResponse.output == compactionToolResult,
+          ),
+        );
+        expect(toolCallIndex, greaterThanOrEqualTo(0));
+        expect(toolResultIndex, toolCallIndex + 1);
+        expect(captured[toolCallIndex].role, ChatMessageRole.model);
+        expect(captured[toolCallIndex].toolCalls, hasLength(1));
+        expect(captured[toolResultIndex].role, ChatMessageRole.tool);
         expect(
-          toolResultMessage?.parts.whereType<ToolResponsePart>(),
+          captured[toolResultIndex].parts.whereType<ToolResponsePart>(),
           hasLength(1),
-        );
-        expect(
-          toolResultMessage?.parts
-              .whereType<ToolResponsePart>()
-              .firstOrNull
-              ?.toolResponse
-              .output,
-          '{"temperature":"18C"}',
         );
       },
     );
@@ -922,7 +913,11 @@ void main() {
   });
 }
 
-ConversationEntity _makeConversation({String? modelId = 'model-1'}) {
+ConversationEntity _makeConversation({
+  String? modelId = 'model-1',
+  String? forkSourceConversationId,
+  String? forkThroughMessageId,
+}) {
   return ConversationEntity(
     id: 'conv-1',
     title: 'Test',
@@ -931,6 +926,8 @@ ConversationEntity _makeConversation({String? modelId = 'model-1'}) {
     createdAt: .new(2026),
     updatedAt: .new(2026),
     modelId: modelId,
+    forkSourceConversationId: forkSourceConversationId,
+    forkThroughMessageId: forkThroughMessageId,
   );
 }
 

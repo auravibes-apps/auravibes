@@ -19,6 +19,7 @@ void main() {
       isPinned: false,
       createdAt: now,
       updatedAt: now,
+      revision: 17,
       activeCompactionCheckpointId: 'summary-2',
     );
     final messages = [
@@ -52,6 +53,12 @@ void main() {
     final history = await container.read(historyProvider.future);
 
     expect(history.activeCheckpointId, 'summary-2');
+    expect(history.conversationRevision, 17);
+    expect(history.messages.map((message) => message.id), [
+      'summary-2',
+      'summary-1',
+      'unsent-summary',
+    ]);
     expect(history.summaries.map((message) => message.id), [
       'summary-1',
       'summary-2',

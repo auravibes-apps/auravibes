@@ -28,6 +28,12 @@ void main() {
       final semantics = tester.ensureSemantics();
       try {
         final menu = find.byIcon(Icons.menu);
+        final selector = find.bySemanticsIdentifier('app_drawer_menu');
+        expect(
+          find.byKey(const ValueKey<String>('app_drawer_menu')),
+          findsOneWidget,
+        );
+        expect(selector, findsOneWidget);
         expect(find.byTooltip(label), findsOneWidget);
         expect(tester.getSemantics(menu).label, label);
       } finally {

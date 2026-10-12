@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/features/markdown/widgets/empty_markdown_preview.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_list_input_formatter.dart';
+import 'package:auravibes_app/features/markdown/widgets/markdown_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
@@ -237,7 +238,7 @@ class const _MarkdownEditorPreview({
               ? const EmptyMarkdownPreview(
                   label: LocaleKeys.markdown_editor_empty,
                 )
-              : GptMarkdown(text),
+              : MarkdownPreview(text: text),
         ),
       ],
     );
