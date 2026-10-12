@@ -5,7 +5,6 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 const double _backgroundWorkListPadding = 12;
@@ -21,7 +20,7 @@ const int _maximumElapsedSeconds = 999999;
 const int _secondsPerMinute = 60;
 const int _minutesPerHour = 60;
 const int _ellipsisCodePoint = 0x2026;
-const Duration _elapsedTimeRefreshInterval = Duration(seconds: 1);
+const Duration _elapsedTimeRefreshInterval = .new(seconds: 1);
 
 class const BackgroundWorkListView({
   required final List<AgentBackgroundWork> works,
