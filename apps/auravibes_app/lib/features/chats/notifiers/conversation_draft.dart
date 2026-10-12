@@ -1,11 +1,14 @@
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:riverpod/misc.dart' show KeepAliveLink;
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_draft.g.dart';
 
-@Riverpod(keepAlive: true)
+@riverpod
 class ConversationDraft extends _$ConversationDraft {
+  KeepAliveLink? _keepAliveLink;
+
   @override
   ChatDraft? build(String workspaceId, String conversationId) {
     final registry = ref.watch(conversationDraftRegistryProvider);
@@ -17,9 +20,22 @@ class ConversationDraft extends _$ConversationDraft {
     return null;
   }
 
-  void save(ChatDraft draft) => state = draft.isEmpty ? null : draft;
+  void save(ChatDraft draft) {
+    if (draft.isEmpty) {
+      clear();
 
-  void clear() => state = null;
+      return;
+    }
+
+    _keepAliveLink ??= ref.keepAlive();
+    state = draft;
+  }
+
+  void clear() {
+    state = null;
+    _keepAliveLink?.close();
+    _keepAliveLink = null;
+  }
 
   ChatDraft? take() {
     final draft = state;
