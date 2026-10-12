@@ -1545,6 +1545,78 @@ abstract class LocaleKeys {
   static const more_screen_skills_subtitle = 'more_screen.skills.subtitle';
   static const more_screen_agents_title = 'more_screen.agents.title';
   static const more_screen_agents_subtitle = 'more_screen.agents.subtitle';
+  static const more_screen_workflows_title = 'more_screen.workflows.title';
+  static const more_screen_workflows_subtitle =
+      'more_screen.workflows.subtitle';
+  static const workflows_screen_title = 'workflows_screen.title';
+  static const workflows_screen_create = 'workflows_screen.create';
+  static const workflows_screen_empty_title = 'workflows_screen.empty_title';
+  static const workflows_screen_empty_subtitle =
+      'workflows_screen.empty_subtitle';
+  static const workflows_screen_load_error = 'workflows_screen.load_error';
+  static const workflows_screen_summary = 'workflows_screen.summary';
+  static const workflow_editor_title = 'workflow_editor.title';
+  static const workflow_editor_new_title = 'workflow_editor.new_title';
+  static const workflow_editor_name = 'workflow_editor.name';
+  static const workflow_editor_description = 'workflow_editor.description';
+  static const workflow_editor_save = 'workflow_editor.save';
+  static const workflow_editor_save_success = 'workflow_editor.save_success';
+  static const workflow_editor_save_error = 'workflow_editor.save_error';
+  static const workflow_editor_validation_error =
+      'workflow_editor.validation_error';
+  static const workflow_editor_not_found = 'workflow_editor.not_found';
+  static const workflow_editor_load_error = 'workflow_editor.load_error';
+  static const workflow_editor_retry = 'workflow_editor.retry';
+  static const workflow_editor_back_to_list = 'workflow_editor.back_to_list';
+  static const workflow_editor_add_node = 'workflow_editor.add_node';
+  static const workflow_editor_add_input = 'workflow_editor.add_input';
+  static const workflow_editor_add_output = 'workflow_editor.add_output';
+  static const workflow_editor_inputs = 'workflow_editor.inputs';
+  static const workflow_editor_outputs = 'workflow_editor.outputs';
+  static const workflow_editor_signature = 'workflow_editor.signature';
+  static const workflow_editor_system_tool = 'workflow_editor.system_tool';
+  static const workflow_editor_agent = 'workflow_editor.agent';
+  static const workflow_editor_skill = 'workflow_editor.skill';
+  static const workflow_editor_workflow = 'workflow_editor.workflow';
+  static const workflow_editor_available_tools =
+      'workflow_editor.available_tools';
+  static const workflow_editor_available_agents =
+      'workflow_editor.available_agents';
+  static const workflow_editor_available_skills =
+      'workflow_editor.available_skills';
+  static const workflow_editor_available_workflows =
+      'workflow_editor.available_workflows';
+  static const workflow_editor_empty_group = 'workflow_editor.empty_group';
+  static const workflow_editor_node_label = 'workflow_editor.node_label';
+  static const workflow_editor_input = 'workflow_editor.input';
+  static const workflow_editor_output = 'workflow_editor.output';
+  static const workflow_editor_result = 'workflow_editor.result';
+  static const workflow_editor_connection_hint =
+      'workflow_editor.connection_hint';
+  static const workflow_editor_connection_label =
+      'workflow_editor.connection_label';
+  static const workflow_editor_connections = 'workflow_editor.connections';
+  static const workflow_editor_kind = 'workflow_editor.kind';
+  static const workflow_editor_port_name = 'workflow_editor.port_name';
+  static const workflow_editor_port_type = 'workflow_editor.port_type';
+  static const workflow_editor_add_port = 'workflow_editor.add_port';
+  static const workflow_editor_type_any = 'workflow_editor.type_any';
+  static const workflow_editor_type_string = 'workflow_editor.type_string';
+  static const workflow_editor_type_integer = 'workflow_editor.type_integer';
+  static const workflow_editor_type_number = 'workflow_editor.type_number';
+  static const workflow_editor_type_boolean = 'workflow_editor.type_boolean';
+  static const workflow_editor_type_object = 'workflow_editor.type_object';
+  static const workflow_editor_type_array = 'workflow_editor.type_array';
+  static const workflow_editor_required = 'workflow_editor.required';
+  static const workflow_editor_remove = 'workflow_editor.remove';
+  static const workflow_editor_delete_node = 'workflow_editor.delete_node';
+  static const workflow_editor_unsaved_title = 'workflow_editor.unsaved_title';
+  static const workflow_editor_unsaved_message =
+      'workflow_editor.unsaved_message';
+  static const workflow_editor_discard = 'workflow_editor.discard';
+  static const workflow_editor_continue = 'workflow_editor.continue';
+  static const workflow_editor_execution_notice =
+      'workflow_editor.execution_notice';
   static const sidebar_recent_chats = 'sidebar.recent_chats';
   static const sidebar_no_recent_chats = 'sidebar.no_recent_chats';
   static const sidebar_view_all_chats = 'sidebar.view_all_chats';

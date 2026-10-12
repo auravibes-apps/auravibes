@@ -54,6 +54,12 @@ const _moreTiles = [
     titleKey: LocaleKeys.more_screen_agents_title,
     subtitleKey: LocaleKeys.more_screen_agents_subtitle,
   ),
+  _MoreTileSpec(
+    kind: .workflows,
+    icon: Icons.account_tree_outlined,
+    titleKey: LocaleKeys.more_screen_workflows_title,
+    subtitleKey: LocaleKeys.more_screen_workflows_subtitle,
+  ),
 ];
 
 /// A hub screen that groups all app management sections.
@@ -123,6 +129,7 @@ enum _MoreTileKind {
   tools,
   skills,
   agents,
+  workflows,
 }
 
 class const _MoreTileSpec({
@@ -140,6 +147,7 @@ class const _MoreTileSpec({
     .tools => '/workspaces/$workspaceId/more/tools',
     .skills => '/workspaces/$workspaceId/more/skills',
     .agents => '/workspaces/$workspaceId/more/agents',
+    .workflows => WorkflowsRoute(workspaceId: workspaceId).location,
   };
 }
 

@@ -1,0 +1,38 @@
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workflows/widgets/workflow_canvas.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('canvas bounds include distant nodes and their ports', () {
+    final workflow = WorkflowDefinition(
+      id: 'workflow-1',
+      workspaceId: 'workspace-1',
+      name: 'Workflow',
+      description: '',
+      inputs: const [],
+      outputs: const [],
+      nodes: [
+        const WorkflowNode(
+          id: 'node-1',
+          kind: .agent,
+          targetId: 'agent-1',
+          label: 'Agent',
+          x: 4000,
+          y: 8040,
+          outputs: const [
+            WorkflowPort(id: 'output-1', name: 'result', type: .any),
+            WorkflowPort(id: 'output-2', name: 'summary', type: .string),
+          ],
+        ),
+      ],
+      connections: const [],
+      createdAt: DateTime.utc(2026),
+      updatedAt: DateTime.utc(2026),
+    );
+
+    final size = workflowCanvasSizeFor(workflow);
+
+    expect(size.width, greaterThan(4000 + 260));
+    expect(size.height, greaterThan(8040 + 40 + 1 + 2 * 28));
+  });
+}

@@ -20,6 +20,7 @@ import 'package:auravibes_app/data/database/drift/daos/skill_resources_dao.dart'
 import 'package:auravibes_app/data/database/drift/daos/skill_template_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/workflows_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
@@ -46,6 +47,7 @@ import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.da
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
+import 'package:auravibes_app/data/database/drift/tables/workflows.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
@@ -68,6 +70,7 @@ export 'daos/model_connections_dao.dart';
 export 'daos/model_usage_records_dao.dart';
 export 'daos/recent_model_selections_dao.dart';
 export 'daos/skill_credentials_dao.dart';
+export 'daos/workflows_dao.dart';
 export 'daos/workspace_compaction_settings_dao.dart';
 export 'daos/workspace_dao.dart';
 export 'daos/workspace_tools_dao.dart';
@@ -105,6 +108,7 @@ part 'app_database.g.dart';
     RecentModelSelections,
     ModelUsageRecords,
     BackgroundWorks,
+    Workflows,
   ],
   daos: [
     WorkspaceDao,
@@ -131,6 +135,7 @@ part 'app_database.g.dart';
     AppSkillWorkspaceSettingsDao,
     RecentModelSelectionsDao,
     ModelUsageRecordsDao,
+    WorkflowsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -173,7 +178,8 @@ class AppDatabase extends _$AppDatabase {
       _mcpTestSummarySchemaVersion + 1;
   static const int _backgroundWorkSchemaVersion =
       _toolSamplingPolicySchemaVersion + 1;
-  static const int _currentSchemaVersion = _backgroundWorkSchemaVersion;
+  static const int _workflowSchemaVersion = _backgroundWorkSchemaVersion + 1;
+  static const int _currentSchemaVersion = _workflowSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -218,6 +224,7 @@ extension on AppDatabase {
     await _runSkillUpgrades(m, from);
     await _upgradeModelCapabilitiesSchema(m);
     await _upgradeModelUsageSchema(m);
+    await _upgradeWorkflowSchema(m, from);
   }
 
   Future<void> _upgradeModelUsageSchema(Migrator m) async {
@@ -228,6 +235,14 @@ extension on AppDatabase {
     if (!await _tableExists('model_usage_records')) {
       await m.createTable(modelUsageRecords);
     }
+  }
+
+  Future<void> _upgradeWorkflowSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._workflowSchemaVersion ||
+        await _tableExists('workflows')) {
+      return;
+    }
+    await m.createTable(workflows);
   }
 
   Future<void> _upgradeModelCapabilitiesSchema(Migrator m) async {

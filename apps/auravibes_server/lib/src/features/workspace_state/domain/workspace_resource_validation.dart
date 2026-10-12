@@ -12,6 +12,7 @@ class WorkspaceResourceValidation {
   static const _maxJsonDepth = 16;
   static const _maxCollectionEntries = 100;
   static const _maxStringLength = 16 * 1024;
+  static const _maxWorkflowNodePosition = 10000;
 
   static const dedicatedKinds = {
     WorkspaceResourceKind.conversation,
@@ -66,6 +67,11 @@ class WorkspaceResourceValidation {
     WorkspaceResourceKind kind,
     Map<String, Object?> data,
   ) {
+    if (kind == WorkspaceResourceKind.workflow) {
+      _validateWorkflow(data);
+
+      return;
+    }
     if (kind != WorkspaceResourceKind.agent) return;
 
     final name = data['name'];
@@ -84,6 +90,203 @@ class WorkspaceResourceValidation {
         (isEnabled != null && isEnabled is! bool)) {
       throw const FormatException();
     }
+  }
+
+  static void _validateWorkflow(Map<String, Object?> data) {
+    final name = data['name'];
+    final description = data['description'];
+    final definition = data['definition'];
+    if (name is! String ||
+        name.trim().isEmpty ||
+        description is! String ||
+        definition is! Map<String, Object?> ||
+        definition['version'] != 1) {
+      throw const FormatException();
+    }
+    final inputs = _validateWorkflowPorts(definition['inputs']);
+    final outputs = _validateWorkflowPorts(definition['outputs']);
+    final rawNodes = definition['nodes'];
+    final rawConnections = definition['connections'];
+    if (rawNodes is! List<Object?> ||
+        rawNodes.length > 100 ||
+        rawConnections is! List<Object?> ||
+        rawConnections.length > _maxCollectionEntries) {
+      throw const FormatException();
+    }
+
+    final nodes = <String, Map<String, Object?>>{};
+    final edges = <String, Set<String>>{};
+    for (final value in rawNodes) {
+      if (value is! Map<String, Object?>) throw const FormatException();
+      final id = value['id'];
+      final kind = value['kind'];
+      final targetId = value['targetId'];
+      final label = value['label'];
+      final x = value['x'];
+      final y = value['y'];
+      if (id is! String ||
+          id.isEmpty ||
+          nodes.containsKey(id) ||
+          kind is! String ||
+          !const {'systemTool', 'agent', 'skill', 'workflow'}.contains(kind) ||
+          targetId is! String ||
+          targetId.isEmpty ||
+          label is! String ||
+          label.trim().isEmpty ||
+          x is! num ||
+          !x.isFinite ||
+          x < 0 ||
+          x > _maxWorkflowNodePosition ||
+          y is! num ||
+          !y.isFinite ||
+          y < 0 ||
+          y > _maxWorkflowNodePosition) {
+        throw const FormatException();
+      }
+      if (kind == 'skill' &&
+          !const {null, 'user', 'app'}.contains(value['targetSource'])) {
+        throw const FormatException();
+      }
+      _validateWorkflowPorts(value['inputs']);
+      _validateWorkflowPorts(value['outputs']);
+      nodes[id] = value;
+      edges[id] = <String>{};
+    }
+    final connectionIds =
+        <
+          ({
+            String? fromNodeId,
+            String fromPortId,
+            String? toNodeId,
+            String toPortId,
+          })
+        >{};
+    for (final value in rawConnections) {
+      if (value is! Map<String, Object?>) throw const FormatException();
+      final fromNodeId = value['fromNodeId'];
+      final fromPortId = value['fromPortId'];
+      final toNodeId = value['toNodeId'];
+      final toPortId = value['toPortId'];
+      if ((fromNodeId != null && fromNodeId is! String) ||
+          fromPortId is! String ||
+          (toNodeId != null && toNodeId is! String) ||
+          toPortId is! String ||
+          (fromNodeId == null && toNodeId == null)) {
+        throw const FormatException();
+      }
+      final connectionIdentity = (
+        fromNodeId: fromNodeId as String?,
+        fromPortId: fromPortId,
+        toNodeId: toNodeId as String?,
+        toPortId: toPortId,
+      );
+      if (!connectionIds.add(connectionIdentity)) {
+        throw const FormatException();
+      }
+      final source = fromNodeId == null ? null : nodes[fromNodeId];
+      final target = toNodeId == null ? null : nodes[toNodeId];
+      if ((fromNodeId != null && source == null) ||
+          (toNodeId != null && target == null) ||
+          (fromNodeId != null && fromNodeId == toNodeId)) {
+        throw const FormatException();
+      }
+      final sourcePort = source == null
+          ? _workflowPort(inputs, fromPortId)
+          : _workflowPort(source['outputs'], fromPortId);
+      final targetPort = target == null
+          ? _workflowPort(outputs, toPortId)
+          : _workflowPort(target['inputs'], toPortId);
+      if (sourcePort == null || targetPort == null) {
+        throw const FormatException();
+      }
+      final sourceType = sourcePort['type'];
+      final targetType = targetPort['type'];
+      if (sourceType != targetType &&
+          sourceType != 'any' &&
+          targetType != 'any') {
+        throw const FormatException();
+      }
+      if (source != null && target != null) {
+        edges[fromNodeId as String]!.add(toNodeId as String);
+      }
+    }
+    _rejectWorkflowCycles(edges);
+    if (inputs.length > 100 || outputs.length > 100) {
+      throw const FormatException();
+    }
+  }
+
+  static List<Map<String, Object?>> _validateWorkflowPorts(Object? value) {
+    if (value is! List<Object?> || value.length > 100) {
+      throw const FormatException();
+    }
+    final ids = <String>{};
+    final names = <String>{};
+    final ports = <Map<String, Object?>>[];
+    for (final item in value) {
+      if (item is! Map<String, Object?>) throw const FormatException();
+      final id = item['id'];
+      final name = item['name'];
+      final type = item['type'];
+      final isRequired = item['isRequired'];
+      if (id is! String ||
+          id.isEmpty ||
+          !ids.add(id) ||
+          name is! String ||
+          name.trim().isEmpty ||
+          !names.add(name.trim().toLowerCase()) ||
+          type is! String ||
+          !const {
+            'any',
+            'string',
+            'integer',
+            'number',
+            'boolean',
+            'object',
+            'array',
+          }.contains(type) ||
+          (isRequired != null && isRequired is! bool)) {
+        throw const FormatException();
+      }
+      ports.add(item);
+    }
+
+    return ports;
+  }
+
+  static Map<String, Object?>? _workflowPort(Object? ports, String id) {
+    if (ports is! List<Object?>) return null;
+    for (final port in ports) {
+      if (port is Map<String, Object?> && port['id'] == id) return port;
+    }
+
+    return null;
+  }
+
+  static void _rejectWorkflowCycles(Map<String, Set<String>> edges) {
+    final states = <String, int>{};
+    for (final node in edges.keys) {
+      if (_visitWorkflowNode(node, edges, states)) {
+        throw const FormatException();
+      }
+    }
+  }
+
+  static bool _visitWorkflowNode(
+    String id,
+    Map<String, Set<String>> edges,
+    Map<String, int> states,
+  ) {
+    final state = states[id] ?? 0;
+    if (state == 1) return true;
+    if (state == 2) return false;
+    states[id] = 1;
+    for (final next in edges[id] ?? const <String>{}) {
+      if (_visitWorkflowNode(next, edges, states)) return true;
+    }
+    states[id] = 2;
+
+    return false;
   }
 
   static void validateDataSize(String data) {
@@ -168,7 +371,8 @@ class WorkspaceResourceValidation {
       WorkspaceResourceKind.mcpServer ||
       WorkspaceResourceKind.skillDefinition ||
       WorkspaceResourceKind.compactionSetting ||
-      WorkspaceResourceKind.workspaceSetting => const {},
+      WorkspaceResourceKind.workspaceSetting ||
+      WorkspaceResourceKind.workflow => const {},
       WorkspaceResourceKind.conversation ||
       WorkspaceResourceKind.message ||
       WorkspaceResourceKind.attachment ||
@@ -197,6 +401,30 @@ class WorkspaceResourceValidation {
       if (value == null) continue;
       if (value is! String || value.isEmpty) throw const FormatException();
       references.add(WorkspaceResourceReference(targetKind, value));
+    }
+    if (kind == WorkspaceResourceKind.workflow) {
+      final definition = data['definition'];
+      if (definition is! Map<String, Object?> ||
+          definition['nodes'] is! List<Object?>) {
+        throw const FormatException();
+      }
+      for (final node in definition['nodes']! as List<Object?>) {
+        if (node is! Map<String, Object?>) throw const FormatException();
+        final kind = node['kind'];
+        if (kind == 'skill' && node['targetSource'] == 'app') continue;
+        final targetKind = switch (kind) {
+          'systemTool' => WorkspaceResourceKind.tool,
+          'agent' => WorkspaceResourceKind.agent,
+          'skill' => WorkspaceResourceKind.skill,
+          'workflow' => WorkspaceResourceKind.workflow,
+          _ => throw const FormatException(),
+        };
+        final targetId = node['targetId'];
+        if (targetId is! String || targetId.isEmpty) {
+          throw const FormatException();
+        }
+        references.add(WorkspaceResourceReference(targetKind, targetId));
+      }
     }
 
     return references;

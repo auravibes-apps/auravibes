@@ -45,6 +45,7 @@ const _requiredResourceFields = <WorkspaceResourceKind, Map<String, Type>>{
   .conversationSkillSelection: {'conversationId': String, 'skillId': String},
   .compactionSetting: {},
   .workspaceSetting: {},
+  .workflow: {'name': String, 'description': String, 'definition': Map},
 };
 
 abstract final class CloudResourceMapper {
@@ -159,6 +160,7 @@ bool _allowsEmptyValue(WorkspaceResourceKind kind, String field) {
   if (kind == WorkspaceResourceKind.skill) {
     return field == 'content' || field == 'description';
   }
+  if (kind == WorkspaceResourceKind.workflow) return field == 'description';
 
   return kind == WorkspaceResourceKind.agent && field == 'content';
 }
@@ -175,6 +177,12 @@ void _validateResourceSpecificFields(
   }
   if (kind == WorkspaceResourceKind.agentAssociation) {
     _validateAgentAssociation(data);
+  }
+  if (kind == WorkspaceResourceKind.workflow) {
+    final definition = data['definition'];
+    if (definition is! Map || definition['version'] != 1) {
+      throw const FormatException();
+    }
   }
 }
 

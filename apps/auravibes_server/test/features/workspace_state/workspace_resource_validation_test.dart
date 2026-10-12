@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_server/src/features/workspace_state/domain/workspace_resource_validation.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
@@ -50,6 +52,169 @@ void main() {
         throwsFormatException,
       );
     }
+  });
+
+  test('workflow resources validate typed workflow boundary connections', () {
+    final data = {
+      'name': 'Workflow',
+      'description': 'Composed workflow',
+      'definition': {
+        'version': 1,
+        'inputs': [
+          {'id': 'workflow-input', 'name': 'query', 'type': 'string'},
+        ],
+        'outputs': [
+          {'id': 'workflow-output', 'name': 'answer', 'type': 'string'},
+        ],
+        'nodes': [
+          {
+            'id': 'agent-node',
+            'kind': 'agent',
+            'targetId': 'agent-1',
+            'label': 'Agent',
+            'x': 300,
+            'y': 100,
+            'inputs': [
+              {'id': 'agent-input', 'name': 'prompt', 'type': 'string'},
+            ],
+            'outputs': [
+              {'id': 'agent-output', 'name': 'text', 'type': 'string'},
+            ],
+          },
+        ],
+        'connections': [
+          {
+            'fromNodeId': null,
+            'fromPortId': 'workflow-input',
+            'toNodeId': 'agent-node',
+            'toPortId': 'agent-input',
+          },
+          {
+            'fromNodeId': 'agent-node',
+            'fromPortId': 'agent-output',
+            'toNodeId': null,
+            'toPortId': 'workflow-output',
+          },
+        ],
+      },
+    };
+
+    expect(
+      WorkspaceResourceValidation.decode(
+        kind: WorkspaceResourceKind.workflow,
+        resourceId: 'workflow-1',
+        workspaceId: 1,
+        data: jsonEncode(data),
+      ),
+      containsPair('name', 'Workflow'),
+    );
+    final references = WorkspaceResourceValidation.references(
+      WorkspaceResourceKind.workflow,
+      data,
+    );
+    expect(
+      references.map((reference) => (reference.kind, reference.id)),
+      [(WorkspaceResourceKind.agent, 'agent-1')],
+    );
+  });
+
+  test('workflow resources reject node cycles and unknown references', () {
+    final data = {
+      'name': 'Workflow',
+      'description': '',
+      'definition': {
+        'version': 1,
+        'inputs': [],
+        'outputs': [],
+        'nodes': [
+          for (final id in ['one', 'two'])
+            {
+              'id': id,
+              'kind': 'agent',
+              'targetId': '$id-agent',
+              'label': id,
+              'x': 0,
+              'y': 0,
+              'inputs': [
+                {'id': '$id-input', 'name': 'input', 'type': 'any'},
+              ],
+              'outputs': [
+                {'id': '$id-output', 'name': 'output', 'type': 'any'},
+              ],
+            },
+        ],
+        'connections': [
+          {
+            'fromNodeId': 'one',
+            'fromPortId': 'one-output',
+            'toNodeId': 'two',
+            'toPortId': 'two-input',
+          },
+          {
+            'fromNodeId': 'two',
+            'fromPortId': 'two-output',
+            'toNodeId': 'one',
+            'toPortId': 'one-input',
+          },
+        ],
+      },
+    };
+
+    expect(
+      () => WorkspaceResourceValidation.decode(
+        kind: WorkspaceResourceKind.workflow,
+        resourceId: 'workflow-1',
+        workspaceId: 1,
+        data: jsonEncode(data),
+      ),
+      throwsFormatException,
+    );
+    expect(
+      () => WorkspaceResourceValidation.references(
+        WorkspaceResourceKind.workflow,
+        {
+          'name': 'Workflow',
+          'description': '',
+          'definition': {},
+        },
+      ),
+      throwsFormatException,
+    );
+  });
+
+  test('workflow resources reject node positions outside the canvas limit', () {
+    final data = {
+      'name': 'Workflow',
+      'description': '',
+      'definition': {
+        'version': 1,
+        'inputs': [],
+        'outputs': [],
+        'nodes': [
+          {
+            'id': 'node-1',
+            'kind': 'agent',
+            'targetId': 'agent-1',
+            'label': 'Agent',
+            'x': 10001,
+            'y': 0,
+            'inputs': [],
+            'outputs': [],
+          },
+        ],
+        'connections': [],
+      },
+    };
+
+    expect(
+      () => WorkspaceResourceValidation.decode(
+        kind: WorkspaceResourceKind.workflow,
+        resourceId: 'workflow-1',
+        workspaceId: 1,
+        data: jsonEncode(data),
+      ),
+      throwsFormatException,
+    );
   });
 
   test('rejects model metadata resources', () {
@@ -110,13 +275,10 @@ void main() {
       {'agentId': 'agent-1', 'skillId': 'skill-1'},
     );
 
-    expect(
-      references.map((reference) => (reference.kind, reference.id)),
-      [
-        (WorkspaceResourceKind.agent, 'agent-1'),
-        (WorkspaceResourceKind.skill, 'skill-1'),
-      ],
-    );
+    expect(references.map((reference) => (reference.kind, reference.id)), [
+      (WorkspaceResourceKind.agent, 'agent-1'),
+      (WorkspaceResourceKind.skill, 'skill-1'),
+    ]);
   });
 
   test('agent tool associations reference agent and tool', () {
@@ -129,29 +291,18 @@ void main() {
       },
     );
 
-    expect(
-      references.map((reference) => (reference.kind, reference.id)),
-      [
-        (WorkspaceResourceKind.agent, 'agent-1'),
-        (WorkspaceResourceKind.tool, 'tool-1'),
-      ],
-    );
+    expect(references.map((reference) => (reference.kind, reference.id)), [
+      (WorkspaceResourceKind.agent, 'agent-1'),
+      (WorkspaceResourceKind.tool, 'tool-1'),
+    ]);
   });
 
   test('agent associations require exactly one typed target', () {
     for (final data in [
       {'agentId': 'agent-1'},
       {'agentId': 'agent-1', 'toolId': 'tool-1'},
-      {
-        'agentId': 'agent-1',
-        'toolId': 'tool-1',
-        'permissionMode': 'invalid',
-      },
-      {
-        'agentId': 'agent-1',
-        'skillId': 'skill-1',
-        'toolId': 'tool-1',
-      },
+      {'agentId': 'agent-1', 'toolId': 'tool-1', 'permissionMode': 'invalid'},
+      {'agentId': 'agent-1', 'skillId': 'skill-1', 'toolId': 'tool-1'},
       {'toolId': 'tool-1'},
     ]) {
       expect(
@@ -235,6 +386,10 @@ void main() {
           WorkspaceResourceKind.agent =>
             '{"name":"Agent","description":"Description",'
                 '"content":"Prompt","visibility":"both"}',
+          WorkspaceResourceKind.workflow =>
+            '{"name":"Workflow","description":"",'
+                '"definition":{"version":1,"inputs":[],"outputs":[],'
+                '"nodes":[],"connections":[]}}',
           _ => '{}',
         },
       );

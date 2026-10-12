@@ -1,0 +1,336 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'workflow_providers.dart';
+
+// **************************************************************************
+// RiverpodGenerator
+// **************************************************************************
+
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+@ProviderFor(workflowRepository)
+final workflowRepositoryProvider = WorkflowRepositoryFamily._();
+
+final class WorkflowRepositoryProvider
+    extends
+        $FunctionalProvider<
+          WorkflowRepository,
+          WorkflowRepository,
+          WorkflowRepository
+        >
+    with $Provider<WorkflowRepository> {
+  WorkflowRepositoryProvider._({
+    required WorkflowRepositoryFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'workflowRepositoryProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$workflowRepositoryHash();
+
+  @override
+  String toString() {
+    return r'workflowRepositoryProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $ProviderElement<WorkflowRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  WorkflowRepository create(Ref ref) {
+    final argument = this.argument as String;
+    return workflowRepository(ref, argument);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(WorkflowRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<WorkflowRepository>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkflowRepositoryProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$workflowRepositoryHash() =>
+    r'e430d264828ba4b72546b09894f7b99daf4da05a';
+
+final class WorkflowRepositoryFamily extends $Family
+    with $FunctionalFamilyOverride<WorkflowRepository, String> {
+  WorkflowRepositoryFamily._()
+    : super(
+        retry: null,
+        name: r'workflowRepositoryProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkflowRepositoryProvider call(String workspaceId) =>
+      WorkflowRepositoryProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'workflowRepositoryProvider';
+}
+
+@ProviderFor(workflows)
+final workflowsProvider = WorkflowsFamily._();
+
+final class WorkflowsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<WorkflowDefinition>>,
+          List<WorkflowDefinition>,
+          Stream<List<WorkflowDefinition>>
+        >
+    with
+        $FutureModifier<List<WorkflowDefinition>>,
+        $StreamProvider<List<WorkflowDefinition>> {
+  WorkflowsProvider._({
+    required WorkflowsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'workflowsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$workflowsHash();
+
+  @override
+  String toString() {
+    return r'workflowsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<WorkflowDefinition>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<WorkflowDefinition>> create(Ref ref) {
+    final argument = this.argument as String;
+    return workflows(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkflowsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$workflowsHash() => r'295b360b662e7f00df93464e750794601ba7d4cc';
+
+final class WorkflowsFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<WorkflowDefinition>>, String> {
+  WorkflowsFamily._()
+    : super(
+        retry: null,
+        name: r'workflowsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkflowsProvider call(String workspaceId) =>
+      WorkflowsProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'workflowsProvider';
+}
+
+@ProviderFor(workflow)
+final workflowProvider = WorkflowFamily._();
+
+final class WorkflowProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<WorkflowDefinition?>,
+          WorkflowDefinition?,
+          FutureOr<WorkflowDefinition?>
+        >
+    with
+        $FutureModifier<WorkflowDefinition?>,
+        $FutureProvider<WorkflowDefinition?> {
+  WorkflowProvider._({
+    required WorkflowFamily super.from,
+    required (String, String) super.argument,
+  }) : super(
+         retry: null,
+         name: r'workflowProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$workflowHash();
+
+  @override
+  String toString() {
+    return r'workflowProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<WorkflowDefinition?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<WorkflowDefinition?> create(Ref ref) {
+    final argument = this.argument as (String, String);
+    return workflow(ref, argument.$1, argument.$2);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkflowProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$workflowHash() => r'ac009c6ca29ddfe205813e8e723072decca311fa';
+
+final class WorkflowFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<WorkflowDefinition?>,
+          (String, String)
+        > {
+  WorkflowFamily._()
+    : super(
+        retry: null,
+        name: r'workflowProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkflowProvider call(String workspaceId, String workflowId) =>
+      WorkflowProvider._(argument: (workspaceId, workflowId), from: this);
+
+  @override
+  String toString() => r'workflowProvider';
+}
+
+@ProviderFor(saveWorkflowUsecase)
+final saveWorkflowUsecaseProvider = SaveWorkflowUsecaseFamily._();
+
+final class SaveWorkflowUsecaseProvider
+    extends
+        $FunctionalProvider<
+          SaveWorkflowUsecase,
+          SaveWorkflowUsecase,
+          SaveWorkflowUsecase
+        >
+    with $Provider<SaveWorkflowUsecase> {
+  SaveWorkflowUsecaseProvider._({
+    required SaveWorkflowUsecaseFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'saveWorkflowUsecaseProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$saveWorkflowUsecaseHash();
+
+  @override
+  String toString() {
+    return r'saveWorkflowUsecaseProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $ProviderElement<SaveWorkflowUsecase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SaveWorkflowUsecase create(Ref ref) {
+    final argument = this.argument as String;
+    return saveWorkflowUsecase(ref, argument);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SaveWorkflowUsecase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SaveWorkflowUsecase>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SaveWorkflowUsecaseProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$saveWorkflowUsecaseHash() =>
+    r'838b1f1633e1a0e0c761fa70088f937dda369d8a';
+
+final class SaveWorkflowUsecaseFamily extends $Family
+    with $FunctionalFamilyOverride<SaveWorkflowUsecase, String> {
+  SaveWorkflowUsecaseFamily._()
+    : super(
+        retry: null,
+        name: r'saveWorkflowUsecaseProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  SaveWorkflowUsecaseProvider call(String workspaceId) =>
+      SaveWorkflowUsecaseProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'saveWorkflowUsecaseProvider';
+}
