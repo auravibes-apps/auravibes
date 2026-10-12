@@ -487,6 +487,16 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.bulk_archive_export';
   static const chats_screens_chats_list_archive_imported_many =
       'chats_screens.chats_list.archive_imported_many';
+  static const chats_screens_chats_list_archive_incomplete_title =
+      'chats_screens.chats_list.archive_incomplete_title';
+  static const chats_screens_chats_list_archive_incomplete_description =
+      'chats_screens.chats_list.archive_incomplete_description';
+  static const chats_screens_chats_list_archive_incomplete_affected =
+      'chats_screens.chats_list.archive_incomplete_affected';
+  static const chats_screens_chats_list_archive_import_cancel =
+      'chats_screens.chats_list.archive_import_cancel';
+  static const chats_screens_chats_list_archive_import_continue =
+      'chats_screens.chats_list.archive_import_continue';
   static const chats_screens_chats_list_bulk_delete_title =
       'chats_screens.chats_list.bulk_delete_title';
   static const chats_screens_chats_list_bulk_delete_confirm =
@@ -513,6 +523,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.archive_unsupported_version';
   static const chats_screens_chat_conversation_archive_error =
       'chats_screens.chat_conversation.archive_error';
+  static const chats_screens_chat_conversation_context_incomplete_title =
+      'chats_screens.chat_conversation.context_incomplete_title';
+  static const chats_screens_chat_conversation_context_incomplete_description =
+      'chats_screens.chat_conversation.context_incomplete_description';
   static const chats_screens_chat_conversation_reasoning_title =
       'chats_screens.chat_conversation.reasoning.title';
   static const chats_screens_chat_conversation_reasoning_enabled =

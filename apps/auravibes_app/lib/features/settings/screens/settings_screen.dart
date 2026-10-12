@@ -186,16 +186,13 @@ class const _ThemeResetButton({required final VoidCallback onPressed})
   @override
   Widget build(BuildContext _) => Align(
     alignment: .centerRight,
-    child: Semantics(
-      key: const ValueKey<String>('settings_theme_reset'),
-      child: AuraButton(
-        onPressed: onPressed,
-        child: const TextLocale(
-          LocaleKeys.settings_screen_actions_reset_defaults,
-        ),
-        variant: .ghost,
-        size: .small,
+    child: AuraButton(
+      onPressed: onPressed,
+      child: const TextLocale(
+        LocaleKeys.settings_screen_actions_reset_defaults,
       ),
+      variant: .ghost,
+      size: .small,
       identifier: 'settings_theme_reset',
     ),
   );
@@ -206,18 +203,15 @@ class const _ThemeTile({
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('settings_theme'),
-    child: AuraTile(
-      child: const AuraText(
-        child: TextLocale(LocaleKeys.settings_screen_theme_title),
-        style: .bodyLarge,
-      ),
-      onTap: onTap,
-      variant: .ghost,
-      leading: _ThemeTileIcon(color: context.auraColors.secondary),
-      trailing: _ThemeTileTrailing(theme: theme),
+  Widget build(BuildContext context) => AuraTile(
+    child: const AuraText(
+      child: TextLocale(LocaleKeys.settings_screen_theme_title),
+      style: .bodyLarge,
     ),
+    onTap: onTap,
+    variant: .ghost,
+    leading: _ThemeTileIcon(color: context.auraColors.secondary),
+    trailing: _ThemeTileTrailing(theme: theme),
     identifier: 'settings_theme',
   );
 }

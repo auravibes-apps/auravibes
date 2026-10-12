@@ -1043,14 +1043,11 @@ class const _NavButton({
   required final String selectorId,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: ValueKey<String>(selectorId),
-    child: AuraIconButton(
-      icon: icon,
-      onPressed: onPressed,
-      disabled: onPressed == null,
-      size: .small,
-    ),
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: icon,
+    onPressed: onPressed,
+    disabled: onPressed == null,
+    size: .small,
     identifier: selectorId,
   );
 }
@@ -1532,19 +1529,16 @@ class const _BatchApprovalAction({
         ? 'tool_approval_allow_all'
         : 'tool_approval_deny_all';
 
-    return Semantics(
-      key: ValueKey<String>(identifier),
-      child: AuraButton(
-        onPressed: onPressed,
-        child: TextLocale(
-          approved
-              ? LocaleKeys.tool_confirmation_allow_all
-              : LocaleKeys.tool_confirmation_deny_all,
-        ),
-        variant: .outlined,
-        tint: approved ? null : .error,
-        size: .small,
+    return AuraButton(
+      onPressed: onPressed,
+      child: TextLocale(
+        approved
+            ? LocaleKeys.tool_confirmation_allow_all
+            : LocaleKeys.tool_confirmation_deny_all,
       ),
+      variant: .outlined,
+      tint: approved ? null : .error,
+      size: .small,
       identifier: identifier,
     );
   }
@@ -1958,32 +1952,24 @@ class _AllowButtonChildren {
     required _ConfirmationActionHandler handler,
   }) : values = [
          Expanded(
-           child: Semantics(
-             key: const ValueKey<String>('tool_approval_allow_once'),
-             child: AuraButton(
-               onPressed: () =>
-                   unawaited(handler.allowOnce(ref, actionContext)),
-               child: const TextLocale(LocaleKeys.tool_confirmation_allow_once),
-               variant: .outlined,
-               size: .small,
-             ),
+           child: AuraButton(
+             onPressed: () => unawaited(handler.allowOnce(ref, actionContext)),
+             child: const TextLocale(LocaleKeys.tool_confirmation_allow_once),
+             variant: .outlined,
+             size: .small,
              identifier: 'tool_approval_allow_once',
            ),
          ),
          if (!handler._isCloudCall)
            Expanded(
-             child: Semantics(
-               key: const ValueKey<String>('tool_approval_allow_conversation'),
-               child: AuraButton(
-                 onPressed: () => unawaited(
-                   handler.allowForConversation(ref, actionContext),
-                 ),
-                 child: const TextLocale(
-                   LocaleKeys.tool_confirmation_allow_conversation,
-                 ),
-                 variant: .outlined,
-                 size: .small,
+             child: AuraButton(
+               onPressed: () =>
+                   unawaited(handler.allowForConversation(ref, actionContext)),
+               child: const TextLocale(
+                 LocaleKeys.tool_confirmation_allow_conversation,
                ),
+               variant: .outlined,
+               size: .small,
                identifier: 'tool_approval_allow_conversation',
              ),
            ),
@@ -2014,28 +2000,22 @@ class _DecisionButtonChildren {
     required _ConfirmationActionHandler handler,
   }) : values = [
          Expanded(
-           child: Semantics(
-             key: const ValueKey<String>('tool_approval_skip'),
-             child: AuraButton(
-               onPressed: () => unawaited(handler.skip(ref, actionContext)),
-               child: const TextLocale(LocaleKeys.tool_confirmation_skip),
-               variant: .outlined,
-               tint: .primary,
-               size: .small,
-             ),
+           child: AuraButton(
+             onPressed: () => unawaited(handler.skip(ref, actionContext)),
+             child: const TextLocale(LocaleKeys.tool_confirmation_skip),
+             variant: .outlined,
+             tint: .primary,
+             size: .small,
              identifier: 'tool_approval_skip',
            ),
          ),
          Expanded(
-           child: Semantics(
-             key: const ValueKey<String>('tool_approval_stop_all'),
-             child: AuraButton(
-               onPressed: () => unawaited(handler.stopAll(ref, actionContext)),
-               child: const TextLocale(LocaleKeys.tool_confirmation_stop_all),
-               variant: .outlined,
-               tint: .error,
-               size: .small,
-             ),
+           child: AuraButton(
+             onPressed: () => unawaited(handler.stopAll(ref, actionContext)),
+             child: const TextLocale(LocaleKeys.tool_confirmation_stop_all),
+             variant: .outlined,
+             tint: .error,
+             size: .small,
              identifier: 'tool_approval_stop_all',
            ),
          ),

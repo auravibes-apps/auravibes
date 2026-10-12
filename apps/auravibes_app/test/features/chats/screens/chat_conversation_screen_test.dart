@@ -21,6 +21,7 @@ import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
@@ -50,6 +51,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/src/framework.dart' show Override;
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -59,6 +61,12 @@ const _chatId = 'chat-1';
 final _busyRefreshProvider = NotifierProvider<_BusyRefreshNotifier, int>(
   _BusyRefreshNotifier.new,
 );
+
+Override _incompleteAgentContextOverride() =>
+    conversationArchiveIncompleteContextProvider((
+      workspaceId: _workspaceId,
+      conversationId: _chatId,
+    )).overrideWith((ref) => Stream.value(false));
 
 void main() {
   setUpAll(() {
@@ -628,6 +636,7 @@ void main() {
                         ),
                       ),
                   conversationSelectedProvider.overrideWithValue(_chatId),
+                  _incompleteAgentContextOverride(),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
                   ),
@@ -758,6 +767,7 @@ void main() {
                         ),
                       ),
                   conversationSelectedProvider.overrideWithValue(_chatId),
+                  _incompleteAgentContextOverride(),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
                   ),
@@ -851,6 +861,7 @@ void main() {
           ),
         ),
         conversationSelectedProvider.overrideWithValue(_chatId),
+        _incompleteAgentContextOverride(),
         conversationRepositoryProvider.overrideWithValue(
           _StubConversationRepository(),
         ),
@@ -1017,6 +1028,7 @@ void main() {
           ),
         ),
         conversationSelectedProvider.overrideWithValue(_chatId),
+        _incompleteAgentContextOverride(),
         conversationRepositoryProvider.overrideWithValue(
           _StubConversationRepository(),
         ),
@@ -1140,6 +1152,7 @@ void main() {
                         ),
                       ),
                   conversationSelectedProvider.overrideWithValue(_chatId),
+                  _incompleteAgentContextOverride(),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
                   ),

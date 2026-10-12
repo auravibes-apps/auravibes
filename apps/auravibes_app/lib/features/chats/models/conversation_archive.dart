@@ -46,6 +46,17 @@ class ConversationArchiveAgentContext({
   );
 }
 
+@freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
+abstract class ConversationArchiveImportPreview
+    with _$ConversationArchiveImportPreview {
+  const factory({
+    required String title,
+    required bool hasIncompleteAgentContext,
+  }) = _ConversationArchiveImportPreview;
+}
+
 class const ConversationArchiveAgentContextEntry({
   required final int? afterMessageIndex,
   required final DateTime createdAt,
@@ -207,6 +218,14 @@ abstract final class ConversationArchiveCodec {
 
     return _decodeArchiveBundle(root);
   }
+
+  static List<ConversationArchiveImportPreview> previewImport(String json) => [
+    for (final archive in decodeMany(json))
+      ConversationArchiveImportPreview(
+        title: archive.title,
+        hasIncompleteAgentContext: archive.agentContext?.isComplete == false,
+      ),
+  ];
 }
 
 List<Map<String, Object?>> _encodeArchives(List<ConversationArchive> archives) {
