@@ -1058,6 +1058,16 @@ bool _isIdentifierToken(_Token token) =>
 int? _expressionStart(List<_Token> tokens, int end) {
   if (end <= 0) return null;
   var start = end - 1;
+  final receiver = tokens[start];
+  if (receiver.value == ';' &&
+      !receiver.isString &&
+      receiver.start == receiver.end) {
+    for (var index = start - 1; index >= 0; index--) {
+      final token = tokens[index];
+      if (token.isString && token.end == receiver.start) return index;
+    }
+  }
+
   final value = tokens[start].value;
   if (value == ')') {
     final open = _matchingOpening(tokens, start, '(', ')');

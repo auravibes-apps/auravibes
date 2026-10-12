@@ -1816,7 +1816,7 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       DynamicTranslationSite(
         file: 'features/skills/widgets/conversation_skill_selector_modal.dart',
         method: 'TextLocale',
-        keyExpression: 'emptyKey',
+        keyExpression: 'emptyMessage',
       ),
       DynamicTranslationSite(
         file: 'features/skills/widgets/conversation_skill_selector_modal.dart',

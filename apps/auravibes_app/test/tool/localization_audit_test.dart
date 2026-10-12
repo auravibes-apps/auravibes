@@ -568,6 +568,25 @@ class TextLocale {
     );
   });
 
+  test(
+    'reports the full braced interpolation receiver for extension calls',
+    () {
+      File('${sourceDir.path}/screen.dart')
+          .writeAsStringSync(r'''final item = 'menu.${suffix}'.tr();''');
+
+      final issues = findDynamicTranslationIssues(
+        translationsDir: translationsDir,
+        sourceDir: sourceDir,
+        localeKeysFile: localeKeysFile,
+        registry: const [],
+      );
+
+      expect(issues, [
+        r'''screen.dart:1: unregistered dynamic tr key ('menu.${suffix}')''',
+      ]);
+    },
+  );
+
   test('checks registered dynamic family keys in every locale', () {
     File('${sourceDir.path}/screen.dart').writeAsStringSync('''
 // Line changes must not invalidate reviewed call sites.
