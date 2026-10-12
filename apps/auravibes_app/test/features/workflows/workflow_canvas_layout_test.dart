@@ -1,5 +1,5 @@
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
-import 'package:auravibes_app/features/workflows/widgets/workflow_canvas.dart';
+import 'package:auravibes_app/features/workflows/widgets/workflow_canvas_metrics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -30,7 +30,7 @@ void main() {
       updatedAt: .utc(2026),
     );
 
-    final size = workflowCanvasSizeFor(workflow);
+    final size = WorkflowCanvasLayout.sizeFor(workflow);
 
     expect(size.width, greaterThan(4000 + 260));
     expect(size.height, greaterThan(8040 + 40 + 1 + 2 * 28));

@@ -6,49 +6,67 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 
-class WorkflowSignatureEditor extends StatelessWidget {
-  const new({required this.workflow, required this.editor, super.key});
-
-  final WorkflowDefinition workflow;
-  final WorkflowEditorNotifier editor;
-
+class const WorkflowSignatureEditor({
+  required final WorkflowDefinition workflow,
+  required final WorkflowEditorNotifier editor,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .stretch,
     children: [
       const TextLocale(LocaleKeys.workflow_editor_signature),
       const SizedBox(height: 12),
-      WorkflowPortGroup(
-        titleKey: LocaleKeys.workflow_editor_inputs,
+      _WorkflowSignaturePorts(
         ports: workflow.inputs,
-        onAdd: () => editor.addWorkflowPort(
-          isInput: true,
-          name: LocaleKeys.workflow_editor_input.tr(context: context),
-        ),
-        onUpdate: (portId, port) => editor.updateWorkflowPort(
-          isInput: true,
-          portId: portId,
-          port: port,
-        ),
-        onRemove: (portId) =>
-            editor.removeWorkflowPort(isInput: true, portId: portId),
+        isInput: true,
+        editor: editor,
       ),
       const SizedBox(height: 16),
-      WorkflowPortGroup(
-        titleKey: LocaleKeys.workflow_editor_outputs,
+      _WorkflowSignaturePorts(
         ports: workflow.outputs,
-        onAdd: () => editor.addWorkflowPort(
-          isInput: false,
-          name: LocaleKeys.workflow_editor_output.tr(context: context),
-        ),
-        onUpdate: (portId, port) => editor.updateWorkflowPort(
-          isInput: false,
-          portId: portId,
-          port: port,
-        ),
-        onRemove: (portId) =>
-            editor.removeWorkflowPort(isInput: false, portId: portId),
+        isInput: false,
+        editor: editor,
       ),
     ],
   );
+}
+
+class const _WorkflowSignaturePorts({
+  required final List<WorkflowPort> ports,
+  required final bool isInput,
+  required final WorkflowEditorNotifier editor,
+}) extends StatelessWidget {
+  String get _titleKey => isInput
+      ? LocaleKeys.workflow_editor_inputs
+      : LocaleKeys.workflow_editor_outputs;
+
+  @override
+  Widget build(BuildContext context) => WorkflowPortGroup(
+    titleKey: _titleKey,
+    ports: ports,
+    onAdd: _addPort(context),
+    onUpdate: _updatePort,
+    onRemove: _removePort,
+  );
+
+  VoidCallback _addPort(BuildContext context) =>
+      () => editor.commands().ports.addWorkflow(
+        isInput: isInput,
+        name: _portName(context),
+      );
+
+  void _updatePort(String portId, WorkflowPort port) => editor
+      .commands()
+      .ports
+      .updateWorkflow(isInput: isInput, portId: portId, port: port);
+
+  void _removePort(String portId) =>
+      editor.commands().ports.removeWorkflow(isInput: isInput, portId: portId);
+
+  String _portName(BuildContext context) =>
+      (isInput
+              ? LocaleKeys.workflow_editor_input
+              : LocaleKeys.workflow_editor_output)
+          .tr(context: context);
 }

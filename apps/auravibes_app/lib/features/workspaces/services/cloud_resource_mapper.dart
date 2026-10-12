@@ -169,20 +169,44 @@ void _validateResourceSpecificFields(
   WorkspaceResourceKind kind,
   Map<String, dynamic> data,
 ) {
-  if (kind == WorkspaceResourceKind.agent) {
-    final _ = CloudResourceMapper.visibility(data['visibility']);
-  }
-  if (_requiresPermission(kind)) {
-    final _ = CloudResourceMapper.permission(data['permissionMode']);
-  }
-  if (kind == WorkspaceResourceKind.agentAssociation) {
-    _validateAgentAssociation(data);
-  }
-  if (kind == WorkspaceResourceKind.workflow) {
-    final definition = data['definition'];
-    if (definition is! Map || definition['version'] != 1) {
-      throw const FormatException();
-    }
+  _validateVisibility(kind, data);
+  _validatePermissionMode(kind, data);
+  _validateAssociation(kind, data);
+  _validateWorkflowDefinition(kind, data);
+}
+
+void _validateVisibility(
+  WorkspaceResourceKind kind,
+  Map<String, dynamic> data,
+) {
+  if (kind != WorkspaceResourceKind.agent) return;
+  final _ = CloudResourceMapper.visibility(data['visibility']);
+}
+
+void _validatePermissionMode(
+  WorkspaceResourceKind kind,
+  Map<String, dynamic> data,
+) {
+  if (!_requiresPermission(kind)) return;
+  final _ = CloudResourceMapper.permission(data['permissionMode']);
+}
+
+void _validateAssociation(
+  WorkspaceResourceKind kind,
+  Map<String, dynamic> data,
+) {
+  if (kind != WorkspaceResourceKind.agentAssociation) return;
+  _validateAgentAssociation(data);
+}
+
+void _validateWorkflowDefinition(
+  WorkspaceResourceKind kind,
+  Map<String, dynamic> data,
+) {
+  if (kind != WorkspaceResourceKind.workflow) return;
+  final definition = data['definition'];
+  if (definition is! Map || definition['version'] != 1) {
+    throw const FormatException();
   }
 }
 

@@ -7,37 +7,58 @@ import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_graph_validation.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_node_draft.dart';
 import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:uuid/v7.dart';
 
-typedef WorkflowNodeDraft = ({
+abstract final class WorkflowNodePicker {
+  static const _sheetHeightFactor = 0.82;
+
+  static Future<WorkflowNodeDraft?> show({
+    required BuildContext context,
+    required String workspaceId,
+    required String? currentWorkflowId,
+  }) => showModalBottomSheet<WorkflowNodeDraft>(
+    context: context,
+    builder: (context) => _WorkflowNodePicker(
+      workspaceId: workspaceId,
+      currentWorkflowId: currentWorkflowId,
+    ),
+    isScrollControlled: true,
+  );
+}
+
+typedef _WorkflowNodePickerItems = ({
+  List<WorkspaceToolEntity> tools,
+  List<AgentEntity> agents,
+  List<WorkspaceSkill> skills,
+  List<WorkflowDefinition> workflows,
+  bool isLoading,
+});
+
+typedef _WorkflowNodePickerSources = ({
+  AsyncValue<List<WorkspaceToolEntity>> tools,
+  AsyncValue<List<AgentEntity>> agents,
+  AsyncValue<List<WorkspaceSkill>> skills,
+  AsyncValue<List<WorkflowDefinition>> workflows,
+  String? currentWorkflowId,
+});
+
+typedef _WorkflowNodeDraftFields = ({
   WorkflowNodeKind kind,
   String targetId,
-  String? targetSource,
   String label,
+  String? targetSource,
   List<WorkflowPort>? inputs,
   List<WorkflowPort>? outputs,
 });
-
-Future<WorkflowNodeDraft?> showWorkflowNodePicker({
-  required BuildContext context,
-  required String workspaceId,
-  required String? currentWorkflowId,
-}) => showModalBottomSheet<WorkflowNodeDraft>(
-  context: context,
-  builder: (context) => _WorkflowNodePicker(
-    workspaceId: workspaceId,
-    currentWorkflowId: currentWorkflowId,
-  ),
-  isScrollControlled: true,
-);
 
 class const _WorkflowNodePicker({
   required final String workspaceId,
@@ -45,182 +66,305 @@ class const _WorkflowNodePicker({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final toolsState = ref.watch(workspaceToolsProvider(workspaceId));
-    final agentsState = ref.watch(agentsProvider(workspaceId));
-    final skillsState = ref.watch(workspaceSkillsProvider(workspaceId));
-    final workflowsState = ref.watch(workflowsProvider(workspaceId));
-    final tools = switch (toolsState) {
-      AsyncData(:final value) => value.where((tool) => tool.isEnabled).toList(),
-      AsyncLoading(:final value?) =>
-        value.where((tool) => tool.isEnabled).toList(),
-      AsyncLoading() || AsyncError() => const <WorkspaceToolEntity>[],
-    };
-    final agents = switch (agentsState) {
-      AsyncData(:final value) =>
-        value.where((agent) => agent.isEnabled).toList(),
-      AsyncLoading(:final value?) =>
-        value.where((agent) => agent.isEnabled).toList(),
-      AsyncLoading() || AsyncError() => const <AgentEntity>[],
-    };
-    final skills = switch (skillsState) {
-      AsyncData(:final value) =>
-        value.where((skill) => skill.isEnabled).toList(),
-      AsyncLoading(:final value?) =>
-        value.where((skill) => skill.isEnabled).toList(),
-      AsyncLoading() || AsyncError() => const <WorkspaceSkill>[],
-    };
-    final workflows = switch (workflowsState) {
-      AsyncData(:final value) =>
-        value
-            .where(
-              (workflow) =>
-                  !_workflowDependsOn(workflow, currentWorkflowId, value),
-            )
-            .toList(),
-      AsyncLoading(:final value?) =>
-        value
-            .where(
-              (workflow) =>
-                  !_workflowDependsOn(workflow, currentWorkflowId, value),
-            )
-            .toList(),
-      AsyncLoading() || AsyncError() => const <WorkflowDefinition>[],
-    };
-    final isLoading =
-        toolsState.isLoading ||
-        agentsState.isLoading ||
-        skillsState.isLoading ||
-        workflowsState.isLoading;
+    final catalog = WorkflowNodePickerCatalog.fromStates((
+      tools: ref.watch(workspaceToolsProvider(workspaceId)),
+      agents: ref.watch(agentsProvider(workspaceId)),
+      skills: ref.watch(workspaceSkillsProvider(workspaceId)),
+      workflows: ref.watch(workflowsProvider(workspaceId)),
+      currentWorkflowId: currentWorkflowId,
+    ));
 
-    return SafeArea(
-      child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.82,
-        child: Column(
-          crossAxisAlignment: .stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      LocaleKeys.workflow_editor_add_node.tr(context: context),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    tooltip: MaterialLocalizations.of(context)
-                        .closeButtonTooltip,
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-            ),
-            if (isLoading && tools.isEmpty && agents.isEmpty && skills.isEmpty)
-              const Expanded(child: Center(child: AuraSpinner()))
-            else
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-                  children: [
-                    _WorkflowLibrarySection(
-                      titleKey: LocaleKeys.workflow_editor_available_tools,
-                      isEmpty: tools.isEmpty,
-                      children: [
-                        for (final tool in tools)
-                          _WorkflowLibraryTile(
-                            title: tool.toolId,
-                            icon: Icons.build_outlined,
-                            onTap: () => _select(context, (
-                              kind: .systemTool,
-                              targetId: tool.id,
-                              targetSource: null,
-                              label: tool.toolId,
-                              inputs: _schemaPorts(
-                                tool.inputSchema,
-                                isInput: true,
-                              ),
-                              outputs: _schemaPorts(
-                                tool.outputSchemaJson,
-                                isInput: false,
-                              ),
-                            )),
-                            subtitle: tool.description,
-                          ),
-                      ],
-                    ),
-                    _WorkflowLibrarySection(
-                      titleKey: LocaleKeys.workflow_editor_available_agents,
-                      isEmpty: agents.isEmpty,
-                      children: [
-                        for (final agent in agents)
-                          _WorkflowLibraryTile(
-                            title: agent.name,
-                            icon: Icons.smart_toy_outlined,
-                            onTap: () => _select(context, (
-                              kind: .agent,
-                              targetId: agent.id,
-                              targetSource: null,
-                              label: agent.name,
-                              inputs: null,
-                              outputs: null,
-                            )),
-                            subtitle: agent.description,
-                          ),
-                      ],
-                    ),
-                    _WorkflowLibrarySection(
-                      titleKey: LocaleKeys.workflow_editor_available_skills,
-                      isEmpty: skills.isEmpty,
-                      children: [
-                        for (final skill in skills)
-                          _WorkflowLibraryTile(
-                            title: skill.title,
-                            icon: Icons.psychology_alt_outlined,
-                            onTap: () => _select(context, (
-                              kind: .skill,
-                              targetId: skill.id,
-                              targetSource: skill.source.name,
-                              label: skill.title,
-                              inputs: null,
-                              outputs: null,
-                            )),
-                            subtitle: skill.description,
-                          ),
-                      ],
-                    ),
-                    _WorkflowLibrarySection(
-                      titleKey: LocaleKeys.workflow_editor_available_workflows,
-                      isEmpty: workflows.isEmpty,
-                      children: [
-                        for (final workflow in workflows)
-                          _WorkflowLibraryTile(
-                            title: workflow.name,
-                            icon: Icons.account_tree_outlined,
-                            onTap: () => _select(context, (
-                              kind: .workflow,
-                              targetId: workflow.id,
-                              targetSource: null,
-                              label: workflow.name,
-                              inputs: _copyPorts(workflow.inputs),
-                              outputs: _copyPorts(workflow.outputs),
-                            )),
-                            subtitle: workflow.description,
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
+    return _WorkflowNodePickerContent(catalog: catalog);
+  }
+}
+
+abstract final class WorkflowNodePickerCatalog {
+  static _WorkflowNodePickerItems fromStates(
+    _WorkflowNodePickerSources sources,
+  ) {
+    final workflows = _values(sources.workflows, (_) => true);
+
+    return (
+      tools: _enabledTools(sources.tools),
+      agents: _enabledAgents(sources.agents),
+      skills: _enabledSkills(sources.skills),
+      workflows: _eligibleWorkflows(workflows, sources.currentWorkflowId),
+      isLoading: _anyLoading(sources),
     );
   }
 
-  void _select(BuildContext context, WorkflowNodeDraft draft) =>
-      Navigator.of(context).pop(draft);
+  static WorkflowNodeDraft draft(
+    BuildContext context,
+    _WorkflowNodeDraftFields fields,
+  ) => WorkflowNodeDraft(
+    kind: fields.kind,
+    targetId: fields.targetId,
+    label: fields.label,
+    defaultInputLabel: LocaleKeys.workflow_editor_input.tr(context: context),
+    defaultOutputLabel: LocaleKeys.workflow_editor_result.tr(context: context),
+    targetSource: fields.targetSource,
+    inputs: fields.inputs,
+    outputs: fields.outputs,
+  );
+
+  static List<WorkflowPort> copyPorts(List<WorkflowPort> ports) => [
+    for (final port in ports)
+      WorkflowPort(
+        id: const UuidV7().generate(),
+        name: port.name,
+        type: port.type,
+        isRequired: port.isRequired,
+      ),
+  ];
+
+  static List<WorkspaceToolEntity> _enabledTools(
+    AsyncValue<List<WorkspaceToolEntity>> state,
+  ) => _values(state, (tool) => tool.isEnabled);
+
+  static List<AgentEntity> _enabledAgents(
+    AsyncValue<List<AgentEntity>> state,
+  ) => _values(state, (agent) => agent.isEnabled);
+
+  static List<WorkspaceSkill> _enabledSkills(
+    AsyncValue<List<WorkspaceSkill>> state,
+  ) => _values(state, (skill) => skill.isEnabled);
+
+  static bool _anyLoading(_WorkflowNodePickerSources sources) =>
+      sources.tools.isLoading ||
+      sources.agents.isLoading ||
+      sources.skills.isLoading ||
+      sources.workflows.isLoading;
+
+  static List<T> _values<T>(
+    AsyncValue<List<T>> state,
+    bool Function(T) include,
+  ) {
+    final candidates = switch (state) {
+      AsyncData(:final value) => value,
+      AsyncLoading(:final value?) => value,
+      AsyncLoading() || AsyncError() => <T>[],
+    };
+
+    return candidates.where(include).toList();
+  }
+
+  static List<WorkflowDefinition> _eligibleWorkflows(
+    List<WorkflowDefinition> workflows,
+    String? currentWorkflowId,
+  ) {
+    if (currentWorkflowId == null) return workflows;
+    final dependencyGraph = WorkflowDependencyGraph.fromWorkflows(workflows);
+
+    return [
+      for (final workflow in workflows)
+        if (!dependencyGraph.dependsOn(workflow.id, currentWorkflowId))
+          workflow,
+    ];
+  }
+}
+
+class const _WorkflowNodePickerContent({
+  required final _WorkflowNodePickerItems catalog,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: SizedBox(
+      height:
+          MediaQuery.sizeOf(context).height *
+          WorkflowNodePicker._sheetHeightFactor,
+      child: Column(
+        crossAxisAlignment: .stretch,
+        children: [
+          const _WorkflowPickerHeader(),
+          _WorkflowPickerBody(catalog: catalog),
+        ],
+      ),
+    ),
+  );
+}
+
+class const _WorkflowPickerHeader() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+    child: Row(
+      children: [
+        const Expanded(child: _WorkflowPickerTitle()),
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+          icon: const Icon(Icons.close),
+        ),
+      ],
+    ),
+  );
+}
+
+class const _WorkflowPickerTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    LocaleKeys.workflow_editor_add_node.tr(context: context),
+    style: Theme.of(context).textTheme.titleLarge,
+  );
+}
+
+class const _WorkflowPickerBody({
+  required final _WorkflowNodePickerItems catalog,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (catalog.isLoading && _hasNoSimpleItems(catalog)) {
+      return const Expanded(child: Center(child: AuraSpinner()));
+    }
+
+    return Expanded(child: _WorkflowPickerList(catalog: catalog));
+  }
+
+  bool _hasNoSimpleItems(_WorkflowNodePickerItems items) =>
+      items.tools.isEmpty && items.agents.isEmpty && items.skills.isEmpty;
+}
+
+class const _WorkflowPickerList({
+  required final _WorkflowNodePickerItems catalog,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+    children: [
+      _WorkflowToolSection(tools: catalog.tools),
+      _WorkflowAgentSection(agents: catalog.agents),
+      _WorkflowSkillSection(skills: catalog.skills),
+      _WorkflowDefinitionSection(workflows: catalog.workflows),
+    ],
+  );
+}
+
+class const _WorkflowToolSection({
+  required final List<WorkspaceToolEntity> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkflowLibrarySection(
+    titleKey: LocaleKeys.workflow_editor_available_tools,
+    isEmpty: tools.isEmpty,
+    children: [for (final tool in tools) _WorkflowToolPickerItem(tool: tool)],
+  );
+}
+
+class const _WorkflowToolPickerItem({required final WorkspaceToolEntity tool})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkflowLibraryTile(
+    title: tool.toolId,
+    icon: Icons.build_outlined,
+    draft: _draft(context),
+    subtitle: tool.description,
+  );
+
+  WorkflowNodeDraft _draft(BuildContext context) =>
+      WorkflowNodePickerCatalog.draft(context, (
+        kind: .systemTool,
+        targetId: tool.id,
+        label: tool.toolId,
+        targetSource: null,
+        inputs: WorkflowSchemaPortParser.parse(tool.inputSchema, isInput: true),
+        outputs: WorkflowSchemaPortParser.parse(
+          tool.outputSchemaJson,
+          isInput: false,
+        ),
+      ));
+}
+
+class const _WorkflowAgentSection({required final List<AgentEntity> agents})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkflowLibrarySection(
+    titleKey: LocaleKeys.workflow_editor_available_agents,
+    isEmpty: agents.isEmpty,
+    children: [
+      for (final agent in agents) _WorkflowAgentPickerItem(agent: agent),
+    ],
+  );
+}
+
+class const _WorkflowAgentPickerItem({required final AgentEntity agent})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkflowLibraryTile(
+    title: agent.name,
+    icon: Icons.smart_toy_outlined,
+    draft: WorkflowNodePickerCatalog.draft(context, (
+      kind: .agent,
+      targetId: agent.id,
+      label: agent.name,
+      targetSource: null,
+      inputs: null,
+      outputs: null,
+    )),
+    subtitle: agent.description,
+  );
+}
+
+class const _WorkflowSkillSection({required final List<WorkspaceSkill> skills})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkflowLibrarySection(
+    titleKey: LocaleKeys.workflow_editor_available_skills,
+    isEmpty: skills.isEmpty,
+    children: [
+      for (final skill in skills) _WorkflowSkillPickerItem(skill: skill),
+    ],
+  );
+}
+
+class const _WorkflowSkillPickerItem({required final WorkspaceSkill skill})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkflowLibraryTile(
+    title: skill.title,
+    icon: Icons.psychology_alt_outlined,
+    draft: WorkflowNodePickerCatalog.draft(context, (
+      kind: .skill,
+      targetId: skill.id,
+      label: skill.title,
+      targetSource: skill.source.name,
+      inputs: null,
+      outputs: null,
+    )),
+    subtitle: skill.description,
+  );
+}
+
+class const _WorkflowDefinitionSection({
+  required final List<WorkflowDefinition> workflows,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkflowLibrarySection(
+    titleKey: LocaleKeys.workflow_editor_available_workflows,
+    isEmpty: workflows.isEmpty,
+    children: [
+      for (final workflow in workflows)
+        _WorkflowDefinitionPickerItem(workflow: workflow),
+    ],
+  );
+}
+
+class const _WorkflowDefinitionPickerItem({
+  required final WorkflowDefinition workflow,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkflowLibraryTile(
+    title: workflow.name,
+    icon: Icons.account_tree_outlined,
+    draft: WorkflowNodePickerCatalog.draft(context, (
+      kind: .workflow,
+      targetId: workflow.id,
+      label: workflow.name,
+      targetSource: null,
+      inputs: WorkflowNodePickerCatalog.copyPorts(workflow.inputs),
+      outputs: WorkflowNodePickerCatalog.copyPorts(workflow.outputs),
+    )),
+    subtitle: workflow.description,
+  );
 }
 
 class const _WorkflowLibrarySection({
@@ -234,118 +378,131 @@ class const _WorkflowLibrarySection({
     child: Column(
       crossAxisAlignment: .stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: TextLocale(titleKey),
-        ),
-        if (isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: TextLocale(LocaleKeys.workflow_editor_empty_group),
-          )
-        else
-          ...children,
+        _WorkflowLibraryHeading(titleKey: titleKey),
+        _WorkflowLibraryContents(isEmpty: isEmpty, children: children),
       ],
     ),
   );
 }
 
+class const _WorkflowLibraryHeading({required final String titleKey})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: TextLocale(titleKey),
+  );
+}
+
+class const _WorkflowLibraryContents({
+  required final bool isEmpty,
+  required final List<Widget> children,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => isEmpty
+      ? const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: TextLocale(LocaleKeys.workflow_editor_empty_group),
+        )
+      : Column(crossAxisAlignment: .stretch, children: children);
+}
+
 class const _WorkflowLibraryTile({
   required final String title,
   required final IconData icon,
-  required final VoidCallback onTap,
+  required final WorkflowNodeDraft draft,
   final String? subtitle,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final subtitle = this.subtitle;
+  Widget build(BuildContext context) => Card(
+    child: _WorkflowLibraryTileContents(
+      title: title,
+      icon: icon,
+      draft: draft,
+      subtitle: subtitle,
+    ),
+  );
+}
 
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(title),
-        subtitle: subtitle == null || subtitle.isEmpty ? null : Text(subtitle),
-        onTap: onTap,
-      ),
+class const _WorkflowLibraryTileContents({
+  required final String title,
+  required final IconData icon,
+  required final WorkflowNodeDraft draft,
+  final String? subtitle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: Icon(icon),
+    title: Text(title),
+    subtitle: subtitle == null || subtitle.isEmpty ? null : Text(subtitle),
+    onTap: () => Navigator.of(context).pop(draft),
+  );
+}
+
+abstract final class WorkflowSchemaPortParser {
+  static List<WorkflowPort>? parse(String? rawSchema, {required bool isInput}) {
+    if (rawSchema == null || rawSchema.isEmpty) return null;
+    try {
+      return _parseDecoded(jsonDecode(rawSchema), isInput);
+    } on Object {
+      return null;
+    }
+  }
+
+  static List<WorkflowPort>? _parseDecoded(Object? decoded, bool isInput) {
+    final properties = _properties(decoded);
+    if (properties == null) return null;
+    final requiredNames = _requiredNames(decoded);
+
+    return [
+      for (final entry in properties.entries)
+        if (entry.key case final String name)
+          _port(name, entry.value, requiredNames, isInput),
+    ];
+  }
+
+  static Map<Object?, Object?>? _properties(Object? decoded) {
+    if (decoded is! Map<Object?, Object?>) return null;
+    final properties = decoded['properties'];
+
+    return properties is Map<Object?, Object?> ? properties : null;
+  }
+
+  static Set<String> _requiredNames(Object? decoded) {
+    if (decoded is! Map<Object?, Object?>) {
+      return const <String>{};
+    }
+    final requiredValues = decoded['required'];
+    if (requiredValues is! List<Object?>) return const <String>{};
+
+    return requiredValues.whereType<String>().toSet();
+  }
+
+  static WorkflowPort _port(
+    String name,
+    Object? property,
+    Set<String> requiredNames,
+    bool isInput,
+  ) {
+    final schemaType = property is Map<Object?, Object?>
+        ? property['type']
+        : null;
+
+    return WorkflowPort(
+      id: const UuidV7().generate(),
+      name: name,
+      type: _valueType(schemaType),
+      isRequired: isInput && requiredNames.contains(name),
     );
   }
-}
 
-List<WorkflowPort>? _schemaPorts(String? rawSchema, {required bool isInput}) {
-  if (rawSchema == null || rawSchema.isEmpty) return null;
-  try {
-    final schema = jsonDecode(rawSchema);
-    if (schema is! Map) return null;
-    final properties = schema['properties'];
-    if (properties is! Map) return null;
-    final requiredNames = schema['required'] is List
-        ? (schema['required'] as List).whereType<String>().toSet()
-        : const <String>{};
-    final ports = <WorkflowPort>[];
-    for (final entry in properties.entries) {
-      final name = entry.key;
-      if (name is! String) continue;
-      final property = entry.value;
-      final type = property is Map
-          ? _schemaValueType(property['type'])
-          : WorkflowValueType.any;
-      ports.add(
-        WorkflowPort(
-          id: const UuidV7().generate(),
-          name: name,
-          type: type,
-          isRequired: isInput && requiredNames.contains(name),
-        ),
-      );
-    }
-
-    return ports;
-  } on Object {
-    return null;
-  }
-}
-
-WorkflowValueType _schemaValueType(Object? value) => switch (value) {
-  'string' => .string,
-  'integer' => .integer,
-  'number' => .number,
-  'boolean' => .boolean,
-  'object' => .object,
-  'array' => .array,
-  _ => .any,
-};
-
-List<WorkflowPort> _copyPorts(List<WorkflowPort> ports) => [
-  for (final port in ports)
-    WorkflowPort(
-      id: const UuidV7().generate(),
-      name: port.name,
-      type: port.type,
-      isRequired: port.isRequired,
-    ),
-];
-
-bool _workflowDependsOn(
-  WorkflowDefinition workflow,
-  String? targetWorkflowId,
-  List<WorkflowDefinition> workflows,
-) {
-  if (workflow.id == targetWorkflowId) return true;
-  if (targetWorkflowId == null) return false;
-  final visited = <String>{};
-
-  bool visit(WorkflowDefinition candidate) {
-    if (!visited.add(candidate.id)) return false;
-    for (final node in candidate.nodes) {
-      if (node.kind != WorkflowNodeKind.workflow) continue;
-      if (node.targetId == targetWorkflowId) return true;
-      final nested = workflows.where((item) => item.id == node.targetId);
-      final nestedWorkflow = nested.firstOrNull;
-      if (nestedWorkflow != null && visit(nestedWorkflow)) return true;
-    }
-
-    return false;
-  }
-
-  return visit(workflow);
+  static WorkflowValueType _valueType(Object? value) => switch (value) {
+    'string' => .string,
+    'integer' => .integer,
+    'number' => .number,
+    'boolean' => .boolean,
+    'object' => .object,
+    'array' => .array,
+    _ => .any,
+  };
 }

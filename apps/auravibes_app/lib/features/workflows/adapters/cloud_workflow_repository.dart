@@ -27,12 +27,27 @@ class CloudWorkflowRepository implements WorkflowRepository {
   )?._workflow(workspaceId);
 
   @override
-  Future<void> saveWorkflow(WorkflowDefinition workflow) async {
-    final current = _findResource(
-      await store.watch(.workflow).first,
-      workflow.id,
-    );
+  Future<void> saveWorkflow(WorkflowDefinition workflow) =>
+      CloudWorkflowWriter.save(store, workflow);
+}
+
+abstract final class CloudWorkflowWriter {
+  static Future<void> save(
+    CloudWorkspaceResourceStore store,
+    WorkflowDefinition workflow,
+  ) async {
+    final resources = await store.watch(.workflow).first;
+    final current = _findResource(resources, workflow.id);
     final data = workflow.toResourceData();
+    await _write(store, workflow, current, data);
+  }
+
+  static Future<void> _write(
+    CloudWorkspaceResourceStore store,
+    WorkflowDefinition workflow,
+    WorkspaceResource? current,
+    Map<String, Object?> data,
+  ) async {
     if (current == null) {
       await store.create(kind: .workflow, id: workflow.id, data: data);
 
@@ -66,11 +81,11 @@ WorkspaceResource? _findResource(
 
 extension on WorkspaceResource {
   WorkflowDefinition _workflow(String workspaceId) =>
-      WorkflowDefinition.fromResource(
+      WorkflowDefinition.fromResource((
         id: resourceId,
         workspaceId: workspaceId,
         data: CloudResourceMapper.decode(this),
         createdAt: createdAt,
         updatedAt: updatedAt,
-      );
+      ));
 }

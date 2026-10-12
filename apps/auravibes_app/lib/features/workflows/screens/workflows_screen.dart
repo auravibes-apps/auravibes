@@ -12,23 +12,32 @@ import 'package:material_ui/material_ui.dart';
 class const WorkflowsScreen({required final String workspaceId, super.key})
     extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final workflows = ref.watch(workflowsProvider(workspaceId));
+  Widget build(BuildContext context, WidgetRef ref) => AuraScreen(
+    child: _WorkflowsList(
+      workspaceId: workspaceId,
+      workflows: ref.watch(workflowsProvider(workspaceId)),
+    ),
+    appBar: _WorkflowsAppBar(workspaceId: workspaceId),
+  );
+}
 
-    return AuraScreen(
-      child: _WorkflowsList(workspaceId: workspaceId, workflows: workflows),
-      appBar: AuraAppBarWithDrawer(
-        title: const TextLocale(LocaleKeys.workflows_screen_title),
-        actions: [
-          AuraIconButton(
-            icon: Icons.add,
-            onPressed: () => _openWorkflow(context, workspaceId),
-            tooltip: LocaleKeys.workflows_screen_create.tr(context: context),
-          ),
-        ],
+class const _WorkflowsAppBar({required final String workspaceId})
+    extends StatelessWidget
+    implements PreferredSizeWidget {
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) => AuraAppBarWithDrawer(
+    title: const TextLocale(LocaleKeys.workflows_screen_title),
+    actions: [
+      AuraIconButton(
+        icon: Icons.add,
+        onPressed: () => _openWorkflow(context, workspaceId),
+        tooltip: LocaleKeys.workflows_screen_create.tr(context: context),
       ),
-    );
-  }
+    ],
+  );
 }
 
 class const _WorkflowsList({
@@ -40,49 +49,100 @@ class const _WorkflowsList({
     AsyncData(:final value) when value.isEmpty => _WorkflowEmptyState(
       onCreate: () => _openWorkflow(context, workspaceId),
     ),
-    AsyncData(:final value) => ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemBuilder: (context, index) =>
-          _WorkflowListTile(workflow: value[index], workspaceId: workspaceId),
-      itemCount: value.length,
+    AsyncData(:final value) => _WorkflowListItems(
+      workflows: value,
+      workspaceId: workspaceId,
     ),
-    AsyncLoading(:final value?) => ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemBuilder: (context, index) =>
-          _WorkflowListTile(workflow: value[index], workspaceId: workspaceId),
-      itemCount: value.length,
+    AsyncLoading(:final value?) => _WorkflowListItems(
+      workflows: value,
+      workspaceId: workspaceId,
     ),
-    AsyncLoading() => const Center(child: AuraSpinner()),
-    AsyncError() => const Center(
-      child: AuraText(
-        child: TextLocale(LocaleKeys.workflows_screen_load_error),
-      ),
-    ),
+    AsyncLoading() => const _WorkflowListLoading(),
+    AsyncError() => const _WorkflowListFailure(),
   };
+}
+
+class const _WorkflowListItems({
+  required final List<WorkflowDefinition> workflows,
+  required final String workspaceId,
+}) extends StatelessWidget {
+  static const _listPadding = 16.0;
+
+  @override
+  Widget build(BuildContext context) => ListView.builder(
+    padding: const EdgeInsets.all(_listPadding),
+    itemBuilder: (context, index) =>
+        _WorkflowListTile(workflow: workflows[index], workspaceId: workspaceId),
+    itemCount: workflows.length,
+  );
+}
+
+class const _WorkflowListLoading() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Center(child: AuraSpinner());
+}
+
+class const _WorkflowListFailure() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Center(
+    child: AuraText(child: TextLocale(LocaleKeys.workflows_screen_load_error)),
+  );
 }
 
 class const _WorkflowEmptyState({required final VoidCallback onCreate})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: .min,
-        children: [
-          const Icon(Icons.account_tree_outlined, size: 52),
-          const SizedBox(height: 16),
-          const TextLocale(LocaleKeys.workflows_screen_empty_title),
-          const SizedBox(height: 8),
-          const TextLocale(LocaleKeys.workflows_screen_empty_subtitle),
-          const SizedBox(height: 16),
-          AuraButton(
-            onPressed: onCreate,
-            child: const TextLocale(LocaleKeys.workflows_screen_create),
-          ),
-        ],
-      ),
+  Widget build(BuildContext context) =>
+      Center(child: _WorkflowEmptyContents(onCreate: onCreate));
+}
+
+class const _WorkflowEmptyContents({required final VoidCallback onCreate})
+    extends StatelessWidget {
+  static const _contentPadding = 24.0;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(_contentPadding),
+    child: Column(
+      mainAxisSize: .min,
+      children: [
+        const _WorkflowEmptyIcon(),
+        const _WorkflowEmptyMessage(),
+        _WorkflowCreateButton(onPressed: onCreate),
+      ],
     ),
+  );
+}
+
+class const _WorkflowEmptyIcon() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.only(bottom: 16),
+    child: Icon(Icons.account_tree_outlined, size: 52),
+  );
+}
+
+class const _WorkflowEmptyMessage() extends StatelessWidget {
+  static const _titleBottomSpacing = 8.0;
+  static const _subtitleBottomSpacing = 16.0;
+
+  @override
+  Widget build(BuildContext context) => const Column(
+    children: [
+      TextLocale(LocaleKeys.workflows_screen_empty_title),
+      SizedBox(height: _titleBottomSpacing),
+      TextLocale(LocaleKeys.workflows_screen_empty_subtitle),
+      SizedBox(height: _subtitleBottomSpacing),
+    ],
+  );
+}
+
+class const _WorkflowCreateButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed,
+    child: const TextLocale(LocaleKeys.workflows_screen_create),
   );
 }
 
@@ -95,26 +155,39 @@ class const _WorkflowListTile({
     child: ListTile(
       leading: const Icon(Icons.account_tree_outlined),
       title: Text(workflow.name),
-      subtitle: Text(
-        workflow.description.isNotEmpty
-            ? workflow.description
-            : LocaleKeys.workflows_screen_summary.tr(
-                context: context,
-                namedArgs: {
-                  'steps': '${workflow.nodes.length}',
-                  'inputs': '${workflow.inputs.length}',
-                  'outputs': '${workflow.outputs.length}',
-                },
-              ),
-        overflow: .ellipsis,
-        maxLines: 2,
-      ),
+      subtitle: _WorkflowSummary(workflow: workflow),
       onTap: () => WorkflowEditRoute(
         workspaceId: workspaceId,
         workflowId: workflow.id,
       ).go(context),
     ),
   );
+}
+
+class const _WorkflowSummary({required final WorkflowDefinition workflow})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    WorkflowSummaryText.forWorkflow(workflow, context),
+    overflow: .ellipsis,
+    maxLines: 2,
+  );
+}
+
+abstract final class WorkflowSummaryText {
+  static String forWorkflow(
+    WorkflowDefinition workflow,
+    BuildContext context,
+  ) => workflow.description.isNotEmpty
+      ? workflow.description
+      : LocaleKeys.workflows_screen_summary.tr(
+          context: context,
+          namedArgs: {
+            'steps': '${workflow.nodes.length}',
+            'inputs': '${workflow.inputs.length}',
+            'outputs': '${workflow.outputs.length}',
+          },
+        );
 }
 
 void _openWorkflow(BuildContext context, String workspaceId) {

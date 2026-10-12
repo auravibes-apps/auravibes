@@ -36,7 +36,10 @@ void main() {
       ],
     );
 
-    expect(validateWorkflowDefinition(workflow), isEmpty);
+    expect(
+      WorkflowGraphValidation.validateWorkflowDefinition(workflow),
+      isEmpty,
+    );
     final decoded = WorkflowDefinition.decode(workflow.encode());
     expect(decoded.connections.first.fromNodeId, isNull);
     expect(decoded.connections.last.toNodeId, isNull);
@@ -82,7 +85,7 @@ void main() {
     );
 
     expect(
-      validateWorkflowDefinition(workflow),
+      WorkflowGraphValidation.validateWorkflowDefinition(workflow),
       containsAll([
         WorkflowGraphIssue.cycle,
         WorkflowGraphIssue.missingConnectionNode,
@@ -100,8 +103,14 @@ void main() {
       nodes: [_node(id: 'a-ref', kind: .workflow, targetId: 'a')],
     );
 
-    expect(workflowHasDependencyCycle(candidate, [b]), isTrue);
-    expect(workflowHasDependencyCycle(candidate, const []), isFalse);
+    expect(
+      WorkflowGraphValidation.workflowHasDependencyCycle(candidate, [b]),
+      isTrue,
+    );
+    expect(
+      WorkflowGraphValidation.workflowHasDependencyCycle(candidate, const []),
+      isFalse,
+    );
   });
 
   test('workflow node positions stay within the scrollable canvas limit', () {
@@ -110,7 +119,7 @@ void main() {
     );
 
     expect(
-      validateWorkflowDefinition(workflow),
+      WorkflowGraphValidation.validateWorkflowDefinition(workflow),
       contains(WorkflowGraphIssue.invalidNodePosition),
     );
   });
