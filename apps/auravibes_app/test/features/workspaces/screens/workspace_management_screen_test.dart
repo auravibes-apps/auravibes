@@ -1006,7 +1006,7 @@ void main() {
         expect(
           tester
               .widget<AuraInput>(
-                find.descendant(
+                find.ancestor(
                   of: find.byKey(const ValueKey('workspace_search')),
                   matching: find.byType(AuraInput),
                 ),
@@ -1879,6 +1879,7 @@ void main() {
     testWidgets('confirms before discarding dirty workspace edits', (
       tester,
     ) async {
+      final semantics = tester.ensureSemantics();
       final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: .local),
       );
@@ -1896,7 +1897,7 @@ void main() {
       await tester.enterText(_workspaceNameEditor(), 'Workspace B');
       await tester.pump();
       final _ = await tester.tap(
-        find.byKey(const ValueKey<String>('workspace_management_back')),
+        find.bySemanticsIdentifier('workspace_management_back'),
       );
       final _ = await tester.pumpAndSettle();
 
@@ -1908,7 +1909,7 @@ void main() {
       expect(_workspaceNameEditor(), findsOneWidget);
 
       final _ = await tester.tap(
-        find.byKey(const ValueKey<String>('workspace_cancel')),
+        find.bySemanticsIdentifier('workspace_cancel'),
       );
       final _ = await tester.pumpAndSettle();
       final _ = await tester.tap(find.text('Discard'));
@@ -1917,11 +1918,13 @@ void main() {
       expect(find.text('Discard unsaved changes?'), findsNothing);
       expect(_workspaceNameEditor(), findsNothing);
       expect((await repository.getWorkspaceById('ws-1'))?.name, 'Workspace A');
+      semantics.dispose();
     });
 
     testWidgets('saves workspace edits without showing discard confirmation', (
       tester,
     ) async {
+      final semantics = tester.ensureSemantics();
       final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: .local),
       );
@@ -1937,14 +1940,13 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       await tester.enterText(_workspaceNameEditor(), 'Workspace B');
-      final _ = await tester.tap(
-        find.byKey(const ValueKey<String>('workspace_save')),
-      );
+      final _ = await tester.tap(find.bySemanticsIdentifier('workspace_save'));
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Discard unsaved changes?'), findsNothing);
       expect(_workspaceNameEditor(), findsNothing);
       expect((await repository.getWorkspaceById('ws-1'))?.name, 'Workspace B');
+      semantics.dispose();
     });
 
     testWidgets('shows sign-in recovery for an expired cloud session', (

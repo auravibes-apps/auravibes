@@ -5,17 +5,16 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Modal dialog that displays tool call response content in markdown format.
+/// Modal dialog that displays tool call response content as plain text.
 ///
-/// Shows the full response content in a scrollable view with markdown
-/// rendering. Used when tool call responses exceed the preview limit
-/// in the chat view.
+/// Shows the stored response in a scrollable view without interpreting it.
 class const ToolCallResponseModal({
   /// The name of the tool that generated the response.
   required final String toolName,
 
-  /// The markdown content to display.
+  /// The stored response content to display.
   required final String content,
+  final String? inspectionStatus,
   super.key,
 }) extends StatelessWidget {
   static const _dividerOpacity = 0.2;
@@ -25,20 +24,28 @@ class const ToolCallResponseModal({
     BuildContext context, {
     required String toolName,
     required String content,
+    String? inspectionStatus,
   }) {
     FocusManager.instance.primaryFocus?.unfocus();
 
     return showDialog<void>(
       context: context,
-      builder: (context) =>
-          ToolCallResponseModal(toolName: toolName, content: content),
+      builder: (context) => ToolCallResponseModal(
+        toolName: toolName,
+        content: content,
+        inspectionStatus: inspectionStatus,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) => Dialog(
     shape: _toolCallResponseDialogShape(context),
-    child: _ToolCallResponseModalBody(toolName: toolName, content: content),
+    child: _ToolCallResponseModalBody(
+      toolName: toolName,
+      content: content,
+      inspectionStatus: inspectionStatus,
+    ),
   );
 }
 
@@ -52,6 +59,7 @@ ShapeBorder _toolCallResponseDialogShape(BuildContext context) =>
 class const _ToolCallResponseModalBody({
   required final String toolName,
   required final String content,
+  required final String? inspectionStatus,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -60,19 +68,34 @@ class const _ToolCallResponseModalBody({
     return Container(
       width: size.width * 0.9,
       constraints: .new(maxWidth: 600, maxHeight: size.height * 0.85),
-      child: Column(
-        mainAxisSize: .min,
-        children: [
-          _ToolCallResponseModalHeader(toolName: toolName),
-          _ToolCallResponseModalMarkdown(content: content),
-          const _ToolCallResponseModalFooter(),
-        ],
+      child: _ToolCallResponseModalContent(
+        toolName: toolName,
+        content: content,
+        inspectionStatus: inspectionStatus,
       ),
     );
   }
 }
 
-class const _ToolCallResponseModalMarkdown({required final String content})
+class const _ToolCallResponseModalContent({
+  required final String toolName,
+  required final String content,
+  required final String? inspectionStatus,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _ToolCallResponseModalHeader(toolName: toolName),
+      if (inspectionStatus case final value?)
+        _ToolCallResponseModalStatus(message: value),
+      _ToolCallResponseModalText(content: content),
+      const _ToolCallResponseModalFooter(),
+    ],
+  );
+}
+
+class const _ToolCallResponseModalText({required final String content})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Flexible(
@@ -80,9 +103,23 @@ class const _ToolCallResponseModalMarkdown({required final String content})
       padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       child: SizedBox(
         width: .infinity,
-        child: AuraText(child: GptMarkdown(content)),
+        child: Text(content, style: .new(color: context.auraColors.onSurface)),
       ),
     ),
+  );
+}
+
+class const _ToolCallResponseModalStatus({required final String message})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: Padding(
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
+      child: Text(message),
+    ),
+    container: true,
+    excludeSemantics: true,
+    label: message,
   );
 }
 

@@ -46,10 +46,15 @@ typedef _EffectiveMessageMappingContext = ({
 });
 
 class _MessageWatchController {
-  new(this._repository, this._conversationId);
+  new(
+    this._repository,
+    this._conversationId, {
+    this._includeTranscriptContext = false,
+  });
 
   final MessageRepository _repository;
   final String _conversationId;
+  final bool _includeTranscriptContext;
   final _controller = StreamController<List<MessageEntity>>();
   final _subscriptions = <StreamSubscription<dynamic>>[];
   var _pending = false;
@@ -93,7 +98,9 @@ class _MessageWatchController {
 
   Future<void> _emitOnce() async {
     try {
-      final messages = await _repository._getEffectiveMessages(_conversationId);
+      final messages = _includeTranscriptContext
+          ? await _repository._getEffectiveTranscriptMessages(_conversationId)
+          : await _repository._getEffectiveMessages(_conversationId);
       if (!_controller.isClosed) _controller.add(messages);
     } on Object catch (error, stackTrace) {
       if (!_controller.isClosed) _controller.addError(error, stackTrace);
@@ -123,6 +130,11 @@ class MessageRepository(
   Future<List<MessageEntity>> getTranscriptMessagesByConversation(
     String conversationId,
   ) => _getEffectiveTranscriptMessages(conversationId);
+
+  /// Watches the full transcript, including internal agent context entries.
+  Stream<List<MessageEntity>> watchTranscriptMessagesByConversation(
+    String conversationId,
+  ) => _watchTranscriptMessages(conversationId);
 }
 
 mixin _MessageRepositoryReadApi {
@@ -267,6 +279,19 @@ extension on MessageRepository {
 
   Stream<List<MessageEntity>> _watchEffectiveMessages(String conversationId) {
     final watcher = _MessageWatchController(this, conversationId);
+    watcher
+      .._controller.onListen = watcher.listen
+      .._controller.onCancel = watcher.cancel;
+
+    return watcher.stream.transform(_messageWatchTransformer(conversationId));
+  }
+
+  Stream<List<MessageEntity>> _watchTranscriptMessages(String conversationId) {
+    final watcher = _MessageWatchController(
+      this,
+      conversationId,
+      includeTranscriptContext: true,
+    );
     watcher
       .._controller.onListen = watcher.listen
       .._controller.onCancel = watcher.cancel;

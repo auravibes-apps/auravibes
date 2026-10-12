@@ -1,8 +1,12 @@
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'compaction_context_fixture.dart';
 
 void main() {
   const usecase = SelectCompactionRangeUsecase();
@@ -56,6 +60,104 @@ void main() {
       );
       expect(range.keptTailMessageIds, isNotEmpty);
     });
+
+    test('selects fork context within recent and output reserve budgets', () {
+      final transcript = CompactionContextFixture();
+      const model = ApiModelEntity(
+        modelProvider: 'test',
+        id: 'offline-model',
+        name: 'Offline test model',
+        limitContext: 64,
+        limitOutput: 32,
+        modalitiesInput: [],
+        modalitiesOutput: [],
+      );
+      const reserveTokens = 16;
+      const keepRecentTokens = 20;
+      const override = CompactionModelOverride(
+        reserveTokens: reserveTokens,
+        keepRecentTokens: keepRecentTokens,
+      );
+
+      final range = usecase(
+        transcript.messages,
+        apiModel: model,
+        modelOverride: override,
+      );
+
+      expect(range, isNotNull);
+      final selectedRange = range ?? fail('Expected range to be non-null');
+      expect(selectedRange.messageIds, [
+        'parent-01-constraint',
+        'parent-02-decision',
+        'parent-03-tool-exchange',
+        'parent-04-pending-task',
+        transcript.forkThroughMessageId,
+        'child-01-continuation',
+        'child-02-decision',
+      ]);
+      expect(selectedRange.keptTailMessageIds, [
+        'child-03-current-request',
+        'child-04-latest-response',
+      ]);
+      expect(
+        selectedRange.messageIds,
+        isNot(contains(transcript.parentMessageAfterForkBoundary.id)),
+      );
+
+      final retainedTail = transcript.messages.where(
+        (message) => selectedRange.keptTailMessageIds.contains(message.id),
+      );
+      final retainedTailTokens = _estimatedTokenCount(retainedTail);
+      expect(retainedTailTokens, greaterThanOrEqualTo(keepRecentTokens));
+      expect(
+        retainedTailTokens + reserveTokens,
+        lessThanOrEqualTo(model.limitContext),
+      );
+    });
+
+    test(
+      'returns no range when recent tool output exceeds the context budget',
+      () {
+        final messages = [
+          _makeMessage(content: 'Earlier request.'),
+          _makeMessage(id: 'msg-2', isUser: false, content: 'Earlier answer.'),
+          _makeMessage(id: 'msg-3', content: 'Recent request.'),
+          _makeMessage(
+            id: 'msg-4',
+            isUser: false,
+            content: '',
+            metadata: .new(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'large-recent-result',
+                  name: 'read_large_file',
+                  argumentsRaw: '{"path":"local.txt"}',
+                  responseRaw: List.filled(400, 'x').join(),
+                  resultStatus: .success,
+                ),
+              ],
+            ),
+          ),
+        ];
+
+        final range = usecase(
+          messages,
+          apiModel: const .new(
+            modelProvider: 'test',
+            id: 'offline-model',
+            name: 'Offline test model',
+            limitContext: 64,
+            limitOutput: 32,
+            modalitiesInput: [],
+            modalitiesOutput: [],
+          ),
+          modelOverride: const .new(reserveTokens: 16),
+        );
+
+        expect(range, isNull);
+      },
+    );
 
     test('excludes error messages from compactable range', () {
       final messages = [
@@ -237,4 +339,18 @@ void main() {
       expect(range.keptTailMessageIds, isNot(contains('msg-2')));
     });
   });
+}
+
+int _estimatedTokenCount(Iterable<MessageEntity> messages) {
+  num characterCount = 0;
+  for (final message in messages) {
+    characterCount += message.content.length;
+    for (final toolCall
+        in message.metadata?.toolCalls ?? const <MessageToolCallEntity>[]) {
+      characterCount += toolCall.argumentsRaw.length;
+      characterCount += toolCall.getResponseForAI().length;
+    }
+  }
+
+  return (characterCount / 4).ceil();
 }

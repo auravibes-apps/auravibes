@@ -1,18 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:auravibes_engine/auravibes_engine.dart' show projectToolOutput;
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
-import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../engine/conversation_engine_host.dart';
 import '../engine/conversation_host_effects.dart';
+import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
-
 import 'conversation_job_leases.dart';
+
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show ProviderFailureCategory, ProviderFailureRecovery, projectToolOutput;
 
 typedef ConversationJobPublisher = Future<void> Function(
   Session session,
@@ -109,13 +110,19 @@ class const ConversationWorker({
       return true;
     } on ConversationJobLeaseLostException {
       return true;
-    } on ConversationEngineConfigurationException {
+    } on ConversationEngineConfigurationException catch (error) {
       if (isActive != null && !isActive()) return true;
       final updated = await _retryOrFailIfLeased(
         session,
         jobId: job.id!,
         leaseToken: leaseToken,
         errorCode: 'configuration',
+        retryable: false,
+        providerRecovery: ProviderFailureRecovery(
+          category: .configuration,
+          retryable: false,
+        ).toJson(),
+        errorDetails: ProviderFailureRecovery.safeDetail(error),
         now: DateTime.now().toUtc(),
       );
       if (updated == null) return true;
@@ -133,13 +140,19 @@ class const ConversationWorker({
         level: LogLevel.warning,
       );
       return true;
-    } on ConversationResponseLimitException {
+    } on ConversationResponseLimitException catch (error) {
       if (isActive != null && !isActive()) return true;
       final updated = await _retryOrFailIfLeased(
         session,
         jobId: job.id!,
         leaseToken: leaseToken,
         errorCode: 'configuration',
+        retryable: false,
+        providerRecovery: ProviderFailureRecovery(
+          category: .configuration,
+          retryable: false,
+        ).toJson(),
+        errorDetails: ProviderFailureRecovery.safeDetail(error),
         now: DateTime.now().toUtc(),
       );
       if (updated == null) return true;
@@ -159,11 +172,16 @@ class const ConversationWorker({
       return true;
     } on Object catch (error, stackTrace) {
       if (isActive != null && !isActive()) return true;
+      final recovery = ProviderFailureRecovery.fromError(error);
       final updated = await _retryOrFailIfLeased(
         session,
         jobId: job.id!,
         leaseToken: leaseToken,
-        errorCode: 'provider_unavailable',
+        errorCode: _recoveryErrorCode(recovery.category),
+        retryable: recovery.retryable,
+        retryDelay: _retryDelayForRecovery(recovery),
+        providerRecovery: recovery.toJson(),
+        errorDetails: ProviderFailureRecovery.safeDetail(error),
         now: DateTime.now().toUtc(),
       );
       if (updated == null) return true;
@@ -193,6 +211,10 @@ class const ConversationWorker({
     required String leaseToken,
     required String errorCode,
     required DateTime now,
+    bool retryable = false,
+    Duration retryDelay = const Duration(seconds: 10),
+    Map<String, Object?>? providerRecovery,
+    String? errorDetails,
   }) async {
     final updated = await leases.retryOrFail(
       session,
@@ -200,6 +222,10 @@ class const ConversationWorker({
       leaseToken: leaseToken,
       errorCode: errorCode,
       now: now,
+      retryable: retryable,
+      retryDelay: retryDelay,
+      providerRecovery: providerRecovery,
+      errorDetails: errorDetails,
     );
     if (updated.status == ConversationJobStatuses.queued) {
       await _publishRetryWake(session, updated);
@@ -213,6 +239,10 @@ class const ConversationWorker({
     required String leaseToken,
     required String errorCode,
     required DateTime now,
+    bool retryable = false,
+    Duration retryDelay = const Duration(seconds: 10),
+    Map<String, Object?>? providerRecovery,
+    String? errorDetails,
   }) async {
     try {
       return await _retryOrFail(
@@ -221,10 +251,31 @@ class const ConversationWorker({
         leaseToken: leaseToken,
         errorCode: errorCode,
         now: now,
+        retryable: retryable,
+        retryDelay: retryDelay,
+        providerRecovery: providerRecovery,
+        errorDetails: errorDetails,
       );
     } on ConversationJobLeaseLostException {
       return null;
     }
+  }
+
+  String _recoveryErrorCode(ProviderFailureCategory category) =>
+      switch (category) {
+        .authentication => 'authentication',
+        .quotaRateLimit => 'quota_rate_limit',
+        .transientOutage => 'provider_unavailable',
+        .configuration => 'configuration',
+        .unknown => 'unknown',
+      };
+
+  Duration _retryDelayForRecovery(ProviderFailureRecovery recovery) {
+    final retryAfter = recovery.retryAfter;
+    if (retryAfter == null) return const Duration(seconds: 10);
+    const maximumDelay = Duration(seconds: 60);
+
+    return retryAfter > maximumDelay ? maximumDelay : retryAfter;
   }
 
   Future<void> _publishRetryWake(Session session, ConversationJob job) async {

@@ -2,25 +2,28 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
-import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
-import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
-import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
-import 'package:auravibes_server/src/features/conversations/workers/conversation_job_dispatcher.dart';
-import 'package:auravibes_server/src/features/conversations/workers/conversation_job_leases.dart';
-import 'package:auravibes_server/src/features/conversations/workers/conversation_worker.dart';
-import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
-import 'package:auravibes_server/src/features/workspaces/domain/workspace_roles.dart';
-import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
-    as conversation_repo;
-import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
-    as workspace_repo;
-import 'package:auravibes_server/src/generated/protocol.dart';
+import 'package:genkit/plugin.dart' show GenkitException;
 import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
 
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
+import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
+import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
+import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
+import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
+import 'package:auravibes_server/src/features/conversations/workers/conversation_job_dispatcher.dart';
+import 'package:auravibes_server/src/features/conversations/workers/conversation_job_leases.dart';
+import 'package:auravibes_server/src/features/conversations/workers/conversation_worker.dart';
+import 'package:auravibes_server/src/features/workspaces/domain/workspace_roles.dart';
+import 'package:auravibes_server/src/generated/protocol.dart';
+
 import '../../test_tools/serverpod_test_tools.dart';
+
+import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
+    as conversation_repo;
+import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
+    as workspace_repo;
 
 void main() {
   withServerpod('ConversationExecutionState', (sessionBuilder, endpoints) {
@@ -2395,76 +2398,863 @@ void main() {
     );
   });
 
-  withServerpod('ConversationExecutionState concurrent same-request', (
-    sessionBuilder,
-    endpoints,
-  ) {
-    test(
-      'concurrent Continue requests from independent sessions replay once',
-      () async {
-        final fixture = await _preparePromptlessExecution(sessionBuilder);
-        final request = ContinueConversationRequest(
-          workspaceId: fixture.workspaceId,
-          requestId: 'concurrent-promptless-continue-1',
-          conversationId: fixture.conversationId,
-          expectedProjectionRevision: 1,
-        );
-        final firstSession = sessionBuilder.copyWith(
-          authentication: AuthenticationOverride.authenticationInfo(
-            fixture.userId,
-            const {},
-          ),
-        );
-        final secondSession = sessionBuilder.copyWith(
-          authentication: AuthenticationOverride.authenticationInfo(
-            fixture.userId,
-            const {},
-          ),
-        );
+  withServerpod(
+    'ConversationExecutionState concurrent same-request',
+    (
+      sessionBuilder,
+      endpoints,
+    ) {
+      test(
+        'concurrent Continue requests from independent sessions replay once',
+        () async {
+          final fixture = await _preparePromptlessExecution(sessionBuilder);
+          final request = ContinueConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'concurrent-promptless-continue-1',
+            conversationId: fixture.conversationId,
+            expectedProjectionRevision: 1,
+          );
+          final firstSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              fixture.userId,
+              const {},
+            ),
+          );
+          final secondSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              fixture.userId,
+              const {},
+            ),
+          );
 
-        try {
-          final snapshots = await Future.wait([
-            endpoints.conversation.continueConversation(firstSession, request),
-            endpoints.conversation.continueConversation(secondSession, request),
-          ]);
-          final executions = await ConversationExecution.db.find(
+          try {
+            final snapshots = await Future.wait([
+              endpoints.conversation.continueConversation(
+                firstSession,
+                request,
+              ),
+              endpoints.conversation.continueConversation(
+                secondSession,
+                request,
+              ),
+            ]);
+            final executions = await ConversationExecution.db.find(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.conversationId.equals(fixture.conversationDatabaseId),
+            );
+            final jobs = await ConversationJob.db.find(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.conversationId.equals(fixture.conversationDatabaseId) &
+                  table.kind.equals(ConversationJobKinds.turn),
+            );
+            final events = await ConversationEvent.db.find(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.requestId.equals(request.requestId),
+            );
+
+            expect(
+              snapshots.map((snapshot) => snapshot.activeExecution!.id).toSet(),
+              hasLength(1),
+            );
+            expect(executions, hasLength(1));
+            expect(jobs, hasLength(1));
+            expect(events, hasLength(1));
+          } finally {
+            await runConversationWorker(
+              fixture.database,
+              isActive: () => true,
+              worker: ConversationWorker(host: _CountingCompletingHost()),
+            );
+            await _waitForIdle(fixture, endpoints);
+
+            expect(host.calls, 1);
+          }
+        },
+      );
+
+      test(
+        'stop rejects a member acting on another user execution',
+        () async {
+          final fixture = await prepareExecution();
+          final memberId = const Uuid().v4().toString();
+          final now = DateTime.now().toUtc();
+          final memberSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              memberId,
+              const {},
+            ),
+          );
+          await AuthUser.db.insertRow(
+            fixture.database,
+            AuthUser(
+              id: UuidValue.fromString(memberId),
+              scopeNames: const {},
+            ),
+          );
+          await EmailAccount.db.insertRow(
+            fixture.database,
+            EmailAccount(
+              authUserId: UuidValue.fromString(memberId),
+              email: 'stop-attacker@example.com',
+              passwordHash: 'unused',
+            ),
+          );
+          await WorkspaceMember.db.insertRow(
+            fixture.database,
+            WorkspaceMember(
+              workspaceId: fixture.workspaceId,
+              userId: memberId,
+              role: WorkspaceRoles.member,
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          final snapshot = await endpoints.conversation.getConversationSnapshot(
+            memberSession,
+            GetConversationRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+            ),
+          );
+
+          await expectLater(
+            endpoints.conversation.stopConversation(
+              memberSession,
+              StopConversationRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'unauthorized-stop',
+                conversationId: fixture.conversationId,
+                expectedProjectionRevision:
+                    snapshot.conversation.projectionRevision,
+              ),
+            ),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                ConversationErrorCode.permissionDenied,
+              ),
+            ),
+          );
+
+          final conversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationDatabaseId,
+          ))!;
+          final execution = (await ConversationExecution.db.findById(
+            fixture.database,
+            conversation.activeExecutionId!,
+          ))!;
+          expect(conversation.executionState, ConversationStatuses.running);
+          expect(execution.status, ConversationStatuses.running);
+        },
+      );
+
+      test(
+        'stop wins when it races approval pausing after the host returns',
+        () async {
+          final fixture = await prepareExecution();
+          final pauseEntered = Completer<void>();
+          final releasePause = Completer<void>();
+          final worker = ConversationWorker(
+            host: _AwaitingApprovalHost(),
+            beforePauseForApproval: () async {
+              if (!pauseEntered.isCompleted) pauseEntered.complete();
+              await releasePause.future;
+            },
+          );
+
+          final running = runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+          await pauseEntered.future.timeout(const Duration(seconds: 2));
+          final snapshot = await endpoints.conversation.getConversationSnapshot(
+            fixture.session,
+            GetConversationRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+            ),
+          );
+          await endpoints.conversation.stopConversation(
+            fixture.session,
+            StopConversationRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'stop-before-pause',
+              conversationId: fixture.conversationId,
+              expectedProjectionRevision:
+                  snapshot.conversation.projectionRevision,
+            ),
+          );
+          releasePause.complete();
+          await running.timeout(const Duration(seconds: 2));
+
+          final conversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationDatabaseId,
+          ))!;
+          final execution = (await ConversationExecution.db.findFirstRow(
             fixture.database,
             where: (table) =>
                 table.workspaceId.equals(fixture.workspaceId) &
-                table.conversationId.equals(fixture.conversationDatabaseId),
+                table.stableId.equals(snapshot.activeExecution!.id),
+          ))!;
+          final turn = (await ConversationTurn.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.requestId.equals(execution.stableId),
+          ))!;
+          final assistant = (await ConversationMessage.db.findById(
+            fixture.database,
+            turn.assistantMessageId!,
+          ))!;
+          expect(turn.status, ConversationStatuses.cancelled);
+          expect(assistant.status, ConversationStatuses.cancelled);
+          expect(execution.status, ConversationStatuses.cancelled);
+          expect(conversation.executionState, 'idle');
+          expect(conversation.activeExecutionId, isNull);
+        },
+      );
+
+      test(
+        'approval pause and decision submission complete without lock inversion',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 1);
+          final job = (await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          ))!;
+          await ConversationJob.db.updateRow(
+            fixture.database,
+            job.copyWith(
+              status: ConversationJobStatuses.queued,
+              availableAt: DateTime.now().toUtc(),
+              updatedAt: DateTime.now().toUtc(),
+            ),
           );
-          final jobs = await ConversationJob.db.find(
+          final pauseTurnLocked = Completer<void>();
+          final releasePause = Completer<void>();
+          final worker = ConversationWorker(
+            host: _AwaitingApprovalHost(),
+            afterApprovalTurnLock: () async {
+              pauseTurnLocked.complete();
+              await releasePause.future;
+            },
+          );
+
+          final running = runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+          await pauseTurnLocked.future.timeout(const Duration(seconds: 2));
+          final decision = decisionUseCases().submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: SubmitToolDecisionRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'approve-racing-pause',
+              conversationId: fixture.conversationId,
+              turnId: staged.turn.requestId,
+              toolCallId: staged.toolCallIds.single,
+              argumentsDigest: 'digest-1',
+              expectedTurnRevision: 3,
+              decision: 'approve',
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          releasePause.complete();
+
+          await Future.wait([running, decision]).timeout(
+            const Duration(seconds: 2),
+          );
+          final turn = (await ConversationTurn.db.findById(
+            fixture.database,
+            staged.turn.id!,
+          ))!;
+          expect(turn.status, ConversationStatuses.queued);
+        },
+      );
+
+      test(
+        'a second approval pause belongs to its resumed phase assistant',
+        () async {
+          final fixture = await prepareExecution();
+          final worker = ConversationWorker(host: _AwaitingApprovalHost());
+          await runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+          final firstTurn = (await ConversationTurn.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.conversationId.equals(
+              fixture.conversationDatabaseId,
+            ),
+          ))!;
+          final firstAssistant = (await ConversationMessage.db.findById(
+            fixture.database,
+            firstTurn.assistantMessageId!,
+          ))!;
+          final now = DateTime.now().toUtc();
+          await ConversationToolCall.db.insertRow(
+            fixture.database,
+            ConversationToolCall(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationDatabaseId,
+              turnId: firstTurn.id!,
+              messageId: firstAssistant.id!,
+              stableId: 'phase-one-call',
+              name: 'tool',
+              argumentsJson: '{}',
+              argumentsDigest: 'phase-one-digest',
+              status: 'pending',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          await decisionUseCases().submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: SubmitToolDecisionRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'approve-phase-one',
+              conversationId: fixture.conversationId,
+              turnId: firstTurn.requestId,
+              toolCallId: 'phase-one-call',
+              argumentsDigest: 'phase-one-digest',
+              expectedTurnRevision: firstTurn.revision,
+              decision: 'approve',
+            ),
+          );
+
+          await runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+
+          final assistants = await ConversationMessage.db.find(
+            fixture.database,
+            where: (table) =>
+                table.conversationId.equals(fixture.conversationDatabaseId) &
+                table.role.equals('assistant'),
+            orderBy: (table) => table.id,
+          );
+          expect(assistants.map((assistant) => assistant.stableId), [
+            firstAssistant.stableId,
+            'approve-phase-one:assistant',
+          ]);
+          expect(assistants.map((assistant) => assistant.status), [
+            'sent',
+            ConversationStatuses.awaitingApproval,
+          ]);
+        },
+      );
+
+      test(
+        'persists classified provider failures and does not retry terminal cases',
+        () async {
+          for (final scenario in [
+            (
+              name: 'authentication',
+              error: GenkitException(
+                'Credentials rejected.',
+                status: .unauthenticated,
+              ),
+              category: ProviderFailureCategory.authentication,
+              retryable: false,
+            ),
+            (
+              name: 'quota',
+              error: GenkitException(
+                'Quota exceeded.',
+                status: .resourceExhausted,
+              ),
+              category: ProviderFailureCategory.quotaRateLimit,
+              retryable: false,
+            ),
+            (
+              name: 'rate limit with Retry-After',
+              error: ProviderHttpFailureException(
+                429,
+                'Rate limit exceeded.',
+                retryAfter: const Duration(seconds: 42),
+              ),
+              category: ProviderFailureCategory.quotaRateLimit,
+              retryable: true,
+            ),
+            (
+              name: 'transient outage',
+              error: ProviderHttpFailureException(
+                503,
+                'Provider unavailable.',
+                details: 'api_key=offline-fixture-secret',
+              ),
+              category: ProviderFailureCategory.transientOutage,
+              retryable: true,
+            ),
+            (
+              name: 'configuration',
+              error: GenkitException(
+                'Invalid model settings.',
+                status: .invalidArgument,
+              ),
+              category: ProviderFailureCategory.configuration,
+              retryable: false,
+            ),
+            (
+              name: 'unknown text that resembles a rate limit',
+              error: GenkitException(
+                'HTTP 429 rate limit. Try again in one minute.',
+                status: .unknown,
+              ),
+              category: ProviderFailureCategory.unknown,
+              retryable: false,
+            ),
+          ]) {
+            final fixture = await prepareExecution();
+            final job = (await ConversationJob.db.findFirstRow(
+              fixture.database,
+              where: (table) =>
+                  table.conversationId.equals(fixture.conversationDatabaseId),
+            ))!;
+            await ConversationJob.db.updateRow(
+              fixture.database,
+              job.copyWith(maxAttempts: 1),
+            );
+            final host = _ThrowingFailureHost(scenario.error);
+
+            await runConversationWorker(
+              fixture.database,
+              isActive: () => true,
+              worker: ConversationWorker(host: host),
+            );
+
+            final failedJob = await ConversationJob.db.findById(
+              fixture.database,
+              job.id!,
+            );
+            final turn = (await ConversationTurn.db.findById(
+              fixture.database,
+              job.turnId!,
+            ))!;
+            final userMessage = await ConversationMessage.db.findById(
+              fixture.database,
+              turn.userMessageId!,
+            );
+            final assistantMessage = await ConversationMessage.db.findById(
+              fixture.database,
+              turn.assistantMessageId!,
+            );
+            final userMetadata = jsonDecode(userMessage!.metadataJson!) as Map;
+            final assistantMetadata =
+                jsonDecode(assistantMessage!.metadataJson!) as Map;
+            final userModelMetadata = userMetadata['modelMetadata'] as Map;
+            final assistantModelMetadata =
+                assistantMetadata['modelMetadata'] as Map;
+            final userRecovery = userModelMetadata['providerRecovery'] as Map;
+            final assistantRecovery =
+                assistantModelMetadata['providerRecovery'] as Map;
+
+            expect(failedJob!.status, ConversationJobStatuses.failed);
+            expect(turn.status, ConversationStatuses.failed);
+            expect(host.calls, 1, reason: scenario.name);
+            expect(userMessage.status, 'error');
+            expect(assistantMessage.status, ConversationStatuses.failed);
+            expect(userModelMetadata['providerError'], isTrue);
+            expect(assistantModelMetadata['providerError'], isTrue);
+            expect(userRecovery['classification'], scenario.category.wireValue);
+            expect(
+              assistantRecovery['classification'],
+              scenario.category.wireValue,
+            );
+            expect(userRecovery['retryable'], scenario.retryable);
+            expect(assistantRecovery['retryable'], scenario.retryable);
+            if (scenario.name == 'rate limit with Retry-After') {
+              expect(userRecovery['retryAfterSeconds'], 42);
+              expect(assistantRecovery['retryAfterSeconds'], 42);
+            }
+            if (scenario.category == ProviderFailureCategory.transientOutage) {
+              expect(assistantMessage.content, 'api_key=[REDACTED]');
+              expect(
+                assistantMessage.content,
+                isNot(contains('offline-fixture-secret')),
+              );
+            }
+
+            await runConversationWorker(
+              fixture.database,
+              isActive: () => true,
+              worker: ConversationWorker(host: host),
+            );
+            expect(host.calls, 1, reason: scenario.name);
+          }
+        },
+      );
+
+      test(
+        'retry wake waits for its durable availability before rerunning',
+        () async {
+          final fixture = await prepareExecution();
+          final host = _FailOnceHost();
+          final published = <ConversationJob>[];
+          final worker = ConversationWorker(
+            host: host,
+            publishConversationJob: (session, job) async {
+              final persisted = await ConversationJob.db.findById(
+                session,
+                job.id!,
+              );
+              expect(persisted, isNotNull);
+              expect(persisted!.status, ConversationJobStatuses.queued);
+              expect(persisted.availableAt, job.availableAt);
+              published.add(job);
+            },
+          );
+
+          await runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+
+          final retry = (await ConversationJob.db.findFirstRow(
             fixture.database,
             where: (table) =>
                 table.workspaceId.equals(fixture.workspaceId) &
                 table.conversationId.equals(fixture.conversationDatabaseId) &
                 table.kind.equals(ConversationJobKinds.turn),
-          );
-          final events = await ConversationEvent.db.find(
-            fixture.database,
-            where: (table) =>
-                table.workspaceId.equals(fixture.workspaceId) &
-                table.requestId.equals(request.requestId),
+          ))!;
+          final databaseNow = await fixture.database.db.unsafeQuery(
+            'SELECT clock_timestamp() AS "now"',
           );
 
+          expect(host.calls, 1);
+          expect(retry.status, ConversationJobStatuses.queued);
           expect(
-            snapshots.map((snapshot) => snapshot.activeExecution!.id).toSet(),
-            hasLength(1),
+            retry.availableAt.isAfter(
+              databaseNow.first.toColumnMap()['now']! as DateTime,
+            ),
+            isTrue,
           );
-          expect(executions, hasLength(1));
-          expect(jobs, hasLength(1));
-          expect(events, hasLength(1));
-        } finally {
+          expect(published, hasLength(1));
+          expect(published.single.id, retry.id);
+
           await runConversationWorker(
             fixture.database,
             isActive: () => true,
-            worker: ConversationWorker(host: _CountingCompletingHost()),
+            worker: worker,
           );
+
+          expect(host.calls, 1);
+
+          await fixture.database.db.unsafeQuery(
+            'UPDATE conversation_job '
+            'SET "availableAt" = CURRENT_TIMESTAMP - INTERVAL \'1 second\' '
+            'WHERE "id" = ${retry.id}',
+          );
+          await runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+
+          final completed = await ConversationJob.db.findById(
+            fixture.database,
+            retry.id!,
+          );
+          expect(host.calls, 2);
+          expect(completed!.status, ConversationJobStatuses.completed);
+        },
+      );
+
+      test(
+        'transient renewal retries before aborting a blocked provider request',
+        () async {
+          final fixture = await prepareExecution();
+          final host = _BlockingCompletingHost();
+          final renewalRecovered = Completer<void>();
+          var renewalAttempts = 0;
+          final worker = ConversationWorker(
+            host: host,
+            renewalInterval: const Duration(milliseconds: 1),
+            renewalRetryDelay: const Duration(milliseconds: 1),
+            renewLease: (jobId, leaseToken) async {
+              renewalAttempts++;
+              if (renewalAttempts == 1) {
+                throw StateError('transient renewal failure');
+              }
+              final renewed = await const ConversationJobLeases().renew(
+                fixture.database,
+                jobId: jobId,
+                leaseToken: leaseToken,
+                now: DateTime.now().toUtc(),
+              );
+              if (!renewalRecovered.isCompleted) renewalRecovered.complete();
+              return renewed;
+            },
+          );
+
+          final running = runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+          await host.started.future.timeout(const Duration(seconds: 2));
+          await renewalRecovered.future.timeout(const Duration(seconds: 2));
+
+          expect(host.leaseLostObserved, isFalse);
+          host.release();
+          await running.timeout(const Duration(seconds: 2));
           await _waitForIdle(fixture, endpoints);
-        }
-      },
-    );
-  }, rollbackDatabase: RollbackDatabase.disabled);
+
+          expect(renewalAttempts, greaterThanOrEqualTo(2));
+          expect(host.normalCompletions, 1);
+          final job = (await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationDatabaseId) &
+                table.kind.equals(ConversationJobKinds.turn),
+          ))!;
+          final turn = await ConversationTurn.db.findById(
+            fixture.database,
+            job.turnId!,
+          );
+          expect(job.status, ConversationJobStatuses.completed);
+          expect(turn!.status, ConversationStatuses.completed);
+        },
+      );
+
+      test(
+        'authoritative lease loss aborts a blocked provider request',
+        () async {
+          final fixture = await prepareExecution();
+          final host = _BlockingCompletingHost();
+          final worker = ConversationWorker(
+            host: host,
+            renewalInterval: const Duration(milliseconds: 1),
+            renewalRetryDelay: const Duration(milliseconds: 1),
+            renewLease: (jobId, leaseToken) async {
+              throw ConversationJobLeaseLostException(jobId);
+            },
+          );
+
+          final running = runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+          await host.started.future.timeout(const Duration(seconds: 2));
+          await host.leaseLost.future.timeout(const Duration(seconds: 2));
+          await running.timeout(const Duration(seconds: 2));
+          await _waitForIdle(fixture, endpoints);
+
+          expect(host.normalCompletions, 0);
+          final job = (await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationDatabaseId) &
+                table.kind.equals(ConversationJobKinds.turn),
+          ))!;
+          final turn = await ConversationTurn.db.findById(
+            fixture.database,
+            job.turnId!,
+          );
+          expect(job.status, ConversationJobStatuses.completed);
+          expect(turn!.status, ConversationStatuses.cancelled);
+        },
+      );
+
+      test(
+        'operation completion during renewal does not reschedule renewal',
+        () async {
+          final fixture = await prepareExecution();
+          final host = _BlockingCompletingHost();
+          final renewalStarted = Completer<void>();
+          final releaseRenewal = Completer<void>();
+          final scheduledTimers = <_ManualTimer>[];
+          final worker = ConversationWorker(
+            host: host,
+            renewalInterval: const Duration(milliseconds: 1),
+            renewalTimer: (duration, callback) {
+              final timer = _ManualTimer(callback);
+              scheduledTimers.add(timer);
+              return timer;
+            },
+            renewLease: (jobId, leaseToken) async {
+              if (!renewalStarted.isCompleted) renewalStarted.complete();
+              await releaseRenewal.future;
+              return const ConversationJobLeases().renew(
+                fixture.database,
+                jobId: jobId,
+                leaseToken: leaseToken,
+                now: DateTime.now().toUtc(),
+              );
+            },
+          );
+
+          final running = runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+          await host.started.future.timeout(const Duration(seconds: 2));
+          expect(scheduledTimers, hasLength(1));
+          scheduledTimers.single.fire();
+          await renewalStarted.future.timeout(const Duration(seconds: 2));
+
+          host.release();
+          await scheduledTimers.single.cancelled.future.timeout(
+            const Duration(seconds: 2),
+          );
+          releaseRenewal.complete();
+          await running.timeout(const Duration(seconds: 2));
+
+          expect(scheduledTimers, hasLength(1));
+        },
+      );
+
+      test('inactive ownership leaves a continued execution running', () async {
+        final fixture = await prepareExecution();
+        final host = _CountingCompletingHost();
+        final dispatcher = dispatcherFor(fixture, host, Completer<void>());
+        dispatcher.start(
+          wakeups: const Stream<void>.empty(),
+          isActive: () => false,
+        );
+
+        final snapshot = await endpoints.conversation.getConversationSnapshot(
+          fixture.session,
+          GetConversationRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+          ),
+        );
+        await dispatcher.stop();
+
+        expect(snapshot.conversation.executionState, 'running');
+        expect(host.calls, 0);
+      });
+
+      test(
+        'empty wake stream fallback executes a continued execution once',
+        () async {
+          final fixture = await prepareExecution();
+          var active = false;
+          final host = _CountingCompletingHost();
+          final drained = Completer<void>();
+          final dispatcher = dispatcherFor(fixture, host, drained);
+          dispatcher.start(
+            wakeups: const Stream<void>.empty(),
+            isActive: () => active,
+          );
+          active = true;
+
+          await drained.future.timeout(const Duration(seconds: 2));
+          await dispatcher.stop();
+          await _waitForIdle(fixture, endpoints);
+
+          expect(host.calls, 1);
+        },
+      );
+    },
+  );
+
+  withServerpod(
+    'ConversationExecutionState concurrent same-request',
+    (sessionBuilder, endpoints) {
+      test(
+        'concurrent Continue requests from independent sessions replay once',
+        () async {
+          final fixture = await _preparePromptlessExecution(
+            sessionBuilder,
+          );
+          final request = ContinueConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'concurrent-promptless-continue-1',
+            conversationId: fixture.conversationId,
+            expectedProjectionRevision: 1,
+          );
+          final firstSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              fixture.userId,
+              const {},
+            ),
+          );
+          final secondSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              fixture.userId,
+              const {},
+            ),
+          );
+
+          try {
+            final snapshots = await Future.wait([
+              endpoints.conversation.continueConversation(
+                firstSession,
+                request,
+              ),
+              endpoints.conversation.continueConversation(
+                secondSession,
+                request,
+              ),
+            ]);
+            final executions = await ConversationExecution.db.find(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.conversationId.equals(
+                    fixture.conversationDatabaseId,
+                  ),
+            );
+            final jobs = await ConversationJob.db.find(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.conversationId.equals(
+                    fixture.conversationDatabaseId,
+                  ) &
+                  table.kind.equals(ConversationJobKinds.turn),
+            );
+            final events = await ConversationEvent.db.find(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.requestId.equals(request.requestId),
+            );
+
+            expect(
+              snapshots.map((snapshot) => snapshot.activeExecution!.id).toSet(),
+              hasLength(1),
+            );
+            expect(executions, hasLength(1));
+            expect(jobs, hasLength(1));
+            expect(events, hasLength(1));
+          } finally {
+            await runConversationWorker(
+              fixture.database,
+              isActive: () => true,
+              worker: ConversationWorker(host: _CountingCompletingHost()),
+            );
+            await _waitForIdle(fixture, endpoints);
+          }
+        },
+      );
+    },
+    rollbackDatabase: RollbackDatabase.disabled,
+  );
 }
 
 Future<_ExecutionFixture> _preparePromptlessExecution(
@@ -2627,6 +3417,26 @@ class _AwaitingApprovalHost extends _CountingCompletingHost {
   }
 }
 
+class _ThrowingFailureHost extends _CountingCompletingHost {
+  _ThrowingFailureHost(this.failure);
+
+  final Object failure;
+
+  @override
+  Future<ConversationEngineResult> executeTurn(
+    Session session, {
+    required ConversationJob job,
+    required ConversationTurn turn,
+    required List<ConversationMessage> messages,
+    required ConversationProgressPublisher liveTurns,
+    Future<void>? leaseLost,
+  }) async {
+    calls++;
+    if (!started.isCompleted) started.complete();
+    throw failure;
+  }
+}
+
 class _FailOnceHost extends _CountingCompletingHost {
   @override
   Future<ConversationEngineResult> executeTurn(
@@ -2638,7 +3448,9 @@ class _FailOnceHost extends _CountingCompletingHost {
     Future<void>? leaseLost,
   }) async {
     calls++;
-    if (calls == 1) throw StateError('retry once');
+    if (calls == 1) {
+      throw const ProviderTransientFailureException('offline retry fixture');
+    }
     return const ConversationEngineResult(
       content: 'Done',
       finishReason: 'stop',

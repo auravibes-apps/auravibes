@@ -4,16 +4,24 @@
 // Cascade_invocations lint. Not applicable in test assertions.
 
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_repository_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/usecases/create_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/duplicate_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/validate_workspace_name_use_case.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class _FakeRepository implements WorkspaceRepository {
   Future<void> Function(String id)? beforeDeleteWorkspace;
@@ -404,7 +412,93 @@ void main() {
       final remaining = await fixture.repository.getAllWorkspaces();
       expect(remaining, isEmpty);
     });
+
+    test('clears only drafts in a successfully deleted workspace', () async {
+      final repository = _FakeRepository();
+      final deletedWorkspace = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Delete', type: .local),
+      );
+      final otherWorkspace = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Keep', type: .local),
+      );
+      final attachmentUsecase = _RecordingLocalChatAttachmentUsecase();
+      final container = ProviderContainer(
+        overrides: [
+          workspaceRepositoryProvider.overrideWithValue(repository),
+          backgroundWorkCoordinatorProvider.overrideWithValue(
+            .new(_UnusedBackgroundWorkStore(), .new(), (_) async => null),
+          ),
+          localChatAttachmentUsecaseProvider.overrideWithValue(
+            attachmentUsecase,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      const attachment = MessageAttachmentToCreate(
+        localPath: '/tmp/workspace-draft.txt',
+        fileName: 'workspace-draft.txt',
+        displayName: 'workspace-draft.txt',
+        mimeType: 'text/plain',
+        modality: .file,
+        sizeBytes: 30,
+      );
+      const deletedDraft = ChatDraft(
+        text: 'remove with workspace',
+        attachments: [attachment],
+      );
+      const sameWorkspaceOtherDraft = ChatDraft(text: 'also remove');
+      const otherWorkspaceDraft = ChatDraft(text: 'keep');
+      final deletedDraftProvider = conversationDraftProvider(
+        deletedWorkspace.id,
+        'conversation-1',
+      );
+      final sameWorkspaceOtherDraftProvider = conversationDraftProvider(
+        deletedWorkspace.id,
+        'conversation-2',
+      );
+      final otherWorkspaceDraftProvider = conversationDraftProvider(
+        otherWorkspace.id,
+        'conversation-1',
+      );
+      container.read(deletedDraftProvider.notifier).save(deletedDraft);
+      container
+          .read(sameWorkspaceOtherDraftProvider.notifier)
+          .save(sameWorkspaceOtherDraft);
+      container
+          .read(otherWorkspaceDraftProvider.notifier)
+          .save(otherWorkspaceDraft);
+
+      await container
+          .read(deleteWorkspaceUseCaseProvider)
+          .call(id: deletedWorkspace.id, activeWorkspaceId: otherWorkspace.id);
+
+      expect(container.read(deletedDraftProvider), isNull);
+      expect(container.read(sameWorkspaceOtherDraftProvider), isNull);
+      expect(
+        container.read(otherWorkspaceDraftProvider),
+        same(otherWorkspaceDraft),
+      );
+      expect(attachmentUsecase.deletedPaths, [attachment.localPath]);
+    });
   });
+}
+
+class _RecordingLocalChatAttachmentUsecase
+    implements LocalChatAttachmentUsecase {
+  final deletedPaths = <String>[];
+
+  @override
+  Future<void> deleteAttachment(String localPath) async {
+    deletedPaths.add(localPath);
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _UnusedBackgroundWorkStore implements AgentBackgroundWorkStore {
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class const _CreateWorkspaceUseCaseFixture._(
@@ -460,6 +554,7 @@ class const _DeleteWorkspaceUseCaseFixture._(
         repository: repository,
         prepareBackgroundWorkDeletion: (_) async => calls.add('prepare'),
         restoreBackgroundWorkAfterFailedDeletion: (_) => calls.add('restore'),
+        clearWorkspaceDrafts: (_) => Future<void>.value(),
       ),
       calls,
     );

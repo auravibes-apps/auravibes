@@ -6,6 +6,7 @@ class DeleteConversationUsecase {
     this._stopConversation, {
     required this._prepareBackgroundWorkDeletion,
     required this._restoreBackgroundWorkAfterFailedDeletion,
+    required this._clearConversationDraft,
     this._captureForkBoundaries,
   });
 
@@ -15,29 +16,33 @@ class DeleteConversationUsecase {
   _prepareBackgroundWorkDeletion;
   final void Function(String conversationId)
   _restoreBackgroundWorkAfterFailedDeletion;
+  final Future<void> Function(String workspaceId, String conversationId)
+  _clearConversationDraft;
   final Future<Map<String, String?>> Function(String conversationId)?
   _captureForkBoundaries;
 
-  Future<bool> call(String conversationId) async {
+  Future<bool> call({
+    required String workspaceId,
+    required String conversationId,
+  }) async {
     final boundaries = await _captureForkBoundaries?.call(conversationId);
+    final bool deleted;
     try {
-      return await _deleteAfterPreparation(conversationId, boundaries);
+      await _prepareBackgroundWorkDeletion(conversationId);
+      await _stopConversation(conversationId);
+      deleted = await _deleteConversation(conversationId, boundaries);
     } on Object {
       _restoreBackgroundWorkAfterFailedDeletion(conversationId);
       rethrow;
     }
-  }
+    if (!deleted) {
+      _restoreBackgroundWorkAfterFailedDeletion(conversationId);
 
-  Future<bool> _deleteAfterPreparation(
-    String conversationId,
-    Map<String, String?>? boundaries,
-  ) async {
-    await _prepareBackgroundWorkDeletion(conversationId);
-    await _stopConversation(conversationId);
-    final deleted = await _deleteConversation(conversationId, boundaries);
-    if (!deleted) _restoreBackgroundWorkAfterFailedDeletion(conversationId);
+      return false;
+    }
+    await _clearConversationDraft(workspaceId, conversationId);
 
-    return deleted;
+    return true;
   }
 
   Future<bool> _deleteConversation(
