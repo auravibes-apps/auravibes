@@ -91,6 +91,10 @@ class const RestoreCompactionCheckpointUsecase({
     if (conversation == null) {
       throw const CompactionCheckpointRestoreException();
     }
+    final expectedRevision = request.expectedConversationRevision;
+    if (expectedRevision != null && expectedRevision != conversation.revision) {
+      throw const CompactionStalePreviewException();
+    }
     _ensureSourceTranscriptUnchanged(request, messages);
     _ensureLocalCheckpointExists(request, messages);
     await _ensureConversationIdle(request.conversationId);

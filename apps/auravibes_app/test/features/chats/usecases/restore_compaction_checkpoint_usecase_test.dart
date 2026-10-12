@@ -127,6 +127,24 @@ void main() {
   );
 
   test(
+    'rejects a local preview when the conversation revision changed',
+    () async {
+      await expectLater(
+        restore.call(
+          restoreRequest(
+            expectedConversationRevision: conversation.revision + 1,
+            expectedMessages: [checkpoint],
+          ),
+        ),
+        throwsA(isA<CompactionStalePreviewException>()),
+      );
+      final _ = verifyNever(
+        () => conversations.patchConversation(any(), any()),
+      );
+    },
+  );
+
+  test(
     'restores an inherited fork checkpoint within the child boundary',
     () async {
       when(() => conversations.getConversationById(conversationId)).thenAnswer(
