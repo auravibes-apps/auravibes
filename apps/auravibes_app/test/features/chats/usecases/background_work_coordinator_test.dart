@@ -252,7 +252,6 @@ void main() {
       final fixture = await _createFixture();
       addTearDown(fixture.database.close);
       final database = fixture.database;
-      final workspaceId = fixture.workspaceId;
       final conversationId = fixture.conversationId;
       final runtime = fixture.runtime;
       final repository = fixture.repository;
@@ -323,7 +322,6 @@ void main() {
     () async {
       final fixture = await _createFixture();
       addTearDown(fixture.database.close);
-      final database = fixture.database;
       final workspaceId = fixture.workspaceId;
       final conversationId = fixture.conversationId;
       final repository = fixture.repository;
