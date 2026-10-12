@@ -56,6 +56,12 @@ class const ResponsiveSlidingDrawer({
 
   /// Whether the drawer starts open.
   final bool initiallyOpen = false,
+
+  /// Whether the desktop drawer is shown as a compact 80px navigation rail.
+  ///
+  /// The saved expanded width is kept separately and is not changed by this
+  /// presentation mode.
+  final bool isDesktopCompact = false,
   super.key,
 }) extends ConsumerStatefulWidget {
   @override
@@ -71,6 +77,7 @@ class _ResponsiveSlidingDrawerState
   static const _desktopOpenRatio = 0.3;
   static const _desktopMinDrawerWidth = 150.0;
   static const _desktopMaxDrawerWidth = 400.0;
+  static const _desktopCompactDrawerWidth = 80.0;
   static const _desktopDrawerWidthPreferenceKey = 'app_desktop_drawer_width';
   static const _swipeVelocityThreshold = 500.0;
   static const _dragPercentageThreshold = 0.3;
@@ -243,13 +250,19 @@ extension _ResponsiveSlidingDrawerAppearance on _ResponsiveSlidingDrawerState {
   double get _currentDrawerWidth {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
-    return isDesktop
-        ? (_desktopDrawerWidth ??
-              (_ResponsiveSlidingDrawerState._desktopOpenRatio * screenWidth))
-        : (_ResponsiveSlidingDrawerState._openRatio * screenWidth).clamp(
-            0.0,
-            _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth,
-          );
+    if (isDesktop) {
+      if (widget.isDesktopCompact) {
+        return _ResponsiveSlidingDrawerState._desktopCompactDrawerWidth;
+      }
+
+      return _desktopDrawerWidth ??
+          (_ResponsiveSlidingDrawerState._desktopOpenRatio * screenWidth);
+    }
+
+    return (_ResponsiveSlidingDrawerState._openRatio * screenWidth).clamp(
+      0.0,
+      _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth,
+    );
   }
 
   bool get _drawerFullyOpen =>
@@ -523,7 +536,8 @@ class const _DesktopDrawerLayout({
       _DesktopDrawerBody(state: state),
       _DesktopDrawerPanel(state: state),
       _DesktopDrawerDragArea(state: state),
-      if (state._drawerFullyOpen) _DesktopDrawerDivider(state: state),
+      if (state._drawerFullyOpen && !state.widget.isDesktopCompact)
+        _DesktopDrawerDivider(state: state),
     ],
   );
 }

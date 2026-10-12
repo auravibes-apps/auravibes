@@ -12,7 +12,9 @@
   "navigation_drawer": {
     "toggle_tooltip": "Alternar menú de navegación",
     "resize_handle_tooltip": "Redimensionar panel de navegación",
-    "resize_handle_hint": "Arrastra horizontalmente para cambiar el ancho del panel"
+    "resize_handle_hint": "Arrastra horizontalmente para cambiar el ancho del panel",
+    "collapse_sidebar_tooltip": "Contraer barra lateral",
+    "expand_sidebar_tooltip": "Expandir barra lateral"
   },
   "intro_flow": {
     "welcome": {

@@ -104,6 +104,8 @@ Future<void> _verifyUnavailableScenario(
 };
 
 Future<void> _sendAvailable(WidgetTester tester) async {
+  final semantics = tester.ensureSemantics();
+
   ChatDraft? sentDraft;
   await _pumpAndInit(
     tester,
@@ -113,27 +115,36 @@ Future<void> _sendAvailable(WidgetTester tester) async {
   );
   await tester.enterText(find.byType(EditableText), 'A local message');
   await tester.pump();
-  await tester.tap(find.byKey(const ValueKey<String>('chat_send_button')));
+  await tester.tap(
+    find.bySemanticsIdentifier('chat_send_button').hitTestable(),
+  );
   await tester.pump();
 
   expect(sentDraft?.text, 'A local message');
+  semantics.dispose();
 }
 
 Future<void> _sendUnavailable(WidgetTester tester) async {
+  final semantics = tester.ensureSemantics();
+
   var sendCount = 0;
   await _pumpAndInit(
     tester,
     _InputApp(input: _InputSubject(onSendMessage: (_) => sendCount++)),
   );
-  final sendButton = find.descendant(
-    of: find.byKey(const ValueKey<String>('chat_send_button')),
+  final sendButtonIdentifier = find.bySemanticsIdentifier('chat_send_button');
+  final sendButton = find.ancestor(
+    of: sendButtonIdentifier,
     matching: find.byType(AuraButton),
   );
 
+  expect(sendButtonIdentifier, findsOneWidget);
+  expect(sendButton, findsOneWidget);
   expect(tester.widget<AuraButton>(sendButton).disabled, isTrue);
-  await tester.tap(find.byKey(const ValueKey<String>('chat_send_button')));
+  await tester.tap(sendButtonIdentifier);
   await tester.pump();
   expect(sendCount, 0);
+  semantics.dispose();
 }
 
 Future<void> _stopAvailable(WidgetTester tester) async {

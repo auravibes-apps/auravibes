@@ -17,6 +17,10 @@ abstract class LocaleKeys {
       'navigation_drawer.resize_handle_tooltip';
   static const navigation_drawer_resize_handle_hint =
       'navigation_drawer.resize_handle_hint';
+  static const navigation_drawer_collapse_sidebar_tooltip =
+      'navigation_drawer.collapse_sidebar_tooltip';
+  static const navigation_drawer_expand_sidebar_tooltip =
+      'navigation_drawer.expand_sidebar_tooltip';
   static const intro_flow_welcome_title = 'intro_flow.welcome.title';
   static const intro_flow_welcome_body = 'intro_flow.welcome.body';
   static const intro_flow_choice_title = 'intro_flow.choice.title';
