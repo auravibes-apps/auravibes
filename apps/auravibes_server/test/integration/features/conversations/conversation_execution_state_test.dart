@@ -1835,9 +1835,9 @@ void main() {
               fixture.database,
               job.id!,
             );
-            final turn = (await ConversationTurn.db.findFirstRow(
+            final turn = (await ConversationTurn.db.findById(
               fixture.database,
-              where: (table) => table.requestId.equals('continue-1'),
+              job.turnId!,
             ))!;
             final userMessage = await ConversationMessage.db.findById(
               fixture.database,
