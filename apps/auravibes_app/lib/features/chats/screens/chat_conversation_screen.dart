@@ -1828,14 +1828,11 @@ void _showSkillsModal({
 }) {
   if (!context.mounted) return;
 
-  FocusManager.instance.primaryFocus?.unfocus();
   unawaited(
-    showDialog<void>(
+    ConversationSkillSelectorModal.show(
       context: context,
-      builder: (context) => ConversationSkillSelectorModal(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      ),
+      workspaceId: workspaceId,
+      conversationId: conversationId,
     ),
   );
 }

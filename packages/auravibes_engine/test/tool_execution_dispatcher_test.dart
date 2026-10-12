@@ -13,6 +13,7 @@ void main() {
     return AgentToolExecutionDispatcher<String>(
       runResolvedTool: ({
         required conversationId,
+        required toolCallId,
         required tool,
         required arguments,
       }) async => result,
@@ -141,6 +142,7 @@ void main() {
         AgentToolExecutionDispatcher<String>(
           runResolvedTool: ({
             required conversationId,
+            required toolCallId,
             required tool,
             required arguments,
           }) async => 'x' * 1000,
@@ -178,6 +180,7 @@ void main() {
           await AgentToolExecutionDispatcher<String>(
             runResolvedTool: ({
               required conversationId,
+              required toolCallId,
               required tool,
               required arguments,
             }) async => source,
@@ -208,6 +211,7 @@ void main() {
         await AgentToolBatchExecutor<String>(
           runResolvedTool: ({
             required conversationId,
+            required toolCallId,
             required tool,
             required arguments,
           }) async => tool * (defaultToolOutputBytes + 1),
@@ -244,6 +248,7 @@ void main() {
             runResolvedTool:
                 ({
                   required conversationId,
+                  required toolCallId,
                   required tool,
                   required arguments,
                 }) async {
@@ -272,6 +277,7 @@ void main() {
         await AgentToolExecutionDispatcher<String>(
           runResolvedTool: ({
             required conversationId,
+            required toolCallId,
             required tool,
             required arguments,
           }) async => '{"conversationId":"child-1","status":"stopped"}',
@@ -294,6 +300,7 @@ void main() {
         await AgentToolExecutionDispatcher<String>(
           runResolvedTool: ({
             required conversationId,
+            required toolCallId,
             required tool,
             required arguments,
           }) async => 'x' * (defaultToolOutputBytes + 1),
@@ -321,6 +328,7 @@ void main() {
           runResolvedTool:
               ({
                 required conversationId,
+                required toolCallId,
                 required tool,
                 required arguments,
               }) async {
@@ -351,6 +359,7 @@ void main() {
             runResolvedTool:
                 ({
                   required conversationId,
+                  required toolCallId,
                   required tool,
                   required arguments,
                 }) async {

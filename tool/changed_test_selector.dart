@@ -1724,8 +1724,16 @@ bool _isDocumentation(String path) {
 
 bool _isNonExecutablePath(String path) =>
     _isDocumentation(path) ||
+    _isSkillMetadataPath(path) ||
     path.startsWith('.pi/') ||
     path == 'sonar-project.properties';
+
+bool _isSkillMetadataPath(String path) {
+  if (!path.startsWith('.agents/skills/')) return false;
+  final filename = path.split('/').last.toLowerCase();
+
+  return filename.endsWith('.mdx') || path.endsWith('/evals/evals.json');
+}
 
 bool _isGlobal(String path) {
   final normalized = path.replaceAll(r'\', '/');

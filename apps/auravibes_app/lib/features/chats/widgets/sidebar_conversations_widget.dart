@@ -108,20 +108,53 @@ class const _SidebarConversationsLoaded({
   required final List<ConversationEntity> chats,
   required final String workspaceId,
   required final String? currentChatId,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => chats.isEmpty
-      ? const Column(
-          children: [
-            _SidebarConversationsSectionHeader(),
-            _SidebarConversationsEmptyState(),
-          ],
-        )
-      : _SidebarConversationsList(
-          chats: chats,
-          workspaceId: workspaceId,
-          currentChatId: currentChatId,
-        );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final visibleChats = _sidebarVisibleConversations(
+      ref,
+      workspaceId: workspaceId,
+      currentChatId: currentChatId,
+      recentChats: chats,
+    );
+
+    return visibleChats.isEmpty
+        ? const Column(
+            children: [
+              _SidebarConversationsSectionHeader(),
+              _SidebarConversationsEmptyState(),
+            ],
+          )
+        : _SidebarConversationsList(
+            chats: visibleChats,
+            workspaceId: workspaceId,
+            currentChatId: currentChatId,
+          );
+  }
+}
+
+List<ConversationEntity> _sidebarVisibleConversations(
+  WidgetRef ref, {
+  required String workspaceId,
+  required String? currentChatId,
+  required List<ConversationEntity> recentChats,
+}) {
+  final activeChatId = currentChatId;
+  if (activeChatId == null ||
+      recentChats.any((chat) => chat.id == activeChatId)) {
+    return recentChats;
+  }
+
+  final activeChat = ref
+      .watch(
+        conversationByIdStreamProvider(
+          workspaceId,
+          conversationId: activeChatId,
+        ),
+      )
+      .value;
+
+  return activeChat == null ? recentChats : [activeChat, ...recentChats];
 }
 
 class const _SidebarConversationsLoading() extends StatelessWidget {
