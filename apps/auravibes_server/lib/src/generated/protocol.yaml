@@ -31,6 +31,9 @@ conversation:
   - continueTurn:
   - getTurn:
   - getConversationSnapshot:
+  - detachToolCall:
+  - listBackgroundWorks:
+  - stopBackgroundWork:
   - queueConversationMessage:
   - continueConversation:
   - stopConversation:

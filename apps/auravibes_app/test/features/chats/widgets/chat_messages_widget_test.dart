@@ -4,7 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ui' show Offset, PointerDeviceKind;
+import 'dart:ui' show Offset, PointerDeviceKind, Tristate;
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -16,7 +16,9 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
+import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -25,9 +27,9 @@ import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
+import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
-import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
@@ -57,9 +59,10 @@ import 'package:flutter_localizations/flutter_localizations.dart'
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show DataPath;
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:rxdart/rxdart.dart' show CompositeSubscription;
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -70,6 +73,7 @@ Widget buildSubject({
   String conversationId = 'conv-1',
   List<PendingToolCall> pendingToolCalls = const [],
   bool showThinking = false,
+  bool isStopRequested = false,
   Future<void> Function(MessageEntity message)? onRetryMessage,
   ConversationEntity? conversation,
   AuraTheme? theme,
@@ -82,6 +86,7 @@ Widget buildSubject({
     overrides: overrides,
     pendingToolCalls: pendingToolCalls,
     showThinking: showThinking,
+    isStopRequested: isStopRequested,
     onRetryMessage: onRetryMessage,
     messageEntitiesById: messageEntitiesById,
     conversation: conversation,
@@ -280,6 +285,75 @@ void main() {
   }
 
   group('ChatMessagesWidget', () {
+    testWidgets('sizes the fork boundary action from Aura target updates', (
+      tester,
+    ) async {
+      final message = _createMessage();
+      final source = ConversationEntity(
+        id: 'source-1',
+        title: 'Original',
+        workspaceId: 'ws-1',
+        isPinned: false,
+        createdAt: DateTime(2025),
+        updatedAt: DateTime(2025),
+      );
+      final fork = ConversationEntity(
+        id: 'conv-1',
+        title: 'Fork',
+        workspaceId: 'ws-1',
+        isPinned: false,
+        createdAt: DateTime(2025),
+        updatedAt: DateTime(2025),
+        forkSourceConversationId: source.id,
+        forkSourceTitle: source.title,
+        forkThroughMessageId: message.id,
+      );
+      final theme = ValueNotifier(AuraTheme.light);
+      addTearDown(theme.dispose);
+
+      Widget subject(AuraTheme theme) => buildSubject(
+        messages: [message.id],
+        messageEntitiesById: {message.id: message},
+        conversation: fork,
+        theme: theme,
+        overrides: [
+          ..._messageOverrides({message.id: message}),
+          conversationByIdStreamProvider(
+            'ws-1',
+            conversationId: source.id,
+          ).overrideWith((ref) => Stream.value(source)),
+        ],
+      );
+
+      await pumpAndInit(
+        tester,
+        ValueListenableBuilder<AuraTheme>(
+          valueListenable: theme,
+          builder: (context, theme, _) => subject(theme),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final label = find.text('Forked from Original');
+      expect(label, findsOneWidget);
+      final target = find.ancestor(of: label, matching: find.byType(InkWell));
+      expect(target, findsOneWidget);
+      final initialTargetSize = tester.getSize(target);
+      expect(initialTargetSize.width, greaterThanOrEqualTo(48));
+      expect(initialTargetSize.height, greaterThanOrEqualTo(48));
+      final labelSize = tester.getSize(label);
+
+      theme.value = AuraTheme.light.copyWith(
+        interactionSizes: const AuraInteractionSizeScale(minimumTargetSize: 72),
+      );
+      await tester.pumpAndSettle();
+
+      final updatedTargetSize = tester.getSize(target);
+      expect(updatedTargetSize.width, greaterThanOrEqualTo(72));
+      expect(updatedTargetSize.height, greaterThanOrEqualTo(72));
+      expect(tester.getSize(label), labelSize);
+    });
+
     testWidgets('keeps unfinished form fields editable without final actions', (
       tester,
     ) async {
@@ -656,6 +730,48 @@ void main() {
 
       expect(
         find.byKey(const ValueKey('retry_message_failed-user')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('hides retry for a non-retryable provider failure', (
+      tester,
+    ) async {
+      final message = _createMessage(
+        id: 'auth-failed-user',
+        status: MessageStatus.error,
+        metadata: const MessageMetadataEntity(
+          modelMetadata: {
+            'providerError': true,
+            'providerRecovery': {
+              'classification': 'authentication',
+              'retryable': false,
+            },
+          },
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          onRetryMessage: (_) async {},
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('retry_message_auth-failed-user')),
         findsNothing,
       );
     });
@@ -1574,6 +1690,7 @@ void main() {
         sendMessage: (_, _, _) async {
           sendCalls++;
         },
+        recordRecentSkillUse: (_, _, _) async {},
       );
 
       final result = await pumpCopySurface(
@@ -2092,10 +2209,25 @@ void main() {
           text,
           contains(
             persistedClipped
-                ? 'stored output was also clipped'
-                : 'full output remains stored',
+                ? 'removed content is unavailable'
+                : 'Only the model context was truncated',
           ),
         );
+
+        final semantics = tester.ensureSemantics();
+        await tester.tap(find.text('Show more'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.descendant(
+            of: find.byType(Dialog),
+            matching: find.bySemanticsLabel(text),
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Close'));
+        await tester.pumpAndSettle();
+        semantics.dispose();
       });
     }
 
@@ -2164,6 +2296,176 @@ void main() {
         find.byKey(const ValueKey('activity_tool_truncation_tc-malformed')),
         findsNothing,
       );
+      expect(find.text('Show more'), findsNothing);
+    });
+
+    testWidgets(
+      'offers inspection when retained output fits the visual preview',
+      (tester) async {
+        const responseRaw =
+            '**stored** <b>text</b> [link](https://example.test)';
+        const modelResponse = 'The model response stays unchanged.';
+        final originalBytes = defaultToolOutputBytes + 128;
+        final contextStatus =
+            'Tool response: $originalBytes bytes. Only the model context was '
+            'truncated to $defaultToolOutputBytes bytes; the full response '
+            'remains stored.';
+        final responseContextRaw = jsonEncode({
+          '_toolOutput': {
+            'format': 'auravibes.tool-output-projection.v1',
+            'notice': '[tool output truncated]',
+            'truncated': true,
+            'originalBytes': originalBytes,
+            'limitBytes': defaultToolOutputBytes,
+          },
+          'content': 'model context excerpt',
+        });
+        final toolCall = MessageToolCallEntity(
+          id: 'tc-inspect-short',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{}',
+          responseRaw: responseRaw,
+          responseContextRaw: responseContextRaw,
+          outputTruncated: true,
+          originalResponseBytes: originalBytes,
+          resultStatus: ToolCallResultStatus.success,
+        );
+        final message = _createMessage(
+          content: modelResponse,
+          isUser: false,
+          metadata: MessageMetadataEntity(toolCalls: [toolCall]),
+        );
+        final semantics = tester.ensureSemantics();
+        String? copiedText;
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          (call) async {
+            if (call.method == 'Clipboard.setData') {
+              copiedText = (call.arguments as Map)['text'] as String?;
+            }
+
+            return null;
+          },
+        );
+        addTearDown(
+          () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            SystemChannels.platform,
+            null,
+          ),
+        );
+
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: [message.id],
+            overrides: _messageOverrides({message.id: message}),
+          ),
+        );
+        await revealActivityToolCalls(tester);
+        await tester.tap(
+          find.byKey(const ValueKey('activity_tool_tc-inspect-short')),
+        );
+        await tester.pump();
+
+        expect(find.text('Show more'), findsOneWidget);
+        expect(find.byTooltip('Copy tool response'), findsOneWidget);
+        expect(find.text(modelResponse), findsOneWidget);
+
+        await tester.tap(find.text('Show more'));
+        await tester.pumpAndSettle();
+
+        final modal = find.byType(Dialog);
+        expect(
+          find.descendant(of: modal, matching: find.text(responseRaw)),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: modal,
+            matching: find.bySemanticsLabel(contextStatus),
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Close'));
+        await tester.pumpAndSettle();
+        expect(find.text(modelResponse), findsOneWidget);
+
+        await tester.tap(find.byTooltip('Copy tool response'));
+        await tester.pump();
+
+        expect(copiedText, responseRaw);
+        expect(find.text(modelResponse), findsOneWidget);
+        semantics.dispose();
+      },
+    );
+
+    testWidgets('localizes accessible stored-output controls in Spanish', (
+      tester,
+    ) async {
+      final originalBytes = defaultToolOutputBytes + 128;
+      final responseContextRaw = jsonEncode({
+        '_toolOutput': {
+          'format': 'auravibes.tool-output-projection.v1',
+          'notice': '[tool output truncated]',
+          'truncated': true,
+          'originalBytes': originalBytes,
+          'limitBytes': defaultToolOutputBytes,
+        },
+        'content': 'vista previa del modelo',
+      });
+      final toolCall = MessageToolCallEntity(
+        id: 'tc-inspect-spanish',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        responseRaw: 'respuesta guardada',
+        responseContextRaw: responseContextRaw,
+        outputTruncated: true,
+        originalResponseBytes: originalBytes,
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: 'La respuesta del modelo no cambia.',
+        isUser: false,
+        metadata: MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+      final expectedStatus =
+          'Respuesta de la herramienta: $originalBytes bytes. Solo se recortó '
+          'el contexto del modelo a $defaultToolOutputBytes bytes; la '
+          'respuesta completa sigue guardada.';
+      final semantics = tester.ensureSemantics();
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          locale: const Locale('es'),
+          overrides: _messageOverrides({message.id: message}),
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.tap(
+        find.byKey(const ValueKey('activity_tool_tc-inspect-spanish')),
+      );
+      await tester.pump();
+
+      expect(find.text('Ver más'), findsOneWidget);
+      expect(
+        find.byTooltip('Copiar respuesta de la herramienta'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel(expectedStatus), findsOneWidget);
+
+      await tester.tap(find.text('Ver más'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(Dialog),
+          matching: find.bySemanticsLabel(expectedStatus),
+        ),
+        findsOneWidget,
+      );
+      semantics.dispose();
     });
 
     testWidgets('hides pending tool arguments from the activity details', (
@@ -2333,6 +2635,7 @@ void main() {
         label.textSpan?.toPlainText(),
         contains('Research Assistant / Search the web'),
       );
+      expect(label.textSpan?.toPlainText(), contains('Searches the web.'));
       expect(find.text('Call Skill Tool'), findsNothing);
       final status = tester.widget<Text>(
         find.byKey(const ValueKey('activity_tool_status_tc-skill')),
@@ -2343,10 +2646,113 @@ void main() {
         tester
             .getSemantics(find.byKey(const ValueKey('activity_tool_tc-skill')))
             .label,
-        contains('Research Assistant / Search the web Disabled in workspace'),
+        contains(
+          'Research Assistant / Search the web Searches the web. '
+          'Disabled in workspace',
+        ),
       );
       expect(tester.takeException(), isNull);
       semantics.dispose();
+    });
+
+    testWidgets('opens the owning skill from a separate activity action', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-open-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research","tool":"search_web"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+      Widget? mainChat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/chats/conv-1',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            builder: (_, _) => mainChat ?? const SizedBox.shrink(),
+          ),
+          GoRoute(
+            path: '/workspaces/:workspaceId/more/skills/:skillId',
+            builder: (_, state) => Material(
+              child: Text('Skill details ${state.pathParameters['skillId']}'),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          messageEntitiesById: {message.id: message},
+          overrides: [
+            ..._messageOverrides({message.id: message}),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => const [
+                WorkspaceSkill(
+                  id: 'skill-1',
+                  slug: 'research',
+                  title: 'Research Assistant',
+                  description: '',
+                  source: SkillSource.user,
+                  kind: SkillKind.template,
+                  isEnabled: true,
+                ),
+              ],
+            ),
+            skillTemplateToolsProvider('ws-1', 'skill-1').overrideWith(
+              (ref) async => [
+                SkillTemplateToolEntity(
+                  id: 'tool-1',
+                  skillId: 'skill-1',
+                  templateType: SkillTemplateToolType.url,
+                  title: 'Search the web',
+                  description: 'Searches the web.',
+                  slug: 'search_web',
+                  isEnabled: true,
+                  requiresCredential: false,
+                  createdAt: DateTime(2026),
+                  updatedAt: DateTime(2026),
+                ),
+              ],
+            ),
+          ],
+          appBuilder: (context, child) {
+            mainChat = ChatPrimaryScrollController(child: child);
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('activity_open_skill_tc-open-skill')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_tool_details_tc-open-skill')),
+        findsNothing,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('activity_open_skill_tc-open-skill')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Skill details skill-1'), findsOneWidget);
     });
 
     testWidgets('shows app skill and tool titles in activity rows', (
@@ -2412,10 +2818,17 @@ void main() {
       final skillTitle =
           appSkill.titleKey?.tr(context: context) ?? appSkill.title;
       final toolTitle = tool.titleKey?.tr(context: context) ?? tool.title;
+      final toolDescription =
+          tool.descriptionKey?.tr(context: context) ?? tool.description;
       final label = tester.widget<Text>(labelFinder);
       expect(
         label.textSpan?.toPlainText(),
         contains('$skillTitle / $toolTitle'),
+      );
+      expect(label.textSpan?.toPlainText(), contains(toolDescription));
+      expect(
+        find.byKey(const ValueKey('activity_open_skill_tc-app-skill')),
+        findsOneWidget,
       );
       expect(find.text('Completed'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);
@@ -3417,6 +3830,472 @@ void main() {
         find.byKey(const ValueKey('message_footer_intermediate')),
         findsNothing,
       );
+    });
+
+    testWidgets(
+      'announces a response once across tokens, activity reclassification, and transcript rebuilds',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        final focusNode = FocusNode();
+        addTearDown(focusNode.dispose);
+
+        const toolCall = MessageToolCallEntity(
+          id: 'tc-intermediate',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{}',
+          resultStatus: ToolCallResultStatus.running,
+        );
+        final initialMessage = _createMessage(
+          id: 'intermediate',
+          content: '',
+          isUser: false,
+          status: MessageStatus.unfinished,
+        );
+        final finalMessage = _createMessage(
+          id: 'final',
+          content: 'Final response',
+          isUser: false,
+        );
+        var messagesById = <String, MessageEntity>{
+          'intermediate': initialMessage,
+        };
+        var visibleIds = <String>['intermediate'];
+        late StateSetter updateTimeline;
+
+        await pumpAndInit(
+          tester,
+          StatefulBuilder(
+            builder: (context, setState) {
+              updateTimeline = setState;
+              return buildSubject(
+                messages: visibleIds,
+                messageEntitiesById: messagesById,
+                overrides: [
+                  messageConversationByIdProvider.overrideWith(
+                    (ref, id) => null,
+                  ),
+                  messagesStreamingProvider.overrideWith(
+                    MessagesStreamingNotifier.new,
+                  ),
+                  conversationBusyStateProvider.overrideWith(
+                    (ref, _) async => const ConversationBusyState(
+                      isStreaming: false,
+                      hasPendingTools: false,
+                    ),
+                  ),
+                ],
+                appBuilder: (context, child) => MaterialApp(
+                  home: ChatPrimaryScrollController(
+                    child: Focus(focusNode: focusNode, child: child),
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: [
+                    ...GlobalMaterialLocalizations.delegates,
+                    sdk_localizations.GlobalMaterialLocalizations.delegate,
+                    ...context.localizationDelegates,
+                  ],
+                  supportedLocales: context.supportedLocales,
+                ),
+              );
+            },
+          ),
+        );
+
+        final statusFinder = find.byKey(
+          const ValueKey('assistant_response_status_conv-1'),
+        );
+        final context = tester.element(find.byType(ChatMessagesWidget));
+        final container = ProviderScope.containerOf(context, listen: false);
+        final streamingNotifier = container.read(
+          messagesStreamingProvider.notifier,
+        );
+        streamingNotifier.startSubscription(
+          CompositeSubscription(),
+          'intermediate',
+        );
+        await tester.pump();
+        expect(statusFinder, findsOneWidget);
+        final startedStatus = tester.getSemantics(statusFinder);
+        expect(startedStatus.label, 'Assistant response started.');
+        expect(startedStatus.flagsCollection.isLiveRegion, isTrue);
+        expect(startedStatus.flagsCollection.isFocused, Tristate.none);
+        final statusNodeId = startedStatus.id;
+        focusNode.requestFocus();
+        await tester.pump();
+        final focusedNode = FocusManager.instance.primaryFocus;
+        expect(focusedNode, same(focusNode));
+
+        updateTimeline(() {
+          messagesById = {
+            'intermediate': _createMessage(
+              id: 'intermediate',
+              content: 'Partial response with another token',
+              isUser: false,
+              status: MessageStatus.unfinished,
+            ),
+          };
+        });
+        await tester.pump();
+        expect(
+          tester.getSemantics(statusFinder).label,
+          'Assistant response started.',
+        );
+        expect(tester.getSemantics(statusFinder).id, statusNodeId);
+        expect(FocusManager.instance.primaryFocus, same(focusedNode));
+
+        updateTimeline(() {
+          messagesById = {
+            'intermediate': _createMessage(
+              id: 'intermediate',
+              content: 'Intermediate response',
+              isUser: false,
+              status: MessageStatus.unfinished,
+              metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+            ),
+            'final': finalMessage,
+          };
+          visibleIds = ['intermediate', 'final'];
+        });
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('activity_trace_toggle_intermediate')),
+          findsOneWidget,
+        );
+        expect(
+          tester.getSemantics(statusFinder).label,
+          'Assistant response started.',
+        );
+        expect(tester.getSemantics(statusFinder).id, statusNodeId);
+        expect(FocusManager.instance.primaryFocus, same(focusedNode));
+
+        updateTimeline(() {
+          messagesById = {
+            'intermediate': _createMessage(
+              id: 'intermediate',
+              content: 'Intermediate response',
+              isUser: false,
+              metadata: const MessageMetadataEntity(
+                toolCalls: [
+                  MessageToolCallEntity(
+                    id: 'tc-intermediate',
+                    name: 'built_in_1_read_file',
+                    argumentsRaw: '{}',
+                    resultStatus: ToolCallResultStatus.success,
+                  ),
+                ],
+              ),
+            ),
+            'final': finalMessage,
+          };
+        });
+        await streamingNotifier.remove('intermediate');
+        await tester.pump();
+        expect(
+          tester.getSemantics(statusFinder).label,
+          'Assistant response completed.',
+        );
+        expect(tester.getSemantics(statusFinder).id, statusNodeId);
+
+        updateTimeline(() {});
+        await tester.pump();
+        expect(statusFinder, findsOneWidget);
+        expect(
+          tester.getSemantics(statusFinder).label,
+          'Assistant response completed.',
+        );
+        expect(tester.getSemantics(statusFinder).id, statusNodeId);
+        semantics.dispose();
+      },
+    );
+
+    for (final terminal in [
+      (
+        status: MessageStatus.error,
+        isStopRequested: false,
+        label: 'Assistant response failed.',
+      ),
+      (
+        status: MessageStatus.sent,
+        isStopRequested: true,
+        label: 'Assistant response cancelled.',
+      ),
+    ]) {
+      testWidgets('announces ${terminal.label}', (tester) async {
+        final semantics = tester.ensureSemantics();
+        var message = _createMessage(
+          id: 'response',
+          content: 'Working',
+          isUser: false,
+          status: MessageStatus.unfinished,
+        );
+        var isStopRequested = false;
+        late StateSetter updateTimeline;
+
+        await pumpAndInit(
+          tester,
+          StatefulBuilder(
+            builder: (context, setState) {
+              updateTimeline = setState;
+              return buildSubject(
+                messages: ['response'],
+                isStopRequested: isStopRequested,
+                messageEntitiesById: {'response': message},
+                overrides: [
+                  messageConversationByIdProvider.overrideWith(
+                    (ref, id) => null,
+                  ),
+                  messagesStreamingProvider.overrideWith(
+                    MessagesStreamingNotifier.new,
+                  ),
+                  conversationBusyStateProvider.overrideWith(
+                    (ref, _) async => const ConversationBusyState(
+                      isStreaming: false,
+                      hasPendingTools: false,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+
+        final statusFinder = find.byKey(
+          const ValueKey('assistant_response_status_conv-1'),
+        );
+        final context = tester.element(find.byType(ChatMessagesWidget));
+        final container = ProviderScope.containerOf(context, listen: false);
+        final streamingNotifier = container.read(
+          messagesStreamingProvider.notifier,
+        );
+        streamingNotifier.startSubscription(
+          CompositeSubscription(),
+          'response',
+        );
+        await tester.pump();
+        expect(
+          tester.getSemantics(statusFinder).label,
+          'Assistant response started.',
+        );
+
+        updateTimeline(() {
+          message = _createMessage(
+            id: 'response',
+            content: 'Working',
+            isUser: false,
+            status: terminal.status,
+          );
+          isStopRequested = terminal.isStopRequested;
+        });
+        await tester.pump();
+        await streamingNotifier.remove('response');
+        await tester.pump();
+        expect(tester.getSemantics(statusFinder).label, terminal.label);
+        semantics.dispose();
+      });
+    }
+
+    testWidgets('localizes response start status', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final message = _createMessage(
+        id: 'response',
+        content: '',
+        isUser: false,
+        status: MessageStatus.unfinished,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          locale: const Locale('es'),
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => true),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        tester
+            .getSemantics(
+              find.byKey(const ValueKey('assistant_response_status_conv-1')),
+            )
+            .label,
+        'La respuesta del asistente comenzó.',
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('does not announce tool-call lifecycle messages', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      final message = _createMessage(
+        id: 'tool-call',
+        content: '',
+        isUser: false,
+        status: MessageStatus.unfinished,
+        messageType: MessageType.toolCall,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => true),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        tester
+            .getSemantics(
+              find.byKey(const ValueKey('assistant_response_status_conv-1')),
+            )
+            .label,
+        isEmpty,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('announces rich A2UI intermediate responses', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-rich-intermediate',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.running,
+      );
+      final intermediateMessage = _createMessage(
+        id: 'intermediate',
+        content: '',
+        isUser: false,
+        status: MessageStatus.sent,
+        metadata: MessageMetadataEntity(
+          a2uiMessages: [
+            for (final operation in [
+              {
+                'createSurface': {
+                  'surfaceId': 'main',
+                  'catalogId': 'urn:auravibes:a2ui:chat:v1',
+                },
+              },
+              {
+                'updateComponents': {
+                  'surfaceId': 'main',
+                  'components': [
+                    {
+                      'id': 'root',
+                      'component': 'Text',
+                      'text': 'A2UI intermediate response',
+                    },
+                  ],
+                },
+              },
+            ])
+              jsonEncode({
+                'protocolVersion': 'v1',
+                'interactionMode': 'passive',
+                'message': {'version': 'v0.9', ...operation},
+              }),
+          ],
+        ),
+      );
+      final finalMessage = _createMessage(
+        id: 'final',
+        content: 'Final response',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+      final messagesById = {
+        'intermediate': intermediateMessage,
+        'final': finalMessage,
+      };
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['intermediate', 'final'],
+          messageEntitiesById: messagesById,
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messagesById[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith(
+              (ref, id) => id == 'intermediate',
+            ),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_intermediate')),
+        findsOneWidget,
+      );
+      expect(find.text('A2UI intermediate response'), findsOneWidget);
+      expect(
+        tester
+            .getSemantics(
+              find.byKey(const ValueKey('assistant_response_status_conv-1')),
+            )
+            .label,
+        'Assistant response started.',
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('activity_trace_toggle_intermediate')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('A2UI intermediate response'), findsNothing);
+      expect(
+        tester
+            .getSemantics(
+              find.byKey(const ValueKey('assistant_response_status_conv-1')),
+            )
+            .label,
+        'Assistant response started.',
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('activity_trace_toggle_intermediate')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('A2UI intermediate response'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
     });
 
     for (final later in [
@@ -5169,9 +6048,16 @@ void main() {
         content: providerDetails,
         isUser: false,
         status: MessageStatus.error,
-        messageType: MessageType.system,
+        messageType: MessageType.text,
         metadata: const MessageMetadataEntity(
-          modelMetadata: {'providerError': true},
+          modelMetadata: {
+            'providerError': true,
+            'providerRecovery': {
+              'classification': 'quota_rate_limit',
+              'retryable': false,
+              'providerStatus': 'RESOURCE_EXHAUSTED',
+            },
+          },
         ),
       );
 
@@ -5194,6 +6080,13 @@ void main() {
 
       expect(find.text(safeDetails), findsOneWidget);
       expect(find.text(providerDetails), findsNothing);
+      expect(
+        find.text(
+          'The provider quota or rate limit was reached. '
+          'Check its usage and limits before retrying.',
+        ),
+        findsOneWidget,
+      );
       expect(find.byType(AuraSelectableText), findsOneWidget);
       final selectable = tester.widget<AuraSelectableText>(
         find.byType(AuraSelectableText),
@@ -5220,6 +6113,7 @@ class const _ChatMessagesTestSubject({
   required final List<PendingToolCall> pendingToolCalls,
   final Map<String, MessageEntity>? messageEntitiesById,
   final bool showThinking = false,
+  final bool isStopRequested = false,
   final Future<void> Function(MessageEntity message)? onRetryMessage,
   final ConversationEntity? conversation,
   final AuraTheme? theme,
@@ -5264,6 +6158,7 @@ class const _ChatMessagesTestSubject({
                       messageEntitiesById: messageEntitiesById,
                       pendingToolCalls: pendingToolCalls,
                       showThinking: showThinking,
+                      isStopRequested: isStopRequested,
                       onRetryMessage: onRetryMessage,
                     ),
                   ),

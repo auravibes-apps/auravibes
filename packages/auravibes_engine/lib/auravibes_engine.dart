@@ -6,6 +6,8 @@ export 'src/a2ui/a2ui_skill_definition.dart';
 export 'src/a2ui/a2ui_stream_decoder.dart';
 export 'src/a2ui/a2ui_validation.dart';
 export 'src/a2ui/a2ui_wire_codec.dart';
+export 'src/agent_background_work.dart';
+export 'src/agent_background_work_status.dart';
 export 'src/agent_continuation_preparer.dart';
 export 'src/agent_iteration_context.dart';
 export 'src/agent_iteration_decision.dart';
@@ -37,7 +39,8 @@ export 'src/genkit_providers/chat_completions_provider.dart'
         ToolSamplingPolicy,
         ToolSamplingResult,
         ToolSamplingValidationException,
-        ToolSamplingValidationReason;
+        ToolSamplingValidationReason,
+        sanitizeProviderErrorDetail;
 export 'src/genkit_providers/openai_codex.dart'
     show OpenAICodexCodec, isRetryableCodexError, openAICodexModel;
 export 'src/genkit_providers/openai_compat_chat_options.dart';
@@ -51,6 +54,7 @@ export 'src/namespaces/agent_namespace.dart';
 export 'src/namespaces/conversations_namespace.dart';
 export 'src/namespaces/tools_namespace.dart';
 export 'src/prompt_messages.dart';
+export 'src/provider_failure_recovery.dart';
 export 'src/provider_profile.dart';
 export 'src/provider_tool_exchange.dart';
 export 'src/providers/agent_data_provider.dart';

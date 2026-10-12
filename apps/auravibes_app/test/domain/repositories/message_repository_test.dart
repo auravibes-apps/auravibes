@@ -61,6 +61,11 @@ class _StubMessageRepository implements MessageRepository {
   }
 
   @override
+  Stream<List<MessageEntity>> watchTranscriptMessagesByConversation(
+    String conversationId,
+  ) => Stream.value(messagesByConversation);
+
+  @override
   Future<List<MessageEntity>> getMessagesByConversationPaginated(
     String conversationId,
     int limit,

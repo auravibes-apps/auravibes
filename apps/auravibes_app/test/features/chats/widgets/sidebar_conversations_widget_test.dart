@@ -315,7 +315,6 @@ void main() {
       );
       expect(find.text('Draft'), findsOneWidget);
       expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
-
       final startStreaming = streamingNotifier.start;
       final stopStreaming = streamingNotifier.remove;
 

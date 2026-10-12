@@ -49,7 +49,7 @@ abstract interface class AgentCancellationEffects {
 }
 
 class AgentCancellationScope {
-  final _cleanupCallbacks = <FutureOr<void> Function()>[];
+  final _cleanupCallbacks = <AgentCancellationCleanupRegistration>[];
   final _cleanupFutures = <Future<void>>[];
   final _closedCompleter = Completer<void>();
   bool _isCancellationRequested = false;
@@ -88,12 +88,25 @@ class AgentCancellationScope {
     if (_isCancellationRequested) return;
 
     _isCancellationRequested = true;
-    List.of(_cleanupCallbacks).forEach(_runCleanup);
+    for (final cleanup in List<AgentCancellationCleanupRegistration>.of(
+      _cleanupCallbacks,
+    )) {
+      cleanup.run();
+    }
   }
 
-  void registerCleanup(FutureOr<void> Function() cleanup) {
-    _cleanupCallbacks.add(cleanup);
-    if (_isCancellationRequested) _runCleanup(cleanup);
+  AgentCancellationCleanupRegistration registerCleanup(
+    FutureOr<void> Function() cleanup,
+  ) {
+    late final AgentCancellationCleanupRegistration registration;
+    registration = AgentCancellationCleanupRegistration(
+      removeCallback: () => _cleanupCallbacks.remove(registration),
+      runCallback: () => _runCleanup(cleanup),
+    );
+    _cleanupCallbacks.add(registration);
+    if (_isCancellationRequested) registration.run();
+
+    return registration;
   }
 
   void _runCleanup(FutureOr<void> Function() cleanup) {
@@ -106,6 +119,34 @@ class AgentCancellationScope {
     } on Object {
       return;
     }
+  }
+}
+
+/// A cleanup that can be transferred away from its foreground scope.
+///
+/// Removing a cleanup succeeds only before cancellation has started. This
+/// lets a caller transfer ownership without racing a stop that already began.
+class AgentCancellationCleanupRegistration({
+  required final bool Function() removeCallback,
+  required final void Function() runCallback,
+}) {
+  final bool Function() _remove = removeCallback;
+  final void Function() _run = runCallback;
+  bool _wasRemoved = false;
+  bool _wasRun = false;
+
+  bool remove() {
+    if (_wasRemoved || _wasRun) return false;
+    final removed = _remove();
+    if (removed) _wasRemoved = true;
+
+    return removed;
+  }
+
+  void run() {
+    if (_wasRemoved || _wasRun) return;
+    _wasRun = true;
+    _run();
   }
 }
 

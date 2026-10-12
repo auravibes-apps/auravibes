@@ -59,15 +59,12 @@ class const _AuraAppBarWithDrawerLeading({
 class const _DrawerMenuButton({required final VoidCallback onPressed})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('app_drawer_menu'),
-    child: AuraIconButton(
-      icon: Icons.menu,
-      onPressed: onPressed,
-      semanticLabel: LocaleKeys.navigation_drawer_toggle_tooltip.tr(),
-      tooltip: LocaleKeys.navigation_drawer_toggle_tooltip.tr(),
-    ),
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.menu,
+    onPressed: onPressed,
     identifier: 'app_drawer_menu',
+    semanticLabel: LocaleKeys.navigation_drawer_toggle_tooltip.tr(),
+    tooltip: LocaleKeys.navigation_drawer_toggle_tooltip.tr(),
   );
 }
 
@@ -83,10 +80,9 @@ class const _NavigationBackButton({required final Widget child})
 
 class const _AutomaticNavigationBackButton() extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _NavigationBackButton(
-    child: AuraIconButton(
-      icon: Icons.arrow_back,
-      onPressed: () => Navigator.of(context).pop(),
-    ),
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.arrow_back,
+    onPressed: () => Navigator.of(context).pop(),
+    identifier: 'app_navigation_back',
   );
 }

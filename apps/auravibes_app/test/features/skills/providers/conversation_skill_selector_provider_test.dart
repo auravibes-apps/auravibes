@@ -1,7 +1,9 @@
+import 'package:auravibes_app/domain/repositories/recent_skill_usage_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/skills/providers/recent_skill_usage_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -111,6 +113,63 @@ void main() {
       ConversationSkillContextStatus.added,
     );
   });
+
+  test(
+    'orders recent skills and ignores duplicates or missing catalog entries',
+    () async {
+      const writing = AvailableSkill(
+        id: 'skill-2',
+        slug: 'writing',
+        title: 'Writing',
+        description: 'Write clearly',
+        content: 'Use plain language',
+        source: .user,
+        kind: .template,
+        credentialReadiness: .ready,
+      );
+      final list = _ListSkills();
+      final manifests = _BuildManifests();
+      when(
+        () => list.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .loaded,
+        ),
+      ).thenAnswer((_) async => [skill]);
+      when(
+        () => list.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .selector,
+        ),
+      ).thenAnswer((_) async => [skill, writing]);
+      when(
+        () => manifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => const []);
+      final recentRepository = _RecentSkillUsageRepository([
+        'writing',
+        'research',
+        'removed-skill',
+        'writing',
+      ]);
+      final container = _container(
+        list,
+        manifests,
+        recentRepository: recentRepository,
+      );
+      addTearDown(container.dispose);
+
+      final state = await container.read(
+        conversationSkillSelectorProvider('workspace', 'conversation').future,
+      );
+
+      expect(state.recentSkills, [writing, skill]);
+      expect(recentRepository.readWorkspaces, ['workspace']);
+    },
+  );
 
   test(
     'new selection stays added while existing context stays ready',
@@ -286,16 +345,37 @@ void main() {
   });
 }
 
-ProviderContainer _container(_ListSkills list, _BuildManifests manifests) =>
-    ProviderContainer(
-      overrides: [
-        listAvailableSkillsUsecaseProvider('workspace')
-            .overrideWith((ref) => list),
-        buildLoadedSkillManifestsUsecaseProvider.overrideWith(
-          (ref) => manifests,
-        ),
-      ],
-    );
+ProviderContainer _container(
+  _ListSkills list,
+  _BuildManifests manifests, {
+  _RecentSkillUsageRepository? recentRepository,
+}) => ProviderContainer(
+  overrides: [
+    listAvailableSkillsUsecaseProvider('workspace').overrideWith((ref) => list),
+    buildLoadedSkillManifestsUsecaseProvider.overrideWith((ref) => manifests),
+    recentSkillUsageRepositoryProvider.overrideWith(
+      (ref) => recentRepository ?? _RecentSkillUsageRepository(const []),
+    ),
+  ],
+);
+
+class _RecentSkillUsageRepository(final List<String> _slugs)
+    implements RecentSkillUsageRepository {
+  final List<String> readWorkspaces = [];
+
+  @override
+  Future<List<String>> readRecentSkillSlugs(String workspaceId) async {
+    readWorkspaces.add(workspaceId);
+
+    return _slugs;
+  }
+
+  @override
+  Future<void> recordUseNow({
+    required String workspaceId,
+    required String skillSlug,
+  }) => Future<void>.value();
+}
 
 void _stubSkills(_ListSkills list, AvailableSkill skill) {
   when(

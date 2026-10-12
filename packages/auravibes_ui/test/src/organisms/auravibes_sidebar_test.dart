@@ -215,6 +215,32 @@ void main() {
       expect(tappedIndex, 1);
     });
 
+    testWidgets('shows each icon-only navigation label in a tooltip', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraSidebar(
+              navigationItems: const [
+                AuraNavigationData(
+                  icon: Icon(Icons.home),
+                  label: Text('Home'),
+                  semanticLabel: 'Home',
+                ),
+              ],
+              onNavigationTap: (_) {
+                final _ = Object();
+              },
+              isExpanded: false,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byTooltip('Home'), findsOneWidget);
+    });
+
     testWidgets('renders optional header, middle section, and footer', (
       tester,
     ) async {

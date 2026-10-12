@@ -45,6 +45,9 @@ class const AssessSkillAccessUsecase({
         id: tool.slug,
         title: tool.title,
         status: tool.requiresCredential ? access : .available,
+        description: tool.description,
+        titleKey: tool.titleKey,
+        descriptionKey: tool.descriptionKey,
       ),
   ];
 
@@ -176,6 +179,7 @@ Future<SkillToolAccess> _toolAccess(
   id: tool.id,
   title: tool.title,
   status: await _toolStatus(usecase, tool, definitionId, access),
+  description: tool.description,
   credentialDefinitionId: definitionId,
 );
 

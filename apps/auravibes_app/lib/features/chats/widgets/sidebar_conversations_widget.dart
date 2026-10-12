@@ -11,11 +11,11 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_draft_badge.dart';
@@ -388,37 +388,27 @@ class const _SidebarConversationTileContent({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isResponseStreaming = _isResponseStreaming(ref);
-    final hasDraft = _hasDraft(ref);
+    final isResponseStreaming = ref.watch(
+      conversationStreamingProvider.select(
+        (conversationIds) => conversationIds.contains(chat.id),
+      ),
+    );
+    final draft = ref.watch(
+      conversationDraftProvider(chat.workspaceId, chat.id),
+    );
+    final hasDraft = draft?.isEmpty == false;
 
     return _SidebarConversationTileBody(
       content: this,
       isResponseStreaming: isResponseStreaming,
       hasDraft: hasDraft,
-      semanticLabel: _semanticLabel(isResponseStreaming, hasDraft),
-    );
-  }
-
-  bool _isResponseStreaming(WidgetRef ref) => ref.watch(
-    conversationStreamingProvider.select(
-      (conversationIds) => conversationIds.contains(chat.id),
-    ),
-  );
-
-  bool _hasDraft(WidgetRef ref) {
-    final draft = ref.watch(
-      conversationDraftProvider(chat.workspaceId, chat.id),
-    );
-
-    return draft?.isEmpty == false;
-  }
-
-  String _semanticLabel(bool isResponseStreaming, bool hasDraft) =>
-      _sidebarConversationTileSemanticLabel(
+      semanticLabel: _sidebarConversationTileSemanticLabel(
         title,
         isResponseStreaming,
         hasDraft,
-      );
+      ),
+    );
+  }
 }
 
 class const _SidebarConversationTileTrailing({
@@ -627,16 +617,7 @@ Future<void> _deleteSidebarConversationInStorage(
   WidgetRef ref,
   ConversationEntity chat,
 ) async {
-  final cloud = await ref.read(
-    cloudConversationUsecaseProvider(chat.workspaceId).future,
-  );
-  if (cloud != null) {
-    await cloud.delete(chat);
-
-    return;
-  }
-
-  final _ = await ref.read(deleteConversationUsecaseProvider).call(chat.id);
+  final _ = await ref.read(bulkConversationActionsUsecaseProvider).delete(chat);
 }
 
 void _showSidebarDeleteSnack(BuildContext context, Object error) {

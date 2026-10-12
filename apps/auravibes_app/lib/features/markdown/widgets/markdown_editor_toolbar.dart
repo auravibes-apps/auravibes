@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/markdown/widgets/markdown_link_dialog.dar
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const MarkdownEditorToolbar({
@@ -17,36 +18,44 @@ class const MarkdownEditorToolbar({
 }
 
 class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
-  final _undoHistory = <({TextEditingValue before, TextEditingValue after})>[];
-  final _redoHistory = <({TextEditingValue before, TextEditingValue after})>[];
+  final _history = _MarkdownToolbarHistory();
   String _lastText = '';
+  _MarkdownToolbarKeyEventHandler? _keyEventHandler;
 
   TextEditingController get _controller => widget.controller;
 
   FocusNode get _focusNode => widget.focusNode;
 
-  bool get _canUndo =>
-      _undoHistory.isNotEmpty &&
-      _controller.text == _undoHistory.last.after.text;
+  bool get _canUndo => _history.canUndo(_controller.text);
 
-  bool get _canRedo =>
-      _redoHistory.isNotEmpty &&
-      _controller.text == _redoHistory.last.before.text;
+  bool get _canRedo => _history.canRedo(_controller.text);
 
   @override
   void initState() {
     super.initState();
     _lastText = _controller.text;
+    _keyEventHandler = _MarkdownToolbarKeyEventHandler(
+      platform: () => Theme.of(context).platform,
+      onAction: (action) => _applyAction(action, context),
+    )..attach(_focusNode);
+  }
+
+  @override
+  void dispose() {
+    _keyEventHandler?.dispose();
+    super.dispose();
   }
 
   @override
   void didUpdateWidget(MarkdownEditorToolbar oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      _keyEventHandler?.attach(_focusNode);
+    }
     if (oldWidget.controller == widget.controller) return;
 
     _lastText = _controller.text;
-    _undoHistory.clear();
-    _redoHistory.clear();
+    _history.clear();
   }
 
   @override
@@ -56,32 +65,17 @@ class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
     allowMouseDrag: true,
   );
 
-  void _rememberAction(TextEditingValue before) {
-    final after = _controller.value;
-    if (after.text == before.text) return;
+  void _rememberAction(TextEditingValue before) =>
+      _history.remember(before, _controller.value, setState);
 
-    setState(() {
-      _undoHistory.add((before: before, after: after));
-      _redoHistory.clear();
-    });
-  }
-
-  void _undo() {
-    if (!_canUndo) return;
-
-    final action = _undoHistory.removeLast();
-    _toolbarEdit(() => _controller.value = action.before);
-    if (!_focusNode.hasFocus) _focusNode.requestFocus();
-    setState(() => _redoHistory.add(action));
-  }
-
-  void _redo() {
-    if (!_canRedo) return;
-
-    final action = _redoHistory.removeLast();
-    _toolbarEdit(() => _controller.value = action.after);
-    if (!_focusNode.hasFocus) _focusNode.requestFocus();
-    setState(() => _undoHistory.add(action));
+  void _changeHistory({required bool undo}) {
+    _history.change((
+      undo: undo,
+      controller: _controller,
+      focusNode: _focusNode,
+      onEdit: () => _lastText = _controller.text,
+      setState: setState,
+    ));
   }
 }
 
@@ -95,17 +89,14 @@ extension on _MarkdownEditorToolbarState {
     if (text == _lastText) return;
 
     _lastText = text;
-    _undoHistory.clear();
-    _redoHistory.clear();
+    _history.clear();
   }
 
   TextSelection get _safeSelection {
     final selection = _controller.selection;
     if (selection.isValid) return selection;
 
-    final length = _controller.text.length;
-
-    return TextSelection.collapsed(offset: length);
+    return TextSelection.collapsed(offset: _controller.text.length);
   }
 
   void _applyAction(_ToolbarActionKind action, BuildContext context) {
@@ -145,7 +136,7 @@ extension on _MarkdownEditorToolbarState {
   void _applyLineAction(_ToolbarActionKind action) {
     switch (action) {
       case .heading:
-        _prefixLines('# ');
+        _toggleBlockPrefix(action);
       case .bullets:
         _prefixLines('- ');
       case .numberedList:
@@ -153,11 +144,164 @@ extension on _MarkdownEditorToolbarState {
       case .taskList:
         _formatTaskList();
       case .quote:
-        _prefixLines('> ');
+        _toggleBlockPrefix(action);
       case .bold || .italic || .link || .code:
         break;
     }
   }
+}
+
+class _MarkdownToolbarKeyEventHandler({
+  required final TargetPlatform Function() platform,
+  required final void Function(_ToolbarActionKind) onAction,
+}) {
+  FocusNode? _focusNode;
+  KeyEventResult Function(FocusNode, KeyEvent)? _previousHandler;
+  KeyEventResult Function(FocusNode, KeyEvent)? _handler;
+
+  void attach(FocusNode focusNode) {
+    _detach();
+    _focusNode = focusNode;
+    _previousHandler = focusNode.onKeyEvent;
+    final handler = _handle;
+    _handler = handler;
+    focusNode.onKeyEvent = handler;
+  }
+
+  void dispose() => _detach();
+
+  void _detach() {
+    final focusNode = _focusNode;
+    final handler = _handler;
+    if (focusNode != null &&
+        handler != null &&
+        identical(focusNode.onKeyEvent, handler)) {
+      focusNode.onKeyEvent = _previousHandler;
+    }
+    _focusNode = null;
+    _previousHandler = null;
+    _handler = null;
+  }
+
+  KeyEventResult _handle(FocusNode node, KeyEvent event) {
+    final action = _MarkdownToolbarShortcuts.actionFor(event, platform());
+    if (action != null) {
+      onAction(action);
+
+      return .handled;
+    }
+
+    return _previousHandler?.call(node, event) ?? .ignored;
+  }
+}
+
+abstract final class _MarkdownToolbarShortcuts {
+  static _ToolbarActionKind? actionFor(
+    KeyEvent event,
+    TargetPlatform platform,
+  ) {
+    if (event is! KeyDownEvent || !_hasPrimaryModifier(platform)) return null;
+
+    return _actionForKey(event.logicalKey);
+  }
+
+  static bool _hasPrimaryModifier(TargetPlatform platform) {
+    final keyboard = HardwareKeyboard.instance;
+    if (keyboard.isAltPressed || keyboard.isShiftPressed) return false;
+
+    // Use Command on macOS and Control elsewhere for the shared actions.
+    return platform == TargetPlatform.macOS
+        ? keyboard.isMetaPressed && !keyboard.isControlPressed
+        : keyboard.isControlPressed && !keyboard.isMetaPressed;
+  }
+
+  static _ToolbarActionKind? _actionForKey(LogicalKeyboardKey key) =>
+      switch (key) {
+        .keyB => .bold,
+        .keyI => .italic,
+        .keyE => .code,
+        .keyK => .link,
+        _ => null,
+      };
+}
+
+typedef _MarkdownHistoryAction = ({
+  TextEditingValue before,
+  TextEditingValue after,
+});
+
+typedef _MarkdownHistoryChange = ({
+  bool undo,
+  TextEditingController controller,
+  FocusNode focusNode,
+  void Function() onEdit,
+  void Function(void Function()) setState,
+});
+
+class _MarkdownToolbarHistory {
+  final _undoHistory = <_MarkdownHistoryAction>[];
+  final _redoHistory = <_MarkdownHistoryAction>[];
+
+  bool canUndo(String text) =>
+      _undoHistory.isNotEmpty && text == _undoHistory.last.after.text;
+
+  bool canRedo(String text) =>
+      _redoHistory.isNotEmpty && text == _redoHistory.last.before.text;
+
+  void clear() {
+    _undoHistory.clear();
+    _redoHistory.clear();
+  }
+
+  void remember(
+    TextEditingValue before,
+    TextEditingValue after,
+    void Function(void Function()) setState,
+  ) {
+    if (after.text == before.text) return;
+
+    setState(() {
+      _undoHistory.add((before: before, after: after));
+      _redoHistory.clear();
+    });
+  }
+
+  void change(_MarkdownHistoryChange change) {
+    final action = _take(change.undo, change.controller.text);
+    if (action == null) return;
+
+    _applyValue(action, change);
+    _restoreFocus(change.focusNode);
+    _pushAction(action, change);
+  }
+
+  void _applyValue(
+    _MarkdownHistoryAction action,
+    _MarkdownHistoryChange change,
+  ) {
+    change.controller.value = change.undo ? action.before : action.after;
+    change.onEdit();
+  }
+
+  void _restoreFocus(FocusNode focusNode) {
+    if (!focusNode.hasFocus) focusNode.requestFocus();
+  }
+
+  void _pushAction(
+    _MarkdownHistoryAction action,
+    _MarkdownHistoryChange change,
+  ) {
+    change.setState(() => _historyForDirection(change.undo).add(action));
+  }
+
+  _MarkdownHistoryAction? _take(bool undo, String text) {
+    if (!(undo ? canUndo(text) : canRedo(text))) return null;
+
+    return (undo ? _undoHistory : _redoHistory).removeLast();
+  }
+
+  List<_MarkdownHistoryAction> _historyForDirection(bool undo) =>
+      undo ? _redoHistory : _undoHistory;
 }
 
 extension on _MarkdownEditorToolbarState {
@@ -206,7 +350,36 @@ extension on _MarkdownEditorToolbarState {
       .collapsed(offset: range.start + replacement.length),
     );
   }
+
+  void _toggleBlockPrefix(_ToolbarActionKind action) {
+    final update = _toggleBlockPrefixUpdate(
+      action,
+      _safeSelection,
+      _controller.text,
+    );
+    _replace(update.range, update.replacement, update.selection);
+  }
 }
+
+typedef _LinePrefixEdit = ({int start, int removedLength, int insertedLength});
+typedef _BlockPrefixUpdate = ({
+  TextSelection range,
+  String replacement,
+  TextSelection selection,
+});
+typedef _BlockLinesUpdate = ({String replacement, List<_LinePrefixEdit> edits});
+typedef _BlockLineUpdate = ({String line, _LinePrefixEdit? edit});
+typedef _BlockPrefixPlan = ({
+  List<int> markerLengths,
+  bool removeMarkers,
+  String prefix,
+});
+typedef _BlockLineContext = ({
+  int markerLength,
+  bool removeMarkers,
+  String prefix,
+  int lineOffset,
+});
 
 typedef _InlineToggleResult = ({bool matchedSpan, _InlineUnwrapEdit? edit});
 
@@ -384,6 +557,154 @@ String _prefixReplacement(String selected, String prefix) => selected
     .split('\n')
     .map((line) => line.startsWith(prefix) ? line : '$prefix$line')
     .join('\n');
+
+final _headingMarker = RegExp(r'^#{1,6}[ \t]+');
+
+int _blockMarkerLength(String line, _ToolbarActionKind action) =>
+    switch (action) {
+      .heading => _headingMarker.matchAsPrefix(line)?.group(0)?.length ?? 0,
+      .quote => line.startsWith(_quoteMarker) ? _quoteMarker.length : 0,
+      _ => 0,
+    };
+
+String _blockPrefix(_ToolbarActionKind action) => switch (action) {
+  .heading => '# ',
+  .quote => _quoteMarker,
+  _ => '',
+};
+
+_BlockPrefixUpdate _toggleBlockPrefixUpdate(
+  _ToolbarActionKind action,
+  TextSelection selection,
+  String text,
+) {
+  final range = _lineRange(selection, text);
+  final lines = range.textInside(text).split('\n');
+  final plan = _blockPrefixPlan(action, lines);
+  final transformed = _toggleBlockLines(lines, plan, range.start);
+
+  return (
+    range: range,
+    replacement: transformed.replacement,
+    selection: _selectionAfterLinePrefixEdits(selection, transformed.edits),
+  );
+}
+
+_BlockPrefixPlan _blockPrefixPlan(
+  _ToolbarActionKind action,
+  List<String> lines,
+) {
+  final markerLengths = [
+    for (final line in lines) _blockMarkerLength(line, action),
+  ];
+
+  return (
+    markerLengths: markerLengths,
+    removeMarkers: markerLengths.every((length) => length > 0),
+    prefix: _blockPrefix(action),
+  );
+}
+
+_BlockLinesUpdate _toggleBlockLines(
+  List<String> lines,
+  _BlockPrefixPlan plan,
+  int startOffset,
+) => _BlockPrefixLineBuilder(
+  lines: lines,
+  plan: plan,
+  startOffset: startOffset,
+).build();
+
+class _BlockPrefixLineBuilder({
+  required final List<String> lines,
+  required final _BlockPrefixPlan plan,
+  required final int startOffset,
+}) {
+  final List<_LinePrefixEdit> edits = [];
+  final StringBuffer replacement = .new();
+  int lineOffset = 0;
+  int index = 0;
+
+  _BlockLinesUpdate build() {
+    lineOffset = startOffset;
+    while (index < lines.length) {
+      _appendNextLine();
+    }
+
+    return (replacement: replacement.toString(), edits: edits);
+  }
+
+  void _appendNextLine() {
+    final line = lines[index];
+    final context = _blockLineContext(index, lineOffset);
+    final update = _toggleBlockLine(line, context);
+    _appendUpdate(update, index);
+    lineOffset += line.length + _lineBreakLength;
+    index++;
+  }
+
+  _BlockLineContext _blockLineContext(int index, int offset) => (
+    markerLength: plan.markerLengths[index],
+    removeMarkers: plan.removeMarkers,
+    prefix: plan.prefix,
+    lineOffset: offset,
+  );
+
+  void _appendUpdate(_BlockLineUpdate update, int lineIndex) {
+    replacement.write(update.line);
+    if (lineIndex < lines.length - 1) replacement.write('\n');
+    if (update.edit case final edit?) edits.add(edit);
+  }
+}
+
+_BlockLineUpdate _toggleBlockLine(String line, _BlockLineContext context) {
+  if (context.removeMarkers) {
+    return (
+      line: line.characters.skip(context.markerLength).toString(),
+      edit: (
+        start: context.lineOffset,
+        removedLength: context.markerLength,
+        insertedLength: 0,
+      ),
+    );
+  }
+  if (context.markerLength > 0) return (line: line, edit: null);
+
+  return (
+    line: '${context.prefix}$line',
+    edit: (
+      start: context.lineOffset,
+      removedLength: 0,
+      insertedLength: context.prefix.length,
+    ),
+  );
+}
+
+TextSelection _selectionAfterLinePrefixEdits(
+  TextSelection selection,
+  List<_LinePrefixEdit> edits,
+) => TextSelection(
+  baseOffset: _linePrefixSelectionOffset(selection.baseOffset, edits),
+  extentOffset: _linePrefixSelectionOffset(selection.extentOffset, edits),
+  affinity: selection.affinity,
+  isDirectional: selection.isDirectional,
+);
+
+int _linePrefixSelectionOffset(int offset, List<_LinePrefixEdit> edits) {
+  var shift = 0;
+  for (final edit in edits) {
+    final editStart = edit.start;
+    if (offset < editStart) break;
+
+    final removedEnd = editStart + edit.removedLength;
+    if (offset <= removedEnd) {
+      return editStart + shift + edit.insertedLength;
+    }
+    shift += edit.insertedLength - edit.removedLength;
+  }
+
+  return offset + shift;
+}
 
 String _numberedReplacement(String selected) {
   final existingPrefix = RegExp(r'^\d+\. ');
@@ -860,7 +1181,7 @@ class const _ToolbarActions({
 
       return SingleChildScrollView(
         scrollDirection: .horizontal,
-        child: _ToolbarActionList(toolbar: toolbar),
+        child: _ToolbarActionList(toolbar: toolbar, value: value),
       );
     },
   );
@@ -868,6 +1189,7 @@ class const _ToolbarActions({
 
 class const _ToolbarActionList({
   required final _MarkdownEditorToolbarState toolbar,
+  required final TextEditingValue value,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraRow(
@@ -875,7 +1197,7 @@ class const _ToolbarActionList({
       _ToolbarHistoryButton(toolbar: toolbar, isUndo: true),
       _ToolbarHistoryButton(toolbar: toolbar, isUndo: false),
       for (final action in _ToolbarActionKind.values)
-        _ToolbarAction(toolbar: toolbar, action: action),
+        _ToolbarAction(toolbar: toolbar, action: action, value: value),
     ],
     spacing: .xs,
   );
@@ -901,22 +1223,66 @@ VoidCallback? _historyCallback(
   _MarkdownEditorToolbarState toolbar,
   bool isUndo,
 ) {
-  if (isUndo) return toolbar._canUndo ? toolbar._undo : null;
+  if (isUndo) {
+    return toolbar._canUndo ? () => toolbar._changeHistory(undo: true) : null;
+  }
 
-  return toolbar._canRedo ? toolbar._redo : null;
+  return toolbar._canRedo ? () => toolbar._changeHistory(undo: false) : null;
 }
 
 class const _ToolbarAction({
   required final _MarkdownEditorToolbarState toolbar,
   required final _ToolbarActionKind action,
+  required final TextEditingValue value,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _ToolbarButton(
-    icon: action.icon,
-    label: action.labelKey.tr(context: context),
-    onPressed: () => toolbar._applyAction(action, context),
+  Widget build(BuildContext context) =>
+      _ToolbarActionButton(toolbar: toolbar, action: action, value: value);
+}
+
+class const _ToolbarActionButton({
+  required final _MarkdownEditorToolbarState toolbar,
+  required final _ToolbarActionKind action,
+  required final TextEditingValue value,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final presentation = _toolbarActionPresentation(action, value);
+
+    return _ToolbarButton(
+      icon: action.icon,
+      label: action.labelKey.tr(context: context),
+      onPressed: () => toolbar._applyAction(action, context),
+      variant: presentation.variant,
+      toggleState: presentation.state,
+      toggleName: presentation.name,
+    );
+  }
+}
+
+typedef _ToolbarActionPresentation = ({
+  AuraIconButtonVariant variant,
+  _ToolbarActionState? state,
+  String? name,
+});
+
+_ToolbarActionPresentation _toolbarActionPresentation(
+  _ToolbarActionKind action,
+  TextEditingValue value,
+) {
+  final state = switch (action) {
+    .bold || .italic || .code => _inlineFormattingState(action, value),
+    _ => null,
+  };
+
+  return (
+    variant: state == .active ? .filled : .outlined,
+    state: state,
+    name: state == null ? null : action.name,
   );
 }
+
+enum _ToolbarActionState { inactive, active, mixed }
 
 enum _ToolbarActionKind {
   bold(Icons.format_bold, LocaleKeys.markdown_editor_toolbar_bold),
@@ -945,18 +1311,704 @@ class const _ToolbarButton({
   required final IconData icon,
   required final String label,
   required final VoidCallback? onPressed,
+  final AuraIconButtonVariant variant = .outlined,
+  final _ToolbarActionState? toggleState,
+  final String? toggleName,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final button = _ToolbarIconButton(
+      icon: icon,
+      label: label,
+      onPressed: onPressed,
+      variant: variant,
+    );
+    final content = toggleState == .mixed
+        ? _MixedFormattingButtonContent(child: button, toggleName: toggleName)
+        : button;
+
     return ExcludeFocus(
-      child: AuraIconButton(
-        icon: icon,
-        onPressed: onPressed,
-        disabled: onPressed == null,
-        variant: .outlined,
-        semanticLabel: label,
-        tooltip: label,
-      ),
+      child: _ToolbarToggleSemantics(state: toggleState, child: content),
     );
   }
+}
+
+class const _ToolbarIconButton({
+  required final IconData icon,
+  required final String label,
+  required final VoidCallback? onPressed,
+  required final AuraIconButtonVariant variant,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: icon,
+    onPressed: onPressed,
+    disabled: onPressed == null,
+    variant: variant,
+    semanticLabel: label,
+    tooltip: label,
+  );
+}
+
+class const _MixedFormattingButtonContent({
+  required final Widget child,
+  required final String? toggleName,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Stack(
+    clipBehavior: .none,
+    children: [
+      child,
+      _MixedFormattingIndicator(toggleName: toggleName),
+    ],
+  );
+}
+
+class const _MixedFormattingIndicator({required final String? toggleName})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Positioned(
+    right: _mixedIndicatorInset,
+    bottom: _mixedIndicatorInset,
+    child: IgnorePointer(
+      child: ExcludeSemantics(
+        child: DecoratedBox(
+          key: ValueKey('markdown-toolbar-mixed-indicator-$toggleName'),
+          decoration: BoxDecoration(
+            color: context.auraColors.colorFor(.primary),
+            borderRadius: const BorderRadius.all(.circular(1)),
+          ),
+          child: const SizedBox(width: 8, height: 2),
+        ),
+      ),
+    ),
+  );
+}
+
+class const _ToolbarToggleSemantics({
+  required final _ToolbarActionState? state,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (state) {
+    null => child,
+    .mixed => Semantics(child: child, mixed: true),
+    .active => Semantics(child: child, toggled: true),
+    .inactive => Semantics(child: child, toggled: false),
+  };
+}
+
+typedef _InlineFormattingSpan = ({
+  int start,
+  int contentStart,
+  int contentEnd,
+  int end,
+});
+typedef _InlineSpanScan = ({_InlineFormattingSpan? span, int? nextOffset});
+typedef _CodeContentRange = ({int start, int end});
+typedef _SelectionBounds = ({int start, int end});
+typedef _MarkdownLine = ({int start, int end, int newlineOffset});
+typedef _FenceContainerScan = ({
+  _FenceContainerPrefix? prefix,
+  int markerStart,
+});
+typedef _FencePrefixState = ({
+  int markerStart,
+  List<_FenceContainerPrefix> containerPrefixes,
+});
+typedef _FenceMarker = ({int markerCharacter, int markerLength, int infoStart});
+
+const _quoteMarker = '> ';
+const double _mixedIndicatorInset = 6;
+const _lineBreakLength = 1;
+const _singleCodeUnitLength = 1;
+const _maximumFenceIndentation = 3;
+const _minimumFenceMarkerLength = 3;
+const _maximumListMarkerDigits = 9;
+const _spaceCodeUnit = 0x20;
+const _tabCodeUnit = 0x09;
+const _carriageReturnCodeUnit = 0x0d;
+const _plusCodeUnit = 0x2b;
+const _minusCodeUnit = 0x2d;
+const _asteriskCodeUnit = 0x2a;
+const _periodCodeUnit = 0x2e;
+const _rightParenthesisCodeUnit = 0x29;
+const _zeroCodeUnit = 0x30;
+const _nineCodeUnit = 0x39;
+const _greaterThanCodeUnit = 0x3e;
+const _backtickCodeUnit = 0x60;
+const _tildeCodeUnit = 0x7e;
+
+_ToolbarActionState _inlineFormattingState(
+  _ToolbarActionKind action,
+  TextEditingValue value,
+) {
+  final markers = _inlineFormattingMarkers(action);
+  if (markers.isEmpty) return .inactive;
+
+  final selection = _validFormattingSelection(value);
+  final spans = _formattingSpansOutsideCode(action, value.text, markers);
+
+  return _formattingStateForSelection(selection, value.text, spans);
+}
+
+List<String> _inlineFormattingMarkers(_ToolbarActionKind action) =>
+    switch (action) {
+      .bold => const ['**'],
+      .italic => const ['*', '_'],
+      .code => const ['`'],
+      _ => const <String>[],
+    };
+
+TextSelection _validFormattingSelection(TextEditingValue value) =>
+    value.selection.isValid
+    ? value.selection
+    : TextSelection.collapsed(offset: value.text.length);
+
+List<_InlineFormattingSpan> _formattingSpansOutsideCode(
+  _ToolbarActionKind action,
+  String text,
+  List<String> markers,
+) {
+  final spans = [
+    for (final marker in markers) ..._inlineFormattingSpans(text, marker),
+  ];
+  final codeRanges = _codeContentRanges(action, text);
+
+  return spans
+      .where((span) => !_spanIsInsideCodeRange(span, codeRanges))
+      .toList();
+}
+
+List<_CodeContentRange> _codeContentRanges(
+  _ToolbarActionKind action,
+  String text,
+) => [
+  if (action != .code)
+    for (final span in _inlineFormattingSpans(text, '`'))
+      (start: span.contentStart, end: span.contentEnd),
+  ..._fencedCodeBlockContentRanges(text),
+];
+
+bool _spanIsInsideCodeRange(
+  _InlineFormattingSpan span,
+  List<_CodeContentRange> codeRanges,
+) => codeRanges.any(
+  (range) => span.start >= range.start && span.end <= range.end,
+);
+
+_ToolbarActionState _formattingStateForSelection(
+  TextSelection selection,
+  String text,
+  List<_InlineFormattingSpan> spans,
+) {
+  final bounds = _selectionBounds(selection, text);
+  if (selection.isCollapsed) {
+    return _isCursorInsideFormattingContent(bounds.start, spans)
+        ? .active
+        : .inactive;
+  }
+  if (spans.any((span) => _selectionMatchesFormattingSpan(bounds, span))) {
+    return .active;
+  }
+  if (spans.any((span) => _selectionOverlapsFormattingContent(bounds, span))) {
+    return .mixed;
+  }
+
+  return .inactive;
+}
+
+bool _isCursorInsideFormattingContent(
+  int offset,
+  List<_InlineFormattingSpan> spans,
+) => spans.any(
+  (span) => offset >= span.contentStart && offset <= span.contentEnd,
+);
+
+bool _selectionMatchesFormattingSpan(
+  _SelectionBounds bounds,
+  _InlineFormattingSpan span,
+) {
+  final withinContent =
+      bounds.start >= span.contentStart && bounds.end <= span.contentEnd;
+  final matchesWholeSpan = bounds.start == span.start && bounds.end == span.end;
+
+  return withinContent || matchesWholeSpan;
+}
+
+bool _selectionOverlapsFormattingContent(
+  _SelectionBounds bounds,
+  _InlineFormattingSpan span,
+) => span.contentStart < bounds.end && span.contentEnd > bounds.start;
+
+List<_InlineFormattingSpan> _inlineFormattingSpans(String text, String marker) {
+  final spans = <_InlineFormattingSpan>[];
+  var searchOffset = 0;
+  while (searchOffset < text.length) {
+    final scan = _inlineSpanScanAt(text, marker, searchOffset);
+    if (scan.span case final span?) spans.add(span);
+    final nextOffset = scan.nextOffset;
+    if (nextOffset == null) break;
+    searchOffset = nextOffset;
+  }
+
+  return spans;
+}
+
+_InlineSpanScan _inlineSpanScanAt(
+  String text,
+  String marker,
+  int searchOffset,
+) {
+  final span = _inlineSpanAt(text, marker, searchOffset);
+  if (span != null) return (span: span, nextOffset: span.end);
+
+  final unmatchedStart = _nextInlineMarker(
+    text,
+    marker,
+    searchOffset,
+    opening: true,
+  );
+  if (unmatchedStart == -1) return (span: null, nextOffset: null);
+
+  return (span: null, nextOffset: unmatchedStart + marker.length);
+}
+
+List<({int start, int end})> _fencedCodeBlockContentRanges(String text) {
+  return _FencedCodeBlockScanner(text: text).scan();
+}
+
+typedef _FenceContainerPrefix = ({bool isBlockQuote, int indent});
+typedef _FencedCodeFence = ({
+  int markerCharacter,
+  int markerLength,
+  int infoStart,
+  List<_FenceContainerPrefix> containerPrefixes,
+});
+
+class _FencedCodeBlockScanner({required final String text}) {
+  final List<_CodeContentRange> ranges = [];
+  _FencedCodeFence? openFence;
+  int? contentStart;
+  int lineStart = 0;
+
+  List<_CodeContentRange> scan() {
+    while (lineStart <= text.length) {
+      final line = _markdownLineAt(text, lineStart);
+      _processLine(line);
+      if (line.newlineOffset == -1) break;
+      lineStart = line.newlineOffset + _lineBreakLength;
+    }
+    _addUnclosedContentRange();
+
+    return ranges;
+  }
+
+  void _processLine(_MarkdownLine line) {
+    final fence = _candidateFence(line);
+    if (openFence == null) {
+      _startFence(fence, line);
+    } else if (_isClosingFence(fence, line)) {
+      _closeFence(line.start);
+    }
+  }
+
+  _FencedCodeFence? _candidateFence(_MarkdownLine line) {
+    final currentFence = openFence;
+    if (currentFence == null) {
+      return _fencedCodeFenceAt(text, line.start, line.end);
+    }
+
+    return _fencedCodeClosingFenceAt(
+      text,
+      line.start,
+      line.end,
+      currentFence.containerPrefixes,
+    );
+  }
+
+  bool _isClosingFence(_FencedCodeFence? fence, _MarkdownLine line) {
+    final currentFence = openFence;
+    if (fence == null || currentFence == null) return false;
+
+    return fence.markerCharacter == currentFence.markerCharacter &&
+        fence.markerLength >= currentFence.markerLength &&
+        _isCodeFenceWhitespace(text, fence.infoStart, line.end);
+  }
+
+  void _startFence(_FencedCodeFence? fence, _MarkdownLine line) {
+    if (fence == null) return;
+
+    openFence = fence;
+    contentStart = line.end < text.length
+        ? line.end + _lineBreakLength
+        : text.length;
+  }
+
+  void _closeFence(int lineStart) {
+    final activeContentStart = contentStart;
+    if (activeContentStart != null) {
+      ranges.add((start: activeContentStart, end: lineStart));
+    }
+    openFence = null;
+    contentStart = null;
+  }
+
+  void _addUnclosedContentRange() {
+    final activeContentStart = contentStart;
+    if (activeContentStart != null) {
+      ranges.add((start: activeContentStart, end: text.length));
+    }
+  }
+}
+
+_MarkdownLine _markdownLineAt(String text, int start) {
+  final newlineOffset = text.indexOf('\n', start);
+
+  return (
+    start: start,
+    end: newlineOffset == -1 ? text.length : newlineOffset,
+    newlineOffset: newlineOffset,
+  );
+}
+
+_FencedCodeFence? _fencedCodeFenceAt(String text, int lineStart, int lineEnd) {
+  final state = _fencedCodePrefixState(text, lineStart, lineEnd);
+
+  return _openingFenceAt(
+    text,
+    state.markerStart,
+    lineEnd,
+    state.containerPrefixes,
+  );
+}
+
+_FencePrefixState _fencedCodePrefixState(
+  String text,
+  int lineStart,
+  int lineEnd,
+) => _FencePrefixScanner(
+  text: text,
+  initialMarkerStart: lineStart,
+  lineEnd: lineEnd,
+).scan();
+
+class _FencePrefixScanner({
+  required final String text,
+  required final int initialMarkerStart,
+  required final int lineEnd,
+}) {
+  final List<_FenceContainerPrefix> containerPrefixes = [];
+  int markerStart = initialMarkerStart;
+  int containerEnd = initialMarkerStart;
+
+  _FencePrefixState scan() {
+    while (markerStart < lineEnd) {
+      if (!_scanNextPrefix()) break;
+    }
+
+    return (markerStart: markerStart, containerPrefixes: containerPrefixes);
+  }
+
+  bool _scanNextPrefix() {
+    final scan = _nextFenceContainerPrefix(
+      text,
+      markerStart,
+      lineEnd,
+      containerEnd,
+    );
+    markerStart = scan.markerStart;
+    final prefix = scan.prefix;
+    if (prefix == null) return false;
+
+    containerEnd = markerStart;
+    containerPrefixes.add(prefix);
+
+    return true;
+  }
+}
+
+_FenceContainerScan _nextFenceContainerPrefix(
+  String text,
+  int markerStart,
+  int lineEnd,
+  int containerEnd,
+) {
+  final prefixStart = _skipFenceIndentation(text, markerStart, lineEnd);
+  final scan = _fenceContainerPrefixAt(
+    text,
+    prefixStart,
+    lineEnd,
+    containerEnd,
+  );
+
+  return scan ?? (prefix: null, markerStart: prefixStart);
+}
+
+_FenceContainerScan? _fenceContainerPrefixAt(
+  String text,
+  int markerStart,
+  int lineEnd,
+  int containerEnd,
+) {
+  if (_isCodeUnitAt(text, markerStart, lineEnd, _greaterThanCodeUnit)) {
+    return _blockQuoteFencePrefixAt(text, markerStart, lineEnd);
+  }
+
+  return _listFencePrefixAt(text, markerStart, lineEnd, containerEnd);
+}
+
+_FenceContainerScan _blockQuoteFencePrefixAt(
+  String text,
+  int markerStart,
+  int lineEnd,
+) => (
+  prefix: (isBlockQuote: true, indent: 0),
+  markerStart: _skipOptionalMarkdownWhitespace(
+    text,
+    markerStart + _singleCodeUnitLength,
+    lineEnd,
+  ),
+);
+
+_FenceContainerScan? _listFencePrefixAt(
+  String text,
+  int markerStart,
+  int lineEnd,
+  int containerEnd,
+) {
+  final listMarkerEnd = _markdownListMarkerEnd(text, markerStart, lineEnd);
+  if (listMarkerEnd == null) return null;
+  final nextMarkerStart = _skipOptionalMarkdownWhitespace(
+    text,
+    listMarkerEnd,
+    lineEnd,
+  );
+
+  return (
+    prefix: (isBlockQuote: false, indent: nextMarkerStart - containerEnd),
+    markerStart: nextMarkerStart,
+  );
+}
+
+_FencedCodeFence? _openingFenceAt(
+  String text,
+  int markerStart,
+  int lineEnd,
+  List<_FenceContainerPrefix> containerPrefixes,
+) {
+  final marker = _fencedCodeMarkerAt(text, markerStart, lineEnd);
+  if (marker == null || !_isValidOpeningFence(text, marker, lineEnd)) {
+    return null;
+  }
+
+  return _fenceWithPrefixes(marker, containerPrefixes);
+}
+
+bool _isValidOpeningFence(String text, _FenceMarker marker, int lineEnd) {
+  final hasBacktickInfo =
+      marker.markerCharacter == _backtickCodeUnit &&
+      _containsCodeUnit(text, marker.infoStart, lineEnd, _backtickCodeUnit);
+
+  return !hasBacktickInfo;
+}
+
+_FencedCodeFence _fenceWithPrefixes(
+  _FenceMarker marker,
+  List<_FenceContainerPrefix> containerPrefixes,
+) => (
+  markerCharacter: marker.markerCharacter,
+  markerLength: marker.markerLength,
+  infoStart: marker.infoStart,
+  containerPrefixes: containerPrefixes,
+);
+
+int _skipFenceIndentation(String text, int start, int end) {
+  var cursor = start;
+  while (_isCodeUnitAt(text, cursor, end, _spaceCodeUnit) &&
+      cursor - start < _maximumFenceIndentation) {
+    cursor++;
+  }
+
+  return cursor;
+}
+
+int _skipOptionalMarkdownWhitespace(String text, int start, int end) =>
+    _isWhitespaceAt(text, start, end) ? start + _singleCodeUnitLength : start;
+
+bool _isCodeUnitAt(String text, int offset, int end, int expected) =>
+    offset < end && text.codeUnitAt(offset) == expected;
+
+bool _isWhitespaceAt(String text, int offset, int end) =>
+    offset < end && _isMarkdownWhitespace(text.codeUnitAt(offset));
+
+_FencedCodeFence? _fencedCodeClosingFenceAt(
+  String text,
+  int lineStart,
+  int lineEnd,
+  List<_FenceContainerPrefix> containerPrefixes,
+) {
+  final markerStart = _closingFenceMarkerStart(
+    text,
+    lineStart,
+    lineEnd,
+    containerPrefixes,
+  );
+  if (markerStart == null) return null;
+
+  final marker = _fencedCodeMarkerAt(text, markerStart, lineEnd);
+  if (marker == null) return null;
+
+  return _fenceWithPrefixes(marker, containerPrefixes);
+}
+
+int? _closingFenceMarkerStart(
+  String text,
+  int lineStart,
+  int lineEnd,
+  List<_FenceContainerPrefix> containerPrefixes,
+) {
+  var markerStart = lineStart;
+  for (final prefix in containerPrefixes) {
+    final nextMarkerStart = prefix.isBlockQuote
+        ? _blockQuoteContinuationStart(text, markerStart, lineEnd)
+        : _listContinuationStart(text, markerStart, lineEnd, prefix.indent);
+    if (nextMarkerStart == null) return null;
+    markerStart = nextMarkerStart;
+  }
+
+  return _skipFenceIndentation(text, markerStart, lineEnd);
+}
+
+int? _blockQuoteContinuationStart(String text, int start, int end) {
+  final quoteStart = _skipFenceIndentation(text, start, end);
+  if (!_isCodeUnitAt(text, quoteStart, end, _greaterThanCodeUnit)) return null;
+
+  return _skipOptionalMarkdownWhitespace(
+    text,
+    quoteStart + _singleCodeUnitLength,
+    end,
+  );
+}
+
+int? _listContinuationStart(String text, int start, int end, int indent) {
+  var cursor = start;
+  for (var count = 0; count < indent; count++) {
+    if (!_isWhitespaceAt(text, cursor, end)) return null;
+    cursor++;
+  }
+
+  return cursor;
+}
+
+_FenceMarker? _fencedCodeMarkerAt(String text, int markerStart, int lineEnd) {
+  if (markerStart >= lineEnd) return null;
+
+  final markerCharacter = text.codeUnitAt(markerStart);
+  if (!_isFenceMarkerCharacter(markerCharacter)) return null;
+
+  final markerEnd = _fenceMarkerEnd(
+    text,
+    markerStart,
+    lineEnd,
+    markerCharacter,
+  );
+  final markerLength = markerEnd - markerStart;
+  if (markerLength < _minimumFenceMarkerLength) return null;
+
+  return (
+    markerCharacter: markerCharacter,
+    markerLength: markerLength,
+    infoStart: markerEnd,
+  );
+}
+
+bool _isFenceMarkerCharacter(int character) =>
+    character == _backtickCodeUnit || character == _tildeCodeUnit;
+
+int _fenceMarkerEnd(String text, int start, int end, int markerCharacter) {
+  var cursor = start;
+  while (_isCodeUnitAt(text, cursor, end, markerCharacter)) {
+    cursor++;
+  }
+
+  return cursor;
+}
+
+int? _markdownListMarkerEnd(String text, int start, int end) {
+  if (start >= end) return null;
+
+  final firstCharacter = text.codeUnitAt(start);
+  if (_isUnorderedListMarker(firstCharacter)) {
+    return _unorderedListMarkerEnd(text, start, end);
+  }
+
+  return _orderedListMarkerEnd(text, start, end);
+}
+
+bool _isUnorderedListMarker(int character) =>
+    character == _plusCodeUnit ||
+    character == _minusCodeUnit ||
+    character == _asteriskCodeUnit;
+
+int? _unorderedListMarkerEnd(String text, int start, int end) {
+  final markerEnd = start + _singleCodeUnitLength;
+  if (markerEnd == end || _isWhitespaceAt(text, markerEnd, end)) {
+    return markerEnd;
+  }
+
+  return null;
+}
+
+int? _orderedListMarkerEnd(String text, int start, int end) {
+  final numberEnd = _listNumberEnd(text, start, end);
+  if (numberEnd == null || numberEnd == end) return null;
+
+  final delimiter = text.codeUnitAt(numberEnd);
+  if (!_isOrderedListDelimiter(delimiter)) return null;
+  final markerEnd = numberEnd + _singleCodeUnitLength;
+  if (!_isWhitespaceAt(text, markerEnd, end) && markerEnd != end) return null;
+
+  return markerEnd;
+}
+
+int? _listNumberEnd(String text, int start, int end) {
+  if (!_isAsciiDigit(text.codeUnitAt(start))) return null;
+  var cursor = start;
+  while (cursor < end && _isAsciiDigit(text.codeUnitAt(cursor))) {
+    cursor++;
+    if (cursor - start > _maximumListMarkerDigits) return null;
+  }
+
+  return cursor;
+}
+
+bool _isAsciiDigit(int character) =>
+    character >= _zeroCodeUnit && character <= _nineCodeUnit;
+
+bool _isOrderedListDelimiter(int character) =>
+    character == _periodCodeUnit || character == _rightParenthesisCodeUnit;
+
+bool _isMarkdownWhitespace(int codeUnit) =>
+    codeUnit == _spaceCodeUnit || codeUnit == _tabCodeUnit;
+
+bool _containsCodeUnit(String text, int start, int end, int target) {
+  for (var offset = start; offset < end; offset++) {
+    if (text.codeUnitAt(offset) == target) return true;
+  }
+
+  return false;
+}
+
+bool _isCodeFenceWhitespace(String text, int start, int end) {
+  for (var offset = start; offset < end; offset++) {
+    final codeUnit = text.codeUnitAt(offset);
+    if (codeUnit != _spaceCodeUnit &&
+        codeUnit != _tabCodeUnit &&
+        codeUnit != _carriageReturnCodeUnit) {
+      return false;
+    }
+  }
+
+  return true;
 }

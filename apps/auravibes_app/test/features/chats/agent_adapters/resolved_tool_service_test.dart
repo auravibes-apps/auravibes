@@ -234,6 +234,39 @@ void main() {
     );
   });
 
+  test('exposes cancellation support for background eligibility', () {
+    expect(
+      usecase.supportsCancellation(
+        ResolvedTool.native(tableId: 'url', nativeToolType: NativeToolType.url),
+      ),
+      isTrue,
+    );
+    expect(
+      usecase.supportsCancellation(
+        ResolvedTool.builtIn(
+          tableId: 'calculator',
+          toolIdentifier: 'calculator',
+          tooltype: UserToolType.calculator,
+        ),
+      ),
+      isFalse,
+    );
+    expect(
+      usecase.supportsCancellation(
+        ResolvedTool.mcp(
+          tableId: 'weather',
+          toolIdentifier: 'forecast',
+          mcp: (
+            mcpServerId: 'server-1',
+            mcpSlug: 'weather',
+            outputSchemaJson: null,
+          ),
+        ),
+      ),
+      isFalse,
+    );
+  });
+
   test('runs built-in calculator tools', () async {
     final result = await usecase(
       conversationId: 'conversation-1',
@@ -578,6 +611,7 @@ void main() {
     expect(
       await provider.runSkillControlTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         toolIdentifier: activateSkillToolName,
         arguments: {'slug': 'skill-1', 'revision': 'rev-1'},
@@ -625,6 +659,7 @@ void main() {
 
     final result = await provider.runSkillControlTool((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       toolIdentifier: SkillToolNames.listCredentials,
       arguments: {'skillSlug': 'openai'},
@@ -691,6 +726,7 @@ void main() {
     expect(
       await provider.runSkillControlTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         toolIdentifier: SkillToolNames.listCredentials,
         arguments: const {'skillSlug': 'skill-1'},
@@ -759,6 +795,7 @@ void main() {
       expect(
         await provider.runSkillControlTool((
           conversationId: 'conversation-1',
+          toolCallId: 'call-1',
           workspaceId: 'workspace-1',
           toolIdentifier: listSkillCredentialsToolName,
           arguments: const {'skillSlug': 'openai'},
@@ -859,6 +896,7 @@ void main() {
 
     final result = await provider.runSkillControlTool((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       toolIdentifier: callSkillToolName,
       arguments: {
@@ -973,6 +1011,7 @@ void main() {
     expect(
       await provider.runSkillNativeTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: listAgentsToolName,
@@ -983,6 +1022,7 @@ void main() {
     expect(
       await provider.runSkillNativeTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: runSubAgentToolName,
@@ -993,6 +1033,7 @@ void main() {
     await expectLater(
       () => provider.runSkillNativeTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: 'unknown',
@@ -1011,13 +1052,13 @@ void main() {
     );
     final nativeSuccesses = <({String workspaceId, String toolSlug})>[];
     when(
-      () => templateTool.call(
+      () => templateTool.callCancelable(
         workspaceId: 'workspace-1',
         skillSlug: 'skill-1',
         toolSlug: 'template-tool',
         arguments: {'value': 1},
       ),
-    ).thenAnswer((_) async => 'template result');
+    ).thenReturn(CancelableOperation.fromFuture(.value('template result')));
     when(
       () => nativeTool.call(
         workspaceId: 'workspace-1',
@@ -1058,6 +1099,7 @@ void main() {
     expect(
       await provider.runSkillTemplateTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         skillSlug: 'skill-1',
         toolSlug: 'template-tool',
@@ -1068,6 +1110,7 @@ void main() {
     expect(
       await provider.runSkillNativeTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         skillSlug: 'skills_manager',
         toolSlug: 'native-tool',
@@ -1078,6 +1121,7 @@ void main() {
     expect(
       await provider.runSkillNativeTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         skillSlug: 'duckduckgo',
         toolSlug: 'search',
@@ -1118,6 +1162,7 @@ void main() {
 
     final result = provider.runSkillNativeTool((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       skillSlug: 'duckduckgo',
       toolSlug: 'search',
@@ -1136,6 +1181,62 @@ void main() {
     );
   });
 
+  test(
+    'returns one background acknowledgement and keeps the call running',
+    () async {
+      final _ = cancellationRuntime.start('conversation-1');
+      final appSkillTool = _MockRunAppSkillToolUsecase();
+      final specs = _currentAppSkillSpecs(
+        'skill__app_native__duckduckgo__search',
+      );
+      final operation = CancelableCompleter<Object?>();
+      when(
+        () => appSkillTool.callCancelable(
+          workspaceId: 'workspace-1',
+          skillSlug: 'duckduckgo',
+          toolSlug: 'search',
+          arguments: {'query': 'dart'},
+        ),
+      ).thenReturn(operation.operation);
+      final provider = AppResolvedToolProvider(
+        agentCancellationRuntime: cancellationRuntime,
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+        }) async => 'mcp result',
+        runAppSkillToolUsecase: appSkillTool,
+        buildAppSkillNativeToolSpecsUsecase: specs,
+      );
+
+      final result = provider.runSkillNativeTool((
+        conversationId: 'conversation-1',
+        toolCallId: 'call-background',
+        workspaceId: 'workspace-1',
+        skillSlug: 'duckduckgo',
+        toolSlug: 'search',
+        arguments: {'query': 'dart'},
+      ));
+      await Future<void>.delayed(.zero);
+      expect(
+        cancellationRuntime.detachToolCall(
+          conversationId: 'conversation-1',
+          toolCallId: 'call-background',
+          workId: 'work-1',
+        ),
+        isTrue,
+      );
+
+      expect(await result, {
+        'status': 'running_in_background',
+        'work_id': 'work-1',
+      });
+      operation.complete('eventual result');
+      await Future<void>.delayed(.zero);
+      expect(operation.isCanceled, isFalse);
+    },
+  );
+
   test('rejects app native tools absent from current specifications', () async {
     final appSkillTool = _MockRunAppSkillToolUsecase();
     final specs = _currentAppSkillSpecs(null);
@@ -1153,6 +1254,7 @@ void main() {
     await expectLater(
       provider.runSkillNativeTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         skillSlug: 'duckduckgo',
         toolSlug: 'search',
@@ -1183,6 +1285,7 @@ void main() {
     expect(
       () => provider.runSkillTemplateTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         skillSlug: 'skill-1',
         toolSlug: 'template-tool',
@@ -1193,6 +1296,7 @@ void main() {
     expect(
       () => provider.runSkillNativeTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         skillSlug: 'skill-1',
         toolSlug: 'native-tool',
@@ -1215,6 +1319,7 @@ void main() {
     await expectLater(
       () => provider.runSkillNativeTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: listAgentsToolName,
@@ -1225,6 +1330,7 @@ void main() {
     await expectLater(
       () => provider.runSkillNativeTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         skillSlug: SkillToolSlugs.skillsManager,
         toolSlug: 'list',
@@ -1267,6 +1373,7 @@ void main() {
     await expectLater(
       provider.runSkillControlTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         toolIdentifier: SkillToolNames.listCredentials,
         arguments: const {'skillSlug': 'missing-app-skill'},
@@ -1276,6 +1383,7 @@ void main() {
     await expectLater(
       provider.runSkillControlTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         toolIdentifier: SkillToolNames.listCredentials,
         arguments: const {'skillSlug': 'not-loaded'},
@@ -1305,6 +1413,7 @@ void main() {
     await expectLater(
       providerWithMissingRegistryEntry.runSkillControlTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         toolIdentifier: SkillToolNames.listCredentials,
         arguments: const {'skillSlug': 'missing-app-skill'},
@@ -1326,6 +1435,7 @@ void main() {
     expect(
       () => provider.runSkillControlTool((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         toolIdentifier: activateSkillToolName,
         arguments: const {'slug': 'skill-1', 'revision': 'rev-1'},

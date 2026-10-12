@@ -2,6 +2,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_feedback.dart';
@@ -139,6 +140,7 @@ typedef _ArchiveImportRequest = ({
 
 Future<void> _importArchive(_ArchiveImportRequest request) async {
   final (:context, :ref, :workspaceId, :archiveJson) = request;
+  if (!await _confirmIncompleteAgentContextImport(context, archiveJson)) return;
   final conversations = await _importConversations(
     ref,
     workspaceId,
@@ -155,6 +157,73 @@ Future<List<ConversationEntity>> _importConversations(
 ) => ref
     .read(conversationArchiveUsecaseProvider)
     .importArchive(workspaceId: workspaceId, archiveJson: archiveJson);
+
+Future<bool> _confirmIncompleteAgentContextImport(
+  BuildContext context,
+  String archiveJson,
+) {
+  final affected = _incompleteArchiveImportPreview(archiveJson);
+  if (affected.isEmpty) return Future.value(true);
+
+  return _showIncompleteAgentContextImportDialog(context, affected);
+}
+
+List<ConversationArchiveImportPreview> _incompleteArchiveImportPreview(
+  String archiveJson,
+) =>
+    ConversationArchiveCodec.previewImport(archiveJson)
+        .where((item) => item.hasIncompleteAgentContext)
+        .toList(growable: false);
+
+Future<bool> _showIncompleteAgentContextImportDialog(
+  BuildContext context,
+  List<ConversationArchiveImportPreview> affected,
+) async {
+  if (!context.mounted) return false;
+
+  final result = await AuraDialogs.confirm(
+    context: context,
+    title: const TextLocale(
+      LocaleKeys.chats_screens_chats_list_archive_incomplete_title,
+    ),
+    message: _IncompleteAgentContextImportContent(affected: affected),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(
+        LocaleKeys.chats_screens_chats_list_archive_import_continue,
+      ),
+      cancelLabel: TextLocale(
+        LocaleKeys.chats_screens_chats_list_archive_import_cancel,
+      ),
+    ),
+  );
+
+  return result == true;
+}
+
+class const _IncompleteAgentContextImportContent({
+  required final List<ConversationArchiveImportPreview> affected,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: [
+      const TextLocale(
+        LocaleKeys.chats_screens_chats_list_archive_incomplete_description,
+      ),
+      const SizedBox(height: 12),
+      const TextLocale(
+        LocaleKeys.chats_screens_chats_list_archive_incomplete_affected,
+      ),
+      const SizedBox(height: 4),
+      for (final conversation in affected)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Text(conversation.title),
+        ),
+    ],
+  );
+}
 
 void _showArchiveImportResult(
   BuildContext context,

@@ -5,6 +5,8 @@ import 'package:auravibes_app/features/chats/usecases/message_persisted_exceptio
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
+import 'package:auravibes_app/features/skills/providers/recent_skill_usage_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -37,6 +39,12 @@ class ApplyConversationSkillActionUsecase({
     ChatDraft draft,
   )
   sendMessage,
+  required final Future<void> Function(
+    String workspaceId,
+    String conversationId,
+    String skillSlug,
+  )
+  recordRecentSkillUse,
 }) {
   final Set<String> _inProgress = {};
 
@@ -223,6 +231,16 @@ extension on ApplyConversationSkillActionUsecase {
   ) async {
     if (request.action == .add) return .added;
     try {
+      await recordRecentSkillUse(
+        request.workspaceId,
+        request.conversationId,
+        skill.slug,
+      );
+    } on Object {
+      // A recent-history write must not block an explicit skill request.
+    }
+
+    try {
       await sendMessage(
         request.workspaceId,
         request.conversationId,
@@ -284,5 +302,13 @@ final applyConversationSkillActionUsecaseProvider =
         sendMessage: (workspaceId, conversationId, draft) => ref
             .read(sendMessageUsecaseProvider(workspaceId))
             .call(conversationId: conversationId, draft: draft),
+        recordRecentSkillUse: (workspaceId, conversationId, skillSlug) async {
+          await ref
+              .read(recentSkillUsageRepositoryProvider)
+              .recordUseNow(workspaceId: workspaceId, skillSlug: skillSlug);
+          ref.invalidate(
+            conversationSkillSelectorProvider(workspaceId, conversationId),
+          );
+        },
       );
     });

@@ -5,6 +5,15 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod/riverpod.dart';
 
+typedef _ToolCancellationRegistrationRequest = ({
+  String conversationId,
+  String toolCallId,
+  bool isSupported,
+  Future<void> Function() cancel,
+  Future<Object?>? operationResult,
+  bool Function()? isCancellationConfirmed,
+});
+
 class AgentCancellationRuntime implements AgentCancellationEffects {
   new({@visibleForTesting this.cleanupTimeout = const Duration(seconds: 5)});
 
@@ -14,6 +23,8 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
   final _completionByConversationId = <String, Completer<void>>{};
   final _conversationByScope = <AgentCancellationScope, String>{};
   final _pendingStops = <String>{};
+  final _toolCancellationHandles =
+      <String, Map<String, AgentToolCancellationHandle>>{};
 
   @override
   AgentCancellationScope start(String conversationId) =>
@@ -22,11 +33,6 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
   @override
   AgentCancellationScope? current(String conversationId) =>
       _entries[conversationId];
-
-  Future<void> waitForCompletion(String conversationId) {
-    return _completionByConversationId[conversationId]?.future ??
-        Future<void>.value();
-  }
 
   @override
   void requestStop(String conversationId) {
@@ -38,6 +44,10 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
     final scope = _entries[conversationId];
     if (scope == null) {
       final _ = _pendingStops.add(conversationId);
+      final _ = _completionByConversationId.putIfAbsent(
+        conversationId,
+        Completer<void>.new,
+      );
 
       return;
     }
@@ -57,51 +67,222 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
     final scope = _entries.remove(conversationId);
     if (scope == null) {
       if (!_conversationByScope.values.contains(conversationId)) {
-        _complete(conversationId);
+        _completeConversation(this, conversationId);
       }
     } else {
       scope
         ..requestStop()
         ..close();
       unawaited(
-        _completeScope(scope, _completionByConversationId[conversationId]),
+        _completeScope(
+          this,
+          scope,
+          _completionByConversationId[conversationId],
+        ),
       );
     }
     final _ = _pendingStops.remove(conversationId);
   }
+}
 
-  Future<void> _completeScope(
-    AgentCancellationScope scope,
-    Completer<void>? completion,
-  ) async {
-    await _waitForScopeCleanup(scope, cleanupTimeout);
-    final conversationId = _conversationByScope.remove(scope);
-    if (conversationId == null ||
-        completion == null ||
-        completion.isCompleted) {
-      return;
+enum AgentToolCancellationStatus {
+  running,
+  unsupported,
+  detached,
+  cancellationRequested,
+  cancellationConfirmed,
+  completed,
+}
+
+class AgentToolCancellationHandle {
+  new({
+    required this.toolCallId,
+    required bool isSupported,
+    required this._cancel,
+    this.operationResult,
+    this._isCancellationConfirmed,
+  }) : _isSupported = isSupported,
+       _status = isSupported
+           ? AgentToolCancellationStatus.running
+           : AgentToolCancellationStatus.unsupported {
+    final operation = operationResult;
+    if (operation != null) {
+      unawaited(_markToolCancellationCompletedWhenSettled(this, operation));
     }
-    if (identical(_entries[conversationId], scope)) return;
-    if (identical(_completionByConversationId[conversationId], completion)) {
-      final _ = _completionByConversationId.remove(conversationId);
-    }
-    completion.complete();
   }
 
-  void _complete(String conversationId) {
-    final completion = _completionByConversationId.remove(conversationId);
-    if (completion != null && !completion.isCompleted) completion.complete();
+  final String toolCallId;
+  final Future<Object?>? operationResult;
+  final Future<void> Function() _cancel;
+  final bool Function()? _isCancellationConfirmed;
+  final bool _isSupported;
+  AgentCancellationCleanupRegistration? _cleanupRegistration;
+  AgentToolCancellationStatus _status;
+  Future<void>? _cancellation;
+  String? _backgroundWorkId;
+  final _detachedCompleter = Completer<String>();
+  bool _operationCompleted = false;
+  bool _cancellationWasConfirmed = false;
+
+  AgentToolCancellationStatus get status => _status;
+  Future<String> get detached => _detachedCompleter.future;
+  String? get backgroundWorkId => _backgroundWorkId;
+  bool get cancellationWasConfirmed => _cancellationWasConfirmed;
+  Future<bool>? get cancellationCompletion {
+    final cancellation = _cancellation;
+    if (cancellation == null) return null;
+
+    return _awaitCancellationCompletion(this, cancellation);
+  }
+
+  bool isOperationCompleted() => _operationCompleted;
+
+  bool tryDetach({required String workId}) {
+    if (!_isSupported ||
+        operationResult == null ||
+        _operationCompleted ||
+        _status != AgentToolCancellationStatus.running) {
+      return false;
+    }
+    final registration = _cleanupRegistration;
+    if (registration == null || !registration.remove()) return false;
+    _cleanupRegistration = null;
+    _backgroundWorkId = workId;
+    _status = .detached;
+    _detachedCompleter.complete(workId);
+
+    return true;
+  }
+
+  void markOperationCompleted() {
+    _operationCompleted = true;
+    _status = .completed;
+  }
+
+  Future<bool> requestCancellation() async {
+    if (!_isSupported || _operationCompleted) {
+      return false;
+    }
+    final existing = _cancellation;
+    if (existing != null) {
+      await existing;
+
+      return _cancellationWasConfirmed;
+    }
+
+    _status = .cancellationRequested;
+    final cancellation = _cancelToolOnce(this);
+    _cancellation = cancellation;
+    await cancellation;
+
+    return _cancellationWasConfirmed;
+  }
+}
+
+Future<bool> _awaitCancellationCompletion(
+  AgentToolCancellationHandle handle,
+  Future<void> cancellation,
+) async {
+  try {
+    await cancellation;
+
+    return handle._cancellationWasConfirmed;
+  } on Object {
+    return false;
+  }
+}
+
+void _markToolCancellationCompleted(AgentToolCancellationHandle handle) {
+  handle.markOperationCompleted();
+}
+
+Future<void> _markToolCancellationCompletedWhenSettled(
+  AgentToolCancellationHandle handle,
+  Future<Object?> operation,
+) async {
+  try {
+    final _ = await operation;
+  } on Object {
+    _markToolCancellationCompleted(handle);
+
+    return;
+  }
+
+  _markToolCancellationCompleted(handle);
+}
+
+Future<void> _cancelToolOnce(AgentToolCancellationHandle handle) async {
+  await handle._cancel();
+  final cancellationConfirmed =
+      handle._isCancellationConfirmed?.call() ?? !handle._operationCompleted;
+  if (cancellationConfirmed) {
+    handle._cancellationWasConfirmed = true;
+    if (!handle._operationCompleted) {
+      handle._status = .cancellationConfirmed;
+    }
   }
 }
 
 extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
+  Future<void> waitForCompletion(String conversationId) =>
+      _completionByConversationId[conversationId]?.future ??
+      Future<void>.value();
+
+  AgentToolCancellationHandle registerToolCancellationHandle(
+    _ToolCancellationRegistrationRequest request,
+  ) {
+    final handle = _newToolCancellationHandle(request);
+    _storeToolCancellationHandle(this, request, handle);
+    _registerToolCancellationCleanup(this, request, handle);
+
+    return handle;
+  }
+
+  AgentToolCancellationHandle? toolCancellationHandle({
+    required String conversationId,
+    required String toolCallId,
+  }) => _toolCancellationHandles[conversationId]?[toolCallId];
+
+  bool detachToolCall({
+    required String conversationId,
+    required String toolCallId,
+    required String workId,
+  }) =>
+      toolCancellationHandle(
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+      )?.tryDetach(workId: workId) ??
+      false;
+
+  void completeToolCancellationHandle({
+    required String conversationId,
+    required String toolCallId,
+    required AgentToolCancellationHandle handle,
+  }) {
+    if (handle.backgroundWorkId != null && !handle.isOperationCompleted()) {
+      return;
+    }
+    _markToolCancellationCompleted(handle);
+    final handles = _toolCancellationHandles[conversationId];
+    if (handles == null || !identical(handles[toolCallId], handle)) return;
+    final _ = handles.remove(toolCallId);
+    if (handles.isEmpty) {
+      final _ = _toolCancellationHandles.remove(conversationId);
+    }
+  }
+
   bool isCancellationRequested(String conversationId) =>
       current(conversationId)?.isCancellationRequested ?? false;
+}
 
+extension AgentCancellationScopeHelpers on AgentCancellationRuntime {
   AgentCancellationScope _startScope(String conversationId) {
     final scope = AgentCancellationScope();
     _replaceScope(conversationId);
-    _completionByConversationId[conversationId] = Completer<void>();
+    final _ = _completionByConversationId.putIfAbsent(
+      conversationId,
+      Completer<void>.new,
+    );
     _conversationByScope[scope] = conversationId;
     _entries[conversationId] = scope;
     if (_pendingStops.remove(conversationId)) scope.requestStop();
@@ -113,21 +294,21 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
     String conversationId,
     StreamSubscription<T> subscription,
   ) {
-    current(conversationId)?.registerCleanup(subscription.cancel);
+    final _ = current(conversationId)?.registerCleanup(subscription.cancel);
   }
 
   void registerCancelableOperation<T>(
     String conversationId,
     CancelableOperation<T> operation,
   ) {
-    current(conversationId)?.registerCleanup(operation.cancel);
+    final _ = current(conversationId)?.registerCleanup(operation.cancel);
   }
 
   void registerCleanup(
     String conversationId,
     FutureOr<void> Function() cleanup,
   ) {
-    current(conversationId)?.registerCleanup(cleanup);
+    final _ = current(conversationId)?.registerCleanup(cleanup);
   }
 
   void _replaceScope(String conversationId) {
@@ -137,8 +318,85 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
     previous
       ..requestStop()
       ..close();
-    unawaited(_completeScope(previous, completion));
+    unawaited(_completeScope(this, previous, completion));
+    _completionByConversationId[conversationId] = Completer<void>();
   }
+}
+
+AgentToolCancellationHandle _newToolCancellationHandle(
+  _ToolCancellationRegistrationRequest request,
+) => AgentToolCancellationHandle(
+  toolCallId: request.toolCallId,
+  isSupported: request.isSupported,
+  cancel: request.cancel,
+  operationResult: request.operationResult,
+  isCancellationConfirmed: request.isCancellationConfirmed,
+);
+
+void _storeToolCancellationHandle(
+  AgentCancellationRuntime runtime,
+  _ToolCancellationRegistrationRequest request,
+  AgentToolCancellationHandle handle,
+) {
+  final handles = runtime._toolCancellationHandles.putIfAbsent(
+    request.conversationId,
+    () => <String, AgentToolCancellationHandle>{},
+  );
+  handles[request.toolCallId] = handle;
+}
+
+void _registerToolCancellationCleanup(
+  AgentCancellationRuntime runtime,
+  _ToolCancellationRegistrationRequest request,
+  AgentToolCancellationHandle handle,
+) {
+  handle._cleanupRegistration = runtime
+      .current(request.conversationId)
+      ?.registerCleanup(() async {
+        final _ = await handle.requestCancellation();
+      });
+}
+
+Future<void> _completeScope(
+  AgentCancellationRuntime runtime,
+  AgentCancellationScope scope,
+  Completer<void>? completion,
+) async {
+  await _waitForScopeCleanup(scope, runtime.cleanupTimeout);
+  _completeScopeCompletion(runtime, scope, completion);
+}
+
+void _completeScopeCompletion(
+  AgentCancellationRuntime runtime,
+  AgentCancellationScope scope,
+  Completer<void>? completion,
+) {
+  final conversationId = runtime._conversationByScope.remove(scope);
+  if (conversationId == null || completion == null || completion.isCompleted) {
+    return;
+  }
+  if (identical(runtime._entries[conversationId], scope)) return;
+  _removeScopeCompletion(runtime, conversationId, completion);
+  completion.complete();
+}
+
+void _removeScopeCompletion(
+  AgentCancellationRuntime runtime,
+  String conversationId,
+  Completer<void> completion,
+) {
+  final currentCompletion = runtime._completionByConversationId[conversationId];
+  if (identical(currentCompletion, completion)) {
+    final _ = runtime._completionByConversationId.remove(conversationId);
+  }
+}
+
+void _completeConversation(
+  AgentCancellationRuntime runtime,
+  String conversationId,
+) {
+  final completion = runtime._completionByConversationId.remove(conversationId);
+  if (completion != null && !completion.isCompleted) completion.complete();
 }
 
 Future<void> _waitForScopeCleanup(
