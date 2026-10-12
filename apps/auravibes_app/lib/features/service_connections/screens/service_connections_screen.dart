@@ -372,8 +372,8 @@ class const _ConnectionsLoadFailure({required final String workspaceId})
         child: const TextLocale(LocaleKeys.route_state_retry),
       ),
       AuraButton(
-        onPressed: () => MoreRoute(workspaceId: workspaceId).go(context),
-        child: const TextLocale('connection_setup.return_workspace'),
+        onPressed: () => NewChatRoute(workspaceId: workspaceId).go(context),
+        child: const TextLocale(LocaleKeys.connection_setup_return_workspace),
       ),
     ],
   );
