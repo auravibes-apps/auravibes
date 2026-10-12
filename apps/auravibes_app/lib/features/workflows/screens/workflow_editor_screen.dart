@@ -82,7 +82,7 @@ class _WorkflowEditorScreenState extends ConsumerState<WorkflowEditorScreen> {
   Widget build(BuildContext context) {
     final source = _watchEditorSource();
     _syncTextFields(source.state.workflow);
-    _bindExitGuard(context, source.state);
+    _bindExitGuard(source.state);
 
     return _WorkflowEditorPage(
       presentation: _WorkflowEditorPresentationFactory.create(
@@ -103,7 +103,7 @@ class _WorkflowEditorScreenState extends ConsumerState<WorkflowEditorScreen> {
     return (state: ref.watch(provider), editor: ref.watch(provider.notifier));
   }
 
-  void _bindExitGuard(BuildContext context, WorkflowEditorState editorState) {
+  void _bindExitGuard(WorkflowEditorState editorState) {
     _WorkflowEditorExitGuardBinder.bind(
       guard: _exitGuard,
       state: editorState,

@@ -178,10 +178,10 @@ class const _WorkflowBoundaryPosition({
     children: [
       _WorkflowInputBoundary(
         ports: workflow.inputs,
+        onPortTap: (portId) => onSelectOutput(null, portId),
         pendingPortId: editorState.pendingOutput?.nodeId == null
             ? editorState.pendingOutput?.portId
             : null,
-        onPortTap: (portId) => onSelectOutput(null, portId),
       ),
       _WorkflowOutputBoundary(
         ports: workflow.outputs,
@@ -411,8 +411,8 @@ class const _WorkflowBoundaryPorts({
       : _WorkflowBoundaryPortList(
           ports: ports,
           isOutputBoundary: isOutputBoundary,
-          pendingPortId: pendingPortId,
           onPortTap: onPortTap,
+          pendingPortId: pendingPortId,
         );
 }
 

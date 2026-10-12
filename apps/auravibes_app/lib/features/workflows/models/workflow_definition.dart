@@ -276,10 +276,13 @@ abstract final class _WorkflowDefinitionParser {
   }
 
   static Map<String, Object?> _definition(Object? value) {
-    final definition = value! as Map<String, Object?>;
-    _validateVersion(definition);
+    if (value is! Map<String, Object?>) {
+      throw const FormatException('Workflow definition must be a map.');
+    }
 
-    return definition;
+    _validateVersion(value);
+
+    return value;
   }
 
   static _WorkflowContents _contentsFromDefinition(
