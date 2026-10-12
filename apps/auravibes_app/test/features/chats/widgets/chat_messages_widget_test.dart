@@ -3723,6 +3723,47 @@ void main() {
       semantics.dispose();
     });
 
+    testWidgets('does not announce tool-call lifecycle messages', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      final message = _createMessage(
+        id: 'tool-call',
+        content: '',
+        isUser: false,
+        status: MessageStatus.unfinished,
+        messageType: MessageType.toolCall,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => true),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        tester
+            .getSemantics(
+              find.byKey(const ValueKey('assistant_response_status_conv-1')),
+            )
+            .label,
+        isEmpty,
+      );
+      semantics.dispose();
+    });
+
     testWidgets('announces rich A2UI intermediate responses', (tester) async {
       final semantics = tester.ensureSemantics();
       final runtime = ChatA2uiRuntime(conversationId: 'conv-1');

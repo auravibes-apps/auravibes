@@ -230,7 +230,8 @@ class const ChatMessagesWidget({
         if (source != null &&
             !source.message.isUser &&
             !source.message.isForkReference &&
-            source.message.messageType != MessageType.system)
+            source.message.messageType != MessageType.system &&
+            source.message.messageType != MessageType.toolCall)
           ChatAssistantResponseProgress(
             messageId: source.message.id,
             isStreaming: source.isStreaming,
