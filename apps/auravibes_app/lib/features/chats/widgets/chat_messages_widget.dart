@@ -506,14 +506,13 @@ void _showConversationSkillPicker(
   String workspaceId,
   String conversationId,
 ) {
-  FocusManager.instance.primaryFocus?.unfocus();
+  if (!context.mounted) return;
+
   unawaited(
-    showDialog<void>(
+    ConversationSkillSelectorModal.show(
       context: context,
-      builder: (context) => ConversationSkillSelectorModal(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      ),
+      workspaceId: workspaceId,
+      conversationId: conversationId,
     ),
   );
 }

@@ -55,6 +55,37 @@ void main() {
     },
   );
 
+  test('retains saved descriptions and app localization keys', () async {
+    final usecase = AssessSkillAccessUsecase(
+      hasCredential: (_) async => true,
+      hasAppCredential: (_) async => false,
+    );
+    final user = await usecase.call(
+      skill: _skill(),
+      tools: [_tool(description: 'Search public sources.')],
+    );
+    final app = await usecase.call(
+      skill: _skill(
+        app: true,
+        appTools: const [
+          AppSkillToolDefinition(
+            slug: 'search',
+            title: 'Search',
+            description: 'Search app data.',
+            titleKey: 'app.search.title',
+            descriptionKey: 'app.search.description',
+          ),
+        ],
+      ),
+      tools: [],
+    );
+
+    expect(user.tools.single.description, 'Search public sources.');
+    expect(app.tools.single.description, 'Search app data.');
+    expect(app.tools.single.titleKey, 'app.search.title');
+    expect(app.tools.single.descriptionKey, 'app.search.description');
+  });
+
   test('required missing access and unknown reads remain distinct', () async {
     for (final unknown in [false, true]) {
       final result = await AssessSkillAccessUsecase(
@@ -151,6 +182,7 @@ SkillDetail _skill({
   bool optional = false,
   String? definitionId = 'parent-access',
   bool app = false,
+  List<AppSkillToolDefinition>? appTools,
 }) => SkillDetail(
   id: 'skill',
   workspaceId: 'workspace',
@@ -163,22 +195,29 @@ SkillDetail _skill({
   isEnabled: true,
   isCredentialOptional: optional,
   credentialDefinitionId: definitionId,
-  appTools: app
-      ? const [
-          AppSkillToolDefinition(slug: 'free', title: 'Free', description: ''),
-          AppSkillToolDefinition(
-            slug: 'protected',
-            title: 'Protected',
-            description: '',
-            requiresCredential: true,
-          ),
-        ]
-      : const [],
+  appTools:
+      appTools ??
+      (app
+          ? const [
+              AppSkillToolDefinition(
+                slug: 'free',
+                title: 'Free',
+                description: '',
+              ),
+              AppSkillToolDefinition(
+                slug: 'protected',
+                title: 'Protected',
+                description: '',
+                requiresCredential: true,
+              ),
+            ]
+          : const []),
 );
 
 SkillTemplateToolEntity _tool({
   String id = 'tool',
   String? definitionId,
+  String description = '',
   bool requiresAccess = true,
   bool enabled = true,
 }) => SkillTemplateToolEntity(
@@ -186,7 +225,7 @@ SkillTemplateToolEntity _tool({
   skillId: 'skill',
   templateType: .url,
   title: id,
-  description: '',
+  description: description,
   slug: id,
   isEnabled: enabled,
   requiresCredential: requiresAccess,
