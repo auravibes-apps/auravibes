@@ -225,6 +225,85 @@ abstract final class _MarkdownToolbarShortcuts {
       };
 }
 
+typedef _MarkdownHistoryAction = ({
+  TextEditingValue before,
+  TextEditingValue after,
+});
+
+typedef _MarkdownHistoryChange = ({
+  bool undo,
+  TextEditingController controller,
+  FocusNode focusNode,
+  void Function() onEdit,
+  void Function(void Function()) setState,
+});
+
+class _MarkdownToolbarHistory {
+  final _undoHistory = <_MarkdownHistoryAction>[];
+  final _redoHistory = <_MarkdownHistoryAction>[];
+
+  bool canUndo(String text) =>
+      _undoHistory.isNotEmpty && text == _undoHistory.last.after.text;
+
+  bool canRedo(String text) =>
+      _redoHistory.isNotEmpty && text == _redoHistory.last.before.text;
+
+  void clear() {
+    _undoHistory.clear();
+    _redoHistory.clear();
+  }
+
+  void remember(
+    TextEditingValue before,
+    TextEditingValue after,
+    void Function(void Function()) setState,
+  ) {
+    if (after.text == before.text) return;
+
+    setState(() {
+      _undoHistory.add((before: before, after: after));
+      _redoHistory.clear();
+    });
+  }
+
+  void change(_MarkdownHistoryChange change) {
+    final action = _take(change.undo, change.controller.text);
+    if (action == null) return;
+
+    _applyValue(action, change);
+    _restoreFocus(change.focusNode);
+    _pushAction(action, change);
+  }
+
+  void _applyValue(
+    _MarkdownHistoryAction action,
+    _MarkdownHistoryChange change,
+  ) {
+    change.controller.value = change.undo ? action.before : action.after;
+    change.onEdit();
+  }
+
+  void _restoreFocus(FocusNode focusNode) {
+    if (!focusNode.hasFocus) focusNode.requestFocus();
+  }
+
+  void _pushAction(
+    _MarkdownHistoryAction action,
+    _MarkdownHistoryChange change,
+  ) {
+    change.setState(() => _historyForDirection(change.undo).add(action));
+  }
+
+  _MarkdownHistoryAction? _take(bool undo, String text) {
+    if (!(undo ? canUndo(text) : canRedo(text))) return null;
+
+    return (undo ? _undoHistory : _redoHistory).removeLast();
+  }
+
+  List<_MarkdownHistoryAction> _historyForDirection(bool undo) =>
+      undo ? _redoHistory : _undoHistory;
+}
+
 extension on _MarkdownEditorToolbarState {
   void _toggleSelection(String marker, {String? alternateMarker}) {
     final selection = _safeSelection;
@@ -1317,85 +1396,6 @@ class const _ToolbarToggleSemantics({
     .active => Semantics(child: child, toggled: true),
     .inactive => Semantics(child: child, toggled: false),
   };
-}
-
-typedef _MarkdownHistoryAction = ({
-  TextEditingValue before,
-  TextEditingValue after,
-});
-
-typedef _MarkdownHistoryChange = ({
-  bool undo,
-  TextEditingController controller,
-  FocusNode focusNode,
-  void Function() onEdit,
-  void Function(void Function()) setState,
-});
-
-class _MarkdownToolbarHistory {
-  final _undoHistory = <_MarkdownHistoryAction>[];
-  final _redoHistory = <_MarkdownHistoryAction>[];
-
-  bool canUndo(String text) =>
-      _undoHistory.isNotEmpty && text == _undoHistory.last.after.text;
-
-  bool canRedo(String text) =>
-      _redoHistory.isNotEmpty && text == _redoHistory.last.before.text;
-
-  void clear() {
-    _undoHistory.clear();
-    _redoHistory.clear();
-  }
-
-  void remember(
-    TextEditingValue before,
-    TextEditingValue after,
-    void Function(void Function()) setState,
-  ) {
-    if (after.text == before.text) return;
-
-    setState(() {
-      _undoHistory.add((before: before, after: after));
-      _redoHistory.clear();
-    });
-  }
-
-  void change(_MarkdownHistoryChange change) {
-    final action = _take(change.undo, change.controller.text);
-    if (action == null) return;
-
-    _applyValue(action, change);
-    _restoreFocus(change.focusNode);
-    _pushAction(action, change);
-  }
-
-  void _applyValue(
-    _MarkdownHistoryAction action,
-    _MarkdownHistoryChange change,
-  ) {
-    change.controller.value = change.undo ? action.before : action.after;
-    change.onEdit();
-  }
-
-  void _restoreFocus(FocusNode focusNode) {
-    if (!focusNode.hasFocus) focusNode.requestFocus();
-  }
-
-  void _pushAction(
-    _MarkdownHistoryAction action,
-    _MarkdownHistoryChange change,
-  ) {
-    change.setState(() => _historyForDirection(change.undo).add(action));
-  }
-
-  _MarkdownHistoryAction? _take(bool undo, String text) {
-    if (!(undo ? canUndo(text) : canRedo(text))) return null;
-
-    return (undo ? _undoHistory : _redoHistory).removeLast();
-  }
-
-  List<_MarkdownHistoryAction> _historyForDirection(bool undo) =>
-      undo ? _redoHistory : _undoHistory;
 }
 
 typedef _InlineFormattingSpan = ({
