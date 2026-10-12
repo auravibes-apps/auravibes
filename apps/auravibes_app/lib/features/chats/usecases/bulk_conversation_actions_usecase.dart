@@ -7,7 +7,13 @@ typedef CloudConversationResolver = Future<CloudConversationUsecase?> Function(
   String workspaceId,
 );
 
-typedef LocalConversationDelete = Future<bool> Function(String conversationId);
+typedef LocalConversationDelete = Future<bool> Function(
+  ConversationEntity conversation,
+);
+typedef ClearConversationDraft = Future<void> Function(
+  String workspaceId,
+  String conversationId,
+);
 
 typedef BulkConversationOperationError = ({
   ConversationEntity conversation,
@@ -31,6 +37,7 @@ class const BulkConversationActionsUsecase({
   required final ConversationRepository conversationRepository,
   required final LocalConversationDelete deleteConversation,
   required final CloudConversationResolver resolveCloudConversation,
+  required final ClearConversationDraft clearConversationDraft,
 }) {
   Future<ConversationEntity?> setPinned(
     ConversationEntity conversation, {
@@ -52,11 +59,12 @@ class const BulkConversationActionsUsecase({
     final cloud = await resolveCloudConversation(conversation.workspaceId);
     if (cloud != null) {
       await cloud.delete(conversation);
+      await clearConversationDraft(conversation.workspaceId, conversation.id);
 
       return true;
     }
 
-    return await deleteConversation(conversation.id);
+    return await deleteConversation(conversation);
   }
 
   Future<BulkPinResult> pinMany(

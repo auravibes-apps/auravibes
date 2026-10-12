@@ -5,10 +5,14 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_draft_cleanup_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
@@ -16,6 +20,7 @@ import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/services/conversation_archive_file_service.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_archive_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/delete_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -1113,7 +1118,11 @@ void main() {
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
             deleteConversationUsecaseProvider.overrideWithValue(
-              DeleteConversationUsecase(repo, (_) => Future<void>.value()),
+              DeleteConversationUsecase(
+                repo,
+                (_) => Future<void>.value(),
+                clearConversationDraft: (_, _) => Future<void>.value(),
+              ),
             ),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
@@ -1172,7 +1181,11 @@ void main() {
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
             deleteConversationUsecaseProvider.overrideWithValue(
-              DeleteConversationUsecase(repo, (_) => Future<void>.value()),
+              DeleteConversationUsecase(
+                repo,
+                (_) => Future<void>.value(),
+                clearConversationDraft: (_, _) => Future<void>.value(),
+              ),
             ),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
@@ -1218,7 +1231,11 @@ void main() {
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
             deleteConversationUsecaseProvider.overrideWithValue(
-              DeleteConversationUsecase(repo, (_) => Future<void>.value()),
+              DeleteConversationUsecase(
+                repo,
+                (_) => Future<void>.value(),
+                clearConversationDraft: (_, _) => Future<void>.value(),
+              ),
             ),
             cloudConversationUsecaseProvider.overrideWithValue(.new(gateway)),
             streamingTitleProvider.overrideWith((ref, id) => null),
@@ -1243,6 +1260,83 @@ void main() {
       expect(find.text('1 selected'), findsOneWidget);
     });
 
+    testWidgets('successful cloud bulk delete clears the draft', (
+      tester,
+    ) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([_createConversation()]),
+      );
+      final stateGateway = _WorkspaceGateway();
+      final client = _Client();
+      final endpoint = _ConversationEndpoint();
+      when(() => stateGateway.workspace).thenReturn(_cloudWorkspace);
+      when(() => stateGateway.client).thenReturn(client);
+      when(() => client.conversation).thenReturn(endpoint);
+      when(() => endpoint.delete(any()))
+          .thenAnswer((_) => Future<void>.value());
+      final gateway = CloudChatGateway(stateGateway);
+      final attachmentUsecase = _RecordingLocalChatAttachmentUsecase();
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            localChatAttachmentUsecaseProvider.overrideWithValue(
+              attachmentUsecase,
+            ),
+            deleteConversationUsecaseProvider.overrideWithValue(
+              DeleteConversationUsecase(
+                repo,
+                (_) => Future<void>.value(),
+                clearConversationDraft: (_, _) => Future<void>.value(),
+              ),
+            ),
+            cloudConversationUsecaseProvider.overrideWithValue(.new(gateway)),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(ChatListWidget)),
+      );
+      const attachment = MessageAttachmentToCreate(
+        localPath: '/tmp/cloud-draft.txt',
+        fileName: 'cloud-draft.txt',
+        displayName: 'cloud-draft.txt',
+        mimeType: 'text/plain',
+        modality: .file,
+        sizeBytes: 25,
+      );
+      final draftProvider = conversationDraftProvider('ws-1', 'conv-1');
+      container
+          .read(draftProvider.notifier)
+          .save(
+            const ChatDraft(
+              text: 'remove after cloud deletion',
+              attachments: [attachment],
+            ),
+          );
+
+      await tester.tap(
+        find.byKey(const ValueKey('conversation-selection-conv-1')),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Delete selected'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      final _ = await tester.pumpAndSettle();
+
+      verify(() => endpoint.delete(any())).called(1);
+      expect(repo.deleteCalls, isEmpty);
+      expect(container.read(draftProvider), isNull);
+      expect(attachmentUsecase.deletedPaths, [attachment.localPath]);
+    });
+
     testWidgets('bulk delete reports and retains failed conversations', (
       tester,
     ) async {
@@ -1253,6 +1347,7 @@ void main() {
         ]),
         onDelete: (id) async => id != 'conv-1',
       );
+      final attachmentUsecase = _RecordingLocalChatAttachmentUsecase();
 
       await pumpAndInit(
         tester,
@@ -1260,9 +1355,18 @@ void main() {
           workspaceId: 'ws-1',
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
-            deleteConversationUsecaseProvider.overrideWithValue(
-              DeleteConversationUsecase(repo, (_) => Future<void>.value()),
+            localChatAttachmentUsecaseProvider.overrideWithValue(
+              attachmentUsecase,
             ),
+            deleteConversationUsecaseProvider.overrideWith((ref) {
+              final cleanup = ref.read(conversationDraftCleanupUsecaseProvider);
+
+              return DeleteConversationUsecase(
+                repo,
+                (_) => Future<void>.value(),
+                clearConversationDraft: cleanup.clearConversation,
+              );
+            }),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
               (ref, workspaceId) => Stream.value([]),
@@ -1270,6 +1374,26 @@ void main() {
           ],
         ),
       );
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(ChatListWidget)),
+      );
+      const failedDraft = ChatDraft(text: 'keep this draft');
+      const deletedAttachment = MessageAttachmentToCreate(
+        localPath: '/tmp/deleted-draft.txt',
+        fileName: 'deleted-draft.txt',
+        displayName: 'deleted-draft.txt',
+        mimeType: 'text/plain',
+        modality: .file,
+        sizeBytes: 25,
+      );
+      const deletedDraft = ChatDraft(
+        text: 'remove this draft',
+        attachments: [deletedAttachment],
+      );
+      final failedDraftProvider = conversationDraftProvider('ws-1', 'conv-1');
+      final deletedDraftProvider = conversationDraftProvider('ws-1', 'conv-2');
+      container.read(failedDraftProvider.notifier).save(failedDraft);
+      container.read(deletedDraftProvider.notifier).save(deletedDraft);
 
       await tester.tap(
         find.byKey(const ValueKey('conversation-selection-conv-1')),
@@ -1284,6 +1408,9 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(repo.deleteCalls, ['conv-1', 'conv-2']);
+      expect(container.read(failedDraftProvider), same(failedDraft));
+      expect(container.read(deletedDraftProvider), isNull);
+      expect(attachmentUsecase.deletedPaths, [deletedAttachment.localPath]);
       expect(find.text('Could not delete: Failed Chat'), findsOneWidget);
       expect(find.text('1 selected'), findsOneWidget);
       expect(find.text('Failed Chat'), findsOneWidget);
@@ -1364,6 +1491,19 @@ const _cloudWorkspace = CloudWorkspaceRef(
   accountId: 'account',
   cloudWorkspaceId: 1,
 );
+
+class _RecordingLocalChatAttachmentUsecase
+    implements LocalChatAttachmentUsecase {
+  final deletedPaths = <String>[];
+
+  @override
+  Future<void> deleteAttachment(String localPath) async {
+    deletedPaths.add(localPath);
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
 
 class _StubConversationRepository({
   required final Stream<List<ConversationEntity>> conversationsStream,

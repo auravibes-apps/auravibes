@@ -39,6 +39,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
+import 'package:auravibes_app/features/chats/widgets/model_usage_header_button.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
@@ -1141,6 +1142,7 @@ class const _LoadedChatConversationView({
         child: _ChatConversationBody(data: data),
         appBar: _ChatConversationAppBar(
           title: data.conversation.title,
+          conversationId: data.conversation.id,
           leading: data.leading,
         ),
       ),
@@ -1150,14 +1152,18 @@ class const _LoadedChatConversationView({
 
 class const _ChatConversationAppBar({
   required final String title,
+  required final String conversationId,
   required final Widget? leading,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) =>
-      AuraAppBarWithDrawer(title: Text(title), leading: leading);
+  Widget build(BuildContext context) => AuraAppBarWithDrawer(
+    title: Text(title),
+    actions: [ModelUsageHeaderButton(conversationId: conversationId)],
+    leading: leading,
+  );
 }
 
 class const _ChatConversationBody({
@@ -1828,14 +1834,11 @@ void _showSkillsModal({
 }) {
   if (!context.mounted) return;
 
-  FocusManager.instance.primaryFocus?.unfocus();
   unawaited(
-    showDialog<void>(
+    ConversationSkillSelectorModal.show(
       context: context,
-      builder: (context) => ConversationSkillSelectorModal(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      ),
+      workspaceId: workspaceId,
+      conversationId: conversationId,
     ),
   );
 }

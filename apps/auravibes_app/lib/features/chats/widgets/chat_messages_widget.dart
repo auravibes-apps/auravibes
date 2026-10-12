@@ -506,14 +506,13 @@ void _showConversationSkillPicker(
   String workspaceId,
   String conversationId,
 ) {
-  FocusManager.instance.primaryFocus?.unfocus();
+  if (!context.mounted) return;
+
   unawaited(
-    showDialog<void>(
+    ConversationSkillSelectorModal.show(
       context: context,
-      builder: (context) => ConversationSkillSelectorModal(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      ),
+      workspaceId: workspaceId,
+      conversationId: conversationId,
     ),
   );
 }
@@ -1568,7 +1567,13 @@ class const _ForkBoundaryDivider({
               workspaceId: source.workspaceId,
               chatId: source.id,
             ).go(context),
-            child: row,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: context.auraTheme.interactionSizes.minimumTargetSize,
+                minHeight: context.auraTheme.interactionSizes.minimumTargetSize,
+              ),
+              child: Center(child: row),
+            ),
           );
   }
 }

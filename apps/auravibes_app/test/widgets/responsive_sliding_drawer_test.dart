@@ -6,9 +6,13 @@ import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart'
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   group('ResponsiveSlidingDrawerController', () {
     test('isDesktop defaults to false without state', () {
       final controller = ResponsiveSlidingDrawerController();
@@ -126,33 +130,35 @@ void main() {
       Widget drawer = const Text('Drawer'),
       Widget body = const Text('Body'),
     }) {
-      return EasyLocalization(
-        child: Builder(
-          builder: (context) {
-            return AuraThemeScope(
-              theme: .light,
-              child: MaterialApp(
-                home: ResponsiveSlidingDrawer(
-                  drawer: drawer,
-                  body: body,
-                  isDarkMode: isDarkMode,
-                  controller: controller,
-                  initiallyOpen: initiallyOpen,
+      return ProviderScope(
+        child: EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return AuraThemeScope(
+                theme: .light,
+                child: MaterialApp(
+                  home: ResponsiveSlidingDrawer(
+                    drawer: drawer,
+                    body: body,
+                    isDarkMode: isDarkMode,
+                    controller: controller,
+                    initiallyOpen: initiallyOpen,
+                  ),
+                  theme: .new(platform: platform),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
                 ),
-                theme: .new(platform: platform),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              ),
-            );
-          },
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
         ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
       );
     }
 
@@ -282,6 +288,41 @@ void main() {
             ? (width * 0.3).clamp(150.0, 400.0)
             : (width * 0.8).clamp(0.0, 400.0);
         expect(tester.getSize(panel).width, closeTo(expectedWidth, 0.1));
+      }
+    });
+
+    testWidgets('restores the desktop drawer width after it is recreated', (
+      tester,
+    ) async {
+      await pumpDrawer(tester, controller: .new(), initiallyOpen: true);
+      final defaultWidth = _drawerPanelWidth(tester);
+
+      await tester.drag(
+        find.byTooltip(LocaleKeys.navigation_drawer_resize_handle_tooltip.tr()),
+        const .new(-50, 0),
+      );
+      final _ = await tester.pumpAndSettle();
+      final resizedWidth = _drawerPanelWidth(tester);
+      expect(resizedWidth, lessThan(defaultWidth));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await pumpDrawer(tester, controller: .new(), initiallyOpen: true);
+
+      expect(_drawerPanelWidth(tester), closeTo(resizedWidth, 0.1));
+    });
+
+    testWidgets('clamps the restored desktop drawer width', (tester) async {
+      for (final (:storedWidth, :expectedWidth) in [
+        (storedWidth: 149.0, expectedWidth: 150.0),
+        (storedWidth: 401.0, expectedWidth: 400.0),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        SharedPreferences.setMockInitialValues({
+          'app_desktop_drawer_width': storedWidth,
+        });
+        await pumpDrawer(tester, controller: .new(), initiallyOpen: true);
+
+        expect(_drawerPanelWidth(tester), closeTo(expectedWidth, 0.1));
       }
     });
 
@@ -568,4 +609,12 @@ void main() {
       expect(drawerPressCount, 0);
     });
   });
+}
+
+double _drawerPanelWidth(WidgetTester tester) {
+  final panel = find
+      .ancestor(of: find.text('Drawer'), matching: find.byType(SizedBox))
+      .first;
+
+  return tester.getSize(panel).width;
 }
