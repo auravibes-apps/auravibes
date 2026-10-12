@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -8,6 +9,8 @@ void main() {
   Widget buildSubject({
     required TextEditingController controller,
     required FocusNode focusNode,
+    FocusNode? otherFocusNode,
+    TargetPlatform? platform,
   }) {
     return EasyLocalization(
       child: Builder(
@@ -16,11 +19,13 @@ void main() {
             home: AuraThemeScope(
               theme: .light,
               child: Theme(
-                data: .new(),
+                data: .new(platform: platform),
                 child: Scaffold(
                   body: Column(
                     children: [
                       TextField(controller: controller, focusNode: focusNode),
+                      if (otherFocusNode case final otherFocusNode?)
+                        TextField(focusNode: otherFocusNode),
                       MarkdownEditorToolbar(
                         controller: controller,
                         focusNode: focusNode,
@@ -53,6 +58,29 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(widget);
     });
+    await tester.pump();
+  }
+
+  Future<void> sendShortcut(
+    WidgetTester tester,
+    LogicalKeyboardKey key, {
+    bool meta = false,
+    bool control = false,
+    bool shift = false,
+  }) async {
+    final modifiers = [
+      if (meta) LogicalKeyboardKey.metaLeft,
+      if (control) LogicalKeyboardKey.controlLeft,
+      if (shift) LogicalKeyboardKey.shiftLeft,
+    ];
+    for (final modifier in modifiers) {
+      final _ = await tester.sendKeyDownEvent(modifier);
+    }
+    final _ = await tester.sendKeyDownEvent(key);
+    final _ = await tester.sendKeyUpEvent(key);
+    for (final modifier in modifiers.reversed) {
+      final _ = await tester.sendKeyUpEvent(modifier);
+    }
     await tester.pump();
   }
 
@@ -101,6 +129,182 @@ void main() {
       expect(focusNode.hasFocus, isTrue);
       expect(controller.text, '**bold**');
     });
+
+    testWidgets('uses macOS Command shortcuts and records selection for undo', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'bold');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+      final originalValue = controller.value;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          controller: controller,
+          focusNode: focusNode,
+          platform: .macOS,
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+
+      await sendShortcut(tester, .keyB, control: true);
+      expect(controller.text, 'bold');
+
+      controller.value = originalValue;
+      await tester.pump();
+      await sendShortcut(tester, .keyB, meta: true);
+
+      expect(controller.text, '**bold**');
+      expect(focusNode.hasFocus, isTrue);
+
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+
+      expect(controller.value, originalValue);
+
+      controller.value = const TextEditingValue(
+        text: 'italic',
+        selection: .new(baseOffset: 0, extentOffset: 6),
+      );
+      await tester.pump();
+      await sendShortcut(tester, .keyI, meta: true);
+
+      expect(controller.text, '*italic*');
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      expect(
+        controller.value,
+        const TextEditingValue(
+          text: 'italic',
+          selection: .new(baseOffset: 0, extentOffset: 6),
+        ),
+      );
+    });
+
+    testWidgets('uses Control shortcuts on Windows and Linux', (tester) async {
+      final controller = TextEditingController(text: 'text');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+
+      for (final platform in [TargetPlatform.windows, TargetPlatform.linux]) {
+        controller.value = const TextEditingValue(
+          text: 'text',
+          selection: .new(baseOffset: 0, extentOffset: 4),
+        );
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            controller: controller,
+            focusNode: focusNode,
+            platform: platform,
+          ),
+        );
+        focusNode.requestFocus();
+        await tester.pump();
+
+        await sendShortcut(tester, .keyB, meta: true);
+        expect(controller.text, 'text');
+        await sendShortcut(tester, .keyB, control: true);
+        expect(controller.text, '**text**');
+
+        controller.value = const TextEditingValue(
+          text: 'code',
+          selection: .new(baseOffset: 0, extentOffset: 4),
+        );
+        await tester.pump();
+        await sendShortcut(tester, .keyE, control: true);
+
+        expect(controller.text, '`code`');
+        expect(focusNode.hasFocus, isTrue);
+      }
+    });
+
+    testWidgets('opens link insertion from the platform shortcut', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'Documentation');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 13,
+      );
+      final originalValue = controller.value;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          controller: controller,
+          focusNode: focusNode,
+          platform: .macOS,
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+      await sendShortcut(tester, .keyK, meta: true);
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      final fields = find.byType(TextField);
+      expect(
+        tester.widget<TextField>(fields.at(1)).controller?.text,
+        'Documentation',
+      );
+      await tester.enterText(fields.last, 'https://docs.example.com');
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(controller.text, '[Documentation](https://docs.example.com)');
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      expect(controller.value, originalValue);
+    });
+
+    testWidgets(
+      'does not handle editor shortcuts when another field has focus',
+      (tester) async {
+        final controller = TextEditingController(text: 'text');
+        final focusNode = FocusNode();
+        final otherFocusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+        addTearDown(otherFocusNode.dispose);
+        controller.selection = const TextSelection(
+          baseOffset: 0,
+          extentOffset: 4,
+        );
+
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            controller: controller,
+            focusNode: focusNode,
+            otherFocusNode: otherFocusNode,
+            platform: .windows,
+          ),
+        );
+        otherFocusNode.requestFocus();
+        await tester.pump();
+        await sendShortcut(tester, .keyB, control: true);
+
+        expect(controller.text, 'text');
+        expect(focusNode.hasFocus, isFalse);
+        expect(otherFocusNode.hasFocus, isTrue);
+      },
+    );
 
     testWidgets('escaped inline delimiters are not toggled as formatting', (
       tester,
