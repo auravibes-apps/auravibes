@@ -87,6 +87,56 @@ void main() {
     expect(serverToolIsReplayableSkillKind(AgentResolvedToolKind.mcp), isFalse);
   });
 
+  test('only cancellable template calls can run in background', () {
+    ServerResolvedTool tool(AgentResolvedToolName descriptor) =>
+        ServerResolvedTool(
+          descriptor: descriptor,
+          spec: ToolSpec(
+            name: descriptor.fullName,
+            description: 'Test tool.',
+            inputJsonSchema: const {'type': 'object'},
+          ),
+        );
+
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.skillTemplate(
+            tableId: 'search',
+            skillSlug: 'research',
+            toolIdentifier: 'search',
+          ),
+        ),
+      ),
+      isTrue,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.skillAppTemplate(
+            tableId: 'calendar',
+            skillSlug: 'calendar',
+            toolIdentifier: 'list_events',
+          ),
+        ),
+      ),
+      isTrue,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.mcp(
+            tableId: 'server',
+            toolIdentifier: 'list',
+            mcpServerId: 'server',
+            mcpSlug: 'list',
+          ),
+        ),
+      ),
+      isFalse,
+    );
+  });
+
   test('does not infer an omitted cloud tool credentialId', () {
     expect(cloudToolCredentialId(null), isNull);
     expect(cloudToolCredentialId(' credential-1 '), 'credential-1');

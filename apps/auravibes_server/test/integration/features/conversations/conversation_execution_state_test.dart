@@ -2,25 +2,28 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
-import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
-import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
-import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
-import 'package:auravibes_server/src/features/conversations/workers/conversation_job_dispatcher.dart';
-import 'package:auravibes_server/src/features/conversations/workers/conversation_job_leases.dart';
-import 'package:auravibes_server/src/features/conversations/workers/conversation_worker.dart';
-import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
-import 'package:auravibes_server/src/features/workspaces/domain/workspace_roles.dart';
-import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
-    as conversation_repo;
-import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
-    as workspace_repo;
-import 'package:auravibes_server/src/generated/protocol.dart';
+import 'package:genkit/plugin.dart' show GenkitException;
 import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
 
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
+import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
+import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
+import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
+import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
+import 'package:auravibes_server/src/features/conversations/workers/conversation_job_dispatcher.dart';
+import 'package:auravibes_server/src/features/conversations/workers/conversation_job_leases.dart';
+import 'package:auravibes_server/src/features/conversations/workers/conversation_worker.dart';
+import 'package:auravibes_server/src/features/workspaces/domain/workspace_roles.dart';
+import 'package:auravibes_server/src/generated/protocol.dart';
+
 import '../../test_tools/serverpod_test_tools.dart';
+
+import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
+    as conversation_repo;
+import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
+    as workspace_repo;
 
 void main() {
   withServerpod(
@@ -1750,6 +1753,147 @@ void main() {
       );
 
       test(
+        'persists classified provider failures and does not retry terminal cases',
+        () async {
+          for (final scenario in [
+            (
+              name: 'authentication',
+              error: GenkitException(
+                'Credentials rejected.',
+                status: .unauthenticated,
+              ),
+              category: ProviderFailureCategory.authentication,
+              retryable: false,
+            ),
+            (
+              name: 'quota',
+              error: GenkitException(
+                'Quota exceeded.',
+                status: .resourceExhausted,
+              ),
+              category: ProviderFailureCategory.quotaRateLimit,
+              retryable: false,
+            ),
+            (
+              name: 'rate limit with Retry-After',
+              error: ProviderHttpFailureException(
+                429,
+                'Rate limit exceeded.',
+                retryAfter: const Duration(seconds: 42),
+              ),
+              category: ProviderFailureCategory.quotaRateLimit,
+              retryable: true,
+            ),
+            (
+              name: 'transient outage',
+              error: ProviderHttpFailureException(
+                503,
+                'Provider unavailable.',
+                details: 'api_key=offline-fixture-secret',
+              ),
+              category: ProviderFailureCategory.transientOutage,
+              retryable: true,
+            ),
+            (
+              name: 'configuration',
+              error: GenkitException(
+                'Invalid model settings.',
+                status: .invalidArgument,
+              ),
+              category: ProviderFailureCategory.configuration,
+              retryable: false,
+            ),
+            (
+              name: 'unknown text that resembles a rate limit',
+              error: GenkitException(
+                'HTTP 429 rate limit. Try again in one minute.',
+                status: .unknown,
+              ),
+              category: ProviderFailureCategory.unknown,
+              retryable: false,
+            ),
+          ]) {
+            final fixture = await prepareExecution();
+            final job = (await ConversationJob.db.findFirstRow(
+              fixture.database,
+              where: (table) =>
+                  table.conversationId.equals(fixture.conversationDatabaseId),
+            ))!;
+            await ConversationJob.db.updateRow(
+              fixture.database,
+              job.copyWith(maxAttempts: 1),
+            );
+            final host = _ThrowingFailureHost(scenario.error);
+
+            await runConversationWorker(
+              fixture.database,
+              isActive: () => true,
+              worker: ConversationWorker(host: host),
+            );
+
+            final failedJob = await ConversationJob.db.findById(
+              fixture.database,
+              job.id!,
+            );
+            final turn = (await ConversationTurn.db.findById(
+              fixture.database,
+              job.turnId!,
+            ))!;
+            final userMessage = await ConversationMessage.db.findById(
+              fixture.database,
+              turn.userMessageId!,
+            );
+            final assistantMessage = await ConversationMessage.db.findById(
+              fixture.database,
+              turn.assistantMessageId!,
+            );
+            final userMetadata = jsonDecode(userMessage!.metadataJson!) as Map;
+            final assistantMetadata =
+                jsonDecode(assistantMessage!.metadataJson!) as Map;
+            final userModelMetadata = userMetadata['modelMetadata'] as Map;
+            final assistantModelMetadata =
+                assistantMetadata['modelMetadata'] as Map;
+            final userRecovery = userModelMetadata['providerRecovery'] as Map;
+            final assistantRecovery =
+                assistantModelMetadata['providerRecovery'] as Map;
+
+            expect(failedJob!.status, ConversationJobStatuses.failed);
+            expect(turn.status, ConversationStatuses.failed);
+            expect(host.calls, 1, reason: scenario.name);
+            expect(userMessage.status, 'error');
+            expect(assistantMessage.status, ConversationStatuses.failed);
+            expect(userModelMetadata['providerError'], isTrue);
+            expect(assistantModelMetadata['providerError'], isTrue);
+            expect(userRecovery['classification'], scenario.category.wireValue);
+            expect(
+              assistantRecovery['classification'],
+              scenario.category.wireValue,
+            );
+            expect(userRecovery['retryable'], scenario.retryable);
+            expect(assistantRecovery['retryable'], scenario.retryable);
+            if (scenario.name == 'rate limit with Retry-After') {
+              expect(userRecovery['retryAfterSeconds'], 42);
+              expect(assistantRecovery['retryAfterSeconds'], 42);
+            }
+            if (scenario.category == ProviderFailureCategory.transientOutage) {
+              expect(assistantMessage.content, 'api_key=[REDACTED]');
+              expect(
+                assistantMessage.content,
+                isNot(contains('offline-fixture-secret')),
+              );
+            }
+
+            await runConversationWorker(
+              fixture.database,
+              isActive: () => true,
+              worker: ConversationWorker(host: host),
+            );
+            expect(host.calls, 1, reason: scenario.name);
+          }
+        },
+      );
+
+      test(
         'retry wake waits for its durable availability before rerunning',
         () async {
           final fixture = await prepareExecution();
@@ -2267,6 +2411,26 @@ class _AwaitingApprovalHost extends _CountingCompletingHost {
   }
 }
 
+class _ThrowingFailureHost extends _CountingCompletingHost {
+  _ThrowingFailureHost(this.failure);
+
+  final Object failure;
+
+  @override
+  Future<ConversationEngineResult> executeTurn(
+    Session session, {
+    required ConversationJob job,
+    required ConversationTurn turn,
+    required List<ConversationMessage> messages,
+    required ConversationProgressPublisher liveTurns,
+    Future<void>? leaseLost,
+  }) async {
+    calls++;
+    if (!started.isCompleted) started.complete();
+    throw failure;
+  }
+}
+
 class _FailOnceHost extends _CountingCompletingHost {
   @override
   Future<ConversationEngineResult> executeTurn(
@@ -2278,7 +2442,9 @@ class _FailOnceHost extends _CountingCompletingHost {
     Future<void>? leaseLost,
   }) async {
     calls++;
-    if (calls == 1) throw StateError('retry once');
+    if (calls == 1) {
+      throw const ProviderTransientFailureException('offline retry fixture');
+    }
     return const ConversationEngineResult(
       content: 'Done',
       finishReason: 'stop',

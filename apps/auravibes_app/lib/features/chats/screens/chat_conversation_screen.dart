@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
@@ -828,6 +829,7 @@ class const _LoadedChatConversationData({
   required final ConversationEntity conversation,
   required final _LoadedChatConversationState state,
   required final bool hidesStoppedRun,
+  required final bool isStopRequested,
   required final bool showInputComposer,
   required final _LoadedChatConversationCallbackState callbacks,
   required final Widget? leading,
@@ -837,6 +839,7 @@ class const _LoadedChatConversationRuntimeState({
   required final _LoadedChatConversationCallbackState callbacks,
   required final _LoadedChatConversationState state,
   required final bool hidesStoppedRun,
+  required final bool isStopRequested,
 });
 
 _LoadedChatConversationRuntimeState _useLoadedChatConversationRuntimeState(
@@ -895,6 +898,7 @@ _LoadedChatConversationRuntimeState _loadedChatConversationRuntimeState(
     request.conversationId,
     request.state.isInputBusy,
   ),
+  isStopRequested: request.stopRequested.value,
 );
 
 class const _LoadedChatConversationRender({
@@ -911,6 +915,7 @@ class const _LoadedChatConversationRender({
       conversation: conversation,
       state: runtimeState.state,
       hidesStoppedRun: runtimeState.hidesStoppedRun,
+      isStopRequested: runtimeState.isStopRequested,
       showInputComposer: showInputComposer,
       callbacks: runtimeState.callbacks,
       leading: leading,
@@ -1267,16 +1272,20 @@ class const _ChatConversationStatusAndComposerView({
 class const _ChatConversationMessageList({
   required final _LoadedChatConversationData data,
 }) extends StatelessWidget {
+  Future<void> Function(MessageEntity message)? get _onRetryMessage =>
+      data.state.isInputBusy ? null : data.callbacks.hooks.onRetryMessage;
+
+  bool get _showThinking => data.state.isGenerating && !data.hidesStoppedRun;
+
   @override
   Widget build(BuildContext context) => Expanded(
     child: _ChatList(
       workspaceId: data.workspaceId,
       conversationId: data.conversation.id,
       pendingToolCalls: data.state.pendingCalls,
-      onRetryMessage: data.state.isInputBusy
-          ? null
-          : data.callbacks.hooks.onRetryMessage,
-      showThinking: data.state.isGenerating && !data.hidesStoppedRun,
+      isStopRequested: data.isStopRequested,
+      onRetryMessage: _onRetryMessage,
+      showThinking: _showThinking,
     ),
   );
 }
@@ -2138,6 +2147,8 @@ Future<void> _retryMessage(_RetryMessageRequest request) async {
 }
 
 bool _canRetryMessage(_RetryMessageRequest request) {
+  if (!_canRetryProviderMessage(request.message)) return false;
+
   final busyState = request.ref.read(
     conversationBusyStateProvider(request.workspaceId, request.conversationId),
   );
@@ -2153,6 +2164,14 @@ bool _canRetryMessage(_RetryMessageRequest request) {
 
   return true;
 }
+
+bool _canRetryProviderMessage(MessageEntity message) =>
+    message.isUser &&
+    !message.isForkReference &&
+    message.hasValidContent &&
+    (message.status == .unfinished ||
+        (message.status == .error &&
+            ProviderRecoveryMetadata.isRetryEligible(message)));
 
 Future<void> _runRetryMessage(_RetryMessageRequest request) async {
   final cloud = await request.ref.read(
@@ -2280,9 +2299,41 @@ CloudConversationState? _readCloudConversationState(
     .value;
 
 bool _canContinueCloudState(CloudConversationState state) {
+  if (_hasNonRetryableCloudProviderFailure(state.messages)) return false;
+
   final executionState = state.conversation.executionState;
 
   return executionState == 'idle' || executionState == 'failed';
+}
+
+bool _hasNonRetryableCloudProviderFailure(
+  Iterable<ConversationMessageView> messages,
+) {
+  ConversationMessageView? latestUserMessage;
+  for (final message in messages) {
+    if (message.role != 'user' || message.isForkReference) continue;
+    if (latestUserMessage == null ||
+        message.createdAt.isAfter(latestUserMessage.createdAt)) {
+      latestUserMessage = message;
+    }
+  }
+
+  return latestUserMessage != null &&
+      _isNonRetryableCloudProviderFailure(latestUserMessage);
+}
+
+bool _isNonRetryableCloudProviderFailure(ConversationMessageView message) {
+  if (message.role != 'user' ||
+      message.status != 'error' ||
+      message.isForkReference) {
+    return false;
+  }
+  final modelMetadata = MessageMetadataEntity.fromJsonString(
+    message.metadataJson,
+  )?.modelMetadata;
+
+  return ProviderRecoveryMetadata.isProviderErrorMetadata(modelMetadata) &&
+      !ProviderRecoveryMetadata.isRetryEligibleMetadata(modelMetadata);
 }
 
 Future<void> _stopConversation(_ConversationContextRequest request) async {
@@ -2564,6 +2615,7 @@ class const _ChatList({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingToolCalls,
+  required final bool isStopRequested,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
   final bool showThinking = false,
 }) extends ConsumerWidget {
@@ -2578,6 +2630,7 @@ class const _ChatList({
       workspaceId: workspaceId,
       conversationId: conversationId,
       pendingToolCalls: pendingToolCalls,
+      isStopRequested: isStopRequested,
       showThinking: showThinking,
       onRetryMessage: onRetryMessage,
     );
@@ -2589,6 +2642,7 @@ class const _ChatListContent({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingToolCalls,
+  required final bool isStopRequested,
   required final bool showThinking,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
@@ -2601,6 +2655,7 @@ class const _ChatListContent({
       workspaceId: workspaceId,
       conversationId: conversationId,
       pendingToolCalls: pendingToolCalls,
+      isStopRequested: isStopRequested,
       showThinking: showThinking,
       onRetryMessage: onRetryMessage,
     );
@@ -2612,6 +2667,7 @@ class const _ChatListErrorOrResult({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingToolCalls,
+  required final bool isStopRequested,
   required final bool showThinking,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
@@ -2630,6 +2686,7 @@ class const _ChatListErrorOrResult({
       conversationId: conversationId,
       messages: chatMessages.value ?? const <MessageEntity>[],
       pendingToolCalls: pendingToolCalls,
+      isStopRequested: isStopRequested,
       showThinking: showThinking,
       onRetryMessage: onRetryMessage,
     );
@@ -2658,6 +2715,7 @@ class const _ChatListResult({
   required final String conversationId,
   required final Iterable<MessageEntity> messages,
   required final List<PendingToolCall> pendingToolCalls,
+  required final bool isStopRequested,
   required final bool showThinking,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
@@ -2672,6 +2730,7 @@ class const _ChatListResult({
       messageEntitiesById: messageData.entitiesById,
       pendingToolCalls: pendingToolCalls,
       showThinking: showThinking,
+      isStopRequested: isStopRequested,
       onRetryMessage: onRetryMessage,
     );
   }
