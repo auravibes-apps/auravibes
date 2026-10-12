@@ -53,6 +53,7 @@ typedef _ForkCopies = ({
   Map<int, int> turnIds,
   Map<int, int> messageIds,
   Map<String, String> stableMessageIds,
+  Set<String> detachedToolCallIds,
 });
 
 class _BatchDecisionState {
@@ -1241,6 +1242,15 @@ class ConversationUseCases {
         userId: userId,
         transaction: transaction,
       );
+      final workspace = await CloudWorkspace.db.findFirstRow(
+        session,
+        where: (table) => table.id.equals(request.workspaceId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (workspace == null || workspace.deletedAt != null) {
+        _fail(ConversationErrorCode.notFound);
+      }
       final conversation = await _repository.findConversationByStableId(
         session,
         workspaceId: request.workspaceId,
@@ -1296,6 +1306,18 @@ class ConversationUseCases {
         _fail(ConversationErrorCode.turnConflict);
       }
       if (!call.backgroundEligible || call.status != 'running') {
+        _fail(ConversationErrorCode.turnConflict);
+      }
+      await _repository.lockBackgroundWorkCapacity(
+        session,
+        transaction: transaction,
+      );
+      final activeBackgroundWork = await _repository.countActiveBackgroundWork(
+        session,
+        transaction: transaction,
+      );
+      if (activeBackgroundWork >=
+          ConversationLimits.maxConcurrentDetachedWork) {
         _fail(ConversationErrorCode.turnConflict);
       }
       final now = DateTime.now().toUtc();
@@ -1363,14 +1385,32 @@ class ConversationUseCases {
       request.workspaceId,
       request.conversationId,
     );
-    final records = await BackgroundWorkRecord.db.find(
+    final recentRecords = await BackgroundWorkRecord.db.find(
       session,
       where: (table) =>
           table.workspaceId.equals(request.workspaceId) &
           table.conversationId.equals(conversation.id),
-      orderBy: (table) => table.createdAt,
+      orderBy: (table) => table.createdAt.desc(),
       limit: 100,
     );
+    final queuedRecords = await BackgroundWorkRecord.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(request.workspaceId) &
+          table.conversationId.equals(conversation.id) &
+          table.statusPreview.inSet({
+            BackgroundWorkPreviews.queuedForContinuation,
+            BackgroundWorkPreviews.continuationInProgress,
+            BackgroundWorkPreviews.continuationFailed,
+          }),
+      orderBy: (table) => table.createdAt,
+    );
+    final recordsById = {
+      for (final record in [...recentRecords, ...queuedRecords])
+        record.id!: record,
+    };
+    final records = recordsById.values.toList()
+      ..sort((left, right) => left.createdAt.compareTo(right.createdAt));
     final messages = await ConversationMessage.db.find(
       session,
       where: (table) => table.id.inSet(
@@ -4124,12 +4164,17 @@ class ConversationUseCases {
           ),
       transaction: context.transaction,
     );
+    final detachedToolCallIds = await _detachedBackgroundToolCallIds(
+      session,
+      context,
+    );
     final copies = (
       sourceMessages: sourceMessages,
       targetMessages: <ConversationMessage>[],
       turnIds: <int, int>{},
       messageIds: <int, int>{},
       stableMessageIds: <String, String>{},
+      detachedToolCallIds: detachedToolCallIds,
     );
     await _copyForkMessages(session, context, copies);
     await _copyForkTurns(session, context, sourceTurns, copies);
@@ -4203,6 +4248,21 @@ class ConversationUseCases {
     return sourceMessages;
   }
 
+  Future<Set<String>> _detachedBackgroundToolCallIds(
+    Session session,
+    _ForkMaterializationContext context,
+  ) async {
+    final workRecords = await BackgroundWorkRecord.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(context.source.workspaceId) &
+          table.conversationId.equals(context.source.id!),
+      transaction: context.transaction,
+    );
+
+    return workRecords.map((work) => work.toolCallId).toSet();
+  }
+
   Future<void> _copyForkMessages(
     Session session,
     _ForkMaterializationContext context,
@@ -4219,7 +4279,10 @@ class ConversationUseCases {
           kind: message.kind,
           status: message.status,
           content: message.content,
-          metadataJson: message.metadataJson,
+          metadataJson: _forkSafeMetadataJson(
+            message.metadataJson,
+            copies.detachedToolCallIds,
+          ),
           compactedThroughMessageId: null,
           revision: message.revision,
           createdAt: message.createdAt,
@@ -4387,6 +4450,7 @@ class ConversationUseCases {
       final newTurnId = copies.turnIds[call.turnId];
       final newMessageId = copies.messageIds[call.messageId];
       if (newTurnId == null || newMessageId == null) continue;
+      if (copies.detachedToolCallIds.contains(call.stableId)) continue;
       await ConversationToolCall.db.insertRow(
         session,
         ConversationToolCall(
@@ -4411,6 +4475,32 @@ class ConversationUseCases {
         transaction: context.transaction,
       );
     }
+  }
+
+  String? _forkSafeMetadataJson(
+    String? metadataJson,
+    Set<String> detachedToolCallIds,
+  ) {
+    if (metadataJson == null || detachedToolCallIds.isEmpty) {
+      return metadataJson;
+    }
+    final decoded = _tryDecodeJson(metadataJson);
+    if (decoded is! Map || decoded['toolCalls'] is! List) {
+      return metadataJson;
+    }
+    final toolCalls = (decoded['toolCalls']! as List)
+        .where(
+          (toolCall) =>
+              toolCall is! Map || !detachedToolCallIds.contains(toolCall['id']),
+        )
+        .toList();
+    if (toolCalls.length == (decoded['toolCalls']! as List).length) {
+      return metadataJson;
+    }
+    final sanitizedMetadata = Map<String, Object?>.from(decoded)
+      ..['toolCalls'] = toolCalls;
+
+    return jsonEncode(sanitizedMetadata);
   }
 
   Future<void> _purgeConversation(

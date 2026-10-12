@@ -36,13 +36,25 @@ typedef _MessageMapping = ({
   List<MessageAttachmentEntity> attachments,
   String? conversationIdOverride,
   bool isForkReference,
+  MessageMetadataEntity? metadataOverride,
+});
+
+typedef _EffectiveMessageMappingContext = ({
+  String conversationId,
+  Map<String, List<MessageAttachmentEntity>> attachmentsByMessage,
+  Map<String, Set<String>> detachedToolCallIds,
 });
 
 class _MessageWatchController {
-  new(this._repository, this._conversationId);
+  new(
+    this._repository,
+    this._conversationId, {
+    this._includeTranscriptContext = false,
+  });
 
   final MessageRepository _repository;
   final String _conversationId;
+  final bool _includeTranscriptContext;
   final _controller = StreamController<List<MessageEntity>>();
   final _subscriptions = <StreamSubscription<dynamic>>[];
   var _pending = false;
@@ -86,7 +98,9 @@ class _MessageWatchController {
 
   Future<void> _emitOnce() async {
     try {
-      final messages = await _repository._getEffectiveMessages(_conversationId);
+      final messages = _includeTranscriptContext
+          ? await _repository._getEffectiveTranscriptMessages(_conversationId)
+          : await _repository._getEffectiveMessages(_conversationId);
       if (!_controller.isClosed) _controller.add(messages);
     } on Object catch (error, stackTrace) {
       if (!_controller.isClosed) _controller.addError(error, stackTrace);
@@ -116,6 +130,11 @@ class MessageRepository(
   Future<List<MessageEntity>> getTranscriptMessagesByConversation(
     String conversationId,
   ) => _getEffectiveTranscriptMessages(conversationId);
+
+  /// Watches the full transcript, including internal agent context entries.
+  Stream<List<MessageEntity>> watchTranscriptMessagesByConversation(
+    String conversationId,
+  ) => _watchTranscriptMessages(conversationId);
 }
 
 mixin _MessageRepositoryReadApi {
@@ -267,6 +286,19 @@ extension on MessageRepository {
     return watcher.stream.transform(_messageWatchTransformer(conversationId));
   }
 
+  Stream<List<MessageEntity>> _watchTranscriptMessages(String conversationId) {
+    final watcher = _MessageWatchController(
+      this,
+      conversationId,
+      includeTranscriptContext: true,
+    );
+    watcher
+      .._controller.onListen = watcher.listen
+      .._controller.onCancel = watcher.cancel;
+
+    return watcher.stream.transform(_messageWatchTransformer(conversationId));
+  }
+
   Future<List<({MessagesTable table, bool isForkReference})>>
   _effectiveMessageRows(String conversationId) async {
     final conversation = await _database.conversationDao.getConversationById(
@@ -350,20 +382,99 @@ extension on MessageRepository {
     String conversationId,
   ) async {
     if (rows.isEmpty) return [];
+    final detachedToolCallIds = await _detachedForkToolCallIds(rows);
+    final attachmentsByMessage = await _attachmentsByMessageForRows(rows);
+    final context = (
+      conversationId: conversationId,
+      attachmentsByMessage: attachmentsByMessage,
+      detachedToolCallIds: detachedToolCallIds,
+    );
+
+    return [for (final row in rows) _mapEffectiveRow(row, context)];
+  }
+
+  Future<Map<String, List<MessageAttachmentEntity>>>
+  _attachmentsByMessageForRows(
+    List<({MessagesTable table, bool isForkReference})> rows,
+  ) async {
     final attachments = await _messageAttachmentRows(
       rows.map((row) => row.table).toList(),
     );
-    final attachmentsByMessage = _attachmentsByMessage(attachments);
 
-    return [
-      for (final row in rows)
-        _mapToMessage((
-          table: row.table,
-          attachments: attachmentsByMessage[row.table.id] ?? [],
-          conversationIdOverride: conversationId,
-          isForkReference: row.isForkReference,
-        )),
-    ];
+    return _attachmentsByMessage(attachments);
+  }
+
+  MessageEntity _mapEffectiveRow(
+    ({MessagesTable table, bool isForkReference}) row,
+    _EffectiveMessageMappingContext context,
+  ) => _mapToMessage((
+    table: row.table,
+    attachments: context.attachmentsByMessage[row.table.id] ?? [],
+    conversationIdOverride: context.conversationId,
+    isForkReference: row.isForkReference,
+    metadataOverride: _forkSafeMetadata(row, context.detachedToolCallIds),
+  ));
+
+  Future<Map<String, Set<String>>> _detachedForkToolCallIds(
+    List<({MessagesTable table, bool isForkReference})> rows,
+  ) async {
+    final sourceConversationIds = _forkSourceConversationIds(rows);
+    if (sourceConversationIds.isEmpty) return const {};
+    final activeWork = await _activeBackgroundWorkForConversations(
+      sourceConversationIds,
+    );
+
+    return _groupToolCallIdsByConversation(activeWork);
+  }
+
+  Set<String> _forkSourceConversationIds(
+    List<({MessagesTable table, bool isForkReference})> rows,
+  ) => rows
+      .where((row) => row.isForkReference)
+      .map((row) => row.table.conversationId)
+      .toSet();
+
+  Future<List<BackgroundWorkTable>> _activeBackgroundWorkForConversations(
+    Set<String> conversationIds,
+  ) => (_database.select(
+    _database.backgroundWorks,
+  )..where((table) => table.conversationId.isIn(conversationIds))).get();
+
+  Map<String, Set<String>> _groupToolCallIdsByConversation(
+    List<BackgroundWorkTable> activeWork,
+  ) {
+    final activeIdsByConversation = <String, Set<String>>{};
+    for (final work in activeWork) {
+      final _ = activeIdsByConversation
+          .putIfAbsent(work.conversationId, () => <String>{})
+          .add(work.toolCallId);
+    }
+
+    return activeIdsByConversation;
+  }
+
+  MessageMetadataEntity? _forkSafeMetadata(
+    ({MessagesTable table, bool isForkReference}) row,
+    Map<String, Set<String>> detachedToolCallIds,
+  ) {
+    if (!row.isForkReference) return null;
+    final metadata = MessageMetadataEntity.fromJsonString(row.table.metadata);
+    final detachedIds = detachedToolCallIds[row.table.conversationId];
+    if (metadata == null || detachedIds == null) return null;
+
+    return _metadataWithoutDetachedCalls(metadata, detachedIds);
+  }
+
+  MessageMetadataEntity? _metadataWithoutDetachedCalls(
+    MessageMetadataEntity metadata,
+    Set<String> detachedIds,
+  ) {
+    final toolCalls = metadata.toolCalls
+        .where((toolCall) => !detachedIds.contains(toolCall.id))
+        .toList();
+    if (toolCalls.length == metadata.toolCalls.length) return null;
+
+    return metadata.copyWith(toolCalls: toolCalls);
   }
 
   StreamTransformer<List<MessageEntity>, List<MessageEntity>>
@@ -1170,6 +1281,7 @@ extension on MessageRepository {
           attachments: attachmentsByMessage[message.id] ?? [],
           conversationIdOverride: null,
           isForkReference: false,
+          metadataOverride: null,
         )),
       )
       .toList();
@@ -1253,7 +1365,9 @@ extension on MessageRepository {
     MessageEntity message,
     _MessageMapping mapping,
   ) => message.copyWith(
-    metadata: .fromJsonString(mapping.table.metadata),
+    metadata:
+        mapping.metadataOverride ??
+        MessageMetadataEntity.fromJsonString(mapping.table.metadata),
     attachments: mapping.attachments,
     isForkReference: mapping.isForkReference,
   );

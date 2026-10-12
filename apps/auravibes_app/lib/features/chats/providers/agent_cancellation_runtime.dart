@@ -316,6 +316,23 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
       _completionByConversationId[conversationId]?.future ??
       Future<void>.value();
 
+  Future<bool> requestToolCancellation(AgentToolCancellationHandle handle) =>
+      handle.requestCancellation().timeout(
+        cleanupTimeout,
+        onTimeout: () => false,
+      );
+
+  Future<bool> waitForToolCancellationConfirmation(
+    AgentToolCancellationHandle handle,
+  ) {
+    final cancellation = handle.cancellationCompletion;
+    if (cancellation == null) {
+      return Future<bool>.value(handle.cancellationWasConfirmed);
+    }
+
+    return cancellation.timeout(cleanupTimeout, onTimeout: () => false);
+  }
+
   AgentToolCancellationHandle registerToolCancellationHandle(
     _ToolCancellationRegistrationRequest request,
   ) {

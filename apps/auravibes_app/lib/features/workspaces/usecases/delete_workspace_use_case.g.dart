@@ -59,4 +59,4 @@ final class DeleteWorkspaceUseCaseProvider
 }
 
 String _$deleteWorkspaceUseCaseHash() =>
-    r'8d68c0f996e0418548371f9f95c80d91b10bf946';
+    r'0f9a7df57f7239e8d9cf45000be81c258b69fbd9';

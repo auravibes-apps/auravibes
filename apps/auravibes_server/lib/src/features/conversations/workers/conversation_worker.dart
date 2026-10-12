@@ -1,18 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:auravibes_engine/auravibes_engine.dart' show projectToolOutput;
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
-import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../engine/conversation_engine_host.dart';
 import '../engine/conversation_host_effects.dart';
+import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
-
 import 'conversation_job_leases.dart';
+
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show ProviderFailureCategory, ProviderFailureRecovery, projectToolOutput;
 
 typedef ConversationJobPublisher = Future<void> Function(
   Session session,
@@ -61,6 +62,11 @@ class const ConversationWorker({
     if (job == null) return false;
     if (isActive != null && !isActive()) return true;
     if (job.status == ConversationJobStatuses.failed) {
+      await _updateBackgroundContinuationPreview(
+        session,
+        job,
+        statusPreview: BackgroundWorkPreviews.continuationFailed,
+      );
       await _reconcileParentAfterChild(session, job);
       await _continueQueuedAfterJob(session, job);
       return true;
@@ -73,7 +79,9 @@ class const ConversationWorker({
     try {
       if (isActive != null && !isActive()) return true;
       if (job.kind == ConversationJobKinds.turn) {
+        await _markBackgroundContinuationStarted(session, job);
         await _executeTurn(session, job, leaseToken, isActive);
+        await _updateBackgroundContinuationPreview(session, job);
       } else if (job.kind == ConversationJobKinds.compact) {
         await _compact(session, job, leaseToken, isActive);
       } else {
@@ -94,19 +102,35 @@ class const ConversationWorker({
       } on ConversationJobLeaseLostException {
         return true;
       }
+      await _updateBackgroundContinuationPreview(
+        session,
+        job,
+        statusPreview: BackgroundWorkPreviews.continuationFailed,
+      );
       return true;
     } on ConversationJobLeaseLostException {
       return true;
-    } on ConversationEngineConfigurationException {
+    } on ConversationEngineConfigurationException catch (error) {
       if (isActive != null && !isActive()) return true;
       final updated = await _retryOrFailIfLeased(
         session,
         jobId: job.id!,
         leaseToken: leaseToken,
         errorCode: 'configuration',
+        retryable: false,
+        providerRecovery: ProviderFailureRecovery(
+          category: .configuration,
+          retryable: false,
+        ).toJson(),
+        errorDetails: ProviderFailureRecovery.safeDetail(error),
         now: DateTime.now().toUtc(),
       );
       if (updated == null) return true;
+      await _updateBackgroundContinuationPreview(
+        session,
+        job,
+        statusPreview: _continuationFailurePreview(updated),
+      );
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
         await _continueQueuedAfterJob(session, updated);
@@ -116,16 +140,27 @@ class const ConversationWorker({
         level: LogLevel.warning,
       );
       return true;
-    } on ConversationResponseLimitException {
+    } on ConversationResponseLimitException catch (error) {
       if (isActive != null && !isActive()) return true;
       final updated = await _retryOrFailIfLeased(
         session,
         jobId: job.id!,
         leaseToken: leaseToken,
         errorCode: 'configuration',
+        retryable: false,
+        providerRecovery: ProviderFailureRecovery(
+          category: .configuration,
+          retryable: false,
+        ).toJson(),
+        errorDetails: ProviderFailureRecovery.safeDetail(error),
         now: DateTime.now().toUtc(),
       );
       if (updated == null) return true;
+      await _updateBackgroundContinuationPreview(
+        session,
+        job,
+        statusPreview: _continuationFailurePreview(updated),
+      );
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
         await _continueQueuedAfterJob(session, updated);
@@ -137,14 +172,24 @@ class const ConversationWorker({
       return true;
     } on Object catch (error, stackTrace) {
       if (isActive != null && !isActive()) return true;
+      final recovery = ProviderFailureRecovery.fromError(error);
       final updated = await _retryOrFailIfLeased(
         session,
         jobId: job.id!,
         leaseToken: leaseToken,
-        errorCode: 'provider_unavailable',
+        errorCode: _recoveryErrorCode(recovery.category),
+        retryable: recovery.retryable,
+        retryDelay: _retryDelayForRecovery(recovery),
+        providerRecovery: recovery.toJson(),
+        errorDetails: ProviderFailureRecovery.safeDetail(error),
         now: DateTime.now().toUtc(),
       );
       if (updated == null) return true;
+      await _updateBackgroundContinuationPreview(
+        session,
+        job,
+        statusPreview: _continuationFailurePreview(updated),
+      );
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
         await _continueQueuedAfterJob(session, updated);
@@ -166,6 +211,10 @@ class const ConversationWorker({
     required String leaseToken,
     required String errorCode,
     required DateTime now,
+    bool retryable = false,
+    Duration retryDelay = const Duration(seconds: 10),
+    Map<String, Object?>? providerRecovery,
+    String? errorDetails,
   }) async {
     final updated = await leases.retryOrFail(
       session,
@@ -173,6 +222,10 @@ class const ConversationWorker({
       leaseToken: leaseToken,
       errorCode: errorCode,
       now: now,
+      retryable: retryable,
+      retryDelay: retryDelay,
+      providerRecovery: providerRecovery,
+      errorDetails: errorDetails,
     );
     if (updated.status == ConversationJobStatuses.queued) {
       await _publishRetryWake(session, updated);
@@ -186,6 +239,10 @@ class const ConversationWorker({
     required String leaseToken,
     required String errorCode,
     required DateTime now,
+    bool retryable = false,
+    Duration retryDelay = const Duration(seconds: 10),
+    Map<String, Object?>? providerRecovery,
+    String? errorDetails,
   }) async {
     try {
       return await _retryOrFail(
@@ -194,10 +251,31 @@ class const ConversationWorker({
         leaseToken: leaseToken,
         errorCode: errorCode,
         now: now,
+        retryable: retryable,
+        retryDelay: retryDelay,
+        providerRecovery: providerRecovery,
+        errorDetails: errorDetails,
       );
     } on ConversationJobLeaseLostException {
       return null;
     }
+  }
+
+  String _recoveryErrorCode(ProviderFailureCategory category) =>
+      switch (category) {
+        .authentication => 'authentication',
+        .quotaRateLimit => 'quota_rate_limit',
+        .transientOutage => 'provider_unavailable',
+        .configuration => 'configuration',
+        .unknown => 'unknown',
+      };
+
+  Duration _retryDelayForRecovery(ProviderFailureRecovery recovery) {
+    final retryAfter = recovery.retryAfter;
+    if (retryAfter == null) return const Duration(seconds: 10);
+    const maximumDelay = Duration(seconds: 60);
+
+    return retryAfter > maximumDelay ? maximumDelay : retryAfter;
   }
 
   Future<void> _publishRetryWake(Session session, ConversationJob job) async {
@@ -432,6 +510,144 @@ class const ConversationWorker({
         session,
         workspaceId: job.workspaceId,
         conversationId: currentConversation.stableId,
+      );
+    }
+  }
+
+  Future<void> _markBackgroundContinuationStarted(
+    Session session,
+    ConversationJob job,
+  ) => _updateBackgroundContinuationPreview(
+    session,
+    job,
+    statusPreview: BackgroundWorkPreviews.continuationInProgress,
+  );
+
+  String _continuationFailurePreview(ConversationJob job) =>
+      job.status == ConversationJobStatuses.failed
+      ? BackgroundWorkPreviews.continuationFailed
+      : BackgroundWorkPreviews.queuedForContinuation;
+
+  Future<void> _updateBackgroundContinuationPreview(
+    Session session,
+    ConversationJob job, {
+    String? statusPreview,
+  }) async {
+    final turnId = job.turnId;
+    if (turnId == null) return;
+    final conversationStableId = await session.db.transaction(
+      (transaction) async {
+        final turn = await ConversationTurn.db.findById(
+          session,
+          turnId,
+          transaction: transaction,
+        );
+        final userMessageId = turn?.userMessageId;
+        if (turn == null || userMessageId == null) return null;
+        final message = await ConversationMessage.db.findById(
+          session,
+          userMessageId,
+          transaction: transaction,
+        );
+        if (message == null) return null;
+        final metadata = _metadataObject(message.metadataJson);
+        if (metadata['isBackgroundWorkCompletion'] != true) return null;
+        final workId = metadata['backgroundWorkId'];
+        if (workId is! String) return null;
+        final conversation = await Conversation.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.id.equals(job.conversationId) &
+              table.workspaceId.equals(job.workspaceId),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (conversation == null) return null;
+        final work = await BackgroundWorkRecord.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(job.workspaceId) &
+              table.conversationId.equals(job.conversationId) &
+              table.stableId.equals(workId) &
+              table.statusPreview.inSet({
+                BackgroundWorkPreviews.queuedForContinuation,
+                BackgroundWorkPreviews.continuationInProgress,
+                BackgroundWorkPreviews.continuationFailed,
+              }),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (work == null) return null;
+        final nextStatusPreview =
+            statusPreview ??
+            switch (turn.status) {
+              ConversationStatuses.completed => switch ((
+                work.status,
+                work.errorCode,
+              )) {
+                ('completed', _) => 'Completed',
+                ('cancelled', _) => 'Stopped',
+                ('failed', 'outcome_unknown') => 'Outcome unknown',
+                _ => 'Failed',
+              },
+              ConversationStatuses.failed || ConversationStatuses.cancelled =>
+                BackgroundWorkPreviews.continuationFailed,
+              ConversationStatuses.awaitingApproval ||
+              ConversationStatuses.awaitingUserAction =>
+                BackgroundWorkPreviews.queuedForContinuation,
+              _ => BackgroundWorkPreviews.continuationInProgress,
+            };
+        if (work.statusPreview == nextStatusPreview) return null;
+        final now = DateTime.now().toUtc();
+        await BackgroundWorkRecord.db.updateRow(
+          session,
+          work.copyWith(
+            statusPreview: nextStatusPreview,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+        final sequence = conversation.eventSequence + 1;
+        await Conversation.db.updateRow(
+          session,
+          conversation.copyWith(
+            eventSequence: sequence,
+            projectionRevision: conversation.projectionRevision + 1,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+        final eventId = const Uuid().v7();
+        await ConversationEvent.db.insertRow(
+          session,
+          ConversationEvent(
+            workspaceId: job.workspaceId,
+            conversationId: conversation.id!,
+            sequence: sequence,
+            eventId: eventId,
+            actorUserId: turn.initiatorUserId,
+            requestId: eventId,
+            kind: ConversationEventType.backgroundWorkCompleted,
+            payloadJson: jsonEncode({
+              'workId': workId,
+              'toolCallId': work.toolCallId,
+              'status': work.status,
+              'statusPreview': nextStatusPreview,
+              'continuationStatus': nextStatusPreview,
+              'errorCode': work.errorCode,
+            }),
+            createdAt: now,
+          ),
+          transaction: transaction,
+        );
+        return conversation.stableId;
+      },
+    );
+    if (conversationStableId != null) {
+      await SyncWakeups.publishConversation(
+        session,
+        workspaceId: job.workspaceId,
+        conversationId: conversationStableId,
       );
     }
   }

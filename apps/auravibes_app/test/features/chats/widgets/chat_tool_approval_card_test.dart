@@ -438,7 +438,7 @@ void main() {
       }
     }
 
-    testWidgets('does not trust the model action description in an approval', (
+    testWidgets('shows normalized user-facing tool descriptions in approvals', (
       tester,
     ) async {
       final pendingCalls = [
@@ -456,8 +456,11 @@ void main() {
         ),
       );
 
-      expect(find.text('I will search for the requested item.'), findsNothing);
-      expect(find.text('Review the arguments for Read File'), findsOneWidget);
+      expect(
+        find.text('I will search for the requested item.'),
+        findsOneWidget,
+      );
+      expect(find.text('Review the arguments for Read File'), findsNothing);
       expect(find.textContaining('arg1: search'), findsOneWidget);
       expect(find.textContaining('arg2: item'), findsOneWidget);
 
@@ -493,15 +496,16 @@ void main() {
       expect(argument.overflow, TextOverflow.clip);
     });
 
-    testWidgets('never shows a model batch description while paging calls', (
+    testWidgets('shows the current call description while paging approvals', (
       tester,
     ) async {
-      const description = 'I will search and then open the result.';
+      const firstDescription = 'I will search and then open the result.';
+      const secondDescription = 'I will save the selected result.';
       final pendingCalls = [
-        _createPendingToolCall(userFacingDescription: description),
+        _createPendingToolCall(userFacingDescription: firstDescription),
         _createPendingToolCall(
           toolCallId: 'tc-2',
-          userFacingDescription: description,
+          userFacingDescription: secondDescription,
         ),
       ];
       await pumpAndInit(
@@ -513,12 +517,56 @@ void main() {
         ),
       );
 
-      expect(find.text(description), findsNothing);
+      expect(find.text(firstDescription), findsOneWidget);
+      expect(find.text(secondDescription), findsNothing);
       await tester.tap(
         find.byKey(const ValueKey<String>('tool_approval_next')),
       );
       await tester.pump();
-      expect(find.text(description), findsNothing);
+      expect(find.text(secondDescription), findsOneWidget);
+      expect(find.text(firstDescription), findsNothing);
+    });
+
+    testWidgets('uses saved skill tool descriptions as a fallback', (
+      tester,
+    ) async {
+      final pendingCalls = [
+        _createPendingToolCall(
+          toolName: 'call_skill_tool',
+          argumentsRaw: '{"skill":"research","tool":"search_web"}',
+        ),
+        _createPendingToolCall(
+          toolCallId: 'tc-priority',
+          toolName: 'call_skill_tool',
+          argumentsRaw: '{"skill":"research","tool":"search_web"}',
+          userFacingDescription: 'Searching the saved sources now.',
+        ),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+            ..._skillTitleOverrides(),
+          ],
+        ),
+      );
+
+      expect(find.text('Searches the web.'), findsOneWidget);
+      expect(
+        find.text(
+          'Review the arguments for Research Assistant / Search the web',
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_next')),
+      );
+      await tester.pump();
+
+      expect(find.text('Searching the saved sources now.'), findsOneWidget);
+      expect(find.text('Searches the web.'), findsNothing);
     });
 
     testWidgets('shows effective skill target for local approval', (

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import '../domain/conversation_values.dart';
+
 typedef ConversationJobDrain = Future<void> Function(bool Function() isActive);
 
 final class ConversationJobDispatcher({
@@ -14,6 +16,7 @@ final class ConversationJobDispatcher({
   bool _pending = false;
   bool _stopped = true;
   bool Function()? _isActive;
+  int _activeDrains = 0;
 
   void start({
     required Stream<void> wakeups,
@@ -34,12 +37,22 @@ final class ConversationJobDispatcher({
   void requestDrain() {
     if (_stopped || !(_isActive?.call() ?? false)) return;
     _pending = true;
-    if (_drainTask != null) return;
+    if (_activeDrains >=
+        ConversationLimits.maxConcurrentBackgroundContinuations) {
+      return;
+    }
+    _activeDrains++;
     final task = Future<void>.microtask(_run);
     _drainTask = task;
     unawaited(
       task.whenComplete(() {
-        if (identical(_drainTask, task)) _drainTask = null;
+        _activeDrains--;
+        if (identical(_drainTask, task)) {
+          _drainTask = null;
+          if (_pending && !_stopped && (_isActive?.call() ?? false)) {
+            requestDrain();
+          }
+        }
       }),
     );
   }
