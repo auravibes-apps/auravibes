@@ -19,6 +19,7 @@ import 'package:auravibes_app/features/agents/providers/agent_repository_provide
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
@@ -1102,6 +1103,10 @@ List<Override> _overrides(_NotionFixture fixture, AppDatabase database) {
 
   return [
     appDatabaseProvider.overrideWithValue(database),
+    conversationArchiveIncompleteContextProvider((
+      workspaceId: _workspaceId,
+      conversationId: _chatId,
+    )).overrideWith((ref) => Stream.value(false)),
     cloudAccountsProvider.overrideWith((ref) async => const []),
     workspaceSessionForRouteProvider(_workspaceId).overrideWithValue(
       const AsyncData(
