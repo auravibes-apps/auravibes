@@ -88,7 +88,7 @@ class WorkflowEditorState {
         currentWorkflow.encode() != initialSnapshot;
   }
 
-  WorkflowEditorState withWorkflow(WorkflowDefinition? value) =>
+  WorkflowEditorState withWorkflow(WorkflowDefinition value) =>
       copyWith(workflow: value);
 
   WorkflowEditorState withSelection(String nodeId) =>

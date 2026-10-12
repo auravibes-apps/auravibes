@@ -431,12 +431,16 @@ class const _WorkflowLibraryTileContents({
   final String? subtitle,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => ListTile(
-    leading: Icon(icon),
-    title: Text(title),
-    subtitle: subtitle == null || subtitle.isEmpty ? null : Text(subtitle),
-    onTap: () => Navigator.of(context).pop(draft),
-  );
+  Widget build(BuildContext context) {
+    final subtitle = this.subtitle;
+
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: subtitle == null || subtitle.isEmpty ? null : Text(subtitle),
+      onTap: () => Navigator.of(context).pop(draft),
+    );
+  }
 }
 
 abstract final class WorkflowSchemaPortParser {
