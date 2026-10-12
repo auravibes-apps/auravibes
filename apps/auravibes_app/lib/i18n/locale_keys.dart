@@ -721,6 +721,14 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.turn_failed';
   static const chats_screens_chat_conversation_turn_cancelled =
       'chats_screens.chat_conversation.turn_cancelled';
+  static const chats_screens_chat_conversation_assistant_response_started =
+      'chats_screens.chat_conversation.assistant_response_started';
+  static const chats_screens_chat_conversation_assistant_response_completed =
+      'chats_screens.chat_conversation.assistant_response_completed';
+  static const chats_screens_chat_conversation_assistant_response_failed =
+      'chats_screens.chat_conversation.assistant_response_failed';
+  static const chats_screens_chat_conversation_assistant_response_cancelled =
+      'chats_screens.chat_conversation.assistant_response_cancelled';
   static const chats_screens_chat_conversation_activity_tools_count =
       'chats_screens.chat_conversation.activity_tools_count';
   static const chats_screens_chat_conversation_activity_thinking =

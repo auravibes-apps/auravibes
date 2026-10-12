@@ -37,6 +37,7 @@ import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_announcement.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
@@ -88,6 +89,7 @@ class const ChatMessagesWidget({
   final Map<String, MessageEntity>? messageEntitiesById,
   final List<PendingToolCall> pendingToolCalls = const [],
   final bool showThinking = false,
+  final bool isStopRequested = false,
   final Future<void> Function(MessageEntity message)? onRetryMessage,
   super.key,
 }) extends HookConsumerWidget {
@@ -232,6 +234,26 @@ class const ChatMessagesWidget({
           _activityToolCallKey(pendingCall.messageId, pendingCall.toolCall.id),
       },
     ).reversed.toList(growable: false);
+    final assistantResponseProgress = <ChatAssistantResponseProgress>[
+      for (final source in resolvedMessages)
+        if (source != null &&
+            !source.message.isUser &&
+            !source.message.isForkReference &&
+            source.message.messageType != MessageType.system &&
+            source.message.messageType != MessageType.toolCall)
+          ChatAssistantResponseProgress(
+            messageId: source.message.id,
+            isStreaming: source.isStreaming,
+            status: source.message.status,
+            hasResponse: _hasAssistantResponseCandidate(
+              source,
+              submittedA2uiReplayPayloads,
+            ),
+            isAwaitingUserAction:
+                source.message.status == MessageStatus.unfinished &&
+                _hasA2uiMessageState(source.message),
+          ),
+    ];
     final retryableMessageId = _retryableUserMessageId(resolvedMessages);
 
     void updateDisclosure(VoidCallback update) => update();
@@ -280,6 +302,12 @@ class const ChatMessagesWidget({
           addAutomaticKeepAlives: false,
           scrollCacheExtent: const ScrollCacheExtent.pixels(500),
           keyboardDismissBehavior: .manual,
+        ),
+        ChatAssistantResponseAnnouncement(
+          key: ValueKey('assistant_response_announcements_$conversationId'),
+          conversationId: conversationId,
+          responses: assistantResponseProgress,
+          isStopRequested: isStopRequested,
         ),
         Positioned(
           right: 16,
@@ -899,6 +927,18 @@ bool _hasVisibleAssistantResponse(
 ) =>
     message.content.trim().isNotEmpty ||
     _requiresMessageTimelineItem(message, replayPayloadsByMessageId);
+
+bool _hasAssistantResponseCandidate(
+  _ResolvedChatMessage source,
+  Map<String, List<String>> replayPayloadsByMessageId,
+) {
+  if (_hasVisibleAssistantResponse(source.message, replayPayloadsByMessageId)) {
+    return true;
+  }
+
+  return source.isStreaming &&
+      source.message.metadata?.toolCalls.isNotEmpty != true;
+}
 
 bool _requiresMessageTimelineItem(
   MessageEntity message,
