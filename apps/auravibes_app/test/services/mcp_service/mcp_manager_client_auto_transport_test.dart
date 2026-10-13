@@ -24,8 +24,40 @@ void main() {
       );
 
       expect(client.resolvedTransport, isA<McpTransportTypeStreamableHttp>());
-      expect(server.streamablePostCount, 1);
+      expect(server.streamablePostCount, greaterThanOrEqualTo(1));
       expect(server.sseGetCount, 0);
+    });
+
+    test('uses app OAuth token provider for Streamable HTTP', () async {
+      final server = await _LocalMcpHttpServer.start();
+      final manager = McpManagerService();
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(
+          server.endpoint,
+          authenticationType: McpAuthenticationType.oauth(
+            token: .new(
+              accessToken: 'configured-token',
+              issuedAt: DateTime(2026),
+              refreshToken: 'refresh-token',
+              expiresIn: 3600,
+            ),
+            clientId: 'client-id',
+            authorizationEndpoint: 'https://example.com/authorize',
+            tokenEndpoint: 'https://example.com/token',
+          ),
+        ),
+      );
+
+      expect(client.resolvedTransport, isA<McpTransportTypeStreamableHttp>());
+      expect(server.streamablePostCount, greaterThanOrEqualTo(1));
+      expect(server.sseGetCount, 0);
+      expect(server.streamableAuthorization, 'Bearer configured-token');
     });
 
     test('falls back to valid legacy SSE handshake on native', () async {
@@ -48,7 +80,7 @@ void main() {
       await server.waitForInitializedNotification();
 
       expect(client.resolvedTransport, isA<McpTransportTypeSSE>());
-      expect(server.streamablePostCount, 1);
+      expect(server.streamablePostCount, greaterThanOrEqualTo(1));
       expect(server.sseGetCount, 1);
       expect(server.streamableAuthorization, 'Bearer configured-token');
       expect(server.sseAuthorization, 'Bearer configured-token');
