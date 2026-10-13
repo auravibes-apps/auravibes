@@ -338,6 +338,8 @@ void main() {
       expect(find.byTooltip('Markdown'), findsOneWidget);
       expect(controller.value, sourceValue);
       expect(focusNode.hasFocus, isFalse);
+      await _sendControlShortcut(tester, .keyB);
+      expect(controller.value, sourceValue);
 
       await tester.tap(find.bySemanticsLabel('Preview'));
       final _ = await tester.pumpAndSettle();
