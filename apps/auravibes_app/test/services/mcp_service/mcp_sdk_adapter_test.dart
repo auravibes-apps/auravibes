@@ -6,10 +6,17 @@ import 'package:mcp_client/mcp_client.dart' as mcp;
 void main() {
   test('maps every SDK result variant', () {
     final result = McpSdkAdapter.toolResult(
-      const mcp.CallToolResult(
-        [
-          mcp.TextContent(text: 'text'),
-          mcp.ImageContent(data: 'AA==', mimeType: 'image/png'),
+      mcp.CallToolResult(
+        content: [
+          mcp.TextContent(
+            text: 'text',
+            annotations: mcp.Annotations(priority: 0.7),
+          ),
+          mcp.ImageContent(
+            data: 'AA==',
+            mimeType: 'image/png',
+            annotations: mcp.Annotations(priority: 0.7),
+          ),
           mcp.AudioContent(data: 'AQ==', mimeType: 'audio/wav'),
           mcp.ResourceContent(uri: 'file:///a', text: 'resource'),
           mcp.ResourceLinkContent(
@@ -22,6 +29,10 @@ void main() {
         isError: true,
       ),
     );
+
+    final text = result.content[0] as McpTextContent;
+    final image = result.content[1] as McpBinaryContent;
+
     expect(result.content, [
       isA<McpTextContent>(),
       isA<McpBinaryContent>(),
@@ -29,19 +40,22 @@ void main() {
       isA<McpResourceContent>(),
       isA<McpResourceContent>(),
     ]);
+    expect(text.annotations, {'priority': 0.7});
+    expect(image.data, 'AA==');
+    expect(image.mimeType, 'image/png');
+    expect(image.url, isNull);
     expect(result.structuredContent, {'ok': true});
     expect(result.isError, isTrue);
   });
 
-  test('drops SDK legacy streaming hint', () {
+  test('preserves array structured content', () {
     final result = McpSdkAdapter.toolResult(
-      const mcp.CallToolResult(
-        [mcp.TextContent(text: 'legacy')],
-        // ignore: deprecated_member_use - Verifies the legacy SDK hint is dropped.
-        isStreaming: true,
+      mcp.CallToolResult(
+        content: [mcp.TextContent(text: 'ok')],
+        structuredContent: ['ok', 2],
       ),
     );
 
-    expect(result.isStreaming, isFalse);
+    expect(result.structuredContent, ['ok', 2]);
   });
 }

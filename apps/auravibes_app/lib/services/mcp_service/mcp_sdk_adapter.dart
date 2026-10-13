@@ -20,22 +20,23 @@ abstract final class McpSdkAdapter {
   };
 }
 
-McpTextContent _textContent(mcp.TextContent content) =>
-    McpTextContent(content.text, annotations: content.annotations);
+McpTextContent _textContent(mcp.TextContent content) => McpTextContent(
+  content.text,
+  annotations: _annotationsFromSdk(content.annotations),
+);
 
 McpBinaryContent _imageContent(mcp.ImageContent content) => McpBinaryContent(
   type: 'image',
   mimeType: content.mimeType,
   data: content.data,
-  url: content.url,
-  annotations: content.annotations,
+  annotations: _annotationsFromSdk(content.annotations),
 );
 
 McpBinaryContent _audioContent(mcp.AudioContent content) => McpBinaryContent(
   type: 'audio',
   mimeType: content.mimeType,
   data: content.data,
-  annotations: content.annotations,
+  annotations: _annotationsFromSdk(content.annotations),
 );
 
 McpResourceContent _resourceContent(mcp.ResourceContent content) =>
@@ -44,7 +45,7 @@ McpResourceContent _resourceContent(mcp.ResourceContent content) =>
       text: content.text,
       blob: content.blob,
       mimeType: content.mimeType,
-      annotations: content.annotations,
+      annotations: _annotationsFromSdk(content.annotations),
     );
 
 McpResourceContent _resourceLinkContent(mcp.ResourceLinkContent content) =>
@@ -54,6 +55,15 @@ McpResourceContent _resourceLinkContent(mcp.ResourceLinkContent content) =>
       name: content.name,
       description: content.description,
       isLink: true,
-      annotations: content.annotations,
+      annotations: _annotationsFromSdk(content.annotations),
       meta: content.meta,
     );
+
+Map<String, Object?>? _annotationsFromSdk(Object? annotations) {
+  if (annotations == null) return null;
+  if (annotations case final Map<String, Object?> value) return value;
+  if (annotations case final Map value) {
+    return value.cast<String, Object?>();
+  }
+  return (annotations as dynamic).toJson() as Map<String, Object?>;
+}
