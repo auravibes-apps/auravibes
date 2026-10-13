@@ -6,32 +6,37 @@ import 'package:mcp_client/mcp_client.dart' as mcp;
 void main() {
   test('maps every SDK result variant', () {
     final result = McpSdkAdapter.toolResult(
-      mcp.CallToolResult(
+      .new(
         content: [
-          mcp.TextContent(
-            text: 'text',
-            annotations: mcp.Annotations(priority: 0.7),
-          ),
+          mcp.TextContent(annotations: .new(priority: 0.7), text: 'text'),
           mcp.ImageContent(
+            annotations: .new(priority: 0.7),
             data: 'AA==',
             mimeType: 'image/png',
-            annotations: mcp.Annotations(priority: 0.7),
           ),
           mcp.AudioContent(data: 'AQ==', mimeType: 'audio/wav'),
-          mcp.ResourceContent(uri: 'file:///a', text: 'resource'),
-          mcp.ResourceLinkContent(
-            uri: 'https://example.test',
-            name: 'Example',
+          mcp.EmbeddedResource(
+            resource: mcp.TextResourceContents(
+              text: 'resource',
+              uri: 'file:///a',
+            ),
+          ),
+          mcp.ResourceLink(
             meta: {'x': true},
+            name: 'Example',
+            uri: 'https://example.test',
           ),
         ],
-        structuredContent: {'ok': true},
         isError: true,
+        structuredContent: {'ok': true},
       ),
     );
 
-    final text = result.content[0] as McpTextContent;
-    final image = result.content[1] as McpBinaryContent;
+    final [text, image, _, resource, resourceLink] = result.content;
+    final typedText = text as McpTextContent;
+    final typedImage = image as McpBinaryContent;
+    final typedResource = resource as McpResourceContent;
+    final typedResourceLink = resourceLink as McpResourceContent;
 
     expect(result.content, [
       isA<McpTextContent>(),
@@ -40,22 +45,48 @@ void main() {
       isA<McpResourceContent>(),
       isA<McpResourceContent>(),
     ]);
-    expect(text.annotations, {'priority': 0.7});
-    expect(image.data, 'AA==');
-    expect(image.mimeType, 'image/png');
-    expect(image.url, isNull);
+    expect(typedText.annotations, {'priority': 0.7});
+    expect(typedImage.data, 'AA==');
+    expect(typedImage.mimeType, 'image/png');
+    expect(typedImage.url, isNull);
+    expect(typedResource.uri, 'file:///a');
+    expect(typedResource.text, 'resource');
+    expect(typedResource.isLink, isFalse);
+    expect(typedResourceLink.uri, 'https://example.test');
+    expect(typedResourceLink.name, 'Example');
+    expect(typedResourceLink.isLink, isTrue);
+    expect(typedResourceLink.meta, {'x': true});
     expect(result.structuredContent, {'ok': true});
     expect(result.isError, isTrue);
   });
 
   test('preserves array structured content', () {
     final result = McpSdkAdapter.toolResult(
-      mcp.CallToolResult(
+      .new(
         content: [mcp.TextContent(text: 'ok')],
         structuredContent: ['ok', 2],
       ),
     );
 
     expect(result.structuredContent, ['ok', 2]);
+  });
+
+  test('throws on unknown SDK content block', () {
+    expect(
+      () => McpSdkAdapter.toolResult(
+        .new(
+          content: [
+            mcp.UnknownContentBlock.fromJson({'type': 'future'}),
+          ],
+        ),
+      ),
+      throwsA(
+        isA<UnsupportedError>().having(
+          (error) => error.message,
+          'message',
+          'Unsupported MCP content: UnknownContentBlock',
+        ),
+      ),
+    );
   });
 }

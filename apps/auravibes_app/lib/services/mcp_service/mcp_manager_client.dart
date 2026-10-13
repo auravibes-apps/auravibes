@@ -324,6 +324,7 @@ Future<mcp.ClientTransport> _createSseTransportConfig(
     );
   }
 
+  // ignore: deprecated_member_use - Retain legacy SSE OAuth refresh hooks; v3 SseClientTransport only supports static headers.
   return mcp.SseAuthClientTransport.create(
     serverUrl: server.url,
     headers: _httpHeaders(authType),

@@ -8,16 +8,17 @@ abstract final class McpSdkAdapter {
     isError: result.isError,
   );
 
-  static McpContent _contentFromSdk(mcp.Content content) => switch (content) {
-    final mcp.TextContent value => _textContent(value),
-    final mcp.ImageContent value => _imageContent(value),
-    final mcp.AudioContent value => _audioContent(value),
-    final mcp.ResourceContent value => _resourceContent(value),
-    final mcp.ResourceLinkContent value => _resourceLinkContent(value),
-    _ => throw UnsupportedError(
-      'Unsupported MCP content: ${content.runtimeType}',
-    ),
-  };
+  static McpContent _contentFromSdk(mcp.ContentBlock content) =>
+      switch (content) {
+        final mcp.TextContent value => _textContent(value),
+        final mcp.ImageContent value => _imageContent(value),
+        final mcp.AudioContent value => _audioContent(value),
+        final mcp.EmbeddedResource value => _resourceContent(value),
+        final mcp.ResourceLink value => _resourceLinkContent(value),
+        final mcp.UnknownContentBlock value => throw UnsupportedError(
+          'Unsupported MCP content: ${value.runtimeType}',
+        ),
+      };
 }
 
 McpTextContent _textContent(mcp.TextContent content) => McpTextContent(
@@ -39,16 +40,19 @@ McpBinaryContent _audioContent(mcp.AudioContent content) => McpBinaryContent(
   annotations: _annotationsFromSdk(content.annotations),
 );
 
-McpResourceContent _resourceContent(mcp.ResourceContent content) =>
-    McpResourceContent(
-      uri: content.uri,
-      text: content.text,
-      blob: content.blob,
-      mimeType: content.mimeType,
-      annotations: _annotationsFromSdk(content.annotations),
-    );
+McpResourceContent _resourceContent(mcp.EmbeddedResource content) {
+  final resource = content.resource;
 
-McpResourceContent _resourceLinkContent(mcp.ResourceLinkContent content) =>
+  return McpResourceContent(
+    uri: resource.uri,
+    text: resource.text,
+    blob: resource.blob,
+    mimeType: resource.mimeType,
+    annotations: _annotationsFromSdk(content.annotations),
+  );
+}
+
+McpResourceContent _resourceLinkContent(mcp.ResourceLink content) =>
     McpResourceContent(
       uri: content.uri,
       mimeType: content.mimeType,
@@ -59,11 +63,5 @@ McpResourceContent _resourceLinkContent(mcp.ResourceLinkContent content) =>
       meta: content.meta,
     );
 
-Map<String, Object?>? _annotationsFromSdk(Object? annotations) {
-  if (annotations == null) return null;
-  if (annotations case final Map<String, Object?> value) return value;
-  if (annotations case final Map value) {
-    return value.cast<String, Object?>();
-  }
-  return (annotations as dynamic).toJson() as Map<String, Object?>;
-}
+Map<String, Object?>? _annotationsFromSdk(mcp.Annotations? annotations) =>
+    annotations?.toJson();

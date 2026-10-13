@@ -40,7 +40,7 @@ void main() {
       client = await manager.connectMcpWithAutoTransport(
         _connectionRequest(
           server.endpoint,
-          authenticationType: McpAuthenticationType.oauth(
+          authenticationType: .oauth(
             token: .new(
               accessToken: 'configured-token',
               issuedAt: DateTime(2026),
