@@ -99,6 +99,61 @@ jobs:
           CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
+      - name: 🧪 Test iOS SQLite binary preparer
+        if: ${{ matrix.platform == 'ios' }}
+        run: bash tool/test_prepare_sqlite3_ios.sh
+
+      - name: 🔑 Resolve iOS SQLite cache identity
+        if: ${{ matrix.platform == 'ios' }}
+        id: sqlite3_identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          source tool/prepare_sqlite3_ios.sh
+          sqlite3_version="$(sqlite3_version_from_lock pubspec.lock)"
+          if ! sqlite3_ios_metadata "$sqlite3_version" >/dev/null; then
+            echo "::error::No pinned iOS SQLite binary metadata for sqlite3 $sqlite3_version."
+            exit 1
+          fi
+          flutter_version="$(awk -F'"' '$2 == "flutter" { print $4; exit }' .fvmrc)"
+          xcode_version="$(xcodebuild -version | awk '/^Xcode / { version = $2 } /^Build version / { build = $3 } END { if (version != "" && build != "") printf "%s-%s", version, build }')"
+          cache_path=".dart_tool/hooks_runner/shared/sqlite3/build"
+
+          if [[ -z "$sqlite3_version" || -z "$flutter_version" || -z "$xcode_version" ]]; then
+            echo "::error::Could not resolve sqlite3, Flutter, or Xcode version for the iOS binary cache."
+            exit 1
+          fi
+
+          mkdir -p "$cache_path"
+          {
+            printf 'sqlite3_version=%s\n' "$sqlite3_version"
+            printf 'flutter_version=%s\n' "$flutter_version"
+            printf 'xcode_version=%s\n' "$xcode_version"
+            printf 'cache_path=%s\n' "$cache_path"
+          } >> "$GITHUB_OUTPUT"
+
+      # Unique snapshots let a verified repair replace a corrupted immutable cache entry.
+      - name: ♻️ Restore verified iOS SQLite cache
+        if: ${{ matrix.platform == 'ios' }}
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ steps.sqlite3_identity.outputs.cache_path }}
+          key: sqlite3-ios-arm64-${{ runner.os }}-${{ runner.arch }}-sqlite-${{ steps.sqlite3_identity.outputs.sqlite3_version }}-flutter-${{ steps.sqlite3_identity.outputs.flutter_version }}-xcode-${{ steps.sqlite3_identity.outputs.xcode_version }}-run-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            sqlite3-ios-arm64-${{ runner.os }}-${{ runner.arch }}-sqlite-${{ steps.sqlite3_identity.outputs.sqlite3_version }}-flutter-${{ steps.sqlite3_identity.outputs.flutter_version }}-xcode-${{ steps.sqlite3_identity.outputs.xcode_version }}-
+
+      - name: 📥 Prepare verified iOS SQLite binary
+        if: ${{ matrix.platform == 'ios' }}
+        id: prepare_sqlite3
+        run: ./tool/prepare_sqlite3_ios.sh
+
+      - name: 💾 Save verified iOS SQLite cache
+        if: ${{ success() && matrix.platform == 'ios' && steps.prepare_sqlite3.outputs.cache_state != 'hit' }}
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ steps.sqlite3_identity.outputs.cache_path }}
+          key: sqlite3-ios-arm64-${{ runner.os }}-${{ runner.arch }}-sqlite-${{ steps.sqlite3_identity.outputs.sqlite3_version }}-flutter-${{ steps.sqlite3_identity.outputs.flutter_version }}-xcode-${{ steps.sqlite3_identity.outputs.xcode_version }}-run-${{ github.run_id }}-${{ github.run_attempt }}
+
       - name: 🏗️ Build iOS (No Codesign)
         if: ${{ matrix.platform == 'ios' }}
         run: flutter build ios --debug --no-codesign --no-pub
