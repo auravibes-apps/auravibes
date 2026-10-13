@@ -2623,10 +2623,17 @@ void main() {
         final pauseTurnLocked = Completer<void>();
         final releasePause = Completer<void>();
         var approvalLockBarrierCalls = 0;
+        int? workerBackendPid;
         final worker = ConversationWorker(
           host: _AwaitingApprovalHost(),
-          afterApprovalTurnLock: () async {
+          afterApprovalTurnLock: (workerSession, transaction) async {
             approvalLockBarrierCalls++;
+            workerBackendPid ??=
+                (await workerSession.db.unsafeQuery(
+                      'SELECT pg_backend_pid() AS "pid"',
+                      transaction: transaction,
+                    )).single.toColumnMap()['pid']
+                    as int;
             if (!pauseTurnLocked.isCompleted) pauseTurnLocked.complete();
             await releasePause.future;
           },
@@ -2666,6 +2673,7 @@ void main() {
             );
         final decisionWaitObserved = await _waitForConversationLockWait(
           fixture.database,
+          workerBackendPid: workerBackendPid!,
         );
         releasePause.complete();
 
@@ -2821,20 +2829,27 @@ Future<_ExecutionFixture> _preparePromptlessExecution(
   );
 }
 
-Future<bool> _waitForConversationLockWait(Session session) async {
+Future<bool> _waitForConversationLockWait(
+  Session session, {
+  required int workerBackendPid,
+}) async {
   final deadline = DateTime.now().add(const Duration(seconds: 2));
   while (DateTime.now().isBefore(deadline)) {
-    final rows = await session.db.unsafeQuery('''
+    final rows = await session.db.unsafeQuery(
+      '''
       SELECT EXISTS (
         SELECT 1
         FROM pg_stat_activity
         WHERE datname = current_database()
           AND pid <> pg_backend_pid()
+          AND @workerBackendPid = ANY(pg_blocking_pids(pid))
           AND wait_event_type = 'Lock'
           AND state = 'active'
           AND query ILIKE '%conversation%'
       ) AS "waiting"
-    ''');
+    ''',
+      parameters: QueryParameters.named({'workerBackendPid': workerBackendPid}),
+    );
     if (rows.single.toColumnMap()['waiting'] as bool) return true;
     await Future<void>.delayed(const Duration(milliseconds: 10));
   }

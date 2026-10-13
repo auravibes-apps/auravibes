@@ -919,15 +919,16 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     required Iterable<ConversationMessage> messages,
     Transaction? transaction,
   }) async {
-    final conversationIds = messages
-        .map((message) => message.conversationId)
+    final messageIds = messages
+        .map((message) => message.id)
+        .whereType<int>()
         .toSet();
-    if (conversationIds.isEmpty) return const {};
+    if (messageIds.isEmpty) return const {};
     final records = await BackgroundWorkRecord.db.find(
       session,
       where: (table) =>
           table.workspaceId.equals(workspaceId) &
-          table.conversationId.inSet(conversationIds),
+          table.originatingMessageId.inSet(messageIds),
       transaction: transaction,
     );
     return records.map((record) => record.toolCallId).toSet();

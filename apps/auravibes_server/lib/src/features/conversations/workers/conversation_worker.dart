@@ -28,6 +28,10 @@ typedef ConversationRenewalTimer = Timer Function(
   void Function() callback,
 );
 typedef ConversationApprovalPauseBarrier = Future<void> Function();
+typedef ConversationApprovalTurnLockBarrier = Future<void> Function(
+  Session session,
+  Transaction transaction,
+);
 
 const _subAgentFailedMessage = 'Sub-agent failed.';
 const _subAgentCancelledMessage = 'Sub-agent cancelled.';
@@ -42,7 +46,7 @@ class const ConversationWorker({
   final Duration renewalRetryDelay = const Duration(seconds: 1),
   final ConversationRenewalTimer renewalTimer = Timer.new,
   final ConversationApprovalPauseBarrier? beforePauseForApproval,
-  final ConversationApprovalPauseBarrier? afterApprovalTurnLock,
+  final ConversationApprovalTurnLockBarrier? afterApprovalTurnLock,
 }) {
   Future<bool> runOnce(
     Session session, {
@@ -1475,7 +1479,7 @@ class const ConversationWorker({
     if (lockedTurn == null) {
       return;
     }
-    await afterApprovalTurnLock?.call();
+    await afterApprovalTurnLock?.call(session, transaction);
     final lockedJob = await ConversationJob.db.findFirstRow(
       session,
       where: (table) =>
