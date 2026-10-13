@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -17,8 +18,11 @@ void main() {
       expect(widget, isA<HookConsumerWidget>());
     });
 
-    test('noModelsFoundKey is a non-empty string', () {
-      expect(AddModelProviderWidget.noModelsFoundKey, isNotEmpty);
+    test('no-models search label key is generated', () {
+      expect(
+        LocaleKeys.models_screens_add_provider_search_no_models_found,
+        isNotEmpty,
+      );
     });
 
     test('accepts optional key', () {

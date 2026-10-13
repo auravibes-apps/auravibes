@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -47,7 +48,7 @@ class const _ChatReadinessContent({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      TextLocale('chat_readiness.${state.localeKey()}'),
+      TextLocale(_localeKey(state)),
       if (state == _ChatReadinessState.noProvider)
         _ChatAddProviderButton(workspaceId: workspaceId),
       _ChatReadinessActions(workspaceId: workspaceId, state: state),
@@ -60,6 +61,17 @@ class const _ChatReadinessContent({
     ],
     mainAxisSize: .min,
   );
+
+  static String _localeKey(_ChatReadinessState state) => switch (state) {
+    .attention => LocaleKeys.chat_readiness_attention,
+    .loading => LocaleKeys.chat_readiness_loading,
+    .noProvider => LocaleKeys.chat_readiness_no_provider,
+    .authorization => LocaleKeys.chat_readiness_authorization,
+    .unavailable => LocaleKeys.chat_readiness_unavailable,
+    .noModels => LocaleKeys.chat_readiness_no_models,
+    .chooseModel => LocaleKeys.chat_readiness_choose_model,
+    .selected => LocaleKeys.chat_readiness_selected,
+  };
 }
 
 class const _ChatReadinessActions({
@@ -92,15 +104,6 @@ enum _ChatReadinessState {
   noModels,
   chooseModel,
   selected,
-}
-
-extension on _ChatReadinessState {
-  String localeKey() => switch (this) {
-    .noProvider => 'no_provider',
-    .chooseModel => 'choose_model',
-    .noModels => 'no_models',
-    _ => name,
-  };
 }
 
 typedef _ChatReadinessConnections = AsyncValue<List<ModelConnectionEntity>>;

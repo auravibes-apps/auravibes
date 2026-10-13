@@ -157,10 +157,11 @@ String _toolCallTitle(ConversationToolCallView call) {
 }
 
 String _backgroundWorkDetachLabel(bool isPending) {
-  final action = isPending ? 'detaching' : 'continue_in_background';
+  if (isPending) {
+    return 'chats_screens.chat_conversation.background_work.detaching'.tr();
+  }
 
-  return '$_backgroundWorkTranslationPrefix$action'.tr();
+  return 'chats_screens.chat_conversation.background_work.'
+          'continue_in_background'
+      .tr();
 }
-
-const _backgroundWorkTranslationPrefix =
-    'chats_screens.chat_conversation.background_work.';
