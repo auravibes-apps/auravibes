@@ -357,9 +357,8 @@ void main() {
         final protocol = _Protocol();
         when(() => protocol.login(email, 'password'))
             .thenAnswer((_) async => result(origin));
-        const destination =
-            '/workspaces/w/more/service-connections?view=providers';
-        const fallback = '/workspaces/w/more/cloud-accounts';
+        const destination = '/workspaces/w/service-connections?view=providers';
+        const fallback = '/workspaces/w/cloud-accounts';
         final router = GoRouter(
           routes: [
             GoRoute(
@@ -371,7 +370,7 @@ void main() {
               ),
             ),
             GoRoute(
-              path: '/workspaces/w/more/service-connections',
+              path: '/workspaces/w/service-connections',
               builder: (_, _) => const Text('Connections destination'),
             ),
             GoRoute(

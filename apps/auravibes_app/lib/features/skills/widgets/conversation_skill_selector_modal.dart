@@ -313,7 +313,7 @@ extension _ConversationSkillCredentialHandlers
 
   Future<void> _openAppSkillCredentialSetup(AvailableSkill skill) async {
     final _ = await context.push<bool>(
-      '/workspaces/${widget.workspaceId}/more/service-connections/new'
+      '/workspaces/${widget.workspaceId}/service-connections/new'
       '?type=appSkillCredential&appSkillId=${skill.id}',
     );
   }

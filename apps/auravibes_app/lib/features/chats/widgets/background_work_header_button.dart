@@ -100,19 +100,30 @@ class const _BackgroundWorkButton({
   required final int activeCount,
   required final String workspaceId,
   required final String conversationId,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => AuraButton(
-    onPressed: () => _showBackgroundWorkList(
+  Widget build(BuildContext context, WidgetRef ref) {
+    void openList() => _openBackgroundWorkList(context, ref);
+
+    return AuraButton(
+      onPressed: openList,
+      child: _BackgroundWorkButtonContent(activeCount: activeCount),
+      key: const ValueKey('background_work_header_button'),
+      variant: .ghost,
+      size: .small,
+    );
+  }
+
+  void _openBackgroundWorkList(BuildContext context, WidgetRef ref) {
+    if (_backgroundWorksFailedToLoad(ref, workspaceId, conversationId)) {
+      _invalidateBackgroundWorks(ref, workspaceId, conversationId);
+    }
+    _showBackgroundWorkList(
       context: context,
       workspaceId: workspaceId,
       conversationId: conversationId,
-    ),
-    child: _BackgroundWorkButtonContent(activeCount: activeCount),
-    key: const ValueKey('background_work_header_button'),
-    variant: .ghost,
-    size: .small,
-  );
+    );
+  }
 }
 
 class const _BackgroundWorkButtonContent({required final int activeCount})
@@ -268,8 +279,10 @@ class const _BackgroundWorkListStateView({
     }
 
     return const _BackgroundWorkMessage(
-      localeKey:
-          LocaleKeys.chats_screens_chat_conversation_background_work_load_error,
+      message: TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_background_work_load_error,
+        textAlign: .center,
+      ),
     );
   }
 }
@@ -295,43 +308,34 @@ class const _BackgroundWorkListContent({
   required final String conversationId,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (works.isEmpty) {
-      return const _BackgroundWorkMessage(
-        localeKey:
+  Widget build(BuildContext context, WidgetRef ref) => works.isEmpty
+      ? const _BackgroundWorkMessage(
+          message: TextLocale(
             LocaleKeys.chats_screens_chat_conversation_background_work_empty,
-      );
-    }
-
-    return BackgroundWorkListView(
-      works: _sortBackgroundWorks(works),
-      onStop: (work) => _stopBackgroundWork(ref, work),
-      onOpenResult: (work) async => _showBackgroundWorkResult(context, work),
-      onOpenChild: (work) => _openChildConversation(context, work),
-    );
-  }
-
-  Future<void> _openChildConversation(
-    BuildContext context,
-    AgentBackgroundWork work,
-  ) async {
-    final childConversationId = work.identity.childConversationId;
-    if (childConversationId == null) return;
-    final _ = await SubAgentConversationRoute(
-      workspaceId: workspaceId,
-      chatId: conversationId,
-      subAgentConversationId: childConversationId,
-    ).push<void>(context);
-  }
+            textAlign: .center,
+          ),
+        )
+      : BackgroundWorkListView(
+          works: _sortBackgroundWorks(works),
+          onStop: (work) => _stopBackgroundWork(ref, work),
+          onOpenResult: (work) async =>
+              _showBackgroundWorkResult(context, work),
+          onOpenChild: (work) => _openChildBackgroundWork(
+            context: context,
+            workspaceId: workspaceId,
+            conversationId: conversationId,
+            work: work,
+          ),
+        );
 }
 
-class const _BackgroundWorkMessage({required final String localeKey})
+class const _BackgroundWorkMessage({required final Widget message})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: Padding(
       padding: const .all(_backgroundWorkMessagePadding),
-      child: TextLocale(localeKey, textAlign: .center),
+      child: message,
     ),
   );
 }
@@ -344,6 +348,21 @@ void _showBackgroundWorkResult(
   toolName: work.identity.toolKind,
   content: work.state.resultContent ?? '',
 );
+
+Future<void> _openChildBackgroundWork({
+  required BuildContext context,
+  required String workspaceId,
+  required String conversationId,
+  required AgentBackgroundWork work,
+}) async {
+  final childConversationId = work.identity.childConversationId;
+  if (childConversationId == null) return;
+  await SubAgentConversationRoute(
+    workspaceId: workspaceId,
+    chatId: conversationId,
+    subAgentConversationId: childConversationId,
+  ).push<void>(context);
+}
 
 AsyncValue<List<AgentBackgroundWork>> _watchBackgroundWorks(
   WidgetRef ref, {
@@ -359,6 +378,43 @@ AsyncValue<List<AgentBackgroundWork>> _watchBackgroundWorks(
       )
     : ref.watch(conversationBackgroundWorksProvider(conversationId));
 
+bool _backgroundWorksFailedToLoad(
+  WidgetRef ref,
+  String workspaceId,
+  String conversationId,
+) => _isCloudWorkspace(ref, workspaceId)
+    ? ref
+          .read(
+            cloudConversationBackgroundWorksProvider((
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            )),
+          )
+          .hasError
+    : ref.read(conversationBackgroundWorksProvider(conversationId)).hasError;
+
+void _invalidateBackgroundWorks(
+  WidgetRef ref,
+  String workspaceId,
+  String conversationId,
+) {
+  if (_isCloudWorkspace(ref, workspaceId)) {
+    ref.invalidate(
+      cloudConversationBackgroundWorksProvider((
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      )),
+    );
+
+    return;
+  }
+  ref.invalidate(conversationBackgroundWorksProvider(conversationId));
+}
+
+bool _isCloudWorkspace(WidgetRef ref, String workspaceId) =>
+    ref.read(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
+    null;
+
 List<AgentBackgroundWork> _backgroundWorksValue(
   AsyncValue<List<AgentBackgroundWork>> worksAsync,
 ) => switch (worksAsync) {
@@ -370,10 +426,19 @@ List<AgentBackgroundWork> _backgroundWorksValue(
 
 List<AgentBackgroundWork> _sortBackgroundWorks(
   List<AgentBackgroundWork> works,
-) => [...works]
-  ..sort(
-    (first, second) => first.state.createdAt.compareTo(second.state.createdAt),
+) => [...works]..sort(_compareBackgroundWorks);
+
+int _compareBackgroundWorks(
+  AgentBackgroundWork first,
+  AgentBackgroundWork second,
+) {
+  final createdAtComparison = first.state.createdAt.compareTo(
+    second.state.createdAt,
   );
+  if (createdAtComparison != 0) return createdAtComparison;
+
+  return first.identity.id.compareTo(second.identity.id);
+}
 
 int _activeBackgroundWorkCount(List<AgentBackgroundWork> works) =>
     works.where((work) => _isActiveBackgroundWork(work.state.status)).length;

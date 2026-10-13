@@ -67,7 +67,7 @@ final class WorkspaceNavigationNotifierProvider
 }
 
 String _$workspaceNavigationNotifierHash() =>
-    r'88dec7f35ffbeb59f1479f394e73e601e4956327';
+    r'ca354ba5c1735564de556de6b3def9e6fcf941d6';
 
 /// Retains safe list categories across listener gaps for each workspace.
 

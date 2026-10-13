@@ -220,6 +220,17 @@ void main() {
       );
     });
 
+    test('archive exceptions expose keys from the app locale catalog', () {
+      expect(
+        const MalformedConversationArchiveException().localizationKey,
+        'chats_screens.chat_conversation.archive_invalid',
+      );
+      expect(
+        const UnsupportedArchiveVersionException(999).localizationKey,
+        'chats_screens.chat_conversation.archive_unsupported_version',
+      );
+    });
+
     test('rejects input that exceeds resource limits before decoding', () {
       final oversized = '"${'a' * ConversationArchiveCodec.maxArchiveBytes}"';
       final tooManyMessages = jsonEncode({

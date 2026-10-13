@@ -33,6 +33,7 @@ class const WorkspaceSecretResolver() {
     required String initiatorUserId,
     required String resourceId,
     bool allowWorkspaceFallback = false,
+    Transaction? transaction,
   }) async {
     final userSecret = await find(
       session,
@@ -41,6 +42,7 @@ class const WorkspaceSecretResolver() {
       scope: WorkspaceSecretScope.user,
       ownerUserId: initiatorUserId,
       resourceId: resourceId,
+      transaction: transaction,
     );
     if (userSecret != null || !allowWorkspaceFallback) return userSecret;
     return find(
@@ -50,6 +52,7 @@ class const WorkspaceSecretResolver() {
       scope: WorkspaceSecretScope.workspace,
       ownerUserId: initiatorUserId,
       resourceId: resourceId,
+      transaction: transaction,
     );
   }
 }

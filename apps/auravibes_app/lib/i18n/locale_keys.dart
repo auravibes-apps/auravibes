@@ -467,6 +467,8 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.title';
   static const chats_screens_chats_list_add_chat =
       'chats_screens.chats_list.add_chat';
+  static const chats_screens_chats_list_draft_marker =
+      'chats_screens.chats_list.draft_marker';
   static const chats_screens_chats_list_archive_import =
       'chats_screens.chats_list.archive_import';
   static const chats_screens_chats_list_search_placeholder =

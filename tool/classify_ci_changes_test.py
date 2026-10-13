@@ -15,7 +15,11 @@ class ClassifyCiChangesTest(unittest.TestCase):
 
         self.assertEqual(
             result,
-            {"run_code_checks": False, "renovate_config_changes": False},
+            {
+                "run_code_checks": False,
+                "run_server_integration": False,
+                "renovate_config_changes": False,
+            },
         )
 
     def test_skill_scripts_and_non_eval_json_keep_code_checks(self):
@@ -32,7 +36,11 @@ class ClassifyCiChangesTest(unittest.TestCase):
 
         self.assertEqual(
             result,
-            {"run_code_checks": False, "renovate_config_changes": True},
+            {
+                "run_code_checks": False,
+                "run_server_integration": False,
+                "renovate_config_changes": True,
+            },
         )
 
     def test_code_changes_keep_existing_checks_with_metadata(self):
@@ -42,7 +50,11 @@ class ClassifyCiChangesTest(unittest.TestCase):
 
         self.assertEqual(
             result,
-            {"run_code_checks": True, "renovate_config_changes": False},
+            {
+                "run_code_checks": True,
+                "run_server_integration": False,
+                "renovate_config_changes": False,
+            },
         )
 
     def test_renovate_validation_runs_with_code_changes_too(self):
@@ -50,7 +62,11 @@ class ClassifyCiChangesTest(unittest.TestCase):
 
         self.assertEqual(
             result,
-            {"run_code_checks": True, "renovate_config_changes": True},
+            {
+                "run_code_checks": True,
+                "run_server_integration": False,
+                "renovate_config_changes": True,
+            },
         )
 
     def test_source_dependency_toolchain_and_workflow_changes_keep_checks(self):
@@ -69,6 +85,32 @@ class ClassifyCiChangesTest(unittest.TestCase):
         result = classify_paths(["README.md", "docs/testing/ci.md"])
 
         self.assertFalse(result["run_code_checks"])
+        self.assertFalse(result["run_server_integration"])
+
+    def test_server_integration_runs_for_server_engine_and_shared_ci_inputs(self):
+        for path in (
+            "apps/auravibes_server/test/integration/conversations_test.dart",
+            "apps/auravibes_server/config/test.yaml",
+            "packages/auravibes_engine/lib/engine.dart",
+            "pubspec.lock",
+            ".fvmrc",
+            ".github/workflows/ci.yml",
+            "tool/classify_ci_changes.py",
+        ):
+            with self.subTest(path=path):
+                self.assertTrue(classify_paths([path])["run_server_integration"])
+
+    def test_server_integration_skips_frontend_only_and_backend_documentation(self):
+        for path in (
+            "apps/auravibes_app/lib/main.dart",
+            "packages/auravibes_ui/lib/button.dart",
+            "apps/auravibes_server/README.md",
+            "README.md",
+        ):
+            with self.subTest(path=path):
+                self.assertFalse(
+                    classify_paths([path])["run_server_integration"]
+                )
 
 
 if __name__ == "__main__":

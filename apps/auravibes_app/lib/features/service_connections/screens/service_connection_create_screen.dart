@@ -589,7 +589,7 @@ void _resetAfterSave(
 
 void _goToServiceConnections(_ServiceConnectionCreateScreenState state) {
   state.context.go(
-    '/workspaces/${state.widget.workspaceId}/more/service-connections',
+    '/workspaces/${state.widget.workspaceId}/service-connections',
   );
 }
 

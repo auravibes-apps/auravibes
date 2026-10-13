@@ -30,7 +30,6 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
-import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
@@ -324,6 +323,31 @@ void main() {
       });
     }
   }
+  testWidgets('failed connections return to workspace start', (tester) async {
+    final fixture = await UxValidationFixture.create();
+    final router = await fixture.pump(
+      tester,
+      ServiceConnectionsRoute(workspaceId: fixture.workspaceId).location,
+      overrides: [
+        serviceConnectionsProvider(fixture.workspaceId).overrideWith(
+          (_) => Stream.error(StateError('Connections unavailable')),
+        ),
+      ],
+    );
+    expect(find.text('Retry'), findsOneWidget);
+    await tester.tap(find.text('Return to workspace'));
+    await fixture.settle(tester);
+
+    expect(find.byType(NewChatScreen), findsOneWidget);
+    expect(find.byType(ServiceConnectionsScreen), findsNothing);
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      NewChatRoute(workspaceId: fixture.workspaceId).location,
+    );
+    expect(tester.takeException(), isNull);
+    await fixture.close(tester);
+  });
+
   for (final name in _routeNames) {
     testWidgets('production direct route $name', (tester) async {
       final fixture = await UxValidationFixture.create(
@@ -536,44 +560,43 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
   return switch (name) {
     'CloudWorkspaceDetailRoute' => (
       location:
-          '$base/more/manage-workspaces/cloud/fixture-account/7?server-url=https%3A%2F%2Ffixture.example',
+          '$base/manage-workspaces/cloud/fixture-account/7?server-url=https%3A%2F%2Ffixture.example',
       screen: CloudWorkspaceDetailScreen,
       selection: -1,
       expected: null,
     ),
     'ServiceConnectionEditRoute' => (
-      location: '$base/more/service-connections/fixture-service',
+      location: '$base/service-connections/fixture-service',
       screen: ServiceConnectionEditScreen,
       selection: 2,
       expected: null,
     ),
     'BuiltInSkillDetail' => (
-      location: '$base/more/skills/jina',
+      location: '$base/skills/jina',
       screen: SkillDetailScreen,
       selection: 1,
       expected: null,
     ),
     'BuiltInResource' => (
-      location:
-          '$base/more/skills/jina/resources/reader_url_and_document_modes',
+      location: '$base/skills/jina/resources/reader_url_and_document_modes',
       screen: SkillResourceEditScreen,
       selection: 1,
       expected: null,
     ),
     'MixedConnections' => (
-      location: '$base/more/service-connections',
+      location: '$base/service-connections',
       screen: ServiceConnectionsScreen,
       selection: 2,
       expected: null,
     ),
     'MixedAccounts' => (
-      location: '$base/more/cloud-accounts',
+      location: '$base/cloud-accounts',
       screen: CloudAccountsScreen,
       selection: 4,
       expected: null,
     ),
     'CloudTools' || 'LocalEmptyTools' => (
-      location: '$base/more/tools',
+      location: '$base/tools',
       screen: ToolsScreen,
       selection: 2,
       expected: null,
@@ -620,12 +643,6 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
       selection: -1,
       expected: null,
     ),
-    'MoreRoute' => (
-      location: '$base/more',
-      screen: MoreScreen,
-      selection: -1,
-      expected: null,
-    ),
     'SettingsRoute' => (
       location: '$base/settings',
       screen: SettingsScreen,
@@ -639,146 +656,146 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
       expected: null,
     ),
     'WorkspaceManagementRoute' => (
-      location: '$base/more/manage-workspaces',
+      location: '$base/manage-workspaces',
       screen: WorkspaceManagementScreen,
       selection: -1,
       expected: null,
     ),
     'WorkspaceCreateRoute' => (
-      location: '$base/more/manage-workspaces/create',
+      location: '$base/manage-workspaces/create',
       screen: CreateWorkspaceScreen,
       selection: -1,
       expected: null,
     ),
     'CloudAccountsRoute' => (
-      location: '$base/more/cloud-accounts',
+      location: '$base/cloud-accounts',
       screen: CloudAccountsScreen,
       selection: 4,
       expected: null,
     ),
     'CloudAccountAddRoute' => (
-      location: '$base/more/cloud-accounts/add',
+      location: '$base/cloud-accounts/add',
       screen: CloudAccountAddScreen,
       selection: 4,
       expected: null,
     ),
     'CloudAccountLoginRoute' => (
-      location: '$base/more/cloud-accounts/login',
+      location: '$base/cloud-accounts/login',
       screen: CloudAccountLoginScreen,
       selection: 4,
       expected: null,
     ),
     'CloudAccountRegisterRoute' => (
-      location: '$base/more/cloud-accounts/register',
+      location: '$base/cloud-accounts/register',
       screen: CloudAccountRegisterScreen,
       selection: 4,
       expected: null,
     ),
     'CloudAccountForgotPasswordRoute' => (
-      location: '$base/more/cloud-accounts/forgot-password',
+      location: '$base/cloud-accounts/forgot-password',
       screen: CloudAccountForgotPasswordScreen,
       selection: 4,
       expected: null,
     ),
     'ModelsRoute' => (
-      location: '$base/more/models',
+      location: '$base/models',
       screen: ServiceConnectionsScreen,
       selection: 2,
-      expected: '$base/more/service-connections',
+      expected: '$base/service-connections',
     ),
     'ServiceConnectionsRoute' => (
-      location: '$base/more/service-connections',
+      location: '$base/service-connections',
       screen: ServiceConnectionsScreen,
       selection: 2,
       expected: null,
     ),
     'ServiceConnectionCreateRoute' => (
       location:
-          '$base/more/service-connections/new?type=skillCredential&credentialDefinitionId=${f.definitionId}',
+          '$base/service-connections/new?type=skillCredential&credentialDefinitionId=${f.definitionId}',
       screen: ServiceConnectionCreateScreen,
       selection: 2,
       expected: null,
     ),
     'ToolsRoute' => (
-      location: '$base/more/tools',
+      location: '$base/tools',
       screen: ToolsScreen,
       selection: 2,
       expected: null,
     ),
     'AgentsRoute' || 'DarkAgents' => (
-      location: '$base/more/agents',
+      location: '$base/agents',
       screen: AgentsScreen,
       selection: 1,
       expected: null,
     ),
     'AgentCreateRoute' => (
-      location: '$base/more/agents/new',
+      location: '$base/agents/new',
       screen: AgentDetailScreen,
       selection: 1,
       expected: null,
     ),
     'AgentDetailRoute' => (
-      location: '$base/more/agents/${f.agentId}',
+      location: '$base/agents/${f.agentId}',
       screen: AgentDetailScreen,
       selection: 1,
       expected: null,
     ),
     'SkillsRoute' => (
-      location: '$base/more/skills',
+      location: '$base/skills',
       screen: SkillsScreen,
       selection: 1,
       expected: null,
     ),
     'SkillCreateRoute' => (
-      location: '$base/more/skills/new',
+      location: '$base/skills/new',
       screen: SkillDetailScreen,
       selection: 1,
       expected: null,
     ),
     'SkillDetailRoute' => (
-      location: '$base/more/skills/${f.skillId}',
+      location: '$base/skills/${f.skillId}',
       screen: SkillDetailScreen,
       selection: 1,
       expected: null,
     ),
     'SkillResourceCreateRoute' => (
-      location: '$base/more/skills/${f.skillId}/resources/new',
+      location: '$base/skills/${f.skillId}/resources/new',
       screen: SkillResourceEditScreen,
       selection: 1,
       expected: null,
     ),
     'SkillResourceEditRoute' => (
-      location: '$base/more/skills/${f.skillId}/resources/${f.resourceId}',
+      location: '$base/skills/${f.skillId}/resources/${f.resourceId}',
       screen: SkillResourceEditScreen,
       selection: 1,
       expected: null,
     ),
     'SkillToolCreateRoute' => (
-      location: '$base/more/skills/${f.skillId}/tools/new',
+      location: '$base/skills/${f.skillId}/tools/new',
       screen: SkillToolEditScreen,
       selection: 1,
       expected: null,
     ),
     'SkillToolEditRoute' => (
-      location: '$base/more/skills/${f.skillId}/tools/${f.toolId}',
+      location: '$base/skills/${f.skillId}/tools/${f.toolId}',
       screen: SkillToolEditScreen,
       selection: 1,
       expected: null,
     ),
     'SkillCredentialDefinitionsRoute' => (
-      location: '$base/more/skill-credential-definitions',
+      location: '$base/skill-credential-definitions',
       screen: SkillCredentialDefinitionsScreen,
       selection: 2,
       expected: null,
     ),
     'SkillCredentialDefinitionCreateRoute' => (
-      location: '$base/more/skill-credential-definitions/new',
+      location: '$base/skill-credential-definitions/new',
       screen: SkillCredentialDefinitionEditScreen,
       selection: 2,
       expected: null,
     ),
     'SkillCredentialDefinitionEditRoute' => (
-      location: '$base/more/skill-credential-definitions/${f.definitionId}',
+      location: '$base/skill-credential-definitions/${f.definitionId}',
       screen: SkillCredentialDefinitionEditScreen,
       selection: 2,
       expected: null,
@@ -804,7 +821,6 @@ const _routeNames = [
   'ChatsRoute',
   'ConversationRoute',
   'SubAgentConversationRoute',
-  'MoreRoute',
   'SettingsRoute',
   'WorkspaceSettingsRoute',
   'WorkspaceManagementRoute',

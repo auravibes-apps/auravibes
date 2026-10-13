@@ -208,7 +208,7 @@ class _ModelUsageRequestRows {
 class _ModelUsageMetricRows {
   static List<Widget> summary(ModelUsageTotals totals, Locale locale) => [
     _metric(
-      LocaleKeys.chats_screens_chat_conversation_model_usage_request_count,
+      LocaleKeys.chats_screens_chat_conversation_model_usage_request_count.tr(),
       NumberFormatter.count(totals.requestCount, locale),
     ),
     _costMetric(totals.costStatus, totals.costUsd, locale),
@@ -248,17 +248,18 @@ class _ModelUsageMetricRows {
     Locale locale,
   ) => [
     _tokenMetric(
-      LocaleKeys.chats_screens_chat_conversation_model_usage_prompt_tokens,
+      LocaleKeys.chats_screens_chat_conversation_model_usage_prompt_tokens.tr(),
       prompt,
       locale,
     ),
     _tokenMetric(
-      LocaleKeys.chats_screens_chat_conversation_model_usage_response_tokens,
+      LocaleKeys.chats_screens_chat_conversation_model_usage_response_tokens
+          .tr(),
       response,
       locale,
     ),
     _tokenMetric(
-      LocaleKeys.chats_screens_chat_conversation_model_usage_total_tokens,
+      LocaleKeys.chats_screens_chat_conversation_model_usage_total_tokens.tr(),
       total,
       locale,
     ),
@@ -266,13 +267,15 @@ class _ModelUsageMetricRows {
 
   static List<Widget> _cacheRows(int? read, int? creation, Locale locale) => [
     _tokenMetric(
-      LocaleKeys.chats_screens_chat_conversation_model_usage_cache_read_tokens,
+      LocaleKeys.chats_screens_chat_conversation_model_usage_cache_read_tokens
+          .tr(),
       read,
       locale,
     ),
     _tokenMetric(
       LocaleKeys
-          .chats_screens_chat_conversation_model_usage_cache_creation_tokens,
+          .chats_screens_chat_conversation_model_usage_cache_creation_tokens
+          .tr(),
       creation,
       locale,
     ),
@@ -286,17 +289,17 @@ class _ModelUsageMetricRows {
     double? costUsd,
     Locale locale,
   ) => _metric(
-    LocaleKeys.chats_screens_chat_conversation_model_usage_estimated_cost,
+    LocaleKeys.chats_screens_chat_conversation_model_usage_estimated_cost.tr(),
     _ModelUsageValueFormatter.costValue(status, costUsd, locale),
   );
 
   static Widget _outcome(ModelUsageRequestOutcome outcome) => _metric(
-    LocaleKeys.chats_screens_chat_conversation_model_usage_outcome,
+    LocaleKeys.chats_screens_chat_conversation_model_usage_outcome.tr(),
     _ModelUsageValueFormatter.outcomeLabel(outcome),
   );
 
-  static Widget _metric(String key, String value) =>
-      _ModelUsageMetric(label: key.tr(), value: value);
+  static Widget _metric(String label, String value) =>
+      _ModelUsageMetric(label: label, value: value);
 }
 
 class _ModelUsageValueFormatter {

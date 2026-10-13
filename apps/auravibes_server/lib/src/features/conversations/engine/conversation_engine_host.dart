@@ -60,6 +60,13 @@ String _toolResultForContext(ConversationToolCall call) {
   return projectToolOutput(result).text;
 }
 
+bool _isDetachedBackgroundToolCall(
+  ConversationToolCall call,
+  Map<int, Set<String>> detachedToolCallIdsByMessageId,
+) =>
+    detachedToolCallIdsByMessageId[call.messageId]?.contains(call.stableId) ??
+    false;
+
 typedef ConversationProviderTransport =
     Future<ProviderTransportResponse> Function(Map<String, dynamic> body);
 
@@ -655,10 +662,22 @@ final class const ServerConversationEngineHost({
             ) &
             table.status.notEquals('running'),
       );
+      final inheritedDetachedToolCallIdsByMessageId =
+          await _inheritedDetachedBackgroundToolCallIds(
+            session,
+            workspaceId: job.workspaceId,
+            conversationId: job.conversationId,
+            messages: messages,
+          );
       toolExchanges.addAll(
         persistedProviderToolExchanges(
           messages: messages,
-          calls: resolvedCalls,
+          calls: resolvedCalls.where(
+            (call) => !_isDetachedBackgroundToolCall(
+              call,
+              inheritedDetachedToolCallIdsByMessageId,
+            ),
+          ),
         ),
       );
       requestMessages = await _refreshedRequestMessages(
@@ -1297,8 +1316,20 @@ final class const ServerConversationEngineHost({
             messages.map((message) => message.id).whereType<int>().toSet(),
           ),
     );
+    final inheritedDetachedToolCallIdsByMessageId =
+        await _inheritedDetachedBackgroundToolCallIds(
+          session,
+          workspaceId: job.workspaceId,
+          conversationId: job.conversationId,
+          messages: messages,
+        );
     final toolCallsByMessageId = <int, List<ConversationToolCall>>{};
-    for (final toolCall in toolCalls) {
+    for (final toolCall in toolCalls.where(
+      (call) => !_isDetachedBackgroundToolCall(
+        call,
+        inheritedDetachedToolCallIdsByMessageId,
+      ),
+    )) {
       (toolCallsByMessageId[toolCall.messageId] ??= []).add(toolCall);
     }
     final range = selectConversationCompactionRange(
@@ -1355,7 +1386,13 @@ final class const ServerConversationEngineHost({
     return ConversationCompactionResult(
       summary: appendDurableSkillActivations(
         summary,
-        await _durableSkillActivations(session, job.workspaceId, range),
+        await _durableSkillActivations(
+          session,
+          job.workspaceId,
+          range,
+          excludedToolCallIdsByMessageId:
+              inheritedDetachedToolCallIdsByMessageId,
+        ),
       ),
       range: range,
       providerId: config.providerId,
@@ -1366,8 +1403,9 @@ final class const ServerConversationEngineHost({
   Future<List<String>> _durableSkillActivations(
     Session session,
     int workspaceId,
-    AgentCompactionRangeSelected range,
-  ) async {
+    AgentCompactionRangeSelected range, {
+    required Map<int, Set<String>> excludedToolCallIdsByMessageId,
+  }) async {
     final messageIds = range.messageIds.map(int.parse).toSet();
     if (messageIds.isEmpty) return const [];
     final calls = await ConversationToolCall.db.find(
@@ -1379,13 +1417,45 @@ final class const ServerConversationEngineHost({
       orderBy: (table) => table.id,
     );
     final latestBySkill = <String, String>{};
-    for (final call in calls) {
+    for (final call in calls.where(
+      (call) => !_isDetachedBackgroundToolCall(
+        call,
+        excludedToolCallIdsByMessageId,
+      ),
+    )) {
       final result = call.resultJson;
       if (result == null || !result.startsWith('<skill_content ')) continue;
       latestBySkill[_activationSkillKey(call)] = result;
     }
 
     return latestBySkill.values.toList(growable: false);
+  }
+
+  Future<Map<int, Set<String>>> _inheritedDetachedBackgroundToolCallIds(
+    Session session, {
+    required int workspaceId,
+    required int conversationId,
+    required Iterable<ConversationMessage> messages,
+  }) async {
+    final inheritedMessageIds = messages
+        .where((message) => message.conversationId != conversationId)
+        .map((message) => message.id)
+        .whereType<int>()
+        .toSet();
+    if (inheritedMessageIds.isEmpty) return const {};
+    final workRecords = await BackgroundWorkRecord.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.originatingMessageId.inSet(inheritedMessageIds),
+    );
+    final toolCallIdsByMessageId = <int, Set<String>>{};
+    for (final work in workRecords) {
+      final messageId = work.originatingMessageId;
+      if (messageId == null) continue;
+      (toolCallIdsByMessageId[messageId] ??= <String>{}).add(work.toolCallId);
+    }
+    return toolCallIdsByMessageId;
   }
 
   Future<_ProviderConfig> _loadConfig(

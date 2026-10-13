@@ -70,7 +70,7 @@ void main() {
             ),
           ),
           GoRoute(
-            path: '/workspaces/:workspaceId/more/service-connections/new',
+            path: '/workspaces/:workspaceId/service-connections/new',
             pageBuilder: (context, state) => NoTransitionPage(
               child: Builder(
                 builder: (context) {

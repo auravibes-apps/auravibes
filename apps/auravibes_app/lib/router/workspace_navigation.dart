@@ -14,22 +14,21 @@ abstract final class WorkspaceNavigation {
 
   static WorkspaceDestination? classify(Uri uri) => switch (path(uri)) {
     ['chat', 'new'] || ['chats', ...] => .chats,
-    ['more', 'agents', ...] || ['more', 'skills', ...] => .agentsAndSkills,
-    ['more', 'service-connections', ...] ||
-    ['more', 'skill-credential-definitions', ...] ||
-    ['more', 'tools'] ||
-    ['more', 'models'] => .connections,
+    ['agents', ...] || ['skills', ...] => .agentsAndSkills,
+    ['service-connections', ...] ||
+    ['skill-credential-definitions', ...] ||
+    ['tools'] ||
+    ['models'] => .connections,
     ['settings'] => .appSettings,
-    ['more', 'cloud-accounts', ...] => .cloudAccounts,
+    ['cloud-accounts', ...] => .cloudAccounts,
     _ => null,
   };
 
   /// Only these app-owned pages can recover an expired workspace session.
   static bool isAppScoped(Uri uri) => switch (path(uri)) {
     ['settings'] ||
-    ['more', 'cloud-accounts'] ||
+    ['cloud-accounts'] ||
     [
-      'more',
       'cloud-accounts',
       'add' || 'login' || 'register' || 'forgot-password',
     ] => true,

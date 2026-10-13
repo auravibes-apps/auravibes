@@ -192,6 +192,42 @@ void main() {
       expect(find.text('Option 1'), findsNothing);
     });
 
+    testWidgets('opens with Space and closes with Escape', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: AuraDropdownSelector<String>(
+                options: const [
+                  AuraDropdownOption(
+                    value: 'Option 1',
+                    child: Text('Option 1'),
+                  ),
+                ],
+                onChanged: (_) => fail('Unexpected selection'),
+                placeholder: const Text('Select'),
+                focusNode: focusNode,
+              ),
+            ),
+          ),
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+
+      expect(await tester.sendKeyEvent(.space), isTrue);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Option 1'), findsOneWidget);
+
+      expect(await tester.sendKeyEvent(.escape), isTrue);
+      await tester.pump();
+      expect(find.text('Option 1'), findsNothing);
+    });
+
     testWidgets('tab from closed dropdown moves to next visible button', (
       tester,
     ) async {
