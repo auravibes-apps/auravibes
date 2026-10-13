@@ -83,10 +83,6 @@ class const AddModelProviderWidget({
   final VoidCallback? onCancel,
   final bool showHeader = true,
 }) extends HookConsumerWidget {
-  // Extract long locale key to avoid line length issues.
-  static const String noModelsFoundKey =
-      LocaleKeys.models_screens_add_provider_search_no_models_found;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final content = _AddModelProviderContent(
@@ -2373,7 +2369,9 @@ class const _NoModelProvidersIcon({required final Color color})
 class const _NoModelProvidersLabel() extends StatelessWidget {
   @override
   Widget build(BuildContext _) => const AuraText(
-    child: TextLocale(AddModelProviderWidget.noModelsFoundKey),
+    child: TextLocale(
+      LocaleKeys.models_screens_add_provider_search_no_models_found,
+    ),
     style: .bodyLarge,
   );
 }

@@ -437,7 +437,7 @@ class const _AgentFilters({
     children: [
       Expanded(
         child: _AgentFilter(
-          labelKey: LocaleKeys.agents_filter_type,
+          type: .type,
           onChanged: _setType,
           options: _typeOptions,
           value: _typeFilterValue(state.type),
@@ -446,7 +446,7 @@ class const _AgentFilters({
       const SizedBox(width: 8),
       Expanded(
         child: _AgentFilter(
-          labelKey: LocaleKeys.agents_filter_status,
+          type: .status,
           onChanged: _setStatus,
           options: _statusOptions,
           value: _statusFilterValue(state.status),
@@ -481,7 +481,7 @@ String _statusFilterValue(AgentListStatus? status) => switch (status) {
 };
 
 class const _AgentFilter({
-  required final String labelKey,
+  required final _AgentFilterType type,
   required final ValueChanged<String?> onChanged,
   required final List<AuraDropdownOption<String>> options,
   required final String value,
@@ -491,9 +491,14 @@ class const _AgentFilter({
     options: options,
     value: value,
     onChanged: onChanged,
-    label: TextLocale(labelKey),
+    label: TextLocale(switch (type) {
+      .type => LocaleKeys.agents_filter_type,
+      .status => LocaleKeys.agents_filter_status,
+    }),
   );
 }
+
+enum _AgentFilterType { type, status }
 
 const _typeOptions = <AuraDropdownOption<String>>[
   AuraDropdownOption(

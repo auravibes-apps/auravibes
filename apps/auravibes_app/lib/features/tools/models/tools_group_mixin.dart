@@ -49,7 +49,7 @@ extension ToolsGroupMixinDisplay on ToolsGroupMixin {
     if (message == null) return null;
 
     return message == LocaleKeys.tools_screen_mcp_error
-        ? message.tr()
+        ? LocaleKeys.tools_screen_mcp_error.tr()
         : message;
   }
 

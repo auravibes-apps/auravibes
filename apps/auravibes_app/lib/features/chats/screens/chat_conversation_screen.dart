@@ -2346,18 +2346,20 @@ void _reportContinueAgentFlutterError(_ContinueErrorRequest request) {
 void _showContinueAgentError(BuildContext context, Exception error) {
   if (!context.mounted) return;
 
-  final messageKey = switch (error) {
+  final message = switch (error) {
     UnsupportedTranscriptVersionException() =>
-      LocaleKeys.chats_screens_chat_conversation_transcript_context_unsupported,
+      LocaleKeys.chats_screens_chat_conversation_transcript_context_unsupported
+          .tr(),
     MalformedTranscriptContextException() =>
-      LocaleKeys.chats_screens_chat_conversation_transcript_context_malformed,
+      LocaleKeys.chats_screens_chat_conversation_transcript_context_malformed
+          .tr(),
     SelectedModelNotFoundException() =>
-      LocaleKeys.chats_screens_chat_conversation_model_missing,
-    _ => LocaleKeys.chats_screens_chat_conversation_continue_error,
+      LocaleKeys.chats_screens_chat_conversation_model_missing.tr(),
+    _ => LocaleKeys.chats_screens_chat_conversation_continue_error.tr(),
   };
   final _ = AuraSnackBars.show(
     context: context,
-    content: Text(messageKey.tr()),
+    content: Text(message),
     variant: .error,
   );
 }

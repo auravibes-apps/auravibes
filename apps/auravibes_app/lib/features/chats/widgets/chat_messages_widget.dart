@@ -3032,8 +3032,8 @@ class const _ErrorMessageWidget({
     final visibleContent = isProviderError
         ? LogRedaction.redact(content)
         : content.tr(context: context);
-    final guidanceKey = isProviderError
-        ? _providerRecoveryGuidanceKey(providerFailureCategory)
+    final guidanceLabel = isProviderError
+        ? _providerRecoveryGuidanceLabel(context, providerFailureCategory)
         : null;
     const iconSize = 16.0;
     const containerBorderRadius = 10.0;
@@ -3042,10 +3042,10 @@ class const _ErrorMessageWidget({
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (guidanceKey case final key?)
+          if (guidanceLabel case final label?)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Text(key.tr(context: context)),
+              child: Text(label),
             ),
           Row(
             children: [
@@ -3071,21 +3071,28 @@ class const _ErrorMessageWidget({
   }
 }
 
-String _providerRecoveryGuidanceKey(
+String _providerRecoveryGuidanceLabel(
+  BuildContext context,
   ProviderFailureCategory? category,
 ) => switch (category) {
   .authentication =>
-    LocaleKeys.chats_screens_chat_conversation_provider_recovery_authentication,
+    LocaleKeys.chats_screens_chat_conversation_provider_recovery_authentication
+        .tr(context: context),
   .quotaRateLimit =>
     LocaleKeys
-        .chats_screens_chat_conversation_provider_recovery_quota_rate_limit,
+        .chats_screens_chat_conversation_provider_recovery_quota_rate_limit
+        .tr(context: context),
   .transientOutage =>
     LocaleKeys
-        .chats_screens_chat_conversation_provider_recovery_transient_outage,
+        .chats_screens_chat_conversation_provider_recovery_transient_outage
+        .tr(context: context),
   .configuration =>
-    LocaleKeys.chats_screens_chat_conversation_provider_recovery_configuration,
-  .unknown ||
-  null => LocaleKeys.chats_screens_chat_conversation_provider_recovery_unknown,
+    LocaleKeys.chats_screens_chat_conversation_provider_recovery_configuration
+        .tr(context: context),
+  .unknown || null =>
+    LocaleKeys.chats_screens_chat_conversation_provider_recovery_unknown.tr(
+      context: context,
+    ),
 };
 
 class const _CompactingIndicator() extends StatelessWidget {
