@@ -727,7 +727,7 @@ void main() {
                 WorkspaceManagementScreen(workspaceId: active.id),
           ),
           GoRoute(
-            path: '/workspaces/:workspaceId/more/cloud-accounts/login',
+            path: '/workspaces/:workspaceId/cloud-accounts/login',
             builder: (context, state) => const Text('Auth destination'),
           ),
         ],
@@ -749,10 +749,10 @@ void main() {
       );
       final _ = await tester.pumpAndSettle();
       final uri = navigationRouter.routeInformationProvider.value.uri;
-      expect(uri.path, '/workspaces/${active.id}/more/cloud-accounts/login');
+      expect(uri.path, '/workspaces/${active.id}/cloud-accounts/login');
       expect(
         uri.queryParameters['return-path'],
-        '/workspaces/${active.id}/more/manage-workspaces',
+        '/workspaces/${active.id}/manage-workspaces',
       );
       expect(uri.queryParameters['serverUrl'], 'https://two.example');
       expect(uri.queryParameters['accountId'], 'same');
@@ -1775,7 +1775,7 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(selectionRepository.selectedWorkspaceId, 'ws-2');
-      expect(router.lastLocation, '/workspaces/ws-2/more/manage-workspaces');
+      expect(router.lastLocation, '/workspaces/ws-2/manage-workspaces');
     });
 
     testWidgets('shows switch-specific error when selection fails', (

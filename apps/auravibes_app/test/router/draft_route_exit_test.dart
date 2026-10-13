@@ -119,7 +119,7 @@ void main() {
             onExit: route.onExit,
           ),
           GoRoute(
-            path: '/workspaces/:workspaceId/more/agents',
+            path: '/workspaces/:workspaceId/agents',
             pageBuilder: (_, state) => NoTransitionPage(
               child: const Text('Workspace agents destination'),
               key: state.pageKey,

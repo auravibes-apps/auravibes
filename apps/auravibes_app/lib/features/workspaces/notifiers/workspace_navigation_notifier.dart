@@ -43,17 +43,17 @@ class WorkspaceNavigationNotifier extends _$WorkspaceNavigationNotifier {
 
   void _rememberWorkspacePath(List<String> path, Uri uri) {
     switch (path) {
-      case ['more', 'agents']:
+      case ['agents']:
         _rememberAgents(.agents);
-      case ['more', 'skills']:
+      case ['skills']:
         _rememberAgents(.skills);
-      case ['more', 'service-connections']:
+      case ['service-connections']:
         _rememberConnections(
           routes.WorkspaceNavigation.connectionView(
             uri.queryParameters['view'],
           ),
         );
-      case ['more', 'tools']:
+      case ['tools']:
         _rememberConnections(.tools);
     }
   }

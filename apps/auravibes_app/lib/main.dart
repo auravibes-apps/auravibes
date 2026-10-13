@@ -410,11 +410,9 @@ class const _RouteTitleContent({
 
 abstract final class RouteTitles {
   static const _workspaceRouteLength = 3;
-  static const _moreRouteLength = 4;
-  static const _cloudAccountRouteLength = 5;
+  static const _cloudAccountRouteLength = 4;
   static const _workspaceAreaIndex = 2;
-  static const _moreSectionIndex = 3;
-  static const _cloudAccountScreenIndex = 4;
+  static const _cloudAccountScreenIndex = 3;
 
   static String? titleKeyForPath(String path) {
     if (path == '/') return LocaleKeys.intro_flow_welcome_title;
@@ -432,17 +430,12 @@ abstract final class RouteTitles {
       'chat' => LocaleKeys.menu_new_chat,
       'chats' => LocaleKeys.menu_chats,
       'settings' => LocaleKeys.settings_screen_title,
-      'more' => _moreTitleKey(segments),
-      _ => null,
+      _ => _featureTitleKey(segments),
     };
   }
 
-  static String? _moreTitleKey(List<String> segments) {
-    if (segments.length < _moreRouteLength) {
-      return LocaleKeys.more_screen_title;
-    }
-
-    return switch (segments[_moreSectionIndex]) {
+  static String? _featureTitleKey(List<String> segments) {
+    return switch (segments[_workspaceAreaIndex]) {
       'manage-workspaces' => LocaleKeys.workspace_management_title,
       'cloud-accounts' => _cloudAccountTitleKey(segments),
       'tools' => LocaleKeys.tools_screen_title,

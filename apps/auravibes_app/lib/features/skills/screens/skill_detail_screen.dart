@@ -388,7 +388,7 @@ extension on _SkillDetailScreenState {
       return;
     }
 
-    context.go('/workspaces/${widget.workspaceId}/more/skills');
+    context.go('/workspaces/${widget.workspaceId}/skills');
   }
 
   Future<void> _duplicateSkill(BuildContext context, SkillDetail detail) async {
@@ -1230,7 +1230,7 @@ class _SkillResourcesActions {
 
   Future<void> _open([String? resourceId]) async {
     final result = await context.push<bool>(
-      '/workspaces/$workspaceId/more/skills/$skillId/resources/'
+      '/workspaces/$workspaceId/skills/$skillId/resources/'
       '${resourceId ?? 'new'}',
     );
     if (result == true && context.mounted) {
@@ -1376,7 +1376,7 @@ class const _SkillResourcesAppTile({
     description: resource.description,
     onOpen: () => unawaited(
       context.push<bool>(
-        '/workspaces/$workspaceId/more/skills/$skillId/resources/'
+        '/workspaces/$workspaceId/skills/$skillId/resources/'
         '${resource.slug}',
       ),
     ),
@@ -1485,7 +1485,7 @@ class _SkillToolsCardActions {
   Future<void> _openTool([String? toolId]) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final result = await context.push<bool>(
-      '/workspaces/$workspaceId/more/skills/$skillId/tools/${toolId ?? 'new'}',
+      '/workspaces/$workspaceId/skills/$skillId/tools/${toolId ?? 'new'}',
     );
     if (result == true) {
       _scheduleToolsRefresh(container);
@@ -2198,7 +2198,7 @@ class const _AppSkillCredentialsHint({
 
   Future<bool?> _pushAppSkillCredentialCreate(BuildContext context) {
     return context.push<bool>(
-      '/workspaces/$workspaceId/more/service-connections/new'
+      '/workspaces/$workspaceId/service-connections/new'
       '?type=appSkillCredential&appSkillId=$appSkillId',
     );
   }

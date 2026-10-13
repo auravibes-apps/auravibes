@@ -282,8 +282,7 @@ void main() {
           ),
         ),
         GoRoute(
-          path:
-              '/workspaces/:workspaceId/more/service-connections/:connectionId',
+          path: '/workspaces/:workspaceId/service-connections/:connectionId',
           builder: (_, state) =>
               Text('Source ${state.pathParameters['connectionId']}'),
         ),
