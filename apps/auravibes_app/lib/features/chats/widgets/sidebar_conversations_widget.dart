@@ -8,6 +8,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
@@ -17,6 +18,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_draft_badge.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
@@ -386,17 +388,32 @@ class const _SidebarConversationTileContent({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isResponseStreaming = ref.watch(
-      conversationStreamingProvider.select(
-        (conversationIds) => conversationIds.contains(chat.id),
-      ),
-    );
+    final isResponseStreaming = _isResponseStreaming(ref);
+    final hasDraft = _hasDraft(ref);
 
     return _SidebarConversationTileBody(
       content: this,
       isResponseStreaming: isResponseStreaming,
+      hasDraft: hasDraft,
+      semanticLabel: _sidebarConversationTileSemanticLabel(
+        title,
+        isResponseStreaming,
+        hasDraft,
+      ),
     );
   }
+
+  bool _isResponseStreaming(WidgetRef ref) => ref.watch(
+    conversationStreamingProvider.select(
+      (conversationIds) => conversationIds.contains(chat.id),
+    ),
+  );
+
+  bool _hasDraft(WidgetRef ref) =>
+      ref
+          .watch(conversationDraftProvider(chat.workspaceId, chat.id))
+          ?.isEmpty ==
+      false;
 }
 
 class const _SidebarConversationTileTrailing({
@@ -423,10 +440,12 @@ class const _SidebarConversationTileTrailing({
 class const _SidebarConversationTileBody({
   required final _SidebarConversationTileContent content,
   required final bool isResponseStreaming,
+  required final bool hasDraft,
+  required final String semanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraTile(
-    child: _SidebarConversationTileLabel(content: content),
+    child: _SidebarConversationTileLabel(content: content, hasDraft: hasDraft),
     onTap: content.onTap,
     variant: content.isActive
         ? AuraTileVariant.selected
@@ -437,19 +456,19 @@ class const _SidebarConversationTileBody({
       content: content,
       isResponseStreaming: isResponseStreaming,
     ),
-    semanticLabel: _sidebarConversationTileSemanticLabel(
-      content.title,
-      isResponseStreaming,
-    ),
+    semanticLabel: semanticLabel,
   );
 }
 
 String _sidebarConversationTileSemanticLabel(
   String title,
   bool isResponseStreaming,
-) => isResponseStreaming
-    ? '$title, ${LocaleKeys.sidebar_response_in_progress.tr()}'
-    : title;
+  bool hasDraft,
+) => [
+  title,
+  if (isResponseStreaming) LocaleKeys.sidebar_response_in_progress.tr(),
+  if (hasDraft) LocaleKeys.chats_screens_chats_list_draft_marker.tr(),
+].join(', ');
 
 class const _SidebarResponseStreamingStatus({
   required final String conversationId,
@@ -465,6 +484,7 @@ class const _SidebarResponseStreamingStatus({
 
 class const _SidebarConversationTileLabel({
   required final _SidebarConversationTileContent content,
+  required final bool hasDraft,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraRow(
@@ -474,6 +494,10 @@ class const _SidebarConversationTileLabel({
         const SizedBox(width: 8),
       ],
       Expanded(child: _SidebarConversationTileLabelText(content: content)),
+      if (hasDraft) ...[
+        const SizedBox(width: 8),
+        ConversationDraftBadge(conversationId: content.chat.id),
+      ],
     ],
   );
 }

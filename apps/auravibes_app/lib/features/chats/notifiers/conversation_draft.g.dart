@@ -20,7 +20,7 @@ final class ConversationDraftProvider
   }) : super(
          retry: null,
          name: r'conversationDraftProvider',
-         isAutoDispose: false,
+         isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -58,7 +58,7 @@ final class ConversationDraftProvider
   }
 }
 
-String _$conversationDraftHash() => r'f2975ca6e1409a98d20e97222d5b3aef18fc7cd0';
+String _$conversationDraftHash() => r'3e9a762251e40f1e5595d540c940e6b7c6dccb21';
 
 final class ConversationDraftFamily extends $Family
     with
@@ -75,7 +75,7 @@ final class ConversationDraftFamily extends $Family
         name: r'conversationDraftProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: false,
+        isAutoDispose: true,
       );
 
   ConversationDraftProvider call(String workspaceId, String conversationId) =>
