@@ -53,7 +53,7 @@ typedef _ForkCopies = ({
   Map<int, int> turnIds,
   Map<int, int> messageIds,
   Map<String, String> stableMessageIds,
-  Set<String> detachedToolCallIds,
+  Map<int, Set<String>> detachedToolCallIdsByMessageId,
 });
 
 class _BatchDecisionState {
@@ -370,6 +370,14 @@ class ConversationUseCases {
     final messages = allMessages.length <= request.limit
         ? allMessages
         : allMessages.skip(allMessages.length - request.limit).toList();
+    final detachedToolCallIdsByMessageId = await _repository
+        .listBackgroundWorkToolCallIdsByMessageId(
+          session,
+          workspaceId: request.workspaceId,
+          messages: messages.where(
+            (message) => message.conversationId != conversation.id,
+          ),
+        );
     final turnIds = messages.map((message) => message.turnId).whereType<int>();
     final turns = {
       for (final turn in await _repository.listTurns(
@@ -389,7 +397,13 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       turnIds: turns.keys,
     )) {
-      if (!messageIds.contains(call.messageId)) continue;
+      if (!messageIds.contains(call.messageId) ||
+          detachedToolCallIdsByMessageId[call.messageId]?.contains(
+                call.stableId,
+              ) ==
+              true) {
+        continue;
+      }
       final messageId = call.messageId;
       (calls[messageId] ??= []).add(call);
     }
@@ -406,7 +420,10 @@ class ConversationUseCases {
         content: message.content,
         isForkReference: message.conversationId != conversation.id,
         metadataJson: cloudA2uiMetadataForClient(
-          message.metadataJson,
+          conversation_repo.forkSafeConversationMetadataJson(
+            message.metadataJson,
+            detachedToolCallIdsByMessageId[message.id] ?? const {},
+          ),
           cloudA2uiComponentsForClient(
             request.a2uiSupportedComponents,
             isChildConversation:
@@ -1220,6 +1237,14 @@ class ConversationUseCases {
       ))
         turn.id!: turn,
     };
+    final detachedToolCallIdsByMessageId = await _repository
+        .listBackgroundWorkToolCallIdsByMessageId(
+          session,
+          workspaceId: request.workspaceId,
+          messages: effectiveMessages.where(
+            (message) => message.conversationId != conversation.id,
+          ),
+        );
     final toolCalls = await _repository.listToolCallsByTurnIds(
       session,
       workspaceId: request.workspaceId,
@@ -1269,12 +1294,16 @@ class ConversationUseCases {
       toolCalls: [
         for (final toolCall in toolCalls)
           if (effectiveMessageIds.contains(toolCall.messageId))
-            if (turns[toolCall.turnId] case final turn?)
-              _toolCallView(
-                toolCall,
-                turn,
-                effectiveMessages,
-              ),
+            if (detachedToolCallIdsByMessageId[toolCall.messageId]?.contains(
+                  toolCall.stableId,
+                ) !=
+                true)
+              if (turns[toolCall.turnId] case final turn?)
+                _toolCallView(
+                  toolCall,
+                  turn,
+                  effectiveMessages,
+                ),
       ],
       sequence: conversation.eventSequence,
     );
@@ -4217,9 +4246,10 @@ class ConversationUseCases {
           ),
       transaction: context.transaction,
     );
-    final detachedToolCallIds = await _detachedBackgroundToolCallIds(
+    final detachedToolCallIdsByMessageId = await _detachedBackgroundToolCallIds(
       session,
       context,
+      sourceMessages,
     );
     final copies = (
       sourceMessages: sourceMessages,
@@ -4227,7 +4257,7 @@ class ConversationUseCases {
       turnIds: <int, int>{},
       messageIds: <int, int>{},
       stableMessageIds: <String, String>{},
-      detachedToolCallIds: detachedToolCallIds,
+      detachedToolCallIdsByMessageId: detachedToolCallIdsByMessageId,
     );
     await _copyForkMessages(session, context, copies);
     await _copyForkTurns(session, context, sourceTurns, copies);
@@ -4301,20 +4331,16 @@ class ConversationUseCases {
     return sourceMessages;
   }
 
-  Future<Set<String>> _detachedBackgroundToolCallIds(
+  Future<Map<int, Set<String>>> _detachedBackgroundToolCallIds(
     Session session,
     _ForkMaterializationContext context,
-  ) async {
-    final workRecords = await BackgroundWorkRecord.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(context.source.workspaceId) &
-          table.conversationId.equals(context.source.id!),
-      transaction: context.transaction,
-    );
-
-    return workRecords.map((work) => work.toolCallId).toSet();
-  }
+    List<ConversationMessage> sourceMessages,
+  ) => _repository.listBackgroundWorkToolCallIdsByMessageId(
+    session,
+    workspaceId: context.source.workspaceId,
+    messages: sourceMessages,
+    transaction: context.transaction,
+  );
 
   Future<void> _copyForkMessages(
     Session session,
@@ -4332,9 +4358,9 @@ class ConversationUseCases {
           kind: message.kind,
           status: message.status,
           content: message.content,
-          metadataJson: _forkSafeMetadataJson(
+          metadataJson: conversation_repo.forkSafeConversationMetadataJson(
             message.metadataJson,
-            copies.detachedToolCallIds,
+            copies.detachedToolCallIdsByMessageId[message.id] ?? const {},
           ),
           compactedThroughMessageId: null,
           revision: message.revision,
@@ -4503,7 +4529,12 @@ class ConversationUseCases {
       final newTurnId = copies.turnIds[call.turnId];
       final newMessageId = copies.messageIds[call.messageId];
       if (newTurnId == null || newMessageId == null) continue;
-      if (copies.detachedToolCallIds.contains(call.stableId)) continue;
+      if (copies.detachedToolCallIdsByMessageId[call.messageId]?.contains(
+            call.stableId,
+          ) ==
+          true) {
+        continue;
+      }
       await ConversationToolCall.db.insertRow(
         session,
         ConversationToolCall(
@@ -4528,32 +4559,6 @@ class ConversationUseCases {
         transaction: context.transaction,
       );
     }
-  }
-
-  String? _forkSafeMetadataJson(
-    String? metadataJson,
-    Set<String> detachedToolCallIds,
-  ) {
-    if (metadataJson == null || detachedToolCallIds.isEmpty) {
-      return metadataJson;
-    }
-    final decoded = _tryDecodeJson(metadataJson);
-    if (decoded is! Map || decoded['toolCalls'] is! List) {
-      return metadataJson;
-    }
-    final toolCalls = (decoded['toolCalls']! as List)
-        .where(
-          (toolCall) =>
-              toolCall is! Map || !detachedToolCallIds.contains(toolCall['id']),
-        )
-        .toList();
-    if (toolCalls.length == (decoded['toolCalls']! as List).length) {
-      return metadataJson;
-    }
-    final sanitizedMetadata = Map<String, Object?>.from(decoded)
-      ..['toolCalls'] = toolCalls;
-
-    return jsonEncode(sanitizedMetadata);
   }
 
   Future<void> _purgeConversation(

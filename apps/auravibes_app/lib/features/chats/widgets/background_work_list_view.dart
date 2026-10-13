@@ -385,8 +385,12 @@ class const _BackgroundWorkStopButton({
   Widget build(BuildContext context) => _BackgroundWorkActionButton(
     workId: workId,
     keyPrefix: 'background_work_stop',
-    localeKey: LocaleKeys.chats_screens_chat_conversation_background_work_stop,
-    errorKey: _backgroundWorkStopErrorKey,
+    label: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_background_work_stop,
+    ),
+    errorMessage: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_background_work_stop_error,
+    ),
     action: action,
   );
 }
@@ -399,8 +403,12 @@ class const _BackgroundWorkOpenResultButton({
   Widget build(BuildContext context) => _BackgroundWorkActionButton(
     workId: workId,
     keyPrefix: 'background_work_open_result',
-    localeKey: _backgroundWorkOpenResultKey,
-    errorKey: _backgroundWorkOpenErrorKey,
+    label: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_background_work_open_result,
+    ),
+    errorMessage: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_background_work_open_error,
+    ),
     action: action,
   );
 }
@@ -408,26 +416,19 @@ class const _BackgroundWorkOpenResultButton({
 class const _BackgroundWorkActionButton({
   required final String workId,
   required final String keyPrefix,
-  required final String localeKey,
-  required final String errorKey,
+  required final Widget label,
+  required final Widget errorMessage,
   required final Future<void> Function() action,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
-    onPressed: () => _runAction(context, action, errorKey),
-    child: TextLocale(localeKey),
+    onPressed: () => _runAction(context, action, errorMessage),
+    child: label,
     key: ValueKey('${keyPrefix}_$workId'),
     variant: .ghost,
     size: .small,
   );
 }
-
-const String _backgroundWorkStopErrorKey =
-    LocaleKeys.chats_screens_chat_conversation_background_work_stop_error;
-const String _backgroundWorkOpenErrorKey =
-    LocaleKeys.chats_screens_chat_conversation_background_work_open_error;
-const String _backgroundWorkOpenResultKey =
-    LocaleKeys.chats_screens_chat_conversation_background_work_open_result;
 
 String _backgroundWorkStatusLocaleKey(
   AgentBackgroundWorkStatus status,
@@ -500,26 +501,26 @@ String _elapsedHoursLabel(int hours, int minutes) => LocaleKeys
 void _runAction(
   BuildContext context,
   Future<void> Function() action,
-  String errorKey,
+  Widget errorMessage,
 ) {
-  unawaited(_runActionAndReportError(context, action, errorKey));
+  unawaited(_runActionAndReportError(context, action, errorMessage));
 }
 
 Future<void> _runActionAndReportError(
   BuildContext context,
   Future<void> Function() action,
-  String errorKey,
+  Widget errorMessage,
 ) async {
   try {
     await action();
   } on Object {
     if (!context.mounted) return;
-    _showActionError(context, errorKey);
+    _showActionError(context, errorMessage);
   }
 }
 
-void _showActionError(BuildContext context, String errorKey) {
+void _showActionError(BuildContext context, Widget errorMessage) {
   if (!context.mounted) return;
   final _ = ScaffoldMessenger.of(context)
-      .showSnackBar(.new(content: TextLocale(errorKey)));
+      .showSnackBar(.new(content: errorMessage));
 }

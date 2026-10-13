@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:cryptography/cryptography.dart';
 import 'package:genkit/plugin.dart' show GenkitException;
 import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
@@ -106,7 +107,7 @@ void main() {
             updatedAt: historyTime.add(const Duration(milliseconds: 1)),
           ),
         );
-        await ConversationTurn.db.insertRow(
+        final historyTurn = await ConversationTurn.db.insertRow(
           database,
           ConversationTurn(
             workspaceId: workspace.id!,
@@ -123,6 +124,14 @@ void main() {
             createdAt: historyTime,
             updatedAt: historyTime.add(const Duration(milliseconds: 1)),
           ),
+        );
+        await ConversationMessage.db.updateRow(
+          database,
+          historyUser.copyWith(turnId: historyTurn.id),
+        );
+        await ConversationMessage.db.updateRow(
+          database,
+          historyAssistant.copyWith(turnId: historyTurn.id),
         );
       }
       if (continueConversation) {
@@ -215,7 +224,7 @@ void main() {
             await ConversationUseCases(
               conversation_repo.ConversationRepository(),
             ).continueOldestQueuedMessage(
-              fixture.session,
+              fixture.database,
               userId: fixture.userId,
               workspaceId: fixture.workspaceId,
               conversationId: fixture.conversationId,
@@ -297,89 +306,12 @@ void main() {
     stageAwaitingApproval(
       _ExecutionFixture fixture, {
       required int calls,
-    }) async {
-      final now = DateTime.now().toUtc();
-      final conversation = (await Conversation.db.findById(
-        fixture.database,
-        fixture.conversationDatabaseId,
-      ))!;
-      final turn = (await ConversationTurn.db.findFirstRow(
-        fixture.database,
-        where: (table) =>
-            table.workspaceId.equals(fixture.workspaceId) &
-            table.conversationId.equals(fixture.conversationDatabaseId),
-      ))!;
-      final assistant = (await ConversationMessage.db.findById(
-        fixture.database,
-        turn.assistantMessageId!,
-      ))!;
-      final execution = (await ConversationExecution.db.findById(
-        fixture.database,
-        conversation.activeExecutionId!,
-      ))!;
-      final initialJob = (await ConversationJob.db.findFirstRow(
-        fixture.database,
-        where: (table) =>
-            table.workspaceId.equals(fixture.workspaceId) &
-            table.turnId.equals(turn.id),
-      ))!;
-      await ConversationJob.db.updateRow(
-        fixture.database,
-        initialJob.copyWith(status: 'completed', updatedAt: now),
-      );
-      await ConversationTurn.db.updateRow(
-        fixture.database,
-        turn.copyWith(
-          status: ConversationStatuses.awaitingApproval,
-          revision: 2,
-          updatedAt: now,
-        ),
-      );
-      await ConversationMessage.db.updateRow(
-        fixture.database,
-        assistant.copyWith(
-          status: ConversationStatuses.awaitingApproval,
-          updatedAt: now,
-        ),
-      );
-      await ConversationExecution.db.updateRow(
-        fixture.database,
-        execution.copyWith(
-          status: ConversationStatuses.awaitingApproval,
-          updatedAt: now,
-        ),
-      );
-      await Conversation.db.updateRow(
-        fixture.database,
-        conversation.copyWith(
-          executionState: ConversationStatuses.awaitingApproval,
-          updatedAt: now,
-        ),
-      );
-      final toolCallIds = <String>[];
-      for (var index = 0; index < calls; index++) {
-        final stableId = 'tool-call-${index + 1}';
-        toolCallIds.add(stableId);
-        await ConversationToolCall.db.insertRow(
-          fixture.database,
-          ConversationToolCall(
-            workspaceId: fixture.workspaceId,
-            conversationId: fixture.conversationDatabaseId,
-            turnId: turn.id!,
-            messageId: assistant.id!,
-            stableId: stableId,
-            name: 'tool',
-            argumentsJson: '{}',
-            argumentsDigest: 'digest-${index + 1}',
-            status: 'pending',
-            revision: 1,
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
-      }
-      return (turn: turn, toolCallIds: toolCallIds);
-    }
+      String? argumentsDigest,
+    }) => _stageAwaitingApproval(
+      fixture,
+      calls: calls,
+      argumentsDigest: argumentsDigest,
+    );
 
     ConversationUseCases decisionUseCases() => ConversationUseCases(
       conversation_repo.ConversationRepository(),
@@ -620,6 +552,36 @@ void main() {
             updatedAt: now,
           ),
         );
+        final userMessage = (await ConversationMessage.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId) &
+              table.role.equals('user'),
+        )).single;
+        final toolCallIdsByMessageId =
+            await conversation_repo.ConversationRepository()
+                .listBackgroundWorkToolCallIdsByMessageId(
+                  fixture.database,
+                  workspaceId: fixture.workspaceId,
+                  messages: [assistant],
+                );
+        expect(toolCallIdsByMessageId.keys, {assistant.id!});
+        expect(
+          toolCallIdsByMessageId[assistant.id!],
+          {detachedToolCallId, completedToolCallId},
+        );
+        expect(
+          await conversation_repo.ConversationRepository()
+              .listBackgroundWorkToolCallIdsByMessageId(
+                fixture.database,
+                workspaceId: fixture.workspaceId,
+                messages: [userMessage],
+              ),
+          isEmpty,
+          reason:
+              'Other messages in the same conversation have no detached calls.',
+        );
         await ConversationMessage.db.updateRow(
           fixture.database,
           assistant.copyWith(
@@ -639,6 +601,32 @@ void main() {
                   'id': deliveredToolCallId,
                   'arguments': {'query': 'public history'},
                   'result': {'answer': 'already delivered'},
+                },
+              ],
+              'providerToolBatches': [
+                {
+                  'assistant': {
+                    'content': null,
+                    'tool_calls': [
+                      {
+                        'id': detachedToolCallId,
+                        'type': 'function',
+                        'function': {
+                          'name': 'background-search',
+                          'arguments': '{"private":"search query"}',
+                        },
+                      },
+                      {
+                        'id': deliveredToolCallId,
+                        'type': 'function',
+                        'function': {
+                          'name': 'delivered-search',
+                          'arguments': '{"query":"public history"}',
+                        },
+                      },
+                    ],
+                  },
+                  'toolCallIds': [detachedToolCallId, deliveredToolCallId],
                 },
               ],
             }),
@@ -674,7 +662,7 @@ void main() {
             sourceConversationId: fixture.conversationId,
           ),
         );
-        await useCases.getConversationSnapshot(
+        final forkSnapshot = await useCases.getConversationSnapshot(
           fixture.database,
           userId: fixture.userId,
           request: GetConversationRequest(
@@ -682,26 +670,86 @@ void main() {
             conversationId: fork.id,
           ),
         );
+        final forkWorkerMessages =
+            await conversation_repo.ConversationRepository()
+                .listEffectiveMessages(
+                  fixture.database,
+                  workspaceId: fixture.workspaceId,
+                  conversationId: fork.id,
+                );
+        final nestedFork = await useCases.fork(
+          fixture.database,
+          userId: fixture.userId,
+          request: ForkConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'fork-from-detached-work-fork',
+            forkConversationId: 'nested-fork-detached-work',
+            sourceConversationId: fork.id,
+          ),
+        );
+        final nestedSnapshot = await useCases.getConversationSnapshot(
+          fixture.database,
+          userId: fixture.userId,
+          request: GetConversationRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: nestedFork.id,
+          ),
+        );
+        final nestedWorkerMessages =
+            await conversation_repo.ConversationRepository()
+                .listEffectiveMessages(
+                  fixture.database,
+                  workspaceId: fixture.workspaceId,
+                  conversationId: nestedFork.id,
+                );
+        final forkBackgroundWorks = await useCases.listBackgroundWorks(
+          fixture.database,
+          userId: fixture.userId,
+          request: ListBackgroundWorksRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: fork.id,
+          ),
+        );
+        final nestedBackgroundWorks = await useCases.listBackgroundWorks(
+          fixture.database,
+          userId: fixture.userId,
+          request: ListBackgroundWorksRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: nestedFork.id,
+          ),
+        );
+        final sourceBackgroundWorks = await useCases.listBackgroundWorks(
+          fixture.database,
+          userId: fixture.userId,
+          request: ListBackgroundWorksRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+          ),
+        );
 
         final forkConversation = (await Conversation.db.findFirstRow(
           fixture.database,
           where: (table) => table.stableId.equals(fork.id),
         ))!;
-        final forkCalls = await ConversationToolCall.db.find(
-          fixture.database,
-          where: (table) =>
-              table.workspaceId.equals(fixture.workspaceId) &
-              table.conversationId.equals(forkConversation.id),
+        final forkAssistant = forkSnapshot.messages.singleWhere(
+          (message) => message.id == assistant.stableId,
         );
-        final forkAssistant = (await ConversationMessage.db.findFirstRow(
-          fixture.database,
-          where: (table) =>
-              table.workspaceId.equals(fixture.workspaceId) &
-              table.conversationId.equals(forkConversation.id) &
-              table.role.equals('assistant'),
-        ))!;
         final forkMetadata = jsonDecode(forkAssistant.metadataJson!) as Map;
         final forkToolCalls = forkMetadata['toolCalls']! as List;
+        final forkProviderBatches =
+            forkMetadata['providerToolBatches']! as List;
+        final forkCalls = forkSnapshot.toolCalls
+            .where((call) => call.messageId == assistant.stableId)
+            .toList();
+        final forkWorkerAssistant = forkWorkerMessages.singleWhere(
+          (message) => message.stableId == assistant.stableId,
+        );
+        final nestedAssistant = nestedSnapshot.messages.singleWhere(
+          (message) => message.id == assistant.stableId,
+        );
+        final nestedWorkerAssistant = nestedWorkerMessages.singleWhere(
+          (message) => message.stableId == assistant.stableId,
+        );
         final sourceWork = await BackgroundWorkRecord.db.findFirstRow(
           fixture.database,
           where: (table) => table.stableId.equals(detachedWorkId),
@@ -716,32 +764,103 @@ void main() {
               table.conversationId.equals(forkConversation.id) &
               table.stableId.equals('queued-message-not-forked'),
         );
-        final forkTurns = await ConversationTurn.db.find(
+        final forkConversationToolCalls = await ConversationToolCall.db.find(
           fixture.database,
           where: (table) => table.conversationId.equals(forkConversation.id),
+        );
+        final sourceAssistantAfterFork = (await ConversationMessage.db.findById(
+          fixture.database,
+          assistant.id!,
+        ))!;
+        final sourceCallsAfterFork = await ConversationToolCall.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
         );
         final forkEvents = await ConversationEvent.db.find(
           fixture.database,
           where: (table) => table.conversationId.equals(forkConversation.id),
         );
 
+        expect(fork.forkMaterializedAt, isNull);
+        expect(
+          forkConversation.forkSourceConversationId,
+          fixture.conversationId,
+        );
+        expect(forkSnapshot.messages.map((message) => message.id), [
+          'history-assistant',
+          'history-user',
+        ]);
+        expect(forkAssistant.isForkReference, isTrue);
         expect(forkCalls, hasLength(1));
         expect(forkCalls.single.name, 'delivered-search');
+        expect(forkCalls.single.status, 'success');
+        expect(forkCalls.single.resultJson, '{"answer":"already delivered"}');
         expect(forkToolCalls, hasLength(1));
         expect(forkToolCalls.single['id'], deliveredToolCallId);
+        expect(forkProviderBatches, hasLength(1));
+        final providerBatch = forkProviderBatches.single as Map;
+        expect(providerBatch['toolCallIds'], [deliveredToolCallId]);
+        final providerToolCalls =
+            (providerBatch['assistant'] as Map)['tool_calls'] as List;
+        expect(providerToolCalls, hasLength(1));
+        expect(providerToolCalls.single['id'], deliveredToolCallId);
         expect(forkAssistant.metadataJson, isNot(contains(detachedWorkId)));
         expect(forkAssistant.metadataJson, isNot(contains(completedWorkId)));
         expect(forkAssistant.metadataJson, isNot(contains('search query')));
         expect(forkAssistant.metadataJson, isNot(contains('completed query')));
+        expect(
+          forkWorkerAssistant.metadataJson,
+          isNot(contains(detachedWorkId)),
+        );
+        expect(
+          forkWorkerAssistant.metadataJson,
+          isNot(contains(completedWorkId)),
+        );
+        expect(
+          forkWorkerAssistant.metadataJson,
+          isNot(contains('search query')),
+        );
+        expect(
+          forkWorkerAssistant.metadataJson,
+          isNot(contains('completed query')),
+        );
+        expect(nestedFork.forkMaterializedAt, isNull);
+        expect(
+          nestedSnapshot.toolCalls
+              .where((call) => call.messageId == assistant.stableId)
+              .map((call) => call.id),
+          [deliveredToolCallId],
+        );
+        expect(nestedAssistant.metadataJson, isNot(contains(detachedWorkId)));
+        expect(nestedAssistant.metadataJson, isNot(contains(completedWorkId)));
+        expect(nestedAssistant.metadataJson, isNot(contains('search query')));
+        expect(
+          nestedWorkerAssistant.metadataJson,
+          isNot(contains('completed query')),
+        );
+        expect(forkBackgroundWorks, isEmpty);
+        expect(nestedBackgroundWorks, isEmpty);
+        expect(
+          sourceBackgroundWorks.map((work) => work.id).toSet(),
+          {detachedWorkId, completedWorkId},
+        );
         expect(sourceWork?.status, 'running');
         expect(completedSourceWork?.status, 'completed');
         expect(
           completedSourceWork?.resultContent,
           'private stored completion result',
         );
+        expect(sourceAssistantAfterFork.metadataJson, contains(detachedWorkId));
+        expect(
+          sourceAssistantAfterFork.metadataJson,
+          contains(completedWorkId),
+        );
+        expect(sourceCallsAfterFork, hasLength(3));
         expect(forkQueuedMessage, isNull);
-        expect(forkTurns, hasLength(1));
-        expect(forkTurns.single.status, ConversationStatuses.completed);
+        expect(forkConversationToolCalls, isEmpty);
+        expect(forkSnapshot.pendingMessages, isEmpty);
         expect(
           forkEvents.map((event) => event.payloadJson),
           everyElement(isNot(contains('queued-message-not-forked'))),
@@ -1273,7 +1392,14 @@ void main() {
       'Stop all applies after a prior Skip replay for the same call',
       () async {
         final fixture = await prepareExecution();
-        final staged = await stageAwaitingApproval(fixture, calls: 2);
+        final argumentsDigest = base64UrlEncode(
+          (await Sha256().hash(utf8.encode('{}'))).bytes,
+        );
+        final staged = await stageAwaitingApproval(
+          fixture,
+          calls: 2,
+          argumentsDigest: argumentsDigest,
+        );
 
         await decisionUseCases().submitToolDecision(
           fixture.database,
@@ -1284,7 +1410,7 @@ void main() {
             conversationId: fixture.conversationId,
             turnId: staged.turn.requestId,
             toolCallId: staged.toolCallIds.first,
-            argumentsDigest: 'digest-1',
+            argumentsDigest: argumentsDigest,
             expectedTurnRevision: 2,
             decision: 'deny',
           ),
@@ -1298,7 +1424,7 @@ void main() {
             conversationId: fixture.conversationId,
             turnId: staged.turn.requestId,
             toolCallId: staged.toolCallIds.first,
-            argumentsDigest: 'digest-1',
+            argumentsDigest: argumentsDigest,
             // A replay carries the revision from the original prompt.
             expectedTurnRevision: 2,
             decision: 'deny',
@@ -1373,6 +1499,7 @@ void main() {
           jsonEncode({
             'actorUserId': fixture.userId,
             'executionId': execution.id,
+            'reasoningConfigJson': null,
           }),
         );
 
@@ -1640,11 +1767,18 @@ void main() {
             table.stableId.equals('compact-1:compaction-summary'),
       );
 
+      final continuedMessage = await ConversationMessage.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.stableId.equals('message-after-compaction'),
+      );
+      expect(continuedMessage, isNotNull);
       final followUpTurn = await ConversationTurn.db.findFirstRow(
         fixture.database,
         where: (table) =>
             table.workspaceId.equals(fixture.workspaceId) &
-            table.requestId.equals('queued:message-after-compaction'),
+            table.userMessageId.equals(continuedMessage!.id),
       );
 
       expect(host.compactionCalls, 1);
@@ -1990,66 +2124,6 @@ void main() {
         expect(execution.status, ConversationStatuses.cancelled);
         expect(conversation.executionState, 'idle');
         expect(conversation.activeExecutionId, isNull);
-      },
-    );
-
-    test(
-      'approval pause and decision submission complete without lock inversion',
-      () async {
-        final fixture = await prepareExecution();
-        final staged = await stageAwaitingApproval(fixture, calls: 1);
-        final job = (await ConversationJob.db.findFirstRow(
-          fixture.database,
-          where: (table) => table.turnId.equals(staged.turn.id),
-        ))!;
-        await ConversationJob.db.updateRow(
-          fixture.database,
-          job.copyWith(
-            status: ConversationJobStatuses.queued,
-            availableAt: DateTime.now().toUtc(),
-            updatedAt: DateTime.now().toUtc(),
-          ),
-        );
-        final pauseTurnLocked = Completer<void>();
-        final releasePause = Completer<void>();
-        final worker = ConversationWorker(
-          host: _AwaitingApprovalHost(),
-          afterApprovalTurnLock: () async {
-            pauseTurnLocked.complete();
-            await releasePause.future;
-          },
-        );
-
-        final running = runConversationWorker(
-          fixture.database,
-          isActive: () => true,
-          worker: worker,
-        );
-        await pauseTurnLocked.future.timeout(const Duration(seconds: 2));
-        final decision = decisionUseCases().submitToolDecision(
-          fixture.database,
-          userId: fixture.userId,
-          request: SubmitToolDecisionRequest(
-            workspaceId: fixture.workspaceId,
-            requestId: 'approve-racing-pause',
-            conversationId: fixture.conversationId,
-            turnId: staged.turn.requestId,
-            toolCallId: staged.toolCallIds.single,
-            argumentsDigest: 'digest-1',
-            expectedTurnRevision: 3,
-            decision: 'approve',
-          ),
-        );
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-        releasePause.complete();
-
-        await Future.wait([running, decision])
-            .timeout(const Duration(seconds: 2));
-        final turn = (await ConversationTurn.db.findById(
-          fixture.database,
-          staged.turn.id!,
-        ))!;
-        expect(turn.status, ConversationStatuses.queued);
       },
     );
 
@@ -2539,10 +2613,129 @@ void main() {
     );
   });
 
-  withServerpod('ConversationExecutionState concurrent same-request', (
+  withServerpod('ConversationExecutionState concurrent transactions', (
     sessionBuilder,
     endpoints,
   ) {
+    test(
+      'approval pause and decision submission complete without lock inversion',
+      () async {
+        final fixture = await _preparePromptlessExecution(sessionBuilder);
+        await endpoints.conversation.continueConversation(
+          fixture.session,
+          ContinueConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'approval-race-continue-1',
+            conversationId: fixture.conversationId,
+            expectedProjectionRevision: 1,
+          ),
+        );
+        final argumentsDigest = base64UrlEncode(
+          (await Sha256().hash(utf8.encode('{}'))).bytes,
+        );
+        final staged = await _stageAwaitingApproval(
+          fixture,
+          calls: 1,
+          argumentsDigest: argumentsDigest,
+        );
+        final job = (await ConversationJob.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.turnId.equals(staged.turn.id),
+        ))!;
+        await ConversationJob.db.updateRow(
+          fixture.database,
+          job.copyWith(
+            status: ConversationJobStatuses.queued,
+            availableAt: DateTime.now().toUtc(),
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+        final pauseTurnLocked = Completer<void>();
+        final releasePause = Completer<void>();
+        var approvalLockBarrierCalls = 0;
+        int? workerBackendPid;
+        final worker = ConversationWorker(
+          host: _AwaitingApprovalHost(),
+          afterApprovalTurnLock: (workerSession, transaction) async {
+            approvalLockBarrierCalls++;
+            workerBackendPid ??=
+                (await workerSession.db.unsafeQuery(
+                      'SELECT pg_backend_pid() AS "pid"',
+                      transaction: transaction,
+                    )).single.toColumnMap()['pid']
+                    as int;
+            if (!pauseTurnLocked.isCompleted) pauseTurnLocked.complete();
+            await releasePause.future;
+          },
+        );
+
+        final running = runConversationWorker(
+          fixture.session.build(),
+          isActive: () => true,
+          worker: worker,
+        );
+        await pauseTurnLocked.future.timeout(const Duration(seconds: 2));
+        final decisionDatabase = sessionBuilder
+            .copyWith(
+              authentication: AuthenticationOverride.authenticationInfo(
+                fixture.userId,
+                const {},
+              ),
+            )
+            .build();
+        final decision =
+            ConversationUseCases(
+              conversation_repo.ConversationRepository(),
+              publishConversationJob: (_, _) async {},
+            ).submitToolDecision(
+              decisionDatabase,
+              userId: fixture.userId,
+              request: SubmitToolDecisionRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'approve-racing-pause',
+                conversationId: fixture.conversationId,
+                turnId: staged.turn.requestId,
+                toolCallId: staged.toolCallIds.single,
+                argumentsDigest: argumentsDigest,
+                expectedTurnRevision: 3,
+                decision: 'approve',
+              ),
+            );
+        final decisionWaitObserved = await _waitForConversationLockWait(
+          fixture.database,
+          workerBackendPid: workerBackendPid!,
+        );
+        releasePause.complete();
+
+        await Future.wait([running, decision]).timeout(
+          const Duration(seconds: 2),
+        );
+        expect(
+          decisionWaitObserved,
+          isTrue,
+          reason:
+              'The decision should wait on the worker-held conversation lock.',
+        );
+        final turn = (await ConversationTurn.db.findById(
+          fixture.database,
+          staged.turn.id!,
+        ))!;
+        expect(turn.status, ConversationStatuses.queued);
+
+        await runConversationWorker(
+          fixture.session.build(),
+          isActive: () => true,
+          worker: worker,
+        );
+        expect(
+          approvalLockBarrierCalls,
+          greaterThan(1),
+          reason:
+              'The worker should re-enter this barrier for the continuation.',
+        );
+      },
+    );
+
     test(
       'concurrent Continue requests from independent sessions replay once',
       () async {
@@ -2664,6 +2857,124 @@ Future<_ExecutionFixture> _preparePromptlessExecution(
     conversationDatabaseId: conversation.id!,
     conversationId: conversation.stableId,
   );
+}
+
+Future<bool> _waitForConversationLockWait(
+  Session session, {
+  required int workerBackendPid,
+}) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 2));
+  while (DateTime.now().isBefore(deadline)) {
+    final rows = await session.db.unsafeQuery(
+      '''
+      SELECT EXISTS (
+        SELECT 1
+        FROM pg_stat_activity
+        WHERE datname = current_database()
+          AND pid <> pg_backend_pid()
+          AND @workerBackendPid = ANY(pg_blocking_pids(pid))
+          AND wait_event_type = 'Lock'
+          AND state = 'active'
+          AND query ILIKE '%conversation%'
+      ) AS "waiting"
+    ''',
+      parameters: QueryParameters.named({'workerBackendPid': workerBackendPid}),
+    );
+    if (rows.single.toColumnMap()['waiting'] as bool) return true;
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
+
+  return false;
+}
+
+Future<({ConversationTurn turn, List<String> toolCallIds})>
+_stageAwaitingApproval(
+  _ExecutionFixture fixture, {
+  required int calls,
+  String? argumentsDigest,
+}) async {
+  final now = DateTime.now().toUtc();
+  final conversation = (await Conversation.db.findById(
+    fixture.database,
+    fixture.conversationDatabaseId,
+  ))!;
+  final execution = (await ConversationExecution.db.findById(
+    fixture.database,
+    conversation.activeExecutionId!,
+  ))!;
+  final turn = (await ConversationTurn.db.findFirstRow(
+    fixture.database,
+    where: (table) =>
+        table.workspaceId.equals(fixture.workspaceId) &
+        table.conversationId.equals(fixture.conversationDatabaseId) &
+        table.requestId.equals(execution.stableId),
+  ))!;
+  final assistant = (await ConversationMessage.db.findById(
+    fixture.database,
+    turn.assistantMessageId!,
+  ))!;
+  final initialJob = (await ConversationJob.db.findFirstRow(
+    fixture.database,
+    where: (table) =>
+        table.workspaceId.equals(fixture.workspaceId) &
+        table.turnId.equals(turn.id),
+  ))!;
+  await ConversationJob.db.updateRow(
+    fixture.database,
+    initialJob.copyWith(status: 'completed', updatedAt: now),
+  );
+  await ConversationTurn.db.updateRow(
+    fixture.database,
+    turn.copyWith(
+      status: ConversationStatuses.awaitingApproval,
+      revision: 2,
+      updatedAt: now,
+    ),
+  );
+  await ConversationMessage.db.updateRow(
+    fixture.database,
+    assistant.copyWith(
+      status: ConversationStatuses.awaitingApproval,
+      updatedAt: now,
+    ),
+  );
+  await ConversationExecution.db.updateRow(
+    fixture.database,
+    execution.copyWith(
+      status: ConversationStatuses.awaitingApproval,
+      updatedAt: now,
+    ),
+  );
+  await Conversation.db.updateRow(
+    fixture.database,
+    conversation.copyWith(
+      executionState: ConversationStatuses.awaitingApproval,
+      updatedAt: now,
+    ),
+  );
+  final toolCallIds = <String>[];
+  for (var index = 0; index < calls; index++) {
+    final stableId = 'tool-call-${index + 1}';
+    toolCallIds.add(stableId);
+    await ConversationToolCall.db.insertRow(
+      fixture.database,
+      ConversationToolCall(
+        workspaceId: fixture.workspaceId,
+        conversationId: fixture.conversationDatabaseId,
+        turnId: turn.id!,
+        messageId: assistant.id!,
+        stableId: stableId,
+        name: 'tool',
+        argumentsJson: '{}',
+        argumentsDigest: argumentsDigest ?? 'digest-${index + 1}',
+        status: 'pending',
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+  }
+  return (turn: turn, toolCallIds: toolCallIds);
 }
 
 Future<void> _waitForIdle(_ExecutionFixture fixture, dynamic endpoints) async {
