@@ -50,4 +50,17 @@ void main() {
       },
     );
   });
+
+  test('serializes array structured content', () {
+    expect(
+      jsonDecode(
+        McpToolResult(structuredContent: ['ok', 2]).toModelText(),
+      ),
+      {
+        'content': <Object?>[],
+        'structuredContent': ['ok', 2],
+        'isStreaming': false,
+      },
+    );
+  });
 }
