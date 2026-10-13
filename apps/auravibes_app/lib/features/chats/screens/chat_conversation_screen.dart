@@ -37,6 +37,7 @@ import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart'
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_continuation_status.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_detach_controls.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
@@ -1155,8 +1156,9 @@ class const _LoadedChatConversationView({
       child: AuraScreen(
         child: _ChatConversationBody(data: data),
         appBar: _ChatConversationAppBar(
-          title: data.conversation.title,
+          workspaceId: data.workspaceId,
           conversationId: data.conversation.id,
+          title: data.conversation.title,
           leading: data.leading,
         ),
       ),
@@ -1165,8 +1167,9 @@ class const _LoadedChatConversationView({
 }
 
 class const _ChatConversationAppBar({
-  required final String title,
+  required final String workspaceId,
   required final String conversationId,
+  required final String title,
   required final Widget? leading,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
@@ -1175,7 +1178,13 @@ class const _ChatConversationAppBar({
   @override
   Widget build(BuildContext context) => AuraAppBarWithDrawer(
     title: Text(title),
-    actions: [ModelUsageHeaderButton(conversationId: conversationId)],
+    actions: [
+      ModelUsageHeaderButton(conversationId: conversationId),
+      BackgroundWorkHeaderButton(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+    ],
     leading: leading,
   );
 }
