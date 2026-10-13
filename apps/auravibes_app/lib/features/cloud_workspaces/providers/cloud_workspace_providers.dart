@@ -89,7 +89,10 @@ Future<CloudWorkspaceDetailState?> cloudWorkspaceDetail(
   Ref ref,
   CloudWorkspaceDetailKey key,
 ) async {
-  final account = cloudAccountKey(key.serverUrl, key.accountId);
+  final account = CloudAccountKeyFactory.fromIdentity(
+    key.serverUrl,
+    key.accountId,
+  );
   final useCases = await ref.watch(
     cloudWorkspaceUseCasesProvider(account).future,
   );

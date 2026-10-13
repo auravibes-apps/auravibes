@@ -9,17 +9,6 @@ typedef McpCatalogFilter = ({
   String? authType,
 });
 
-List<McpCatalogListing> filterMcpCatalog(
-  List<McpCatalogListing> listings,
-  McpCatalogFilter filter,
-) {
-  final query = filter.query.trim().toLowerCase();
-
-  return listings
-      .where((listing) => _matchesMcpCatalogFilter(listing, query, filter))
-      .toList();
-}
-
 bool _matchesMcpCatalogFilter(
   McpCatalogListing listing,
   String query,
@@ -80,6 +69,17 @@ class McpCatalogInstallation {
       if (field.isRequired && (values[field.key]?.trim().isNotEmpty != true))
         field.key,
   ];
+
+  static List<McpCatalogListing> filterListings(
+    List<McpCatalogListing> listings,
+    McpCatalogFilter filter,
+  ) {
+    final query = filter.query.trim().toLowerCase();
+
+    return listings
+        .where((listing) => _matchesMcpCatalogFilter(listing, query, filter))
+        .toList();
+  }
 
   @override
   String toString() =>

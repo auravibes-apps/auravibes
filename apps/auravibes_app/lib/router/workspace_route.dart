@@ -16,7 +16,6 @@ import 'package:auravibes_app/features/models/providers/add_model_provider_state
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
-import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
@@ -911,8 +910,8 @@ class MoreRoute({required final String workspaceId})
     extends GoRouteData
     with $MoreRoute {
   @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return MoreScreen(workspaceId: workspaceId);
+  String redirect(BuildContext context, GoRouterState state) {
+    return NewChatRoute(workspaceId: workspaceId).location;
   }
 }
 

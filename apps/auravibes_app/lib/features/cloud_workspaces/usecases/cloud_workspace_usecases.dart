@@ -55,7 +55,10 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
   Future<WorkspaceEntity?> _existingMirror(
     CloudWorkspaceSummary workspace,
   ) async {
-    final account = cloudAccountKey(_serverUrl, _cloudAccountId);
+    final account = CloudAccountKeyFactory.fromIdentity(
+      _serverUrl,
+      _cloudAccountId,
+    );
     final workspaces = await _workspaceRepository.getAllWorkspaces();
     final mirrors = workspaces.where(
       (item) => _isMirrorForWorkspace(item, workspace, account),
