@@ -848,8 +848,8 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         conversationId: conversation.forkSourceConversationId!,
         transaction: transaction,
       );
-      final detachedToolCallIds =
-          await listBackgroundWorkToolCallIdsForMessages(
+      final detachedToolCallIdsByMessageId =
+          await listBackgroundWorkToolCallIdsByMessageId(
             session,
             workspaceId: workspaceId,
             messages: inherited,
@@ -881,7 +881,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
               (message) => message.copyWith(
                 metadataJson: forkSafeConversationMetadataJson(
                   message.metadataJson,
-                  detachedToolCallIds,
+                  detachedToolCallIdsByMessageId[message.id] ?? const {},
                 ),
               ),
             ),
@@ -913,7 +913,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     return messages;
   }
 
-  Future<Set<String>> listBackgroundWorkToolCallIdsForMessages(
+  Future<Map<int, Set<String>>> listBackgroundWorkToolCallIdsByMessageId(
     Session session, {
     required int workspaceId,
     required Iterable<ConversationMessage> messages,
@@ -931,7 +931,15 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
           table.originatingMessageId.inSet(messageIds),
       transaction: transaction,
     );
-    return records.map((record) => record.toolCallId).toSet();
+    final toolCallIdsByMessageId = <int, Set<String>>{};
+    for (final record in records) {
+      final messageId = record.originatingMessageId;
+      if (messageId == null) continue;
+      (toolCallIdsByMessageId[messageId] ??= <String>{}).add(
+        record.toolCallId,
+      );
+    }
+    return toolCallIdsByMessageId;
   }
 
   Future<ConversationToolCall?> findToolCallByStableId(

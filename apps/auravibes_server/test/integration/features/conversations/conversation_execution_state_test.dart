@@ -552,6 +552,36 @@ void main() {
             updatedAt: now,
           ),
         );
+        final userMessage = (await ConversationMessage.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId) &
+              table.role.equals('user'),
+        )).single;
+        final toolCallIdsByMessageId =
+            await conversation_repo.ConversationRepository()
+                .listBackgroundWorkToolCallIdsByMessageId(
+                  fixture.database,
+                  workspaceId: fixture.workspaceId,
+                  messages: [assistant],
+                );
+        expect(toolCallIdsByMessageId.keys, {assistant.id!});
+        expect(
+          toolCallIdsByMessageId[assistant.id!],
+          {detachedToolCallId, completedToolCallId},
+        );
+        expect(
+          await conversation_repo.ConversationRepository()
+              .listBackgroundWorkToolCallIdsByMessageId(
+                fixture.database,
+                workspaceId: fixture.workspaceId,
+                messages: [userMessage],
+              ),
+          isEmpty,
+          reason:
+              'Other messages in the same conversation have no detached calls.',
+        );
         await ConversationMessage.db.updateRow(
           fixture.database,
           assistant.copyWith(
