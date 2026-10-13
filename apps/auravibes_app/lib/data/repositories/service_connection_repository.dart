@@ -1039,7 +1039,17 @@ String _candidatePrefixForKind(
 };
 
 String _candidatePrefix(String key, String fallback, String serviceId) {
-  final value = tr(key, namedArgs: {'serviceId': serviceId});
+  final value = switch (key) {
+    LocaleKeys.service_connections_candidate_model_provider =>
+      LocaleKeys.service_connections_candidate_model_provider.tr(
+        namedArgs: {'serviceId': serviceId},
+      ),
+    LocaleKeys.service_connections_candidate_app_skill =>
+      LocaleKeys.service_connections_candidate_app_skill.tr(
+        namedArgs: {'serviceId': serviceId},
+      ),
+    _ => key,
+  };
   if (value != key) return value;
 
   return fallback.replaceAll('{serviceId}', serviceId);

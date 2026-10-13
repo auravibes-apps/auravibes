@@ -49,6 +49,9 @@ extension BackgroundWorksDaoOperations on BackgroundWorksDao {
     )..where((table) => _provisionalWork(table, conversationId, workId))).go();
   }
 
+  Future<void> reconcileInterrupted({required DateTime startedAt}) =>
+      transaction(() => _reconcileInterrupted(startedAt));
+
   Future<bool> requestStop({
     required String conversationId,
     required String workId,
@@ -65,6 +68,40 @@ extension BackgroundWorksDaoOperations on BackgroundWorksDao {
   Future<AgentBackgroundWork?> finish(
     AgentBackgroundWorkCompletion completion,
   ) => transaction(() => _finish(completion));
+}
+
+extension _BackgroundWorksDaoReconciliationOps on BackgroundWorksDao {
+  Future<void> _reconcileInterrupted(DateTime startedAt) async {
+    final interrupted = await _findInterruptedBefore(startedAt);
+    for (final work in interrupted) {
+      await _markInterrupted(work);
+    }
+  }
+
+  Future<List<BackgroundWorkTable>> _findInterruptedBefore(
+    DateTime startedAt,
+  ) =>
+      (select(backgroundWorks)
+            ..where((table) => _wasActiveBefore(table, startedAt))
+            ..orderBy([
+              (table) => OrderingTerm(expression: table.createdAt),
+              (table) => OrderingTerm(expression: table.id),
+            ]))
+          .get();
+
+  Future<void> _markInterrupted(BackgroundWorkTable work) async {
+    final _ = await _finish(
+      .new(
+        conversationId: work.conversationId,
+        workId: work.id,
+        status: .failed,
+        resultContent: null,
+        resultByteLength: 0,
+        statusPreview: 'Outcome unknown',
+        errorCode: 'outcome_unknown',
+      ),
+    );
+  }
 }
 
 extension _BackgroundWorksDaoQueryOps on BackgroundWorksDao {
@@ -101,6 +138,13 @@ extension _BackgroundWorksDaoQueryOps on BackgroundWorksDao {
     backgroundWorks,
   )..where((table) => _activeWork(table, completion))).getSingleOrNull();
 }
+
+Expression<bool> _wasActiveBefore(
+  $BackgroundWorksTable table,
+  DateTime startedAt,
+) =>
+    table.createdAt.isSmallerThanValue(startedAt) &
+    table.status.isIn(_activeStatuses);
 
 extension _BackgroundWorksDaoCompletionOps on BackgroundWorksDao {
   Future<AgentBackgroundWork?> _finish(
@@ -168,7 +212,7 @@ BackgroundWorksCompanion _stopRequestUpdate() => BackgroundWorksCompanion(
 BackgroundWorksCompanion _completionUpdate(
   AgentBackgroundWorkCompletion completion,
   _BoundedCompletion bounded,
-) => .new(
+) => BackgroundWorksCompanion(
   updatedAt: .new(DateTime.now().toUtc()),
   status: .new(completion.status.name),
   statusPreview: .new(bounded.statusPreview),
@@ -225,7 +269,7 @@ AgentBackgroundWork _toAgentBackgroundWork(BackgroundWorkTable row) =>
 
 AgentBackgroundWorkIdentity _toBackgroundWorkIdentity(
   BackgroundWorkTable row,
-) => .new(
+) => AgentBackgroundWorkIdentity(
   id: row.id,
   workspaceId: row.workspaceId,
   conversationId: row.conversationId,

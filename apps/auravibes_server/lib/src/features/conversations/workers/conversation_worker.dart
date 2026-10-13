@@ -9,6 +9,7 @@ import '../domain/conversation_values.dart';
 import '../engine/conversation_engine_host.dart';
 import '../engine/conversation_host_effects.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
+import '../usecases/conversation_usecases.dart';
 import 'conversation_job_leases.dart';
 
 import 'package:auravibes_engine/auravibes_engine.dart'
@@ -27,6 +28,10 @@ typedef ConversationRenewalTimer = Timer Function(
   void Function() callback,
 );
 typedef ConversationApprovalPauseBarrier = Future<void> Function();
+typedef ConversationApprovalTurnLockBarrier = Future<void> Function(
+  Session session,
+  Transaction transaction,
+);
 
 const _subAgentFailedMessage = 'Sub-agent failed.';
 const _subAgentCancelledMessage = 'Sub-agent cancelled.';
@@ -41,7 +46,7 @@ class const ConversationWorker({
   final Duration renewalRetryDelay = const Duration(seconds: 1),
   final ConversationRenewalTimer renewalTimer = Timer.new,
   final ConversationApprovalPauseBarrier? beforePauseForApproval,
-  final ConversationApprovalPauseBarrier? afterApprovalTurnLock,
+  final ConversationApprovalTurnLockBarrier? afterApprovalTurnLock,
 }) {
   Future<bool> runOnce(
     Session session, {
@@ -61,7 +66,13 @@ class const ConversationWorker({
     if (job == null) return false;
     if (isActive != null && !isActive()) return true;
     if (job.status == ConversationJobStatuses.failed) {
+      await _updateBackgroundContinuationPreview(
+        session,
+        job,
+        statusPreview: BackgroundWorkPreviews.continuationFailed,
+      );
       await _reconcileParentAfterChild(session, job);
+      await _continueQueuedAfterJob(session, job);
       return true;
     }
 
@@ -72,7 +83,9 @@ class const ConversationWorker({
     try {
       if (isActive != null && !isActive()) return true;
       if (job.kind == ConversationJobKinds.turn) {
+        await _markBackgroundContinuationStarted(session, job);
         await _executeTurn(session, job, leaseToken, isActive);
+        await _updateBackgroundContinuationPreview(session, job);
       } else if (job.kind == ConversationJobKinds.compact) {
         await _compact(session, job, leaseToken, isActive);
       } else {
@@ -93,6 +106,11 @@ class const ConversationWorker({
       } on ConversationJobLeaseLostException {
         return true;
       }
+      await _updateBackgroundContinuationPreview(
+        session,
+        job,
+        statusPreview: BackgroundWorkPreviews.continuationFailed,
+      );
       return true;
     } on ConversationJobLeaseLostException {
       return true;
@@ -112,8 +130,14 @@ class const ConversationWorker({
         now: DateTime.now().toUtc(),
       );
       if (updated == null) return true;
+      await _updateBackgroundContinuationPreview(
+        session,
+        job,
+        statusPreview: _continuationFailurePreview(updated),
+      );
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
+        await _continueQueuedAfterJob(session, updated);
       }
       session.log(
         'Conversation job configuration failed: job=${job.id}.',
@@ -136,8 +160,14 @@ class const ConversationWorker({
         now: DateTime.now().toUtc(),
       );
       if (updated == null) return true;
+      await _updateBackgroundContinuationPreview(
+        session,
+        job,
+        statusPreview: _continuationFailurePreview(updated),
+      );
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
+        await _continueQueuedAfterJob(session, updated);
       }
       session.log(
         'Conversation job response exceeded limit: job=${job.id}.',
@@ -159,8 +189,14 @@ class const ConversationWorker({
         now: DateTime.now().toUtc(),
       );
       if (updated == null) return true;
+      await _updateBackgroundContinuationPreview(
+        session,
+        job,
+        statusPreview: _continuationFailurePreview(updated),
+      );
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
+        await _continueQueuedAfterJob(session, updated);
       }
       session.log(
         'Conversation job provider execution failed: job=${job.id}, '
@@ -257,6 +293,27 @@ class const ConversationWorker({
         stackTrace: stackTrace,
       );
     }
+  }
+
+  Future<void> _continueQueuedAfterJob(
+    Session session,
+    ConversationJob job,
+  ) async {
+    if (job.turnId == null) return;
+    final turn = await ConversationTurn.db.findById(session, job.turnId!);
+    final conversation = await Conversation.db.findById(
+      session,
+      job.conversationId,
+    );
+    if (turn == null || conversation == null) return;
+    await ConversationUseCases(
+      conversation_repo.ConversationRepository(),
+    ).continueOldestQueuedMessage(
+      session,
+      userId: turn.initiatorUserId,
+      workspaceId: job.workspaceId,
+      conversationId: conversation.stableId,
+    );
   }
 
   Future<void> _executeTurn(
@@ -438,6 +495,14 @@ class const ConversationWorker({
       result,
     );
     await _reconcileParentAfterChild(session, job);
+    await ConversationUseCases(
+      conversation_repo.ConversationRepository(),
+    ).continueOldestQueuedMessage(
+      session,
+      userId: turn.initiatorUserId,
+      workspaceId: job.workspaceId,
+      conversationId: conversation.stableId,
+    );
 
     await SyncWakeups.publishWorkspace(session, job.workspaceId);
     final currentConversation = await Conversation.db.findById(
@@ -449,6 +514,144 @@ class const ConversationWorker({
         session,
         workspaceId: job.workspaceId,
         conversationId: currentConversation.stableId,
+      );
+    }
+  }
+
+  Future<void> _markBackgroundContinuationStarted(
+    Session session,
+    ConversationJob job,
+  ) => _updateBackgroundContinuationPreview(
+    session,
+    job,
+    statusPreview: BackgroundWorkPreviews.continuationInProgress,
+  );
+
+  String _continuationFailurePreview(ConversationJob job) =>
+      job.status == ConversationJobStatuses.failed
+      ? BackgroundWorkPreviews.continuationFailed
+      : BackgroundWorkPreviews.queuedForContinuation;
+
+  Future<void> _updateBackgroundContinuationPreview(
+    Session session,
+    ConversationJob job, {
+    String? statusPreview,
+  }) async {
+    final turnId = job.turnId;
+    if (turnId == null) return;
+    final conversationStableId = await session.db.transaction(
+      (transaction) async {
+        final turn = await ConversationTurn.db.findById(
+          session,
+          turnId,
+          transaction: transaction,
+        );
+        final userMessageId = turn?.userMessageId;
+        if (turn == null || userMessageId == null) return null;
+        final message = await ConversationMessage.db.findById(
+          session,
+          userMessageId,
+          transaction: transaction,
+        );
+        if (message == null) return null;
+        final metadata = _metadataObject(message.metadataJson);
+        if (metadata['isBackgroundWorkCompletion'] != true) return null;
+        final workId = metadata['backgroundWorkId'];
+        if (workId is! String) return null;
+        final conversation = await Conversation.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.id.equals(job.conversationId) &
+              table.workspaceId.equals(job.workspaceId),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (conversation == null) return null;
+        final work = await BackgroundWorkRecord.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(job.workspaceId) &
+              table.conversationId.equals(job.conversationId) &
+              table.stableId.equals(workId) &
+              table.statusPreview.inSet({
+                BackgroundWorkPreviews.queuedForContinuation,
+                BackgroundWorkPreviews.continuationInProgress,
+                BackgroundWorkPreviews.continuationFailed,
+              }),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (work == null) return null;
+        final nextStatusPreview =
+            statusPreview ??
+            switch (turn.status) {
+              ConversationStatuses.completed => switch ((
+                work.status,
+                work.errorCode,
+              )) {
+                ('completed', _) => 'Completed',
+                ('cancelled', _) => 'Stopped',
+                ('failed', 'outcome_unknown') => 'Outcome unknown',
+                _ => 'Failed',
+              },
+              ConversationStatuses.failed || ConversationStatuses.cancelled =>
+                BackgroundWorkPreviews.continuationFailed,
+              ConversationStatuses.awaitingApproval ||
+              ConversationStatuses.awaitingUserAction =>
+                BackgroundWorkPreviews.queuedForContinuation,
+              _ => BackgroundWorkPreviews.continuationInProgress,
+            };
+        if (work.statusPreview == nextStatusPreview) return null;
+        final now = DateTime.now().toUtc();
+        await BackgroundWorkRecord.db.updateRow(
+          session,
+          work.copyWith(
+            statusPreview: nextStatusPreview,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+        final sequence = conversation.eventSequence + 1;
+        await Conversation.db.updateRow(
+          session,
+          conversation.copyWith(
+            eventSequence: sequence,
+            projectionRevision: conversation.projectionRevision + 1,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+        final eventId = const Uuid().v7();
+        await ConversationEvent.db.insertRow(
+          session,
+          ConversationEvent(
+            workspaceId: job.workspaceId,
+            conversationId: conversation.id!,
+            sequence: sequence,
+            eventId: eventId,
+            actorUserId: turn.initiatorUserId,
+            requestId: eventId,
+            kind: ConversationEventType.backgroundWorkCompleted,
+            payloadJson: jsonEncode({
+              'workId': workId,
+              'toolCallId': work.toolCallId,
+              'status': work.status,
+              'statusPreview': nextStatusPreview,
+              'continuationStatus': nextStatusPreview,
+              'errorCode': work.errorCode,
+            }),
+            createdAt: now,
+          ),
+          transaction: transaction,
+        );
+        return conversation.stableId;
+      },
+    );
+    if (conversationStableId != null) {
+      await SyncWakeups.publishConversation(
+        session,
+        workspaceId: job.workspaceId,
+        conversationId: conversationStableId,
       );
     }
   }
@@ -1276,7 +1479,7 @@ class const ConversationWorker({
     if (lockedTurn == null) {
       return;
     }
-    await afterApprovalTurnLock?.call();
+    await afterApprovalTurnLock?.call(session, transaction);
     final lockedJob = await ConversationJob.db.findFirstRow(
       session,
       where: (table) =>
@@ -1800,6 +2003,32 @@ class const ConversationWorker({
     );
     if (isActive != null && !isActive()) return;
     await _commitCompaction(session, job, leaseToken, result);
+    await _continueQueuedAfterCompaction(session, job);
+  }
+
+  Future<void> _continueQueuedAfterCompaction(
+    Session session,
+    ConversationJob job,
+  ) async {
+    final actorUserId = _jsonMap(job.payloadJson)['actorUserId'];
+    if (actorUserId is! String) {
+      throw const ConversationEngineConfigurationException('actorUserId');
+    }
+    final conversation = await Conversation.db.findById(
+      session,
+      job.conversationId,
+    );
+    if (conversation == null) {
+      throw const ConversationEngineConfigurationException('conversation');
+    }
+    await ConversationUseCases(
+      conversation_repo.ConversationRepository(),
+    ).continueOldestQueuedMessage(
+      session,
+      userId: actorUserId,
+      workspaceId: job.workspaceId,
+      conversationId: conversation.stableId,
+    );
   }
 
   Future<void> _commitCompaction(

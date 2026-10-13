@@ -50,6 +50,82 @@ String? conversationReasoningConfigForExecutionSettings(String settingsJson) {
       : null;
 }
 
+String? forkSafeConversationMetadataJson(
+  String? metadataJson,
+  Set<String> detachedToolCallIds,
+) {
+  if (metadataJson == null || detachedToolCallIds.isEmpty) {
+    return metadataJson;
+  }
+  dynamic decoded;
+  try {
+    decoded = jsonDecode(metadataJson);
+  } on FormatException {
+    return metadataJson;
+  }
+  if (decoded is! Map) return metadataJson;
+
+  var changed = false;
+  final sanitized = Map<String, Object?>.from(decoded);
+  final originalToolCalls = decoded['toolCalls'];
+  if (originalToolCalls is List) {
+    final toolCalls = originalToolCalls
+        .where(
+          (toolCall) =>
+              toolCall is! Map || !detachedToolCallIds.contains(toolCall['id']),
+        )
+        .toList();
+    if (toolCalls.length != originalToolCalls.length) {
+      sanitized['toolCalls'] = toolCalls;
+      changed = true;
+    }
+  }
+
+  final originalBatches = decoded['providerToolBatches'];
+  if (originalBatches is List) {
+    final batches = <Object?>[];
+    for (final batch in originalBatches) {
+      if (batch is! Map) {
+        batches.add(batch);
+        continue;
+      }
+      final sanitizedBatch = Map<String, Object?>.from(batch);
+      final originalIds = batch['toolCallIds'];
+      if (originalIds is List) {
+        final toolCallIds = originalIds
+            .where(
+              (id) => id is! String || !detachedToolCallIds.contains(id),
+            )
+            .toList();
+        if (toolCallIds.length != originalIds.length) {
+          sanitizedBatch['toolCallIds'] = toolCallIds;
+          changed = true;
+        }
+      }
+      final assistant = batch['assistant'];
+      if (assistant is Map && assistant['tool_calls'] is List) {
+        final originalCalls = assistant['tool_calls']! as List;
+        final toolCalls = originalCalls
+            .where(
+              (toolCall) =>
+                  toolCall is! Map ||
+                  !detachedToolCallIds.contains(toolCall['id']),
+            )
+            .toList();
+        if (toolCalls.length != originalCalls.length) {
+          sanitizedBatch['assistant'] = Map<String, Object?>.from(assistant)
+            ..['tool_calls'] = toolCalls;
+          changed = true;
+        }
+      }
+      batches.add(sanitizedBatch);
+    }
+    if (changed) sanitized['providerToolBatches'] = batches;
+  }
+
+  return changed ? jsonEncode(sanitized) : metadataJson;
+}
+
 String _escapeLike(String value) =>
     value.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');
 
@@ -97,6 +173,29 @@ String? conversationParentToolCallIdForExecutionSettings(String settingsJson) {
 class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
   final ObjectReferenceService _objectReferenceService =
       objectReferenceService ?? ObjectReferenceService();
+
+  Future<void> lockBackgroundWorkCapacity(
+    Session session, {
+    required Transaction transaction,
+  }) async {
+    await session.db.unsafeQuery(
+      'SELECT pg_advisory_xact_lock(hashtextextended(@lockKey, 0))',
+      parameters: QueryParameters.named({
+        'lockKey': 'conversation-background-work-capacity',
+      }),
+      transaction: transaction,
+    );
+  }
+
+  Future<int> countActiveBackgroundWork(
+    Session session, {
+    required Transaction transaction,
+  }) => BackgroundWorkRecord.db.count(
+    session,
+    where: (table) => table.status.inSet({'running', 'stopRequested'}),
+    transaction: transaction,
+  );
+
   Future<Conversation?> findConversationByStableId(
     Session session, {
     required int workspaceId,
@@ -282,6 +381,19 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     where: (table) =>
         table.workspaceId.equals(workspaceId) &
         table.requestId.equals(requestId),
+    transaction: transaction,
+  );
+
+  Future<ConversationTurn?> findTurnByUserMessage(
+    Session session, {
+    required int workspaceId,
+    required int userMessageId,
+    Transaction? transaction,
+  }) => ConversationTurn.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.userMessageId.equals(userMessageId),
     transaction: transaction,
   );
 
@@ -577,6 +689,8 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     required String clientMessageId,
     required String content,
     required List<int> attachmentIds,
+    String role = 'user',
+    String kind = 'text',
     String? metadataJson,
     required DateTime now,
     required Transaction transaction,
@@ -603,8 +717,8 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         workspaceId: conversation.workspaceId,
         conversationId: conversation.id!,
         stableId: clientMessageId,
-        role: 'user',
-        kind: 'text',
+        role: role,
+        kind: kind,
         status: ConversationStatuses.queued,
         content: content,
         metadataJson: jsonEncode({
@@ -685,6 +799,19 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         table.id.equals(messageId) & table.workspaceId.equals(workspaceId),
   );
 
+  Future<ConversationMessage?> findMessageByStableId(
+    Session session, {
+    required int workspaceId,
+    required String messageId,
+    Transaction? transaction,
+  }) => ConversationMessage.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.stableId.equals(messageId),
+    transaction: transaction,
+  );
+
   Future<List<ConversationMessage>> listConversationMessages(
     Session session, {
     required int workspaceId,
@@ -721,6 +848,13 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         conversationId: conversation.forkSourceConversationId!,
         transaction: transaction,
       );
+      final detachedToolCallIdsByMessageId =
+          await listBackgroundWorkToolCallIdsByMessageId(
+            session,
+            workspaceId: workspaceId,
+            messages: inherited,
+            transaction: transaction,
+          );
       final transientToolMessageIds =
           (await listToolCallsByTurnIds(
                 session,
@@ -736,12 +870,21 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
               .map((call) => call.messageId)
               .toSet();
       messages.addAll(
-        inherited.where(
-          (message) =>
-              message.pendingOrder == null &&
-              ConversationStatuses.isMessageTerminal(message.status) &&
-              !transientToolMessageIds.contains(message.id),
-        ),
+        inherited
+            .where(
+              (message) =>
+                  message.pendingOrder == null &&
+                  ConversationStatuses.isMessageTerminal(message.status) &&
+                  !transientToolMessageIds.contains(message.id),
+            )
+            .map(
+              (message) => message.copyWith(
+                metadataJson: forkSafeConversationMetadataJson(
+                  message.metadataJson,
+                  detachedToolCallIdsByMessageId[message.id] ?? const {},
+                ),
+              ),
+            ),
       );
       final boundary = conversation.forkThroughMessageId;
       if (boundary != null) {
@@ -768,6 +911,35 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
       return created == 0 ? left.id!.compareTo(right.id!) : created;
     });
     return messages;
+  }
+
+  Future<Map<int, Set<String>>> listBackgroundWorkToolCallIdsByMessageId(
+    Session session, {
+    required int workspaceId,
+    required Iterable<ConversationMessage> messages,
+    Transaction? transaction,
+  }) async {
+    final messageIds = messages
+        .map((message) => message.id)
+        .whereType<int>()
+        .toSet();
+    if (messageIds.isEmpty) return const {};
+    final records = await BackgroundWorkRecord.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.originatingMessageId.inSet(messageIds),
+      transaction: transaction,
+    );
+    final toolCallIdsByMessageId = <int, Set<String>>{};
+    for (final record in records) {
+      final messageId = record.originatingMessageId;
+      if (messageId == null) continue;
+      (toolCallIdsByMessageId[messageId] ??= <String>{}).add(
+        record.toolCallId,
+      );
+    }
+    return toolCallIdsByMessageId;
   }
 
   Future<ConversationToolCall?> findToolCallByStableId(

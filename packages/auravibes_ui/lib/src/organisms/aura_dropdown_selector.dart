@@ -3,6 +3,7 @@ import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
+import 'package:auravibes_ui/src/atoms/aura_key_down_shortcut_activator.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
@@ -10,7 +11,6 @@ import 'package:auravibes_ui/src/molecules/aura_dropdown_option.dart';
 import 'package:auravibes_ui/src/organisms/aura_field_wrapper.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 import 'package:flutter/material.dart';
 
@@ -120,7 +120,6 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     _initFocusNode(widget.focusNode);
     _menuFocusScopeNode = FocusScopeNode(
       debugLabel: 'AuraDropdownSelector menu',
-      onKeyEvent: _handleMenuKeyEvent,
     );
   }
 
@@ -174,20 +173,8 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
       onToggle: _toggleDropdown,
       onClose: _closeDropdown,
       onFocusChange: _handleTriggerFocusChange,
-      onKeyEvent: _handleTriggerKeyEvent,
       optionBuilder: widget.optionBuilder,
     );
-  }
-
-  KeyEventResult _handleMenuKeyEvent(FocusNode _, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.escape) {
-      _closeDropdown();
-
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
   }
 
   void _initFocusNode(FocusNode? focusNode) {
@@ -235,26 +222,6 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     _requiredFocusNode.unfocus();
   }
 
-  KeyEventResult _handleTriggerKeyEvent(FocusNode _, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        (event.logicalKey == LogicalKeyboardKey.enter ||
-            event.logicalKey == LogicalKeyboardKey.space)) {
-      _toggleDropdown();
-
-      return KeyEventResult.handled;
-    }
-
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.escape &&
-        _isDropdownOpen) {
-      _closeDropdown();
-
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
-
   void _handleTriggerFocusChange(bool value) {
     setState(() {
       _isTriggerFocused = value;
@@ -284,7 +251,6 @@ class const _DropdownSelectorShell<T>({
   required final VoidCallback onToggle,
   required final VoidCallback onClose,
   required final ValueChanged<bool> onFocusChange,
-  required final KeyEventResult Function(FocusNode, KeyEvent) onKeyEvent,
   required final Widget Function(BuildContext, AuraDropdownOption<T>)?
   optionBuilder,
 }) extends StatelessWidget {
@@ -299,74 +265,120 @@ class const _DropdownSelectorShell<T>({
       widthFactor: 1,
     ),
     portalFollower: TapRegion(
-      child: FocusScope(
-        node: menuFocusScopeNode,
-        child: _DropdownMenu<T>(
-          options: options,
-          selectedValue: value,
-          onOptionSelected: (option) {
-            onClose();
-            onChanged?.call(option);
-          },
-          header: header,
-          footer: footer,
-          optionBuilder: optionBuilder,
+      child: Shortcuts(
+        shortcuts: const {
+          AuraKeyDownShortcutActivator(.escape): _DropdownCloseIntent(),
+        },
+        child: Actions(
+          actions: _dropdownActions(onToggle, onClose),
+          child: FocusScope(
+            node: menuFocusScopeNode,
+            child: _DropdownMenu<T>(
+              options: options,
+              selectedValue: value,
+              onOptionSelected: (option) {
+                onClose();
+                onChanged?.call(option);
+              },
+              header: header,
+              footer: footer,
+              optionBuilder: optionBuilder,
+            ),
+          ),
         ),
+        includeSemantics: false,
       ),
       onTapOutside: (_) => onClose(),
       groupId: this,
     ),
-    child: Focus(
-      child: TapRegion(
-        child: AuraFieldWrapper(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: context.auraTheme.fromSpacing(.sm),
-              horizontal: context.auraTheme.fromSpacing(.md),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: AuraText(
-                    child: _DropdownDisplay<T>(
-                      options: options,
-                      value: value,
-                      placeholder: placeholder,
+    child: Shortcuts(
+      shortcuts: _dropdownTriggerShortcuts(isDropdownOpen),
+      child: Actions(
+        actions: _dropdownActions(onToggle, onClose),
+        child: Focus(
+          child: TapRegion(
+            child: AuraFieldWrapper(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: context.auraTheme.fromSpacing(.sm),
+                  horizontal: context.auraTheme.fromSpacing(.md),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AuraText(
+                        child: _DropdownDisplay<T>(
+                          options: options,
+                          value: value,
+                          placeholder: placeholder,
+                        ),
+                      ),
                     ),
-                  ),
+                    const AuraSizedBox(width: .sm),
+                    AuraIcon(
+                      isDropdownOpen
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      size: AuraIconSize.small,
+                    ),
+                  ],
                 ),
-                const AuraSizedBox(width: .sm),
-                AuraIcon(
-                  isDropdownOpen
-                      ? Icons.keyboard_arrow_up
-                      : Icons.keyboard_arrow_down,
-                  size: AuraIconSize.small,
-                ),
-              ],
+              ),
+              label: label,
+              hint: hint,
+              error: error,
+              isRequired: isRequired,
+              state: state,
+              isEnabled: isEnabled,
+              isFocused: isDropdownOpen || isTriggerFocused,
+              onTap: isEnabled ? onToggle : null,
+              onFocusChange: onFocusChange,
+              identifier: identifier,
+              semanticLabel: semanticLabel,
             ),
+            groupId: this,
           ),
-          label: label,
-          hint: hint,
-          error: error,
-          isRequired: isRequired,
-          state: state,
-          isEnabled: isEnabled,
-          isFocused: isDropdownOpen || isTriggerFocused,
-          onTap: isEnabled ? onToggle : null,
+          focusNode: focusNode,
+          canRequestFocus: isEnabled,
           onFocusChange: onFocusChange,
-          identifier: identifier,
-          semanticLabel: semanticLabel,
+          descendantsAreFocusable: false,
         ),
-        groupId: this,
       ),
-      focusNode: focusNode,
-      canRequestFocus: isEnabled,
-      onFocusChange: onFocusChange,
-      onKeyEvent: onKeyEvent,
-      descendantsAreFocusable: false,
+      includeSemantics: false,
     ),
   );
 }
+
+Map<ShortcutActivator, Intent> _dropdownTriggerShortcuts(bool isOpen) => {
+  const AuraKeyDownShortcutActivator(.enter): const _DropdownToggleIntent(),
+  const AuraKeyDownShortcutActivator(.space): const _DropdownToggleIntent(),
+  if (isOpen)
+    const AuraKeyDownShortcutActivator(.escape): const _DropdownCloseIntent(),
+};
+
+Map<Type, Action<Intent>> _dropdownActions(
+  VoidCallback toggle,
+  VoidCallback close,
+) => {
+  _DropdownToggleIntent: CallbackAction<_DropdownToggleIntent>(
+    onInvoke: (_) {
+      toggle();
+
+      return null;
+    },
+  ),
+  _DropdownCloseIntent: CallbackAction<_DropdownCloseIntent>(
+    onInvoke: (_) {
+      close();
+
+      return null;
+    },
+  ),
+};
+
+class const _DropdownToggleIntent() extends Intent;
+
+class const _DropdownCloseIntent() extends Intent;
 
 class const _DropdownDisplay<T>({
   required final List<AuraDropdownOption<T>> options,

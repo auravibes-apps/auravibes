@@ -420,6 +420,7 @@ MessageToolCallEntity _readCloudToolCall(
     argumentsDigest: call.argumentsDigest,
     turnId: message.turnId,
     turnRevision: message.turnRevision,
+    backgroundEligible: call.backgroundEligible,
     resultStatus: CloudMessageTools.resultStatus(call.status),
   );
 

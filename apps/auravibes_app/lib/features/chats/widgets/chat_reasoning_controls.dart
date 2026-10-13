@@ -72,19 +72,6 @@ class _ChatReasoningControlsState extends State<ChatReasoningControls> {
     return _buildReasoningEditor();
   }
 
-  KeyEventResult _handleEditorKeyEvent(FocusNode node, KeyEvent event) {
-    if (node == _editorFocusNode &&
-        _isEffortExpanded &&
-        event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.escape) {
-      _collapseEffortChoices();
-
-      return .handled;
-    }
-
-    return .ignored;
-  }
-
   void _toggleEffortChoices() {
     setState(() => _isEffortExpanded = !_isEffortExpanded);
     _editorFocusNode.requestFocus();
@@ -142,19 +129,13 @@ extension _ChatReasoningControlsEditor on _ChatReasoningControlsState {
       _configuration,
     );
 
-    return Focus(
-      child: Semantics(
-        child: AuraColumn(
-          children: _reasoningSections(configuration),
-          spacing: .sm,
-          crossAxisAlignment: .stretch,
-        ),
-        container: true,
-        explicitChildNodes: true,
-        label: LocaleKeys.chats_screens_chat_conversation_reasoning_title.tr(),
+    return _ReasoningEscapeShortcuts(
+      isEffortExpanded: _isEffortExpanded,
+      onCollapse: _collapseEffortChoices,
+      child: _ReasoningEditorContents(
+        focusNode: _editorFocusNode,
+        sections: _reasoningSections(configuration),
       ),
-      focusNode: _editorFocusNode,
-      onKeyEvent: _handleEditorKeyEvent,
     );
   }
 
@@ -223,6 +204,71 @@ extension _ChatReasoningControlsEditor on _ChatReasoningControlsState {
     enabled: configuration?.enabled != false,
     onChanged: (value) => _setBudget(configuration, budget, value),
   );
+}
+
+class const _CollapseEffortChoicesIntent() extends Intent;
+
+class const _ReasoningEditorContents({
+  required final FocusNode focusNode,
+  required final List<Widget> sections,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Focus(
+    child: Semantics(
+      child: AuraColumn(
+        children: sections,
+        spacing: .sm,
+        crossAxisAlignment: .stretch,
+      ),
+      container: true,
+      explicitChildNodes: true,
+      label: LocaleKeys.chats_screens_chat_conversation_reasoning_title.tr(),
+    ),
+    focusNode: focusNode,
+  );
+}
+
+class const _ReasoningEscapeShortcuts({
+  required final bool isEffortExpanded,
+  required final VoidCallback onCollapse,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Shortcuts(
+    shortcuts: isEffortExpanded
+        ? const {
+            _ChatReasoningKeyDownActivator(.escape):
+                _CollapseEffortChoicesIntent(),
+          }
+        : const {},
+    child: Actions(
+      actions: {
+        _CollapseEffortChoicesIntent:
+            CallbackAction<_CollapseEffortChoicesIntent>(
+              onInvoke: (_) {
+                onCollapse();
+
+                return null;
+              },
+            ),
+      },
+      child: child,
+    ),
+    includeSemantics: false,
+  );
+}
+
+class const _ChatReasoningKeyDownActivator(final LogicalKeyboardKey key)
+    extends ShortcutActivator {
+  @override
+  Iterable<LogicalKeyboardKey> get triggers => [key];
+
+  @override
+  bool accepts(KeyEvent event, HardwareKeyboard _) =>
+      event is KeyDownEvent && event.logicalKey == key;
+
+  @override
+  String debugDescribeKeys() => key.keyLabel;
 }
 
 int? _parseBudget(ReasoningOption option, String value) {

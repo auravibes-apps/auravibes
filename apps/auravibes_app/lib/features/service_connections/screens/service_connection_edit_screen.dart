@@ -1031,7 +1031,8 @@ class const _ConnectionEditLoadErrorMessage({required final Object? error})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextLocale(switch (error) {
-    ConnectionUnavailableException(:final localizationKey) => localizationKey,
+    ConnectionUnavailableException() =>
+      LocaleKeys.connection_setup_connection_missing,
     _ => LocaleKeys.service_connections_load_error,
   });
 }
