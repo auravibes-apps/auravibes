@@ -43,6 +43,7 @@ class ModelConnectionUseCases {
         session,
         workspaceId: request.workspaceId,
         userId: userId,
+        transaction: transaction,
       ),
     );
     _requireConnectionInput(
@@ -55,6 +56,7 @@ class ModelConnectionUseCases {
       session,
       workspaceId: request.workspaceId,
       connectionId: request.connectionId,
+      transaction: transaction,
     );
     if (existing != null) _invalid();
     final now = DateTime.now().toUtc();
@@ -114,6 +116,7 @@ class ModelConnectionUseCases {
         session,
         workspaceId: request.workspaceId,
         userId: userId,
+        transaction: transaction,
       ),
     );
     _requireConnectionInput(
@@ -126,6 +129,7 @@ class ModelConnectionUseCases {
       session,
       workspaceId: request.workspaceId,
       connectionId: request.connectionId,
+      transaction: transaction,
     );
     if (connection == null || connection.revision != request.expectedRevision) {
       _invalid();
@@ -159,7 +163,12 @@ class ModelConnectionUseCases {
       kind: 'updated',
       transaction: transaction,
     );
-    return _connectionViewForUser(session, updated, userId);
+    return _connectionViewForUser(
+      session,
+      updated,
+      userId,
+      transaction: transaction,
+    );
   });
 
   Future<void> delete(
@@ -172,12 +181,14 @@ class ModelConnectionUseCases {
         session,
         workspaceId: request.workspaceId,
         userId: userId,
+        transaction: transaction,
       ),
     );
     final connection = await _repository.findConnection(
       session,
       workspaceId: request.workspaceId,
       connectionId: request.connectionId,
+      transaction: transaction,
     );
     if (connection == null || connection.revision != request.expectedRevision) {
       _invalid();
@@ -305,6 +316,7 @@ class ModelConnectionUseCases {
         session,
         workspaceId: request.workspaceId,
         userId: userId,
+        transaction: transaction,
       );
       _requireManager(member);
       _validateToolSamplingPolicy(request.toolSamplingPolicy);
@@ -399,6 +411,7 @@ class ModelConnectionUseCases {
         session,
         workspaceId: request.workspaceId,
         userId: userId,
+        transaction: transaction,
       );
       final resolved = await const VirtualWorkspaceModelSelectionResolver()
           .resolve(
@@ -575,11 +588,13 @@ class ModelConnectionUseCases {
     Session session, {
     required int workspaceId,
     required String userId,
+    Transaction? transaction,
   }) async {
     final member = await _repository.findMember(
       session,
       workspaceId: workspaceId,
       userId: userId,
+      transaction: transaction,
     );
     if (member == null) _permissionDenied();
     return member;
@@ -703,14 +718,16 @@ class ModelConnectionUseCases {
   Future<ModelConnectionView> _connectionViewForUser(
     Session session,
     WorkspaceModelConnection connection,
-    String userId,
-  ) async => _connectionView(
+    String userId, {
+    Transaction? transaction,
+  }) async => _connectionView(
     connection,
     await _repository.findSecret(
       session,
       workspaceId: connection.workspaceId,
       userId: userId,
       connectionId: connection.connectionId,
+      transaction: transaction,
     ),
   );
 

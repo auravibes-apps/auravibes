@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -40,6 +41,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
@@ -1953,7 +1955,13 @@ void main() {
           skillCredentialsRepository,
           .new(
             const ResolveSkillUrlTemplate(),
-            AppSkillHttpClientAdapter(urlService).execute,
+            AppSkillHttpClientAdapter(
+              urlService,
+              requirePublicUri: (url) => PublicUrlGuard.resolveHttpsUri(
+                url,
+                lookup: (_) async => [InternetAddress('8.8.8.8')],
+              ),
+            ).execute,
           ),
           (workspaceId) async => WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: workspaceId),
