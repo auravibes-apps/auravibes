@@ -107,7 +107,7 @@ void main() {
             updatedAt: historyTime.add(const Duration(milliseconds: 1)),
           ),
         );
-        await ConversationTurn.db.insertRow(
+        final historyTurn = await ConversationTurn.db.insertRow(
           database,
           ConversationTurn(
             workspaceId: workspace.id!,
@@ -124,6 +124,14 @@ void main() {
             createdAt: historyTime,
             updatedAt: historyTime.add(const Duration(milliseconds: 1)),
           ),
+        );
+        await ConversationMessage.db.updateRow(
+          database,
+          historyUser.copyWith(turnId: historyTurn.id),
+        );
+        await ConversationMessage.db.updateRow(
+          database,
+          historyAssistant.copyWith(turnId: historyTurn.id),
         );
       }
       if (continueConversation) {
@@ -216,7 +224,7 @@ void main() {
             await ConversationUseCases(
               conversation_repo.ConversationRepository(),
             ).continueOldestQueuedMessage(
-              fixture.session,
+              fixture.database,
               userId: fixture.userId,
               workspaceId: fixture.workspaceId,
               conversationId: fixture.conversationId,
@@ -565,6 +573,32 @@ void main() {
                   'result': {'answer': 'already delivered'},
                 },
               ],
+              'providerToolBatches': [
+                {
+                  'assistant': {
+                    'content': null,
+                    'tool_calls': [
+                      {
+                        'id': detachedToolCallId,
+                        'type': 'function',
+                        'function': {
+                          'name': 'background-search',
+                          'arguments': '{"private":"search query"}',
+                        },
+                      },
+                      {
+                        'id': deliveredToolCallId,
+                        'type': 'function',
+                        'function': {
+                          'name': 'delivered-search',
+                          'arguments': '{"query":"public history"}',
+                        },
+                      },
+                    ],
+                  },
+                  'toolCallIds': [detachedToolCallId, deliveredToolCallId],
+                },
+              ],
             }),
             updatedAt: now,
           ),
@@ -598,7 +632,7 @@ void main() {
             sourceConversationId: fixture.conversationId,
           ),
         );
-        await useCases.getConversationSnapshot(
+        final forkSnapshot = await useCases.getConversationSnapshot(
           fixture.database,
           userId: fixture.userId,
           request: GetConversationRequest(
@@ -606,26 +640,86 @@ void main() {
             conversationId: fork.id,
           ),
         );
+        final forkWorkerMessages =
+            await conversation_repo.ConversationRepository()
+                .listEffectiveMessages(
+                  fixture.database,
+                  workspaceId: fixture.workspaceId,
+                  conversationId: fork.id,
+                );
+        final nestedFork = await useCases.fork(
+          fixture.database,
+          userId: fixture.userId,
+          request: ForkConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'fork-from-detached-work-fork',
+            forkConversationId: 'nested-fork-detached-work',
+            sourceConversationId: fork.id,
+          ),
+        );
+        final nestedSnapshot = await useCases.getConversationSnapshot(
+          fixture.database,
+          userId: fixture.userId,
+          request: GetConversationRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: nestedFork.id,
+          ),
+        );
+        final nestedWorkerMessages =
+            await conversation_repo.ConversationRepository()
+                .listEffectiveMessages(
+                  fixture.database,
+                  workspaceId: fixture.workspaceId,
+                  conversationId: nestedFork.id,
+                );
+        final forkBackgroundWorks = await useCases.listBackgroundWorks(
+          fixture.database,
+          userId: fixture.userId,
+          request: ListBackgroundWorksRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: fork.id,
+          ),
+        );
+        final nestedBackgroundWorks = await useCases.listBackgroundWorks(
+          fixture.database,
+          userId: fixture.userId,
+          request: ListBackgroundWorksRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: nestedFork.id,
+          ),
+        );
+        final sourceBackgroundWorks = await useCases.listBackgroundWorks(
+          fixture.database,
+          userId: fixture.userId,
+          request: ListBackgroundWorksRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+          ),
+        );
 
         final forkConversation = (await Conversation.db.findFirstRow(
           fixture.database,
           where: (table) => table.stableId.equals(fork.id),
         ))!;
-        final forkCalls = await ConversationToolCall.db.find(
-          fixture.database,
-          where: (table) =>
-              table.workspaceId.equals(fixture.workspaceId) &
-              table.conversationId.equals(forkConversation.id),
+        final forkAssistant = forkSnapshot.messages.singleWhere(
+          (message) => message.id == assistant.stableId,
         );
-        final forkAssistant = (await ConversationMessage.db.findFirstRow(
-          fixture.database,
-          where: (table) =>
-              table.workspaceId.equals(fixture.workspaceId) &
-              table.conversationId.equals(forkConversation.id) &
-              table.role.equals('assistant'),
-        ))!;
         final forkMetadata = jsonDecode(forkAssistant.metadataJson!) as Map;
         final forkToolCalls = forkMetadata['toolCalls']! as List;
+        final forkProviderBatches =
+            forkMetadata['providerToolBatches']! as List;
+        final forkCalls = forkSnapshot.toolCalls
+            .where((call) => call.messageId == assistant.stableId)
+            .toList();
+        final forkWorkerAssistant = forkWorkerMessages.singleWhere(
+          (message) => message.stableId == assistant.stableId,
+        );
+        final nestedAssistant = nestedSnapshot.messages.singleWhere(
+          (message) => message.id == assistant.stableId,
+        );
+        final nestedWorkerAssistant = nestedWorkerMessages.singleWhere(
+          (message) => message.stableId == assistant.stableId,
+        );
         final sourceWork = await BackgroundWorkRecord.db.findFirstRow(
           fixture.database,
           where: (table) => table.stableId.equals(detachedWorkId),
@@ -640,32 +734,103 @@ void main() {
               table.conversationId.equals(forkConversation.id) &
               table.stableId.equals('queued-message-not-forked'),
         );
-        final forkTurns = await ConversationTurn.db.find(
+        final forkConversationToolCalls = await ConversationToolCall.db.find(
           fixture.database,
           where: (table) => table.conversationId.equals(forkConversation.id),
+        );
+        final sourceAssistantAfterFork = (await ConversationMessage.db.findById(
+          fixture.database,
+          assistant.id!,
+        ))!;
+        final sourceCallsAfterFork = await ConversationToolCall.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
         );
         final forkEvents = await ConversationEvent.db.find(
           fixture.database,
           where: (table) => table.conversationId.equals(forkConversation.id),
         );
 
+        expect(fork.forkMaterializedAt, isNull);
+        expect(
+          forkConversation.forkSourceConversationId,
+          fixture.conversationId,
+        );
+        expect(forkSnapshot.messages.map((message) => message.id), [
+          'history-assistant',
+          'history-user',
+        ]);
+        expect(forkAssistant.isForkReference, isTrue);
         expect(forkCalls, hasLength(1));
         expect(forkCalls.single.name, 'delivered-search');
+        expect(forkCalls.single.status, 'success');
+        expect(forkCalls.single.resultJson, '{"answer":"already delivered"}');
         expect(forkToolCalls, hasLength(1));
         expect(forkToolCalls.single['id'], deliveredToolCallId);
+        expect(forkProviderBatches, hasLength(1));
+        final providerBatch = forkProviderBatches.single as Map;
+        expect(providerBatch['toolCallIds'], [deliveredToolCallId]);
+        final providerToolCalls =
+            (providerBatch['assistant'] as Map)['tool_calls'] as List;
+        expect(providerToolCalls, hasLength(1));
+        expect(providerToolCalls.single['id'], deliveredToolCallId);
         expect(forkAssistant.metadataJson, isNot(contains(detachedWorkId)));
         expect(forkAssistant.metadataJson, isNot(contains(completedWorkId)));
         expect(forkAssistant.metadataJson, isNot(contains('search query')));
         expect(forkAssistant.metadataJson, isNot(contains('completed query')));
+        expect(
+          forkWorkerAssistant.metadataJson,
+          isNot(contains(detachedWorkId)),
+        );
+        expect(
+          forkWorkerAssistant.metadataJson,
+          isNot(contains(completedWorkId)),
+        );
+        expect(
+          forkWorkerAssistant.metadataJson,
+          isNot(contains('search query')),
+        );
+        expect(
+          forkWorkerAssistant.metadataJson,
+          isNot(contains('completed query')),
+        );
+        expect(nestedFork.forkMaterializedAt, isNull);
+        expect(
+          nestedSnapshot.toolCalls
+              .where((call) => call.messageId == assistant.stableId)
+              .map((call) => call.id),
+          [deliveredToolCallId],
+        );
+        expect(nestedAssistant.metadataJson, isNot(contains(detachedWorkId)));
+        expect(nestedAssistant.metadataJson, isNot(contains(completedWorkId)));
+        expect(nestedAssistant.metadataJson, isNot(contains('search query')));
+        expect(
+          nestedWorkerAssistant.metadataJson,
+          isNot(contains('completed query')),
+        );
+        expect(forkBackgroundWorks, isEmpty);
+        expect(nestedBackgroundWorks, isEmpty);
+        expect(
+          sourceBackgroundWorks.map((work) => work.id).toSet(),
+          {detachedWorkId, completedWorkId},
+        );
         expect(sourceWork?.status, 'running');
         expect(completedSourceWork?.status, 'completed');
         expect(
           completedSourceWork?.resultContent,
           'private stored completion result',
         );
+        expect(sourceAssistantAfterFork.metadataJson, contains(detachedWorkId));
+        expect(
+          sourceAssistantAfterFork.metadataJson,
+          contains(completedWorkId),
+        );
+        expect(sourceCallsAfterFork, hasLength(3));
         expect(forkQueuedMessage, isNull);
-        expect(forkTurns, hasLength(1));
-        expect(forkTurns.single.status, ConversationStatuses.completed);
+        expect(forkConversationToolCalls, isEmpty);
+        expect(forkSnapshot.pendingMessages, isEmpty);
         expect(
           forkEvents.map((event) => event.payloadJson),
           everyElement(isNot(contains('queued-message-not-forked'))),
@@ -1572,11 +1737,18 @@ void main() {
             table.stableId.equals('compact-1:compaction-summary'),
       );
 
+      final continuedMessage = await ConversationMessage.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.stableId.equals('message-after-compaction'),
+      );
+      expect(continuedMessage, isNotNull);
       final followUpTurn = await ConversationTurn.db.findFirstRow(
         fixture.database,
         where: (table) =>
             table.workspaceId.equals(fixture.workspaceId) &
-            table.requestId.equals('queued:message-after-compaction'),
+            table.userMessageId.equals(continuedMessage!.id),
       );
 
       expect(host.compactionCalls, 1);
