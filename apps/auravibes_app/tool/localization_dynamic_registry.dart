@@ -454,22 +454,6 @@ const _modelsScreensDynamicKeys = <String>{
   'models_screens.tool_sampling_verified',
 };
 
-const _moreScreenDynamicKeys = <String>{
-  'more_screen.agents.subtitle',
-  'more_screen.agents.title',
-  'more_screen.credential_definitions.subtitle',
-  'more_screen.credential_definitions.title',
-  'more_screen.service_connections.subtitle',
-  'more_screen.service_connections.title',
-  'more_screen.skills.subtitle',
-  'more_screen.skills.title',
-  'more_screen.title',
-  'more_screen.tools.subtitle',
-  'more_screen.tools.title',
-  'more_screen.workspaces.subtitle',
-  'more_screen.workspaces.title',
-};
-
 const _serviceConnectionsDynamicKeys = <String>{
   'service_connections.action.reconnect',
   'service_connections.action.reconnect_error',
@@ -1660,16 +1644,6 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
     family: 'settings-and-compaction-label-keys',
     sites: [
       DynamicTranslationSite(
-        file: 'features/settings/screens/more_screen.dart',
-        method: 'TextLocale',
-        keyExpression: 'titleKey',
-      ),
-      DynamicTranslationSite(
-        file: 'features/settings/screens/more_screen.dart',
-        method: 'TextLocale',
-        keyExpression: 'subtitleKey',
-      ),
-      DynamicTranslationSite(
         file: 'features/settings/widgets/compaction_settings_section.dart',
         method: 'tr',
         keyExpression: 'localeKey',
@@ -1690,11 +1664,7 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         keyExpression: 'titleKey',
       ),
     ],
-    keys: {
-      ..._compactionDynamicKeys,
-      ..._moreScreenDynamicKeys,
-      ..._settingsScreenDynamicKeys,
-    },
+    keys: {..._compactionDynamicKeys, ..._settingsScreenDynamicKeys},
   ),
 
   LocalizationDynamicRegistry(
@@ -1851,6 +1821,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       DynamicTranslationSite(
         file: 'features/skills/screens/skills_screen.dart',
         method: 'TextLocale',
+        keyExpression: 'CloudAppErrors.localizationKey(error)',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/background_work_detach_controls.dart',
+        method: 'tr',
         keyExpression: 'CloudAppErrors.localizationKey(error)',
       ),
     ],
