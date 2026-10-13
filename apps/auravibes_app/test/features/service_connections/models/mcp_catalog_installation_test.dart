@@ -37,42 +37,42 @@ void main() {
 
   test('searches name and description and filters transport and auth', () {
     expect(
-      filterMcpCatalog(
+      McpCatalogInstallation.filterListings(
         [listing],
         (query: 'SEARCH', transport: null, authType: null),
       ),
       [listing],
     );
     expect(
-      filterMcpCatalog(
+      McpCatalogInstallation.filterListings(
         [listing],
         (query: 'web pages', transport: null, authType: null),
       ),
       [listing],
     );
     expect(
-      filterMcpCatalog(
+      McpCatalogInstallation.filterListings(
         [listing],
         (query: 'missing', transport: null, authType: null),
       ),
       isEmpty,
     );
     expect(
-      filterMcpCatalog(
+      McpCatalogInstallation.filterListings(
         [listing],
         (query: '', transport: 'streamableHttp', authType: 'httpHeaders'),
       ),
       [listing],
     );
     expect(
-      filterMcpCatalog(
+      McpCatalogInstallation.filterListings(
         [listing],
         (query: '', transport: 'sse', authType: null),
       ),
       isEmpty,
     );
     expect(
-      filterMcpCatalog(
+      McpCatalogInstallation.filterListings(
         [listing],
         (query: '', transport: null, authType: 'oauth'),
       ),

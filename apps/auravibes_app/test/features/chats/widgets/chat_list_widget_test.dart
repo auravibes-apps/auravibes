@@ -46,6 +46,7 @@ void main() {
     required String workspaceId,
     required List<Object> overrides,
     Widget? content,
+    Locale startLocale = const Locale('en'),
   }) => TestableApp(
     child: Theme(
       data: .new(),
@@ -57,6 +58,7 @@ void main() {
     ),
     overrides: overrides,
     workspaceId: workspaceId,
+    startLocale: startLocale,
   );
 
   ConversationEntity _createConversation({
@@ -154,6 +156,168 @@ void main() {
 
       expect(find.text('Chat One'), findsOneWidget);
       expect(find.text('Chat Two'), findsOneWidget);
+    });
+
+    testWidgets(
+      'shows and updates draft badges for the matching workspace conversation',
+      (tester) async {
+        final conversations = [
+          _createConversation(title: 'Pinned Chat', isPinned: true),
+          _createConversation(id: 'conv-2', title: 'Attachment Chat'),
+          _createConversation(id: 'conv-3', title: 'Whitespace Chat'),
+          _createConversation(id: 'conv-4', title: 'Empty Chat'),
+        ];
+        final repo = _StubConversationRepository(
+          conversationsStream: .value(conversations),
+        );
+        ProviderContainer? providerContainer;
+
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            workspaceId: 'ws-1',
+            overrides: [
+              conversationRepositoryProvider.overrideWithValue(repo),
+              listWorkspaceModelSelectionsProvider.overrideWith(
+                (ref, workspaceId) => Stream.value([]),
+              ),
+            ],
+            content: Consumer(
+              builder: (context, ref, _) {
+                providerContainer = ProviderScope.containerOf(context);
+
+                return const ChatListWidget(workspaceId: 'ws-1');
+              },
+            ),
+          ),
+        );
+
+        final container =
+            providerContainer ??
+            (throw StateError('Chat list provider container was unavailable'));
+        const attachment = MessageAttachmentToCreate(
+          localPath: '/tmp/report.pdf',
+          fileName: 'report.pdf',
+          displayName: 'report.pdf',
+          mimeType: 'application/pdf',
+          modality: .file,
+          sizeBytes: 2048,
+        );
+
+        container
+            .read(conversationDraftProvider('ws-2', 'conv-1').notifier)
+            .save(const ChatDraft(text: 'Other workspace draft'));
+        container
+            .read(conversationDraftProvider('ws-1', 'conv-2').notifier)
+            .save(const ChatDraft(text: '', attachments: [attachment]));
+        container
+            .read(conversationDraftProvider('ws-1', 'conv-3').notifier)
+            .save(const ChatDraft(text: '  \n  '));
+        container
+            .read(conversationDraftProvider('ws-1', 'conv-4').notifier)
+            .save(const ChatDraft(text: ''));
+        await tester.pump();
+
+        expect(
+          find.byKey(const ValueKey('conversation-draft-marker-conv-1')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey('conversation-draft-marker-conv-2')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('conversation-draft-marker-conv-3')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey('conversation-draft-marker-conv-4')),
+          findsNothing,
+        );
+        expect(find.text('Draft'), findsOneWidget);
+
+        final firstDraft = container.read(
+          conversationDraftProvider('ws-1', 'conv-1').notifier,
+        )..save(const ChatDraft(text: 'Unsent message'));
+        await tester.pump();
+
+        final firstMarker = find.byKey(
+          const ValueKey('conversation-draft-marker-conv-1'),
+        );
+        expect(firstMarker, findsOneWidget);
+        expect(tester.getSemantics(firstMarker).label, 'Draft');
+        expect(
+          find.byKey(const ValueKey('conversation-draft-marker-conv-2')),
+          findsOneWidget,
+        );
+        expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey('conversation-selection-conv-1')),
+        );
+        await tester.pump();
+        expect(
+          tester
+              .widget<AuraCheckbox>(
+                find.byKey(const ValueKey('conversation-selection-conv-1')),
+              )
+              .value,
+          isTrue,
+        );
+
+        firstDraft.save(const ChatDraft(text: 'Edited message'));
+        await tester.pump();
+        expect(firstMarker, findsOneWidget);
+
+        firstDraft.clear();
+        await tester.pump();
+        expect(firstMarker, findsNothing);
+      },
+    );
+
+    testWidgets('localizes the accessible draft badge in Spanish', (
+      tester,
+    ) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([_createConversation(title: 'Chat')]),
+      );
+      ProviderContainer? providerContainer;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          startLocale: const Locale('es'),
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+          content: Consumer(
+            builder: (context, ref, _) {
+              providerContainer = ProviderScope.containerOf(context);
+
+              return const ChatListWidget(workspaceId: 'ws-1');
+            },
+          ),
+        ),
+      );
+
+      final container =
+          providerContainer ??
+          (throw StateError('Chat list provider container was unavailable'));
+      container
+          .read(conversationDraftProvider('ws-1', 'conv-1').notifier)
+          .save(const ChatDraft(text: 'Mensaje pendiente'));
+      await tester.pump();
+
+      final marker = find.byKey(
+        const ValueKey('conversation-draft-marker-conv-1'),
+      );
+      expect(marker, findsOneWidget);
+      expect(find.text('Borrador'), findsOneWidget);
+      expect(tester.getSemantics(marker).label, 'Borrador');
     });
 
     testWidgets(
@@ -1121,6 +1285,9 @@ void main() {
               DeleteConversationUsecase(
                 repo,
                 (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
                 clearConversationDraft: (_, _) => Future<void>.value(),
               ),
             ),
@@ -1184,6 +1351,9 @@ void main() {
               DeleteConversationUsecase(
                 repo,
                 (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
                 clearConversationDraft: (_, _) => Future<void>.value(),
               ),
             ),
@@ -1234,6 +1404,9 @@ void main() {
               DeleteConversationUsecase(
                 repo,
                 (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
                 clearConversationDraft: (_, _) => Future<void>.value(),
               ),
             ),
@@ -1290,6 +1463,9 @@ void main() {
               DeleteConversationUsecase(
                 repo,
                 (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
                 clearConversationDraft: (_, _) => Future<void>.value(),
               ),
             ),
@@ -1364,6 +1540,9 @@ void main() {
               return DeleteConversationUsecase(
                 repo,
                 (_) => Future<void>.value(),
+                prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                restoreBackgroundWorkAfterFailedDeletion: (id) =>
+                    expect(id, isNotEmpty),
                 clearConversationDraft: cleanup.clearConversation,
               );
             }),
