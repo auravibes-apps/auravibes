@@ -224,6 +224,38 @@ void main() {
     },
   );
 
+  test('failed work retains a redacted error preview', () async {
+    final operation = Completer<Object?>();
+    final _ = runtime.registerToolCancellationHandle((
+      conversationId: conversationId,
+      toolCallId: 'tool-call-failed',
+      isSupported: true,
+      cancel: Future<void>.value,
+      operationResult: operation.future,
+      isCancellationConfirmed: null,
+    ));
+    final coordinator = _coordinator();
+    final work = await coordinator.runInBackground(
+      .new(
+        conversationId: conversationId,
+        toolCallId: 'tool-call-failed',
+        toolKind: 'skill.native',
+      ),
+    );
+    if (work == null) fail('Expected background work to be created.');
+    final failed = repository
+        .watchConversation(conversationId)
+        .firstWhere((items) => items.single.state.status == .failed);
+
+    operation.completeError(const FormatException('access_token=secret-value'));
+    final workState = (await failed).single.state;
+
+    expect(workState.errorCode, 'operation_failed');
+    expect(workState.statusPreview, contains('FormatException'));
+    expect(workState.statusPreview, contains('[REDACTED]'));
+    expect(workState.statusPreview, isNot(contains('secret-value')));
+  });
+
   test(
     'conversation deletion cancels detached work and blocks new detaches',
     () async {

@@ -28,6 +28,7 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
@@ -36,6 +37,7 @@ import 'package:auravibes_app/features/chats/providers/tool_display_name_provide
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_announcement.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
@@ -49,6 +51,7 @@ import 'package:auravibes_app/features/skills/providers/conversation_skill_selec
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
@@ -100,6 +103,20 @@ class const ChatMessagesWidget({
     final controller =
         PrimaryScrollController.of(context) as _DisclosureScrollController;
     final parentConversationId = conversationId;
+    final isCloudWorkspace =
+        ref.watch(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
+        null;
+    final backgroundWorksAsync = isCloudWorkspace
+        ? ref.watch(
+            cloudConversationBackgroundWorksProvider((
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            )),
+          )
+        : ref.watch(conversationBackgroundWorksProvider(conversationId));
+    final backgroundToolCallIds = backgroundWorksAsync.value
+        ?.map((work) => work.identity.toolCallId)
+        .toSet();
     final conversation = ref
         .watch(
           conversationByIdStreamProvider(
@@ -291,6 +308,8 @@ class const ChatMessagesWidget({
             parentConversationId: parentConversationId,
             childConversations: childConversations,
             workspaceId: workspaceId,
+            isCloudWorkspace: isCloudWorkspace,
+            backgroundToolCallIds: backgroundToolCallIds,
             a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
             replayPayloadsByMessageId: submittedA2uiReplayPayloads,
             conversation: conversation,
@@ -560,6 +579,8 @@ Widget _buildChatTimelineItem({
   required String parentConversationId,
   required List<ConversationEntity> childConversations,
   required String workspaceId,
+  required bool isCloudWorkspace,
+  required Set<String>? backgroundToolCallIds,
   required ChatA2uiRuntime? a2uiRuntime,
   required Map<String, List<String>> replayPayloadsByMessageId,
   required ConversationEntity? conversation,
@@ -588,6 +609,8 @@ Widget _buildChatTimelineItem({
       parentConversationId: parentConversationId,
       childConversations: childConversations,
       workspaceId: workspaceId,
+      isCloudWorkspace: isCloudWorkspace,
+      backgroundToolCallIds: backgroundToolCallIds,
       a2uiRuntime: a2uiRuntime,
       a2uiReplayPayloadsByMessageId: replayPayloadsByMessageId,
       a2uiReplayPayloads: run.responseMessageId == null
@@ -609,6 +632,8 @@ Widget _buildChatTimelineItem({
         parentConversationId: parentConversationId,
         childConversations: childConversations,
         workspaceId: workspaceId,
+        isCloudWorkspace: isCloudWorkspace,
+        backgroundToolCallIds: backgroundToolCallIds,
         a2uiRuntime: a2uiRuntime,
         a2uiReplayPayloads:
             replayPayloadsByMessageId[source.message.id] ?? const [],
@@ -997,6 +1022,8 @@ class const _ChatMessageTimelineItem({
   required final String parentConversationId,
   required final List<ConversationEntity> childConversations,
   required final String workspaceId,
+  required final bool isCloudWorkspace,
+  required final Set<String>? backgroundToolCallIds,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
   final bool showResponseActions = true,
@@ -1042,6 +1069,8 @@ class const _ChatMessageTimelineItem({
             parentConversationId: parentConversationId,
             childConversations: childConversations,
             workspaceId: workspaceId,
+            isCloudWorkspace: isCloudWorkspace,
+            backgroundToolCallIds: backgroundToolCallIds,
           ),
         _ChatMessageContent(
           message: message,
@@ -1783,6 +1812,8 @@ class const _AssistantActivityRun({
   required final String parentConversationId,
   required final List<ConversationEntity> childConversations,
   required final String workspaceId,
+  required final bool isCloudWorkspace,
+  required final Set<String>? backgroundToolCallIds,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
   final Map<String, List<String>> a2uiReplayPayloadsByMessageId = const {},
@@ -1906,6 +1937,7 @@ class const _AssistantActivityRun({
               bool showArguments,
               VoidCallback? openSkillDetails,
               VoidCallback? openSubAgent,
+              VoidCallback? onRunInBackground,
             })
           >[];
       for (final item in entry.toolCalls) {
@@ -1931,6 +1963,33 @@ class const _AssistantActivityRun({
             childConversations: childConversations,
             toolCall: item.toolCall,
           ),
+          onRunInBackground:
+              !item.isForkReference &&
+                  item.toolCall.isRunning &&
+                  !(backgroundToolCallIds?.contains(item.toolCall.id) ??
+                      false) &&
+                  (isCloudWorkspace
+                      ? item.toolCall.backgroundEligible
+                      : ref
+                                .watch(
+                                  toolBackgroundEligibilityProvider((
+                                    conversationId: parentConversationId,
+                                    toolCallId: item.toolCall.id,
+                                  )),
+                                )
+                                .value ==
+                            true)
+              ? () => _detachToolCallFromActivity(
+                  context: context,
+                  ref: ref,
+                  workspaceId: workspaceId,
+                  conversationId: parentConversationId,
+                  isCloud: isCloudWorkspace,
+                  toolCallId: item.toolCall.id,
+                  toolKind: display.displayName,
+                  originatingMessageId: item.messageId,
+                )
+              : null,
         ));
       }
       final toolRows = [
@@ -1952,6 +2011,7 @@ class const _AssistantActivityRun({
             ),
             openSkillDetails: activityToolCall.openSkillDetails,
             openSubAgent: activityToolCall.openSubAgent,
+            onRunInBackground: activityToolCall.onRunInBackground,
           ),
       ];
       if (toolRows.length == 1) {
@@ -2301,6 +2361,50 @@ VoidCallback? _openSubAgent({
   ).push(context);
 }
 
+void _detachToolCallFromActivity({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String workspaceId,
+  required String conversationId,
+  required bool isCloud,
+  required String toolCallId,
+  required String toolKind,
+  required String originatingMessageId,
+}) {
+  unawaited(() async {
+    try {
+      final detached = await BackgroundWorkActions.runToolInBackground((
+        ref: ref,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+        toolKind: toolKind,
+        originatingMessageId: originatingMessageId,
+        isCloud: isCloud,
+      ));
+      if (detached || !context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: TextLocale(
+            LocaleKeys
+                .chats_screens_chat_conversation_background_work_detach_error,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: TextLocale(
+            LocaleKeys
+                .chats_screens_chat_conversation_background_work_detach_error,
+          ),
+        ),
+      );
+    }
+  }());
+}
+
 class const _ActivityTraceDisclosure({
   required final IconData icon,
   required final String label,
@@ -2506,6 +2610,7 @@ class const _ActivityToolCallRow({
   required final bool isExpanded,
   required final VoidCallback onToggle,
   required final VoidCallback? openSubAgent,
+  required final VoidCallback? onRunInBackground,
   required final VoidCallback? openSkillDetails,
   super.key,
 }) extends StatelessWidget {
@@ -2520,6 +2625,7 @@ class const _ActivityToolCallRow({
     final statusKey = _statusLocaleKey();
     final statusColor = _statusColor(context);
     final onOpenSubAgent = openSubAgent;
+    final onBackground = onRunInBackground;
     final onOpenSkillDetails = openSkillDetails;
     final statusBadge = _ActivityToolStatusBadge(
       label: statusKey.tr(),
@@ -2648,6 +2754,19 @@ class const _ActivityToolCallRow({
               ),
           ],
         ),
+        if (onBackground != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: AuraButton(
+              key: ValueKey('activity_run_in_background_${toolCall.id}'),
+              onPressed: onBackground,
+              variant: .ghost,
+              size: .small,
+              child: const TextLocale(
+                LocaleKeys.chats_screens_chat_conversation_background_work_run,
+              ),
+            ),
+          ),
         if (isExpanded && hasDetails)
           _ActivityToolCallDetails(
             key: ValueKey('activity_tool_details_${toolCall.id}'),

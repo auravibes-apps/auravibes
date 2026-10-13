@@ -20,6 +20,7 @@ import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dar
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/background_work_continuation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
@@ -282,6 +283,7 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
+          ..._emptyBackgroundWorkOverrides(),
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(repo),
           conversationChatProvider(
@@ -308,6 +310,7 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
+          ..._emptyBackgroundWorkOverrides(),
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
@@ -337,6 +340,7 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
+          ..._emptyBackgroundWorkOverrides(),
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
@@ -368,6 +372,7 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
+          ..._emptyBackgroundWorkOverrides(),
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
@@ -441,6 +446,7 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
+          ..._emptyBackgroundWorkOverrides(),
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
@@ -623,6 +629,7 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
+                  ..._emptyBackgroundWorkOverrides(),
                   conversationSkillSelectorProvider(
                     _workspaceId,
                     _chatId,
@@ -754,6 +761,7 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
+                  ..._emptyBackgroundWorkOverrides(),
                   conversationSkillSelectorProvider(
                     _workspaceId,
                     _chatId,
@@ -856,6 +864,7 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
+        ..._emptyBackgroundWorkOverrides(),
         conversationSkillSelectorProvider(_workspaceId, _chatId).overrideWith(
           (ref) async =>
               const ConversationSkillSelectorState(loaded: [], loadable: []),
@@ -1014,6 +1023,7 @@ void main() {
     final refreshCompleter = Completer<ConversationBusyState>();
     final container = ProviderContainer(
       overrides: [
+        ..._emptyBackgroundWorkOverrides(),
         conversationSkillSelectorProvider(_workspaceId, _chatId).overrideWith(
           (ref) async =>
               const ConversationSkillSelectorState(loaded: [], loadable: []),
@@ -1139,6 +1149,7 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
+                  ..._emptyBackgroundWorkOverrides(),
                   conversationSkillSelectorProvider(
                     _workspaceId,
                     _chatId,
@@ -1775,6 +1786,7 @@ Future<void> _pumpCloudConversationScreen(
           builder: (context) {
             return TestProviderScope(
               overrides: [
+                ..._emptyBackgroundWorkOverrides(),
                 backgroundWorkContinuationsProvider((
                   workspaceId: _workspaceId,
                   conversationId: _chatId,
@@ -1880,6 +1892,15 @@ Future<void> _pumpCloudConversationScreen(
   await tester.pump();
   await tester.pump();
 }
+
+List<Override> _emptyBackgroundWorkOverrides() => [
+  conversationBackgroundWorksProvider(_chatId)
+      .overrideWith((ref) => Stream.value(const [])),
+  cloudConversationBackgroundWorksProvider((
+    workspaceId: _workspaceId,
+    conversationId: _chatId,
+  )).overrideWith((ref) async => const []),
+];
 
 Future<_CloudConversationEndpoint>
 _expectCloudContinueToBeIgnoredWhenStateBecomesBusy(
