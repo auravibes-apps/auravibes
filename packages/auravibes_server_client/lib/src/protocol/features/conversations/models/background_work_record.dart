@@ -23,6 +23,7 @@ abstract class BackgroundWorkRecord
     required this.stableId,
     required this.toolCallId,
     required this.toolKind,
+    this.runtimeServerId,
     required this.status,
     this.statusPreview,
     this.resultContent,
@@ -41,6 +42,7 @@ abstract class BackgroundWorkRecord
     required String stableId,
     required String toolCallId,
     required String toolKind,
+    String? runtimeServerId,
     required String status,
     String? statusPreview,
     String? resultContent,
@@ -63,6 +65,7 @@ abstract class BackgroundWorkRecord
       stableId: jsonSerialization['stableId'] as String,
       toolCallId: jsonSerialization['toolCallId'] as String,
       toolKind: jsonSerialization['toolKind'] as String,
+      runtimeServerId: jsonSerialization['runtimeServerId'] as String?,
       status: jsonSerialization['status'] as String,
       statusPreview: jsonSerialization['statusPreview'] as String?,
       resultContent: jsonSerialization['resultContent'] as String?,
@@ -96,6 +99,8 @@ abstract class BackgroundWorkRecord
 
   String toolKind;
 
+  String? runtimeServerId;
+
   String status;
 
   String? statusPreview;
@@ -122,6 +127,7 @@ abstract class BackgroundWorkRecord
     String? stableId,
     String? toolCallId,
     String? toolKind,
+    String? runtimeServerId,
     String? status,
     String? statusPreview,
     String? resultContent,
@@ -143,6 +149,7 @@ abstract class BackgroundWorkRecord
       'stableId': stableId,
       'toolCallId': toolCallId,
       'toolKind': toolKind,
+      if (runtimeServerId != null) 'runtimeServerId': runtimeServerId,
       'status': status,
       if (statusPreview != null) 'statusPreview': statusPreview,
       if (resultContent != null) 'resultContent': resultContent,
@@ -166,6 +173,7 @@ abstract class BackgroundWorkRecord
       'stableId': stableId,
       'toolCallId': toolCallId,
       'toolKind': toolKind,
+      if (runtimeServerId != null) 'runtimeServerId': runtimeServerId,
       'status': status,
       if (statusPreview != null) 'statusPreview': statusPreview,
       if (resultContent != null) 'resultContent': resultContent,
@@ -194,6 +202,7 @@ class _BackgroundWorkRecordImpl extends BackgroundWorkRecord {
     required String stableId,
     required String toolCallId,
     required String toolKind,
+    String? runtimeServerId,
     required String status,
     String? statusPreview,
     String? resultContent,
@@ -210,6 +219,7 @@ class _BackgroundWorkRecordImpl extends BackgroundWorkRecord {
          stableId: stableId,
          toolCallId: toolCallId,
          toolKind: toolKind,
+         runtimeServerId: runtimeServerId,
          status: status,
          statusPreview: statusPreview,
          resultContent: resultContent,
@@ -232,6 +242,7 @@ class _BackgroundWorkRecordImpl extends BackgroundWorkRecord {
     String? stableId,
     String? toolCallId,
     String? toolKind,
+    Object? runtimeServerId = _Undefined,
     String? status,
     Object? statusPreview = _Undefined,
     Object? resultContent = _Undefined,
@@ -252,6 +263,9 @@ class _BackgroundWorkRecordImpl extends BackgroundWorkRecord {
       stableId: stableId ?? this.stableId,
       toolCallId: toolCallId ?? this.toolCallId,
       toolKind: toolKind ?? this.toolKind,
+      runtimeServerId: runtimeServerId is String?
+          ? runtimeServerId
+          : this.runtimeServerId,
       status: status ?? this.status,
       statusPreview: statusPreview is String?
           ? statusPreview

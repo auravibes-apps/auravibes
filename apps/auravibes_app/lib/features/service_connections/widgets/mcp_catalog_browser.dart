@@ -435,7 +435,7 @@ class const _McpCatalogListingList({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final filtered = filterMcpCatalog(available, (
+    final filtered = McpCatalogInstallation.filterListings(available, (
       query: owner._searchQuery,
       transport: owner._transport,
       authType: owner._authType,

@@ -18,7 +18,7 @@ void main() {
         (tester) async {
           await tester.binding.setSurfaceSize(const Size(1000, 1400));
           addTearDown(() => tester.binding.setSurfaceSize(null));
-          const task = '/workspaces/origin/more/manage-workspaces/create';
+          const task = '/workspaces/origin/manage-workspaces/create';
           final accounts = <CloudAccountSession>[];
           var mounts = 0;
           await tester.runAsync(

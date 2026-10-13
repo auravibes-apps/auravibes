@@ -20,6 +20,7 @@ import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_continuation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
@@ -34,6 +35,9 @@ import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.da
 import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_continuation_status.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_detach_controls.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
@@ -103,6 +107,11 @@ typedef _ConversationContextRequest = ({
   WidgetRef ref,
   String workspaceId,
   String conversationId,
+});
+
+typedef _BackgroundWorkStatusPresence = ({
+  bool hasDetachableToolCalls,
+  bool hasBackgroundWorks,
 });
 
 typedef _ContinueCallbackRequest = ({
@@ -1147,8 +1156,9 @@ class const _LoadedChatConversationView({
       child: AuraScreen(
         child: _ChatConversationBody(data: data),
         appBar: _ChatConversationAppBar(
-          title: data.conversation.title,
+          workspaceId: data.workspaceId,
           conversationId: data.conversation.id,
+          title: data.conversation.title,
           leading: data.leading,
         ),
       ),
@@ -1157,8 +1167,9 @@ class const _LoadedChatConversationView({
 }
 
 class const _ChatConversationAppBar({
-  required final String title,
+  required final String workspaceId,
   required final String conversationId,
+  required final String title,
   required final Widget? leading,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
@@ -1167,13 +1178,63 @@ class const _ChatConversationAppBar({
   @override
   Widget build(BuildContext context) => AuraAppBarWithDrawer(
     title: Text(title),
-    actions: [ModelUsageHeaderButton(conversationId: conversationId)],
+    actions: [
+      ModelUsageHeaderButton(conversationId: conversationId),
+      BackgroundWorkHeaderButton(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+    ],
     leading: leading,
   );
 }
 
 class const _ChatConversationBody({
   required final _LoadedChatConversationData data,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final backgroundWorkStatus = _backgroundWorkStatusPresence(ref, data);
+    final hasOtherStatus = _hasChatConversationStatus(data);
+    final hasStatusArea =
+        backgroundWorkStatus.hasDetachableToolCalls ||
+        backgroundWorkStatus.hasBackgroundWorks ||
+        hasOtherStatus ||
+        data.showInputComposer;
+
+    return _ChatConversationBodyLayout(
+      data: data,
+      backgroundWorkStatus: backgroundWorkStatus,
+      hasOtherStatus: hasOtherStatus,
+      hasStatusArea: hasStatusArea,
+    );
+  }
+}
+
+_BackgroundWorkStatusPresence _backgroundWorkStatusPresence(
+  WidgetRef ref,
+  _LoadedChatConversationData data,
+) {
+  final key = (
+    workspaceId: data.workspaceId,
+    conversationId: data.conversation.id,
+  );
+  final detachableToolCalls = ref.watch(
+    backgroundDetachableToolCallsProvider(key),
+  );
+  final backgroundWorks = ref.watch(backgroundWorkContinuationsProvider(key));
+
+  return (
+    hasDetachableToolCalls: detachableToolCalls.isNotEmpty,
+    hasBackgroundWorks: backgroundWorks.value?.isNotEmpty ?? false,
+  );
+}
+
+class const _ChatConversationBodyLayout({
+  required final _LoadedChatConversationData data,
+  required final _BackgroundWorkStatusPresence backgroundWorkStatus,
+  required final bool hasOtherStatus,
+  required final bool hasStatusArea,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -1182,7 +1243,28 @@ class const _ChatConversationBody({
       _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(data: data),
-      if (_hasChatConversationStatus(data) || data.showInputComposer)
+      if (hasStatusArea)
+        _ChatConversationStatusArea(
+          data: data,
+          backgroundWorkStatus: backgroundWorkStatus,
+          hasOtherStatus: hasOtherStatus,
+        ),
+    ],
+  );
+}
+
+class const _ChatConversationStatusArea({
+  required final _LoadedChatConversationData data,
+  required final _BackgroundWorkStatusPresence backgroundWorkStatus,
+  required final bool hasOtherStatus,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      if (backgroundWorkStatus.hasDetachableToolCalls ||
+          backgroundWorkStatus.hasBackgroundWorks)
+        _BackgroundWorkStatus(data: data, presence: backgroundWorkStatus),
+      if (hasOtherStatus || data.showInputComposer)
         _ChatConversationStatusAndComposer(
           data: data,
           key: ValueKey((
@@ -1191,6 +1273,7 @@ class const _ChatConversationBody({
           )),
         ),
     ],
+    mainAxisSize: .min,
   );
 }
 
@@ -1261,7 +1344,7 @@ class const _ChatConversationStatusAndComposerView({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       if (_hasChatConversationStatus(data))
-        _ChatConversationStatus(data: data, onEditDraft: onEditDraft),
+        _OtherConversationStatus(data: data, onEditDraft: onEditDraft),
       if (data.showInputComposer)
         _ChatComposer(data: data, draftToLoad: draftToLoad),
     ],
@@ -1357,7 +1440,29 @@ class const _IdleConversationActivityLabel({
         );
 }
 
-class const _ChatConversationStatus({
+class const _BackgroundWorkStatus({
+  required final _LoadedChatConversationData data,
+  required final _BackgroundWorkStatusPresence presence,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      if (presence.hasDetachableToolCalls)
+        BackgroundWorkDetachControls(
+          workspaceId: data.workspaceId,
+          conversationId: data.conversation.id,
+        ),
+      if (presence.hasBackgroundWorks)
+        BackgroundWorkContinuationStatus(
+          workspaceId: data.workspaceId,
+          conversationId: data.conversation.id,
+        ),
+    ],
+    mainAxisSize: .min,
+  );
+}
+
+class const _OtherConversationStatus({
   required final _LoadedChatConversationData data,
   required final ValueChanged<ChatDraft>? onEditDraft,
 }) extends StatelessWidget {
@@ -2250,18 +2355,20 @@ void _reportContinueAgentFlutterError(_ContinueErrorRequest request) {
 void _showContinueAgentError(BuildContext context, Exception error) {
   if (!context.mounted) return;
 
-  final messageKey = switch (error) {
+  final message = switch (error) {
     UnsupportedTranscriptVersionException() =>
-      LocaleKeys.chats_screens_chat_conversation_transcript_context_unsupported,
+      LocaleKeys.chats_screens_chat_conversation_transcript_context_unsupported
+          .tr(),
     MalformedTranscriptContextException() =>
-      LocaleKeys.chats_screens_chat_conversation_transcript_context_malformed,
+      LocaleKeys.chats_screens_chat_conversation_transcript_context_malformed
+          .tr(),
     SelectedModelNotFoundException() =>
-      LocaleKeys.chats_screens_chat_conversation_model_missing,
-    _ => LocaleKeys.chats_screens_chat_conversation_continue_error,
+      LocaleKeys.chats_screens_chat_conversation_model_missing.tr(),
+    _ => LocaleKeys.chats_screens_chat_conversation_continue_error.tr(),
   };
   final _ = AuraSnackBars.show(
     context: context,
-    content: Text(messageKey.tr()),
+    content: Text(message),
     variant: .error,
   );
 }

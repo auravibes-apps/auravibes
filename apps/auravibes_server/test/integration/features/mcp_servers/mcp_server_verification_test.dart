@@ -264,15 +264,13 @@ void main() {
               resource.resourceKind == WorkspaceResourceKind.mcpServer,
         );
         final snapshot = jsonDecode(server.data) as Map<String, dynamic>;
+        final copiedSnapshotJson = snapshot['catalogSnapshotJson'] as String;
         final secret = (await WorkspaceSecret.db.find(
           fixture.session,
           where: (table) => table.workspaceId.equals(fixture.workspaceId),
         )).single;
-        expect(snapshot['catalogSnapshotJson'], contains('Original'));
-        expect(
-          snapshot['catalogSnapshotJson'],
-          isNot(contains('secret-value')),
-        );
+        expect(copiedSnapshotJson, contains('Original'));
+        expect(copiedSnapshotJson, isNot(contains('secret-value')));
         expect(
           base64Encode(secret.ciphertext.buffer.asUint8List()),
           isNot(contains('secret-value')),
@@ -282,7 +280,30 @@ void main() {
           fixture.session,
           where: (table) => table.catalogId.equals('catalog-1'),
         );
-        expect(snapshot['catalogSnapshotJson'], contains('Original'));
+        final persistedServer = await WorkspaceResource.db.findFirstRow(
+          fixture.session,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.resourceKind.equals(WorkspaceResourceKind.mcpServer) &
+              table.resourceId.equals(created.mcpServerId),
+        );
+        expect(persistedServer, isNotNull);
+        final storedServer = persistedServer!;
+        final persistedServerData =
+            jsonDecode(storedServer.data) as Map<String, dynamic>;
+        final persistedSnapshotJson =
+            persistedServerData['catalogSnapshotJson'] as String;
+        final persistedSnapshot =
+            jsonDecode(persistedSnapshotJson) as Map<String, dynamic>;
+        expect(persistedSnapshotJson, copiedSnapshotJson);
+        expect(storedServer.data, isNot(contains('secret-value')));
+        expect(persistedSnapshot['id'], 'catalog-1');
+        expect(persistedSnapshot['name'], 'Original');
+        expect(persistedSnapshot['transport'], 'streamableHttp');
+        final persistedOption =
+            persistedSnapshot['option'] as Map<String, dynamic>;
+        expect(persistedOption['key'], 'personal');
+        expect(persistedOption['name'], 'Personal');
         final replay = await useCases.create(
           fixture.session,
           userId: fixture.userId,

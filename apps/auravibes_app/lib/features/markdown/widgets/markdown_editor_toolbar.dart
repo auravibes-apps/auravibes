@@ -1,16 +1,17 @@
 // Required: Toolbar actions intentionally mutate selected editor text.
+
 import 'dart:async';
 
 import 'package:auravibes_app/features/markdown/widgets/markdown_link_dialog.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const MarkdownEditorToolbar({
   required final TextEditingController controller,
   required final FocusNode focusNode,
+  required final MarkdownEditorShortcutController shortcutController,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -20,7 +21,6 @@ class const MarkdownEditorToolbar({
 class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
   final _history = _MarkdownToolbarHistory();
   String _lastText = '';
-  _MarkdownToolbarKeyEventHandler? _keyEventHandler;
 
   TextEditingController get _controller => widget.controller;
 
@@ -34,23 +34,25 @@ class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
   void initState() {
     super.initState();
     _lastText = _controller.text;
-    _keyEventHandler = _MarkdownToolbarKeyEventHandler(
-      platform: () => Theme.of(context).platform,
-      onAction: (action) => _applyAction(action, context),
-    )..attach(_focusNode);
+    widget.shortcutController._toolbarState = this;
   }
 
   @override
   void dispose() {
-    _keyEventHandler?.dispose();
+    if (identical(widget.shortcutController._toolbarState, this)) {
+      widget.shortcutController._toolbarState = null;
+    }
     super.dispose();
   }
 
   @override
   void didUpdateWidget(MarkdownEditorToolbar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusNode != widget.focusNode) {
-      _keyEventHandler?.attach(_focusNode);
+    if (oldWidget.shortcutController != widget.shortcutController) {
+      if (identical(oldWidget.shortcutController._toolbarState, this)) {
+        oldWidget.shortcutController._toolbarState = null;
+      }
+      widget.shortcutController._toolbarState = this;
     }
     if (oldWidget.controller == widget.controller) return;
 
@@ -80,6 +82,19 @@ class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
 }
 
 extension on _MarkdownEditorToolbarState {
+  void _applyShortcut(
+    MarkdownEditorShortcutAction action,
+    BuildContext context,
+  ) {
+    final toolbarAction = switch (action) {
+      .bold => _ToolbarActionKind.bold,
+      .italic => _ToolbarActionKind.italic,
+      .code => _ToolbarActionKind.code,
+      .link => _ToolbarActionKind.link,
+    };
+    _applyAction(toolbarAction, context);
+  }
+
   void _toolbarEdit(VoidCallback edit) {
     edit();
     _lastText = _controller.text;
@@ -151,78 +166,16 @@ extension on _MarkdownEditorToolbarState {
   }
 }
 
-class _MarkdownToolbarKeyEventHandler({
-  required final TargetPlatform Function() platform,
-  required final void Function(_ToolbarActionKind) onAction,
-}) {
-  FocusNode? _focusNode;
-  KeyEventResult Function(FocusNode, KeyEvent)? _previousHandler;
-  KeyEventResult Function(FocusNode, KeyEvent)? _handler;
+/// A Markdown formatting operation bound to an editor keyboard shortcut.
+enum MarkdownEditorShortcutAction { bold, italic, code, link }
 
-  void attach(FocusNode focusNode) {
-    _detach();
-    _focusNode = focusNode;
-    _previousHandler = focusNode.onKeyEvent;
-    final handler = _handle;
-    _handler = handler;
-    focusNode.onKeyEvent = handler;
-  }
+/// Dispatches keyboard actions to the Markdown editor toolbar.
+class MarkdownEditorShortcutController {
+  _MarkdownEditorToolbarState? _toolbarState;
 
-  void dispose() => _detach();
-
-  void _detach() {
-    final focusNode = _focusNode;
-    final handler = _handler;
-    if (focusNode != null &&
-        handler != null &&
-        identical(focusNode.onKeyEvent, handler)) {
-      focusNode.onKeyEvent = _previousHandler;
-    }
-    _focusNode = null;
-    _previousHandler = null;
-    _handler = null;
-  }
-
-  KeyEventResult _handle(FocusNode node, KeyEvent event) {
-    final action = _MarkdownToolbarShortcuts.actionFor(event, platform());
-    if (action != null) {
-      onAction(action);
-
-      return .handled;
-    }
-
-    return _previousHandler?.call(node, event) ?? .ignored;
-  }
-}
-
-abstract final class _MarkdownToolbarShortcuts {
-  static _ToolbarActionKind? actionFor(
-    KeyEvent event,
-    TargetPlatform platform,
-  ) {
-    if (event is! KeyDownEvent || !_hasPrimaryModifier(platform)) return null;
-
-    return _actionForKey(event.logicalKey);
-  }
-
-  static bool _hasPrimaryModifier(TargetPlatform platform) {
-    final keyboard = HardwareKeyboard.instance;
-    if (keyboard.isAltPressed || keyboard.isShiftPressed) return false;
-
-    // Use Command on macOS and Control elsewhere for the shared actions.
-    return platform == TargetPlatform.macOS
-        ? keyboard.isMetaPressed && !keyboard.isControlPressed
-        : keyboard.isControlPressed && !keyboard.isMetaPressed;
-  }
-
-  static _ToolbarActionKind? _actionForKey(LogicalKeyboardKey key) =>
-      switch (key) {
-        .keyB => .bold,
-        .keyI => .italic,
-        .keyE => .code,
-        .keyK => .link,
-        _ => null,
-      };
+  /// Applies [action] through the active toolbar.
+  void invoke(MarkdownEditorShortcutAction action, BuildContext context) =>
+      _toolbarState?._applyShortcut(action, context);
 }
 
 typedef _MarkdownHistoryAction = ({

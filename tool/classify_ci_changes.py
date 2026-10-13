@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Classify changed paths for lightweight CI routing.
 
-This module only decides whether application checks are needed and whether the
-Renovate config validator should run. It never launches dependency updates.
+This module decides whether application checks, Serverpod integration tests,
+and the Renovate config validator should run. It never launches dependency
+updates.
 """
 
 import json
@@ -14,6 +15,16 @@ _DOCUMENTATION_FILES = (
     "changelog",
     "license",
 )
+
+_SERVER_INTEGRATION_SHARED_PATHS = {
+    ".fvmrc",
+    ".vscode/settings.json",
+    "melos.yaml",
+    "pubspec.yaml",
+    "pubspec.lock",
+    "pubspec_overrides.yaml",
+    "tool/classify_ci_changes.py",
+}
 
 
 def _requires_code_checks(path):
@@ -51,6 +62,29 @@ def _is_skill_metadata(path):
     return filename.endswith((".md", ".mdx")) or path.endswith("/evals/evals.json")
 
 
+def _requires_server_integration(path):
+    normalized = path.replace("\\", "/")
+    filename = normalized.rsplit("/", 1)[-1].lower()
+
+    if (
+        filename.endswith((".md", ".mdx"))
+        or filename in _DOCUMENTATION_FILES
+        or _is_skill_metadata(normalized)
+    ):
+        return False
+    if normalized.startswith(
+        (
+            "apps/auravibes_server/",
+            "packages/auravibes_engine/",
+            ".github/",
+            ".fvm/",
+        )
+    ):
+        return True
+
+    return normalized in _SERVER_INTEGRATION_SHARED_PATHS
+
+
 def classify_paths(paths):
     """Return whether paths need app checks and Renovate config validation."""
     normalized_paths = [
@@ -58,6 +92,9 @@ def classify_paths(paths):
     ]
     return {
         "run_code_checks": any(_requires_code_checks(path) for path in normalized_paths),
+        "run_server_integration": any(
+            _requires_server_integration(path) for path in normalized_paths
+        ),
         "renovate_config_changes": "renovate.json" in normalized_paths,
     }
 

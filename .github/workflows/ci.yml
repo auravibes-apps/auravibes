@@ -58,6 +58,9 @@ jobs:
       - name: Test CI tools
         run: dart test tool/changed_test_selector_test.dart tool/merge_lcov_test.dart
 
+      - name: Test CI change classifier
+        run: python3 tool/classify_ci_changes_test.py
+
       - name: Audit first-party tool schemas
         working-directory: apps/auravibes_app
         run: flutter test test/first_party_tool_schema_audit_test.dart --no-pub
@@ -177,6 +180,7 @@ jobs:
     outputs:
       platforms: ${{ steps.platforms.outputs.platforms }}
       run_code_checks: ${{ steps.platforms.outputs.run_code_checks }}
+      run_server_integration: ${{ steps.platforms.outputs.run_server_integration }}
       renovate_config_changes: ${{ steps.platforms.outputs.renovate_config_changes }}
     steps:
       - name: Checkout
@@ -242,6 +246,7 @@ jobs:
             ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
             printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
             printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
+            printf 'run_server_integration=true\n' >> "$GITHUB_OUTPUT"
             printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -249,12 +254,14 @@ jobs:
           changed_files="$(git diff --name-only --diff-filter=ACDMRTUXB "$base_sha" "$head_sha")"
           classification="$(printf '%s\n' "$changed_files" | python3 tool/classify_ci_changes.py)"
           run_code_checks="$(jq -r '.run_code_checks' <<< "$classification")"
+          run_server_integration="$(jq -r '.run_server_integration' <<< "$classification")"
           renovate_config_changes="$(jq -r '.renovate_config_changes' <<< "$classification")"
           platforms=()
 
           if [[ "$full_build" == true ]]; then
             printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
             printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
+            printf 'run_server_integration=%s\n' "$run_server_integration" >> "$GITHUB_OUTPUT"
             printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -294,6 +301,7 @@ jobs:
             printf '%s\n' "${platforms[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))' | sed 's/^/platforms=/' >> "$GITHUB_OUTPUT"
           fi
           printf 'run_code_checks=%s\n' "$run_code_checks" >> "$GITHUB_OUTPUT"
+          printf 'run_server_integration=%s\n' "$run_server_integration" >> "$GITHUB_OUTPUT"
           printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
 
   renovate-validation:
@@ -312,7 +320,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24.11.0
+          node-version: 24.21.0
 
       - name: Validate Renovate configuration
         run: npx --yes --package renovate@44.149.0 -- renovate-config-validator --strict
@@ -394,7 +402,7 @@ jobs:
           fi
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            if ! dart run tool/changed_test_selector.dart select \
+            if ! dart tool/changed_test_selector.dart select \
               --base "${{ github.event.pull_request.base.sha }}" \
               --head HEAD \
               --output "$manifest"; then
@@ -415,7 +423,7 @@ jobs:
           if [ -s "$timings" ]; then
             matrix_args+=(--timings "$timings")
           fi
-          matrix="$(dart run tool/changed_test_selector.dart "${matrix_args[@]}")"
+          matrix="$(dart tool/changed_test_selector.dart "${matrix_args[@]}")"
           printf '%s\n' "$matrix" > "$matrix_file"
           report_count="$(ruby -rjson -e 'puts JSON.parse(ARGF.read).fetch("include").length' <<< "$matrix")"
           timing_source="fixed shard fallback"
@@ -937,10 +945,70 @@ jobs:
         working-directory: apps/auravibes_server
         run: docker compose down -v --remove-orphans
 
+  server-integration:
+    name: server integration tests
+    needs: change
+    if: ${{ needs.change.outputs.run_server_integration == 'true' }}
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_PASSWORD: ci-postgres-password
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Configure disposable test database credentials
+        working-directory: apps/auravibes_server
+        shell: bash
+        run: |
+          set -euo pipefail
+          awk -v database_password="$POSTGRES_PASSWORD" '
+            /^test:$/ { in_test = 1; print; next }
+            /^[^[:space:]]/ { in_test = 0 }
+            in_test && /^  database:/ {
+              printf "  database: \"%s\"\n", database_password
+              replaced = 1
+              next
+            }
+            { print }
+            END { if (!replaced) exit 1 }
+          ' config/passwords.example.yaml > config/passwords.yaml
+
+      - name: Start PostgreSQL test service
+        working-directory: apps/auravibes_server
+        run: docker compose up -d --remove-orphans postgres_test
+
+      - name: Wait for PostgreSQL
+        working-directory: apps/auravibes_server
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in {1..60}; do
+            if docker compose exec -T postgres_test pg_isready \
+              -U postgres -d auravibes_server_test; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker compose logs postgres_test
+          exit 1
+
+      - name: Run Serverpod integration suite
+        working-directory: apps/auravibes_server
+        run: dart test test/integration --reporter=compact
+
+      - name: Stop PostgreSQL test service
+        if: ${{ always() }}
+        working-directory: apps/auravibes_server
+        run: docker compose down -v --remove-orphans
+
   ci-success:
     name: ci success
     if: ${{ always() }}
-    needs: [change, format, analysis, localization-audit, code-health, integrity, test-plan, test, responsive-shell-goldens, coverage, platform-builds, server-compose, renovate-validation]
+    needs: [change, format, analysis, localization-audit, code-health, integrity, test-plan, test, responsive-shell-goldens, coverage, platform-builds, server-compose, server-integration, renovate-validation]
     runs-on: ubuntu-latest
     steps:
       - name: Fail for failed required checks

@@ -6,11 +6,48 @@ import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/organisms/aura_popup_menu_controller.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraPopupMenu', () {
+    for (final activation in <({String name, LogicalKeyboardKey key})>[
+      (name: 'Enter', key: .enter),
+      (name: 'Space', key: .space),
+    ]) {
+      testWidgets('opens from the trigger with ${activation.name}', (
+        tester,
+      ) async {
+        final controller = AuraPopupMenuController();
+        final triggerFocusNode = FocusNode();
+        addTearDown(triggerFocusNode.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Portal(
+                child: AuraPopupMenu(
+                  child: const Text('Open Menu'),
+                  items: const [AuraPopupMenuItem(title: Text('Item 1'))],
+                  controller: controller,
+                  focusNode: triggerFocusNode,
+                ),
+              ),
+            ),
+          ),
+        );
+        triggerFocusNode.requestFocus();
+        await tester.pump();
+
+        expect(await tester.sendKeyEvent(activation.key), isTrue);
+        await tester.pump();
+
+        expect(controller.isShowing, isTrue);
+        expect(find.text('Item 1'), findsOneWidget);
+      });
+    }
+
     testWidgets('renders child widget', (tester) async {
       final controller = AuraPopupMenuController();
 

@@ -616,17 +616,22 @@ class const _CheckpointReplayMessageHeading({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
-    final roleKey = message.isUser
-        ? LocaleKeys.compaction_compacted_history_preview_role_user
-        : switch (message.messageType) {
-            .system =>
-              LocaleKeys.compaction_compacted_history_preview_role_system,
-            _ => LocaleKeys.compaction_compacted_history_preview_role_assistant,
-          };
+    final roleLabel =
+        (message.isUser
+                ? LocaleKeys.compaction_compacted_history_preview_role_user
+                : switch (message.messageType) {
+                    .system =>
+                      LocaleKeys
+                          .compaction_compacted_history_preview_role_system,
+                    _ =>
+                      LocaleKeys
+                          .compaction_compacted_history_preview_role_assistant,
+                  })
+            .tr();
 
     return TextLocale(
       LocaleKeys.compaction_compacted_history_preview_message_heading,
-      args: [roleKey.tr(), message.id],
+      args: [roleLabel, message.id],
     );
   }
 }

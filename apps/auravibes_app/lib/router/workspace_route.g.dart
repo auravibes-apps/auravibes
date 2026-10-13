@@ -45,12 +45,7 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
         StatefulShellBranchData.$branch(
           routes: [
             GoRouteData.$route(
-              path: 'more',
-              hasOverriddenOnExit: false,
-              factory: $MoreRoute._fromState,
-            ),
-            GoRouteData.$route(
-              path: 'more/manage-workspaces',
+              path: 'manage-workspaces',
               hasOverriddenOnExit: false,
               factory: $WorkspaceManagementRoute._fromState,
               routes: [
@@ -67,7 +62,7 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
               ],
             ),
             GoRouteData.$route(
-              path: 'more/cloud-accounts',
+              path: 'cloud-accounts',
               hasOverriddenOnExit: false,
               factory: $CloudAccountsRoute._fromState,
               routes: [
@@ -94,17 +89,17 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
               ],
             ),
             GoRouteData.$route(
-              path: 'more/tools',
+              path: 'tools',
               hasOverriddenOnExit: false,
               factory: $ToolsRoute._fromState,
             ),
             GoRouteData.$route(
-              path: 'more/models',
+              path: 'models',
               hasOverriddenOnExit: false,
               factory: $ModelsRoute._fromState,
             ),
             GoRouteData.$route(
-              path: 'more/service-connections',
+              path: 'service-connections',
               hasOverriddenOnExit: false,
               factory: $ServiceConnectionsRoute._fromState,
               routes: [
@@ -121,7 +116,7 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
               ],
             ),
             GoRouteData.$route(
-              path: 'more/skills',
+              path: 'skills',
               hasOverriddenOnExit: false,
               factory: $SkillsRoute._fromState,
               routes: [
@@ -158,7 +153,7 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
               ],
             ),
             GoRouteData.$route(
-              path: 'more/skill-credential-definitions',
+              path: 'skill-credential-definitions',
               hasOverriddenOnExit: false,
               factory: $SkillCredentialDefinitionsRoute._fromState,
               routes: [
@@ -175,7 +170,7 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
               ],
             ),
             GoRouteData.$route(
-              path: 'more/agents',
+              path: 'agents',
               hasOverriddenOnExit: false,
               factory: $AgentsRoute._fromState,
               routes: [
@@ -348,31 +343,6 @@ mixin $ChatsRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-mixin $MoreRoute on GoRouteData {
-  static MoreRoute _fromState(GoRouterState state) =>
-      MoreRoute(workspaceId: state.pathParameters['workspaceId']!);
-
-  MoreRoute get _self => this as MoreRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more',
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
 mixin $WorkspaceManagementRoute on GoRouteData {
   static WorkspaceManagementRoute _fromState(GoRouterState state) =>
       WorkspaceManagementRoute(
@@ -384,7 +354,7 @@ mixin $WorkspaceManagementRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/manage-workspaces',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/manage-workspaces',
     queryParams: {if (_self.view != null) 'view': _self.view},
   );
 
@@ -410,7 +380,7 @@ mixin $WorkspaceCreateRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/manage-workspaces/create',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/manage-workspaces/create',
   );
 
   @override
@@ -440,7 +410,7 @@ mixin $CloudWorkspaceDetailRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/manage-workspaces/cloud/${Uri.encodeComponent(_self.cloudAccountId)}/${Uri.encodeComponent(_self.cloudWorkspaceId.toString())}',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/manage-workspaces/cloud/${Uri.encodeComponent(_self.cloudAccountId)}/${Uri.encodeComponent(_self.cloudWorkspaceId.toString())}',
     queryParams: {if (_self.serverUrl != null) 'server-url': _self.serverUrl},
   );
 
@@ -466,7 +436,7 @@ mixin $CloudAccountsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/cloud-accounts',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/cloud-accounts',
   );
 
   @override
@@ -494,7 +464,7 @@ mixin $CloudAccountAddRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/cloud-accounts/add',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/cloud-accounts/add',
     queryParams: {
       if (_self.returnPath != null) 'return-path': _self.returnPath,
     },
@@ -525,7 +495,7 @@ mixin $CloudAccountLoginRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/cloud-accounts/login',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/cloud-accounts/login',
     queryParams: {
       if (_self.returnPath != null) 'return-path': _self.returnPath,
     },
@@ -556,7 +526,7 @@ mixin $CloudAccountRegisterRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/cloud-accounts/register',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/cloud-accounts/register',
     queryParams: {
       if (_self.returnPath != null) 'return-path': _self.returnPath,
     },
@@ -588,7 +558,7 @@ mixin $CloudAccountForgotPasswordRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/cloud-accounts/forgot-password',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/cloud-accounts/forgot-password',
     queryParams: {
       if (_self.returnPath != null) 'return-path': _self.returnPath,
     },
@@ -616,7 +586,7 @@ mixin $ToolsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/tools',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/tools',
   );
 
   @override
@@ -641,7 +611,7 @@ mixin $ModelsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/models',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/models',
   );
 
   @override
@@ -669,7 +639,7 @@ mixin $ServiceConnectionsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/service-connections',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/service-connections',
     queryParams: {if (_self.view != null) 'view': _self.view},
   );
 
@@ -702,7 +672,7 @@ mixin $ServiceConnectionCreateRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/service-connections/new',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/service-connections/new',
     queryParams: {
       if (_self.returnPath != null) 'return-path': _self.returnPath,
       if (_self.type != null) 'type': _self.type,
@@ -736,7 +706,7 @@ mixin $ServiceConnectionEditRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/service-connections/${Uri.encodeComponent(_self.connectionId)}',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/service-connections/${Uri.encodeComponent(_self.connectionId)}',
   );
 
   @override
@@ -761,7 +731,7 @@ mixin $SkillsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skills',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skills',
   );
 
   @override
@@ -786,7 +756,7 @@ mixin $SkillCreateRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skills/new',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skills/new',
   );
 
   @override
@@ -814,7 +784,7 @@ mixin $SkillToolCreateRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skills/${Uri.encodeComponent(_self.skillId)}/tools/new',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skills/${Uri.encodeComponent(_self.skillId)}/tools/new',
   );
 
   @override
@@ -843,7 +813,7 @@ mixin $SkillToolEditRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skills/${Uri.encodeComponent(_self.skillId)}/tools/${Uri.encodeComponent(_self.toolId)}',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skills/${Uri.encodeComponent(_self.skillId)}/tools/${Uri.encodeComponent(_self.toolId)}',
   );
 
   @override
@@ -871,7 +841,7 @@ mixin $SkillResourceCreateRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skills/${Uri.encodeComponent(_self.skillId)}/resources/new',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skills/${Uri.encodeComponent(_self.skillId)}/resources/new',
   );
 
   @override
@@ -900,7 +870,7 @@ mixin $SkillResourceEditRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skills/${Uri.encodeComponent(_self.skillId)}/resources/${Uri.encodeComponent(_self.resourceId)}',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skills/${Uri.encodeComponent(_self.skillId)}/resources/${Uri.encodeComponent(_self.resourceId)}',
   );
 
   @override
@@ -927,7 +897,7 @@ mixin $SkillDetailRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skills/${Uri.encodeComponent(_self.skillId)}',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skills/${Uri.encodeComponent(_self.skillId)}',
   );
 
   @override
@@ -955,7 +925,7 @@ mixin $SkillCredentialDefinitionsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skill-credential-definitions',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions',
   );
 
   @override
@@ -990,7 +960,7 @@ mixin $SkillCredentialDefinitionCreateRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skill-credential-definitions/new',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions/new',
     queryParams: {
       if (_self.returnCreated != false)
         'return-created': _self.returnCreated.toString(),
@@ -1023,7 +993,7 @@ mixin $SkillCredentialDefinitionEditRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skill-credential-definitions/${Uri.encodeComponent(_self.definitionId)}',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions/${Uri.encodeComponent(_self.definitionId)}',
   );
 
   @override
@@ -1048,7 +1018,7 @@ mixin $AgentsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/agents',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/agents',
   );
 
   @override
@@ -1073,7 +1043,7 @@ mixin $AgentCreateRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/agents/new',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/agents/new',
   );
 
   @override
@@ -1100,7 +1070,7 @@ mixin $AgentDetailRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/agents/${Uri.encodeComponent(_self.agentId)}',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/agents/${Uri.encodeComponent(_self.agentId)}',
   );
 
   @override

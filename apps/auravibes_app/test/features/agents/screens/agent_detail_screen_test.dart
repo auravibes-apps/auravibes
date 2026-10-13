@@ -118,7 +118,7 @@ void main() {
           ),
         ),
         GoRoute(
-          path: '/workspaces/:workspaceId/more/agents',
+          path: '/workspaces/:workspaceId/agents',
           builder: (_, _) => const Text('Agents return'),
         ),
       ],
@@ -179,7 +179,7 @@ void main() {
       routes: [
         GoRoute(path: '/agent', builder: route.build, onExit: route.onExit),
         GoRoute(
-          path: '/workspaces/:workspaceId/more/skills/:skillId',
+          path: '/workspaces/:workspaceId/skills/:skillId',
           builder: (_, state) =>
               Text('Selected skill ${state.pathParameters['skillId']}'),
         ),

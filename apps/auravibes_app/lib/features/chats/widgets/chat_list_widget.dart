@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
@@ -13,6 +14,7 @@ import 'package:auravibes_app/features/chats/usecases/bulk_conversation_actions_
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_feedback.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_draft_badge.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -1647,8 +1649,27 @@ class const _ChatTileTitleRow({
           style: .heading6,
         ),
       ),
+      _ChatTileDraftMarker(chat: chat),
     ],
   );
+}
+
+class const _ChatTileDraftMarker({required final ConversationEntity chat})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final draft = ref.watch(
+      conversationDraftProvider(chat.workspaceId, chat.id),
+    );
+    if (draft == null || draft.isEmpty) return const SizedBox.shrink();
+
+    return AuraRow(
+      children: [
+        const SizedBox(width: 8),
+        ConversationDraftBadge(conversationId: chat.id),
+      ],
+    );
+  }
 }
 
 class const _ChatTileMenu({

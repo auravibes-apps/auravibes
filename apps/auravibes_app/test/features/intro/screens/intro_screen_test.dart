@@ -556,7 +556,7 @@ class _IntroFixture {
             },
           ),
           GoRoute(
-            path: '/workspaces/:workspaceId/more/service-connections/new',
+            path: '/workspaces/:workspaceId/service-connections/new',
             builder: (context, state) {
               return Text(
                 'service connection: ${state.uri.queryParameters['type']}',

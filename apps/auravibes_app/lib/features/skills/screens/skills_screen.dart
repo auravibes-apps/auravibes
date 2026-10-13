@@ -147,7 +147,7 @@ extension on _SkillsScreenScaffold {
   Future<void> _openCreateSkill(BuildContext context) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final result = await context.push<bool>(
-      '/workspaces/$workspaceId/more/skills/new',
+      '/workspaces/$workspaceId/skills/new',
     );
     if (result == true) {
       _scheduleWorkspaceSkillsRefresh(container);
@@ -157,7 +157,7 @@ extension on _SkillsScreenScaffold {
   Future<void> _openSkill(BuildContext context, String skillId) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final result = await context.push<bool>(
-      '/workspaces/$workspaceId/more/skills/$skillId',
+      '/workspaces/$workspaceId/skills/$skillId',
     );
     if (result == true) {
       _scheduleWorkspaceSkillsRefresh(container);
@@ -1792,14 +1792,10 @@ class _DeleteSkillDialog extends StatelessWidget {
     return AuraConfirmDialog(
       title: const TextLocale(LocaleKeys.skills_screen_delete),
       message: const TextLocale(LocaleKeys.skills_screen_delete_confirm),
-      confirmLabel: Text(_label(context, LocaleKeys.common_delete)),
-      cancelLabel: Text(_label(context, LocaleKeys.common_cancel)),
+      confirmLabel: Text(LocaleKeys.common_delete.tr(context: context)),
+      cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
       isDestructive: true,
     );
-  }
-
-  String _label(BuildContext context, String key) {
-    return key.tr(context: context);
   }
 }
 

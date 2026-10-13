@@ -172,7 +172,7 @@ class const ServiceConnectionListItem({
         lastTestSummary: data.lastTestSummary,
       );
 
-  new _fromCloudMcp(ServiceConnectionCloudMcp data)
+  new fromCloudMcp(ServiceConnectionCloudMcp data)
     : this(
         id: data.identity.id,
         workspaceId: data.identity.workspaceId,
@@ -221,10 +221,6 @@ class const ServiceConnectionListItem({
 
   bool hasActions() => canRefresh || canReconnect;
 }
-
-ServiceConnectionListItem serviceConnectionListItemFromCloudMcp(
-  ServiceConnectionCloudMcp data,
-) => ServiceConnectionListItem._fromCloudMcp(data);
 
 enum ServiceConnectionListItemKind { modelProvider, skillCredential, mcpServer }
 

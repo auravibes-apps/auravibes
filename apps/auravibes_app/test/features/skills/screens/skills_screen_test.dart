@@ -191,7 +191,7 @@ void main() {
           ),
         ),
         GoRoute(
-          path: '/workspaces/:workspaceId/more/skills',
+          path: '/workspaces/:workspaceId/skills',
           pageBuilder: (_, state) => NoTransitionPage(
             child: SkillsScreen(
               workspaceId: state.pathParameters['workspaceId']!,
@@ -200,7 +200,7 @@ void main() {
           ),
         ),
         GoRoute(
-          path: '/workspaces/:workspaceId/more/skills/:skillId',
+          path: '/workspaces/:workspaceId/skills/:skillId',
           pageBuilder: (_, state) => NoTransitionPage(
             child: Text('Editing ${state.pathParameters['skillId']}'),
             key: state.pageKey,
@@ -222,7 +222,7 @@ void main() {
     final _ = await tester.runAsync(
       () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
     );
-    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
     await tester.enterText(find.byType(EditableText), 'Summary');
     final _ = await tester.pumpAndSettle();
@@ -239,14 +239,14 @@ void main() {
     expect(find.text('Translate'), findsNothing);
     router.go('/');
     final _ = await tester.pumpAndSettle();
-    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
     expect(
       tester.widget<EditableText>(find.byType(EditableText)).controller.text,
       'Summary',
     );
     expect(find.text('Translate'), findsNothing);
-    router.go('/workspaces/B/more/skills');
+    router.go('/workspaces/B/skills');
     final _ = await tester.pumpAndSettle();
     expect(
       tester.widget<EditableText>(find.byType(EditableText)).controller.text,
@@ -254,7 +254,7 @@ void main() {
     );
     await tester.enterText(find.byType(EditableText), 'Translate');
     final _ = await tester.pumpAndSettle();
-    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
     expect(
       tester.widget<EditableText>(find.byType(EditableText)).controller.text,
@@ -272,7 +272,7 @@ void main() {
       () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
     );
     final _ = await tester.pumpAndSettle();
-    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Workspace Skills'), findsOneWidget);
@@ -288,7 +288,7 @@ void main() {
 
     expect(find.text('Editing ${fixture.skill.id}'), findsOneWidget);
 
-    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Write Summary'));
     final _ = await tester.pumpAndSettle();
@@ -300,7 +300,7 @@ void main() {
 
     expect(find.text('Editing ${fixture.skill.id}'), findsOneWidget);
 
-    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Write Summary'));
     final _ = await tester.pumpAndSettle();
@@ -394,7 +394,7 @@ void main() {
       () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
     );
     final _ = await tester.pumpAndSettle();
-    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
 
     expect(
@@ -422,7 +422,7 @@ void main() {
       () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
     );
     final _ = await tester.pumpAndSettle();
-    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
 
     expect(
@@ -442,7 +442,7 @@ void main() {
       () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
     );
     final _ = await tester.pumpAndSettle();
-    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
 
     final search = find.byType(EditableText);
@@ -499,7 +499,7 @@ void main() {
       () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
     );
     final _ = await tester.pumpAndSettle();
-    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('skills-select-all')));
@@ -546,7 +546,7 @@ void main() {
       () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
     );
     final _ = await tester.pumpAndSettle();
-    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('skills-select-all')));

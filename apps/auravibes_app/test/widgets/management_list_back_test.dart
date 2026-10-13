@@ -16,8 +16,8 @@ void main() {
       tester,
     ) async {
       final listPath = isManager
-          ? '/workspaces/A/more/manage-workspaces'
-          : '/workspaces/A/more/skill-credential-definitions';
+          ? '/workspaces/A/manage-workspaces'
+          : '/workspaces/A/skill-credential-definitions';
       final router = GoRouter(
         routes: [
           GoRoute(

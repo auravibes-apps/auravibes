@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/markdown/widgets/empty_markdown_preview.dart';
+import 'package:auravibes_app/features/markdown/widgets/markdown_editor_shortcut_scope.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_list_input_formatter.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_preview.dart';
@@ -215,6 +216,7 @@ class const _MarkdownEditorBody({required final _MarkdownEditorView view})
           controller: view.controller,
           focusNode: view.focusNode,
           isFocused: view.isFocused,
+          isPreview: view.isPreview,
         ),
       ),
       _MarkdownEditorPreview(controller: view.controller),
@@ -249,6 +251,7 @@ class const _MarkdownEditorSurface({
   required final TextEditingController controller,
   required final FocusNode focusNode,
   required final bool isFocused,
+  required final bool isPreview,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _MarkdownEditorSurfaceContainer(
@@ -256,6 +259,7 @@ class const _MarkdownEditorSurface({
     controller: controller,
     focusNode: focusNode,
     isFocused: isFocused,
+    isPreview: isPreview,
   );
 }
 
@@ -270,6 +274,7 @@ class const _MarkdownEditorSurfaceContainer({
   required final TextEditingController controller,
   required final FocusNode focusNode,
   required final bool isFocused,
+  required final bool isPreview,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Container(
@@ -278,6 +283,7 @@ class const _MarkdownEditorSurfaceContainer({
       controller: controller,
       focusNode: focusNode,
       isFocused: isFocused,
+      isPreview: isPreview,
     ),
   );
 }
@@ -286,19 +292,36 @@ class const _MarkdownEditorColumn({
   required final TextEditingController controller,
   required final FocusNode focusNode,
   required final bool isFocused,
-}) extends StatelessWidget {
+  required final bool isPreview,
+}) extends StatefulWidget {
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      _MarkdownEditorFocusIndicator(isFocused: isFocused),
-      Expanded(
-        child: _MarkdownEditorInput(
-          controller: controller,
-          focusNode: focusNode,
+  State<_MarkdownEditorColumn> createState() => _MarkdownEditorColumnState();
+}
+
+class _MarkdownEditorColumnState extends State<_MarkdownEditorColumn> {
+  final _shortcutController = MarkdownEditorShortcutController();
+
+  @override
+  Widget build(BuildContext context) => MarkdownEditorShortcutScope(
+    controller: _shortcutController,
+    focusNode: widget.focusNode,
+    enabled: !widget.isPreview,
+    child: Column(
+      children: [
+        _MarkdownEditorFocusIndicator(isFocused: widget.isFocused),
+        Expanded(
+          child: _MarkdownEditorInput(
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+          ),
         ),
-      ),
-      _MarkdownEditorToolbar(controller: controller, focusNode: focusNode),
-    ],
+        _MarkdownEditorToolbar(
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          shortcutController: _shortcutController,
+        ),
+      ],
+    ),
   );
 }
 
@@ -412,6 +435,7 @@ InputDecoration _markdownInputDecoration(
 class const _MarkdownEditorToolbar({
   required final TextEditingController controller,
   required final FocusNode focusNode,
+  required final MarkdownEditorShortcutController shortcutController,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
@@ -423,6 +447,7 @@ class const _MarkdownEditorToolbar({
         child: MarkdownEditorToolbar(
           controller: controller,
           focusNode: focusNode,
+          shortcutController: shortcutController,
         ),
       ),
     );

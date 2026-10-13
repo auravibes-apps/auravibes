@@ -94,53 +94,47 @@ void main() {
       );
     });
 
-    test('titles the More screen and its feature routes', () {
-      expect(
-        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/more'),
-        LocaleKeys.more_screen_title,
-      );
+    test('titles feature routes without a more prefix', () {
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/manage-workspaces',
+          '/workspaces/ws-1/manage-workspaces',
         ),
         LocaleKeys.workspace_management_title,
       );
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/cloud-accounts/login',
+          '/workspaces/ws-1/cloud-accounts/login',
         ),
         LocaleKeys.cloud_accounts_login_existing,
       );
       expect(
-        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/more/tools'),
+        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/tools'),
         LocaleKeys.tools_screen_title,
       );
       expect(
-        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/more/models'),
+        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/models'),
         LocaleKeys.models_screens_title,
       );
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/service-connections/1',
+          '/workspaces/ws-1/service-connections/1',
         ),
         LocaleKeys.service_connections_title,
       );
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/skills/skill-1/tools/1',
+          '/workspaces/ws-1/skills/skill-1/tools/1',
         ),
         LocaleKeys.skills_screen_title,
       );
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/skill-credential-definitions/1',
+          '/workspaces/ws-1/skill-credential-definitions/1',
         ),
         LocaleKeys.skill_credentials_definitions_title,
       );
       expect(
-        app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/agents/agent-1',
-        ),
+        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/agents/agent-1'),
         LocaleKeys.agents_title,
       );
     });

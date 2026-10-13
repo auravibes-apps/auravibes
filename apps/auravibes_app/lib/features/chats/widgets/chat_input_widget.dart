@@ -236,7 +236,13 @@ ChatDraft? _initialConversationDraft(WidgetRef ref, ChatInputWidget input) {
   final conversationId = input.conversationId;
   if (conversationId == null) return null;
 
-  return ref.read(conversationDraftProvider(input.workspaceId, conversationId));
+  final draftProvider = conversationDraftProvider(
+    input.workspaceId,
+    conversationId,
+  );
+  final _ = ref.watch(draftProvider.select((draft) => draft != null));
+
+  return ref.read(draftProvider);
 }
 
 void _registerDraftEffects(

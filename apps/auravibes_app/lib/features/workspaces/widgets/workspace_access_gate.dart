@@ -64,7 +64,7 @@ class const _WorkspaceAvailabilityGate({
     if (cloud != null) {
       ref.invalidate(
         cloudAccountHealthProvider(
-          cloudAccountKey(cloud.serverUrl, cloud.accountId),
+          CloudAccountKeyFactory.fromIdentity(cloud.serverUrl, cloud.accountId),
         ),
       );
     }

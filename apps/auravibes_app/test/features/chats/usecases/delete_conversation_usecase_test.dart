@@ -24,7 +24,9 @@ void main() {
     final usecase = DeleteConversationUsecase(
       repository,
       (_) async => calls.add('stop'),
-      clearConversationDraft: (_, _) => Future<void>.value(),
+      prepareBackgroundWorkDeletion: (_) async => calls.add('cancel detached'),
+      restoreBackgroundWorkAfterFailedDeletion: (_) => calls.add('reopen'),
+      clearConversationDraft: (_, _) async => calls.add('clear draft'),
     );
 
     final deleted = await usecase.call(
@@ -33,7 +35,29 @@ void main() {
     );
 
     expect(deleted, isTrue);
-    expect(calls, ['stop', 'delete']);
+    expect(calls, ['cancel detached', 'stop', 'delete', 'clear draft']);
+  });
+
+  test('reopens background work when deletion returns false', () async {
+    final repository = _Repository();
+    final calls = <String>[];
+    when(() => repository.deleteConversation('conversation-1'))
+        .thenAnswer((_) async => false);
+    final usecase = DeleteConversationUsecase(
+      repository,
+      (_) async => calls.add('stop'),
+      prepareBackgroundWorkDeletion: (_) async => calls.add('cancel detached'),
+      restoreBackgroundWorkAfterFailedDeletion: (_) => calls.add('reopen'),
+      clearConversationDraft: (_, _) async => calls.add('clear draft'),
+    );
+
+    final deleted = await usecase.call(
+      workspaceId: 'ws-1',
+      conversationId: 'conversation-1',
+    );
+
+    expect(deleted, isFalse);
+    expect(calls, ['cancel detached', 'stop', 'reopen']);
   });
 
   test(
@@ -66,6 +90,9 @@ void main() {
       final usecase = DeleteConversationUsecase(
         repository,
         (_) => Future<void>.value(),
+        prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+        restoreBackgroundWorkAfterFailedDeletion: (id) =>
+            expect(id, isNotEmpty),
         clearConversationDraft: container
             .read(conversationDraftCleanupUsecaseProvider)
             .clearConversation,

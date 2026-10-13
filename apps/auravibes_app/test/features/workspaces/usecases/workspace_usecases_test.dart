@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/usecases/create_workspace_use_case.dart';
@@ -17,11 +18,13 @@ import 'package:auravibes_app/features/workspaces/usecases/duplicate_workspace_u
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/validate_workspace_name_use_case.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class _FakeRepository implements WorkspaceRepository {
+  Future<void> Function(String id)? beforeDeleteWorkspace;
   final List<WorkspaceEntity> _workspaces = [];
   var _nextId = 1;
 
@@ -88,6 +91,7 @@ class _FakeRepository implements WorkspaceRepository {
 
   @override
   Future<bool> deleteWorkspace(String id) async {
+    await beforeDeleteWorkspace?.call(id);
     final before = _workspaces.length;
     _workspaces.removeWhere((w) => w.id == id);
 
@@ -364,9 +368,12 @@ void main() {
       final _ = await fixture.repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS2', type: .local),
       );
+      fixture.repository.beforeDeleteWorkspace = (_) async =>
+          fixture.calls.add('delete');
 
       await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-2');
 
+      expect(fixture.calls, ['prepare', 'delete']);
       final remaining = await fixture.repository.getAllWorkspaces();
       expect(remaining, hasLength(1));
     });
@@ -418,6 +425,9 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           workspaceRepositoryProvider.overrideWithValue(repository),
+          backgroundWorkCoordinatorProvider.overrideWithValue(
+            .new(_UnusedBackgroundWorkStore(), .new(), (_) async => null),
+          ),
           localChatAttachmentUsecaseProvider.overrideWithValue(
             attachmentUsecase,
           ),
@@ -486,6 +496,11 @@ class _RecordingLocalChatAttachmentUsecase
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
+class _UnusedBackgroundWorkStore implements AgentBackgroundWorkStore {
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
 class const _CreateWorkspaceUseCaseFixture._(
   final CreateWorkspaceUseCase usecase,
 ) {
@@ -527,16 +542,21 @@ class const _EditWorkspaceUseCaseFixture._(
 class const _DeleteWorkspaceUseCaseFixture._(
   final _FakeRepository repository,
   final DeleteWorkspaceUseCase usecase,
+  final List<String> calls,
 ) {
   factory() {
     final repository = _FakeRepository();
+    final calls = <String>[];
 
     return _DeleteWorkspaceUseCaseFixture._(
       repository,
       .new(
         repository: repository,
+        prepareBackgroundWorkDeletion: (_) async => calls.add('prepare'),
+        restoreBackgroundWorkAfterFailedDeletion: (_) => calls.add('restore'),
         clearWorkspaceDrafts: (_) => Future<void>.value(),
       ),
+      calls,
     );
   }
 }
