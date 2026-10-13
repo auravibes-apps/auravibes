@@ -22,12 +22,11 @@ void main() {
         final router = GoRouter(
           routes: [
             GoRoute(
-              path: '/workspaces/:workspaceId/more/:section',
+              path: '/workspaces/:workspaceId/:section',
               builder: (_, state) => _RelatedTabsPage(state: state),
             ),
           ],
-          initialLocation:
-              '/workspaces/A/more/service-connections?view=unknown',
+          initialLocation: '/workspaces/A/service-connections?view=unknown',
         );
         addTearDown(router.dispose);
         await tester.runAsync(
@@ -76,9 +75,9 @@ void main() {
         final _ = await tester.pumpAndSettle();
         expect(
           router.routeInformationProvider.value.uri.path,
-          '/workspaces/A/more/tools',
+          '/workspaces/A/tools',
         );
-        router.go('/workspaces/A/more/agents');
+        router.go('/workspaces/A/agents');
         final _ = await tester.pumpAndSettle();
         await tester.tap(
           find.text(language == 'en' ? 'Skills' : 'Habilidades'),
@@ -86,7 +85,7 @@ void main() {
         final _ = await tester.pumpAndSettle();
         expect(
           router.routeInformationProvider.value.uri.path,
-          '/workspaces/A/more/skills',
+          '/workspaces/A/skills',
         );
         expect(tester.takeException(), isNull);
       });

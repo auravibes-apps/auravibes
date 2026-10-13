@@ -2679,7 +2679,7 @@ void main() {
             builder: (_, _) => mainChat ?? const SizedBox.shrink(),
           ),
           GoRoute(
-            path: '/workspaces/:workspaceId/more/skills/:skillId',
+            path: '/workspaces/:workspaceId/skills/:skillId',
             builder: (_, state) => Material(
               child: Text('Skill details ${state.pathParameters['skillId']}'),
             ),

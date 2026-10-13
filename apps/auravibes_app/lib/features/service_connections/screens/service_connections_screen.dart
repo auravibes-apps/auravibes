@@ -1498,7 +1498,7 @@ VoidCallback _mcpSettingsAction(
   ServiceConnectionListItem connection,
 ) =>
     () => context.push<void>(
-      '/workspaces/${connection.workspaceId}/more/service-connections/'
+      '/workspaces/${connection.workspaceId}/service-connections/'
       '${connection.mcpServerId ?? connection.id}',
     );
 
@@ -1873,7 +1873,7 @@ AuraPopupMenuItem _editMenuItem(
   return AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.common_edit),
     onTap: () => context.push<bool>(
-      '/workspaces/${connection.workspaceId}/more/'
+      '/workspaces/${connection.workspaceId}/'
       'service-connections/$connectionId',
     ),
     leading: const AuraIcon(Icons.edit_outlined),

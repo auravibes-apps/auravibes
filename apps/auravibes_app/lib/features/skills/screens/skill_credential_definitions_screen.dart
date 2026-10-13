@@ -320,7 +320,7 @@ class const _CredentialDefinitionTile({
   Widget build(BuildContext context) => AuraTile(
     child: _CredentialDefinitionDetails(definition: definition),
     onTap: () => context.push(
-      '/workspaces/$workspaceId/more/'
+      '/workspaces/$workspaceId/'
       'skill-credential-definitions/${definition.id}',
     ),
     variant: .ghost,
@@ -403,7 +403,7 @@ class const _SkillCredentialDefinitionAddButton({
   Widget build(BuildContext context) => AuraIconButton(
     icon: Icons.add,
     onPressed: () => context.push(
-      '/workspaces/$workspaceId/more/skill-credential-definitions/new',
+      '/workspaces/$workspaceId/skill-credential-definitions/new',
     ),
   );
 }

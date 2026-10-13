@@ -7,7 +7,7 @@ import 'package:riverpod/riverpod.dart';
 
 void main() {
   test(
-    'direct list entries have no More parent, editors keep their owning list',
+    'direct list entries have no more prefix, editors keep their owning list',
     () {
       final router = GoRouter(routes: $appRoutes);
       addTearDown(router.dispose);
@@ -28,19 +28,16 @@ void main() {
         'manage-workspaces',
       ]) {
         final matches = router.configuration.findMatch(
-          .parse('/workspaces/A/more/$list'),
+          .parse('/workspaces/A/$list'),
         );
-        expect(paths(matches.matches), [
-          '/workspaces/:workspaceId',
-          'more/$list',
-        ]);
+        expect(paths(matches.matches), ['/workspaces/:workspaceId', list]);
       }
       final editor = router.configuration.findMatch(
-        .parse('/workspaces/A/more/skills/skill-A/resources/resource-B'),
+        .parse('/workspaces/A/skills/skill-A/resources/resource-B'),
       );
       expect(paths(editor.matches), [
         '/workspaces/:workspaceId',
-        'more/skills',
+        'skills',
         ':skillId/resources/:resourceId',
       ]);
     },
@@ -51,17 +48,16 @@ void main() {
       'chat/new': WorkspaceDestination.chats,
       'chats': WorkspaceDestination.chats,
       'chats/chat-a/sub-agents/child': WorkspaceDestination.chats,
-      'more/agents/a': WorkspaceDestination.agentsAndSkills,
-      'more/skills/a/resources/b': WorkspaceDestination.agentsAndSkills,
-      'more/service-connections/new?credentialDefinitionId=type'
+      'agents/a': WorkspaceDestination.agentsAndSkills,
+      'skills/a/resources/b': WorkspaceDestination.agentsAndSkills,
+      'service-connections/new?credentialDefinitionId=type'
               '&appSkillId=skill':
           WorkspaceDestination.connections,
-      'more/skill-credential-definitions/type':
-          WorkspaceDestination.connections,
-      'more/models': WorkspaceDestination.connections,
-      'more/tools': WorkspaceDestination.connections,
+      'skill-credential-definitions/type': WorkspaceDestination.connections,
+      'models': WorkspaceDestination.connections,
+      'tools': WorkspaceDestination.connections,
       'settings': WorkspaceDestination.appSettings,
-      'more/cloud-accounts/login': WorkspaceDestination.cloudAccounts,
+      'cloud-accounts/login': WorkspaceDestination.cloudAccounts,
     };
     for (final entry in paths.entries) {
       expect(
@@ -91,11 +87,11 @@ void main() {
     () {
       for (final route in [
         'settings',
-        'more/cloud-accounts',
-        'more/cloud-accounts/add',
-        'more/cloud-accounts/login',
-        'more/cloud-accounts/register',
-        'more/cloud-accounts/forgot-password',
+        'cloud-accounts',
+        'cloud-accounts/add',
+        'cloud-accounts/login',
+        'cloud-accounts/register',
+        'cloud-accounts/forgot-password',
       ]) {
         expect(
           WorkspaceNavigation.isAppScoped(.parse('/workspaces/A/$route')),
@@ -105,10 +101,10 @@ void main() {
       for (final route in [
         'workspace-settings',
         'settings/editor',
-        'more/cloud-accounts/arbitrary',
-        'more/cloud-accounts/login/editor',
-        'more/agents/new',
-        'more/manage-workspaces',
+        'cloud-accounts/arbitrary',
+        'cloud-accounts/login/editor',
+        'agents/new',
+        'manage-workspaces',
       ]) {
         expect(
           WorkspaceNavigation.isAppScoped(.parse('/workspaces/A/$route')),
@@ -129,20 +125,20 @@ void main() {
     final a = container.read(workspaceNavigationProvider('A').notifier);
     final b = container.read(workspaceNavigationProvider('B').notifier);
     a
-      ..remember(.parse('/workspaces/A/more/skills?search=secret'))
-      ..remember(.parse('/workspaces/A/more/skills/skill-a'))
+      ..remember(.parse('/workspaces/A/skills?search=secret'))
+      ..remember(.parse('/workspaces/A/skills/skill-a'))
       ..remember(
         .parse(
-          '/workspaces/A/more/service-connections?view=providers'
+          '/workspaces/A/service-connections?view=providers'
           '&appSkillId=skill-a',
         ),
       )
       ..remember(
         .parse(
-          '/workspaces/A/more/service-connections/connection-a?view=credentials',
+          '/workspaces/A/service-connections/connection-a?view=credentials',
         ),
       )
-      ..remember(.parse('/workspaces/B/more/tools'));
+      ..remember(.parse('/workspaces/B/tools'));
     expect(a.agentsLocation(), SkillsRoute(workspaceId: 'A').location);
     expect(
       a.connectionsLocation(),
@@ -153,28 +149,27 @@ void main() {
       b.connectionsLocation(),
       ServiceConnectionsRoute(workspaceId: 'B').location,
     );
-    a.remember(.parse('/workspaces/A/more/tools'));
+    a.remember(.parse('/workspaces/A/tools'));
     expect(a.connectionsLocation(), ToolsRoute(workspaceId: 'A').location);
-    a.remember(.parse('/workspaces/A/more/skill-credential-definitions'));
+    a.remember(.parse('/workspaces/A/skill-credential-definitions'));
     expect(a.connectionsLocation(), ToolsRoute(workspaceId: 'A').location);
-    a.remember(.parse('/workspaces/A/more/service-connections?view=unsafe'));
+    a.remember(.parse('/workspaces/A/service-connections?view=unsafe'));
     expect(
       a.connectionsLocation(),
       ServiceConnectionsRoute(workspaceId: 'A').location,
     );
   });
 
-  test('old URLs and allowlisted connection view remain typed', () {
-    expect(AgentsRoute(workspaceId: 'A').location, '/workspaces/A/more/agents');
-    expect(SkillsRoute(workspaceId: 'A').location, '/workspaces/A/more/skills');
-    expect(MoreRoute(workspaceId: 'A').location, '/workspaces/A/more');
+  test('canonical URLs and allowlisted connection view remain typed', () {
+    expect(AgentsRoute(workspaceId: 'A').location, '/workspaces/A/agents');
+    expect(SkillsRoute(workspaceId: 'A').location, '/workspaces/A/skills');
     expect(
       WorkspaceSettingsRoute(workspaceId: 'A').location,
       '/workspaces/A/workspace-settings',
     );
     expect(
       WorkspaceManagementRoute(workspaceId: 'A', view: 'connect').location,
-      '/workspaces/A/more/manage-workspaces?view=connect',
+      '/workspaces/A/manage-workspaces?view=connect',
     );
     for (final view in ['providers', 'services', 'credentials']) {
       expect(

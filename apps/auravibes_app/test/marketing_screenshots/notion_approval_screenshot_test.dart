@@ -521,11 +521,10 @@ String _location(String scene) => switch (scene) {
   'workspaces' => '/workspaces/$_workspaceId/chat/new',
   'model' => '/workspaces/$_workspaceId/chat/new',
   'setup-ai' =>
-    '/workspaces/$_workspaceId/more/service-connections/new?type=modelProvider',
-  'setup-workspace' =>
-    '/workspaces/$_workspaceId/more/manage-workspaces/create',
-  'setup-notion' => '/workspaces/$_workspaceId/more/tools',
-  'setup-connected' => '/workspaces/$_workspaceId/more/tools',
+    '/workspaces/$_workspaceId/service-connections/new?type=modelProvider',
+  'setup-workspace' => '/workspaces/$_workspaceId/manage-workspaces/create',
+  'setup-notion' => '/workspaces/$_workspaceId/tools',
+  'setup-connected' => '/workspaces/$_workspaceId/tools',
   _ => '/workspaces/$_workspaceId/chats/$_chatId',
 };
 

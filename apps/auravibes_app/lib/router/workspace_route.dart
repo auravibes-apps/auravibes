@@ -83,9 +83,8 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
         ),
         TypedStatefulShellBranch(
           routes: [
-            TypedGoRoute<MoreRoute>(path: 'more'),
             TypedGoRoute<WorkspaceManagementRoute>(
-              path: 'more/manage-workspaces',
+              path: 'manage-workspaces',
               routes: [
                 TypedGoRoute<WorkspaceCreateRoute>(path: 'create'),
                 TypedGoRoute<CloudWorkspaceDetailRoute>(
@@ -94,7 +93,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
               ],
             ),
             TypedGoRoute<CloudAccountsRoute>(
-              path: 'more/cloud-accounts',
+              path: 'cloud-accounts',
               routes: [
                 TypedGoRoute<CloudAccountAddRoute>(path: 'add'),
                 TypedGoRoute<CloudAccountLoginRoute>(path: 'login'),
@@ -104,17 +103,17 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
                 ),
               ],
             ),
-            TypedGoRoute<ToolsRoute>(path: 'more/tools'),
-            TypedGoRoute<ModelsRoute>(path: 'more/models'),
+            TypedGoRoute<ToolsRoute>(path: 'tools'),
+            TypedGoRoute<ModelsRoute>(path: 'models'),
             TypedGoRoute<ServiceConnectionsRoute>(
-              path: 'more/service-connections',
+              path: 'service-connections',
               routes: [
                 TypedGoRoute<ServiceConnectionCreateRoute>(path: 'new'),
                 TypedGoRoute<ServiceConnectionEditRoute>(path: ':connectionId'),
               ],
             ),
             TypedGoRoute<SkillsRoute>(
-              path: 'more/skills',
+              path: 'skills',
               routes: [
                 TypedGoRoute<SkillCreateRoute>(path: 'new'),
                 TypedGoRoute<SkillToolCreateRoute>(path: ':skillId/tools/new'),
@@ -131,7 +130,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
               ],
             ),
             TypedGoRoute<SkillCredentialDefinitionsRoute>(
-              path: 'more/skill-credential-definitions',
+              path: 'skill-credential-definitions',
               routes: [
                 TypedGoRoute<SkillCredentialDefinitionCreateRoute>(path: 'new'),
                 TypedGoRoute<SkillCredentialDefinitionEditRoute>(
@@ -140,7 +139,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
               ],
             ),
             TypedGoRoute<AgentsRoute>(
-              path: 'more/agents',
+              path: 'agents',
               routes: [
                 TypedGoRoute<AgentCreateRoute>(path: 'new'),
                 TypedGoRoute<AgentDetailRoute>(path: ':agentId'),
@@ -904,15 +903,6 @@ class WorkspaceSettingsRoute({required final String workspaceId})
         guard: _exitGuard,
         key: ValueKey(workspaceId),
       );
-}
-
-class MoreRoute({required final String workspaceId})
-    extends GoRouteData
-    with $MoreRoute {
-  @override
-  String redirect(BuildContext context, GoRouterState state) {
-    return NewChatRoute(workspaceId: workspaceId).location;
-  }
 }
 
 class CloudAccountsRoute({required final String workspaceId})
