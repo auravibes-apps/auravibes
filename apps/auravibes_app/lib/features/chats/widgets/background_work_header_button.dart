@@ -247,8 +247,10 @@ class const _BackgroundWorkListStateView({
     }
 
     return const _BackgroundWorkMessage(
-      localeKey:
-          LocaleKeys.chats_screens_chat_conversation_background_work_load_error,
+      message: TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_background_work_load_error,
+        textAlign: .center,
+      ),
     );
   }
 }
@@ -274,8 +276,10 @@ class const _BackgroundWorkListContent({
   @override
   Widget build(BuildContext context, WidgetRef ref) => works.isEmpty
       ? const _BackgroundWorkMessage(
-          localeKey:
-              LocaleKeys.chats_screens_chat_conversation_background_work_empty,
+          message: TextLocale(
+            LocaleKeys.chats_screens_chat_conversation_background_work_empty,
+            textAlign: .center,
+          ),
         )
       : BackgroundWorkListView(
           works: _sortBackgroundWorks(works),
@@ -285,13 +289,13 @@ class const _BackgroundWorkListContent({
         );
 }
 
-class const _BackgroundWorkMessage({required final String localeKey})
+class const _BackgroundWorkMessage({required final Widget message})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: Padding(
       padding: const .all(_backgroundWorkMessagePadding),
-      child: TextLocale(localeKey, textAlign: .center),
+      child: message,
     ),
   );
 }
