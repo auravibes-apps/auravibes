@@ -358,6 +358,57 @@ void main() {
       expect(limit, 2500);
     });
 
+    test(
+      'resolves Codex context limit from the OpenAI model catalog',
+      () async {
+        final fakeCredentialsRepo = _FakeWorkspaceModelSelectionRepository(
+          selectedModel: _workspaceModelSelectionWithProvider(
+            credentialModelId: 'cm-codex',
+            modelId: 'gpt-5.3-codex',
+            providerId: 'openai-codex',
+          ),
+        );
+        final fakeApiRepo = _FakeApiModelRepository(
+          models: [
+            _apiModel(
+              id: 'gpt-5.3-codex',
+              providerId: 'openai',
+              limit: 400000,
+            ).copyWith(supportsPriorityMode: true),
+          ],
+        );
+
+        final container = ProviderContainer(
+          overrides: [
+            workspaceSessionProvider(
+              const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ).overrideWithValue(
+              const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ),
+            workspaceModelSelectionRepositoryProvider.overrideWithValue(
+              fakeCredentialsRepo,
+            ),
+            apiModelRepositoryProvider.overrideWithValue(fakeApiRepo),
+            modelSelectionStoreProvider.overrideWith(
+              (_, _) async => fakeCredentialsRepo,
+            ),
+            modelCatalogStoreProvider.overrideWith((_, _) async => fakeApiRepo),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final limit = await container.read(
+          modelContextLimitProvider('workspace-1', 'cm-codex').future,
+        );
+
+        expect(limit, 400000);
+      },
+    );
+
     test('does not normalize model IDs when resolving context limit', () async {
       final fakeCredentialsRepo = _FakeWorkspaceModelSelectionRepository(
         selectedModel: _workspaceModelSelectionWithProvider(
