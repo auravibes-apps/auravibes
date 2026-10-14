@@ -212,7 +212,7 @@ Raw arguments, credentials, headers, response bodies, and secrets are excluded o
 
 ## Migration
 
-Persist the conversation tool-access mode locally and on the server, defaulting to **Default** for existing rows. Archive imports with no mode field also default to **Default**. Persist a local marker for calls already presented for approval; legacy unresolved calls are treated as already pending. Existing exact native skill permissions continue working.
+Persist the conversation tool-access mode locally and on the server. Migrate legacy `autoApproveTools: false` to **Default** and `autoApproveTools: true` to **Allow all**; missing legacy values and unknown named mode values default to **Default**. Archive imports follow the same mapping. Persist a local marker for calls already presented for approval; legacy unresolved calls are treated as already pending. Existing exact native skill permissions continue working.
 
 Broad legacy `call_skill_tool` grants must not authorize nested targets. They are ignored for nested execution rather than migrated, because expanding one broad grant into all current skills would preserve unsafe scope.
 
