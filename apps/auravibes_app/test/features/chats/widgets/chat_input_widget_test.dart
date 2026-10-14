@@ -251,13 +251,16 @@ void main() {
       final _ = await tester.sendKeyEvent(.enter);
       final _ = await tester.pumpAndSettle();
       expect(changed, ConversationToolAccessMode.allowAll);
-      focus.requestFocus();
-      await tester.pump();
+      expect(focus.hasFocus, isTrue);
       final _ = await tester.sendKeyEvent(.space);
       final _ = await tester.pumpAndSettle();
       final _ = await tester.sendKeyEvent(.escape);
       final _ = await tester.pumpAndSettle();
       expect(find.text('Allow all'), findsNothing);
+      expect(focus.hasFocus, isTrue);
+      final _ = await tester.sendKeyEvent(.enter);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Allow all'), findsOneWidget);
     },
   );
 

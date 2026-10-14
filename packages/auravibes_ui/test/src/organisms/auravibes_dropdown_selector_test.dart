@@ -226,6 +226,11 @@ void main() {
       expect(await tester.sendKeyEvent(.escape), isTrue);
       await tester.pump();
       expect(find.text('Option 1'), findsNothing);
+      expect(focusNode.hasFocus, isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Option 1'), findsOneWidget);
     });
 
     testWidgets('tab from closed dropdown moves to next visible button', (
@@ -277,6 +282,8 @@ void main() {
     });
 
     testWidgets('tab loops inside open dropdown menu', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
       var buttonPressed = false;
       String? selectedValue;
 
@@ -301,6 +308,7 @@ void main() {
                       ],
                       onChanged: (value) => selectedValue = value,
                       placeholder: const Text('Select'),
+                      focusNode: focusNode,
                     ),
                   ),
                   TextButton(
@@ -334,6 +342,53 @@ void main() {
 
       expect(selectedValue, isNotNull);
       expect(buttonPressed, isFalse);
+      expect(focusNode.hasFocus, isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      await tester.pump();
+      expect(await tester.sendKeyEvent(.enter), isTrue);
+      await tester.pump();
+      expect(buttonPressed, isTrue);
+    });
+
+    testWidgets('outside tap closes without stealing target focus', (
+      tester,
+    ) async {
+      final triggerFocus = FocusNode();
+      final outsideFocus = FocusNode();
+      addTearDown(triggerFocus.dispose);
+      addTearDown(outsideFocus.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: Column(
+                children: [
+                  AuraDropdownSelector<String>(
+                    options: const [
+                      AuraDropdownOption(value: 'one', child: Text('Option')),
+                    ],
+                    placeholder: const Text('Select'),
+                    focusNode: triggerFocus,
+                  ),
+                  const SizedBox(height: 200),
+                  TextField(key: const Key('outside'), focusNode: outsideFocus),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      triggerFocus.requestFocus();
+      await tester.pump();
+      final _ = await tester.sendKeyEvent(.enter);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Option'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('outside')));
+      await tester.pump();
+      expect(find.text('Option'), findsNothing);
+      expect(outsideFocus.hasFocus, isTrue);
+      expect(triggerFocus.hasFocus, isFalse);
     });
 
     testWidgets('keeps dropdown open when header input gets focus', (

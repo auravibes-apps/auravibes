@@ -172,6 +172,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
       onChanged: widget.onChanged,
       onToggle: _toggleDropdown,
       onClose: _closeDropdown,
+      onDismiss: () => _closeDropdown(restoreFocus: false),
       onFocusChange: _handleTriggerFocusChange,
       optionBuilder: widget.optionBuilder,
     );
@@ -210,7 +211,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     });
   }
 
-  void _closeDropdown() {
+  void _closeDropdown({bool restoreFocus = true}) {
     if (!_isDropdownOpen) {
       return;
     }
@@ -218,8 +219,11 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     setState(() {
       _isDropdownOpen = false;
     });
-    FocusScope.of(context).unfocus();
-    _requiredFocusNode.unfocus();
+    if (restoreFocus) {
+      _requiredFocusNode.requestFocus();
+    } else {
+      _requiredMenuFocusScopeNode.unfocus();
+    }
   }
 
   void _handleTriggerFocusChange(bool value) {
@@ -250,6 +254,7 @@ class const _DropdownSelectorShell<T>({
   required final ValueChanged<T?>? onChanged,
   required final VoidCallback onToggle,
   required final VoidCallback onClose,
+  required final VoidCallback onDismiss,
   required final ValueChanged<bool> onFocusChange,
   required final Widget Function(BuildContext, AuraDropdownOption<T>)?
   optionBuilder,
@@ -288,7 +293,7 @@ class const _DropdownSelectorShell<T>({
         ),
         includeSemantics: false,
       ),
-      onTapOutside: (_) => onClose(),
+      onTapOutside: (_) => onDismiss(),
       groupId: this,
     ),
     child: Shortcuts(
