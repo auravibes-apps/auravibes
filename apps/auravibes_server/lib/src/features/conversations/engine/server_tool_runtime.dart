@@ -1835,10 +1835,11 @@ class ServerToolRuntime({
         )
         .firstOrNull;
     final data = permission == null ? null : _data(permission);
+    if (data?['isEnabled'] == false) {
+      return AgentToolPermissionResult.disabledInWorkspace;
+    }
     final workspacePermission = data == null
         ? defaultCloudToolPermission(descriptor)
-        : data['isEnabled'] == false
-        ? AgentToolPermissionResult.disabledInWorkspace
         : switch (data['permissionMode']) {
             'alwaysAllow' => AgentToolPermissionResult.granted,
             'alwaysDeny' => AgentToolPermissionResult.disabledInWorkspace,

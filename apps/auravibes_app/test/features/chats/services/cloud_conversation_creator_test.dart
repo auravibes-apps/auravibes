@@ -24,8 +24,8 @@ void main() {
     final summary = ConversationSummary(
       id: 'conversation-1',
       title: 'Created',
-      autoApproveTools: true,
       isPinned: true,
+      autoApproveTools: true,
       modelId: 'model-1',
       agentId: 'agent-1',
       reasoningConfigJson: value.reasoningConfiguration?.encode(),

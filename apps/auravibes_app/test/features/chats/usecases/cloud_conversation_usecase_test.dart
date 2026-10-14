@@ -62,7 +62,7 @@ void main() {
       when(() => stateGateway.workspace).thenReturn(_workspace);
       when(() => stateGateway.client).thenReturn(client);
       when(() => client.conversation).thenReturn(endpoint);
-      final usecase = CloudConversationUsecase(CloudChatGateway(stateGateway));
+      final usecase = CloudConversationUsecase(.new(stateGateway));
       final now = DateTime.utc(2026);
       final summary = ConversationSummary(
         id: 'conversation',
@@ -77,7 +77,7 @@ void main() {
           .thenAnswer((_) async => summary);
       when(() => endpoint.update(captureAny()))
           .thenAnswer((_) async => summary);
-      await usecase.create(
+      final _ = await usecase.create(
         const ConversationToCreate(
           title: 'Conversation',
           workspaceId: 'local',
@@ -94,15 +94,15 @@ void main() {
         title: summary.title,
         workspaceId: 'local',
         isPinned: false,
-        autoApproveTools: true,
-        revision: 1,
         createdAt: now,
         updatedAt: now,
+        revision: 1,
+        autoApproveTools: true,
       );
       for (final mode in [true, false, null]) {
-        await usecase.update(
+        final _ = await usecase.update(
           conversation,
-          ConversationPatch(autoApproveTools: mode),
+          .new(autoApproveTools: mode),
         );
         final update =
             verify(() => endpoint.update(captureAny())).captured.single

@@ -420,6 +420,41 @@ void main() {
           ),
         );
         expect(await call('explicit-conversation-grant'), 'success');
+        expect(executions, 3);
+        await resource(
+          WorkspaceResourceKind.toolPermission,
+          'disabled-tool-config',
+          {
+            'toolId': listSkillCredentialsToolName,
+            'isEnabled': false,
+            'permissionMode': 'alwaysAllow',
+          },
+        );
+        final disabledConfig = (await WorkspaceResource.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.resourceId.equals('disabled-tool-config'),
+        ))!;
+        var currentRoot = (await Conversation.db.findById(
+          fixture.database,
+          root.id!,
+        ))!;
+        for (final autoApprove in [false, true]) {
+          currentRoot = await Conversation.db.updateRow(
+            fixture.database,
+            currentRoot.copyWith(autoApproveTools: autoApprove),
+          );
+          expect(
+            await call('disabled-config-conversation-grant-$autoApprove'),
+            'disabledInWorkspace',
+          );
+          expect(executions, 3);
+        }
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          disabledConfig.copyWith(deletedAt: now),
+        );
         await WorkspaceResource.db.updateRow(
           fixture.database,
           policy.copyWith(
