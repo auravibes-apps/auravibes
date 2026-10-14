@@ -174,10 +174,8 @@ class const _NewChatActions({
         .setReasoningConfiguration(value);
   }
 
-  void setAutoApproveTools({required bool enabled}) {
-    ref
-        .read(newChatProvider(workspaceId).notifier)
-        .setAutoApproveTools(enabled: enabled);
+  void setToolAccessMode(ConversationToolAccessMode mode) {
+    ref.read(newChatProvider(workspaceId).notifier).setToolAccessMode(mode);
   }
 
   Future<void> handleSendMessage(ChatDraft draft) async {
@@ -405,9 +403,9 @@ class const _NewChatInput({required final Widget child})
            onDraftStatusChanged: (hasDraft) =>
                data.draftStatus.value = hasDraft,
            autofocus: true,
-           autoApproveTools: data.state.autoApproveTools,
-           onAutoApproveToolsChanged: (enabled) =>
-               data.actions.setAutoApproveTools(enabled: enabled),
+           toolAccessMode: data.state.toolAccessMode,
+           onToolAccessModeChanged: (mode) =>
+               data.actions.setToolAccessMode(mode),
            reasoningControl:
                ChatReasoningControls.hasSupportedReasoningOptions(
                  reasoningOptions,

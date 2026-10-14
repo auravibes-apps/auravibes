@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart' as fp;
@@ -81,8 +82,9 @@ class const ChatInputWidget({
   final ValueChanged<bool>? onDraftStatusChanged,
   final String? conversationId,
   final bool autofocus = false,
-  final bool autoApproveTools = false,
-  final ValueChanged<bool>? onAutoApproveToolsChanged,
+  final ConversationToolAccessMode toolAccessMode =
+      ConversationToolAccessMode.defaultMode,
+  final ValueChanged<ConversationToolAccessMode>? onToolAccessModeChanged,
   final double topPadding = _chatInputVerticalPadding,
   final Widget? reasoningControl,
   final ChatDraft? draftToLoad,
@@ -542,9 +544,9 @@ class const _ChatInputPadding({required final _ChatInputState state})
     child: AuraColumn(
       children: [
         _ChatInputFieldComposition(state: state),
-        if (state.input.onAutoApproveToolsChanged case final onChanged?)
-          _ChatInputAutoApproveTools(
-            value: state.input.autoApproveTools,
+        if (state.input.onToolAccessModeChanged case final onChanged?)
+          _ChatInputToolAccessMode(
+            value: state.input.toolAccessMode,
             onChanged: onChanged,
           ),
       ],
@@ -554,36 +556,41 @@ class const _ChatInputPadding({required final _ChatInputState state})
   );
 }
 
-class const _ChatInputAutoApproveTools({
-  required final bool value,
-  required final ValueChanged<bool> onChanged,
+class const _ChatInputToolAccessMode({
+  required final ConversationToolAccessMode value,
+  required final ValueChanged<ConversationToolAccessMode> onChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(
-    key: const ValueKey<String>('chat_auto_approve_tools'),
-    children: [
-      const Expanded(
-        child: AuraColumn(
-          children: [
-            TextLocale(LocaleKeys.chat_input_auto_approve_tools_label),
-            AuraText(
-              child: TextLocale(
-                LocaleKeys.chat_input_auto_approve_tools_description,
-              ),
-              style: .bodySmall,
+  Widget build(BuildContext context) =>
+      AuraDropdownSelector<ConversationToolAccessMode>(
+        options: const [
+          AuraDropdownOption(
+            value: ConversationToolAccessMode.defaultMode,
+            child: TextLocale(LocaleKeys.chat_input_tool_access_default_label),
+            identifier: 'chat_tool_access_default',
+          ),
+          AuraDropdownOption(
+            value: ConversationToolAccessMode.allowAll,
+            child: TextLocale(
+              LocaleKeys.chat_input_tool_access_allow_all_label,
             ),
-          ],
-          crossAxisAlignment: .start,
-          mainAxisSize: .min,
-        ),
-      ),
-      AuraSwitch(
+            identifier: 'chat_tool_access_allow_all',
+          ),
+        ],
+        key: const ValueKey<String>('chat_tool_access_mode'),
         value: value,
-        onChanged: onChanged,
-        semanticLabel: LocaleKeys.chat_input_auto_approve_tools_label.tr(),
-      ),
-    ],
-  );
+        onChanged: (mode) {
+          if (mode == null) return;
+          onChanged(mode);
+        },
+        label: const TextLocale(LocaleKeys.chat_input_tool_access_label),
+        hint: TextLocale(switch (value) {
+          .defaultMode => LocaleKeys.chat_input_tool_access_default_description,
+          .allowAll => LocaleKeys.chat_input_tool_access_allow_all_description,
+        }),
+        identifier: 'chat_tool_access_mode',
+        semanticLabel: LocaleKeys.chat_input_tool_access_label.tr(),
+      );
 }
 
 class const _ChatInputFieldComposition({required final _ChatInputState state})

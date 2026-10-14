@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_activity_gat
 import 'package:auravibes_app/features/chats/services/cloud_conversation_creator.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -21,13 +22,14 @@ Future<ConversationEntity> _send(
   required ChatDraft draft,
   required String workspaceModelSelectionId,
   String? agentId,
-  bool autoApproveTools = false,
+  ConversationToolAccessMode toolAccessMode =
+      ConversationToolAccessMode.defaultMode,
 }) => usecase((
   workspaceId: workspaceId,
   draft: draft,
   workspaceModelSelectionId: workspaceModelSelectionId,
   agentId: agentId,
-  autoApproveTools: autoApproveTools,
+  toolAccessMode: toolAccessMode,
   reasoningConfiguration: null,
 ));
 
@@ -214,24 +216,23 @@ void main() {
       expect(captured.agentId, 'agent-override');
     });
 
-    for (final enabled in [false, true]) {
-      test('saves auto-approve $enabled before first message', () async {
-        when(() => fixture.conversationRepo.createConversation(any()))
-            .thenAnswer((invocation) async {
-              final value =
-                  invocation.positionalArguments.single as ConversationToCreate;
-              expect(value.autoApproveTools, enabled);
-              final _ = verifyNever(
-                () => fixture.sendMessageUsecase.createUserMessage(
-                  conversationId: any(named: 'conversationId'),
-                  draft: any<ChatDraft>(named: 'draft'),
-                ),
-              );
+    for (final mode in ConversationToolAccessMode.values) {
+      test('saves tool access $mode before first message', () async {
+        when(
+          () => fixture.conversationRepo.createConversation(any()),
+        ).thenAnswer((invocation) async {
+          final value =
+              invocation.positionalArguments.single as ConversationToCreate;
+          expect(value.toolAccessMode, mode);
+          final _ = verifyNever(
+            () => fixture.sendMessageUsecase.createUserMessage(
+              conversationId: any(named: 'conversationId'),
+              draft: any<ChatDraft>(named: 'draft'),
+            ),
+          );
 
-              return newConversation.copyWith(
-                autoApproveTools: value.autoApproveTools,
-              );
-            });
+          return newConversation.copyWith(toolAccessMode: value.toolAccessMode);
+        });
         final container = ProviderContainer();
         addTearDown(container.dispose);
         final provider = newChatProvider('ws-1');
@@ -241,12 +242,12 @@ void main() {
         addTearDown(sub.close);
         final notifier = container.read(provider.notifier)
           ..setModelId('model-sel-1')
-          ..setAutoApproveTools(enabled: enabled);
+          ..setToolAccessMode(mode);
         final result = await notifier.startConversation(
           const ChatDraft(text: 'Hello'),
           fixture.usecase,
         );
-        expect(result.autoApproveTools, enabled);
+        expect(result.toolAccessMode, mode);
         verify(
           () => fixture.sendMessageUsecase.createUserMessage(
             conversationId: 'conv-1',
@@ -324,50 +325,59 @@ void main() {
       );
     });
 
-    test('maps the cloud creator through the new-message workflow', () async {
-      final cloudUsecase = _CloudConversationUsecase();
-      const value = ConversationToCreate(
-        title: 'New Conversation',
-        workspaceId: 'ws-1',
-        autoApproveTools: true,
-        modelId: 'model-sel-1',
-      );
-      final now = DateTime.utc(2026);
-      when(() => cloudUsecase.create(value)).thenAnswer(
-        (_) async => ConversationSummary(
-          id: 'cloud-conversation',
-          title: 'Cloud conversation',
-          isPinned: false,
-          autoApproveTools: true,
+    for (final mode in ConversationToolAccessMode.values) {
+      test('maps cloud mode $mode before first-message work', () async {
+        final cloudUsecase = _CloudConversationUsecase();
+        final value = ConversationToCreate(
+          title: 'New Conversation',
+          workspaceId: 'ws-1',
+          toolAccessMode: mode,
           modelId: 'model-sel-1',
-          revision: 2,
-          createdAt: now,
-          updatedAt: now,
-        ),
-      );
-      final cloud = SendNewMessageUsecase(
-        conversationRepo: fixture.conversationRepo,
-        sendMessageUsecase: fixture.sendMessageUsecase,
-        modelSelectionStore: (_) async => fixture.workspaceModelSelectionRepo,
-        generateTitleUsecase: fixture.generateTitleUsecase,
-        monitoringService: fixture.monitoringService,
-        cloudCreate: CloudConversationCreator(load: () async => cloudUsecase)
-            .call,
-      );
+        );
+        final now = DateTime.utc(2026);
+        when(() => cloudUsecase.create(value)).thenAnswer((_) async {
+          final _ = verifyNever(
+            () => fixture.sendMessageUsecase.createUserMessage(
+              conversationId: any(named: 'conversationId'),
+              draft: any(named: 'draft'),
+            ),
+          );
 
-      final result = await cloud((
-        workspaceId: 'ws-1',
-        draft: const ChatDraft(text: 'Hello'),
-        workspaceModelSelectionId: 'model-sel-1',
-        agentId: null,
-        autoApproveTools: true,
-        reasoningConfiguration: null,
-      ));
+          return ConversationSummary(
+            id: 'cloud-conversation',
+            title: 'Cloud conversation',
+            isPinned: false,
+            toolAccessMode: mode.storedValue,
+            modelId: 'model-sel-1',
+            revision: 2,
+            createdAt: now,
+            updatedAt: now,
+          );
+        });
+        final cloud = SendNewMessageUsecase(
+          conversationRepo: fixture.conversationRepo,
+          sendMessageUsecase: fixture.sendMessageUsecase,
+          modelSelectionStore: (_) async => fixture.workspaceModelSelectionRepo,
+          generateTitleUsecase: fixture.generateTitleUsecase,
+          monitoringService: fixture.monitoringService,
+          cloudCreate: CloudConversationCreator(load: () async => cloudUsecase)
+              .call,
+        );
 
-      expect(result.id, 'cloud-conversation');
-      expect(result.autoApproveTools, isTrue);
-      final _ = verify(() => cloudUsecase.create(value)).called(1);
-    });
+        final result = await cloud((
+          workspaceId: 'ws-1',
+          draft: const ChatDraft(text: 'Hello'),
+          workspaceModelSelectionId: 'model-sel-1',
+          agentId: null,
+          toolAccessMode: mode,
+          reasoningConfiguration: null,
+        ));
+
+        expect(result.id, 'cloud-conversation');
+        expect(result.toolAccessMode, mode);
+        final _ = verify(() => cloudUsecase.create(value)).called(1);
+      });
+    }
 
     test('creates first message with correct args', () async {
       final result = await _send(

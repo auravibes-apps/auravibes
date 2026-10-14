@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart' as fp;
@@ -56,8 +57,9 @@ void main() {
   Widget buildSubject({
     required FutureOr<void> Function(ChatDraft) onSendMessage,
     VoidCallback onToolsPress = _noop,
-    bool autoApproveTools = false,
-    ValueChanged<bool>? onAutoApproveToolsChanged,
+    ConversationToolAccessMode toolAccessMode =
+        ConversationToolAccessMode.defaultMode,
+    ValueChanged<ConversationToolAccessMode>? onToolAccessModeChanged,
     Locale locale = const Locale('en'),
     bool disabled = false,
     bool isBusy = false,
@@ -123,8 +125,8 @@ void main() {
               ),
               onDraftStatusChanged: onDraftStatusChanged,
               conversationId: conversationId,
-              autoApproveTools: autoApproveTools,
-              onAutoApproveToolsChanged: onAutoApproveToolsChanged,
+              toolAccessMode: toolAccessMode,
+              onToolAccessModeChanged: onToolAccessModeChanged,
               reasoningControl: reasoningControl,
               draftToLoad: draftToLoad,
               modalitiesInput: modalitiesInput,
@@ -205,85 +207,151 @@ void main() {
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
   }
 
-  testWidgets('auto-approve control requires callback', (tester) async {
-    await pumpAndInit(
-      tester,
-      buildSubject(onSendMessage: (_) => Future<void>.value()),
+  testWidgets('tool access control requires callback', (tester) async {
+    await pumpAndInit(tester, buildSubject(onSendMessage: (_) => _noop()));
+    expect(
+      find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
+      findsNothing,
     );
-    expect(find.byType(AuraSwitch), findsNothing);
   });
 
-  for (final enabled in [false, true]) {
-    testWidgets('auto-approve exposes $enabled and toggles', (tester) async {
-      bool? changed;
+  testWidgets(
+    'tool access supports keyboard focus, open, selection and escape',
+    (tester) async {
+      ConversationToolAccessMode? changed;
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          onSendMessage: (_) => _noop(),
+          onToolAccessModeChanged: (mode) => changed = mode,
+        ),
+      );
+      final control = find.byType(
+        AuraDropdownSelector<ConversationToolAccessMode>,
+      );
+      final focus =
+          (tester
+                    .widgetList<Focus>(
+                      find.descendant(
+                        of: control,
+                        matching: find.byType(Focus),
+                      ),
+                    )
+                    .firstWhere((widget) => widget.focusNode != null)
+                    .focusNode ??
+                (throw StateError('Missing dropdown focus')))
+            ..requestFocus();
+      await tester.pump();
+      expect(focus.hasFocus, isTrue);
+      final _ = await tester.sendKeyEvent(.enter);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Allow all'), findsOneWidget);
+      final _ = await tester.sendKeyEvent(.tab);
+      final _ = await tester.sendKeyEvent(.tab);
+      final _ = await tester.sendKeyEvent(.enter);
+      final _ = await tester.pumpAndSettle();
+      expect(changed, ConversationToolAccessMode.allowAll);
+      focus.requestFocus();
+      await tester.pump();
+      final _ = await tester.sendKeyEvent(.space);
+      final _ = await tester.pumpAndSettle();
+      final _ = await tester.sendKeyEvent(.escape);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Allow all'), findsNothing);
+    },
+  );
+
+  for (final mode in ConversationToolAccessMode.values) {
+    testWidgets('tool access exposes $mode and selects both options', (
+      tester,
+    ) async {
+      ConversationToolAccessMode? changed;
       final semantics = tester.ensureSemantics();
       try {
         await pumpAndInit(
           tester,
           buildSubject(
-            onSendMessage: (_) => Future<void>.value(),
-            autoApproveTools: enabled,
-            onAutoApproveToolsChanged: (value) => changed = value,
+            onSendMessage: (_) => _noop(),
+            toolAccessMode: mode,
+            onToolAccessModeChanged: (value) => changed = value,
           ),
         );
-        final control = find.byType(AuraSwitch);
-        expect(tester.widget<AuraSwitch>(control).value, enabled);
-        expect(find.text('Auto-approve tools'), findsOneWidget);
+        final control = find.byType(
+          AuraDropdownSelector<ConversationToolAccessMode>,
+        );
         expect(
-          find.text('Enabled tools run without approval prompts.'),
+          tester
+              .widget<AuraDropdownSelector<ConversationToolAccessMode>>(control)
+              .value,
+          mode,
+        );
+        expect(find.text('Tool access'), findsOneWidget);
+        expect(
+          find.text(
+            mode == ConversationToolAccessMode.defaultMode
+                ? 'Follows normal tool approval rules.'
+                : 'Skips prompts for otherwise permitted tools.',
+          ),
           findsOneWidget,
         );
-        expect(
-          tester.getSemantics(control).label,
-          contains('Auto-approve tools'),
-        );
-        expect(
-          tester.getSemantics(control),
-          matchesSemantics(
-            label: 'Auto-approve tools',
-            isFocusable: true,
-            hasEnabledState: true,
-            isEnabled: true,
-            hasToggledState: true,
-            isToggled: enabled,
-            hasTapAction: true,
-            hasFocusAction: true,
-          ),
-        );
-        await tester.tap(control);
-        expect(changed, !enabled);
+        expect(find.bySemanticsLabel(RegExp('Tool access')), findsWidgets);
+        for (final option in ConversationToolAccessMode.values) {
+          await tester.tap(control);
+          final _ = await tester.pumpAndSettle();
+          await tester.tap(
+            find
+                .text(
+                  option == ConversationToolAccessMode.defaultMode
+                      ? 'Default'
+                      : 'Allow all',
+                )
+                .last,
+          );
+          final _ = await tester.pumpAndSettle();
+          expect(changed, option);
+        }
       } finally {
         semantics.dispose();
       }
     });
   }
 
-  testWidgets('auto-approve Spanish copy fits narrow composer', (tester) async {
-    tester.view.physicalSize = const Size(320, 800);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final label =
-        'Aprobar herramientas autom${String.fromCharCode(0xe1)}ticamente';
-    final description =
-        'Las herramientas habilitadas se ejecutan sin pedir '
-        'aprobaci${String.fromCharCode(0xf3)}n.';
-    await pumpAndInit(
+  for (final mode in ConversationToolAccessMode.values) {
+    testWidgets('Spanish tool access $mode fits narrow composer', (
       tester,
-      buildSubject(
-        onSendMessage: (_) => Future<void>.value(),
-        onAutoApproveToolsChanged: (_) => _noop(),
-        locale: const Locale('es'),
-      ),
-    );
-    expect(find.text(label), findsOneWidget);
-    expect(find.text(description), findsOneWidget);
-    expect(
-      tester.widget<AuraSwitch>(find.byType(AuraSwitch)).semanticLabel,
-      label,
-    );
-    expect(tester.takeException(), isNull);
-  });
+    ) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          onSendMessage: (_) => _noop(),
+          toolAccessMode: mode,
+          onToolAccessModeChanged: (_) => _noop(),
+          locale: const Locale('es'),
+        ),
+      );
+      expect(find.text('Acceso a herramientas'), findsOneWidget);
+      expect(
+        find.text(
+          mode == ConversationToolAccessMode.defaultMode
+              ? 'Sigue las reglas normales de '
+                    'aprobaci${String.fromCharCode(0xf3)}n de herramientas.'
+              : 'Omite las confirmaciones de herramientas permitidas.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Predeterminado'), findsWidgets);
+      expect(find.text('Permitir todas'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('reports text draft changes', (tester) async {
     final draftStatuses = <bool>[];

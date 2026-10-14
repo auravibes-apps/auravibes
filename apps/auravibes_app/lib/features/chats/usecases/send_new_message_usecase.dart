@@ -23,7 +23,7 @@ typedef _SendNewMessageRequest = ({
   ChatDraft draft,
   String workspaceModelSelectionId,
   String? agentId,
-  bool autoApproveTools,
+  ConversationToolAccessMode toolAccessMode,
   ReasoningConfiguration? reasoningConfiguration,
 });
 
@@ -93,7 +93,7 @@ class const SendNewMessageUsecase({
       .new(
         title: 'New Conversation',
         workspaceId: request.workspaceId,
-        autoApproveTools: request.autoApproveTools,
+        toolAccessMode: request.toolAccessMode,
         modelId: request.workspaceModelSelectionId,
         agentId: request.agentId,
         reasoningConfiguration: request.reasoningConfiguration,

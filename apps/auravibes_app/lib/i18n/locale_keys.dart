@@ -1248,10 +1248,15 @@ abstract class LocaleKeys {
       'skills_selector.semantics_refresh';
   static const skills_selector_semantics_credentials =
       'skills_selector.semantics_credentials';
-  static const chat_input_auto_approve_tools_label =
-      'chat_input.auto_approve_tools_label';
-  static const chat_input_auto_approve_tools_description =
-      'chat_input.auto_approve_tools_description';
+  static const chat_input_tool_access_label = 'chat_input.tool_access_label';
+  static const chat_input_tool_access_default_label =
+      'chat_input.tool_access_default_label';
+  static const chat_input_tool_access_allow_all_label =
+      'chat_input.tool_access_allow_all_label';
+  static const chat_input_tool_access_default_description =
+      'chat_input.tool_access_default_description';
+  static const chat_input_tool_access_allow_all_description =
+      'chat_input.tool_access_allow_all_description';
   static const chat_input_skills_control_count =
       'chat_input.skills_control_count';
   static const skills_tool_section_title = 'skills_tool.section_title';

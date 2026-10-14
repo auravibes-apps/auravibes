@@ -91,13 +91,13 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     await _saveConversationPatch(result.conversation, _agentPatch(agentId));
   }
 
-  Future<void> setAutoApproveTools({required bool enabled}) async {
+  Future<void> setToolAccessMode(ConversationToolAccessMode mode) async {
     final result = state.value;
     if (result is! ConversationFound) return;
 
     await _saveConversationPatch(
       result.conversation,
-      .new(autoApproveTools: enabled),
+      .new(toolAccessMode: mode),
     );
   }
 

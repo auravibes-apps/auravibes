@@ -855,8 +855,11 @@
     "semantics_credentials": "Set up credentials for {skill}"
   },
   "chat_input": {
-    "auto_approve_tools_label": "Auto-approve tools",
-    "auto_approve_tools_description": "Enabled tools run without approval prompts.",
+    "tool_access_label": "Tool access",
+    "tool_access_default_label": "Default",
+    "tool_access_allow_all_label": "Allow all",
+    "tool_access_default_description": "Follows normal tool approval rules.",
+    "tool_access_allow_all_description": "Skips prompts for otherwise permitted tools.",
     "skills_control_count": "Skills, {count} added"
   },
   "skills_tool": {

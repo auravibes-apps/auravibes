@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -585,7 +586,7 @@ void main() {
     });
 
     for (final isCloud in [false, true]) {
-      test('persists auto-approve on and off for cloud=$isCloud', () async {
+      test('persists both tool access modes for cloud=$isCloud', () async {
         final patches = <ConversationPatch>[];
         final gateway = _CloudChatGateway();
         var current = conversation;
@@ -595,15 +596,16 @@ void main() {
                   invocation.positionalArguments.single
                       as UpdateConversationRequest;
               current = current.copyWith(
-                autoApproveTools:
-                    request.autoApproveTools ?? current.autoApproveTools,
+                toolAccessMode: ConversationToolAccessModeStorage.decode(
+                  request.toolAccessMode ?? current.toolAccessMode.storedValue,
+                ),
               );
 
               return ConversationSummary(
                 id: current.id,
                 title: current.title,
                 isPinned: current.isPinned,
-                autoApproveTools: current.autoApproveTools,
+                toolAccessMode: current.toolAccessMode.storedValue,
                 revision: current.revision + 1,
                 createdAt: current.createdAt,
                 updatedAt: current.updatedAt,
@@ -620,8 +622,8 @@ void main() {
                   patches.add(patch);
 
                   return current.copyWith(
-                    autoApproveTools:
-                        patch.autoApproveTools ?? current.autoApproveTools,
+                    toolAccessMode:
+                        patch.toolAccessMode ?? current.toolAccessMode,
                   );
                 },
               ),
@@ -638,28 +640,32 @@ void main() {
         });
         addTearDown(sub.close);
         final _ = await container.read(provider.future);
-        for (final enabled in [true, false]) {
-          await container
-              .read(provider.notifier)
-              .setAutoApproveTools(enabled: enabled);
+        for (final mode in [
+          ConversationToolAccessMode.allowAll,
+          ConversationToolAccessMode.defaultMode,
+        ]) {
+          await container.read(provider.notifier).setToolAccessMode(mode);
           expect(
             (container.read(provider).requireValue as ConversationFound)
                 .conversation
-                .autoApproveTools,
-            enabled,
+                .toolAccessMode,
+            mode,
           );
         }
         if (isCloud) {
           final requests = verify(
             () => gateway.updateConversation(captureAny()),
           ).captured.cast<UpdateConversationRequest>();
-          expect(requests.map((request) => request.autoApproveTools), [
-            true,
-            false,
+          expect(requests.map((request) => request.toolAccessMode), [
+            'allow_all',
+            'default',
           ]);
           expect(patches, isEmpty);
         } else {
-          expect(patches.map((patch) => patch.autoApproveTools), [true, false]);
+          expect(patches.map((patch) => patch.toolAccessMode), [
+            ConversationToolAccessMode.allowAll,
+            ConversationToolAccessMode.defaultMode,
+          ]);
         }
       });
     }

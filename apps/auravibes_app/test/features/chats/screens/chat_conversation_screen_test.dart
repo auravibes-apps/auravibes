@@ -47,6 +47,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -744,7 +745,7 @@ void main() {
         .called(1);
   });
 
-  testWidgets('passes compaction and auto-approve state to chat input', (
+  testWidgets('passes compaction and tool access state to chat input', (
     tester,
   ) async {
     final conversation = ConversationEntity(
@@ -754,7 +755,7 @@ void main() {
       isPinned: false,
       createdAt: .new(2026),
       updatedAt: .new(2026),
-      autoApproveTools: true,
+      toolAccessMode: .allowAll,
     );
 
     await tester.runAsync(() async {
@@ -852,24 +853,41 @@ void main() {
 
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isCompacting, isTrue);
-    expect(input.autoApproveTools, isTrue);
-    expect(input.onAutoApproveToolsChanged, isNotNull);
-    expect(tester.widget<AuraSwitch>(find.byType(AuraSwitch)).value, isTrue);
-    await tester.tap(find.byType(AuraSwitch));
-    await tester.pump();
+    expect(input.toolAccessMode, ConversationToolAccessMode.allowAll);
+    expect(input.onToolAccessModeChanged, isNotNull);
     expect(
       tester
-          .widget<ChatInputWidget>(find.byType(ChatInputWidget))
-          .autoApproveTools,
-      isFalse,
+          .widget<AuraDropdownSelector<ConversationToolAccessMode>>(
+            find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
+          )
+          .value,
+      ConversationToolAccessMode.allowAll,
     );
-    await tester.tap(find.byType(AuraSwitch));
+    tester
+        .widget<AuraDropdownSelector<ConversationToolAccessMode>>(
+          find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
+        )
+        .onChanged
+        ?.call(ConversationToolAccessMode.defaultMode);
     await tester.pump();
     expect(
       tester
           .widget<ChatInputWidget>(find.byType(ChatInputWidget))
-          .autoApproveTools,
-      isTrue,
+          .toolAccessMode,
+      ConversationToolAccessMode.defaultMode,
+    );
+    tester
+        .widget<AuraDropdownSelector<ConversationToolAccessMode>>(
+          find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
+        )
+        .onChanged
+        ?.call(ConversationToolAccessMode.allowAll);
+    await tester.pump();
+    expect(
+      tester
+          .widget<ChatInputWidget>(find.byType(ChatInputWidget))
+          .toolAccessMode,
+      ConversationToolAccessMode.allowAll,
     );
   });
 
@@ -2073,12 +2091,10 @@ class _ResultChatNotifier(final ConversationResult result)
   ) async => result;
 
   @override
-  Future<void> setAutoApproveTools({required bool enabled}) async {
+  Future<void> setToolAccessMode(ConversationToolAccessMode mode) async {
     final current = state.requireValue as ConversationFound;
     state = AsyncData(
-      ConversationFound(
-        current.conversation.copyWith(autoApproveTools: enabled),
-      ),
+      ConversationFound(current.conversation.copyWith(toolAccessMode: mode)),
     );
   }
 }

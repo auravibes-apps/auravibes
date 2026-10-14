@@ -22,7 +22,8 @@ abstract class NewChatState with _$NewChatState {
     String? agentId,
     ReasoningConfiguration? reasoningConfiguration,
     @Default(false) bool isLoading,
-    @Default(false) bool autoApproveTools,
+    @Default(ConversationToolAccessMode.defaultMode)
+    ConversationToolAccessMode toolAccessMode,
   }) = _NewChatState;
 }
 
@@ -52,8 +53,8 @@ class NewChatNotifier extends _$NewChatNotifier {
     state = state.copyWith(reasoningConfiguration: value);
   }
 
-  void setAutoApproveTools({required bool enabled}) {
-    state = state.copyWith(autoApproveTools: enabled);
+  void setToolAccessMode(ConversationToolAccessMode mode) {
+    state = state.copyWith(toolAccessMode: mode);
   }
 
   Future<ConversationEntity> startConversation(
@@ -72,7 +73,7 @@ class NewChatNotifier extends _$NewChatNotifier {
         workspaceModelSelectionId: modelId,
         workspaceId: workspaceId,
         agentId: state.agentId,
-        autoApproveTools: state.autoApproveTools,
+        toolAccessMode: state.toolAccessMode,
         reasoningConfiguration: state.reasoningConfiguration,
       ));
     } finally {

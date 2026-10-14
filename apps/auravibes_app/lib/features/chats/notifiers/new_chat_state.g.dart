@@ -58,7 +58,7 @@ final class NewChatNotifierProvider
   }
 }
 
-String _$newChatNotifierHash() => r'6b6575740e2203b2a071ca6715344cda6c0d64ee';
+String _$newChatNotifierHash() => r'c19b510ce1bfb3e5c7c96f94e5827b59d1b8c494';
 
 final class NewChatNotifierFamily extends $Family
     with

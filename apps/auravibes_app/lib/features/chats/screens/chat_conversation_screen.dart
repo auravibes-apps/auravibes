@@ -60,6 +60,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentIterationContext,
+        ConversationToolAccessMode,
         ReasoningConfiguration,
         ReasoningOption,
         SelectedModelNotFoundException;
@@ -480,7 +481,7 @@ typedef _LoadedChatConversationSelectorCallbacks = ({
   ValueChanged<String?> onModelChanged,
   ValueChanged<String?> onModelSelectionChanged,
   ValueChanged<String?> onAgentChanged,
-  ValueChanged<bool> onAutoApproveToolsChanged,
+  ValueChanged<ConversationToolAccessMode> onToolAccessModeChanged,
   VoidCallback onSkillsPress,
   VoidCallback? Function({required bool isInputBusy}) continueAgent,
 });
@@ -608,7 +609,7 @@ _LoadedChatConversationSelectorCallbacks _loadedConversationSelectorCallbacks(
   onModelChanged: _loadedConversationModelChanged(request),
   onModelSelectionChanged: _loadedConversationModelChanged(request),
   onAgentChanged: _agentChanged(request),
-  onAutoApproveToolsChanged: _autoApproveToolsChanged(request),
+  onToolAccessModeChanged: _toolAccessModeChanged(request),
   onSkillsPress: _loadedConversationSkillsPress(request),
   continueAgent: _loadedConversationContinue(request),
 );
@@ -722,12 +723,14 @@ ValueChanged<String?> _agentChanged(_LoadedRuntimeRequest request) =>
           .setAgent(agentId),
     );
 
-ValueChanged<bool> _autoApproveToolsChanged(_LoadedRuntimeRequest request) =>
-    (enabled) => unawaited(_setAutoApproveTools(request, enabled));
-
-Future<void> _setAutoApproveTools(
+ValueChanged<ConversationToolAccessMode> _toolAccessModeChanged(
   _LoadedRuntimeRequest request,
-  bool enabled,
+) =>
+    (mode) => unawaited(_setToolAccessMode(request, mode));
+
+Future<void> _setToolAccessMode(
+  _LoadedRuntimeRequest request,
+  ConversationToolAccessMode mode,
 ) async {
   try {
     await request.ref
@@ -737,7 +740,7 @@ Future<void> _setAutoApproveTools(
             request.conversation.id,
           ).notifier,
         )
-        .setAutoApproveTools(enabled: enabled);
+        .setToolAccessMode(mode);
   } on Exception catch (error, stackTrace) {
     _logger.severe('Failed to update tool approval mode', error, stackTrace);
     if (!request.context.mounted) return;
@@ -1734,9 +1737,9 @@ class _ChatComposerInput extends StatelessWidget {
            onCompactTap: onPressed,
          ),
          conversationId: data.conversation.id,
-         autoApproveTools: data.conversation.autoApproveTools,
-         onAutoApproveToolsChanged:
-             data.callbacks.selectors.onAutoApproveToolsChanged,
+         toolAccessMode: data.conversation.toolAccessMode,
+         onToolAccessModeChanged:
+             data.callbacks.selectors.onToolAccessModeChanged,
          topPadding: 0,
          reasoningControl: reasoningControl,
          draftToLoad: draftToLoad,
