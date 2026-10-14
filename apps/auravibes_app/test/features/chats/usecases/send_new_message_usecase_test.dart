@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/services/cloud_conversation_creator.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
@@ -10,6 +11,7 @@ import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.d
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/riverpod.dart';
 
 import '../../../test_mocks.dart';
 
@@ -19,11 +21,13 @@ Future<ConversationEntity> _send(
   required ChatDraft draft,
   required String workspaceModelSelectionId,
   String? agentId,
+  bool autoApproveTools = false,
 }) => usecase((
   workspaceId: workspaceId,
   draft: draft,
   workspaceModelSelectionId: workspaceModelSelectionId,
   agentId: agentId,
+  autoApproveTools: autoApproveTools,
   reasoningConfiguration: null,
 ));
 
@@ -210,6 +214,48 @@ void main() {
       expect(captured.agentId, 'agent-override');
     });
 
+    for (final enabled in [false, true]) {
+      test('saves auto-approve $enabled before first message', () async {
+        when(() => fixture.conversationRepo.createConversation(any()))
+            .thenAnswer((invocation) async {
+              final value =
+                  invocation.positionalArguments.single as ConversationToCreate;
+              expect(value.autoApproveTools, enabled);
+              final _ = verifyNever(
+                () => fixture.sendMessageUsecase.createUserMessage(
+                  conversationId: any(named: 'conversationId'),
+                  draft: any<ChatDraft>(named: 'draft'),
+                ),
+              );
+
+              return newConversation.copyWith(
+                autoApproveTools: value.autoApproveTools,
+              );
+            });
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final provider = newChatProvider('ws-1');
+        final sub = container.listen(provider, (_, _) {
+          final _ = Object();
+        });
+        addTearDown(sub.close);
+        final notifier = container.read(provider.notifier)
+          ..setModelId('model-sel-1')
+          ..setAutoApproveTools(enabled: enabled);
+        final result = await notifier.startConversation(
+          const ChatDraft(text: 'Hello'),
+          fixture.usecase,
+        );
+        expect(result.autoApproveTools, enabled);
+        verify(
+          () => fixture.sendMessageUsecase.createUserMessage(
+            conversationId: 'conv-1',
+            draft: const ChatDraft(text: 'Hello'),
+          ),
+        ).called(1);
+      });
+    }
+
     test('throws when model selection not found', () {
       when(
         () => fixture.workspaceModelSelectionRepo
@@ -283,6 +329,7 @@ void main() {
       const value = ConversationToCreate(
         title: 'New Conversation',
         workspaceId: 'ws-1',
+        autoApproveTools: true,
         modelId: 'model-sel-1',
       );
       final now = DateTime.utc(2026);
@@ -291,6 +338,7 @@ void main() {
           id: 'cloud-conversation',
           title: 'Cloud conversation',
           isPinned: false,
+          autoApproveTools: true,
           modelId: 'model-sel-1',
           revision: 2,
           createdAt: now,
@@ -312,10 +360,12 @@ void main() {
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
         agentId: null,
+        autoApproveTools: true,
         reasoningConfiguration: null,
       ));
 
       expect(result.id, 'cloud-conversation');
+      expect(result.autoApproveTools, isTrue);
       final _ = verify(() => cloudUsecase.create(value)).called(1);
     });
 

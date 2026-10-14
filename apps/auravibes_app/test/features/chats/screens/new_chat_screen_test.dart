@@ -289,6 +289,7 @@ void main() {
       expect(state.modelId, isNull);
       expect(state.providerId, isNull);
       expect(state.isLoading, isFalse);
+      expect(state.autoApproveTools, isFalse);
     });
 
     test('copyWith preserves values', () {
@@ -330,6 +331,42 @@ void main() {
       expect(str, contains('m1'));
       expect(str, contains('true'));
     });
+  });
+
+  testWidgets('new chat toggles auto-approve before first message', (
+    tester,
+  ) async {
+    await _pumpNewChatWithinPausedBranch(
+      tester,
+      overrides: _newChatOverrides().skip(1).toList(),
+      tickerEnabled: true,
+    );
+    var input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
+    expect(input.autoApproveTools, isFalse);
+    expect(input.onAutoApproveToolsChanged, isNotNull);
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ChatInputWidget)),
+    );
+    await tester.tap(find.byType(AuraSwitch));
+    expect(
+      container.read(newChatProvider('test-ws')).autoApproveTools,
+      isTrue,
+      reason: 'switch tap updates notifier',
+    );
+    final _ = await tester.pumpAndSettle();
+    input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
+    expect(
+      input.autoApproveTools,
+      isTrue,
+      reason: 'composer rebuilds from notifier',
+    );
+    expect(container.read(newChatProvider('test-ws')).autoApproveTools, isTrue);
+    await tester.tap(find.byType(AuraSwitch));
+    final _ = await tester.pumpAndSettle();
+    expect(
+      container.read(newChatProvider('test-ws')).autoApproveTools,
+      isFalse,
+    );
   });
 
   group('render', () {

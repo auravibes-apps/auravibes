@@ -91,6 +91,16 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     await _saveConversationPatch(result.conversation, _agentPatch(agentId));
   }
 
+  Future<void> setAutoApproveTools({required bool enabled}) async {
+    final result = state.value;
+    if (result is! ConversationFound) return;
+
+    await _saveConversationPatch(
+      result.conversation,
+      .new(autoApproveTools: enabled),
+    );
+  }
+
   Future<void> rename(ConversationEntity conversation, String title) async {
     final trimmedTitle = title.trim();
     if (trimmedTitle.isEmpty) return;

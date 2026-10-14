@@ -855,6 +855,8 @@
     "semantics_credentials": "Configurar las credenciales de {skill}"
   },
   "chat_input": {
+    "auto_approve_tools_label": "Aprobar herramientas automáticamente",
+    "auto_approve_tools_description": "Las herramientas habilitadas se ejecutan sin pedir aprobación.",
     "skills_control_count": "Habilidades, {count} agregadas"
   },
   "skills_tool": {

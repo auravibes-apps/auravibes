@@ -18,6 +18,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/foundation.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:material_ui/material_ui.dart';
@@ -54,6 +56,9 @@ void main() {
   Widget buildSubject({
     required FutureOr<void> Function(ChatDraft) onSendMessage,
     VoidCallback onToolsPress = _noop,
+    bool autoApproveTools = false,
+    ValueChanged<bool>? onAutoApproveToolsChanged,
+    Locale locale = const Locale('en'),
     bool disabled = false,
     bool isBusy = false,
     bool? showStopButton,
@@ -118,6 +123,8 @@ void main() {
               ),
               onDraftStatusChanged: onDraftStatusChanged,
               conversationId: conversationId,
+              autoApproveTools: autoApproveTools,
+              onAutoApproveToolsChanged: onAutoApproveToolsChanged,
               reasoningControl: reasoningControl,
               draftToLoad: draftToLoad,
               modalitiesInput: modalitiesInput,
@@ -164,18 +171,23 @@ void main() {
                 ),
               ),
               locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                sdk_localizations.GlobalMaterialLocalizations.delegate,
+                ...context.localizationDelegates,
+              ],
               supportedLocales: context.supportedLocales,
             );
           },
         ),
       ),
-      supportedLocales: const [Locale('en')],
+      supportedLocales: const [Locale('en'), Locale('es')],
       path: 'assets/i18n',
       fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
+      startLocale: locale,
       useOnlyLangCode: true,
       useFallbackTranslations: true,
+      saveLocale: false,
     );
   }
 
@@ -192,6 +204,86 @@ void main() {
     debugDefaultTargetPlatformOverride = platform;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
   }
+
+  testWidgets('auto-approve control requires callback', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(onSendMessage: (_) => Future<void>.value()),
+    );
+    expect(find.byType(AuraSwitch), findsNothing);
+  });
+
+  for (final enabled in [false, true]) {
+    testWidgets('auto-approve exposes $enabled and toggles', (tester) async {
+      bool? changed;
+      final semantics = tester.ensureSemantics();
+      try {
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            onSendMessage: (_) => Future<void>.value(),
+            autoApproveTools: enabled,
+            onAutoApproveToolsChanged: (value) => changed = value,
+          ),
+        );
+        final control = find.byType(AuraSwitch);
+        expect(tester.widget<AuraSwitch>(control).value, enabled);
+        expect(find.text('Auto-approve tools'), findsOneWidget);
+        expect(
+          find.text('Enabled tools run without approval prompts.'),
+          findsOneWidget,
+        );
+        expect(
+          tester.getSemantics(control).label,
+          contains('Auto-approve tools'),
+        );
+        expect(
+          tester.getSemantics(control),
+          matchesSemantics(
+            label: 'Auto-approve tools',
+            isFocusable: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            hasToggledState: true,
+            isToggled: enabled,
+            hasTapAction: true,
+            hasFocusAction: true,
+          ),
+        );
+        await tester.tap(control);
+        expect(changed, !enabled);
+      } finally {
+        semantics.dispose();
+      }
+    });
+  }
+
+  testWidgets('auto-approve Spanish copy fits narrow composer', (tester) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final label =
+        'Aprobar herramientas autom${String.fromCharCode(0xe1)}ticamente';
+    final description =
+        'Las herramientas habilitadas se ejecutan sin pedir '
+        'aprobaci${String.fromCharCode(0xf3)}n.';
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) => Future<void>.value(),
+        onAutoApproveToolsChanged: (_) => _noop(),
+        locale: const Locale('es'),
+      ),
+    );
+    expect(find.text(label), findsOneWidget);
+    expect(find.text(description), findsOneWidget);
+    expect(
+      tester.widget<AuraSwitch>(find.byType(AuraSwitch)).semanticLabel,
+      label,
+    );
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('reports text draft changes', (tester) async {
     final draftStatuses = <bool>[];

@@ -744,7 +744,9 @@ void main() {
         .called(1);
   });
 
-  testWidgets('passes running compaction state to chat input', (tester) async {
+  testWidgets('passes compaction and auto-approve state to chat input', (
+    tester,
+  ) async {
     final conversation = ConversationEntity(
       id: _chatId,
       title: 'Chat',
@@ -752,6 +754,7 @@ void main() {
       isPinned: false,
       createdAt: .new(2026),
       updatedAt: .new(2026),
+      autoApproveTools: true,
     );
 
     await tester.runAsync(() async {
@@ -849,6 +852,25 @@ void main() {
 
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isCompacting, isTrue);
+    expect(input.autoApproveTools, isTrue);
+    expect(input.onAutoApproveToolsChanged, isNotNull);
+    expect(tester.widget<AuraSwitch>(find.byType(AuraSwitch)).value, isTrue);
+    await tester.tap(find.byType(AuraSwitch));
+    await tester.pump();
+    expect(
+      tester
+          .widget<ChatInputWidget>(find.byType(ChatInputWidget))
+          .autoApproveTools,
+      isFalse,
+    );
+    await tester.tap(find.byType(AuraSwitch));
+    await tester.pump();
+    expect(
+      tester
+          .widget<ChatInputWidget>(find.byType(ChatInputWidget))
+          .autoApproveTools,
+      isTrue,
+    );
   });
 
   testWidgets('shows and updates active sub-agent status in chat controls', (
@@ -2049,6 +2071,16 @@ class _ResultChatNotifier(final ConversationResult result)
     String workspaceId,
     String conversationId,
   ) async => result;
+
+  @override
+  Future<void> setAutoApproveTools({required bool enabled}) async {
+    final current = state.requireValue as ConversationFound;
+    state = AsyncData(
+      ConversationFound(
+        current.conversation.copyWith(autoApproveTools: enabled),
+      ),
+    );
+  }
 }
 
 class _StaticRateLimitRetryNotifier(final DateTime retryDeadline)

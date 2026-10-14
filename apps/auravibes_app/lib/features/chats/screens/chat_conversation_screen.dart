@@ -480,6 +480,7 @@ typedef _LoadedChatConversationSelectorCallbacks = ({
   ValueChanged<String?> onModelChanged,
   ValueChanged<String?> onModelSelectionChanged,
   ValueChanged<String?> onAgentChanged,
+  ValueChanged<bool> onAutoApproveToolsChanged,
   VoidCallback onSkillsPress,
   VoidCallback? Function({required bool isInputBusy}) continueAgent,
 });
@@ -607,6 +608,7 @@ _LoadedChatConversationSelectorCallbacks _loadedConversationSelectorCallbacks(
   onModelChanged: _loadedConversationModelChanged(request),
   onModelSelectionChanged: _loadedConversationModelChanged(request),
   onAgentChanged: _agentChanged(request),
+  onAutoApproveToolsChanged: _autoApproveToolsChanged(request),
   onSkillsPress: _loadedConversationSkillsPress(request),
   continueAgent: _loadedConversationContinue(request),
 );
@@ -719,6 +721,34 @@ ValueChanged<String?> _agentChanged(_LoadedRuntimeRequest request) =>
           )
           .setAgent(agentId),
     );
+
+ValueChanged<bool> _autoApproveToolsChanged(_LoadedRuntimeRequest request) =>
+    (enabled) => unawaited(_setAutoApproveTools(request, enabled));
+
+Future<void> _setAutoApproveTools(
+  _LoadedRuntimeRequest request,
+  bool enabled,
+) async {
+  try {
+    await request.ref
+        .read(
+          conversationChatProvider(
+            request.workspaceId,
+            request.conversation.id,
+          ).notifier,
+        )
+        .setAutoApproveTools(enabled: enabled);
+  } on Exception catch (error, stackTrace) {
+    _logger.severe('Failed to update tool approval mode', error, stackTrace);
+    if (!request.context.mounted) return;
+
+    final _ = AuraSnackBars.show(
+      context: request.context,
+      content: const TextLocale(LocaleKeys.common_error_message),
+      variant: .error,
+    );
+  }
+}
 
 typedef _LoadedChatConversationDependencies = _LoadedConversationWatchParts;
 
@@ -1704,6 +1734,9 @@ class _ChatComposerInput extends StatelessWidget {
            onCompactTap: onPressed,
          ),
          conversationId: data.conversation.id,
+         autoApproveTools: data.conversation.autoApproveTools,
+         onAutoApproveToolsChanged:
+             data.callbacks.selectors.onAutoApproveToolsChanged,
          topPadding: 0,
          reasoningControl: reasoningControl,
          draftToLoad: draftToLoad,

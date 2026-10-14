@@ -81,6 +81,8 @@ class const ChatInputWidget({
   final ValueChanged<bool>? onDraftStatusChanged,
   final String? conversationId,
   final bool autofocus = false,
+  final bool autoApproveTools = false,
+  final ValueChanged<bool>? onAutoApproveToolsChanged,
   final double topPadding = _chatInputVerticalPadding,
   final Widget? reasoningControl,
   final ChatDraft? draftToLoad,
@@ -537,7 +539,50 @@ class const _ChatInputPadding({required final _ChatInputState state})
       right: _chatInputHorizontalPadding,
       bottom: _chatInputVerticalPadding,
     ),
-    child: _ChatInputFieldComposition(state: state),
+    child: AuraColumn(
+      children: [
+        _ChatInputFieldComposition(state: state),
+        if (state.input.onAutoApproveToolsChanged case final onChanged?)
+          _ChatInputAutoApproveTools(
+            value: state.input.autoApproveTools,
+            onChanged: onChanged,
+          ),
+      ],
+      spacing: .xs,
+      mainAxisSize: .min,
+    ),
+  );
+}
+
+class const _ChatInputAutoApproveTools({
+  required final bool value,
+  required final ValueChanged<bool> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    key: const ValueKey<String>('chat_auto_approve_tools'),
+    children: [
+      const Expanded(
+        child: AuraColumn(
+          children: [
+            TextLocale(LocaleKeys.chat_input_auto_approve_tools_label),
+            AuraText(
+              child: TextLocale(
+                LocaleKeys.chat_input_auto_approve_tools_description,
+              ),
+              style: .bodySmall,
+            ),
+          ],
+          crossAxisAlignment: .start,
+          mainAxisSize: .min,
+        ),
+      ),
+      AuraSwitch(
+        value: value,
+        onChanged: onChanged,
+        semanticLabel: LocaleKeys.chat_input_auto_approve_tools_label.tr(),
+      ),
+    ],
   );
 }
 

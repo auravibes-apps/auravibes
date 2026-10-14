@@ -16,6 +16,7 @@ typedef _NewMessageRequest = ({
   ChatDraft draft,
   String workspaceModelSelectionId,
   String? agentId,
+  bool autoApproveTools,
   ReasoningConfiguration? reasoningConfiguration,
 });
 

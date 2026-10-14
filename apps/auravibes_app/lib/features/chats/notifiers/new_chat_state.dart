@@ -22,6 +22,7 @@ abstract class NewChatState with _$NewChatState {
     String? agentId,
     ReasoningConfiguration? reasoningConfiguration,
     @Default(false) bool isLoading,
+    @Default(false) bool autoApproveTools,
   }) = _NewChatState;
 }
 
@@ -51,6 +52,10 @@ class NewChatNotifier extends _$NewChatNotifier {
     state = state.copyWith(reasoningConfiguration: value);
   }
 
+  void setAutoApproveTools({required bool enabled}) {
+    state = state.copyWith(autoApproveTools: enabled);
+  }
+
   Future<ConversationEntity> startConversation(
     ChatDraft draft,
     SendNewMessageUsecase sendNewMessageUsecase,
@@ -67,6 +72,7 @@ class NewChatNotifier extends _$NewChatNotifier {
         workspaceModelSelectionId: modelId,
         workspaceId: workspaceId,
         agentId: state.agentId,
+        autoApproveTools: state.autoApproveTools,
         reasoningConfiguration: state.reasoningConfiguration,
       ));
     } finally {

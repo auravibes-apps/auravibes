@@ -584,6 +584,86 @@ void main() {
       sub.close();
     });
 
+    for (final isCloud in [false, true]) {
+      test('persists auto-approve on and off for cloud=$isCloud', () async {
+        final patches = <ConversationPatch>[];
+        final gateway = _CloudChatGateway();
+        var current = conversation;
+        when(() => gateway.updateConversation(any()))
+            .thenAnswer((invocation) async {
+              final request =
+                  invocation.positionalArguments.single
+                      as UpdateConversationRequest;
+              current = current.copyWith(
+                autoApproveTools:
+                    request.autoApproveTools ?? current.autoApproveTools,
+              );
+
+              return ConversationSummary(
+                id: current.id,
+                title: current.title,
+                isPinned: current.isPinned,
+                autoApproveTools: current.autoApproveTools,
+                revision: current.revision + 1,
+                createdAt: current.createdAt,
+                updatedAt: current.updatedAt,
+              );
+            });
+        final container = ProviderContainer(
+          overrides: [
+            conversationByIdStreamProvider.overrideWith(
+              (ref, _) => Stream.value(conversation),
+            ),
+            conversationRepositoryProvider.overrideWithValue(
+              _FakeConversationRepository(
+                onPatch: (id, patch) {
+                  patches.add(patch);
+
+                  return current.copyWith(
+                    autoApproveTools:
+                        patch.autoApproveTools ?? current.autoApproveTools,
+                  );
+                },
+              ),
+            ),
+            cloudConversationUsecaseProvider.overrideWithValue(
+              isCloud ? .new(gateway) : null,
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+        final provider = conversationChatProvider('ws-1', 'conv-1');
+        final sub = container.listen(provider, (_, _) {
+          final _ = Object();
+        });
+        addTearDown(sub.close);
+        final _ = await container.read(provider.future);
+        for (final enabled in [true, false]) {
+          await container
+              .read(provider.notifier)
+              .setAutoApproveTools(enabled: enabled);
+          expect(
+            (container.read(provider).requireValue as ConversationFound)
+                .conversation
+                .autoApproveTools,
+            enabled,
+          );
+        }
+        if (isCloud) {
+          final requests = verify(
+            () => gateway.updateConversation(captureAny()),
+          ).captured.cast<UpdateConversationRequest>();
+          expect(requests.map((request) => request.autoApproveTools), [
+            true,
+            false,
+          ]);
+          expect(patches, isEmpty);
+        } else {
+          expect(patches.map((patch) => patch.autoApproveTools), [true, false]);
+        }
+      });
+    }
+
     test('rename updates a cloud conversation', () async {
       final gateway = _CloudChatGateway();
       final now = DateTime(2026);
