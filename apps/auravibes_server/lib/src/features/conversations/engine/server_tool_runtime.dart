@@ -82,11 +82,11 @@ bool serverToolCanRunInBackground(
   ServerResolvedTool tool, {
   bool isTopLevelConversation = false,
 }) {
+  if (!isTopLevelConversation) return false;
   final descriptor = tool.descriptor;
   return descriptor.kind == AgentResolvedToolKind.skillTemplate ||
       descriptor.kind == AgentResolvedToolKind.skillAppTemplate ||
-      (isTopLevelConversation &&
-          descriptor.kind == AgentResolvedToolKind.skillNative &&
+      (descriptor.kind == AgentResolvedToolKind.skillNative &&
           descriptor.skillSlug == agentsSkillSlug &&
           descriptor.toolIdentifier == runSubAgentToolName);
 }

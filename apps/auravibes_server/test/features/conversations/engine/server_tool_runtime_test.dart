@@ -107,6 +107,33 @@ void main() {
             toolIdentifier: 'search',
           ),
         ),
+        isTopLevelConversation: true,
+      ),
+      isTrue,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.skillTemplate(
+            tableId: 'search',
+            skillSlug: 'research',
+            toolIdentifier: 'search',
+          ),
+        ),
+        isTopLevelConversation: false,
+      ),
+      isFalse,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.skillAppTemplate(
+            tableId: 'calendar',
+            skillSlug: 'calendar',
+            toolIdentifier: 'list_events',
+          ),
+        ),
+        isTopLevelConversation: true,
       ),
       isTrue,
     );
@@ -119,8 +146,9 @@ void main() {
             toolIdentifier: 'list_events',
           ),
         ),
+        isTopLevelConversation: false,
       ),
-      isTrue,
+      isFalse,
     );
     expect(
       serverToolCanRunInBackground(

@@ -599,6 +599,8 @@ Widget _buildChatTimelineItem({
   }
 
   final item = data[index - thinkingCount - compactionCount];
+  final isTopLevelConversation =
+      conversation != null && conversation.parentConversationId == null;
   final messageId = switch (item) {
     _ActivityRunTimelineItem(:final run) => run.responseMessageId,
     _MessageTimelineItem(:final source) => source.message.id,
@@ -613,6 +615,7 @@ Widget _buildChatTimelineItem({
       workspaceId: workspaceId,
       isCloudWorkspace: isCloudWorkspace,
       backgroundToolCallIds: backgroundToolCallIds,
+      isTopLevelConversation: isTopLevelConversation,
       a2uiRuntime: a2uiRuntime,
       a2uiReplayPayloadsByMessageId: replayPayloadsByMessageId,
       a2uiReplayPayloads: run.responseMessageId == null
@@ -636,6 +639,7 @@ Widget _buildChatTimelineItem({
         workspaceId: workspaceId,
         isCloudWorkspace: isCloudWorkspace,
         backgroundToolCallIds: backgroundToolCallIds,
+        isTopLevelConversation: isTopLevelConversation,
         a2uiRuntime: a2uiRuntime,
         a2uiReplayPayloads:
             replayPayloadsByMessageId[source.message.id] ?? const [],
@@ -1026,6 +1030,7 @@ class const _ChatMessageTimelineItem({
   required final String workspaceId,
   required final bool isCloudWorkspace,
   required final Set<String>? backgroundToolCallIds,
+  required final bool isTopLevelConversation,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
   final bool showResponseActions = true,
@@ -1073,6 +1078,7 @@ class const _ChatMessageTimelineItem({
             workspaceId: workspaceId,
             isCloudWorkspace: isCloudWorkspace,
             backgroundToolCallIds: backgroundToolCallIds,
+            isTopLevelConversation: isTopLevelConversation,
           ),
         _ChatMessageContent(
           message: message,
@@ -1786,6 +1792,7 @@ class const _AssistantActivityRun({
   required final String workspaceId,
   required final bool isCloudWorkspace,
   required final Set<String>? backgroundToolCallIds,
+  required final bool isTopLevelConversation,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
   final Map<String, List<String>> a2uiReplayPayloadsByMessageId = const {},
@@ -1988,6 +1995,7 @@ class const _AssistantActivityRun({
           ),
           onRunInBackground:
               !item.isForkReference &&
+                  isTopLevelConversation &&
                   item.toolCall.isRunning &&
                   !(backgroundToolCallIds?.contains(item.toolCall.id) ??
                       false) &&
