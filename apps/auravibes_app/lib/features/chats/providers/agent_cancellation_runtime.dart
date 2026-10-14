@@ -26,7 +26,9 @@ typedef _BackgroundEligibilityWatchRequest = ({
   MultiStreamController<bool> controller,
 });
 
-void _noOpConversationActivity(String _) {}
+void _noOpConversationActivity(String _) {
+  return;
+}
 
 class AgentCancellationRuntime implements AgentCancellationEffects {
   new({
