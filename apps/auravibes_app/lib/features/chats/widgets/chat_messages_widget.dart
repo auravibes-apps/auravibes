@@ -1220,7 +1220,6 @@ List<Widget> _messageContentChildren({
     if (showResponseActions && hasA2uiResponse)
       _MessageFooter(
         key: ValueKey('message_footer_${message.id}'),
-        createdAt: message.createdAt,
         status: status,
         resolveContent: () => _messageCopyText(message, a2uiRuntime),
         message: message,
@@ -1407,11 +1406,6 @@ class const _MessageTextContent({
           isUser: true,
           key: ValueKey(message.id),
           status: status,
-          timestamp: message.createdAt,
-          timestampLabel: RelativeTimeFormatter.format(
-            message.createdAt,
-            translate: (key, {args}) => context.tr(key, args: args),
-          ),
         ),
       );
     }
@@ -1422,7 +1416,6 @@ class const _MessageTextContent({
         if (hasContent)
           _AiMessageContent(
             content: message.content,
-            timestamp: message.createdAt,
             key: ValueKey(message.id),
             status: status,
             showMetadata: showMetadata,
@@ -1436,57 +1429,28 @@ class const _MessageFooter({
   required final MessageEntity message,
   required final String workspaceId,
   required final String conversationId,
-  required final DateTime createdAt,
   required final AuraMessageDeliveryStatus status,
   required final String? Function() resolveContent,
   super.key,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final typography = context.auraTheme.typography;
     final copyableText = resolveContent();
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (copyableText != null)
-                _MessageActions(
-                  message: message,
-                  resolveContent: resolveContent,
-                  workspaceId: workspaceId,
-                  conversationId: conversationId,
-                ),
-              if (copyableText == null && _canForkMessage(message))
-                _MessageForkAction(
-                  message: message,
-                  workspaceId: workspaceId,
-                  conversationId: conversationId,
-                ),
-              Text(
-                RelativeTimeFormatter.format(
-                  createdAt,
-                  locale: Localizations.localeOf(context),
-                ),
-                style: TextStyle(
-                  color: auraColors.onSurfaceVariant,
-                  fontSize: typography.fontSizeXs,
-                  fontFamily: typography.bodyFontFamily,
-                ),
-              ),
-            ],
-          ),
-          if (status != AuraMessageDeliveryStatus.sent) ...[
-            SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
-            AuraMessageStatus(status: status),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _MessageActions(
+          message: message,
+          resolveContent: copyableText == null ? null : resolveContent,
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        ),
+        if (status != AuraMessageDeliveryStatus.sent) ...[
+          SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
+          AuraMessageStatus(status: status),
         ],
-      ),
+      ],
     );
   }
 }
@@ -1505,12 +1469,29 @@ class const _MessageActions({
   Widget build(BuildContext context) {
     final resolve = resolveContent;
     final retry = onRetryMessage;
+    final typography = context.auraTheme.typography;
+    final timestamp = Text(
+      RelativeTimeFormatter.format(
+        message.createdAt,
+        locale: Localizations.localeOf(context),
+        translate: (key, {args}) => context.tr(key, args: args),
+      ),
+      style: TextStyle(
+        color: context.auraColors.onSurfaceVariant,
+        fontSize: typography.fontSizeXs,
+        fontFamily: typography.bodyFontFamily,
+      ),
+    );
 
     return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (message.isUser) ...[
+            timestamp,
+            SizedBox(width: context.auraTheme.fromSpacing(.xs)),
+          ],
           if (resolve != null) _MessageCopyAction(resolveContent: resolve),
           if (retry != null)
             _MessageRetryAction(message: message, onRetryMessage: retry),
@@ -1520,6 +1501,10 @@ class const _MessageActions({
               workspaceId: workspaceId,
               conversationId: conversationId,
             ),
+          if (!message.isUser) ...[
+            SizedBox(width: context.auraTheme.fromSpacing(.xs)),
+            timestamp,
+          ],
         ],
       ),
     );
@@ -1762,7 +1747,6 @@ Future<void> _openChatMarkdownLink(BuildContext context, String url) async {
 
 class const _AiMessageContent({
   required final String content,
-  required final DateTime timestamp,
   super.key,
   final AuraMessageDeliveryStatus status = AuraMessageDeliveryStatus.sent,
   final bool showMetadata = true,
@@ -1785,23 +1769,9 @@ class const _AiMessageContent({
             fontFamily: typography.bodyFontFamily,
           ),
         ),
-        if (showMetadata) ...[
+        if (showMetadata && status != AuraMessageDeliveryStatus.sent) ...[
           const AuraSizedBox(height: .xs),
-          Text(
-            RelativeTimeFormatter.format(
-              timestamp,
-              locale: Localizations.localeOf(context),
-            ),
-            style: TextStyle(
-              color: auraColors.onSurfaceVariant,
-              fontSize: typography.fontSizeXs,
-              fontFamily: typography.bodyFontFamily,
-            ),
-          ),
-          if (status != AuraMessageDeliveryStatus.sent) ...[
-            SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
-            AuraMessageStatus(status: status),
-          ],
+          AuraMessageStatus(status: status),
         ],
       ],
     );
