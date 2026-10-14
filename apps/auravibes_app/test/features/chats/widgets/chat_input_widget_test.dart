@@ -546,14 +546,12 @@ void main() {
       'chat_agent_selector',
       'chat_model_selector',
       'chat_attachment_options_button',
-      'chat_send_button',
       'chat_stop_generation',
     ]) {
       expect(find.byKey(ValueKey<String>(selector)), findsOneWidget);
     }
     for (final selector in [
       'chat_attachment_options_button',
-      'chat_send_button',
       'chat_stop_generation',
     ]) {
       expect(find.bySemanticsIdentifier(selector), findsOneWidget);
@@ -562,6 +560,10 @@ void main() {
         find.bySemanticsIdentifier(selector).evaluate().single,
       );
     }
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsNothing,
+    );
     expect(find.text('reasoning control'), findsOneWidget);
     final composerRadii = tester
         .widgetList<AuraCornerRadiusScope>(
@@ -638,6 +640,8 @@ void main() {
       buildSubject(
         modalitiesInput: const ['text', 'file'],
         attachmentService: _FakeLocalChatAttachmentService(attachment),
+        isBusy: true,
+        onStop: _noop,
         onSendMessage: (draft) {
           sentDrafts.add(draft);
 
@@ -646,11 +650,27 @@ void main() {
       ),
     );
 
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsNothing,
+    );
     await tester.tap(find.byIcon(Icons.tune_rounded));
     await tester.pump();
     await tester.tap(find.byIcon(Icons.attach_file));
     final _ = await tester.pumpAndSettle();
     expect(find.text('report.pdf'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsNothing,
+    );
 
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await tester.tap(find.byIcon(Icons.arrow_upward));
@@ -1397,7 +1417,53 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('shows send for a busy text draft, then returns to stop', (
+    tester,
+  ) async {
+    ChatDraft? sentDraft;
+    var stopCount = 0;
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (draft) => sentDraft = draft,
+        isBusy: true,
+        onStop: () => stopCount++,
+      ),
+    );
+
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    await tester.enterText(find.byType(EditableText), 'draft while busy');
+    await tester.pump();
+
+    final sendButton = find.byKey(const ValueKey<String>('chat_send_button'));
+    expect(sendButton, findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsNothing,
+    );
+    await tester.tap(sendButton);
+    await tester.pumpAndSettle();
+
+    expect(sentDraft?.text, 'draft while busy');
+    expect(stopCount, 0);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(sendButton, findsNothing);
   });
 
   testWidgets('does not expose stop button when isBusy is false', (
@@ -1435,7 +1501,14 @@ void main() {
 
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isBusy, isTrue);
-    expect(find.byIcon(Icons.stop_rounded).hitTestable(), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('hides stop button when onStop is null', (tester) async {
@@ -1449,7 +1522,14 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.stop_rounded), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('tabs from input to more button and opens with enter', (
