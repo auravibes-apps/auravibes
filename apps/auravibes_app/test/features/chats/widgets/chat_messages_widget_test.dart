@@ -814,15 +814,14 @@ void main() {
       );
     });
 
-    testWidgets('aligns user copy action with the user bubble', (tester) async {
+    testWidgets('aligns user timestamp before the copy action', (tester) async {
+      final message = _createMessage(content: 'Hello AI');
       await pumpAndInit(
         tester,
         buildSubject(
           messages: ['msg-1'],
           overrides: [
-            messageConversationByIdProvider.overrideWith(
-              (ref, id) => _createMessage(content: 'Hello AI'),
-            ),
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
               (ref, _) async => const ConversationBusyState(
@@ -835,11 +834,21 @@ void main() {
       );
 
       final bubbleRight = tester.getTopRight(find.byType(AuraMessageBubble)).dx;
-      final copyActionRight = tester
-          .getTopRight(find.byTooltip('Copy message'))
-          .dx;
+      final copyAction = find.byTooltip('Copy message');
+      final timestamp = find.text(
+        RelativeTimeFormatter.format(message.createdAt),
+      );
 
-      expect(copyActionRight, closeTo(bubbleRight, 1));
+      expect(tester.getTopRight(copyAction).dx, closeTo(bubbleRight, 1));
+      expect(timestamp, findsOneWidget);
+      expect(
+        tester.getTopRight(timestamp).dx,
+        lessThan(tester.getTopLeft(copyAction).dx),
+      );
+      expect(
+        tester.getCenter(timestamp).dy,
+        closeTo(tester.getCenter(copyAction).dy, 1),
+      );
     });
 
     testWidgets('uses a visible selection color for user messages', (
@@ -1249,7 +1258,9 @@ void main() {
       expect(find.byIcon(Icons.copy_outlined), findsNWidgets(2));
     });
 
-    testWidgets('keeps text-only assistant metadata inline', (tester) async {
+    testWidgets('aligns assistant timestamp after the copy action', (
+      tester,
+    ) async {
       final message = _createMessage(
         content: 'Text-only answer',
         isUser: false,
@@ -1276,8 +1287,18 @@ void main() {
 
       expect(find.text('Text-only answer'), findsOneWidget);
       expect(find.byKey(const ValueKey('message_footer_msg-1')), findsNothing);
-      expect(find.byTooltip('Copy message'), findsOneWidget);
-      expect(find.text(relativeTime), findsOneWidget);
+      final copyAction = find.byTooltip('Copy message');
+      final timestamp = find.text(relativeTime);
+      expect(copyAction, findsOneWidget);
+      expect(timestamp, findsOneWidget);
+      expect(
+        tester.getTopLeft(timestamp).dx,
+        greaterThan(tester.getTopRight(copyAction).dx),
+      );
+      expect(
+        tester.getCenter(timestamp).dy,
+        closeTo(tester.getCenter(copyAction).dy, 1),
+      );
     });
 
     testWidgets('renders one thinking indicator while generation is active', (
