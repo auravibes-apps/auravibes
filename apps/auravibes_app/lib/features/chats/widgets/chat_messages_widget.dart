@@ -299,7 +299,7 @@ class const ChatMessagesWidget({
         ListView.separated(
           reverse: true,
           controller: controller,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           itemBuilder: (context, index) => _buildChatTimelineItem(
             index: index,
             data: data,
@@ -603,6 +603,8 @@ Widget _buildChatTimelineItem({
   }
 
   final item = data[index - thinkingCount - compactionCount];
+  final isTopLevelConversation =
+      conversation != null && conversation.parentConversationId == null;
   final messageId = switch (item) {
     _ActivityRunTimelineItem(:final run) => run.responseMessageId,
     _MessageTimelineItem(:final source) => source.message.id,
@@ -617,6 +619,7 @@ Widget _buildChatTimelineItem({
       workspaceId: workspaceId,
       isCloudWorkspace: isCloudWorkspace,
       backgroundToolCallIds: backgroundToolCallIds,
+      isTopLevelConversation: isTopLevelConversation,
       a2uiRuntime: a2uiRuntime,
       a2uiReplayPayloadsByMessageId: replayPayloadsByMessageId,
       a2uiReplayPayloads: run.responseMessageId == null
@@ -641,6 +644,7 @@ Widget _buildChatTimelineItem({
         workspaceId: workspaceId,
         isCloudWorkspace: isCloudWorkspace,
         backgroundToolCallIds: backgroundToolCallIds,
+        isTopLevelConversation: isTopLevelConversation,
         a2uiRuntime: a2uiRuntime,
         a2uiReplayPayloads:
             replayPayloadsByMessageId[source.message.id] ?? const [],
@@ -1032,6 +1036,7 @@ class const _ChatMessageTimelineItem({
   required final String workspaceId,
   required final bool isCloudWorkspace,
   required final Set<String>? backgroundToolCallIds,
+  required final bool isTopLevelConversation,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
   final bool showResponseActions = true,
@@ -1080,6 +1085,7 @@ class const _ChatMessageTimelineItem({
             workspaceId: workspaceId,
             isCloudWorkspace: isCloudWorkspace,
             backgroundToolCallIds: backgroundToolCallIds,
+            isTopLevelConversation: isTopLevelConversation,
             onOpenToolResult: onOpenToolResult,
           ),
         _ChatMessageContent(
@@ -1794,6 +1800,7 @@ class const _AssistantActivityRun({
   required final String workspaceId,
   required final bool isCloudWorkspace,
   required final Set<String>? backgroundToolCallIds,
+  required final bool isTopLevelConversation,
   required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
@@ -1997,6 +2004,7 @@ class const _AssistantActivityRun({
           ),
           onRunInBackground:
               !item.isForkReference &&
+                  isTopLevelConversation &&
                   item.toolCall.isRunning &&
                   !(backgroundToolCallIds?.contains(item.toolCall.id) ??
                       false) &&
@@ -3086,6 +3094,19 @@ String? _subAgentConversationId(MessageToolCallEntity toolCall) {
     final decoded = jsonDecode(responseRaw);
     if (decoded case {'conversationId': final String conversationId}) {
       return conversationId;
+    }
+    if (decoded case {
+      'childConversationId': final String childConversationId,
+    }) {
+      return childConversationId;
+    }
+    if (decoded case {'children': final List children}) {
+      final childIds = children
+          .whereType<Map>()
+          .map((child) => child['conversationId'])
+          .whereType<String>()
+          .toSet();
+      return childIds.length == 1 ? childIds.single : null;
     }
   } on Object {
     return null;

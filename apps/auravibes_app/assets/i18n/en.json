@@ -1279,7 +1279,7 @@
     "recent_chats": "Recent Chats",
     "no_recent_chats": "Chats will appear here",
     "view_all_chats": "View All",
-    "response_in_progress": "Assistant response in progress"
+    "agent_working": "Agent working"
   },
   "mcp_catalog": {
     "back": "Back",

@@ -257,15 +257,13 @@ final class McpResourceContent extends McpContent {
 class McpToolResult {
   new({
     List<McpContent> content = const [],
-    Map<String, Object?>? structuredContent,
+    Object? structuredContent,
     this.isStreaming = false,
     this.isError,
   }) : content = List.unmodifiable(content),
-       structuredContent = structuredContent == null
-           ? null
-           : _freezeMap(structuredContent);
+       structuredContent = _freezeJson(structuredContent);
   final List<McpContent> content;
-  final Map<String, Object?>? structuredContent;
+  final Object? structuredContent;
   final bool isStreaming;
   final bool? isError;
 

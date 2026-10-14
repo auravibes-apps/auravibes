@@ -10,6 +10,7 @@ import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/browser/models/browser_session_state.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/notifiers/agent_run_activity_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
@@ -268,7 +269,7 @@ void main() {
   });
 
   testWidgets(
-    'updates stream indicators per conversation without changing selection',
+    'updates per-conversation activity indicators without changing selection',
     (tester) async {
       final semanticHandle = tester.ensureSemantics();
 
@@ -299,6 +300,9 @@ void main() {
         );
       }
 
+      final activityNotifier = container.read(
+        agentRunActivityProvider.notifier,
+      );
       final streamingNotifier = container.read(
         conversationStreamingProvider.notifier,
       );
@@ -318,34 +322,33 @@ void main() {
       );
       expect(find.text('Draft'), findsOneWidget);
       expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
+      final startAgent = activityNotifier.startAgentRun;
+      final stopAgent = activityNotifier.endAgentRun;
       final startStreaming = streamingNotifier.start;
       final stopStreaming = streamingNotifier.remove;
 
-      startStreaming(otherConversation.id);
+      startAgent(otherConversation.id);
       await tester.pump();
 
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
         findsNothing,
       );
-      expect(
-        find.bySemanticsLabel(RegExp('Assistant response in progress')),
-        findsOneWidget,
-      );
+      expect(find.bySemanticsLabel(RegExp('Agent working')), findsOneWidget);
 
       startStreaming(selectedConversation.id);
       await tester.pump();
 
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
         findsOneWidget,
       );
       final selectedTile = tester.widget<AuraTile>(
@@ -371,15 +374,15 @@ void main() {
         contains('Draft'),
       );
 
-      stopStreaming(otherConversation.id);
+      stopAgent(otherConversation.id);
       await tester.pump();
 
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
         findsNothing,
       );
 
@@ -387,11 +390,11 @@ void main() {
       await tester.pump();
 
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
         findsNothing,
       );
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
         findsNothing,
       );
       semanticHandle.dispose();

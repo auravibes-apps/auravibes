@@ -758,7 +758,7 @@ class const _LoadedChatConversationActivityState({
   required final bool hasPendingApprovals,
   required final bool isInputBusy,
   required final bool isCompacting,
-  required final bool isGenerating,
+  required final bool isAgentWorking,
 });
 
 _LoadedChatConversationActivityState _watchLoadedChatConversationActivity(
@@ -800,11 +800,11 @@ _LoadedChatConversationActivityState _loadedChatConversationActivityState(
   hasPendingApprovals: request.pendingCalls.isNotEmpty,
   isInputBusy: request.isInputBusy,
   isCompacting: request.dependencies.display.isCompacting,
-  isGenerating: _isGeneratingFromCore(request.core),
+  isAgentWorking: _isAgentWorkingFromCore(request.core),
 );
 
-bool _isGeneratingFromCore(_LoadedChatConversationCoreState core) =>
-    _isGenerating(
+bool _isAgentWorkingFromCore(_LoadedChatConversationCoreState core) =>
+    _isAgentWorking(
       isCloud: core.isCloud,
       cloudConversation: core.cloudConversation,
       busyState: core.busyState,
@@ -837,7 +837,7 @@ class const _LoadedChatConversationState({
   required final List<String> modalitiesInput,
   required final bool isInputBusy,
   required final bool isCompacting,
-  required final bool isGenerating,
+  required final bool isAgentWorking,
 });
 
 class const _LoadedChatConversationData({
@@ -1044,7 +1044,7 @@ _LoadedChatConversationState _loadedChatConversationState({
   modalitiesInput: core.modalitiesInput,
   isInputBusy: activity.isInputBusy,
   isCompacting: activity.isCompacting,
-  isGenerating: activity.isGenerating,
+  isAgentWorking: activity.isAgentWorking,
 );
 
 bool _isCloudWorkspace(WidgetRef ref, String workspaceId) =>
@@ -1130,7 +1130,7 @@ bool _isCloudInputBusy(CloudConversationState? state) {
   return executionState == 'running' || executionState == 'awaitingApproval';
 }
 
-bool _isGenerating({
+bool _isAgentWorking({
   required bool isCloud,
   required CloudConversationState? cloudConversation,
   required ConversationBusyState? busyState,
@@ -1139,7 +1139,7 @@ bool _isGenerating({
     return cloudConversation?.conversation.executionState == 'running';
   }
 
-  return busyState?.isStreaming == true;
+  return busyState?.isStreaming == true || busyState?.isAgentWorking == true;
 }
 
 VoidCallback? _continueAgentCallback(_ContinueCallbackRequest request) {
@@ -1407,7 +1407,9 @@ class const _ChatConversationBodyLayout({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      _ConversationOrientation(data: data),
+      if (!data.showInputComposer &&
+          data.conversation.parentConversationId != null)
+        _ConversationOrientation(data: data),
       _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(
@@ -1421,6 +1423,7 @@ class const _ChatConversationBodyLayout({
           hasOtherStatus: hasOtherStatus,
         ),
     ],
+    spacing: .none,
   );
 }
 
@@ -1530,7 +1533,11 @@ class const _ChatConversationMessageList({
   Future<void> Function(MessageEntity message)? get _onRetryMessage =>
       data.state.isInputBusy ? null : data.callbacks.hooks.onRetryMessage;
 
-  bool get _showThinking => data.state.isGenerating && !data.hidesStoppedRun;
+  bool get _showThinking =>
+      data.state.isAgentWorking &&
+      data.state.rateLimitRetryAt == null &&
+      !data.state.isCompacting &&
+      !data.hidesStoppedRun;
 
   @override
   Widget build(BuildContext context) => Expanded(
@@ -1874,6 +1881,7 @@ class _ChatComposerInput extends StatelessWidget {
            onCompactTap: onPressed,
          ),
          conversationId: data.conversation.id,
+         topPadding: 0,
          reasoningControl: reasoningControl,
          draftToLoad: draftToLoad,
          modalitiesInput: data.state.modalitiesInput,
@@ -2016,11 +2024,7 @@ class const _ChatControlsPadding({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(
-      left: context.auraTheme.fromSpacing(.md),
-      top: context.auraTheme.fromSpacing(.sm),
-      right: context.auraTheme.fromSpacing(.md),
-    ),
+    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
     child: _ChatControlsAlignment(
       workspaceId: workspaceId,
       conversationId: conversationId,
@@ -3176,7 +3180,7 @@ String _conversationActivityFallbackKey(
   _ when state.rateLimitRetryAt != null => 'retry',
   _ when state.isCompacting => 'compacting',
   _ when childCount > 0 => 'delegated',
-  _ when state.isGenerating || state.isInputBusy => 'working',
+  _ when state.isAgentWorking || state.isInputBusy => 'working',
   _ when state.queuedDrafts.isNotEmpty => 'queued',
   _ => 'idle',
 };

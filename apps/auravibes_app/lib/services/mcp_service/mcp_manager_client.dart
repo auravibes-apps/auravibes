@@ -23,7 +23,6 @@ typedef McpConnectionRequest = ({
 });
 
 typedef _StreamableHttpAuthConfig = ({
-  mcp.OAuthConfig? oauthConfig,
   Map<String, String> headers,
   mcp.RequestHeadersProvider? headersProvider,
 });
@@ -325,6 +324,7 @@ Future<mcp.ClientTransport> _createSseTransportConfig(
     );
   }
 
+  // ignore: deprecated_member_use - Retain legacy SSE OAuth refresh hooks; v3 SseClientTransport only supports static headers.
   return mcp.SseAuthClientTransport.create(
     serverUrl: server.url,
     headers: _httpHeaders(authType),
@@ -344,18 +344,12 @@ Future<mcp.ClientTransport> _createHttpTransportConfig(
     throw Exception('Invalid transport type for HTTP transport');
   }
 
-  final authType = server.authenticationType;
-  final transport = await _createStreamableTransport(
+  return await _createStreamableTransport(
     server,
     transportType,
     oauthCredentialService: oauthCredentialService,
     httpClient: httpClient,
   );
-  if (authType is! McpAuthenticationTypeOAuth) {
-    _setOAuthToken(transport, authType);
-  }
-
-  return transport;
 }
 
 Future<mcp.StreamableHttpClientTransport> _createStreamableTransport(
@@ -368,7 +362,6 @@ Future<mcp.StreamableHttpClientTransport> _createStreamableTransport(
 
   return mcp.StreamableHttpClientTransport.create(
     baseUrl: server.url,
-    oauthConfig: authConfig.oauthConfig,
     headers: authConfig.headers,
     headersProvider: authConfig.headersProvider,
     useHttp2: transportType.useHttp2,
@@ -383,18 +376,13 @@ _StreamableHttpAuthConfig _streamableHttpAuthConfig(
   final authType = server.authenticationType;
   if (authType is McpAuthenticationTypeOAuth) {
     return (
-      oauthConfig: null,
       headers: const {},
       headersProvider: (_) =>
           _oauthHeaders(server, authType, oauthCredentialService),
     );
   }
 
-  return (
-    oauthConfig: _getOauthConfig(authType),
-    headers: _httpHeaders(authType),
-    headersProvider: null,
-  );
+  return (headers: _httpHeaders(authType), headersProvider: null);
 }
 
 Future<Map<String, String>> _oauthHeaders(
@@ -429,15 +417,6 @@ Map<String, String> _httpHeaders(McpAuthenticationType authType) =>
       McpAuthenticationTypeNone() ||
       McpAuthenticationTypeOAuth() => <String, String>{},
     };
-
-void _setOAuthToken(
-  mcp.StreamableHttpClientTransport transport,
-  McpAuthenticationType authType,
-) {
-  final authToken = _getOauthToken(authType);
-  if (authToken == null) return;
-  transport.setOAuthToken(authToken);
-}
 
 mcp.HttpOAuthClient? _oauthClient(McpAuthenticationType authType) {
   final config = _getOauthConfig(authType);

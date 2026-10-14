@@ -11,10 +11,10 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
@@ -389,7 +389,7 @@ class const _SidebarConversationTileContent({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isResponseStreaming = _isResponseStreaming(ref);
+    final isAgentWorking = _isAgentWorking(ref);
     final hasDraft = _hasDraft(ref);
     final browserSession = ref
         .watch(browserSessionProvider(chat.workspaceId, chat.id))
@@ -399,20 +399,20 @@ class const _SidebarConversationTileContent({
 
     return _SidebarConversationTileBody(
       content: this,
-      isResponseStreaming: isResponseStreaming,
+      isAgentWorking: isAgentWorking,
       hasDraft: hasDraft,
       hasBrowserTabs: hasBrowserTabs,
       isBrowserSuspended: isBrowserSuspended,
       semanticLabel: _sidebarConversationTileSemanticLabel(
         title,
-        isResponseStreaming,
+        isAgentWorking,
         hasDraft,
       ),
     );
   }
 
-  bool _isResponseStreaming(WidgetRef ref) => ref.watch(
-    conversationStreamingProvider.select(
+  bool _isAgentWorking(WidgetRef ref) => ref.watch(
+    conversationActivityProvider.select(
       (conversationIds) => conversationIds.contains(chat.id),
     ),
   );
@@ -426,15 +426,15 @@ class const _SidebarConversationTileContent({
 
 class const _SidebarConversationTileTrailing({
   required final _SidebarConversationTileContent content,
-  required final bool isResponseStreaming,
+  required final bool isAgentWorking,
   required final bool hasBrowserTabs,
   required final bool isBrowserSuspended,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraRow(
     children: [
-      if (isResponseStreaming)
-        _SidebarResponseStreamingStatus(conversationId: content.chat.id),
+      if (isAgentWorking)
+        _SidebarAgentWorkingStatus(conversationId: content.chat.id),
       if (hasBrowserTabs)
         _SidebarBrowserStatus(
           conversationId: content.chat.id,
@@ -458,7 +458,7 @@ class const _SidebarConversationTileTrailing({
 
 class const _SidebarConversationTileBody({
   required final _SidebarConversationTileContent content,
-  required final bool isResponseStreaming,
+  required final bool isAgentWorking,
   required final bool hasDraft,
   required final bool hasBrowserTabs,
   required final bool isBrowserSuspended,
@@ -475,7 +475,7 @@ class const _SidebarConversationTileBody({
     leading: _SidebarConversationTileLeading(isActive: content.isActive),
     trailing: _SidebarConversationTileTrailing(
       content: content,
-      isResponseStreaming: isResponseStreaming,
+      isAgentWorking: isAgentWorking,
       hasBrowserTabs: hasBrowserTabs,
       isBrowserSuspended: isBrowserSuspended,
     ),
@@ -485,21 +485,20 @@ class const _SidebarConversationTileBody({
 
 String _sidebarConversationTileSemanticLabel(
   String title,
-  bool isResponseStreaming,
+  bool isAgentWorking,
   bool hasDraft,
 ) => [
   title,
-  if (isResponseStreaming) LocaleKeys.sidebar_response_in_progress.tr(),
+  if (isAgentWorking) LocaleKeys.sidebar_agent_working.tr(),
   if (hasDraft) LocaleKeys.chats_screens_chats_list_draft_marker.tr(),
 ].join(', ');
 
-class const _SidebarResponseStreamingStatus({
-  required final String conversationId,
-}) extends StatelessWidget {
+class const _SidebarAgentWorkingStatus({required final String conversationId})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraIcon(
     Icons.sync,
-    key: ValueKey('sidebar-streaming-status-$conversationId'),
+    key: ValueKey('sidebar-agent-working-status-$conversationId'),
     size: .small,
     tint: .primary,
   );

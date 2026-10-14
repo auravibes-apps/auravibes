@@ -41,7 +41,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 26);
+      expect(fixture.database.schemaVersion, 27);
     });
 
     test('migration from schema 24 creates background work storage', () async {

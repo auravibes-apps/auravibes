@@ -177,7 +177,11 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
     _DetachableOperation operation,
     String workspaceId,
   ) async {
-    final provisional = await _createProvisional(request, workspaceId);
+    final provisional = await _createProvisional(
+      request,
+      workspaceId,
+      operation.handle,
+    );
     if (_isClosing(request.conversationId, workspaceId)) {
       await _discardProvisional(request, provisional);
 
@@ -189,6 +193,7 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
       return null;
     }
     _trackCompletion(request, provisional, operation);
+    _trackChildConversation(request, provisional, operation.handle);
 
     return provisional;
   }
@@ -196,6 +201,7 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
   Future<AgentBackgroundWork> _createProvisional(
     BackgroundWorkDetachRequest request,
     String workspaceId,
+    AgentToolCancellationHandle handle,
   ) => _store.create(
     .new(
       id: const UuidV7().generate(),
@@ -204,6 +210,7 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
       toolCallId: request.toolCallId,
       toolKind: request.toolKind,
       originatingMessageId: request.originatingMessageId,
+      childConversationId: handle.childConversation.id,
     ),
   );
 
@@ -242,6 +249,36 @@ extension _BackgroundWorkTransferOps on BackgroundWorkCoordinator {
     );
     unawaited(_recordCompletion(completionRequest, operation.result));
   }
+
+  void _trackChildConversation(
+    BackgroundWorkDetachRequest request,
+    AgentBackgroundWork work,
+    AgentToolCancellationHandle handle,
+  ) {
+    unawaited(
+      _persistChildConversationLink(
+        store: _store,
+        conversationId: request.conversationId,
+        workId: work.identity.id,
+        childConversationId: handle.childConversation.whenAvailable,
+      ),
+    );
+  }
+}
+
+Future<void> _persistChildConversationLink({
+  required AgentBackgroundWorkStore store,
+  required String conversationId,
+  required String workId,
+  required Future<String?> childConversationId,
+}) async {
+  final childId = await childConversationId;
+  if (childId == null) return;
+  await store.linkChildConversation(
+    conversationId: conversationId,
+    workId: workId,
+    childConversationId: childId,
+  );
 }
 
 extension _BackgroundWorkCompletionOps on BackgroundWorkCoordinator {

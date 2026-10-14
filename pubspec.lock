@@ -1475,10 +1475,10 @@ packages:
     dependency: transitive
     description:
       name: mcp_client
-      sha256: "29fd5e5592016d141b481b2ada0459332058e263b3c44aba8a7819983e4f8eea"
+      sha256: "679aba997e1e19891c96ba864c72249d78b1c80df61c461f75737ad7f708f694"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.1"
+    version: "3.0.0"
   mcp_dart:
     dependency: transitive
     description:

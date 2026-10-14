@@ -56,7 +56,7 @@ void main() {
       tester
           .widget<AppWithResponsiveDrawer>(find.byType(AppWithResponsiveDrawer))
           .selectedIndex,
-      0,
+      -1,
     );
     await f.settle(tester);
     await tester.scrollUntilVisible(

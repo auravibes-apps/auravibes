@@ -2,6 +2,7 @@
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
@@ -10,6 +11,10 @@ class const ConversationStreamingRuntime({
   required final void Function(String conversationId) start,
   required final bool Function(String conversationId) isStreaming,
   required final void Function(String conversationId) remove,
+});
+
+class const AgentWorkRuntime({
+  required final bool Function(String conversationId) isWorking,
 });
 
 class const MessagesStreamingRuntime({
@@ -69,6 +74,12 @@ final conversationStreamingRuntimeProvider =
         remove: notifier.remove,
       );
     });
+
+final agentWorkRuntimeProvider = Provider<AgentWorkRuntime>((ref) {
+  final workingConversations = ref.watch(agentWorkingConversationsProvider);
+
+  return AgentWorkRuntime(isWorking: workingConversations.contains);
+});
 
 final messagesStreamingRuntimeProvider = Provider<MessagesStreamingRuntime>((
   ref,

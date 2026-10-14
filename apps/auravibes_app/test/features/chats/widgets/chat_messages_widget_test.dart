@@ -5404,14 +5404,27 @@ void main() {
           status: MessageStatus.unfinished,
           metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
         );
-        final eligibility = StreamController<bool>.broadcast();
+        final eligibility = StreamController<bool>();
         addTearDown(eligibility.close);
+        final conversation = ConversationEntity(
+          id: 'conv-1',
+          title: 'Chat',
+          workspaceId: 'ws-1',
+          isPinned: false,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        );
 
         await pumpAndInit(
           tester,
           buildSubject(
             messages: ['msg-1'],
+            conversation: conversation,
             overrides: [
+              conversationByIdStreamProvider(
+                'ws-1',
+                conversationId: 'conv-1',
+              ).overrideWith((ref) => Stream.value(conversation)),
               messageConversationByIdProvider.overrideWith(
                 (ref, id) => message,
               ),
@@ -5448,6 +5461,64 @@ void main() {
         expect(find.byKey(action), findsOneWidget);
       },
     );
+
+    testWidgets('does not offer background work in a child conversation', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-child-background',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{"expression": "1 + 1"}',
+        resultStatus: ToolCallResultStatus.running,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        status: MessageStatus.unfinished,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+      final conversation = ConversationEntity(
+        id: 'conv-1',
+        title: 'Child chat',
+        workspaceId: 'ws-1',
+        isPinned: false,
+        createdAt: DateTime(2025),
+        updatedAt: DateTime(2025),
+        parentConversationId: 'parent-1',
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          conversation: conversation,
+          overrides: [
+            conversationByIdStreamProvider(
+              'ws-1',
+              conversationId: 'conv-1',
+            ).overrideWith((ref) => Stream.value(conversation)),
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => true),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: true,
+                hasPendingTools: true,
+              ),
+            ),
+            toolBackgroundEligibilityProvider.overrideWith(
+              (ref, request) => Stream<bool>.value(true),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(
+          const ValueKey('activity_run_in_background_tc-child-background'),
+        ),
+        findsNothing,
+      );
+    });
 
     testWidgets(
       'reopens a stable live run for an appended tool and collapses on completion',

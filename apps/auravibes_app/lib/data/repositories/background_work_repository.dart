@@ -27,6 +27,17 @@ class BackgroundWorkRepository implements AgentBackgroundWorkStore {
   ) => _dao.create(request);
 
   @override
+  Future<void> linkChildConversation({
+    required String conversationId,
+    required String workId,
+    required String childConversationId,
+  }) => _dao.linkChildConversation(
+    conversationId: conversationId,
+    workId: workId,
+    childConversationId: childConversationId,
+  );
+
+  @override
   Future<void> discard({
     required String conversationId,
     required String workId,

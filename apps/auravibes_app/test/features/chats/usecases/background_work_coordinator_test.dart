@@ -82,6 +82,10 @@ void main() {
           status: .sent,
         ),
       );
+      final childConversation = await database.conversationDao
+          .insertConversation(
+            .insert(workspaceId: workspaceId, title: 'Child'),
+          );
       final operation = Completer<Object?>();
       var cancelCalls = 0;
       final handle = runtime.registerToolCancellationHandle((
@@ -91,7 +95,7 @@ void main() {
         cancel: () async => cancelCalls++,
         operationResult: operation.future,
         isCancellationConfirmed: null,
-      ));
+      ))..childConversation.record(childConversation.id);
       final coordinator = _coordinator();
 
       final work = await coordinator.runInBackground(
@@ -104,6 +108,7 @@ void main() {
       );
       expect(work?.state.status, AgentBackgroundWorkStatus.running);
       expect(work?.identity.originatingMessageId, originatingMessage.id);
+      expect(work?.identity.childConversationId, childConversation.id);
       expect(await handle.detached, work?.identity.id);
 
       final scope = runtime.current(conversationId) ?? fail('Missing scope.');
