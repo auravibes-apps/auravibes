@@ -26,17 +26,19 @@ typedef _BackgroundEligibilityWatchRequest = ({
   MultiStreamController<bool> controller,
 });
 
+void _noOpConversationActivity(String _) {}
+
 class AgentCancellationRuntime implements AgentCancellationEffects {
   new({
     @visibleForTesting this.cleanupTimeout = const Duration(seconds: 5),
-    this.onConversationStarted,
-    this.onConversationEnded,
+    this.onConversationStarted = _noOpConversationActivity,
+    this.onConversationEnded = _noOpConversationActivity,
   });
 
   @visibleForTesting
   final Duration cleanupTimeout;
-  final void Function(String conversationId)? onConversationStarted;
-  final void Function(String conversationId)? onConversationEnded;
+  final void Function(String conversationId) onConversationStarted;
+  final void Function(String conversationId) onConversationEnded;
   final _entries = <String, AgentCancellationScope>{};
   final _completionByConversationId = <String, Completer<void>>{};
   final _conversationByScope = <AgentCancellationScope, String>{};
@@ -105,7 +107,7 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
         _completeConversation(this, conversationId);
       }
     } else {
-      onConversationEnded?.call(conversationId);
+      onConversationEnded(conversationId);
       scope
         ..requestStop()
         ..close();
@@ -472,7 +474,7 @@ extension AgentCancellationScopeHelpers on AgentCancellationRuntime {
     );
     _conversationByScope[scope] = conversationId;
     _entries[conversationId] = scope;
-    onConversationStarted?.call(conversationId);
+    onConversationStarted(conversationId);
     if (_pendingStops.remove(conversationId)) scope.requestStop();
 
     return scope;
