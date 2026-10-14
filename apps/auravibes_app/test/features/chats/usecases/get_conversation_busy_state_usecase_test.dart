@@ -1,6 +1,8 @@
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/agent_run_activity_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -44,6 +46,18 @@ void main() {
 
       expect(result.isStreaming, isTrue);
       expect(result.hasPendingTools, isFalse);
+      expect(result.isBusy, isTrue);
+    });
+
+    test('returns busy while an agent run is executing tools', () async {
+      container
+          .read(agentRunActivityProvider.notifier)
+          .startAgentRun('conversation-1');
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.isStreaming, isFalse);
+      expect(result.isAgentWorking, isTrue);
       expect(result.isBusy, isTrue);
     });
 
@@ -151,6 +165,10 @@ GetConversationBusyStateUsecase _createUsecase({
       start: notifier.start,
       isStreaming: notifier.isStreaming,
       remove: notifier.remove,
+    ),
+    agentWorkRuntime: .new(
+      isWorking: (id) =>
+          container.read(agentWorkingConversationsProvider).contains(id),
     ),
   );
 }

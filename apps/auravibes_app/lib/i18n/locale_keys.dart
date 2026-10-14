@@ -653,6 +653,32 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.continue_agent';
   static const chats_screens_chat_conversation_retry_message =
       'chats_screens.chat_conversation.retry_message';
+  static const chats_screens_chat_conversation_background_work_running_task =
+      'chats_screens.chat_conversation.background_work.running_task';
+  static const chats_screens_chat_conversation_background_work_detach_hint =
+      'chats_screens.chat_conversation.background_work.detach_hint';
+  static const chats_screens_chat_conversation_background_work_continue_in_background =
+      'chats_screens.chat_conversation.background_work.continue_in_background';
+  static const chats_screens_chat_conversation_background_work_detaching =
+      'chats_screens.chat_conversation.background_work.detaching';
+  static const chats_screens_chat_conversation_background_work_detached =
+      'chats_screens.chat_conversation.background_work.detached';
+  static const chats_screens_chat_conversation_background_work_waiting_for_continuation =
+      'chats_screens.chat_conversation.background_work.waiting_for_continuation';
+  static const chats_screens_chat_conversation_background_work_continuation_in_progress =
+      'chats_screens.chat_conversation.background_work.continuation_in_progress';
+  static const chats_screens_chat_conversation_background_work_continuation_failed =
+      'chats_screens.chat_conversation.background_work.continuation_failed';
+  static const chats_screens_chat_conversation_background_work_view_result =
+      'chats_screens.chat_conversation.background_work.view_result';
+  static const chats_screens_chat_conversation_background_work_result_title =
+      'chats_screens.chat_conversation.background_work.result_title';
+  static const chats_screens_chat_conversation_background_work_no_result =
+      'chats_screens.chat_conversation.background_work.no_result';
+  static const chats_screens_chat_conversation_background_work_close =
+      'chats_screens.chat_conversation.background_work.close';
+  static const chats_screens_chat_conversation_background_work_detachment_unavailable =
+      'chats_screens.chat_conversation.background_work.detachment_unavailable';
   static const chats_screens_chat_conversation_submit_answers =
       'chats_screens.chat_conversation.submit_answers';
   static const chats_screens_chat_conversation_form_submitted =
@@ -1588,7 +1614,7 @@ abstract class LocaleKeys {
   static const sidebar_recent_chats = 'sidebar.recent_chats';
   static const sidebar_no_recent_chats = 'sidebar.no_recent_chats';
   static const sidebar_view_all_chats = 'sidebar.view_all_chats';
-  static const sidebar_response_in_progress = 'sidebar.response_in_progress';
+  static const sidebar_agent_working = 'sidebar.agent_working';
   static const mcp_catalog_back = 'mcp_catalog.back';
   static const mcp_catalog_browse = 'mcp_catalog.browse';
   static const mcp_catalog_title = 'mcp_catalog.title';
