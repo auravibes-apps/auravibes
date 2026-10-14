@@ -78,6 +78,7 @@ class const ChatInputWidget({
   final ValueChanged<bool>? onDraftStatusChanged,
   final String? conversationId,
   final bool autofocus = false,
+  final double topPadding = 8,
   final Widget? reasoningControl,
   final ChatDraft? draftToLoad,
   final List<String> modalitiesInput = const [],
@@ -527,7 +528,12 @@ class const _ChatInputPadding({required final _ChatInputState state})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+    padding: EdgeInsets.only(
+      left: 16,
+      top: state.input.topPadding,
+      right: 16,
+      bottom: 8,
+    ),
     child: _ChatInputFieldComposition(state: state),
   );
 }
