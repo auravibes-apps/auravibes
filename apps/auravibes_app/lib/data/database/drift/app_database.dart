@@ -173,7 +173,9 @@ class AppDatabase extends _$AppDatabase {
       _mcpTestSummarySchemaVersion + 1;
   static const int _backgroundWorkSchemaVersion =
       _toolSamplingPolicySchemaVersion + 1;
-  static const int _currentSchemaVersion = _backgroundWorkSchemaVersion;
+  static const int _toolCallAttachmentSchemaVersion =
+      _backgroundWorkSchemaVersion + 1;
+  static const int _currentSchemaVersion = _toolCallAttachmentSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -218,6 +220,16 @@ extension on AppDatabase {
     await _runSkillUpgrades(m, from);
     await _upgradeModelCapabilitiesSchema(m);
     await _upgradeModelUsageSchema(m);
+    await _upgradeToolCallAttachmentSchema(m, from);
+  }
+
+  Future<void> _upgradeToolCallAttachmentSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._toolCallAttachmentSchemaVersion ||
+        !await _tableExists('message_attachments') ||
+        await _columnExists('message_attachments', 'tool_call_id')) {
+      return;
+    }
+    await m.addColumn(messageAttachments, messageAttachments.toolCallId);
   }
 
   Future<void> _upgradeModelUsageSchema(Migrator m) async {

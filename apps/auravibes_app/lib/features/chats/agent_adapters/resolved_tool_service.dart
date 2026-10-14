@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
+import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -69,6 +70,13 @@ typedef SkillsManagerToolSuccessHandler = void Function({
   required Object result,
 });
 
+typedef BrowserSkillToolRunner = Future<Object?> Function({
+  required String workspaceId,
+  required String conversationId,
+  required String toolSlug,
+  required Map<String, dynamic> arguments,
+});
+
 class ResolvedToolService {
   static const ResolvedToolService Function() cloud =
       ResolvedToolService._cloud;
@@ -97,6 +105,7 @@ class ResolvedToolService {
     SkillCredentialsRepository? skillCredentialsRepository,
     agent.SubAgentRunner? subAgentRunner,
     SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
+    BrowserSkillToolRunner? browserSkillToolRunner,
   }) : _delegate = agent.ResolvedToolRunner<ResolvedTool>(
          provider: AppResolvedToolProvider(
            agentCancellationRuntime: agentCancellationRuntime,
@@ -119,6 +128,7 @@ class ResolvedToolService {
            skillCredentialsRepository: skillCredentialsRepository,
            subAgentRunner: subAgentRunner,
            onSkillsManagerToolSuccess: onSkillsManagerToolSuccess,
+           browserSkillToolRunner: browserSkillToolRunner,
          ),
        );
   new _cloud() : _delegate = null;
@@ -184,6 +194,7 @@ class const AppResolvedToolProvider({
   final SkillCredentialsRepository? skillCredentialsRepository,
   final agent.SubAgentRunner? subAgentRunner,
   final SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
+  final BrowserSkillToolRunner? browserSkillToolRunner,
 }) implements agent.ResolvedToolProvider<ResolvedTool> {
   @override
   agent.AgentResolvedToolExecution<ResolvedTool> toExecution(
@@ -1071,6 +1082,9 @@ Map<String, Object> _credentialResult(
 }
 
 Future<Object?> _runSkillNativeTool(_SkillNativeToolRequest request) {
+  if (request.skillSlug == browserSkillSlug) {
+    return _runBrowserSkillTool(request);
+  }
   if (request.skillSlug == agent.agentsSkillSlug) {
     return _runSubAgentNativeTool(request);
   }
@@ -1079,6 +1093,20 @@ Future<Object?> _runSkillNativeTool(_SkillNativeToolRequest request) {
   }
 
   return _runSkillsManagerNativeTool(request);
+}
+
+Future<Object?> _runBrowserSkillTool(_SkillNativeToolRequest request) {
+  final runner = request.provider.browserSkillToolRunner;
+  if (runner == null) {
+    throw StateError('Browser skill tools are not configured.');
+  }
+
+  return runner(
+    workspaceId: request.workspaceId,
+    conversationId: request.conversationId,
+    toolSlug: request.toolSlug,
+    arguments: request.arguments,
+  );
 }
 
 Future<Object?> _runSubAgentNativeTool(_SkillNativeToolRequest request) {
@@ -1251,6 +1279,19 @@ class _ConfiguredSkillCommandRunner {
     }
 
     await _requireCurrentAppSkillToolForNativeRequest(_provider, request);
+    if (target.skillSlug == browserSkillSlug) {
+      final runner = _provider.browserSkillToolRunner;
+      if (runner == null) {
+        throw StateError('Browser skill tools are not configured.');
+      }
+
+      return await runner(
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+        toolSlug: target.toolIdentifier,
+        arguments: request.arguments,
+      );
+    }
 
     return await _runConfiguredAppSkillTool(request);
   }
@@ -1641,6 +1682,15 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
             result: result,
           ));
         },
+    browserSkillToolRunner:
+        ({
+          required workspaceId,
+          required conversationId,
+          required toolSlug,
+          required arguments,
+        }) => container
+            .read(browserSessionProvider(workspaceId, conversationId).notifier)
+            .runSkillTool(toolSlug, arguments),
   );
 });
 

@@ -140,6 +140,7 @@ Future<void> _pumpSubject(
                     workspaceId: 'ws-1',
                     conversationId: 'conv-1',
                     messages: messageIds,
+                    onOpenToolResult: (_) => fail('Unexpected tool result tab'),
                     messageEntitiesById: restoredMessages,
                   ),
                 ),

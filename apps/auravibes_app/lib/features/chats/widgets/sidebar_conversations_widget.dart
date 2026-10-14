@@ -8,6 +8,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
@@ -390,11 +391,18 @@ class const _SidebarConversationTileContent({
   Widget build(BuildContext context, WidgetRef ref) {
     final isResponseStreaming = _isResponseStreaming(ref);
     final hasDraft = _hasDraft(ref);
+    final browserSession = ref
+        .watch(browserSessionProvider(chat.workspaceId, chat.id))
+        .value;
+    final hasBrowserTabs = browserSession?.tabs.isNotEmpty ?? false;
+    final isBrowserSuspended = browserSession?.isSuspended ?? false;
 
     return _SidebarConversationTileBody(
       content: this,
       isResponseStreaming: isResponseStreaming,
       hasDraft: hasDraft,
+      hasBrowserTabs: hasBrowserTabs,
+      isBrowserSuspended: isBrowserSuspended,
       semanticLabel: _sidebarConversationTileSemanticLabel(
         title,
         isResponseStreaming,
@@ -419,14 +427,25 @@ class const _SidebarConversationTileContent({
 class const _SidebarConversationTileTrailing({
   required final _SidebarConversationTileContent content,
   required final bool isResponseStreaming,
+  required final bool hasBrowserTabs,
+  required final bool isBrowserSuspended,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraRow(
     children: [
       if (isResponseStreaming)
         _SidebarResponseStreamingStatus(conversationId: content.chat.id),
+      if (hasBrowserTabs)
+        _SidebarBrowserStatus(
+          conversationId: content.chat.id,
+          isSuspended: isBrowserSuspended,
+        ),
       _SidebarConversationTileMenu(
         isPinned: content.chat.isPinned,
+        hasBrowserTabs: hasBrowserTabs,
+        isBrowserSuspended: isBrowserSuspended,
+        workspaceId: content.chat.workspaceId,
+        conversationId: content.chat.id,
         controller: content.controller,
         onFork: content.onFork,
         onDelete: content.onDelete,
@@ -441,6 +460,8 @@ class const _SidebarConversationTileBody({
   required final _SidebarConversationTileContent content,
   required final bool isResponseStreaming,
   required final bool hasDraft,
+  required final bool hasBrowserTabs,
+  required final bool isBrowserSuspended,
   required final String semanticLabel,
 }) extends StatelessWidget {
   @override
@@ -455,6 +476,8 @@ class const _SidebarConversationTileBody({
     trailing: _SidebarConversationTileTrailing(
       content: content,
       isResponseStreaming: isResponseStreaming,
+      hasBrowserTabs: hasBrowserTabs,
+      isBrowserSuspended: isBrowserSuspended,
     ),
     semanticLabel: semanticLabel,
   );
@@ -479,6 +502,31 @@ class const _SidebarResponseStreamingStatus({
     key: ValueKey('sidebar-streaming-status-$conversationId'),
     size: .small,
     tint: .primary,
+  );
+}
+
+class const _SidebarBrowserStatus({
+  required final String conversationId,
+  required final bool isSuspended,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message:
+        (isSuspended
+                ? LocaleKeys.browser_suspended_indicator
+                : LocaleKeys.browser_open_indicator)
+            .tr(),
+    child: AuraIcon(
+      Icons.language,
+      key: ValueKey('sidebar-browser-status-$conversationId'),
+      size: .small,
+      tint: isSuspended ? AuraTint.secondary : AuraTint.primary,
+      semanticLabel:
+          (isSuspended
+                  ? LocaleKeys.browser_suspended_indicator
+                  : LocaleKeys.browser_open_indicator)
+              .tr(),
+    ),
   );
 }
 
@@ -525,35 +573,70 @@ class const _SidebarConversationTileLeading({required final bool isActive})
 
 class const _SidebarConversationTileMenu({
   required final bool isPinned,
+  required final bool hasBrowserTabs,
+  required final bool isBrowserSuspended,
+  required final String workspaceId,
+  required final String conversationId,
   required final AuraPopupMenuController controller,
   required final VoidCallback onFork,
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
   required final VoidCallback onRename,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => _buildMenu();
+  Widget build(BuildContext context, WidgetRef ref) => _buildMenu(ref);
 }
 
 extension on _SidebarConversationTileMenu {
-  Widget _buildMenu() => AuraPopupMenu(
+  Widget _buildMenu(WidgetRef ref) => AuraPopupMenu(
     child: AuraIconButton(
       icon: Icons.more_vert,
       onPressed: controller.toggle,
       size: .small,
       tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip.tr(),
     ),
-    items: _menuItems(),
+    items: _menuItems(ref),
     controller: controller,
   );
 
-  List<AuraPopupMenuItem> _menuItems() => [
+  void _toggleBrowserSuspension(WidgetRef ref) {
+    final notifier = ref.read(
+      browserSessionProvider(workspaceId, conversationId).notifier,
+    );
+    unawaited(isBrowserSuspended ? notifier.resume() : notifier.suspend());
+  }
+
+  void _closeAllBrowserTabs(WidgetRef ref) => unawaited(
+    ref
+        .read(browserSessionProvider(workspaceId, conversationId).notifier)
+        .closeAllTabs(),
+  );
+
+  List<AuraPopupMenuEntry> _menuItems(WidgetRef ref) => [
     _sidebarConversationPinItem(isPinned, onTogglePin),
     AuraPopupMenuItem(
       title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_fork),
       onTap: onFork,
       leading: const AuraIcon(Icons.call_split_outlined),
     ),
+    if (hasBrowserTabs) ...[
+      const AuraPopupMenuDivider(),
+      AuraPopupMenuItem(
+        title: TextLocale(
+          isBrowserSuspended
+              ? LocaleKeys.browser_resume
+              : LocaleKeys.browser_suspend,
+        ),
+        onTap: () => _toggleBrowserSuspension(ref),
+        leading: AuraIcon(isBrowserSuspended ? Icons.play_arrow : Icons.pause),
+      ),
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.browser_close_all_tabs),
+        onTap: () => _closeAllBrowserTabs(ref),
+        leading: const AuraIcon(Icons.close),
+        variant: .error,
+      ),
+    ],
     ..._sidebarConversationMenuItems(onRename: onRename, onDelete: onDelete),
   ];
 }

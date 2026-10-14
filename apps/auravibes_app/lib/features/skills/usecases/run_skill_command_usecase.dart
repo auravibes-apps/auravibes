@@ -439,13 +439,27 @@ Future<Object?> _executeCallTool(
     command,
   );
 
-  return await _RunSkillCommandExecution(usecase)._runSkillTool((
-    conversationId: request.conversationId,
-    toolCallId: request.toolCallId,
-    workspaceId: request.workspaceId,
-    target: target,
-    command: command,
-  ));
+  try {
+    return await _RunSkillCommandExecution(usecase)._runSkillTool((
+      conversationId: request.conversationId,
+      toolCallId: request.toolCallId,
+      workspaceId: request.workspaceId,
+      target: target,
+      command: command,
+    ));
+  } on AgentToolExecutionFailure {
+    rethrow;
+  } on Object catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      AgentToolExecutionFailure(
+        responseRaw: 'Tool execution failed.',
+        error: error,
+        stackTrace: stackTrace,
+        failurePhase: 'callSkillTool.${target.kind.name}',
+      ),
+      stackTrace,
+    );
+  }
 }
 
 class const _RunSkillCommandValidation(final RunSkillCommandUsecase _usecase) {

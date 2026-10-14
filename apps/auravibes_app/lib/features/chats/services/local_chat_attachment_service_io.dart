@@ -20,6 +20,7 @@ const _macRecordingSampleRate = 44100;
 const _macRecordingChannels = 1;
 const _wavFormatChunkOffset = 16;
 const _mimeHeaderLength = 12;
+const int _maxToolResultAttachmentBytes = 5 * 1024 * 1024;
 
 class LocalChatAttachmentServiceIo({
   AudioRecorder? recorder,
@@ -44,6 +45,14 @@ class LocalChatAttachmentServiceIo({
   Future<MessageAttachmentToCreate> createArchiveAttachment(
     ConversationArchiveAttachment attachment,
   ) => _createArchiveAttachment(this, attachment);
+
+  Future<MessageAttachmentToCreate> createToolResultAttachment({
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    required String toolCallId,
+  }) =>
+      _createToolResultAttachment(this, bytes, fileName, mimeType, toolCallId);
 
   Future<void> startVoiceRecording() => _startVoiceRecording(this);
 
@@ -96,6 +105,46 @@ Future<MessageAttachmentToCreate> _createArchiveAttachment(
   return _archiveAttachmentToCreate(attachment, localPath, fileName, mimeType);
 }
 
+Future<MessageAttachmentToCreate> _createToolResultAttachment(
+  LocalChatAttachmentServiceIo service,
+  Uint8List bytes,
+  String fileName,
+  String mimeType,
+  String toolCallId,
+) async {
+  final safeFileName = _archiveAttachmentFileName(fileName);
+  if (toolCallId.isEmpty) throw ArgumentError.value(toolCallId, 'toolCallId');
+  if (bytes.isEmpty) throw ArgumentError.value(bytes, 'bytes');
+  if (bytes.length > _maxToolResultAttachmentBytes) {
+    throw const ChatAttachmentTooLargeException();
+  }
+  if (!mimeType.toLowerCase().startsWith('image/')) {
+    throw ArgumentError.value(mimeType, 'mimeType');
+  }
+  final resolvedMimeType =
+      lookupMimeType(
+        safeFileName,
+        headerBytes: bytes.take(_mimeHeaderLength).toList(),
+      ) ??
+      mimeType;
+  if (!resolvedMimeType.toLowerCase().startsWith('image/')) {
+    throw ArgumentError.value(resolvedMimeType, 'mimeType');
+  }
+  final localPath = await _newAttachmentPath(service, safeFileName);
+  final file = File(localPath);
+  await _writeArchiveAttachment(file, bytes);
+
+  return MessageAttachmentToCreate(
+    localPath: localPath,
+    fileName: safeFileName,
+    displayName: safeFileName,
+    mimeType: resolvedMimeType,
+    modality: ChatAttachmentModality.forMimeType(resolvedMimeType),
+    sizeBytes: bytes.length,
+    toolCallId: toolCallId,
+  );
+}
+
 MessageAttachmentToCreate _archiveAttachmentToCreate(
   ConversationArchiveAttachment attachment,
   String localPath,
@@ -108,6 +157,7 @@ MessageAttachmentToCreate _archiveAttachmentToCreate(
   mimeType: mimeType,
   modality: ChatAttachmentModality.forMimeType(mimeType),
   sizeBytes: attachment.bytes.length,
+  toolCallId: attachment.toolCallId,
 );
 
 String _archiveAttachmentFileName(String value) {

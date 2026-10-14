@@ -10199,6 +10199,17 @@ class $MessageAttachmentsTable extends MessageAttachments
       'REFERENCES messages (id) ON DELETE CASCADE',
     ),
   );
+  static const VerificationMeta _toolCallIdMeta = const VerificationMeta(
+    'toolCallId',
+  );
+  @override
+  late final GeneratedColumn<String> toolCallId = GeneratedColumn<String>(
+    'tool_call_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _localPathMeta = const VerificationMeta(
     'localPath',
   );
@@ -10272,6 +10283,7 @@ class $MessageAttachmentsTable extends MessageAttachments
     createdAt,
     updatedAt,
     messageId,
+    toolCallId,
     localPath,
     fileName,
     displayName,
@@ -10313,6 +10325,15 @@ class $MessageAttachmentsTable extends MessageAttachments
       );
     } else if (isInserting) {
       context.missing(_messageIdMeta);
+    }
+    if (data.containsKey('tool_call_id')) {
+      context.handle(
+        _toolCallIdMeta,
+        toolCallId.isAcceptableOrUnknown(
+          data['tool_call_id']!,
+          _toolCallIdMeta,
+        ),
+      );
     }
     if (data.containsKey('local_path')) {
       context.handle(
@@ -10391,6 +10412,10 @@ class $MessageAttachmentsTable extends MessageAttachments
         DriftSqlType.string,
         data['${effectivePrefix}message_id'],
       )!,
+      toolCallId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_call_id'],
+      ),
       localPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}local_path'],
@@ -10435,6 +10460,7 @@ class MessageAttachmentsTable extends DataClass
   /// When was last updated timestamp.
   final DateTime updatedAt;
   final String messageId;
+  final String? toolCallId;
   final String localPath;
   final String fileName;
   final String displayName;
@@ -10446,6 +10472,7 @@ class MessageAttachmentsTable extends DataClass
     required this.createdAt,
     required this.updatedAt,
     required this.messageId,
+    this.toolCallId,
     required this.localPath,
     required this.fileName,
     required this.displayName,
@@ -10460,6 +10487,9 @@ class MessageAttachmentsTable extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['message_id'] = Variable<String>(messageId);
+    if (!nullToAbsent || toolCallId != null) {
+      map['tool_call_id'] = Variable<String>(toolCallId);
+    }
     map['local_path'] = Variable<String>(localPath);
     map['file_name'] = Variable<String>(fileName);
     map['display_name'] = Variable<String>(displayName);
@@ -10475,6 +10505,9 @@ class MessageAttachmentsTable extends DataClass
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       messageId: Value(messageId),
+      toolCallId: toolCallId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolCallId),
       localPath: Value(localPath),
       fileName: Value(fileName),
       displayName: Value(displayName),
@@ -10494,6 +10527,7 @@ class MessageAttachmentsTable extends DataClass
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       messageId: serializer.fromJson<String>(json['messageId']),
+      toolCallId: serializer.fromJson<String?>(json['toolCallId']),
       localPath: serializer.fromJson<String>(json['localPath']),
       fileName: serializer.fromJson<String>(json['fileName']),
       displayName: serializer.fromJson<String>(json['displayName']),
@@ -10510,6 +10544,7 @@ class MessageAttachmentsTable extends DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'messageId': serializer.toJson<String>(messageId),
+      'toolCallId': serializer.toJson<String?>(toolCallId),
       'localPath': serializer.toJson<String>(localPath),
       'fileName': serializer.toJson<String>(fileName),
       'displayName': serializer.toJson<String>(displayName),
@@ -10524,6 +10559,7 @@ class MessageAttachmentsTable extends DataClass
     DateTime? createdAt,
     DateTime? updatedAt,
     String? messageId,
+    Value<String?> toolCallId = const Value.absent(),
     String? localPath,
     String? fileName,
     String? displayName,
@@ -10535,6 +10571,7 @@ class MessageAttachmentsTable extends DataClass
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     messageId: messageId ?? this.messageId,
+    toolCallId: toolCallId.present ? toolCallId.value : this.toolCallId,
     localPath: localPath ?? this.localPath,
     fileName: fileName ?? this.fileName,
     displayName: displayName ?? this.displayName,
@@ -10548,6 +10585,9 @@ class MessageAttachmentsTable extends DataClass
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       messageId: data.messageId.present ? data.messageId.value : this.messageId,
+      toolCallId: data.toolCallId.present
+          ? data.toolCallId.value
+          : this.toolCallId,
       localPath: data.localPath.present ? data.localPath.value : this.localPath,
       fileName: data.fileName.present ? data.fileName.value : this.fileName,
       displayName: data.displayName.present
@@ -10566,6 +10606,7 @@ class MessageAttachmentsTable extends DataClass
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('messageId: $messageId, ')
+          ..write('toolCallId: $toolCallId, ')
           ..write('localPath: $localPath, ')
           ..write('fileName: $fileName, ')
           ..write('displayName: $displayName, ')
@@ -10582,6 +10623,7 @@ class MessageAttachmentsTable extends DataClass
     createdAt,
     updatedAt,
     messageId,
+    toolCallId,
     localPath,
     fileName,
     displayName,
@@ -10597,6 +10639,7 @@ class MessageAttachmentsTable extends DataClass
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.messageId == this.messageId &&
+          other.toolCallId == this.toolCallId &&
           other.localPath == this.localPath &&
           other.fileName == this.fileName &&
           other.displayName == this.displayName &&
@@ -10611,6 +10654,7 @@ class MessageAttachmentsCompanion
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String> messageId;
+  final Value<String?> toolCallId;
   final Value<String> localPath;
   final Value<String> fileName;
   final Value<String> displayName;
@@ -10623,6 +10667,7 @@ class MessageAttachmentsCompanion
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.messageId = const Value.absent(),
+    this.toolCallId = const Value.absent(),
     this.localPath = const Value.absent(),
     this.fileName = const Value.absent(),
     this.displayName = const Value.absent(),
@@ -10636,6 +10681,7 @@ class MessageAttachmentsCompanion
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     required String messageId,
+    this.toolCallId = const Value.absent(),
     required String localPath,
     required String fileName,
     this.displayName = const Value.absent(),
@@ -10654,6 +10700,7 @@ class MessageAttachmentsCompanion
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? messageId,
+    Expression<String>? toolCallId,
     Expression<String>? localPath,
     Expression<String>? fileName,
     Expression<String>? displayName,
@@ -10667,6 +10714,7 @@ class MessageAttachmentsCompanion
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (messageId != null) 'message_id': messageId,
+      if (toolCallId != null) 'tool_call_id': toolCallId,
       if (localPath != null) 'local_path': localPath,
       if (fileName != null) 'file_name': fileName,
       if (displayName != null) 'display_name': displayName,
@@ -10682,6 +10730,7 @@ class MessageAttachmentsCompanion
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String>? messageId,
+    Value<String?>? toolCallId,
     Value<String>? localPath,
     Value<String>? fileName,
     Value<String>? displayName,
@@ -10695,6 +10744,7 @@ class MessageAttachmentsCompanion
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       messageId: messageId ?? this.messageId,
+      toolCallId: toolCallId ?? this.toolCallId,
       localPath: localPath ?? this.localPath,
       fileName: fileName ?? this.fileName,
       displayName: displayName ?? this.displayName,
@@ -10719,6 +10769,9 @@ class MessageAttachmentsCompanion
     }
     if (messageId.present) {
       map['message_id'] = Variable<String>(messageId.value);
+    }
+    if (toolCallId.present) {
+      map['tool_call_id'] = Variable<String>(toolCallId.value);
     }
     if (localPath.present) {
       map['local_path'] = Variable<String>(localPath.value);
@@ -10751,6 +10804,7 @@ class MessageAttachmentsCompanion
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('messageId: $messageId, ')
+          ..write('toolCallId: $toolCallId, ')
           ..write('localPath: $localPath, ')
           ..write('fileName: $fileName, ')
           ..write('displayName: $displayName, ')
@@ -27272,6 +27326,7 @@ typedef $$MessageAttachmentsTableCreateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       required String messageId,
+      Value<String?> toolCallId,
       required String localPath,
       required String fileName,
       Value<String> displayName,
@@ -27286,6 +27341,7 @@ typedef $$MessageAttachmentsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String> messageId,
+      Value<String?> toolCallId,
       Value<String> localPath,
       Value<String> fileName,
       Value<String> displayName,
@@ -27347,6 +27403,11 @@ class $$MessageAttachmentsTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -27428,6 +27489,11 @@ class $$MessageAttachmentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get localPath => $composableBuilder(
     column: $table.localPath,
     builder: (column) => ColumnOrderings(column),
@@ -27499,6 +27565,11 @@ class $$MessageAttachmentsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get localPath =>
       $composableBuilder(column: $table.localPath, builder: (column) => column);
@@ -27581,6 +27652,7 @@ class $$MessageAttachmentsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> messageId = const Value.absent(),
+                Value<String?> toolCallId = const Value.absent(),
                 Value<String> localPath = const Value.absent(),
                 Value<String> fileName = const Value.absent(),
                 Value<String> displayName = const Value.absent(),
@@ -27593,6 +27665,7 @@ class $$MessageAttachmentsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 messageId: messageId,
+                toolCallId: toolCallId,
                 localPath: localPath,
                 fileName: fileName,
                 displayName: displayName,
@@ -27607,6 +27680,7 @@ class $$MessageAttachmentsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 required String messageId,
+                Value<String?> toolCallId = const Value.absent(),
                 required String localPath,
                 required String fileName,
                 Value<String> displayName = const Value.absent(),
@@ -27619,6 +27693,7 @@ class $$MessageAttachmentsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 messageId: messageId,
+                toolCallId: toolCallId,
                 localPath: localPath,
                 fileName: fileName,
                 displayName: displayName,

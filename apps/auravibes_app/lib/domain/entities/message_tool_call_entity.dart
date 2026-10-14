@@ -121,6 +121,7 @@ abstract class MessageAttachmentEntity with _$MessageAttachmentEntity {
     required int sizeBytes,
     required DateTime createdAt,
     required DateTime updatedAt,
+    String? toolCallId,
   }) = _MessageAttachmentEntity;
 }
 
@@ -136,6 +137,7 @@ abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
     required String mimeType,
     required MessageAttachmentModality modality,
     required int sizeBytes,
+    String? toolCallId,
   }) = _MessageAttachmentToCreate;
 }
 

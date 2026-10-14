@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_se
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/usecases/persist_tool_call_results_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
@@ -57,6 +58,7 @@ typedef _ToolCallPatchRequest = ({
   ToolCallResultStatus resultStatus,
   String? responseRaw,
   String? responseContextRaw,
+  List<agent.AgentToolResultMedia> media,
   bool outputTruncated,
   int? originalResponseBytes,
   bool fullOutputForContext,
@@ -68,6 +70,9 @@ typedef _ToolCallPersistenceRequest = ({
   MessageMetadataEntity metadata,
   String conversationId,
   MessageStatus? status,
+  String toolCallId,
+  List<agent.AgentToolResultMedia> media,
+  PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
 });
 
 typedef _ToolExecutionErrorRequest =
@@ -92,6 +97,7 @@ class const AppApproveToolCallDataProvider({
   loadConversationToolSpecsUsecaseForWorkspace,
   final ResolveEffectiveToolApprovalUsecase?
   resolveEffectiveToolApprovalUsecase,
+  final PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
 }) implements agent.ApproveToolCallProvider<ResolvedTool> {
   this
     : assert(
@@ -113,17 +119,23 @@ class const AppApproveToolCallDataProvider({
   @override
   Future<void> updateToolCallResult(
     agent.AgentToolCallResultUpdateRequest request,
-  ) => _patchToolCall(messageRepository, onToolCallChanged, (
-    messageId: request.messageId,
-    toolCallId: request.toolCallId,
-    resultStatus: AgentToolStatusMapper.toResultStatus(request.resultStatus),
-    responseRaw: request.responseRaw,
-    responseContextRaw: request.responseContextRaw,
-    outputTruncated: request.outputTruncated,
-    originalResponseBytes: request.originalResponseBytes,
-    fullOutputForContext: request.fullOutputForContext,
-    conversationId: request.conversationId,
-  ));
+  ) => _patchToolCall(
+    messageRepository,
+    onToolCallChanged,
+    persistToolCallResultsUsecase,
+    (
+      messageId: request.messageId,
+      toolCallId: request.toolCallId,
+      resultStatus: AgentToolStatusMapper.toResultStatus(request.resultStatus),
+      responseRaw: request.responseRaw,
+      responseContextRaw: request.responseContextRaw,
+      media: request.media,
+      outputTruncated: request.outputTruncated,
+      originalResponseBytes: request.originalResponseBytes,
+      fullOutputForContext: request.fullOutputForContext,
+      conversationId: request.conversationId,
+    ),
+  );
 
   @override
   void logToolExecutionError(_ToolExecutionErrorRequest request) =>
@@ -200,17 +212,23 @@ class const AppApproveToolCallDataProvider({
     required String toolCallId,
     required String conversationId,
   }) {
-    return _patchToolCall(messageRepository, onToolCallChanged, (
-      conversationId: conversationId,
-      messageId: messageId,
-      toolCallId: toolCallId,
-      resultStatus: .running,
-      responseRaw: null,
-      responseContextRaw: null,
-      outputTruncated: false,
-      originalResponseBytes: null,
-      fullOutputForContext: false,
-    ));
+    return _patchToolCall(
+      messageRepository,
+      onToolCallChanged,
+      persistToolCallResultsUsecase,
+      (
+        conversationId: conversationId,
+        messageId: messageId,
+        toolCallId: toolCallId,
+        resultStatus: .running,
+        responseRaw: null,
+        responseContextRaw: null,
+        media: const [],
+        outputTruncated: false,
+        originalResponseBytes: null,
+        fullOutputForContext: false,
+      ),
+    );
   }
 
   @override
@@ -424,17 +442,24 @@ ConversationToolsRepository? _conversationToolsRepository(
 Future<void> _patchToolCall(
   MessageRepository messageRepository,
   void Function() onToolCallChanged,
+  PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
   _ToolCallPatchRequest request,
 ) async {
   final message = await _loadOwnedToolCallMessage(messageRepository, request);
   if (message == null) return;
 
-  await _patchOwnedToolCall(messageRepository, message, request);
+  await _patchOwnedToolCall(
+    messageRepository,
+    persistToolCallResultsUsecase,
+    message,
+    request,
+  );
   onToolCallChanged();
 }
 
 Future<void> _patchOwnedToolCall(
   MessageRepository messageRepository,
+  PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
   MessageEntity message,
   _ToolCallPatchRequest request,
 ) async {
@@ -446,6 +471,9 @@ Future<void> _patchOwnedToolCall(
     metadata: updatedMetadata,
     conversationId: request.conversationId,
     status: updatedMetadata.hasPendingToolCalls ? null : .sent,
+    toolCallId: request.toolCallId,
+    media: request.media,
+    persistToolCallResultsUsecase: persistToolCallResultsUsecase,
   ));
 }
 
@@ -504,11 +532,29 @@ MessageToolCallEntity _applyToolCallPatch(
 );
 
 Future<void> _persistToolCallPatch(_ToolCallPersistenceRequest request) async {
-  final _ = await request.messageRepository.patchMessage(
-    request.messageId,
-    .new(metadata: request.metadata, status: request.status),
-    conversationId: request.conversationId,
+  final patch = MessagePatch(
+    metadata: request.metadata,
+    status: request.status,
   );
+  if (request.media.isNotEmpty &&
+      request.persistToolCallResultsUsecase == null) {
+    throw StateError('Tool result media persistence is not configured.');
+  }
+  final persist = request.persistToolCallResultsUsecase;
+  if (persist != null) {
+    await persist.call(
+      messageId: request.messageId,
+      conversationId: request.conversationId,
+      patch: patch,
+      media: [(toolCallId: request.toolCallId, media: request.media)],
+    );
+  } else {
+    final _ = await request.messageRepository.patchMessage(
+      request.messageId,
+      patch,
+      conversationId: request.conversationId,
+    );
+  }
 }
 
 void _logToolExecutionError(_ToolExecutionErrorRequest request) {

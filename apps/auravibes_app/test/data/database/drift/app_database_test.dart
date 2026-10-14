@@ -41,7 +41,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 25);
+      expect(fixture.database.schemaVersion, 26);
     });
 
     test('migration from schema 24 creates background work storage', () async {
@@ -63,6 +63,28 @@ void main() {
 
       expect(table, hasLength(1));
     });
+
+    test(
+      'migration from schema 25 adds tool-call attachment association',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 25
+          ..execute('CREATE TABLE message_attachments (id TEXT PRIMARY KEY)');
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+
+        final columns = await database
+            .customSelect('PRAGMA table_info(message_attachments)')
+            .get();
+
+        expect(
+          columns.map((row) => row.read<String>('name')),
+          contains('tool_call_id'),
+        );
+      },
+    );
 
     test('migration defaults advanced capabilities to false', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()

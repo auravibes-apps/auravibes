@@ -82,6 +82,7 @@ void main() {
                 sizeBytes: 3,
                 createdAt: createdAt,
                 updatedAt: createdAt,
+                toolCallId: 'tool-call-private-id',
               ),
             ],
           ),
@@ -118,9 +119,11 @@ void main() {
         expect(metadata['a2uiMessages'], ['{"text":"Visible card"}']);
         expect(metadata['compactedMessageIndexes'], [0]);
         expect(toolCall, {
+          'id': 'tool-call-0',
           'displayName': 'Search documents',
           'resultStatus': 'success',
         });
+        expect(attachment['toolCallId'], 'tool-call-0');
         expect(attachment['dataBase64'], 'AQID');
         expect(attachment['displayName'], 'Report');
         expect(attachment, isNot(contains('localPath')));

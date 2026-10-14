@@ -1191,7 +1191,7 @@ as DateTime?,
 /// @nodoc
 mixin _$ConversationArchiveToolCall {
 
- String? get displayName; ToolCallResultStatus? get resultStatus;
+ String? get id; String? get displayName; ToolCallResultStatus? get resultStatus;
 /// Create a copy of ConversationArchiveToolCall
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1203,20 +1203,20 @@ $ConversationArchiveToolCallCopyWith<ConversationArchiveToolCall> get copyWith =
 @override
 bool operator ==(Object other) {
   final _this = this as ConversationArchiveToolCall;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchiveToolCall&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.resultStatus, _this.resultStatus) || other.resultStatus == _this.resultStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchiveToolCall&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.resultStatus, _this.resultStatus) || other.resultStatus == _this.resultStatus));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ConversationArchiveToolCall;
-  return Object.hash(runtimeType,_this.displayName,_this.resultStatus);
+  return Object.hash(runtimeType,_this.id,_this.displayName,_this.resultStatus);
 }
 
 @override
 String toString() {
   final _this = this as ConversationArchiveToolCall;
-  return 'ConversationArchiveToolCall(displayName: ${_this.displayName}, resultStatus: ${_this.resultStatus})';
+  return 'ConversationArchiveToolCall(id: ${_this.id}, displayName: ${_this.displayName}, resultStatus: ${_this.resultStatus})';
 }
 
 
@@ -1227,7 +1227,7 @@ abstract mixin class $ConversationArchiveToolCallCopyWith<$Res>  {
   factory $ConversationArchiveToolCallCopyWith(ConversationArchiveToolCall value, $Res Function(ConversationArchiveToolCall) _then) = _$ConversationArchiveToolCallCopyWithImpl;
 @useResult
 $Res call({
- String? displayName, ToolCallResultStatus? resultStatus
+ String? id, String? displayName, ToolCallResultStatus? resultStatus
 });
 
 
@@ -1244,9 +1244,10 @@ class _$ConversationArchiveToolCallCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchiveToolCall
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? displayName = freezed,Object? resultStatus = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? displayName = freezed,Object? resultStatus = freezed,}) {
   return _then(ConversationArchiveToolCall(
-displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String?,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String?,resultStatus: freezed == resultStatus ? _self.resultStatus : resultStatus // ignore: cast_nullable_to_non_nullable
 as ToolCallResultStatus?,
   ));
@@ -1333,10 +1334,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? displayName,  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? id,  String? displayName,  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationArchiveToolCall() when $default != null:
-return $default(_that.displayName,_that.resultStatus);case _:
+return $default(_that.id,_that.displayName,_that.resultStatus);case _:
   return orElse();
 
 }
@@ -1354,10 +1355,10 @@ return $default(_that.displayName,_that.resultStatus);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? displayName,  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? id,  String? displayName,  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchiveToolCall():
-return $default(_that.displayName,_that.resultStatus);case _:
+return $default(_that.id,_that.displayName,_that.resultStatus);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1374,10 +1375,10 @@ return $default(_that.displayName,_that.resultStatus);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? displayName,  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? id,  String? displayName,  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchiveToolCall() when $default != null:
-return $default(_that.displayName,_that.resultStatus);case _:
+return $default(_that.id,_that.displayName,_that.resultStatus);case _:
   return null;
 
 }
@@ -1389,9 +1390,10 @@ return $default(_that.displayName,_that.resultStatus);case _:
 
 
 class _ConversationArchiveToolCall implements ConversationArchiveToolCall {
-  const _ConversationArchiveToolCall({this.displayName, this.resultStatus});
+  const _ConversationArchiveToolCall({this.id, this.displayName, this.resultStatus});
   
 
+@override final  String? id;
 @override final  String? displayName;
 @override final  ToolCallResultStatus? resultStatus;
 
@@ -1405,18 +1407,18 @@ _$ConversationArchiveToolCallCopyWith<_ConversationArchiveToolCall> get copyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchiveToolCall&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchiveToolCall&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,displayName,resultStatus);
+    return Object.hash(runtimeType,id,displayName,resultStatus);
 }
 
 @override
 String toString() {
-    return 'ConversationArchiveToolCall(displayName: $displayName, resultStatus: $resultStatus)';
+    return 'ConversationArchiveToolCall(id: $id, displayName: $displayName, resultStatus: $resultStatus)';
 }
 
 
@@ -1427,7 +1429,7 @@ abstract mixin class _$ConversationArchiveToolCallCopyWith<$Res> implements $Con
   factory _$ConversationArchiveToolCallCopyWith(_ConversationArchiveToolCall value, $Res Function(_ConversationArchiveToolCall) _then) = __$ConversationArchiveToolCallCopyWithImpl;
 @override @useResult
 $Res call({
- String? displayName, ToolCallResultStatus? resultStatus
+ String? id, String? displayName, ToolCallResultStatus? resultStatus
 });
 
 
@@ -1444,9 +1446,10 @@ class __$ConversationArchiveToolCallCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchiveToolCall
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? displayName = freezed,Object? resultStatus = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? displayName = freezed,Object? resultStatus = freezed,}) {
   return _then(_ConversationArchiveToolCall(
-displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String?,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String?,resultStatus: freezed == resultStatus ? _self.resultStatus : resultStatus // ignore: cast_nullable_to_non_nullable
 as ToolCallResultStatus?,
   ));
@@ -1458,7 +1461,7 @@ as ToolCallResultStatus?,
 /// @nodoc
 mixin _$ConversationArchiveAttachment {
 
- String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; Uint8List get bytes;
+ String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; Uint8List get bytes; String? get toolCallId;
 /// Create a copy of ConversationArchiveAttachment
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1470,20 +1473,20 @@ $ConversationArchiveAttachmentCopyWith<ConversationArchiveAttachment> get copyWi
 @override
 bool operator ==(Object other) {
   final _this = this as ConversationArchiveAttachment;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchiveAttachment&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&const DeepCollectionEquality().equals(other.bytes, _this.bytes));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchiveAttachment&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&const DeepCollectionEquality().equals(other.bytes, _this.bytes)&&(identical(other.toolCallId, _this.toolCallId) || other.toolCallId == _this.toolCallId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ConversationArchiveAttachment;
-  return Object.hash(runtimeType,_this.fileName,_this.displayName,_this.mimeType,_this.modality,const DeepCollectionEquality().hash(_this.bytes));
+  return Object.hash(runtimeType,_this.fileName,_this.displayName,_this.mimeType,_this.modality,const DeepCollectionEquality().hash(_this.bytes),_this.toolCallId);
 }
 
 @override
 String toString() {
   final _this = this as ConversationArchiveAttachment;
-  return 'ConversationArchiveAttachment(fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, bytes: ${_this.bytes})';
+  return 'ConversationArchiveAttachment(fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, bytes: ${_this.bytes}, toolCallId: ${_this.toolCallId})';
 }
 
 
@@ -1494,7 +1497,7 @@ abstract mixin class $ConversationArchiveAttachmentCopyWith<$Res>  {
   factory $ConversationArchiveAttachmentCopyWith(ConversationArchiveAttachment value, $Res Function(ConversationArchiveAttachment) _then) = _$ConversationArchiveAttachmentCopyWithImpl;
 @useResult
 $Res call({
- String fileName, String displayName, String mimeType, MessageAttachmentModality modality, Uint8List bytes
+ String fileName, String displayName, String mimeType, MessageAttachmentModality modality, Uint8List bytes, String? toolCallId
 });
 
 
@@ -1511,14 +1514,15 @@ class _$ConversationArchiveAttachmentCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchiveAttachment
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? bytes = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? bytes = null,Object? toolCallId = freezed,}) {
   return _then(ConversationArchiveAttachment(
 fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
 as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
 as MessageAttachmentModality,bytes: null == bytes ? _self.bytes : bytes // ignore: cast_nullable_to_non_nullable
-as Uint8List,
+as Uint8List,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -1603,10 +1607,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes,  String? toolCallId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationArchiveAttachment() when $default != null:
-return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes);case _:
+return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes,_that.toolCallId);case _:
   return orElse();
 
 }
@@ -1624,10 +1628,10 @@ return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes,  String? toolCallId)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchiveAttachment():
-return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes);case _:
+return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes,_that.toolCallId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1644,10 +1648,10 @@ return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes,  String? toolCallId)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchiveAttachment() when $default != null:
-return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes);case _:
+return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes,_that.toolCallId);case _:
   return null;
 
 }
@@ -1659,7 +1663,7 @@ return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_
 
 
 class _ConversationArchiveAttachment implements ConversationArchiveAttachment {
-  const _ConversationArchiveAttachment({required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.bytes});
+  const _ConversationArchiveAttachment({required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.bytes, this.toolCallId});
   
 
 @override final  String fileName;
@@ -1667,6 +1671,7 @@ class _ConversationArchiveAttachment implements ConversationArchiveAttachment {
 @override final  String mimeType;
 @override final  MessageAttachmentModality modality;
 @override final  Uint8List bytes;
+@override final  String? toolCallId;
 
 /// Create a copy of ConversationArchiveAttachment
 /// with the given fields replaced by the non-null parameter values.
@@ -1678,18 +1683,18 @@ _$ConversationArchiveAttachmentCopyWith<_ConversationArchiveAttachment> get copy
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchiveAttachment&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&const DeepCollectionEquality().equals(other.bytes, bytes));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchiveAttachment&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&const DeepCollectionEquality().equals(other.bytes, bytes)&&(identical(other.toolCallId, toolCallId) || other.toolCallId == toolCallId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,fileName,displayName,mimeType,modality,const DeepCollectionEquality().hash(bytes));
+    return Object.hash(runtimeType,fileName,displayName,mimeType,modality,const DeepCollectionEquality().hash(bytes),toolCallId);
 }
 
 @override
 String toString() {
-    return 'ConversationArchiveAttachment(fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, bytes: $bytes)';
+    return 'ConversationArchiveAttachment(fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, bytes: $bytes, toolCallId: $toolCallId)';
 }
 
 
@@ -1700,7 +1705,7 @@ abstract mixin class _$ConversationArchiveAttachmentCopyWith<$Res> implements $C
   factory _$ConversationArchiveAttachmentCopyWith(_ConversationArchiveAttachment value, $Res Function(_ConversationArchiveAttachment) _then) = __$ConversationArchiveAttachmentCopyWithImpl;
 @override @useResult
 $Res call({
- String fileName, String displayName, String mimeType, MessageAttachmentModality modality, Uint8List bytes
+ String fileName, String displayName, String mimeType, MessageAttachmentModality modality, Uint8List bytes, String? toolCallId
 });
 
 
@@ -1717,14 +1722,15 @@ class __$ConversationArchiveAttachmentCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchiveAttachment
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? bytes = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? bytes = null,Object? toolCallId = freezed,}) {
   return _then(_ConversationArchiveAttachment(
 fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
 as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
 as MessageAttachmentModality,bytes: null == bytes ? _self.bytes : bytes // ignore: cast_nullable_to_non_nullable
-as Uint8List,
+as Uint8List,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

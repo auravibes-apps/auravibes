@@ -112,8 +112,11 @@ abstract class ConversationArchiveMetadata with _$ConversationArchiveMetadata {
 // DCL cannot see Freezed-generated members in the part file.
 // ignore: weight-of-class
 abstract class ConversationArchiveToolCall with _$ConversationArchiveToolCall {
-  const factory({String? displayName, ToolCallResultStatus? resultStatus}) =
-      _ConversationArchiveToolCall;
+  const factory({
+    String? id,
+    String? displayName,
+    ToolCallResultStatus? resultStatus,
+  }) = _ConversationArchiveToolCall;
 }
 
 @freezed
@@ -127,6 +130,7 @@ abstract class ConversationArchiveAttachment
     required String mimeType,
     required MessageAttachmentModality modality,
     required Uint8List bytes,
+    String? toolCallId,
   }) = _ConversationArchiveAttachment;
 }
 
@@ -270,7 +274,12 @@ String _encodeArchiveBundle(List<Map<String, Object?>> archives) {
 Future<ConversationArchiveAttachment> _exportAttachment(
   MessageAttachmentEntity attachment,
   Future<Uint8List> Function(String localPath) readAttachmentBytes,
+  Map<String, String> toolCallIds,
 ) async {
+  final toolCallId = attachment.toolCallId;
+  if (toolCallId != null && !toolCallIds.containsKey(toolCallId)) {
+    throw const MalformedConversationArchiveException();
+  }
   final bytes = await readAttachmentBytes(attachment.localPath);
   _validateExportAttachmentSize(attachment.sizeBytes, bytes.length);
 
@@ -280,6 +289,7 @@ Future<ConversationArchiveAttachment> _exportAttachment(
     mimeType: attachment.mimeType,
     modality: attachment.modality,
     bytes: bytes,
+    toolCallId: toolCallId == null ? null : toolCallIds[toolCallId],
   );
 }
 
@@ -384,9 +394,14 @@ ConversationArchiveMetadata _decodeMetadata(Object? value) {
 
 ConversationArchiveToolCall _decodeToolCall(Object? value) {
   final json = _jsonMap(value);
-  _requireKeys(json, const {'displayName', 'resultStatus'});
+  _requireAllowedKeys(
+    json,
+    const {'id', 'displayName', 'resultStatus'},
+    const {'displayName', 'resultStatus'},
+  );
 
   return ConversationArchiveToolCall(
+    id: json['id'] == null ? null : _nonEmptyString(json['id']),
     displayName: _nullableString(json['displayName']),
     resultStatus: _nullableToolStatus(json['resultStatus']),
   );
@@ -406,6 +421,21 @@ void _validateMessageIndexes(List<ConversationArchiveMessage> messages) {
     if (indexes.any((index) => index < 0 || index >= messages.length)) {
       throw const MalformedConversationArchiveException();
     }
+    _validateToolCallAttachmentRefs(message);
+  }
+}
+
+void _validateToolCallAttachmentRefs(ConversationArchiveMessage message) {
+  final toolCallIds = [
+    for (final toolCall in message.metadata.toolCalls) ?toolCall.id,
+  ];
+  if (toolCallIds.toSet().length != toolCallIds.length ||
+      message.attachments.any(
+        (attachment) =>
+            attachment.toolCallId != null &&
+            !toolCallIds.contains(attachment.toolCallId),
+      )) {
+    throw const MalformedConversationArchiveException();
   }
 }
 
@@ -1114,21 +1144,33 @@ Future<ConversationArchiveMessage> _archiveMessage(
   Map<String, int> messageIndexes,
   Future<Uint8List> Function(String localPath) readAttachmentBytes,
 ) async {
+  final toolCallIds = _archiveToolCallIds(
+    message.metadata?.toolCalls ?? const [],
+  );
   final attachments = await _archiveMessageAttachments(
     message.attachments,
     readAttachmentBytes,
+    toolCallIds,
   );
 
-  return _archiveMessageTranscript(message, messageIndexes, attachments);
+  return _archiveMessageTranscript(
+    message,
+    messageIndexes,
+    attachments,
+    toolCallIds,
+  );
 }
 
 Future<List<ConversationArchiveAttachment>> _archiveMessageAttachments(
   List<MessageAttachmentEntity> attachments,
   Future<Uint8List> Function(String localPath) readAttachmentBytes,
+  Map<String, String> toolCallIds,
 ) async {
   final archived = <ConversationArchiveAttachment>[];
   for (final attachment in attachments) {
-    archived.add(await _exportAttachment(attachment, readAttachmentBytes));
+    archived.add(
+      await _exportAttachment(attachment, readAttachmentBytes, toolCallIds),
+    );
   }
 
   return archived;
@@ -1138,23 +1180,25 @@ ConversationArchiveMessage _archiveMessageTranscript(
   MessageEntity message,
   Map<String, int> messageIndexes,
   List<ConversationArchiveAttachment> attachments,
+  Map<String, String> toolCallIds,
 ) => ConversationArchiveMessage(
   content: message.content,
   messageType: message.messageType,
   isUser: message.isUser,
   status: message.status,
   createdAt: message.createdAt,
-  metadata: _archiveMetadata(message.metadata, messageIndexes),
+  metadata: _archiveMetadata(message.metadata, messageIndexes, toolCallIds),
   attachments: attachments,
 );
 
 ConversationArchiveMetadata _archiveMetadata(
   MessageMetadataEntity? source,
   Map<String, int> messageIndexes,
+  Map<String, String> toolCallIds,
 ) {
   final metadata = source ?? const MessageMetadataEntity();
 
-  return _archiveMetadataCore(metadata).copyWith(
+  return _archiveMetadataCore(metadata, toolCallIds).copyWith(
     compactionKind: metadata.compactionKind,
     compactedFromMessageIndex: messageIndexes[metadata.compactedFromMessageId],
     compactedThroughMessageIndex:
@@ -1168,8 +1212,9 @@ ConversationArchiveMetadata _archiveMetadata(
 
 ConversationArchiveMetadata _archiveMetadataCore(
   MessageMetadataEntity metadata,
+  Map<String, String> toolCallIds,
 ) => ConversationArchiveMetadata(
-  toolCalls: _archiveToolCalls(metadata.toolCalls),
+  toolCalls: _archiveToolCalls(metadata.toolCalls, toolCallIds),
   a2uiMessages: metadata.a2uiMessages,
   isCompactionSummary: metadata.isCompactionSummary,
   promptTokens: metadata.promptTokens,
@@ -1183,13 +1228,22 @@ ConversationArchiveMetadata _archiveMetadataCore(
 
 List<ConversationArchiveToolCall> _archiveToolCalls(
   List<MessageToolCallEntity> toolCalls,
+  Map<String, String> toolCallIds,
 ) => [
   for (final toolCall in toolCalls)
     ConversationArchiveToolCall(
+      id: toolCallIds[toolCall.id],
       displayName: toolCall.userFacingDescription?.trim(),
       resultStatus: toolCall.resultStatus,
     ),
 ];
+
+Map<String, String> _archiveToolCallIds(
+  List<MessageToolCallEntity> toolCalls,
+) => {
+  for (var index = 0; index < toolCalls.length; index++)
+    toolCalls[index].id: 'tool-call-$index',
+};
 
 Map<String, Object?> _conversationToJson(ConversationArchive archive) => {
   'title': archive.title,
@@ -1218,6 +1272,7 @@ Map<String, Object?> _messageFieldsToJson(ConversationArchiveMessage message) =>
 Map<String, Object?> _attachmentToJson(
   ConversationArchiveAttachment attachment,
 ) => {
+  'toolCallId': ?attachment.toolCallId,
   'fileName': attachment.fileName,
   'displayName': attachment.displayName,
   'mimeType': attachment.mimeType,
@@ -1247,6 +1302,7 @@ Map<String, Object?> _metadataCompactionFieldsToJson(
 };
 
 Map<String, Object?> _toolCallToJson(ConversationArchiveToolCall toolCall) => {
+  'id': ?toolCall.id,
   'displayName': toolCall.displayName,
   'resultStatus': _toolStatusToJson(toolCall.resultStatus),
 };
@@ -1342,14 +1398,26 @@ ConversationArchiveMetadata _decodeMetadataCompaction(
 
 Map<String, Object?> _attachmentJson(Object? value) {
   final json = _jsonMap(value);
-  _requireKeys(json, const {
-    'fileName',
-    'displayName',
-    'mimeType',
-    'modality',
-    'sizeBytes',
-    'dataBase64',
-  });
+  _requireAllowedKeys(
+    json,
+    const {
+      'toolCallId',
+      'fileName',
+      'displayName',
+      'mimeType',
+      'modality',
+      'sizeBytes',
+      'dataBase64',
+    },
+    const {
+      'fileName',
+      'displayName',
+      'mimeType',
+      'modality',
+      'sizeBytes',
+      'dataBase64',
+    },
+  );
 
   return json;
 }
@@ -1362,6 +1430,9 @@ ConversationArchiveAttachment _decodeArchiveAttachment(
   mimeType: _decodeMimeType(json['mimeType']),
   modality: _enumByName(MessageAttachmentModality.values, json['modality']),
   bytes: _decodeAttachmentBytes(json['dataBase64'], json['sizeBytes']),
+  toolCallId: json['toolCallId'] == null
+      ? null
+      : _nonEmptyString(json['toolCallId']),
 );
 
 String _decodeFileName(Object? value) {

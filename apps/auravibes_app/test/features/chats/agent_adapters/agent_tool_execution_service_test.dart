@@ -1,5 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_execution_service.dart';
@@ -16,6 +18,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         SkillCommandTarget,
         callSkillToolName;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../test_mocks.dart';
@@ -145,6 +148,76 @@ void main() {
 
       expect(decision.permissionResult.name, 'granted');
     });
+
+    test(
+      'logs execution phase and redacted unsupported error details',
+      () async {
+        final provider = AppAllowedToolsDataProvider(
+          messageRepository: messageRepository,
+          loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
+          resolvedToolService: .new(
+            agentCancellationRuntime: agentCancellationRuntime,
+            mcpToolCaller: ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+            }) async => 'unused',
+          ),
+          toolDecisionService: getAgentIterationDecisionUsecase,
+          agentCancellationRuntime: agentCancellationRuntime,
+        );
+        final messages = <String>[];
+        final subscription = Logger.root.onRecord.listen((record) {
+          if (record.loggerName == 'agent_tool_execution_service') {
+            messages.add(record.message);
+          }
+        });
+
+        provider
+          ..logToolExecutionError((
+            conversationId: 'conversation-1',
+            toolCallId: 'call-1',
+            tool: ResolvedTool.skillCommand(commandName: callSkillToolName),
+            error: UnsupportedError(
+              'App skill tool has no executor: browser_read_page '
+              'apiKey=secret',
+            ),
+            stackTrace: StackTrace.current,
+            failurePhase: 'callSkillTool.skillNative',
+          ))
+          ..logToolExecutionError((
+            conversationId: 'conversation-1',
+            toolCallId: 'call-2',
+            tool: ResolvedTool.skillCommand(commandName: callSkillToolName),
+            error: TimeoutException(
+              'Waiting for WebView.',
+              const Duration(seconds: 8),
+            ),
+            stackTrace: StackTrace.current,
+            failurePhase: 'callSkillTool.skillNative',
+          ));
+        await Future<void>.delayed(.zero);
+        await subscription.cancel();
+
+        expect(messages, hasLength(2));
+        final unsupportedMessage = messages.singleWhere(
+          (message) => message.contains('errorType=UnsupportedError'),
+        );
+        final timeoutMessage = messages.singleWhere(
+          (message) => message.contains('errorType=TimeoutException'),
+        );
+        expect(
+          unsupportedMessage,
+          contains('failurePhase=callSkillTool.skillNative'),
+        );
+        expect(
+          unsupportedMessage,
+          contains('App skill tool has no executor: browser_read_page'),
+        );
+        expect(unsupportedMessage, isNot(contains('apiKey=secret')));
+        expect(timeoutMessage, contains('duration=8s'));
+      },
+    );
 
     group('effective approval targets', () {
       AppAllowedToolsDataProvider providerWith(

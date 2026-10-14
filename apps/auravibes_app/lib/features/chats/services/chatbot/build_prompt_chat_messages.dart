@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -13,22 +14,34 @@ import 'package:path/path.dart' as p;
 
 class const BuildPromptChatMessages({
   final List<String> modalitiesInput = const [],
+  final bool supportsImageToolResults = false,
 }) {
   static const _agentBuilder = agent.BuildPromptChatMessages();
 
   Future<List<ChatMessage>> call(List<MessageEntity> messages) =>
-      _buildPromptMessages(_agentBuilder, modalitiesInput, messages);
+      _buildPromptMessages(
+        _agentBuilder,
+        modalitiesInput,
+        supportsImageToolResults,
+        messages,
+      );
 }
 
 Future<List<ChatMessage>> _buildPromptMessages(
   agent.BuildPromptChatMessages agentBuilder,
   List<String> modalitiesInput,
+  bool supportsImageToolResults,
   List<MessageEntity> messages,
 ) async {
   final chatMessages = <ChatMessage>[];
   for (final message in messages) {
     chatMessages.addAll(
-      await _buildPromptMessage(agentBuilder, modalitiesInput, message),
+      await _buildPromptMessage(
+        agentBuilder,
+        modalitiesInput,
+        supportsImageToolResults,
+        message,
+      ),
     );
   }
 
@@ -38,17 +51,29 @@ Future<List<ChatMessage>> _buildPromptMessages(
 Future<List<ChatMessage>> _buildPromptMessage(
   agent.BuildPromptChatMessages agentBuilder,
   List<String> modalitiesInput,
+  bool supportsImageToolResults,
   MessageEntity message,
-) async => [
-  for (final chatMessage in agentBuilder.call([_toAgentPromptMessage(message)]))
-    await _withAttachments(
-      _toChatMessage(chatMessage).copyWith(
-        metadata: {...chatMessage.metadata, 'transcriptMessageId': message.id},
+) async {
+  final promptMessage = await _toAgentPromptMessage(
+    message,
+    modalitiesInput,
+    supportsImageToolResults,
+  );
+
+  return [
+    for (final chatMessage in agentBuilder.call([promptMessage]))
+      await _withAttachments(
+        _toChatMessage(chatMessage).copyWith(
+          metadata: {
+            ...chatMessage.metadata,
+            'transcriptMessageId': message.id,
+          },
+        ),
+        message,
+        modalitiesInput,
       ),
-      message,
-      modalitiesInput,
-    ),
-];
+  ];
+}
 
 Future<ChatMessage> _withAttachments(
   ChatMessage message,
@@ -129,10 +154,17 @@ String _safeFileName(String fileName) => p
     .basename(fileName.replaceAll(String.fromCharCode(0x5C), '/'))
     .replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '');
 
-agent.AgentPromptMessage _toAgentPromptMessage(MessageEntity message) {
+Future<agent.AgentPromptMessage> _toAgentPromptMessage(
+  MessageEntity message,
+  List<String> modalitiesInput,
+  bool supportsImageToolResults,
+) async {
   final metadata = message.metadata;
-  final toolCalls = _toAgentToolCalls(
+  final toolCalls = await _toAgentToolCalls(
     metadata?.toolCalls,
+    message.attachments,
+    modalitiesInput,
+    supportsImageToolResults,
     allowPending: !message.isForkReference,
   );
 
@@ -179,20 +211,55 @@ String _appendA2uiSurfaces(String content, MessageMetadataEntity? metadata) =>
       'a2uiMessages': metadata?.a2uiMessages ?? const <String>[],
     });
 
-List<agent.AgentPromptToolCall> _toAgentToolCalls(
-  List<MessageToolCallEntity>? toolCalls, {
+Future<List<agent.AgentPromptToolCall>> _toAgentToolCalls(
+  List<MessageToolCallEntity>? toolCalls,
+  List<MessageAttachmentEntity> attachments,
+  List<String> modalitiesInput,
+  bool supportsImageToolResults, {
   required bool allowPending,
-}) => [
-  for (final toolCall in toolCalls ?? const <MessageToolCallEntity>[])
-    if (allowPending || !toolCall.isPending)
+}) async {
+  final result = <agent.AgentPromptToolCall>[];
+  var totalBytes = 0;
+  for (final toolCall in toolCalls ?? const <MessageToolCallEntity>[]) {
+    if (!allowPending && toolCall.isPending) continue;
+    final media = <agent.AgentToolResultMedia>[];
+    if (supportsImageToolResults && modalitiesInput.contains('image')) {
+      for (final attachment in attachments) {
+        if (attachment.toolCallId != toolCall.id ||
+            attachment.modality != MessageAttachmentModality.image ||
+            !_supportsAttachment(attachment, modalitiesInput)) {
+          continue;
+        }
+        final bytes = await ChatAttachmentBytes.read(attachment.localPath);
+        if (bytes == null ||
+            totalBytes + bytes.length >
+                ChatAttachmentModality.maxChatPromptAttachmentBytes) {
+          continue;
+        }
+        totalBytes += bytes.length;
+        media.add(
+          .new(
+            bytes: Uint8List.fromList(bytes),
+            mimeType: attachment.mimeType,
+            fileName: _safeFileName(attachment.fileName),
+          ),
+        );
+      }
+    }
+    result.add(
       agent.AgentPromptToolCall(
         id: toolCall.id,
         name: toolCall.name,
         arguments: toolCall.arguments,
         isResolved: toolCall.isResolved,
         response: toolCall.getResponseForAI(),
+        media: media,
       ),
-];
+    );
+  }
+
+  return result;
+}
 
 ChatMessage _toChatMessage(agent.AgentChatMessage message) => ChatMessage(
   role: _chatMessageRole(message),
@@ -245,5 +312,14 @@ ToolResponse _toToolResponse(agent.AgentChatPart part) {
     ref: response.ref,
     name: response.name,
     output: response.output,
+    content: [
+      for (final media in response.media)
+        MediaPart(
+          media: .new(
+            contentType: media.mimeType,
+            url: 'data:${media.mimeType};base64,${base64Encode(media.bytes)}',
+          ),
+        ).toJson(),
+    ],
   );
 }

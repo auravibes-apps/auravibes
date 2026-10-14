@@ -665,6 +665,77 @@ extension MessageRepositoryMutationOperations on MessageRepository {
 
     return await _mapToMessageWithAttachments(updatedMessage);
   }
+
+  Future<MessageEntity> patchMessageWithAttachments(
+    String id,
+    MessagePatch message, {
+    required String conversationId,
+    required List<MessageAttachmentToCreate> attachments,
+  }) async {
+    if (attachments.isEmpty ||
+        attachments.any(
+          (attachment) => attachment.toolCallId?.isNotEmpty != true,
+        )) {
+      throw const MessageValidationException(
+        'Tool result attachments require a matching tool call ID.',
+      );
+    }
+    _validateMessagePatch(message);
+    final promotedAttachments = <MessageAttachmentToCreate>[];
+    final updatedMessage = await _promoteAndPatchToolCallAttachments(
+      id,
+      message,
+      conversationId,
+      attachments,
+      promotedAttachments,
+    );
+    await _deleteDraftAttachmentFiles(attachments);
+
+    return await _mapToMessageWithAttachments(updatedMessage);
+  }
+}
+
+extension on MessageRepository {
+  Future<MessagesTable> _promoteAndPatchToolCallAttachments(
+    String id,
+    MessagePatch message,
+    String conversationId,
+    List<MessageAttachmentToCreate> attachments,
+    List<MessageAttachmentToCreate> promotedAttachments,
+  ) async {
+    try {
+      await _promoteAttachments(attachments, promotedAttachments);
+
+      return await _database.transaction(() async {
+        final updated = await _patchMessageInTransaction(
+          id,
+          message,
+          conversationId,
+        );
+        if (updated == null) throw MessageNotFoundException(id);
+        final metadata = MessageMetadataEntity.fromJsonString(updated.metadata);
+        final toolCallIds = attachments
+            .map((attachment) => attachment.toolCallId)
+            .toSet();
+        if (metadata == null ||
+            !toolCallIds.every(
+              (toolCallId) => metadata.toolCalls.any(
+                (toolCall) => toolCall.id == toolCallId,
+              ),
+            )) {
+          throw const MessageValidationException(
+            'Tool result attachment references an unknown tool call.',
+          );
+        }
+        await _insertAttachments(updated.id, promotedAttachments);
+
+        return updated;
+      });
+    } on Exception {
+      await _deleteDraftAttachmentFiles(promotedAttachments);
+      rethrow;
+    }
+  }
 }
 
 class const MessageRepositoryBatchOperations(
@@ -1386,6 +1457,7 @@ extension on MessageRepository {
       sizeBytes: row.sizeBytes,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      toolCallId: row.toolCallId,
     );
   }
 
@@ -1427,6 +1499,7 @@ extension MessageRepositoryCompanionMappings on MessageRepository {
   ) {
     return MessageAttachmentsCompanion(
       messageId: .new(messageId),
+      toolCallId: .absentIfNull(attachment.toolCallId),
       localPath: .new(attachment.localPath),
       fileName: .new(attachment.fileName),
       displayName: .new(attachment.displayName),

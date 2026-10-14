@@ -32,6 +32,22 @@ class LocalChatAttachmentServiceWeb({
     throw UnsupportedError('Local attachment files are unsupported on web.');
   }
 
+  Future<MessageAttachmentToCreate> createToolResultAttachment({
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    required String toolCallId,
+  }) {
+    // Consume matching IO inputs before rejecting local-file access on web.
+    final _ = (
+      bytes: bytes,
+      fileName: fileName,
+      mimeType: mimeType,
+      toolCallId: toolCallId,
+    );
+    throw UnsupportedError('Local attachment files are unsupported on web.');
+  }
+
   Future<void> startVoiceRecording() {
     throw UnsupportedError('Voice recording is unsupported on web.');
   }

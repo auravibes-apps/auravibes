@@ -653,6 +653,32 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.continue_agent';
   static const chats_screens_chat_conversation_retry_message =
       'chats_screens.chat_conversation.retry_message';
+  static const chats_screens_chat_conversation_background_work_running_task =
+      'chats_screens.chat_conversation.background_work.running_task';
+  static const chats_screens_chat_conversation_background_work_detach_hint =
+      'chats_screens.chat_conversation.background_work.detach_hint';
+  static const chats_screens_chat_conversation_background_work_continue_in_background =
+      'chats_screens.chat_conversation.background_work.continue_in_background';
+  static const chats_screens_chat_conversation_background_work_detaching =
+      'chats_screens.chat_conversation.background_work.detaching';
+  static const chats_screens_chat_conversation_background_work_detached =
+      'chats_screens.chat_conversation.background_work.detached';
+  static const chats_screens_chat_conversation_background_work_waiting_for_continuation =
+      'chats_screens.chat_conversation.background_work.waiting_for_continuation';
+  static const chats_screens_chat_conversation_background_work_continuation_in_progress =
+      'chats_screens.chat_conversation.background_work.continuation_in_progress';
+  static const chats_screens_chat_conversation_background_work_continuation_failed =
+      'chats_screens.chat_conversation.background_work.continuation_failed';
+  static const chats_screens_chat_conversation_background_work_view_result =
+      'chats_screens.chat_conversation.background_work.view_result';
+  static const chats_screens_chat_conversation_background_work_result_title =
+      'chats_screens.chat_conversation.background_work.result_title';
+  static const chats_screens_chat_conversation_background_work_no_result =
+      'chats_screens.chat_conversation.background_work.no_result';
+  static const chats_screens_chat_conversation_background_work_close =
+      'chats_screens.chat_conversation.background_work.close';
+  static const chats_screens_chat_conversation_background_work_detachment_unavailable =
+      'chats_screens.chat_conversation.background_work.detachment_unavailable';
   static const chats_screens_chat_conversation_submit_answers =
       'chats_screens.chat_conversation.submit_answers';
   static const chats_screens_chat_conversation_form_submitted =
@@ -1432,6 +1458,140 @@ abstract class LocaleKeys {
   static const app_skills_agents_title = 'app_skills.agents.title';
   static const app_skills_agents_description = 'app_skills.agents.description';
   static const app_skills_agents_content = 'app_skills.agents.content';
+  static const app_skills_browser_title = 'app_skills.browser.title';
+  static const app_skills_browser_description =
+      'app_skills.browser.description';
+  static const app_skills_browser_content = 'app_skills.browser.content';
+  static const app_skills_browser_tools_list_tabs_title =
+      'app_skills.browser.tools.list_tabs.title';
+  static const app_skills_browser_tools_list_tabs_description =
+      'app_skills.browser.tools.list_tabs.description';
+  static const app_skills_browser_tools_open_tab_title =
+      'app_skills.browser.tools.open_tab.title';
+  static const app_skills_browser_tools_open_tab_description =
+      'app_skills.browser.tools.open_tab.description';
+  static const app_skills_browser_tools_close_tab_title =
+      'app_skills.browser.tools.close_tab.title';
+  static const app_skills_browser_tools_close_tab_description =
+      'app_skills.browser.tools.close_tab.description';
+  static const app_skills_browser_tools_select_tab_title =
+      'app_skills.browser.tools.select_tab.title';
+  static const app_skills_browser_tools_select_tab_description =
+      'app_skills.browser.tools.select_tab.description';
+  static const app_skills_browser_tools_navigate_title =
+      'app_skills.browser.tools.navigate.title';
+  static const app_skills_browser_tools_navigate_description =
+      'app_skills.browser.tools.navigate.description';
+  static const app_skills_browser_tools_execute_javascript_title =
+      'app_skills.browser.tools.execute_javascript.title';
+  static const app_skills_browser_tools_execute_javascript_description =
+      'app_skills.browser.tools.execute_javascript.description';
+  static const app_skills_browser_tools_go_back_title =
+      'app_skills.browser.tools.go_back.title';
+  static const app_skills_browser_tools_go_back_description =
+      'app_skills.browser.tools.go_back.description';
+  static const app_skills_browser_tools_go_forward_title =
+      'app_skills.browser.tools.go_forward.title';
+  static const app_skills_browser_tools_go_forward_description =
+      'app_skills.browser.tools.go_forward.description';
+  static const app_skills_browser_tools_reload_title =
+      'app_skills.browser.tools.reload.title';
+  static const app_skills_browser_tools_reload_description =
+      'app_skills.browser.tools.reload.description';
+  static const app_skills_browser_tools_read_page_title =
+      'app_skills.browser.tools.read_page.title';
+  static const app_skills_browser_tools_read_page_description =
+      'app_skills.browser.tools.read_page.description';
+  static const app_skills_browser_tools_query_page_title =
+      'app_skills.browser.tools.query_page.title';
+  static const app_skills_browser_tools_query_page_description =
+      'app_skills.browser.tools.query_page.description';
+  static const app_skills_browser_tools_snapshot_title =
+      'app_skills.browser.tools.snapshot.title';
+  static const app_skills_browser_tools_snapshot_description =
+      'app_skills.browser.tools.snapshot.description';
+  static const app_skills_browser_tools_find_title =
+      'app_skills.browser.tools.find.title';
+  static const app_skills_browser_tools_find_description =
+      'app_skills.browser.tools.find.description';
+  static const app_skills_browser_tools_wait_for_title =
+      'app_skills.browser.tools.wait_for.title';
+  static const app_skills_browser_tools_wait_for_description =
+      'app_skills.browser.tools.wait_for.description';
+  static const app_skills_browser_tools_click_title =
+      'app_skills.browser.tools.click.title';
+  static const app_skills_browser_tools_click_description =
+      'app_skills.browser.tools.click.description';
+  static const app_skills_browser_tools_fill_title =
+      'app_skills.browser.tools.fill.title';
+  static const app_skills_browser_tools_fill_description =
+      'app_skills.browser.tools.fill.description';
+  static const app_skills_browser_tools_select_option_title =
+      'app_skills.browser.tools.select_option.title';
+  static const app_skills_browser_tools_select_option_description =
+      'app_skills.browser.tools.select_option.description';
+  static const app_skills_browser_tools_set_checked_title =
+      'app_skills.browser.tools.set_checked.title';
+  static const app_skills_browser_tools_set_checked_description =
+      'app_skills.browser.tools.set_checked.description';
+  static const app_skills_browser_tools_scroll_title =
+      'app_skills.browser.tools.scroll.title';
+  static const app_skills_browser_tools_scroll_description =
+      'app_skills.browser.tools.scroll.description';
+  static const app_skills_browser_tools_capture_screenshot_title =
+      'app_skills.browser.tools.capture_screenshot.title';
+  static const app_skills_browser_tools_capture_screenshot_description =
+      'app_skills.browser.tools.capture_screenshot.description';
+  static const browser_address = 'browser.address';
+  static const browser_empty_state = 'browser.empty_state';
+  static const browser_open_indicator = 'browser.open_indicator';
+  static const browser_suspended_indicator = 'browser.suspended_indicator';
+  static const browser_suspended_message = 'browser.suspended_message';
+  static const browser_suspend = 'browser.suspend';
+  static const browser_resume = 'browser.resume';
+  static const browser_close_all_tabs = 'browser.close_all_tabs';
+  static const browser_new_tab = 'browser.new_tab';
+  static const browser_close_tab = 'browser.close_tab';
+  static const browser_resize_handle_tooltip = 'browser.resize_handle_tooltip';
+  static const browser_resize_handle_hint = 'browser.resize_handle_hint';
+  static const browser_go_back = 'browser.go_back';
+  static const browser_go_forward = 'browser.go_forward';
+  static const browser_reload = 'browser.reload';
+  static const browser_stop = 'browser.stop';
+  static const browser_agent_activity = 'browser.agent_activity';
+  static const browser_agent_list_tabs = 'browser.agent_list_tabs';
+  static const browser_agent_open_tab = 'browser.agent_open_tab';
+  static const browser_agent_close_tab = 'browser.agent_close_tab';
+  static const browser_agent_select_tab = 'browser.agent_select_tab';
+  static const browser_agent_going_back = 'browser.agent_going_back';
+  static const browser_agent_went_back = 'browser.agent_went_back';
+  static const browser_agent_going_forward = 'browser.agent_going_forward';
+  static const browser_agent_went_forward = 'browser.agent_went_forward';
+  static const browser_agent_reloading = 'browser.agent_reloading';
+  static const browser_agent_reloaded = 'browser.agent_reloaded';
+  static const browser_agent_navigating = 'browser.agent_navigating';
+  static const browser_agent_navigated = 'browser.agent_navigated';
+  static const browser_agent_running_javascript =
+      'browser.agent_running_javascript';
+  static const browser_agent_ran_javascript = 'browser.agent_ran_javascript';
+  static const browser_agent_snapshotting = 'browser.agent_snapshotting';
+  static const browser_agent_snapshot_ready = 'browser.agent_snapshot_ready';
+  static const browser_agent_finding = 'browser.agent_finding';
+  static const browser_agent_found = 'browser.agent_found';
+  static const browser_agent_waiting = 'browser.agent_waiting';
+  static const browser_agent_waited = 'browser.agent_waited';
+  static const browser_agent_wait_timed_out = 'browser.agent_wait_timed_out';
+  static const browser_agent_scrolling = 'browser.agent_scrolling';
+  static const browser_agent_scrolled = 'browser.agent_scrolled';
+  static const browser_agent_capturing_screenshot =
+      'browser.agent_capturing_screenshot';
+  static const browser_agent_screenshot_fallback =
+      'browser.agent_screenshot_fallback';
+  static const browser_agent_screenshot_captured =
+      'browser.agent_screenshot_captured';
+  static const browser_load_error = 'browser.load_error';
+  static const browser_page_error = 'browser.page_error';
+  static const browser_action_error = 'browser.action_error';
   static const tool_confirmation_allow_once = 'tool_confirmation.allow_once';
   static const tool_confirmation_allow_conversation =
       'tool_confirmation.allow_conversation';
@@ -1585,6 +1745,9 @@ abstract class LocaleKeys {
   static const more_screen_skills_subtitle = 'more_screen.skills.subtitle';
   static const more_screen_agents_title = 'more_screen.agents.title';
   static const more_screen_agents_subtitle = 'more_screen.agents.subtitle';
+  static const sidebar_open = 'sidebar.open';
+  static const sidebar_close = 'sidebar.close';
+  static const sidebar_tabs_count = 'sidebar.tabs_count';
   static const sidebar_recent_chats = 'sidebar.recent_chats';
   static const sidebar_no_recent_chats = 'sidebar.no_recent_chats';
   static const sidebar_view_all_chats = 'sidebar.view_all_chats';

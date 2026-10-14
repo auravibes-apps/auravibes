@@ -72,6 +72,52 @@ void main() {
     expect(attachment.localPath, contains('chat_attachments_draft'));
   });
 
+  test(
+    'createToolResultAttachment stores image with tool call association',
+    () async {
+      final bytes = Uint8List.fromList([
+        0x89,
+        0x50,
+        0x4E,
+        0x47,
+        0x0D,
+        0x0A,
+        0x1A,
+        0x0A,
+      ]);
+
+      final attachment = await LocalChatAttachmentService()
+          .createToolResultAttachment(
+            bytes: bytes,
+            fileName: 'capture.png',
+            mimeType: 'image/png',
+            toolCallId: 'browser-call',
+          );
+
+      expect(attachment.toolCallId, 'browser-call');
+      expect(attachment.mimeType, 'image/png');
+      expect(attachment.sizeBytes, bytes.length);
+      expect(await File(attachment.localPath).readAsBytes(), bytes);
+    },
+  );
+
+  test('rejects image type mismatch before creating draft file', () async {
+    await expectLater(
+      LocalChatAttachmentService().createToolResultAttachment(
+        bytes: .fromList([1, 2, 3]),
+        fileName: 'capture.txt',
+        mimeType: 'image/png',
+        toolCallId: 'browser-call',
+      ),
+      throwsArgumentError,
+    );
+
+    expect(
+      Directory('${tempDirectory.path}/chat_attachments_draft').existsSync(),
+      isFalse,
+    );
+  });
+
   test('rejects attachments larger than 25 MiB with a typed error', () async {
     final source = File('${tempDirectory.path}/large.pdf');
     final output = await source.open(mode: .write);
