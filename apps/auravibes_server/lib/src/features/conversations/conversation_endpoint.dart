@@ -3,6 +3,7 @@ import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 import '../accounts/authenticated_account_resolver.dart';
 import 'conversation_stream_service.dart';
+import 'engine/server_tool_runtime.dart';
 
 import 'repositories/conversation_repository.dart' as conversation_repo;
 import 'usecases/conversation_usecases.dart';
@@ -133,11 +134,17 @@ class ConversationEndpoint extends Endpoint {
     DetachToolCallRequest request,
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
-    return _useCases.detachToolCall(
+    final detached = await _useCases.detachToolCall(
       session,
       userId: account.userId,
       request: request,
     );
+    await ServerToolRuntime().reconcileDetachedSubAgentWork(
+      session,
+      workspaceId: request.workspaceId,
+      toolCallId: request.toolCallId,
+    );
+    return detached;
   }
 
   Future<List<BackgroundWorkView>> listBackgroundWorks(

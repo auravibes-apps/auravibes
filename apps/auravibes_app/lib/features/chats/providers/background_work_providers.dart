@@ -72,6 +72,7 @@ AgentBackgroundWorkIdentity _backgroundWorkIdentityFromView(
   toolCallId: view.toolCallId,
   toolKind: view.toolKind,
   originatingMessageId: view.originatingMessageId,
+  childConversationId: view.childConversationId,
 );
 
 AgentBackgroundWorkState _backgroundWorkStateFromView(

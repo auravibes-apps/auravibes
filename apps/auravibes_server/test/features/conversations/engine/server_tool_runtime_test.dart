@@ -87,7 +87,7 @@ void main() {
     expect(serverToolIsReplayableSkillKind(AgentResolvedToolKind.mcp), isFalse);
   });
 
-  test('only cancellable template calls can run in background', () {
+  test('only cancellable top-level tools can run in background', () {
     ServerResolvedTool tool(AgentResolvedToolName descriptor) =>
         ServerResolvedTool(
           descriptor: descriptor,
@@ -107,6 +107,33 @@ void main() {
             toolIdentifier: 'search',
           ),
         ),
+        isTopLevelConversation: true,
+      ),
+      isTrue,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.skillTemplate(
+            tableId: 'search',
+            skillSlug: 'research',
+            toolIdentifier: 'search',
+          ),
+        ),
+        isTopLevelConversation: false,
+      ),
+      isFalse,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.skillAppTemplate(
+            tableId: 'calendar',
+            skillSlug: 'calendar',
+            toolIdentifier: 'list_events',
+          ),
+        ),
+        isTopLevelConversation: true,
       ),
       isTrue,
     );
@@ -119,8 +146,9 @@ void main() {
             toolIdentifier: 'list_events',
           ),
         ),
+        isTopLevelConversation: false,
       ),
-      isTrue,
+      isFalse,
     );
     expect(
       serverToolCanRunInBackground(
@@ -132,6 +160,27 @@ void main() {
             mcpSlug: 'list',
           ),
         ),
+      ),
+      isFalse,
+    );
+    final runSubAgent = tool(
+      AgentResolvedToolName.skillNative(
+        tableId: 'skill__app_native__agents__run_sub_agent',
+        skillSlug: agentsSkillSlug,
+        toolIdentifier: runSubAgentToolName,
+      ),
+    );
+    expect(
+      serverToolCanRunInBackground(
+        runSubAgent,
+        isTopLevelConversation: true,
+      ),
+      isTrue,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        runSubAgent,
+        isTopLevelConversation: false,
       ),
       isFalse,
     );

@@ -12,6 +12,7 @@ fields:
   userFacingDescription: String?
   backgroundEligible: bool, default=false
   backgroundWorkStableId: String?
+  childConversationStableId: String?
   status: String
   decision: String?
   decisionByUserId: String?

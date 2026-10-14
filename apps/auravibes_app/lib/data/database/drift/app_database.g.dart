@@ -15503,6 +15503,20 @@ class $BackgroundWorksTable extends BackgroundWorks
       'REFERENCES conversations (id) ON DELETE CASCADE',
     ),
   );
+  static const VerificationMeta _childConversationIdMeta =
+      const VerificationMeta('childConversationId');
+  @override
+  late final GeneratedColumn<String> childConversationId =
+      GeneratedColumn<String>(
+        'child_conversation_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES conversations (id) ON DELETE SET NULL',
+        ),
+      );
   static const VerificationMeta _originatingMessageIdMeta =
       const VerificationMeta('originatingMessageId');
   @override
@@ -15602,6 +15616,7 @@ class $BackgroundWorksTable extends BackgroundWorks
     updatedAt,
     workspaceId,
     conversationId,
+    childConversationId,
     originatingMessageId,
     toolCallId,
     toolKind,
@@ -15659,6 +15674,15 @@ class $BackgroundWorksTable extends BackgroundWorks
       );
     } else if (isInserting) {
       context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('child_conversation_id')) {
+      context.handle(
+        _childConversationIdMeta,
+        childConversationId.isAcceptableOrUnknown(
+          data['child_conversation_id']!,
+          _childConversationIdMeta,
+        ),
+      );
     }
     if (data.containsKey('originating_message_id')) {
       context.handle(
@@ -15758,6 +15782,10 @@ class $BackgroundWorksTable extends BackgroundWorks
         DriftSqlType.string,
         data['${effectivePrefix}conversation_id'],
       )!,
+      childConversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}child_conversation_id'],
+      ),
       originatingMessageId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}originating_message_id'],
@@ -15811,6 +15839,7 @@ class BackgroundWorkTable extends DataClass
   final DateTime updatedAt;
   final String workspaceId;
   final String conversationId;
+  final String? childConversationId;
   final String? originatingMessageId;
   final String toolCallId;
   final String toolKind;
@@ -15825,6 +15854,7 @@ class BackgroundWorkTable extends DataClass
     required this.updatedAt,
     required this.workspaceId,
     required this.conversationId,
+    this.childConversationId,
     this.originatingMessageId,
     required this.toolCallId,
     required this.toolKind,
@@ -15842,6 +15872,9 @@ class BackgroundWorkTable extends DataClass
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['workspace_id'] = Variable<String>(workspaceId);
     map['conversation_id'] = Variable<String>(conversationId);
+    if (!nullToAbsent || childConversationId != null) {
+      map['child_conversation_id'] = Variable<String>(childConversationId);
+    }
     if (!nullToAbsent || originatingMessageId != null) {
       map['originating_message_id'] = Variable<String>(originatingMessageId);
     }
@@ -15868,6 +15901,9 @@ class BackgroundWorkTable extends DataClass
       updatedAt: Value(updatedAt),
       workspaceId: Value(workspaceId),
       conversationId: Value(conversationId),
+      childConversationId: childConversationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(childConversationId),
       originatingMessageId: originatingMessageId == null && nullToAbsent
           ? const Value.absent()
           : Value(originatingMessageId),
@@ -15898,6 +15934,9 @@ class BackgroundWorkTable extends DataClass
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       workspaceId: serializer.fromJson<String>(json['workspaceId']),
       conversationId: serializer.fromJson<String>(json['conversationId']),
+      childConversationId: serializer.fromJson<String?>(
+        json['childConversationId'],
+      ),
       originatingMessageId: serializer.fromJson<String?>(
         json['originatingMessageId'],
       ),
@@ -15919,6 +15958,7 @@ class BackgroundWorkTable extends DataClass
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'workspaceId': serializer.toJson<String>(workspaceId),
       'conversationId': serializer.toJson<String>(conversationId),
+      'childConversationId': serializer.toJson<String?>(childConversationId),
       'originatingMessageId': serializer.toJson<String?>(originatingMessageId),
       'toolCallId': serializer.toJson<String>(toolCallId),
       'toolKind': serializer.toJson<String>(toolKind),
@@ -15936,6 +15976,7 @@ class BackgroundWorkTable extends DataClass
     DateTime? updatedAt,
     String? workspaceId,
     String? conversationId,
+    Value<String?> childConversationId = const Value.absent(),
     Value<String?> originatingMessageId = const Value.absent(),
     String? toolCallId,
     String? toolKind,
@@ -15950,6 +15991,9 @@ class BackgroundWorkTable extends DataClass
     updatedAt: updatedAt ?? this.updatedAt,
     workspaceId: workspaceId ?? this.workspaceId,
     conversationId: conversationId ?? this.conversationId,
+    childConversationId: childConversationId.present
+        ? childConversationId.value
+        : this.childConversationId,
     originatingMessageId: originatingMessageId.present
         ? originatingMessageId.value
         : this.originatingMessageId,
@@ -15976,6 +16020,9 @@ class BackgroundWorkTable extends DataClass
       conversationId: data.conversationId.present
           ? data.conversationId.value
           : this.conversationId,
+      childConversationId: data.childConversationId.present
+          ? data.childConversationId.value
+          : this.childConversationId,
       originatingMessageId: data.originatingMessageId.present
           ? data.originatingMessageId.value
           : this.originatingMessageId,
@@ -16005,6 +16052,7 @@ class BackgroundWorkTable extends DataClass
           ..write('updatedAt: $updatedAt, ')
           ..write('workspaceId: $workspaceId, ')
           ..write('conversationId: $conversationId, ')
+          ..write('childConversationId: $childConversationId, ')
           ..write('originatingMessageId: $originatingMessageId, ')
           ..write('toolCallId: $toolCallId, ')
           ..write('toolKind: $toolKind, ')
@@ -16024,6 +16072,7 @@ class BackgroundWorkTable extends DataClass
     updatedAt,
     workspaceId,
     conversationId,
+    childConversationId,
     originatingMessageId,
     toolCallId,
     toolKind,
@@ -16042,6 +16091,7 @@ class BackgroundWorkTable extends DataClass
           other.updatedAt == this.updatedAt &&
           other.workspaceId == this.workspaceId &&
           other.conversationId == this.conversationId &&
+          other.childConversationId == this.childConversationId &&
           other.originatingMessageId == this.originatingMessageId &&
           other.toolCallId == this.toolCallId &&
           other.toolKind == this.toolKind &&
@@ -16058,6 +16108,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
   final Value<DateTime> updatedAt;
   final Value<String> workspaceId;
   final Value<String> conversationId;
+  final Value<String?> childConversationId;
   final Value<String?> originatingMessageId;
   final Value<String> toolCallId;
   final Value<String> toolKind;
@@ -16073,6 +16124,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
     this.updatedAt = const Value.absent(),
     this.workspaceId = const Value.absent(),
     this.conversationId = const Value.absent(),
+    this.childConversationId = const Value.absent(),
     this.originatingMessageId = const Value.absent(),
     this.toolCallId = const Value.absent(),
     this.toolKind = const Value.absent(),
@@ -16089,6 +16141,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
     this.updatedAt = const Value.absent(),
     required String workspaceId,
     required String conversationId,
+    this.childConversationId = const Value.absent(),
     this.originatingMessageId = const Value.absent(),
     required String toolCallId,
     required String toolKind,
@@ -16109,6 +16162,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
     Expression<DateTime>? updatedAt,
     Expression<String>? workspaceId,
     Expression<String>? conversationId,
+    Expression<String>? childConversationId,
     Expression<String>? originatingMessageId,
     Expression<String>? toolCallId,
     Expression<String>? toolKind,
@@ -16125,6 +16179,8 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (workspaceId != null) 'workspace_id': workspaceId,
       if (conversationId != null) 'conversation_id': conversationId,
+      if (childConversationId != null)
+        'child_conversation_id': childConversationId,
       if (originatingMessageId != null)
         'originating_message_id': originatingMessageId,
       if (toolCallId != null) 'tool_call_id': toolCallId,
@@ -16144,6 +16200,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
     Value<DateTime>? updatedAt,
     Value<String>? workspaceId,
     Value<String>? conversationId,
+    Value<String?>? childConversationId,
     Value<String?>? originatingMessageId,
     Value<String>? toolCallId,
     Value<String>? toolKind,
@@ -16160,6 +16217,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
       updatedAt: updatedAt ?? this.updatedAt,
       workspaceId: workspaceId ?? this.workspaceId,
       conversationId: conversationId ?? this.conversationId,
+      childConversationId: childConversationId ?? this.childConversationId,
       originatingMessageId: originatingMessageId ?? this.originatingMessageId,
       toolCallId: toolCallId ?? this.toolCallId,
       toolKind: toolKind ?? this.toolKind,
@@ -16189,6 +16247,11 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
     }
     if (conversationId.present) {
       map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (childConversationId.present) {
+      map['child_conversation_id'] = Variable<String>(
+        childConversationId.value,
+      );
     }
     if (originatingMessageId.present) {
       map['originating_message_id'] = Variable<String>(
@@ -16230,6 +16293,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
           ..write('updatedAt: $updatedAt, ')
           ..write('workspaceId: $workspaceId, ')
           ..write('conversationId: $conversationId, ')
+          ..write('childConversationId: $childConversationId, ')
           ..write('originatingMessageId: $originatingMessageId, ')
           ..write('toolCallId: $toolCallId, ')
           ..write('toolKind: $toolKind, ')
@@ -16697,6 +16761,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('background_works', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('background_works', kind: UpdateKind.update)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -21249,6 +21320,29 @@ final class $$ConversationsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$BackgroundWorksTable, List<BackgroundWorkTable>>
+  _backgroundWorksByChildConversationTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.backgroundWorks,
+        aliasName: 'conversations__id__background_works__child_conversation_id',
+      );
+
+  $$BackgroundWorksTableProcessedTableManager
+  get backgroundWorksByChildConversation {
+    final manager =
+        $$BackgroundWorksTableTableManager($_db, $_db.backgroundWorks).filter(
+          (f) =>
+              f.childConversationId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _backgroundWorksByChildConversationTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ConversationsTableFilterComposer
@@ -21516,6 +21610,31 @@ class $$ConversationsTableFilterComposer
       getCurrentColumn: (t) => t.id,
       referencedTable: $db.backgroundWorks,
       getReferencedColumn: (t) => t.conversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableFilterComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> backgroundWorksByChildConversation(
+    Expression<bool> Function($$BackgroundWorksTableFilterComposer f) f,
+  ) {
+    final $$BackgroundWorksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.childConversationId,
       builder:
           (
             joinBuilder, {
@@ -21968,6 +22087,31 @@ class $$ConversationsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> backgroundWorksByChildConversation<T extends Object>(
+    Expression<T> Function($$BackgroundWorksTableAnnotationComposer a) f,
+  ) {
+    final $$BackgroundWorksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.childConversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ConversationsTableTableManager
@@ -21993,6 +22137,7 @@ class $$ConversationsTableTableManager
             bool conversationSkillsRefs,
             bool modelUsageRecordsRefs,
             bool backgroundWorksRefs,
+            bool backgroundWorksByChildConversation,
           })
         > {
   $$ConversationsTableTableManager(_$AppDatabase db, $ConversationsTable table)
@@ -22099,6 +22244,7 @@ class $$ConversationsTableTableManager
                 conversationSkillsRefs = false,
                 modelUsageRecordsRefs = false,
                 backgroundWorksRefs = false,
+                backgroundWorksByChildConversation = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -22108,6 +22254,7 @@ class $$ConversationsTableTableManager
                     if (conversationSkillsRefs) db.conversationSkills,
                     if (modelUsageRecordsRefs) db.modelUsageRecords,
                     if (backgroundWorksRefs) db.backgroundWorks,
+                    if (backgroundWorksByChildConversation) db.backgroundWorks,
                   ],
                   addJoins:
                       <
@@ -22279,6 +22426,27 @@ class $$ConversationsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (backgroundWorksByChildConversation)
+                        await $_getPrefetchedData<
+                          ConversationsTable,
+                          $ConversationsTable,
+                          BackgroundWorkTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ConversationsTableReferences
+                              ._backgroundWorksByChildConversationTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ConversationsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).backgroundWorksByChildConversation,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.childConversationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -22309,6 +22477,7 @@ typedef $$ConversationsTableProcessedTableManager =
         bool conversationSkillsRefs,
         bool modelUsageRecordsRefs,
         bool backgroundWorksRefs,
+        bool backgroundWorksByChildConversation,
       })
     >;
 typedef $$SkillCredentialDefinitionsTableCreateCompanionBuilder =
@@ -31164,6 +31333,7 @@ typedef $$BackgroundWorksTableCreateCompanionBuilder =
       Value<DateTime> updatedAt,
       required String workspaceId,
       required String conversationId,
+      Value<String?> childConversationId,
       Value<String?> originatingMessageId,
       required String toolCallId,
       required String toolKind,
@@ -31181,6 +31351,7 @@ typedef $$BackgroundWorksTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<String> workspaceId,
       Value<String> conversationId,
+      Value<String?> childConversationId,
       Value<String?> originatingMessageId,
       Value<String> toolCallId,
       Value<String> toolKind,
@@ -31234,6 +31405,25 @@ final class $$BackgroundWorksTableReferences
       $_db.conversations,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ConversationsTable _childConversationIdTable(_$AppDatabase db) =>
+      db.conversations.createAlias(
+        'background_works__child_conversation_id__conversations__id',
+      );
+
+  $$ConversationsTableProcessedTableManager? get childConversationId {
+    final $_column = $_itemColumn<String>('child_conversation_id');
+    if ($_column == null) return null;
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_childConversationIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -31347,6 +31537,29 @@ class $$BackgroundWorksTableFilterComposer
     final $$ConversationsTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableFilterComposer get childConversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.childConversationId,
       referencedTable: $db.conversations,
       getReferencedColumn: (t) => t.id,
       builder:
@@ -31495,6 +31708,29 @@ class $$BackgroundWorksTableOrderingComposer
     return composer;
   }
 
+  $$ConversationsTableOrderingComposer get childConversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.childConversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   $$MessagesTableOrderingComposer get originatingMessageId {
     final $$MessagesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -31612,6 +31848,29 @@ class $$BackgroundWorksTableAnnotationComposer
     return composer;
   }
 
+  $$ConversationsTableAnnotationComposer get childConversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.childConversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   $$MessagesTableAnnotationComposer get originatingMessageId {
     final $$MessagesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -31652,6 +31911,7 @@ class $$BackgroundWorksTableTableManager
           PrefetchHooks Function({
             bool workspaceId,
             bool conversationId,
+            bool childConversationId,
             bool originatingMessageId,
           })
         > {
@@ -31675,6 +31935,7 @@ class $$BackgroundWorksTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> workspaceId = const Value.absent(),
                 Value<String> conversationId = const Value.absent(),
+                Value<String?> childConversationId = const Value.absent(),
                 Value<String?> originatingMessageId = const Value.absent(),
                 Value<String> toolCallId = const Value.absent(),
                 Value<String> toolKind = const Value.absent(),
@@ -31690,6 +31951,7 @@ class $$BackgroundWorksTableTableManager
                 updatedAt: updatedAt,
                 workspaceId: workspaceId,
                 conversationId: conversationId,
+                childConversationId: childConversationId,
                 originatingMessageId: originatingMessageId,
                 toolCallId: toolCallId,
                 toolKind: toolKind,
@@ -31707,6 +31969,7 @@ class $$BackgroundWorksTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 required String workspaceId,
                 required String conversationId,
+                Value<String?> childConversationId = const Value.absent(),
                 Value<String?> originatingMessageId = const Value.absent(),
                 required String toolCallId,
                 required String toolKind,
@@ -31722,6 +31985,7 @@ class $$BackgroundWorksTableTableManager
                 updatedAt: updatedAt,
                 workspaceId: workspaceId,
                 conversationId: conversationId,
+                childConversationId: childConversationId,
                 originatingMessageId: originatingMessageId,
                 toolCallId: toolCallId,
                 toolKind: toolKind,
@@ -31746,6 +32010,7 @@ class $$BackgroundWorksTableTableManager
               ({
                 workspaceId = false,
                 conversationId = false,
+                childConversationId = false,
                 originatingMessageId = false,
               }) {
                 return PrefetchHooks(
@@ -31789,6 +32054,17 @@ class $$BackgroundWorksTableTableManager
                                 .id,
                           ) as T;
                         }
+                        if (childConversationId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.childConversationId,
+                            referencedTable: $$BackgroundWorksTableReferences
+                                ._childConversationIdTable(db),
+                            referencedColumn: $$BackgroundWorksTableReferences
+                                ._childConversationIdTable(db)
+                                .id,
+                          ) as T;
+                        }
                         if (originatingMessageId) {
                           state = state.withJoin(
                             currentTable: table,
@@ -31827,6 +32103,7 @@ typedef $$BackgroundWorksTableProcessedTableManager =
       PrefetchHooks Function({
         bool workspaceId,
         bool conversationId,
+        bool childConversationId,
         bool originatingMessageId,
       })
     >;

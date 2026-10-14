@@ -193,6 +193,7 @@ class AgentToolCancellationHandle {
   final String toolCallId;
   final Future<Object?>? operationResult;
   final bool Function()? isCancellationConfirmed;
+  final childConversation = AgentToolChildConversationTracker();
   final Future<void> Function() _cancel;
   final void Function()? _onChanged;
   final bool _isSupported;
@@ -228,6 +229,7 @@ class AgentToolCancellationHandle {
   void markOperationCompleted() {
     _operationCompleted = true;
     _status = .completed;
+    childConversation.markOperationCompleted();
     _onChanged?.call();
   }
 
@@ -249,6 +251,25 @@ class AgentToolCancellationHandle {
     await cancellation;
 
     return _cancellationWasConfirmed;
+  }
+}
+
+class AgentToolChildConversationTracker {
+  final _completer = Completer<String?>();
+  String? _id;
+
+  String? get id => _id;
+  Future<String?> get whenAvailable => _completer.future;
+
+  void markOperationCompleted() {
+    if (!_completer.isCompleted) _completer.complete(_id);
+  }
+
+  void record(String childConversationId) {
+    final normalized = childConversationId.trim();
+    if (normalized.isEmpty) return;
+    _id = normalized;
+    if (!_completer.isCompleted) _completer.complete(normalized);
   }
 }
 
