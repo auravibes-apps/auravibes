@@ -1,9 +1,12 @@
 import 'package:auravibes_engine/src/agent_tool_execution_service.dart';
+import 'package:auravibes_engine/src/conversation_tool_access_mode.dart';
 
-/// Applies conversation auto-approval only after normal permission checks.
-AgentToolPermissionResult applyAgentToolAutoApproval(
+/// Applies conversation tool access mode after normal permission checks.
+AgentToolPermissionResult applyConversationToolAccessMode(
   AgentToolPermissionResult result, {
-  required bool autoApproveTools,
-}) => autoApproveTools && result == AgentToolPermissionResult.needsConfirmation
+  required ConversationToolAccessMode mode,
+}) =>
+    mode == ConversationToolAccessMode.allowAll &&
+        result == AgentToolPermissionResult.needsConfirmation
     ? AgentToolPermissionResult.granted
     : result;

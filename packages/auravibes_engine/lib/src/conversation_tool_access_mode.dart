@@ -1,0 +1,1 @@
+enum ConversationToolAccessMode { defaultMode, allowAll }

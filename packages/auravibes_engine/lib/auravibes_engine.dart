@@ -28,6 +28,7 @@ export 'src/chat_result.dart';
 export 'src/context_window.dart';
 export 'src/continue_agent_result.dart';
 export 'src/conversation_compaction.dart';
+export 'src/conversation_tool_access_mode.dart';
 export 'src/conversation_title.dart';
 export 'src/genkit_providers/chat_completions_provider.dart'
     show

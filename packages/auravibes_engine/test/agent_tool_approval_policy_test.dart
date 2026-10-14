@@ -2,18 +2,36 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 void main() {
-  for (final result in AgentToolPermissionResult.values) {
-    test('auto approval preserves $result unless confirmation is required', () {
+  test('defaultModeLeavesAskPending', () {
+    expect(
+      applyConversationToolAccessMode(
+        AgentToolPermissionResult.needsConfirmation,
+        mode: ConversationToolAccessMode.defaultMode,
+      ),
+      AgentToolPermissionResult.needsConfirmation,
+    );
+  });
+
+  test('allowAllPromotesOnlyNeedsConfirmation', () {
+    expect(
+      applyConversationToolAccessMode(
+        AgentToolPermissionResult.needsConfirmation,
+        mode: ConversationToolAccessMode.allowAll,
+      ),
+      AgentToolPermissionResult.granted,
+    );
+  });
+
+  test('allowAllPreservesOtherResults', () {
+    for (final result in AgentToolPermissionResult.values) {
+      if (result == AgentToolPermissionResult.needsConfirmation) continue;
       expect(
-        applyAgentToolAutoApproval(result, autoApproveTools: false),
+        applyConversationToolAccessMode(
+          result,
+          mode: ConversationToolAccessMode.allowAll,
+        ),
         result,
       );
-      expect(
-        applyAgentToolAutoApproval(result, autoApproveTools: true),
-        result == AgentToolPermissionResult.needsConfirmation
-            ? AgentToolPermissionResult.granted
-            : result,
-      );
-    });
-  }
+    }
+  });
 }
