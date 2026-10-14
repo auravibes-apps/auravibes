@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:async/async.dart';
+import 'package:auravibes_app/features/chats/notifiers/agent_run_activity_notifier.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod/riverpod.dart';
@@ -25,11 +26,21 @@ typedef _BackgroundEligibilityWatchRequest = ({
   MultiStreamController<bool> controller,
 });
 
+void _noOpConversationActivity(String _) {
+  return;
+}
+
 class AgentCancellationRuntime implements AgentCancellationEffects {
-  new({@visibleForTesting this.cleanupTimeout = const Duration(seconds: 5)});
+  new({
+    @visibleForTesting this.cleanupTimeout = const Duration(seconds: 5),
+    this.onConversationStarted = _noOpConversationActivity,
+    this.onConversationEnded = _noOpConversationActivity,
+  });
 
   @visibleForTesting
   final Duration cleanupTimeout;
+  final void Function(String conversationId) onConversationStarted;
+  final void Function(String conversationId) onConversationEnded;
   final _entries = <String, AgentCancellationScope>{};
   final _completionByConversationId = <String, Completer<void>>{};
   final _conversationByScope = <AgentCancellationScope, String>{};
@@ -98,6 +109,7 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
         _completeConversation(this, conversationId);
       }
     } else {
+      onConversationEnded(conversationId);
       scope
         ..requestStop()
         ..close();
@@ -464,6 +476,7 @@ extension AgentCancellationScopeHelpers on AgentCancellationRuntime {
     );
     _conversationByScope[scope] = conversationId;
     _entries[conversationId] = scope;
+    onConversationStarted(conversationId);
     if (_pendingStops.remove(conversationId)) scope.requestStop();
 
     return scope;
@@ -597,7 +610,11 @@ Future<void> _waitForScopeCleanup(
 final agentCancellationRuntimeProvider = Provider<AgentCancellationRuntime>((
   ref,
 ) {
-  final runtime = AgentCancellationRuntime();
+  final activity = ref.watch(agentRunActivityProvider.notifier);
+  final runtime = AgentCancellationRuntime(
+    onConversationStarted: activity.startAgentRun,
+    onConversationEnded: activity.endAgentRun,
+  );
   final _ = ref.onDispose(runtime.dispose);
 
   return runtime;

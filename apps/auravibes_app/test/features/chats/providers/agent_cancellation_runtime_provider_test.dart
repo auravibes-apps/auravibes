@@ -2,7 +2,10 @@ import 'dart:async';
 
 // ignore_for_file: cascade_invocations
 
+import 'package:auravibes_app/features/chats/notifiers/agent_run_activity_notifier.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -250,6 +253,35 @@ void main() {
 
       expect(scope.isCancellationRequested, isTrue);
       expect(runtime.current('c1'), isNull);
+    });
+
+    test('agent activity spans model stream handoffs', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final runtime = container.read(agentCancellationRuntimeProvider);
+      final streaming = container.read(conversationStreamingProvider.notifier);
+      final scope = runtime.start('conversation-1');
+
+      expect(container.read(conversationActivityProvider), {'conversation-1'});
+      expect(container.read(agentRunActivityProvider), {'conversation-1'});
+      expect(container.read(conversationStreamingProvider), isEmpty);
+
+      streaming
+        ..start('conversation-1')
+        ..remove('conversation-1');
+
+      expect(container.read(conversationActivityProvider), {'conversation-1'});
+
+      streaming
+        ..start('conversation-1')
+        ..remove('conversation-1');
+
+      expect(container.read(conversationActivityProvider), {'conversation-1'});
+
+      runtime.clear('conversation-1', scope);
+
+      expect(container.read(conversationActivityProvider), isEmpty);
+      expect(container.read(agentRunActivityProvider), isEmpty);
     });
 
     test('waits for asynchronous cleanup before completion', () async {
