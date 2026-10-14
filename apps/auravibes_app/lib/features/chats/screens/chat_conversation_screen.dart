@@ -1239,7 +1239,9 @@ class const _ChatConversationBodyLayout({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      _ConversationOrientation(data: data),
+      if (!data.showInputComposer &&
+          data.conversation.parentConversationId != null)
+        _ConversationOrientation(data: data),
       _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(data: data),
@@ -1250,6 +1252,7 @@ class const _ChatConversationBodyLayout({
           hasOtherStatus: hasOtherStatus,
         ),
     ],
+    spacing: .none,
   );
 }
 
@@ -1701,6 +1704,7 @@ class _ChatComposerInput extends StatelessWidget {
            onCompactTap: onPressed,
          ),
          conversationId: data.conversation.id,
+         topPadding: 0,
          reasoningControl: reasoningControl,
          draftToLoad: draftToLoad,
          modalitiesInput: data.state.modalitiesInput,
@@ -1843,11 +1847,7 @@ class const _ChatControlsPadding({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(
-      left: context.auraTheme.fromSpacing(.md),
-      top: context.auraTheme.fromSpacing(.sm),
-      right: context.auraTheme.fromSpacing(.md),
-    ),
+    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
     child: _ChatControlsAlignment(
       workspaceId: workspaceId,
       conversationId: conversationId,

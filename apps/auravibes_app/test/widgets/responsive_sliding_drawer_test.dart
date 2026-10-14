@@ -402,38 +402,54 @@ void main() {
       expect(find.text('Drawer'), findsOneWidget);
     });
 
-    testWidgets('mobile drawer opens from blank body space', (tester) async {
+    testWidgets('mobile diagonal chat drag scrolls without opening drawer', (
+      tester,
+    ) async {
+      final controller = ResponsiveSlidingDrawerController();
+      final scrollController = ScrollController();
+      addTearDown(scrollController.dispose);
+
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        viewSize: const Size(400, 800),
+        platform: .iOS,
+        body: SizedBox.expand(
+          child: ListView(
+            controller: scrollController,
+            children: const [
+              SizedBox(height: 1200, child: Text('Chat content')),
+            ],
+          ),
+        ),
+      );
+
+      await tester.dragFrom(const Offset(200, 500), const Offset(100, -80));
+      final _ = await tester.pumpAndSettle();
+
+      expect(tester.getTopLeft(find.text('Drawer')).dx, lessThan(0));
+      expect(scrollController.offset, greaterThan(0));
+    });
+
+    testWidgets('mobile drawer opens from left edge swipe', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
       await pumpDrawer(
         tester,
         controller: controller,
-        initiallyOpen: true,
         viewSize: const Size(400, 800),
         platform: .iOS,
-        body: const SizedBox.expand(
-          child: Align(alignment: .topLeft, child: Text('Body')),
+        drawer: const SizedBox.expand(
+          child: Align(alignment: .topLeft, child: Text('Drawer')),
         ),
       );
 
-      final bodyGestureFinder = find.ancestor(
-        of: find.text('Body'),
-        matching: find.byType(GestureDetector),
-      );
-      final bodyGesture = tester.widget<GestureDetector>(
-        bodyGestureFinder.first,
-      );
-      expect(bodyGesture.behavior, HitTestBehavior.opaque);
-
-      final bodyRect = tester.getRect(bodyGestureFinder.first);
-      final gesture = await tester.startGesture(
-        .new(bodyRect.center.dx, bodyRect.bottom - 16),
-      );
+      final gesture = await tester.startGesture(const Offset(12, 400));
       await gesture.moveBy(const Offset(150, 0));
       await gesture.up();
       final _ = await tester.pumpAndSettle();
 
-      expect(tester.getTopLeft(find.text('Body')).dx, greaterThan(0));
+      expect(tester.getTopLeft(find.text('Drawer')).dx, closeTo(0, 0.1));
     });
 
     testWidgets('mobile drawer closes from blank panel space', (tester) async {
@@ -493,24 +509,38 @@ void main() {
       expect(FocusManager.instance.primaryFocus, isNot(drawerFocus));
     });
 
-    testWidgets('desktop drawer closes from blank panel space', (tester) async {
-      final controller = ResponsiveSlidingDrawerController();
+    testWidgets(
+      'desktop drawer stays open after swipes from panel or chat edge',
+      (tester) async {
+        final controller = ResponsiveSlidingDrawerController();
 
-      await pumpDrawer(
-        tester,
-        controller: controller,
-        drawer: const SizedBox.expand(
-          child: Align(alignment: .topLeft, child: Text('Drawer')),
-        ),
-      );
+        await pumpDrawer(
+          tester,
+          controller: controller,
+          initiallyOpen: true,
+          drawer: const SizedBox.expand(
+            child: Align(alignment: .topLeft, child: Text('Drawer')),
+          ),
+          body: const SizedBox.expand(
+            child: Align(alignment: .topLeft, child: Text('Body')),
+          ),
+        );
 
-      final gesture = await tester.startGesture(const Offset(220, 500));
-      await gesture.moveBy(const Offset(-180, 0));
-      await gesture.up();
-      final _ = await tester.pumpAndSettle();
+        final gesture = await tester.startGesture(const Offset(220, 500));
+        await gesture.moveBy(const Offset(-300, 0));
+        await gesture.up();
+        final _ = await tester.pumpAndSettle();
 
-      expect(tester.getTopLeft(find.text('Drawer')).dx, lessThan(0));
-    });
+        expect(tester.getTopLeft(find.text('Drawer')).dx, closeTo(0, 0.1));
+
+        final edgeGesture = await tester.startGesture(const Offset(365, 500));
+        await edgeGesture.moveBy(const Offset(-300, 0));
+        await edgeGesture.up();
+        final _ = await tester.pumpAndSettle();
+
+        expect(tester.getTopLeft(find.text('Drawer')).dx, closeTo(0, 0.1));
+      },
+    );
 
     testWidgets('divider hover changes state on desktop', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
@@ -554,7 +584,9 @@ void main() {
       expect(opacity.opacity, greaterThan(0));
     });
 
-    testWidgets('desktop drag area exists when closed', (tester) async {
+    testWidgets('desktop drawer content remains mounted when closed', (
+      tester,
+    ) async {
       final controller = ResponsiveSlidingDrawerController();
 
       await pumpDrawer(tester, controller: controller);

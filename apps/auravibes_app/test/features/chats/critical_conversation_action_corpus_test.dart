@@ -163,6 +163,7 @@ Future<void> _stopAvailable(WidgetTester tester) async {
 
   final stopButton = find.byKey(const ValueKey<String>('chat_stop_generation'));
   expect(stopButton, findsOneWidget);
+  expect(find.byKey(const ValueKey<String>('chat_send_button')), findsNothing);
   await tester.tap(stopButton);
   expect(stopped, isTrue);
 }
@@ -182,6 +183,10 @@ Future<void> _stopUnavailable(WidgetTester tester) async {
   expect(
     find.byKey(const ValueKey<String>('chat_stop_generation')).hitTestable(),
     findsNothing,
+  );
+  expect(
+    find.byKey(const ValueKey<String>('chat_send_button')),
+    findsOneWidget,
   );
   expect(stopped, isFalse);
 }

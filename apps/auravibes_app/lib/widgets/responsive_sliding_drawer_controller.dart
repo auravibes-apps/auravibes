@@ -84,8 +84,7 @@ class _ResponsiveSlidingDrawerState
   static const _dividerWidth = 5.0;
   static const _dividerVisibleWidth = 4.0;
   static const _dividerIdleOpacity = 0.45;
-  static const _desktopDragAreaWidth = 10.0;
-  static const _desktopDragAreaMidpoint = 0.5;
+  static const _mobileEdgeDragAreaWidth = 20.0;
   static const _gradientMiddleOpacity = 0.5;
   static const _gradientTrailingOpacity = 0.2;
   static const _drawerFullyOpenThreshold = 0.001;
@@ -535,7 +534,6 @@ class const _DesktopDrawerLayout({
     children: [
       _DesktopDrawerBody(state: state),
       _DesktopDrawerPanel(state: state),
-      _DesktopDrawerDragArea(state: state),
       if (state._drawerFullyOpen && !state.widget.isDesktopCompact)
         _DesktopDrawerDivider(state: state),
     ],
@@ -590,22 +588,9 @@ class const _DesktopPanelPosition({
 
     return Transform.translate(
       offset: .new(-drawerWidth * (1 - animation.value), 0),
-      child: _DrawerPanelGesture(state: state),
+      child: _DrawerFocusBox(state: state),
     );
   }
-}
-
-class const _DrawerPanelGesture({
-  required final _ResponsiveSlidingDrawerState state,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    child: _DrawerFocusBox(state: state),
-    onHorizontalDragStart: state._handleDragStart,
-    onHorizontalDragUpdate: state._handleDragUpdate,
-    onHorizontalDragEnd: state._handleDragEnd,
-    behavior: .opaque,
-  );
 }
 
 class const _DrawerFocusBox({
@@ -626,47 +611,6 @@ class const _DrawerFocusBox({
       ),
     );
   }
-}
-
-class const _DesktopDrawerDragArea({
-  required final _ResponsiveSlidingDrawerState state,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: state._requiredController,
-    builder: (context, _) => _DesktopDragAreaPosition(state: state),
-  );
-}
-
-class const _DesktopDragAreaPosition({
-  required final _ResponsiveSlidingDrawerState state,
-}) extends StatelessWidget {
-  double get _left =>
-      state._requiredController.value <
-          _ResponsiveSlidingDrawerState._desktopDragAreaMidpoint
-      ? 0
-      : state._currentDrawerWidth;
-
-  @override
-  Widget build(BuildContext context) => Positioned(
-    left: _left,
-    top: 0,
-    bottom: 0,
-    width: _ResponsiveSlidingDrawerState._desktopDragAreaWidth,
-    child: _DesktopDragAreaGesture(state: state),
-  );
-}
-
-class const _DesktopDragAreaGesture({
-  required final _ResponsiveSlidingDrawerState state,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onHorizontalDragStart: state._handleDragStart,
-    onHorizontalDragUpdate: state._handleDragUpdate,
-    onHorizontalDragEnd: state._handleDragEnd,
-    behavior: .opaque,
-  );
 }
 
 class const _DesktopDrawerDivider({
@@ -795,6 +739,8 @@ class const _MobileDrawerLayout({
       _MobileDrawerBody(state: state),
       _MobileDrawerScrim(state: state),
       _MobileDrawerPanel(state: state),
+      if (state._isMobilePlatform(context))
+        _MobileDrawerEdgeDragArea(state: state),
     ],
   );
 }
@@ -829,11 +775,39 @@ class const _MobileBodyGesture({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final callbacks = state._mobileDragCallbacks(context);
-
     return GestureDetector(
       child: state.widget.body,
       onTap: state._closeIfFullyOpenCurrent,
+      behavior: .opaque,
+    );
+  }
+}
+
+class const _MobileDrawerEdgeDragArea({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Positioned(
+    left: 0,
+    top: MediaQuery.paddingOf(context).top + kToolbarHeight,
+    bottom: 0,
+    width: _ResponsiveSlidingDrawerState._mobileEdgeDragAreaWidth,
+    child: IgnorePointer(
+      ignoring: state._requiredController.value != 0,
+      child: _MobileDrawerEdgeDragGesture(state: state),
+    ),
+  );
+}
+
+class const _MobileDrawerEdgeDragGesture({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final callbacks = state._mobileDragCallbacks(context);
+
+    return GestureDetector(
+      child: const SizedBox.expand(),
       onHorizontalDragStart: callbacks.onDragStart,
       onHorizontalDragUpdate: callbacks.onDragUpdate,
       onHorizontalDragEnd: callbacks.onDragEnd,
