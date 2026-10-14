@@ -308,26 +308,50 @@ class const _BackgroundWorkListContent({
   required final String conversationId,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => works.isEmpty
-      ? const _BackgroundWorkMessage(
-          message: TextLocale(
-            LocaleKeys.chats_screens_chat_conversation_background_work_empty,
-            textAlign: .center,
-          ),
-        )
-      : BackgroundWorkListView(
-          works: _sortBackgroundWorks(works),
-          onStop: (work) => _stopBackgroundWork(ref, work),
-          onOpenResult: (work) async =>
-              _showBackgroundWorkResult(context, work),
-          onOpenChild: (work) => _openChildBackgroundWork(
-            context: context,
-            workspaceId: workspaceId,
-            conversationId: conversationId,
-            work: work,
-          ),
-        );
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (works.isEmpty) {
+      return const _BackgroundWorkMessage(
+        message: TextLocale(
+          LocaleKeys.chats_screens_chat_conversation_background_work_empty,
+          textAlign: .center,
+        ),
+      );
+    }
+
+    return BackgroundWorkListView(
+      works: _sortBackgroundWorks(works),
+      onStop: _stopBackgroundWorkHandler(ref),
+      onOpenResult: _openBackgroundWorkResultHandler(context),
+      onOpenChild: _openChildBackgroundWorkHandler(
+        context: context,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+    );
+  }
 }
+
+Future<void> Function(AgentBackgroundWork work) _stopBackgroundWorkHandler(
+  WidgetRef ref,
+) =>
+    (work) => _stopBackgroundWork(ref, work);
+
+Future<void> Function(AgentBackgroundWork work)
+_openBackgroundWorkResultHandler(BuildContext context) =>
+    (work) async => _showBackgroundWorkResult(context, work);
+
+Future<void> Function(AgentBackgroundWork work)
+_openChildBackgroundWorkHandler({
+  required BuildContext context,
+  required String workspaceId,
+  required String conversationId,
+}) =>
+    (work) => _openChildBackgroundWork(
+      context: context,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      work: work,
+    );
 
 class const _BackgroundWorkMessage({required final Widget message})
     extends StatelessWidget {
