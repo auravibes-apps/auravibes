@@ -1455,7 +1455,7 @@ void main() {
       findsNothing,
     );
     await tester.tap(sendButton);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(sentDraft?.text, 'draft while busy');
     expect(stopCount, 0);
