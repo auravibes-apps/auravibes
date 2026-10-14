@@ -442,6 +442,7 @@ class const _DropdownMenu<T>({
           ?header,
           Flexible(
             child: ListView.builder(
+              primary: false,
               shrinkWrap: true,
               padding: EdgeInsets.zero,
               itemBuilder: (context, index) {

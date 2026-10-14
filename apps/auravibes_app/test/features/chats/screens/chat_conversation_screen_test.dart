@@ -863,12 +863,13 @@ void main() {
           .value,
       ConversationToolAccessMode.allowAll,
     );
-    tester
-        .widget<AuraDropdownSelector<ConversationToolAccessMode>>(
-          find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
-        )
-        .onChanged
-        ?.call(ConversationToolAccessMode.defaultMode);
+    final control = find.byType(
+      AuraDropdownSelector<ConversationToolAccessMode>,
+    );
+    await tester.tap(control);
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text('Default'));
     await tester.pump();
     expect(
       tester
@@ -876,12 +877,10 @@ void main() {
           .toolAccessMode,
       ConversationToolAccessMode.defaultMode,
     );
-    tester
-        .widget<AuraDropdownSelector<ConversationToolAccessMode>>(
-          find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
-        )
-        .onChanged
-        ?.call(ConversationToolAccessMode.allowAll);
+    await tester.tap(control);
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text('Allow all'));
     await tester.pump();
     expect(
       tester

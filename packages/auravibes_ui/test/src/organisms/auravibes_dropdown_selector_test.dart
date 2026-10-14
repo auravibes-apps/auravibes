@@ -91,6 +91,58 @@ void main() {
       );
     });
 
+    testWidgets(
+      'menu keeps inherited primary scroll controller attached only to page',
+      (tester) async {
+        final controller = ScrollController(initialScrollOffset: 40);
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: PrimaryScrollController(
+                controller: controller,
+                child: Portal(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: ListView(
+                          children: const [SizedBox(height: 1000)],
+                        ),
+                      ),
+                      const AuraDropdownSelector<String>(
+                        options: [
+                          AuraDropdownOption(
+                            value: 'one',
+                            child: Text('Option 1'),
+                          ),
+                        ],
+                        placeholder: Text('Select'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(controller.positions, hasLength(1));
+        expect(controller.offset, 40);
+
+        await tester.tap(find.text('Select'));
+        await tester.pump();
+
+        expect(find.text('Option 1'), findsOneWidget);
+        expect(controller.positions, hasLength(1));
+        expect(controller.offset, 40);
+      },
+      variant: const TargetPlatformVariant({
+        TargetPlatform.android,
+        TargetPlatform.iOS,
+      }),
+    );
+
     testWidgets('highlights selected option in dropdown', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
