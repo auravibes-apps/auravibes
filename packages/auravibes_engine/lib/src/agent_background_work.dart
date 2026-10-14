@@ -15,6 +15,7 @@ class const AgentBackgroundWorkIdentity({
   required final String toolCallId,
   required final String toolKind,
   final String? originatingMessageId,
+  final String? childConversationId,
 });
 
 /// Lifecycle and bounded outcome data for detached work.
@@ -41,6 +42,7 @@ class const AgentBackgroundWorkCreateRequest({
   required final String toolCallId,
   required final String toolKind,
   final String? originatingMessageId,
+  final String? childConversationId,
 });
 
 /// Terminal state to persist after a detached invocation settles.
@@ -64,6 +66,13 @@ abstract interface class AgentBackgroundWorkStore {
   Stream<List<AgentBackgroundWork>> watchConversation(String conversationId);
 
   Future<AgentBackgroundWork> create(AgentBackgroundWorkCreateRequest request);
+
+  /// Associates detached work with the child conversation it launched.
+  Future<void> linkChildConversation({
+    required String conversationId,
+    required String workId,
+    required String childConversationId,
+  });
 
   /// Removes a provisional running record when detachment loses a race.
   Future<void> discard({

@@ -40,6 +40,16 @@ extension BackgroundWorksDaoOperations on BackgroundWorksDao {
     return _toAgentBackgroundWork(await _insertRequest(request));
   }
 
+  Future<void> linkChildConversation({
+    required String conversationId,
+    required String workId,
+    required String childConversationId,
+  }) => _writeChildConversationLink(
+    conversationId: conversationId,
+    workId: workId,
+    childConversationId: childConversationId,
+  );
+
   Future<void> discard({
     required String conversationId,
     required String workId,
@@ -125,6 +135,7 @@ extension _BackgroundWorksDaoQueryOps on BackgroundWorksDao {
       id: .new(request.id),
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
+      childConversationId: .new(request.childConversationId),
       originatingMessageId: .new(request.originatingMessageId),
       toolCallId: request.toolCallId,
       toolKind: request.toolKind,
@@ -171,6 +182,33 @@ extension _BackgroundWorksDaoCompletionOps on BackgroundWorksDao {
     return updated.isEmpty ? null : updated.single;
   }
 }
+
+extension _BackgroundWorksDaoChildConversationOps on BackgroundWorksDao {
+  Future<void> _writeChildConversationLink({
+    required String conversationId,
+    required String workId,
+    required String childConversationId,
+  }) async {
+    final _ =
+        await (update(backgroundWorks)..where(
+              (table) => _childConversationWork(table, conversationId, workId),
+            ))
+            .write(_childConversationLinkUpdate(childConversationId));
+  }
+}
+
+Expression<bool> _childConversationWork(
+  $BackgroundWorksTable table,
+  String conversationId,
+  String workId,
+) => table.conversationId.equals(conversationId) & table.id.equals(workId);
+
+BackgroundWorksCompanion _childConversationLinkUpdate(
+  String childConversationId,
+) => BackgroundWorksCompanion(
+  updatedAt: .new(DateTime.now().toUtc()),
+  childConversationId: .new(childConversationId),
+);
 
 const _activeStatuses = ['running', 'stopRequested'];
 const _terminalStatuses = ['completed', 'failed', 'cancelled'];
@@ -276,6 +314,7 @@ AgentBackgroundWorkIdentity _toBackgroundWorkIdentity(
   toolCallId: row.toolCallId,
   toolKind: row.toolKind,
   originatingMessageId: row.originatingMessageId,
+  childConversationId: row.childConversationId,
 );
 
 AgentBackgroundWorkState _toBackgroundWorkState(BackgroundWorkTable row) =>
