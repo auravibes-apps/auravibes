@@ -254,17 +254,19 @@ bool _shouldIgnoreNavigationTap(_NavigationTap tap) {
   return tap.workspaceId.isEmpty || tap.pending.value;
 }
 
+WorkspaceNavigationNotifier _workspaceNavigation(_NavigationTap tap) =>
+    tap.ref.read(workspaceNavigationProvider(tap.workspaceId).notifier);
+
 String _navigationTarget(_NavigationTap tap) {
-  final navigation = tap.ref.read(
-    workspaceNavigationProvider(tap.workspaceId).notifier,
-  );
+  final workspaceId = tap.workspaceId;
+  final navigation = _workspaceNavigation(tap);
 
   return switch (WorkspaceDestination.values[tap.index]) {
-    .chats => NewChatRoute(workspaceId: tap.workspaceId).location,
+    .chats => NewChatRoute(workspaceId: workspaceId).location,
     .agentsAndSkills => navigation.agentsLocation(),
     .connections => navigation.connectionsLocation(),
-    .appSettings => SettingsRoute(workspaceId: tap.workspaceId).location,
-    .cloudAccounts => CloudAccountsRoute(workspaceId: tap.workspaceId).location,
+    .appSettings => SettingsRoute(workspaceId: workspaceId).location,
+    .cloudAccounts => CloudAccountsRoute(workspaceId: workspaceId).location,
   };
 }
 
