@@ -5,6 +5,7 @@ fields:
   executionState: String
   projectionRevision: int
   sequence: int
+  autoApproveTools: bool, default=false
   modelId: String?
   agentId: String?
   reasoningConfigJson: String?

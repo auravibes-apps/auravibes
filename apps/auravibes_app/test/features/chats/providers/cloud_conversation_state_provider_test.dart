@@ -9,6 +9,18 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('preserves server auto-approval mode through snapshot and stream', () {
+    final snapshot = _snapshot(sequence: 4);
+    snapshot.conversation.autoApproveTools = true;
+    final state = CloudConversationState.fromSnapshot(snapshot);
+    expect(state.conversation.autoApproveTools, isTrue);
+    expect(
+      state.apply(_event(sequence: 5))!.conversation.autoApproveTools,
+      isTrue,
+    );
+    expect(_snapshot(sequence: 6).conversation.autoApproveTools, isFalse);
+  });
+
   test('applies a transient assistant delta at its current sequence', () {
     final state = CloudConversationState.fromSnapshot(
       _snapshot(sequence: 4, assistantContent: 'R1'),

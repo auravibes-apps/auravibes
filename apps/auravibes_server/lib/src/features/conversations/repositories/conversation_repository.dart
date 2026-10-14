@@ -212,6 +212,28 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     lockMode: lock ? LockMode.forUpdate : null,
   );
 
+  Future<bool> effectiveAutoApproveTools(
+    Session session, {
+    required Conversation conversation,
+    Transaction? transaction,
+  }) async {
+    final workspaceId = conversation.workspaceId;
+    final visited = <String>{};
+    Conversation? current = conversation;
+    while (current != null && visited.add(current.stableId)) {
+      if (current.deletedAt != null) return false;
+      final parentId = current.parentConversationStableId;
+      if (parentId == null) return current.autoApproveTools;
+      current = await findConversationByStableId(
+        session,
+        workspaceId: workspaceId,
+        conversationId: parentId,
+        transaction: transaction,
+      );
+    }
+    return false;
+  }
+
   Future<List<Conversation>> listConversations(
     Session session, {
     required int workspaceId,

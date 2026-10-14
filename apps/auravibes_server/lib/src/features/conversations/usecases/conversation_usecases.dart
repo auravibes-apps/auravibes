@@ -153,6 +153,7 @@ class ConversationUseCases {
             stableId: request.conversationId,
             title: request.title.trim(),
             isPinned: request.isPinned,
+            autoApproveTools: request.autoApproveTools,
             modelId: request.modelId,
             agentId: request.agentId,
             reasoningConfigJson: reasoningConfigJson,
@@ -263,6 +264,11 @@ class ConversationUseCases {
           stableId: request.forkConversationId,
           title: title,
           isPinned: false,
+          autoApproveTools: await _repository.effectiveAutoApproveTools(
+            session,
+            conversation: source,
+            transaction: transaction,
+          ),
           modelId: source.modelId,
           agentId: source.agentId,
           reasoningConfigJson: source.reasoningConfigJson,
@@ -519,6 +525,8 @@ class ConversationUseCases {
         conversation.copyWith(
           title: request.title?.trim() ?? conversation.title,
           isPinned: request.isPinned ?? conversation.isPinned,
+          autoApproveTools:
+              request.autoApproveTools ?? conversation.autoApproveTools,
           modelId: request.clearModel
               ? null
               : request.modelId ?? conversation.modelId,
@@ -1260,6 +1268,7 @@ class ConversationUseCases {
         executionState: conversation.executionState,
         projectionRevision: conversation.projectionRevision,
         sequence: conversation.eventSequence,
+        autoApproveTools: conversation.autoApproveTools,
         modelId: conversation.modelId,
         agentId: conversation.agentId,
         forkSourceConversationId: conversation.forkSourceConversationId,
@@ -5318,6 +5327,7 @@ class ConversationUseCases {
         id: conversation.stableId,
         title: conversation.title ?? '',
         isPinned: conversation.isPinned,
+        autoApproveTools: conversation.autoApproveTools,
         modelId: conversation.modelId,
         agentId: conversation.agentId,
         reasoningConfigJson: conversation.reasoningConfigJson,

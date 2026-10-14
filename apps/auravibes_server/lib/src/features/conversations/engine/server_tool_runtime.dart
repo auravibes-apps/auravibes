@@ -709,14 +709,27 @@ bool cloudServiceSkillReady(
 AgentToolPermissionResult resolveCloudToolPermission({
   required AgentToolPermissionResult workspacePermission,
   String? agentPermissionMode,
+  String? conversationPermissionMode,
 }) {
+  if (conversationPermissionMode == 'alwaysAllow') {
+    return AgentToolPermissionResult.granted;
+  }
+  if (conversationPermissionMode == 'alwaysDeny') {
+    return AgentToolPermissionResult.disabledInWorkspace;
+  }
+
   if (workspacePermission != AgentToolPermissionResult.granted &&
       workspacePermission != AgentToolPermissionResult.needsConfirmation) {
     return workspacePermission;
   }
+  if (agentPermissionMode == 'alwaysDeny') {
+    return AgentToolPermissionResult.disabledInWorkspace;
+  }
+  if (conversationPermissionMode == 'alwaysAsk') {
+    return AgentToolPermissionResult.needsConfirmation;
+  }
   return switch (agentPermissionMode) {
     'alwaysAllow' => AgentToolPermissionResult.granted,
-    'alwaysDeny' => AgentToolPermissionResult.disabledInWorkspace,
     'alwaysAsk' => AgentToolPermissionResult.needsConfirmation,
     _ => workspacePermission,
   };
@@ -1212,11 +1225,24 @@ class ServerToolRuntime({
       );
       return ServerToolDisposition.completed;
     }
-    final permission = await _permission(
+    final configuredPermission = await _permission(
       session,
       workspaceId: turn.workspaceId,
       descriptor: permissionDescriptor,
       agentId: conversation?.agentId,
+      conversationStableId: conversation?.stableId,
+    );
+    final permission = applyAgentToolAutoApproval(
+      configuredPermission,
+      autoApproveTools:
+          existing == null &&
+          conversation != null &&
+          conversation.workspaceId == turn.workspaceId &&
+          await conversation_repo.ConversationRepository()
+              .effectiveAutoApproveTools(
+                session,
+                conversation: conversation,
+              ),
     );
     final persistedRequest = request.name == callSkillToolName
         ? ServerToolRequest(
@@ -1782,6 +1808,7 @@ class ServerToolRuntime({
     required int workspaceId,
     required AgentResolvedToolName descriptor,
     required String? agentId,
+    required String? conversationStableId,
   }) async {
     if (descriptor.kind == AgentResolvedToolKind.builtIn &&
         descriptor.tableId == backgroundWorkResultReaderTableId &&
@@ -1793,24 +1820,52 @@ class ServerToolRuntime({
       session,
       where: (table) =>
           table.workspaceId.equals(workspaceId) &
-          table.resourceKind.equals(WorkspaceResourceKind.toolPermission) &
+          table.resourceKind.inSet({
+            WorkspaceResourceKind.toolPermission,
+            WorkspaceResourceKind.conversationToolSelection,
+          }) &
           table.deletedAt.equals(null),
       orderBy: (table) => table.id.desc(),
     );
     final permission = permissions
-        .where((candidate) => _data(candidate)['toolId'] == toolId)
+        .where(
+          (candidate) =>
+              candidate.resourceKind == WorkspaceResourceKind.toolPermission &&
+              _data(candidate)['toolId'] == toolId,
+        )
         .firstOrNull;
-    if (permission == null) return defaultCloudToolPermission(descriptor);
-    final data = _data(permission);
-    if (data['isEnabled'] == false) {
-      return AgentToolPermissionResult.disabledInWorkspace;
+    final data = permission == null ? null : _data(permission);
+    final workspacePermission = data == null
+        ? defaultCloudToolPermission(descriptor)
+        : data['isEnabled'] == false
+        ? AgentToolPermissionResult.disabledInWorkspace
+        : switch (data['permissionMode']) {
+            'alwaysAllow' => AgentToolPermissionResult.granted,
+            'alwaysDeny' => AgentToolPermissionResult.disabledInWorkspace,
+            _ => AgentToolPermissionResult.needsConfirmation,
+          };
+    final conversationPolicy = permissions
+        .where(
+          (candidate) =>
+              candidate.resourceKind ==
+              WorkspaceResourceKind.conversationToolSelection,
+        )
+        .map(_data)
+        .where(
+          (value) =>
+              value['conversationId'] == conversationStableId &&
+              value['toolId'] == toolId,
+        )
+        .firstOrNull;
+    final conversationPermissionMode = conversationPolicy?['isEnabled'] == false
+        ? 'alwaysDeny'
+        : conversationPolicy?['permissionMode'] as String?;
+    if (agentId == null) {
+      return resolveCloudToolPermission(
+        workspacePermission: workspacePermission,
+        conversationPermissionMode: conversationPermissionMode,
+      );
     }
-    final workspacePermission = switch (data['permissionMode']) {
-      'alwaysAllow' => AgentToolPermissionResult.granted,
-      'alwaysDeny' => AgentToolPermissionResult.disabledInWorkspace,
-      _ => AgentToolPermissionResult.needsConfirmation,
-    };
-    if (agentId == null) return workspacePermission;
     final associations = await WorkspaceResource.db.find(
       session,
       where: (table) =>
@@ -1832,6 +1887,7 @@ class ServerToolRuntime({
     return resolveCloudToolPermission(
       workspacePermission: workspacePermission,
       agentPermissionMode: agentPermissionMode,
+      conversationPermissionMode: conversationPermissionMode,
     );
   }
 

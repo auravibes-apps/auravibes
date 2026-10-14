@@ -8,6 +8,40 @@ import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('conversation ask cannot mask agent or workspace denial', () {
+    for (final workspace in [
+      AgentToolPermissionResult.needsConfirmation,
+      AgentToolPermissionResult.disabledInWorkspace,
+    ]) {
+      expect(
+        applyAgentToolAutoApproval(
+          resolveCloudToolPermission(
+            workspacePermission: workspace,
+            agentPermissionMode: 'alwaysDeny',
+            conversationPermissionMode: 'alwaysAsk',
+          ),
+          autoApproveTools: true,
+        ),
+        AgentToolPermissionResult.disabledInWorkspace,
+      );
+    }
+    expect(
+      resolveCloudToolPermission(
+        workspacePermission: AgentToolPermissionResult.disabledInWorkspace,
+        agentPermissionMode: 'alwaysDeny',
+        conversationPermissionMode: 'alwaysAllow',
+      ),
+      AgentToolPermissionResult.granted,
+    );
+    expect(
+      resolveCloudToolPermission(
+        workspacePermission: AgentToolPermissionResult.granted,
+        conversationPermissionMode: 'alwaysDeny',
+      ),
+      AgentToolPermissionResult.disabledInWorkspace,
+    );
+  });
+
   test('authorizes active agent-associated skills for execution', () {
     final now = DateTime.utc(2026);
     WorkspaceResource resource(

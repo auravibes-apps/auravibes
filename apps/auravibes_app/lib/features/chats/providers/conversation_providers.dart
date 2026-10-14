@@ -262,6 +262,7 @@ ConversationEntity _cloudConversationCore(
     createdAt: conversation.createdAt,
     updatedAt: conversation.updatedAt,
     revision: conversation.revision,
+    autoApproveTools: conversation.autoApproveTools,
     modelId: conversation.modelId,
     agentId: conversation.agentId,
     reasoningConfiguration: .decode(conversation.reasoningConfigJson),

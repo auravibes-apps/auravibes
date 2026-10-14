@@ -21,6 +21,7 @@ abstract class UpdateConversationRequest
     required this.expectedRevision,
     this.title,
     this.isPinned,
+    this.autoApproveTools,
     this.modelId,
     required this.clearModel,
     this.agentId,
@@ -38,6 +39,7 @@ abstract class UpdateConversationRequest
     required int expectedRevision,
     String? title,
     bool? isPinned,
+    bool? autoApproveTools,
     String? modelId,
     required bool clearModel,
     String? agentId,
@@ -60,6 +62,11 @@ abstract class UpdateConversationRequest
       isPinned: jsonSerialization['isPinned'] == null
           ? null
           : _isc.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
+      autoApproveTools: jsonSerialization['autoApproveTools'] == null
+          ? null
+          : _isc.BoolJsonExtension.fromJson(
+              jsonSerialization['autoApproveTools'],
+            ),
       modelId: jsonSerialization['modelId'] as String?,
       clearModel: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['clearModel'],
@@ -92,6 +99,8 @@ abstract class UpdateConversationRequest
 
   bool? isPinned;
 
+  bool? autoApproveTools;
+
   String? modelId;
 
   bool clearModel;
@@ -118,6 +127,7 @@ abstract class UpdateConversationRequest
     int? expectedRevision,
     String? title,
     bool? isPinned,
+    bool? autoApproveTools,
     String? modelId,
     bool? clearModel,
     String? agentId,
@@ -137,6 +147,7 @@ abstract class UpdateConversationRequest
       'expectedRevision': expectedRevision,
       if (title != null) 'title': title,
       if (isPinned != null) 'isPinned': isPinned,
+      if (autoApproveTools != null) 'autoApproveTools': autoApproveTools,
       if (modelId != null) 'modelId': modelId,
       'clearModel': clearModel,
       if (agentId != null) 'agentId': agentId,
@@ -160,6 +171,7 @@ abstract class UpdateConversationRequest
       'expectedRevision': expectedRevision,
       if (title != null) 'title': title,
       if (isPinned != null) 'isPinned': isPinned,
+      if (autoApproveTools != null) 'autoApproveTools': autoApproveTools,
       if (modelId != null) 'modelId': modelId,
       'clearModel': clearModel,
       if (agentId != null) 'agentId': agentId,
@@ -189,6 +201,7 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
     required int expectedRevision,
     String? title,
     bool? isPinned,
+    bool? autoApproveTools,
     String? modelId,
     required bool clearModel,
     String? agentId,
@@ -204,6 +217,7 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
          expectedRevision: expectedRevision,
          title: title,
          isPinned: isPinned,
+         autoApproveTools: autoApproveTools,
          modelId: modelId,
          clearModel: clearModel,
          agentId: agentId,
@@ -225,6 +239,7 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
     int? expectedRevision,
     Object? title = _Undefined,
     Object? isPinned = _Undefined,
+    Object? autoApproveTools = _Undefined,
     Object? modelId = _Undefined,
     bool? clearModel,
     Object? agentId = _Undefined,
@@ -241,6 +256,9 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
       expectedRevision: expectedRevision ?? this.expectedRevision,
       title: title is String? ? title : this.title,
       isPinned: isPinned is bool? ? isPinned : this.isPinned,
+      autoApproveTools: autoApproveTools is bool?
+          ? autoApproveTools
+          : this.autoApproveTools,
       modelId: modelId is String? ? modelId : this.modelId,
       clearModel: clearModel ?? this.clearModel,
       agentId: agentId is String? ? agentId : this.agentId,

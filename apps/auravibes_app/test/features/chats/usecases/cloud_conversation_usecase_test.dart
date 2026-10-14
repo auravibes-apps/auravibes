@@ -53,6 +53,67 @@ void main() {
     registerFallbackValue(_StopConversationRequestFake());
   });
 
+  test(
+    'gateway forwards mode in create and nullable update requests',
+    () async {
+      final stateGateway = _WorkspaceGateway();
+      final client = _Client();
+      final endpoint = _ConversationEndpoint();
+      when(() => stateGateway.workspace).thenReturn(_workspace);
+      when(() => stateGateway.client).thenReturn(client);
+      when(() => client.conversation).thenReturn(endpoint);
+      final usecase = CloudConversationUsecase(CloudChatGateway(stateGateway));
+      final now = DateTime.utc(2026);
+      final summary = ConversationSummary(
+        id: 'conversation',
+        title: 'Conversation',
+        isPinned: false,
+        autoApproveTools: true,
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      );
+      when(() => endpoint.create(captureAny()))
+          .thenAnswer((_) async => summary);
+      when(() => endpoint.update(captureAny()))
+          .thenAnswer((_) async => summary);
+      await usecase.create(
+        const ConversationToCreate(
+          title: 'Conversation',
+          workspaceId: 'local',
+          autoApproveTools: true,
+        ),
+      );
+      final create =
+          verify(() => endpoint.create(captureAny())).captured.single
+              as CreateConversationRequest;
+      expect(create.autoApproveTools, isTrue);
+      expect(create.workspaceId, _workspace.cloudWorkspaceId);
+      final conversation = ConversationEntity(
+        id: summary.id,
+        title: summary.title,
+        workspaceId: 'local',
+        isPinned: false,
+        autoApproveTools: true,
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      );
+      for (final mode in [true, false, null]) {
+        await usecase.update(
+          conversation,
+          ConversationPatch(autoApproveTools: mode),
+        );
+        final update =
+            verify(() => endpoint.update(captureAny())).captured.single
+                as UpdateConversationRequest;
+        expect(update.autoApproveTools, mode);
+        expect(update.workspaceId, _workspace.cloudWorkspaceId);
+        expect(update.expectedRevision, conversation.revision);
+      }
+    },
+  );
+
   test('forks a cloud conversation with a fresh target ID', () async {
     final gateway = _Gateway();
     final now = DateTime(2026);

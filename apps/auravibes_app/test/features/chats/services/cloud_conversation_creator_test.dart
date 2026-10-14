@@ -24,6 +24,7 @@ void main() {
     final summary = ConversationSummary(
       id: 'conversation-1',
       title: 'Created',
+      autoApproveTools: true,
       isPinned: true,
       modelId: 'model-1',
       agentId: 'agent-1',
@@ -40,6 +41,7 @@ void main() {
     ).call(value);
 
     expect(conversation.id, 'conversation-1');
+    expect(conversation.autoApproveTools, isTrue);
     expect(
       conversation.reasoningConfiguration?.encode(),
       value.reasoningConfiguration?.encode(),

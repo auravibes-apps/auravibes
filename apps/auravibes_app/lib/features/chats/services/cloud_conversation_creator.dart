@@ -37,6 +37,7 @@ class const CloudConversationCreator({
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
       revision: created.revision,
+      autoApproveTools: created.autoApproveTools,
       modelId: created.modelId,
       agentId: created.agentId,
       reasoningConfiguration: .decode(created.reasoningConfigJson),

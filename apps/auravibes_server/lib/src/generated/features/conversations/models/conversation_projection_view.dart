@@ -20,6 +20,7 @@ abstract class ConversationProjectionView
     required this.executionState,
     required this.projectionRevision,
     required this.sequence,
+    bool? autoApproveTools,
     this.modelId,
     this.agentId,
     this.reasoningConfigJson,
@@ -30,7 +31,7 @@ abstract class ConversationProjectionView
     this.activeExecutionId,
     this.activeCompactionCheckpointId,
     required this.updatedAt,
-  });
+  }) : autoApproveTools = autoApproveTools ?? false;
 
   factory ConversationProjectionView({
     required String id,
@@ -38,6 +39,7 @@ abstract class ConversationProjectionView
     required String executionState,
     required int projectionRevision,
     required int sequence,
+    bool? autoApproveTools,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -59,6 +61,11 @@ abstract class ConversationProjectionView
       executionState: jsonSerialization['executionState'] as String,
       projectionRevision: jsonSerialization['projectionRevision'] as int,
       sequence: jsonSerialization['sequence'] as int,
+      autoApproveTools: jsonSerialization['autoApproveTools'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(
+              jsonSerialization['autoApproveTools'],
+            ),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
@@ -91,6 +98,8 @@ abstract class ConversationProjectionView
 
   int sequence;
 
+  bool autoApproveTools;
+
   String? modelId;
 
   String? agentId;
@@ -120,6 +129,7 @@ abstract class ConversationProjectionView
     String? executionState,
     int? projectionRevision,
     int? sequence,
+    bool? autoApproveTools,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -140,6 +150,7 @@ abstract class ConversationProjectionView
       'executionState': executionState,
       'projectionRevision': projectionRevision,
       'sequence': sequence,
+      'autoApproveTools': autoApproveTools,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
@@ -167,6 +178,7 @@ abstract class ConversationProjectionView
       'executionState': executionState,
       'projectionRevision': projectionRevision,
       'sequence': sequence,
+      'autoApproveTools': autoApproveTools,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
@@ -200,6 +212,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
     required String executionState,
     required int projectionRevision,
     required int sequence,
+    bool? autoApproveTools,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -216,6 +229,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
          executionState: executionState,
          projectionRevision: projectionRevision,
          sequence: sequence,
+         autoApproveTools: autoApproveTools,
          modelId: modelId,
          agentId: agentId,
          reasoningConfigJson: reasoningConfigJson,
@@ -238,6 +252,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
     String? executionState,
     int? projectionRevision,
     int? sequence,
+    bool? autoApproveTools,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
     Object? reasoningConfigJson = _Undefined,
@@ -255,6 +270,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
       executionState: executionState ?? this.executionState,
       projectionRevision: projectionRevision ?? this.projectionRevision,
       sequence: sequence ?? this.sequence,
+      autoApproveTools: autoApproveTools ?? this.autoApproveTools,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
       reasoningConfigJson: reasoningConfigJson is String?

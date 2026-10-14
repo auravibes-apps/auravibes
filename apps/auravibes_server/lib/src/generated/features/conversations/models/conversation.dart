@@ -20,6 +20,7 @@ abstract class Conversation
     required this.stableId,
     this.title,
     required this.isPinned,
+    bool? autoApproveTools,
     this.modelId,
     this.agentId,
     this.reasoningConfigJson,
@@ -37,7 +38,8 @@ abstract class Conversation
     this.forkSourceTitle,
     this.forkThroughMessageId,
     this.forkMaterializedAt,
-  }) : projectionRevision = projectionRevision ?? 1,
+  }) : autoApproveTools = autoApproveTools ?? false,
+       projectionRevision = projectionRevision ?? 1,
        eventSequence = eventSequence ?? 0,
        executionState = executionState ?? 'idle';
 
@@ -47,6 +49,7 @@ abstract class Conversation
     required String stableId,
     String? title,
     required bool isPinned,
+    bool? autoApproveTools,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -73,6 +76,11 @@ abstract class Conversation
       stableId: jsonSerialization['stableId'] as String,
       title: jsonSerialization['title'] as String?,
       isPinned: _is.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
+      autoApproveTools: jsonSerialization['autoApproveTools'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(
+              jsonSerialization['autoApproveTools'],
+            ),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
@@ -122,6 +130,8 @@ abstract class Conversation
 
   bool isPinned;
 
+  bool autoApproveTools;
+
   String? modelId;
 
   String? agentId;
@@ -168,6 +178,7 @@ abstract class Conversation
     String? stableId,
     String? title,
     bool? isPinned,
+    bool? autoApproveTools,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -195,6 +206,7 @@ abstract class Conversation
       'stableId': stableId,
       if (title != null) 'title': title,
       'isPinned': isPinned,
+      'autoApproveTools': autoApproveTools,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
@@ -230,6 +242,7 @@ abstract class Conversation
       'stableId': stableId,
       if (title != null) 'title': title,
       'isPinned': isPinned,
+      'autoApproveTools': autoApproveTools,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
@@ -293,6 +306,7 @@ class _ConversationImpl extends Conversation {
     required String stableId,
     String? title,
     required bool isPinned,
+    bool? autoApproveTools,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -316,6 +330,7 @@ class _ConversationImpl extends Conversation {
          stableId: stableId,
          title: title,
          isPinned: isPinned,
+         autoApproveTools: autoApproveTools,
          modelId: modelId,
          agentId: agentId,
          reasoningConfigJson: reasoningConfigJson,
@@ -345,6 +360,7 @@ class _ConversationImpl extends Conversation {
     String? stableId,
     Object? title = _Undefined,
     bool? isPinned,
+    bool? autoApproveTools,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
     Object? reasoningConfigJson = _Undefined,
@@ -369,6 +385,7 @@ class _ConversationImpl extends Conversation {
       stableId: stableId ?? this.stableId,
       title: title is String? ? title : this.title,
       isPinned: isPinned ?? this.isPinned,
+      autoApproveTools: autoApproveTools ?? this.autoApproveTools,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
       reasoningConfigJson: reasoningConfigJson is String?
@@ -426,6 +443,11 @@ class ConversationUpdateTable extends _is.UpdateTable<ConversationTable> {
 
   _is.ColumnValue<bool, bool> isPinned(bool value) => _is.ColumnValue(
     table.isPinned,
+    value,
+  );
+
+  _is.ColumnValue<bool, bool> autoApproveTools(bool value) => _is.ColumnValue(
+    table.autoApproveTools,
     value,
   );
 
@@ -545,6 +567,11 @@ class ConversationTable extends _is.Table<int?> {
       'isPinned',
       this,
     );
+    autoApproveTools = _is.ColumnBool(
+      'autoApproveTools',
+      this,
+      hasDefault: true,
+    );
     modelId = _is.ColumnString(
       'modelId',
       this,
@@ -628,6 +655,8 @@ class ConversationTable extends _is.Table<int?> {
 
   late final _is.ColumnBool isPinned;
 
+  late final _is.ColumnBool autoApproveTools;
+
   late final _is.ColumnString modelId;
 
   late final _is.ColumnString agentId;
@@ -669,6 +698,7 @@ class ConversationTable extends _is.Table<int?> {
     stableId,
     title,
     isPinned,
+    autoApproveTools,
     modelId,
     agentId,
     reasoningConfigJson,

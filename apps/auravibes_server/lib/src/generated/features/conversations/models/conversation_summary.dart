@@ -18,6 +18,7 @@ abstract class ConversationSummary
     required this.id,
     required this.title,
     required this.isPinned,
+    bool? autoApproveTools,
     this.modelId,
     this.agentId,
     this.reasoningConfigJson,
@@ -30,12 +31,13 @@ abstract class ConversationSummary
     this.activeCompactionCheckpointId,
     required this.createdAt,
     required this.updatedAt,
-  });
+  }) : autoApproveTools = autoApproveTools ?? false;
 
   factory ConversationSummary({
     required String id,
     required String title,
     required bool isPinned,
+    bool? autoApproveTools,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -55,6 +57,11 @@ abstract class ConversationSummary
       id: jsonSerialization['id'] as String,
       title: jsonSerialization['title'] as String,
       isPinned: _is.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
+      autoApproveTools: jsonSerialization['autoApproveTools'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(
+              jsonSerialization['autoApproveTools'],
+            ),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
@@ -88,6 +95,8 @@ abstract class ConversationSummary
 
   bool isPinned;
 
+  bool autoApproveTools;
+
   String? modelId;
 
   String? agentId;
@@ -119,6 +128,7 @@ abstract class ConversationSummary
     String? id,
     String? title,
     bool? isPinned,
+    bool? autoApproveTools,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -139,6 +149,7 @@ abstract class ConversationSummary
       'id': id,
       'title': title,
       'isPinned': isPinned,
+      'autoApproveTools': autoApproveTools,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
@@ -167,6 +178,7 @@ abstract class ConversationSummary
       'id': id,
       'title': title,
       'isPinned': isPinned,
+      'autoApproveTools': autoApproveTools,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
@@ -201,6 +213,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
     required String id,
     required String title,
     required bool isPinned,
+    bool? autoApproveTools,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -217,6 +230,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
          id: id,
          title: title,
          isPinned: isPinned,
+         autoApproveTools: autoApproveTools,
          modelId: modelId,
          agentId: agentId,
          reasoningConfigJson: reasoningConfigJson,
@@ -239,6 +253,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
     String? id,
     String? title,
     bool? isPinned,
+    bool? autoApproveTools,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
     Object? reasoningConfigJson = _Undefined,
@@ -256,6 +271,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
       id: id ?? this.id,
       title: title ?? this.title,
       isPinned: isPinned ?? this.isPinned,
+      autoApproveTools: autoApproveTools ?? this.autoApproveTools,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
       reasoningConfigJson: reasoningConfigJson is String?
