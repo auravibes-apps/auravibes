@@ -107,6 +107,7 @@ Widget _scaffoldedApp(BuildContext context, Widget child) => MaterialApp(
 void main() {
   MessageEntity _createMessage({
     String id = 'msg-1',
+    String conversationId = 'conv-1',
     String content = 'Hello',
     bool isUser = true,
     MessageStatus status = MessageStatus.sent,
@@ -116,7 +117,7 @@ void main() {
   }) {
     return MessageEntity(
       id: id,
-      conversationId: 'conv-1',
+      conversationId: conversationId,
       content: content,
       messageType: messageType,
       isUser: isUser,
@@ -813,15 +814,14 @@ void main() {
       );
     });
 
-    testWidgets('aligns user copy action with the user bubble', (tester) async {
+    testWidgets('aligns user timestamp before the copy action', (tester) async {
+      final message = _createMessage(content: 'Hello AI');
       await pumpAndInit(
         tester,
         buildSubject(
           messages: ['msg-1'],
           overrides: [
-            messageConversationByIdProvider.overrideWith(
-              (ref, id) => _createMessage(content: 'Hello AI'),
-            ),
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
               (ref, _) async => const ConversationBusyState(
@@ -834,11 +834,21 @@ void main() {
       );
 
       final bubbleRight = tester.getTopRight(find.byType(AuraMessageBubble)).dx;
-      final copyActionRight = tester
-          .getTopRight(find.byTooltip('Copy message'))
-          .dx;
+      final copyAction = find.byTooltip('Copy message');
+      final timestamp = find.text(
+        RelativeTimeFormatter.format(message.createdAt),
+      );
 
-      expect(copyActionRight, closeTo(bubbleRight, 1));
+      expect(tester.getTopRight(copyAction).dx, closeTo(bubbleRight, 1));
+      expect(timestamp, findsOneWidget);
+      expect(
+        tester.getTopRight(timestamp).dx,
+        lessThan(tester.getTopLeft(copyAction).dx),
+      );
+      expect(
+        tester.getCenter(timestamp).dy,
+        closeTo(tester.getCenter(copyAction).dy, 1),
+      );
     });
 
     testWidgets('uses a visible selection color for user messages', (
@@ -1248,7 +1258,9 @@ void main() {
       expect(find.byIcon(Icons.copy_outlined), findsNWidgets(2));
     });
 
-    testWidgets('keeps text-only assistant metadata inline', (tester) async {
+    testWidgets('aligns assistant timestamp after the copy action', (
+      tester,
+    ) async {
       final message = _createMessage(
         content: 'Text-only answer',
         isUser: false,
@@ -1275,8 +1287,18 @@ void main() {
 
       expect(find.text('Text-only answer'), findsOneWidget);
       expect(find.byKey(const ValueKey('message_footer_msg-1')), findsNothing);
-      expect(find.byTooltip('Copy message'), findsOneWidget);
-      expect(find.text(relativeTime), findsOneWidget);
+      final copyAction = find.byTooltip('Copy message');
+      final timestamp = find.text(relativeTime);
+      expect(copyAction, findsOneWidget);
+      expect(timestamp, findsOneWidget);
+      expect(
+        tester.getTopLeft(timestamp).dx,
+        greaterThan(tester.getTopRight(copyAction).dx),
+      );
+      expect(
+        tester.getCenter(timestamp).dy,
+        closeTo(tester.getCenter(copyAction).dy, 1),
+      );
     });
 
     testWidgets('renders one thinking indicator while generation is active', (
@@ -5111,6 +5133,263 @@ void main() {
       );
       await pumpBoundary(boundaryId: 'missing-boundary', boundary: null);
     });
+
+    testWidgets(
+      'preserves activity disclosures across routes, refreshes, and conversations',
+      (tester) async {
+        const firstTool = MessageToolCallEntity(
+          id: 'tc-shared-1',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{"path":"details"}',
+          responseRaw: 'First tool details',
+          resultStatus: ToolCallResultStatus.success,
+        );
+        const secondTool = MessageToolCallEntity(
+          id: 'tc-shared-2',
+          name: 'built_in_1_calculator',
+          argumentsRaw: '{"expression":"1 + 1"}',
+          responseRaw: 'Second tool details',
+          resultStatus: ToolCallResultStatus.success,
+        );
+        final transcripts = <String, Map<String, MessageEntity>>{
+          'conv-1': {
+            'run-shared': _createMessage(
+              id: 'run-shared',
+              conversationId: 'conv-1',
+              content: 'Conv one answer',
+              isUser: false,
+              metadata: const MessageMetadataEntity(
+                thinking: 'Conv one thought',
+                toolCalls: [firstTool, secondTool],
+              ),
+            ),
+            'boundary-1': _createMessage(
+              id: 'boundary-1',
+              conversationId: 'conv-1',
+              content: 'Conversation boundary',
+            ),
+            'run-other': _createMessage(
+              id: 'run-other',
+              conversationId: 'conv-1',
+              content: 'Other answer',
+              isUser: false,
+              metadata: const MessageMetadataEntity(
+                thinking: 'Other run thought',
+                toolCalls: [firstTool],
+              ),
+            ),
+          },
+          'conv-2': {
+            'run-shared': _createMessage(
+              id: 'run-shared',
+              conversationId: 'conv-2',
+              content: 'Conv two answer',
+              isUser: false,
+              metadata: const MessageMetadataEntity(
+                thinking: 'Conv two thought',
+                toolCalls: [firstTool, secondTool],
+              ),
+            ),
+          },
+        };
+
+        Widget chatPage(String conversationId, String revision) {
+          return KeyedSubtree(
+            key: ValueKey('$conversationId:$revision'),
+            child: ChatPrimaryScrollController(
+              child: AuraThemeScope(
+                theme: AuraTheme.light,
+                child: Theme(
+                  data: ThemeData(),
+                  child: AuraLegacyMaterialBridge(
+                    child: Material(
+                      child: ChatMessagesWidget(
+                        workspaceId: 'ws-1',
+                        conversationId: conversationId,
+                        messages: transcripts[conversationId]!.keys.toList(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        final router = GoRouter(
+          initialLocation: '/chat/conv-1',
+          routes: [
+            GoRoute(
+              path: '/chat/:conversationId',
+              builder: (context, state) => chatPage(
+                state.pathParameters['conversationId']!,
+                state.uri.queryParameters['revision'] ?? '0',
+              ),
+            ),
+            GoRoute(
+              path: '/other',
+              builder: (context, state) => const SizedBox.shrink(),
+            ),
+          ],
+        );
+        addTearDown(router.dispose);
+
+        Future<void> navigate(String location) async {
+          router.go(location);
+          await tester.pumpAndSettle();
+        }
+
+        Future<void> toggleActivity(String runId) async {
+          final trace = find.byKey(ValueKey('activity_trace_toggle_$runId'));
+          final pressable = find.descendant(
+            of: trace,
+            matching: find.byType(AuraPressable),
+          );
+          tester.widget<AuraPressable>(pressable).onPressed!.call();
+          await tester.pump();
+        }
+
+        await pumpAndInit(
+          tester,
+          TestProviderScope(
+            overrides: [
+              conversationSelectedProvider('conv-1')
+                  .overrideWithValue('conv-1'),
+              conversationSelectedProvider('conv-2')
+                  .overrideWithValue('conv-2'),
+              conversationRepositoryProvider.overrideWithValue(
+                _MockConversationRepository(),
+              ),
+              conversationByIdStreamProvider.overrideWith(
+                (ref, request) => Stream<ConversationEntity?>.value(null),
+              ),
+              childConversationsStreamProvider.overrideWith(
+                (ref, request) =>
+                    Stream<List<ConversationEntity>>.value(const []),
+              ),
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => transcripts[id.conversationId]?[id.messageId],
+              ),
+              isMessageStreamingProvider.overrideWith((ref, id) => false),
+              pendingToolCallsProvider.overrideWith((ref, _) => const []),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: false,
+                  hasPendingTools: false,
+                ),
+              ),
+              workspaceSessionForRouteProvider('ws-1').overrideWithValue(
+                const AsyncData(
+                  WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
+                ),
+              ),
+            ],
+            child: EasyLocalization(
+              child: Builder(
+                builder: (context) => MaterialApp.router(
+                  routerConfig: router,
+                  locale: context.locale,
+                  localizationsDelegates: [
+                    ...GlobalMaterialLocalizations.delegates,
+                    sdk_localizations.GlobalMaterialLocalizations.delegate,
+                    ...context.localizationDelegates,
+                  ],
+                  supportedLocales: context.supportedLocales,
+                ),
+              ),
+              supportedLocales: const [Locale('en'), Locale('es')],
+              path: 'assets/i18n',
+              fallbackLocale: const Locale('en'),
+              startLocale: const Locale('en'),
+              useOnlyLangCode: true,
+              useFallbackTranslations: true,
+            ),
+          ),
+        );
+
+        final firstTrace = find.byKey(
+          const ValueKey('activity_trace_toggle_run-shared'),
+        );
+        expect(find.text('Conv one thought'), findsNothing);
+        expect(find.text('Other run thought'), findsNothing);
+        expect(firstTrace, findsOneWidget);
+
+        await toggleActivity('run-shared');
+        expect(find.text('Conv one thought'), findsOneWidget);
+        final toolListToggle = find.byKey(
+          const ValueKey('activity_tool_list_toggle_run-shared'),
+        );
+        await tester.ensureVisible(toolListToggle);
+        await tester.tap(toolListToggle);
+        await tester.pump();
+        final firstToolRow = find.byKey(
+          const ValueKey('activity_tool_tc-shared-1'),
+        );
+        await tester.ensureVisible(firstToolRow);
+        tester.widget<AuraPressable>(firstToolRow).onPressed!.call();
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('activity_tool_details_tc-shared-1')),
+          findsOneWidget,
+        );
+
+        await navigate('/other');
+        await navigate('/chat/conv-1');
+        expect(find.text('Conv one thought'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('activity_tool_list_toggle_run-shared')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('activity_tool_details_tc-shared-1')),
+          findsOneWidget,
+        );
+        expect(find.text('Other run thought'), findsNothing);
+
+        await toggleActivity('run-shared');
+        expect(find.text('Conv one thought'), findsNothing);
+        await navigate('/other');
+        await navigate('/chat/conv-1');
+        expect(find.text('Conv one thought'), findsNothing);
+
+        await toggleActivity('run-shared');
+        await navigate('/chat/conv-2');
+        expect(find.text('Conv two thought'), findsNothing);
+        expect(find.text('Conv one thought'), findsNothing);
+        await toggleActivity('run-shared');
+        expect(find.text('Conv two thought'), findsOneWidget);
+
+        await navigate('/chat/conv-1');
+        expect(find.text('Conv one thought'), findsOneWidget);
+        expect(find.text('Conv two thought'), findsNothing);
+        expect(find.text('Other run thought'), findsNothing);
+        await navigate('/chat/conv-2');
+        expect(find.text('Conv two thought'), findsOneWidget);
+
+        transcripts['conv-1'] = {
+          ...transcripts['conv-1']!,
+          'boundary-2': _createMessage(
+            id: 'boundary-2',
+            conversationId: 'conv-1',
+            content: 'Second conversation boundary',
+          ),
+          'run-new': _createMessage(
+            id: 'run-new',
+            conversationId: 'conv-1',
+            content: 'New answer',
+            isUser: false,
+            metadata: const MessageMetadataEntity(
+              thinking: 'New run thought',
+              toolCalls: [firstTool],
+            ),
+          ),
+        };
+        await navigate('/chat/conv-1?revision=1');
+        expect(find.text('Conv one thought'), findsOneWidget);
+        expect(find.text('New run thought'), findsNothing);
+        expect(find.text('Other run thought'), findsNothing);
+      },
+    );
 
     testWidgets(
       'offers background work only while the running tool is eligible',

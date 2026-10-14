@@ -8,6 +8,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -26,6 +27,7 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
+import 'package:auravibes_app/features/chats/notifiers/activity_run_expansion_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
@@ -1218,7 +1220,6 @@ List<Widget> _messageContentChildren({
     if (showResponseActions && hasA2uiResponse)
       _MessageFooter(
         key: ValueKey('message_footer_${message.id}'),
-        createdAt: message.createdAt,
         status: status,
         resolveContent: () => _messageCopyText(message, a2uiRuntime),
         message: message,
@@ -1405,11 +1406,6 @@ class const _MessageTextContent({
           isUser: true,
           key: ValueKey(message.id),
           status: status,
-          timestamp: message.createdAt,
-          timestampLabel: RelativeTimeFormatter.format(
-            message.createdAt,
-            translate: (key, {args}) => context.tr(key, args: args),
-          ),
         ),
       );
     }
@@ -1420,7 +1416,6 @@ class const _MessageTextContent({
         if (hasContent)
           _AiMessageContent(
             content: message.content,
-            timestamp: message.createdAt,
             key: ValueKey(message.id),
             status: status,
             showMetadata: showMetadata,
@@ -1434,57 +1429,28 @@ class const _MessageFooter({
   required final MessageEntity message,
   required final String workspaceId,
   required final String conversationId,
-  required final DateTime createdAt,
   required final AuraMessageDeliveryStatus status,
   required final String? Function() resolveContent,
   super.key,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final typography = context.auraTheme.typography;
     final copyableText = resolveContent();
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (copyableText != null)
-                _MessageActions(
-                  message: message,
-                  resolveContent: resolveContent,
-                  workspaceId: workspaceId,
-                  conversationId: conversationId,
-                ),
-              if (copyableText == null && _canForkMessage(message))
-                _MessageForkAction(
-                  message: message,
-                  workspaceId: workspaceId,
-                  conversationId: conversationId,
-                ),
-              Text(
-                RelativeTimeFormatter.format(
-                  createdAt,
-                  locale: Localizations.localeOf(context),
-                ),
-                style: TextStyle(
-                  color: auraColors.onSurfaceVariant,
-                  fontSize: typography.fontSizeXs,
-                  fontFamily: typography.bodyFontFamily,
-                ),
-              ),
-            ],
-          ),
-          if (status != AuraMessageDeliveryStatus.sent) ...[
-            SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
-            AuraMessageStatus(status: status),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _MessageActions(
+          message: message,
+          resolveContent: copyableText == null ? null : resolveContent,
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        ),
+        if (status != AuraMessageDeliveryStatus.sent) ...[
+          SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
+          AuraMessageStatus(status: status),
         ],
-      ),
+      ],
     );
   }
 }
@@ -1503,12 +1469,29 @@ class const _MessageActions({
   Widget build(BuildContext context) {
     final resolve = resolveContent;
     final retry = onRetryMessage;
+    final typography = context.auraTheme.typography;
+    final timestamp = Text(
+      RelativeTimeFormatter.format(
+        message.createdAt,
+        locale: Localizations.localeOf(context),
+        translate: (key, {args}) => context.tr(key, args: args),
+      ),
+      style: TextStyle(
+        color: context.auraColors.onSurfaceVariant,
+        fontSize: typography.fontSizeXs,
+        fontFamily: typography.bodyFontFamily,
+      ),
+    );
 
     return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (message.isUser) ...[
+            timestamp,
+            SizedBox(width: context.auraTheme.fromSpacing(.xs)),
+          ],
           if (resolve != null) _MessageCopyAction(resolveContent: resolve),
           if (retry != null)
             _MessageRetryAction(message: message, onRetryMessage: retry),
@@ -1518,6 +1501,10 @@ class const _MessageActions({
               workspaceId: workspaceId,
               conversationId: conversationId,
             ),
+          if (!message.isUser) ...[
+            SizedBox(width: context.auraTheme.fromSpacing(.xs)),
+            timestamp,
+          ],
         ],
       ),
     );
@@ -1760,7 +1747,6 @@ Future<void> _openChatMarkdownLink(BuildContext context, String url) async {
 
 class const _AiMessageContent({
   required final String content,
-  required final DateTime timestamp,
   super.key,
   final AuraMessageDeliveryStatus status = AuraMessageDeliveryStatus.sent,
   final bool showMetadata = true,
@@ -1783,23 +1769,9 @@ class const _AiMessageContent({
             fontFamily: typography.bodyFontFamily,
           ),
         ),
-        if (showMetadata) ...[
+        if (showMetadata && status != AuraMessageDeliveryStatus.sent) ...[
           const AuraSizedBox(height: .xs),
-          Text(
-            RelativeTimeFormatter.format(
-              timestamp,
-              locale: Localizations.localeOf(context),
-            ),
-            style: TextStyle(
-              color: auraColors.onSurfaceVariant,
-              fontSize: typography.fontSizeXs,
-              fontFamily: typography.bodyFontFamily,
-            ),
-          ),
-          if (status != AuraMessageDeliveryStatus.sent) ...[
-            SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
-            AuraMessageStatus(status: status),
-          ],
+          AuraMessageStatus(status: status),
         ],
       ],
     );
@@ -1869,15 +1841,47 @@ class const _AssistantActivityRun({
           .map((item) => item.toolCall)
           .toList(growable: false),
     );
-    final traceExpanded = useState(isLive);
-    final expandedToolGroupIds = useState<Set<String>>(
-      isLive
+    final initialExpansionState = (
+      isLive: isLive,
+      traceExpanded: isLive,
+      expandedToolGroupIds: isLive
           ? liveToolGroupIds.where(expandableToolGroupIds.contains).toSet()
           : <String>{},
+      expandedToolIds: latestPendingToolId == null
+          ? <String>{}
+          : <String>{latestPendingToolId},
     );
-    final expandedToolIds = useState(
-      latestPendingToolId == null ? <String>{} : <String>{latestPendingToolId},
-    );
+    final expansionState =
+        ref.watch(
+          activityRunExpansionProvider.select(
+            (state) => state[parentConversationId]?[run.id],
+          ),
+        ) ??
+        initialExpansionState;
+    final renderedExpansionState = !isLive && expansionState.isLive
+        ? initialExpansionState
+        : expansionState;
+
+    void updateExpansionState(
+      ActivityRunExpansionState Function(ActivityRunExpansionState) update,
+    ) => ref
+        .read(activityRunExpansionProvider.notifier)
+        .updateExpansion(
+          conversationId: parentConversationId,
+          activityRunId: run.id,
+          initialState: initialExpansionState,
+          update: update,
+        );
+
+    void updateExpansionStateAfterBuild(
+      ActivityRunExpansionState Function(ActivityRunExpansionState) update,
+    ) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        updateExpansionState(update);
+      });
+    }
+
     final previousIsLive = useRef(isLive);
     final previousToolSignature = useRef(toolSignature);
     final previousPendingToolId = useRef(latestPendingToolId);
@@ -1888,25 +1892,43 @@ class const _AssistantActivityRun({
         final hasNewTool = previousToolSignature.value != toolSignature;
         final hasNewPendingTool =
             previousPendingToolId.value != latestPendingToolId;
-        if (isLive && (!wasLive || hasNewTool || hasNewPendingTool)) {
+        if (!isLive && expansionState.isLive) {
           onDisclosureChanged(() {
-            traceExpanded.value = true;
-            expandedToolGroupIds.value = {
-              ...expandedToolGroupIds.value,
-              ...liveToolGroupIds.where(expandableToolGroupIds.contains),
-            };
-            if (latestPendingToolId != null) {
-              expandedToolIds.value = {
-                ...expandedToolIds.value,
-                latestPendingToolId,
-              };
-            }
+            updateExpansionStateAfterBuild(
+              (_) => (
+                isLive: false,
+                traceExpanded: false,
+                expandedToolGroupIds: const {},
+                expandedToolIds: const {},
+              ),
+            );
+          });
+        } else if (isLive && (!wasLive || hasNewTool || hasNewPendingTool)) {
+          onDisclosureChanged(() {
+            updateExpansionStateAfterBuild(
+              (current) => (
+                isLive: true,
+                traceExpanded: true,
+                expandedToolGroupIds: {
+                  ...current.expandedToolGroupIds,
+                  ...liveToolGroupIds.where(expandableToolGroupIds.contains),
+                },
+                expandedToolIds: latestPendingToolId == null
+                    ? current.expandedToolIds
+                    : {...current.expandedToolIds, latestPendingToolId},
+              ),
+            );
           });
         } else if (!isLive && wasLive) {
           onDisclosureChanged(() {
-            traceExpanded.value = false;
-            expandedToolGroupIds.value = <String>{};
-            expandedToolIds.value = <String>{};
+            updateExpansionStateAfterBuild(
+              (_) => (
+                isLive: false,
+                traceExpanded: false,
+                expandedToolGroupIds: const {},
+                expandedToolIds: const {},
+              ),
+            );
           });
         }
         previousIsLive.value = isLive;
@@ -1916,6 +1938,7 @@ class const _AssistantActivityRun({
       },
       [
         expandableToolGroupIds.length,
+        expansionState.isLive,
         isLive,
         latestPendingToolId,
         liveToolGroupSignature,
@@ -2000,15 +2023,22 @@ class const _AssistantActivityRun({
             displayName: activityToolCall.displayName,
             description: activityToolCall.description,
             showArguments: activityToolCall.showArguments,
-            isExpanded: expandedToolIds.value.contains(
+            isExpanded: renderedExpansionState.expandedToolIds.contains(
               activityToolCall.toolCall.id,
             ),
-            onToggle: () => onDisclosureChanged(
-              () => expandedToolIds.value = _toggledToolIds(
-                expandedToolIds.value,
-                activityToolCall.toolCall.id,
-              ),
-            ),
+            onToggle: () => onDisclosureChanged(() {
+              updateExpansionState(
+                (current) => (
+                  isLive: current.isLive,
+                  traceExpanded: current.traceExpanded,
+                  expandedToolGroupIds: current.expandedToolGroupIds,
+                  expandedToolIds: _toggledToolIds(
+                    current.expandedToolIds,
+                    activityToolCall.toolCall.id,
+                  ),
+                ),
+              );
+            }),
             openSkillDetails: activityToolCall.openSkillDetails,
             openSubAgent: activityToolCall.openSubAgent,
             onRunInBackground: activityToolCall.onRunInBackground,
@@ -2028,14 +2058,23 @@ class const _AssistantActivityRun({
                 Localizations.localeOf(context),
               ),
               color: context.auraColors.secondary,
-              isExpanded: expandedToolGroupIds.value.contains(groupId),
+              isExpanded: renderedExpansionState.expandedToolGroupIds.contains(
+                groupId,
+              ),
               onPressed: () => onDisclosureChanged(() {
-                final next = {...expandedToolGroupIds.value};
-                if (!next.remove(groupId)) next.add(groupId);
-                expandedToolGroupIds.value = next;
+                updateExpansionState((current) {
+                  final next = {...current.expandedToolGroupIds};
+                  if (!next.remove(groupId)) next.add(groupId);
+                  return (
+                    isLive: current.isLive,
+                    traceExpanded: current.traceExpanded,
+                    expandedToolGroupIds: next,
+                    expandedToolIds: current.expandedToolIds,
+                  );
+                });
               }),
             ),
-            if (expandedToolGroupIds.value.contains(groupId))
+            if (renderedExpansionState.expandedToolGroupIds.contains(groupId))
               Padding(
                 padding: EdgeInsets.only(
                   left: context.auraTheme.fromSpacing(.sm),
@@ -2125,13 +2164,20 @@ class const _AssistantActivityRun({
             label: activityLabel,
             color: context.auraColors.onSurfaceVariant,
             isActivity: true,
-            isExpanded: traceExpanded.value,
-            onPressed: () => onDisclosureChanged(
-              () => traceExpanded.value = !traceExpanded.value,
-            ),
+            isExpanded: renderedExpansionState.traceExpanded,
+            onPressed: () => onDisclosureChanged(() {
+              updateExpansionState(
+                (current) => (
+                  isLive: current.isLive,
+                  traceExpanded: !current.traceExpanded,
+                  expandedToolGroupIds: current.expandedToolGroupIds,
+                  expandedToolIds: current.expandedToolIds,
+                ),
+              );
+            }),
           ),
         if (hasOuterDisclosure &&
-            traceExpanded.value &&
+            renderedExpansionState.traceExpanded &&
             entriesBeforeResponse.isNotEmpty)
           Padding(
             padding: EdgeInsets.only(
@@ -2147,7 +2193,7 @@ class const _AssistantActivityRun({
         if (responseContent != null) responseContent,
         if (responseSource != null &&
             hasOuterDisclosure &&
-            traceExpanded.value &&
+            renderedExpansionState.traceExpanded &&
             entriesAfterResponse.isNotEmpty)
           Padding(
             padding: EdgeInsets.only(

@@ -1663,13 +1663,15 @@ class const _ChatInputControlRow({required final _ChatInputState state})
   @override
   Widget build(BuildContext context) {
     final input = state.input;
+    final onStop = input.onStop;
 
     return Row(
       children: [
         _ChatInputModeControls(state: state),
-        if (input.onStop case final onStop?)
-          _ChatInputStopControls(state: state, onStop: onStop),
-        _ChatInputSendButton(state: state),
+        if (state.shouldShowStopButton && state.isEmpty && onStop != null)
+          _StopGenerationButtonContent(onStop: onStop)
+        else
+          _ChatInputSendButton(state: state),
       ],
     );
   }
@@ -1876,25 +1878,6 @@ String _audioRecordingTooltip(_ChatInputState state) =>
     ? _recordVoiceKey.tr()
     : _audioAttachmentReasonKey(state).tr();
 
-class const _ChatInputStopControls({
-  required final _ChatInputState state,
-  required final VoidCallback onStop,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: .min,
-      children: [
-        _StopGenerationButton(
-          onStop: onStop,
-          visible: state.shouldShowStopButton,
-        ),
-        const AuraSizedBox(width: .xs),
-      ],
-    );
-  }
-}
-
 class const _AttachmentMenu({required final _ChatInputState state})
     extends StatelessWidget {
   @override
@@ -1980,22 +1963,6 @@ class const _RecordingStopButton({required final _ChatInputState state})
       tooltip: _stopRecordingKey.tr(),
       tint: .error,
       selectorId: 'chat_voice_stop_button',
-    );
-  }
-}
-
-class const _StopGenerationButton({
-  required final VoidCallback onStop,
-  required final bool visible,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Visibility(
-      child: _StopGenerationButtonContent(onStop: onStop),
-      visible: visible,
-      maintainState: true,
-      maintainAnimation: true,
-      maintainSize: true,
     );
   }
 }
