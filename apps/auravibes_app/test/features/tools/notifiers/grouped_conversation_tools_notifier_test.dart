@@ -17,6 +17,7 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -418,7 +419,9 @@ class _FakeConversationToolsRepository implements ConversationToolsRepository {
   final List<String> enabledToolIds = [];
 
   @override
-  Future<bool> isAutoApprovalEnabled(String conversationId) async => false;
+  Future<ConversationToolAccessMode> getToolAccessMode(
+    String conversationId,
+  ) async => .defaultMode;
 
   @override
   Future<bool> setConversationToolEnabled(

@@ -17,7 +17,7 @@ void main() {
 
     setUp(fixture.setUp);
 
-    for (final mode in [false, true]) {
+    for (final mode in agent.ConversationToolAccessMode.values) {
       for (final permission in ToolPermissionResult.values) {
         test('mode $mode preserves $permission except final ask', () async {
           final repository = fixture.conversationToolsRepository;
@@ -32,7 +32,7 @@ void main() {
             conversationToolsRepository: repository,
             toolsGroupsRepository: fixture.toolsGroupsRepository,
             workspaceToolsRepository: fixture.workspaceToolsRepository,
-            isAutoApprovalEnabled: (_) async => mode,
+            getToolAccessMode: (_) async => mode,
           );
           final decision = await usecase(
             conversationId: 'conv-1',
@@ -46,7 +46,8 @@ void main() {
           );
           expect(
             decision.permissionResult,
-            mode && permission == ToolPermissionResult.needsConfirmation
+            mode == agent.ConversationToolAccessMode.allowAll &&
+                    permission == ToolPermissionResult.needsConfirmation
                 ? ToolPermissionResult.granted
                 : permission,
           );
@@ -59,7 +60,7 @@ void main() {
         conversationToolsRepository: fixture.conversationToolsRepository,
         toolsGroupsRepository: fixture.toolsGroupsRepository,
         workspaceToolsRepository: fixture.workspaceToolsRepository,
-        isAutoApprovalEnabled: (_) async => true,
+        getToolAccessMode: (_) async => .allowAll,
       );
       final decision = await usecase(
         conversationId: 'conv-1',

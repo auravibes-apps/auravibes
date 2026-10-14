@@ -4,28 +4,58 @@ import 'dart:typed_data';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ConversationArchiveCodec', () {
-    test('auto approval round-trips, defaults off, rejects invalid values', () {
+    test('mode round-trips and reads legacy or unknown values safely', () {
       final archive = ConversationArchive(
         title: 'Mode',
         createdAt: .utc(2026),
         updatedAt: .utc(2026),
         messages: const [],
-        autoApproveTools: true,
+        toolAccessMode: .allowAll,
       );
       final encoded = ConversationArchiveCodec.encode(archive);
-      expect(ConversationArchiveCodec.decode(encoded).autoApproveTools, isTrue);
       final json = jsonDecode(encoded) as Map<String, dynamic>;
       final conversation = json['conversation'] as Map<String, dynamic>;
-      final _ = conversation.remove('autoApproveTools');
+      expect(conversation['toolAccessMode'], 'allow_all');
+      expect(conversation.containsKey('autoApproveTools'), isFalse);
       expect(
-        ConversationArchiveCodec.decode(jsonEncode(json)).autoApproveTools,
-        isFalse,
+        ConversationArchiveCodec.decode(encoded).toolAccessMode,
+        ConversationToolAccessMode.allowAll,
       );
+      conversation['toolAccessMode'] = 'default';
+      expect(
+        ConversationArchiveCodec.decode(jsonEncode(json)).toolAccessMode,
+        ConversationToolAccessMode.defaultMode,
+      );
+      for (final invalid in [null, true, 1]) {
+        conversation['toolAccessMode'] = invalid;
+        expect(
+          () => ConversationArchiveCodec.decode(jsonEncode(json)),
+          throwsA(isA<MalformedConversationArchiveException>()),
+        );
+      }
+      conversation['toolAccessMode'] = 'future_mode';
+      conversation['autoApproveTools'] = true;
+      expect(
+        ConversationArchiveCodec.decode(jsonEncode(json)).toolAccessMode,
+        ConversationToolAccessMode.defaultMode,
+      );
+      final _ = conversation.remove('toolAccessMode');
+      for (final legacy in [true, false, null]) {
+        final _ = conversation.remove('autoApproveTools');
+        if (legacy != null) conversation['autoApproveTools'] = legacy;
+        expect(
+          ConversationArchiveCodec.decode(jsonEncode(json)).toolAccessMode,
+          legacy == true
+              ? ConversationToolAccessMode.allowAll
+              : ConversationToolAccessMode.defaultMode,
+        );
+      }
       for (final invalid in [null, 'true', 1]) {
         conversation['autoApproveTools'] = invalid;
         expect(

@@ -17,7 +17,10 @@ import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_archive_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentBackgroundWorkStatus, foldAgentTranscriptContext;
+    show
+        AgentBackgroundWorkStatus,
+        ConversationToolAccessMode,
+        foldAgentTranscriptContext;
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -53,18 +56,21 @@ void main() {
         createdAt: DateTime.utc(2026),
         updatedAt: DateTime.utc(2026),
         messages: const [],
-        autoApproveTools: true,
+        toolAccessMode: .allowAll,
       ),
     );
     final imported = await usecase.importConversation(
       workspaceId: workspace.id,
       archiveJson: json,
     );
-    expect(imported.autoApproveTools, isTrue);
+    expect(imported.toolAccessMode, ConversationToolAccessMode.allowAll);
     final exported = await usecase.exportConversation(
       conversationId: imported.id,
     );
-    expect(ConversationArchiveCodec.decode(exported).autoApproveTools, isTrue);
+    expect(
+      ConversationArchiveCodec.decode(exported).toolAccessMode,
+      ConversationToolAccessMode.allowAll,
+    );
   });
 
   test(

@@ -161,10 +161,11 @@ class ConversationRepository(
     final boundary = _resolveForkBoundary(effective, throughMessageId);
 
     final forkDetails = await _forkDetails(source, effective, boundary);
+    final effectiveMode = await _database.conversationDao.getToolAccessMode(
+      source.id,
+    );
     final effectiveSource = source.copyWith(
-      autoApproveTools: await _database.conversationDao.isAutoApprovalEnabled(
-        source.id,
-      ),
+      toolAccessMode: effectiveMode.storedValue,
     );
     final fork = await _createFork(effectiveSource, forkDetails);
 
@@ -450,7 +451,7 @@ extension on ConversationRepository {
     modelId: .new(source.modelId),
     agentId: .new(source.agentId),
     reasoningConfigJson: .new(source.reasoningConfigJson),
-    autoApproveTools: .new(source.autoApproveTools),
+    toolAccessMode: .new(source.toolAccessMode),
   );
 
   Future<_ForkDetails> _forkDetails(
@@ -1178,7 +1179,9 @@ extension on ConversationRepository {
       isPinned: conversationTable.isPinned,
       createdAt: conversationTable.createdAt,
       updatedAt: conversationTable.updatedAt,
-      autoApproveTools: conversationTable.autoApproveTools,
+      toolAccessMode: ConversationToolAccessModeStorage.decode(
+        conversationTable.toolAccessMode,
+      ),
       modelId: conversationTable.modelId,
       agentId: conversationTable.agentId,
       reasoningConfiguration: .decode(conversationTable.reasoningConfigJson),
@@ -1206,7 +1209,7 @@ extension on ConversationRepository {
       reasoningConfigJson: .new(conversation.reasoningConfiguration?.encode()),
       parentConversationId: .new(conversation.parentConversationId),
       activeCompactionCheckpointId: const Value(null),
-      autoApproveTools: .new(conversation.autoApproveTools),
+      toolAccessMode: .new(conversation.toolAccessMode.storedValue),
       isPinned: .new(conversation.isPinned ?? false),
     );
   }
@@ -1226,7 +1229,7 @@ extension on ConversationRepository {
       activeCompactionCheckpointId: _activeCompactionCheckpointPatch(
         conversation,
       ),
-      autoApproveTools: .absentIfNull(conversation.autoApproveTools),
+      toolAccessMode: .absentIfNull(conversation.toolAccessMode?.storedValue),
       isPinned: .absentIfNull(conversation.isPinned),
     );
   }

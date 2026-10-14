@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 
 part 'conversation_dao.g.dart';
@@ -34,9 +35,9 @@ mixin _ConversationDaoWriteApi {
 }
 
 mixin _ConversationDaoReadApi {
-  Future<bool> isAutoApprovalEnabled(String conversationId) =>
+  Future<ConversationToolAccessMode> getToolAccessMode(String conversationId) =>
       ConversationDaoReadOperations(this as ConversationDao)
-          .isAutoApprovalEnabled(conversationId);
+          .getToolAccessMode(conversationId);
 
   Stream<ConversationsTable?> watchConversationById(String id) =>
       ConversationDaoReadOperations(this as ConversationDao)
@@ -166,18 +167,24 @@ extension ConversationDaoWriteOperations on ConversationDao {
 }
 
 extension ConversationDaoReadOperations on ConversationDao {
-  Future<bool> isAutoApprovalEnabled(String conversationId) async {
+  Future<ConversationToolAccessMode> getToolAccessMode(
+    String conversationId,
+  ) async {
     final visited = <String>{};
     var currentId = conversationId;
     while (visited.add(currentId)) {
       final conversation = await getConversationById(currentId);
-      if (conversation == null) return false;
+      if (conversation == null) return .defaultMode;
       final parentId = conversation.parentConversationId;
-      if (parentId == null) return conversation.autoApproveTools;
+      if (parentId == null) {
+        return ConversationToolAccessModeStorage.decode(
+          conversation.toolAccessMode,
+        );
+      }
       currentId = parentId;
     }
 
-    return false;
+    return .defaultMode;
   }
 
   Stream<ConversationsTable?> watchConversationById(String id) => (select(

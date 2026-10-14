@@ -20,7 +20,10 @@ class ResolveToolApprovalDecisionUsecase({
   required final ToolsGroupsRepositoryContract toolsGroupsRepository,
   required final WorkspaceToolsRepositoryContract workspaceToolsRepository,
   final SyncSkillToolPermissionsUsecase? syncSkillToolPermissionsUsecase,
-  final Future<bool> Function(String conversationId)? isAutoApprovalEnabled,
+  final Future<agent.ConversationToolAccessMode> Function(
+    String conversationId,
+  )?
+  getToolAccessMode,
 }) {
   Future<ToolApprovalDecision> call({
     required String conversationId,
@@ -45,9 +48,8 @@ class ResolveToolApprovalDecisionUsecase({
     ));
     if (!decision.needsConfirmation) return decision;
 
-    return decision.withAutoApproval(
-      autoApproveTools:
-          await isAutoApprovalEnabled?.call(conversationId) ?? false,
+    return decision.withToolAccessMode(
+      mode: await getToolAccessMode?.call(conversationId) ?? .defaultMode,
     );
   }
 
@@ -171,6 +173,6 @@ resolveToolApprovalDecisionUsecaseProvider =
         syncSkillToolPermissionsUsecase: ref.watch(
           syncSkillToolPermissionsUsecaseProvider,
         ),
-        isAutoApprovalEnabled: repository.isAutoApprovalEnabled,
+        getToolAccessMode: repository.getToolAccessMode,
       );
     });

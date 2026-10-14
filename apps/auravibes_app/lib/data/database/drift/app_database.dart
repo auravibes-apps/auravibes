@@ -175,7 +175,9 @@ class AppDatabase extends _$AppDatabase {
       _toolSamplingPolicySchemaVersion + 1;
   static const int _autoApproveToolsSchemaVersion =
       _backgroundWorkSchemaVersion + 1;
-  static const int _currentSchemaVersion = _autoApproveToolsSchemaVersion;
+  static const int _toolAccessModeSchemaVersion =
+      _autoApproveToolsSchemaVersion + 1;
+  static const int _currentSchemaVersion = _toolAccessModeSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -220,15 +222,21 @@ extension on AppDatabase {
     await _runSkillUpgrades(m, from);
     await _upgradeModelCapabilitiesSchema(m);
     await _upgradeModelUsageSchema(m);
-    await _upgradeAutoApproveToolsSchema(m);
+    await _upgradeToolAccessModeSchema(m);
   }
 
-  Future<void> _upgradeAutoApproveToolsSchema(Migrator m) async {
-    if (!await _tableExists('conversations') ||
-        await _columnExists('conversations', 'auto_approve_tools')) {
-      return;
+  Future<void> _upgradeToolAccessModeSchema(Migrator m) async {
+    if (!await _tableExists('conversations')) return;
+    if (!await _columnExists('conversations', 'tool_access_mode')) {
+      await m.addColumn(conversations, conversations.toolAccessMode);
     }
-    await m.addColumn(conversations, conversations.autoApproveTools);
+    if (!await _columnExists('conversations', 'auto_approve_tools')) return;
+    await customStatement('''
+      UPDATE conversations SET tool_access_mode =
+      CASE WHEN auto_approve_tools = 1 THEN 'allow_all' ELSE 'default' END''');
+    await customStatement(
+      'ALTER TABLE conversations DROP COLUMN auto_approve_tools',
+    );
   }
 
   Future<void> _upgradeModelUsageSchema(Migrator m) async {

@@ -34,7 +34,8 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
     /// Server revision for optimistic cloud mutations.
     @Default(0) int revision,
 
-    @Default(false) bool autoApproveTools,
+    @Default(ConversationToolAccessMode.defaultMode)
+    ConversationToolAccessMode toolAccessMode,
 
     /// ID of the AI model used for this conversation.
     String? modelId,
@@ -95,7 +96,8 @@ abstract class const ConversationToCreate._() with _$ConversationToCreate {
     required String workspaceId,
     DateTime? createdAt,
     DateTime? updatedAt,
-    @Default(false) bool autoApproveTools,
+    @Default(ConversationToolAccessMode.defaultMode)
+    ConversationToolAccessMode toolAccessMode,
 
     /// ID of the AI model used for this conversation.
     String? modelId,
@@ -151,7 +153,7 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
     /// Conversation-scoped reasoning override. Null uses provider defaults.
     ReasoningConfiguration? reasoningConfiguration,
 
-    bool? autoApproveTools,
+    ConversationToolAccessMode? toolAccessMode,
 
     /// Active compaction checkpoint, if one was restored.
     String? activeCompactionCheckpointId,
@@ -178,7 +180,7 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
       _isNullOrNonEmpty(activeCompactionCheckpointId);
 
   bool get _hasChanges =>
-      autoApproveTools != null ||
+      toolAccessMode != null ||
       title != null ||
       modelId != null ||
       agentId != null ||
@@ -210,4 +212,15 @@ class const ConversationPinLimitException(final String workspaceId)
   String toString() =>
       'ConversationPinLimitException: workspace $workspaceId has reached '
       'the pinned conversation limit';
+}
+
+/// Stable local and archive representation, independent of Dart enum names.
+extension ConversationToolAccessModeStorage on ConversationToolAccessMode {
+  String get storedValue => switch (this) {
+    .defaultMode => 'default',
+    .allowAll => 'allow_all',
+  };
+
+  static ConversationToolAccessMode decode(String value) =>
+      value == 'allow_all' ? .allowAll : .defaultMode;
 }

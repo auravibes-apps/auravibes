@@ -70,7 +70,7 @@ void main() {
         modelId: modelId,
         agentId: agentId,
         reasoningConfigJson: reasoningConfigJson,
-        autoApproveTools: false,
+        toolAccessMode: 'default',
         isPinned: isPinned,
       );
     }
@@ -208,7 +208,7 @@ void main() {
           updatedAt: now,
           workspaceId: 'ws-1',
           title: 'New Chat',
-          autoApproveTools: false,
+          toolAccessMode: 'default',
           isPinned: true,
         );
 
@@ -239,7 +239,7 @@ void main() {
             workspaceId: 'ws-1',
             title: 'Reasoning Chat',
             reasoningConfigJson: configuration.encode(),
-            autoApproveTools: false,
+            toolAccessMode: 'default',
             isPinned: false,
           );
 
@@ -301,7 +301,7 @@ void main() {
           updatedAt: now,
           workspaceId: 'ws-1',
           title: 'Updated Title',
-          autoApproveTools: false,
+          toolAccessMode: 'default',
           isPinned: true,
         );
 

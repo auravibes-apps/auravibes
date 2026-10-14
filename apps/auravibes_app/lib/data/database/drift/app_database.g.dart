@@ -4508,20 +4508,17 @@ class $ConversationsTable extends Conversations
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
-  static const VerificationMeta _autoApproveToolsMeta = const VerificationMeta(
-    'autoApproveTools',
+  static const VerificationMeta _toolAccessModeMeta = const VerificationMeta(
+    'toolAccessMode',
   );
   @override
-  late final GeneratedColumn<bool> autoApproveTools = GeneratedColumn<bool>(
-    'auto_approve_tools',
+  late final GeneratedColumn<String> toolAccessMode = GeneratedColumn<String>(
+    'tool_access_mode',
     aliasedName,
     false,
-    type: DriftSqlType.bool,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("auto_approve_tools" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
+    defaultValue: const Constant('default'),
   );
   static const VerificationMeta _isPinnedMeta = const VerificationMeta(
     'isPinned',
@@ -4554,7 +4551,7 @@ class $ConversationsTable extends Conversations
     forkThroughMessageId,
     forkMaterializedAt,
     activeCompactionCheckpointId,
-    autoApproveTools,
+    toolAccessMode,
     isPinned,
   ];
   @override
@@ -4678,12 +4675,12 @@ class $ConversationsTable extends Conversations
         ),
       );
     }
-    if (data.containsKey('auto_approve_tools')) {
+    if (data.containsKey('tool_access_mode')) {
       context.handle(
-        _autoApproveToolsMeta,
-        autoApproveTools.isAcceptableOrUnknown(
-          data['auto_approve_tools']!,
-          _autoApproveToolsMeta,
+        _toolAccessModeMeta,
+        toolAccessMode.isAcceptableOrUnknown(
+          data['tool_access_mode']!,
+          _toolAccessModeMeta,
         ),
       );
     }
@@ -4758,9 +4755,9 @@ class $ConversationsTable extends Conversations
         DriftSqlType.string,
         data['${effectivePrefix}active_compaction_checkpoint_id'],
       ),
-      autoApproveTools: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}auto_approve_tools'],
+      toolAccessMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_access_mode'],
       )!,
       isPinned: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
@@ -4810,7 +4807,7 @@ class ConversationsTable extends DataClass
   /// Non-null after the source history has been materialized into this fork.
   final DateTime? forkMaterializedAt;
   final String? activeCompactionCheckpointId;
-  final bool autoApproveTools;
+  final String toolAccessMode;
   final bool isPinned;
   const ConversationsTable({
     required this.id,
@@ -4827,7 +4824,7 @@ class ConversationsTable extends DataClass
     this.forkThroughMessageId,
     this.forkMaterializedAt,
     this.activeCompactionCheckpointId,
-    required this.autoApproveTools,
+    required this.toolAccessMode,
     required this.isPinned,
   });
   @override
@@ -4869,7 +4866,7 @@ class ConversationsTable extends DataClass
         activeCompactionCheckpointId,
       );
     }
-    map['auto_approve_tools'] = Variable<bool>(autoApproveTools);
+    map['tool_access_mode'] = Variable<String>(toolAccessMode);
     map['is_pinned'] = Variable<bool>(isPinned);
     return map;
   }
@@ -4909,7 +4906,7 @@ class ConversationsTable extends DataClass
           activeCompactionCheckpointId == null && nullToAbsent
           ? const Value.absent()
           : Value(activeCompactionCheckpointId),
-      autoApproveTools: Value(autoApproveTools),
+      toolAccessMode: Value(toolAccessMode),
       isPinned: Value(isPinned),
     );
   }
@@ -4946,7 +4943,7 @@ class ConversationsTable extends DataClass
       activeCompactionCheckpointId: serializer.fromJson<String?>(
         json['activeCompactionCheckpointId'],
       ),
-      autoApproveTools: serializer.fromJson<bool>(json['autoApproveTools']),
+      toolAccessMode: serializer.fromJson<String>(json['toolAccessMode']),
       isPinned: serializer.fromJson<bool>(json['isPinned']),
     );
   }
@@ -4972,7 +4969,7 @@ class ConversationsTable extends DataClass
       'activeCompactionCheckpointId': serializer.toJson<String?>(
         activeCompactionCheckpointId,
       ),
-      'autoApproveTools': serializer.toJson<bool>(autoApproveTools),
+      'toolAccessMode': serializer.toJson<String>(toolAccessMode),
       'isPinned': serializer.toJson<bool>(isPinned),
     };
   }
@@ -4992,7 +4989,7 @@ class ConversationsTable extends DataClass
     Value<String?> forkThroughMessageId = const Value.absent(),
     Value<DateTime?> forkMaterializedAt = const Value.absent(),
     Value<String?> activeCompactionCheckpointId = const Value.absent(),
-    bool? autoApproveTools,
+    String? toolAccessMode,
     bool? isPinned,
   }) => ConversationsTable(
     id: id ?? this.id,
@@ -5023,7 +5020,7 @@ class ConversationsTable extends DataClass
     activeCompactionCheckpointId: activeCompactionCheckpointId.present
         ? activeCompactionCheckpointId.value
         : this.activeCompactionCheckpointId,
-    autoApproveTools: autoApproveTools ?? this.autoApproveTools,
+    toolAccessMode: toolAccessMode ?? this.toolAccessMode,
     isPinned: isPinned ?? this.isPinned,
   );
   ConversationsTable copyWithCompanion(ConversationsCompanion data) {
@@ -5058,9 +5055,9 @@ class ConversationsTable extends DataClass
       activeCompactionCheckpointId: data.activeCompactionCheckpointId.present
           ? data.activeCompactionCheckpointId.value
           : this.activeCompactionCheckpointId,
-      autoApproveTools: data.autoApproveTools.present
-          ? data.autoApproveTools.value
-          : this.autoApproveTools,
+      toolAccessMode: data.toolAccessMode.present
+          ? data.toolAccessMode.value
+          : this.toolAccessMode,
       isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
     );
   }
@@ -5084,7 +5081,7 @@ class ConversationsTable extends DataClass
           ..write(
             'activeCompactionCheckpointId: $activeCompactionCheckpointId, ',
           )
-          ..write('autoApproveTools: $autoApproveTools, ')
+          ..write('toolAccessMode: $toolAccessMode, ')
           ..write('isPinned: $isPinned')
           ..write(')'))
         .toString();
@@ -5106,7 +5103,7 @@ class ConversationsTable extends DataClass
     forkThroughMessageId,
     forkMaterializedAt,
     activeCompactionCheckpointId,
-    autoApproveTools,
+    toolAccessMode,
     isPinned,
   );
   @override
@@ -5128,7 +5125,7 @@ class ConversationsTable extends DataClass
           other.forkMaterializedAt == this.forkMaterializedAt &&
           other.activeCompactionCheckpointId ==
               this.activeCompactionCheckpointId &&
-          other.autoApproveTools == this.autoApproveTools &&
+          other.toolAccessMode == this.toolAccessMode &&
           other.isPinned == this.isPinned);
 }
 
@@ -5147,7 +5144,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   final Value<String?> forkThroughMessageId;
   final Value<DateTime?> forkMaterializedAt;
   final Value<String?> activeCompactionCheckpointId;
-  final Value<bool> autoApproveTools;
+  final Value<String> toolAccessMode;
   final Value<bool> isPinned;
   final Value<int> rowid;
   const ConversationsCompanion({
@@ -5165,7 +5162,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.forkThroughMessageId = const Value.absent(),
     this.forkMaterializedAt = const Value.absent(),
     this.activeCompactionCheckpointId = const Value.absent(),
-    this.autoApproveTools = const Value.absent(),
+    this.toolAccessMode = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -5184,7 +5181,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.forkThroughMessageId = const Value.absent(),
     this.forkMaterializedAt = const Value.absent(),
     this.activeCompactionCheckpointId = const Value.absent(),
-    this.autoApproveTools = const Value.absent(),
+    this.toolAccessMode = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -5204,7 +5201,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Expression<String>? forkThroughMessageId,
     Expression<DateTime>? forkMaterializedAt,
     Expression<String>? activeCompactionCheckpointId,
-    Expression<bool>? autoApproveTools,
+    Expression<String>? toolAccessMode,
     Expression<bool>? isPinned,
     Expression<int>? rowid,
   }) {
@@ -5229,7 +5226,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
         'fork_materialized_at': forkMaterializedAt,
       if (activeCompactionCheckpointId != null)
         'active_compaction_checkpoint_id': activeCompactionCheckpointId,
-      if (autoApproveTools != null) 'auto_approve_tools': autoApproveTools,
+      if (toolAccessMode != null) 'tool_access_mode': toolAccessMode,
       if (isPinned != null) 'is_pinned': isPinned,
       if (rowid != null) 'rowid': rowid,
     });
@@ -5250,7 +5247,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Value<String?>? forkThroughMessageId,
     Value<DateTime?>? forkMaterializedAt,
     Value<String?>? activeCompactionCheckpointId,
-    Value<bool>? autoApproveTools,
+    Value<String>? toolAccessMode,
     Value<bool>? isPinned,
     Value<int>? rowid,
   }) {
@@ -5271,7 +5268,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       forkMaterializedAt: forkMaterializedAt ?? this.forkMaterializedAt,
       activeCompactionCheckpointId:
           activeCompactionCheckpointId ?? this.activeCompactionCheckpointId,
-      autoApproveTools: autoApproveTools ?? this.autoApproveTools,
+      toolAccessMode: toolAccessMode ?? this.toolAccessMode,
       isPinned: isPinned ?? this.isPinned,
       rowid: rowid ?? this.rowid,
     );
@@ -5334,8 +5331,8 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
         activeCompactionCheckpointId.value,
       );
     }
-    if (autoApproveTools.present) {
-      map['auto_approve_tools'] = Variable<bool>(autoApproveTools.value);
+    if (toolAccessMode.present) {
+      map['tool_access_mode'] = Variable<String>(toolAccessMode.value);
     }
     if (isPinned.present) {
       map['is_pinned'] = Variable<bool>(isPinned.value);
@@ -5365,7 +5362,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
           ..write(
             'activeCompactionCheckpointId: $activeCompactionCheckpointId, ',
           )
-          ..write('autoApproveTools: $autoApproveTools, ')
+          ..write('toolAccessMode: $toolAccessMode, ')
           ..write('isPinned: $isPinned, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -21090,7 +21087,7 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       Value<String?> forkThroughMessageId,
       Value<DateTime?> forkMaterializedAt,
       Value<String?> activeCompactionCheckpointId,
-      Value<bool> autoApproveTools,
+      Value<String> toolAccessMode,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -21110,7 +21107,7 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String?> forkThroughMessageId,
       Value<DateTime?> forkMaterializedAt,
       Value<String?> activeCompactionCheckpointId,
-      Value<bool> autoApproveTools,
+      Value<String> toolAccessMode,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -21366,8 +21363,8 @@ class $$ConversationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get autoApproveTools => $composableBuilder(
-    column: $table.autoApproveTools,
+  ColumnFilters<String> get toolAccessMode => $composableBuilder(
+    column: $table.toolAccessMode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -21655,8 +21652,8 @@ class $$ConversationsTableOrderingComposer
         builder: (column) => ColumnOrderings(column),
       );
 
-  ColumnOrderings<bool> get autoApproveTools => $composableBuilder(
-    column: $table.autoApproveTools,
+  ColumnOrderings<String> get toolAccessMode => $composableBuilder(
+    column: $table.toolAccessMode,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -21811,8 +21808,8 @@ class $$ConversationsTableAnnotationComposer
         builder: (column) => column,
       );
 
-  GeneratedColumn<bool> get autoApproveTools => $composableBuilder(
-    column: $table.autoApproveTools,
+  GeneratedColumn<String> get toolAccessMode => $composableBuilder(
+    column: $table.toolAccessMode,
     builder: (column) => column,
   );
 
@@ -22094,7 +22091,7 @@ class $$ConversationsTableTableManager
                 Value<DateTime?> forkMaterializedAt = const Value.absent(),
                 Value<String?> activeCompactionCheckpointId =
                     const Value.absent(),
-                Value<bool> autoApproveTools = const Value.absent(),
+                Value<String> toolAccessMode = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion(
@@ -22112,7 +22109,7 @@ class $$ConversationsTableTableManager
                 forkThroughMessageId: forkThroughMessageId,
                 forkMaterializedAt: forkMaterializedAt,
                 activeCompactionCheckpointId: activeCompactionCheckpointId,
-                autoApproveTools: autoApproveTools,
+                toolAccessMode: toolAccessMode,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -22133,7 +22130,7 @@ class $$ConversationsTableTableManager
                 Value<DateTime?> forkMaterializedAt = const Value.absent(),
                 Value<String?> activeCompactionCheckpointId =
                     const Value.absent(),
-                Value<bool> autoApproveTools = const Value.absent(),
+                Value<String> toolAccessMode = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion.insert(
@@ -22151,7 +22148,7 @@ class $$ConversationsTableTableManager
                 forkThroughMessageId: forkThroughMessageId,
                 forkMaterializedAt: forkMaterializedAt,
                 activeCompactionCheckpointId: activeCompactionCheckpointId,
-                autoApproveTools: autoApproveTools,
+                toolAccessMode: toolAccessMode,
                 isPinned: isPinned,
                 rowid: rowid,
               ),

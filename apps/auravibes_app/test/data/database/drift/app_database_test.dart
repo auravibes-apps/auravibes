@@ -41,7 +41,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 26);
+      expect(fixture.database.schemaVersion, 27);
     });
 
     test(
@@ -57,13 +57,48 @@ void main() {
         addTearDown(database.close);
         final row = await database
             .customSelect(
-              'SELECT auto_approve_tools FROM conversations WHERE id = ?',
+              'SELECT tool_access_mode FROM conversations WHERE id = ?',
               variables: [const Variable<String>('existing')],
             )
             .getSingle();
-        expect(row.read<bool>('auto_approve_tools'), isFalse);
+        expect(row.read<String>('tool_access_mode'), 'default');
       },
     );
+
+    test('schema 26 backfills both modes and removes boolean column', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 26
+        ..execute(
+          'CREATE TABLE conversations (id TEXT PRIMARY KEY, '
+          'auto_approve_tools INTEGER NOT NULL DEFAULT 0)',
+        )
+        ..execute('INSERT INTO conversations VALUES (?, ?), (?, ?)', [
+          'off',
+          0,
+          'on',
+          1,
+        ]);
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+      final rows = await database
+          .customSelect(
+            'SELECT tool_access_mode FROM conversations ORDER BY id',
+          )
+          .get();
+      expect(rows.map((row) => row.read<String>('tool_access_mode')), [
+        'default',
+        'allow_all',
+      ]);
+      final columns = await database
+          .customSelect('PRAGMA table_info(conversations)')
+          .get();
+      expect(
+        columns.map((row) => row.read<String>('name')),
+        isNot(contains('auto_approve_tools')),
+      );
+    });
 
     test('migration from schema 24 creates background work storage', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()..userVersion = 24;

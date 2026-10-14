@@ -11,11 +11,13 @@ class const ToolApprovalDecision({
 
   bool isGranted() => permissionResult == ToolPermissionResult.granted;
 
-  ToolApprovalDecision withAutoApproval({required bool autoApproveTools}) {
+  ToolApprovalDecision withToolAccessMode({
+    required agent.ConversationToolAccessMode mode,
+  }) {
     if (permissionResult != ToolPermissionResult.needsConfirmation) return this;
-    final result = agent.applyAgentToolAutoApproval(
+    final result = agent.applyConversationToolAccessMode(
       .needsConfirmation,
-      autoApproveTools: autoApproveTools,
+      mode: mode,
     );
     if (result != agent.AgentToolPermissionResult.granted) return this;
 

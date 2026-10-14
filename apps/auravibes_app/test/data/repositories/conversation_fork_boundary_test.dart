@@ -63,20 +63,20 @@ void main() {
       final source =
           await repository.getConversationById('source') ??
           fail('Expected source conversation');
-      expect(source.autoApproveTools, isFalse);
+      expect(source.toolAccessMode, ConversationToolAccessMode.defaultMode);
       final created = await repository.createConversation(
         .new(
           title: 'Auto',
           workspaceId: source.workspaceId,
-          autoApproveTools: true,
+          toolAccessMode: .allowAll,
         ),
       );
-      expect(created.autoApproveTools, isTrue);
+      expect(created.toolAccessMode, ConversationToolAccessMode.allowAll);
       final changed = await repository.patchConversation(
         'source',
-        const .new(autoApproveTools: true),
+        const .new(toolAccessMode: .allowAll),
       );
-      expect(changed.autoApproveTools, isTrue);
+      expect(changed.toolAccessMode, ConversationToolAccessMode.allowAll);
       final _ = await insertMessage(
         id: 'mode-terminal',
         createdAt: .utc(2026),
@@ -84,17 +84,17 @@ void main() {
         status: .sent,
       );
       final fork = await repository.forkConversation('source');
-      expect(fork.autoApproveTools, isTrue);
+      expect(fork.toolAccessMode, ConversationToolAccessMode.allowAll);
       final off = await repository.patchConversation(
         'source',
-        const .new(autoApproveTools: false),
+        const .new(toolAccessMode: .defaultMode),
       );
-      expect(off.autoApproveTools, isFalse);
+      expect(off.toolAccessMode, ConversationToolAccessMode.defaultMode);
       expect(
         (await repository.getConversationById(fork.id) ??
                 fail('Expected fork conversation'))
-            .autoApproveTools,
-        isTrue,
+            .toolAccessMode,
+        ConversationToolAccessMode.allowAll,
       );
     },
   );
@@ -108,7 +108,7 @@ void main() {
           fail('Expected root');
       final _ = await repository.patchConversation(
         root.id,
-        const .new(autoApproveTools: true),
+        const .new(toolAccessMode: .allowAll),
       );
       final child = await repository.createConversation(
         .new(
@@ -117,7 +117,7 @@ void main() {
           parentConversationId: root.id,
         ),
       );
-      expect(child.autoApproveTools, isFalse);
+      expect(child.toolAccessMode, ConversationToolAccessMode.defaultMode);
       final _ = await database.messageDao.insertMessage(
         .new(
           conversationId: Value(child.id),
@@ -128,16 +128,35 @@ void main() {
         ),
       );
       final fork = await repository.forkConversation(child.id);
-      expect(fork.autoApproveTools, isTrue);
+      expect(fork.toolAccessMode, ConversationToolAccessMode.allowAll);
       expect(fork.parentConversationId, isNull);
       final _ = await repository.patchConversation(
         root.id,
-        const .new(autoApproveTools: false),
+        const .new(toolAccessMode: .defaultMode),
       );
       expect(
         (await repository.getConversationById(fork.id) ?? fail('Expected fork'))
-            .autoApproveTools,
-        isTrue,
+            .toolAccessMode,
+        ConversationToolAccessMode.allowAll,
+      );
+    },
+  );
+
+  test(
+    'unknown stored mode defaults safely in entity and root lookup',
+    () async {
+      await insertSource();
+      final _ = await database.conversationDao.patchConversation(
+        'source',
+        const .new(toolAccessMode: Value('future_mode')),
+      );
+      expect(
+        (await repository.getConversationById('source'))?.toolAccessMode,
+        ConversationToolAccessMode.defaultMode,
+      );
+      expect(
+        await database.conversationDao.getToolAccessMode('source'),
+        ConversationToolAccessMode.defaultMode,
       );
     },
   );

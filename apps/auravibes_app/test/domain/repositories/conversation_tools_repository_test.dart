@@ -4,6 +4,7 @@ import 'package:auravibes_app/data/repositories/conversation_tools_repository.da
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubConversationToolsRepository implements ConversationToolsRepository {
@@ -24,7 +25,9 @@ class _StubConversationToolsRepository implements ConversationToolsRepository {
   ToolPermissionResult permissionResult = .granted;
 
   @override
-  Future<bool> isAutoApprovalEnabled(String conversationId) async => false;
+  Future<ConversationToolAccessMode> getToolAccessMode(
+    String conversationId,
+  ) async => .defaultMode;
 
   @override
   Future<List<ConversationToolEntity>> getConversationTools(
