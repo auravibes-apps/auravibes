@@ -17,6 +17,68 @@ void main() {
 
     setUp(fixture.setUp);
 
+    for (final mode in [false, true]) {
+      for (final permission in ToolPermissionResult.values) {
+        test('mode $mode preserves $permission except final ask', () async {
+          final repository = fixture.conversationToolsRepository;
+          when(
+            () => repository.checkToolPermission(
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolId: 'calc',
+            ),
+          ).thenAnswer((_) async => permission);
+          final usecase = ResolveToolApprovalDecisionUsecase(
+            conversationToolsRepository: repository,
+            toolsGroupsRepository: fixture.toolsGroupsRepository,
+            workspaceToolsRepository: fixture.workspaceToolsRepository,
+            isAutoApprovalEnabled: (_) async => mode,
+          );
+          final decision = await usecase(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: 'tc-1',
+            resolvedTool: ResolvedTool.builtIn(
+              tableId: 'calc',
+              toolIdentifier: 'calculator',
+              tooltype: .calculator,
+            ),
+          );
+          expect(
+            decision.permissionResult,
+            mode && permission == ToolPermissionResult.needsConfirmation
+                ? ToolPermissionResult.granted
+                : permission,
+          );
+        });
+      }
+    }
+
+    test('unresolved nested skill is unconfigured even with mode on', () async {
+      final usecase = ResolveToolApprovalDecisionUsecase(
+        conversationToolsRepository: fixture.conversationToolsRepository,
+        toolsGroupsRepository: fixture.toolsGroupsRepository,
+        workspaceToolsRepository: fixture.workspaceToolsRepository,
+        isAutoApprovalEnabled: (_) async => true,
+      );
+      final decision = await usecase(
+        conversationId: 'conv-1',
+        workspaceId: 'ws-1',
+        toolCallId: 'tc-1',
+        resolvedTool: ResolvedTool.skillCommand(
+          commandName: agent.callSkillToolName,
+        ),
+      );
+      expect(decision.permissionResult, ToolPermissionResult.notConfigured);
+      final _ = verifyNever(
+        () => fixture.conversationToolsRepository.checkToolPermission(
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
+          toolId: any(named: 'toolId'),
+        ),
+      );
+    });
+
     group('built-in tools', () {
       test('returns granted for always-approved built-in tool', () async {
         final conversationToolsRepository = fixture.conversationToolsRepository;

@@ -432,8 +432,14 @@ MessageToolCallEntity _toolCallWithResult(
       .firstOrNull;
   if (update == null) return toolCall;
 
+  if (update.approvalRequested) {
+    return toolCall.copyWith(approvalRequested: true);
+  }
+  final status = update.resultStatus;
+  if (status == null) return toolCall;
+
   final withStatus = toolCall.copyWith(
-    resultStatus: AgentToolStatusMapper.toResultStatus(update.resultStatus),
+    resultStatus: AgentToolStatusMapper.toResultStatus(status),
   );
 
   return _applyToolExecutionOutput(withStatus, update);

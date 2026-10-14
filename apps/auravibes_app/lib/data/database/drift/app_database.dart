@@ -173,7 +173,9 @@ class AppDatabase extends _$AppDatabase {
       _mcpTestSummarySchemaVersion + 1;
   static const int _backgroundWorkSchemaVersion =
       _toolSamplingPolicySchemaVersion + 1;
-  static const int _currentSchemaVersion = _backgroundWorkSchemaVersion;
+  static const int _autoApproveToolsSchemaVersion =
+      _backgroundWorkSchemaVersion + 1;
+  static const int _currentSchemaVersion = _autoApproveToolsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -218,6 +220,15 @@ extension on AppDatabase {
     await _runSkillUpgrades(m, from);
     await _upgradeModelCapabilitiesSchema(m);
     await _upgradeModelUsageSchema(m);
+    await _upgradeAutoApproveToolsSchema(m);
+  }
+
+  Future<void> _upgradeAutoApproveToolsSchema(Migrator m) async {
+    if (!await _tableExists('conversations') ||
+        await _columnExists('conversations', 'auto_approve_tools')) {
+      return;
+    }
+    await m.addColumn(conversations, conversations.autoApproveTools);
   }
 
   Future<void> _upgradeModelUsageSchema(Migrator m) async {

@@ -41,8 +41,29 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 25);
+      expect(fixture.database.schemaVersion, 26);
     });
+
+    test(
+      'migration from schema 25 preserves conversations with mode off',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 25
+          ..execute('CREATE TABLE conversations (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO conversations VALUES (?)', ['existing']);
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final row = await database
+            .customSelect(
+              'SELECT auto_approve_tools FROM conversations WHERE id = ?',
+              variables: [const Variable<String>('existing')],
+            )
+            .getSingle();
+        expect(row.read<bool>('auto_approve_tools'), isFalse);
+      },
+    );
 
     test('migration from schema 24 creates background work storage', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()..userVersion = 24;

@@ -38,6 +38,9 @@ class ConversationToolsRepository(
     _ConversationToolsAvailabilityApi {
   final ConversationToolsDao _dao = _database.conversationToolsDao;
 
+  Future<bool> isAutoApprovalEnabled(String conversationId) =>
+      _database.conversationDao.isAutoApprovalEnabled(conversationId);
+
   Future<List<ConversationToolEntity>> getConversationTools(
     String conversationId,
   ) async {
@@ -368,10 +371,24 @@ extension ConversationToolsRepositoryAvailability
       return ToolPermissionResult.notConfigured;
     }
 
-    return await _conversationToolPermission(
+    final result = await _conversationToolPermission(
       conversationId: conversationId,
       workspaceTool: workspaceTool,
     );
+    if (result != ToolPermissionResult.needsConfirmation) return result;
+
+    final agentResult = await _agentToolPermissionResult(
+      conversationId: conversationId,
+      toolId: workspaceTool.id,
+    );
+    if (agentResult == ToolPermissionResult.disabledByAgent) {
+      return ToolPermissionResult.disabledByAgent;
+    }
+    if (workspaceTool.permissionMode == ToolPermissionMode.alwaysDeny) {
+      return ToolPermissionResult.disabledInWorkspace;
+    }
+
+    return result;
   }
 }
 

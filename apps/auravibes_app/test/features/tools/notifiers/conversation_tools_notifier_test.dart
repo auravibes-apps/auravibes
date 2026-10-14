@@ -631,6 +631,9 @@ class _FakeConversationToolsRepository implements ConversationToolsRepository {
   List<WorkspaceToolEntity> availableToolEntities = const [];
 
   @override
+  Future<bool> isAutoApprovalEnabled(String conversationId) async => false;
+
+  @override
   Future<List<ConversationToolEntity>> getConversationTools(
     String conversationId,
   ) async {

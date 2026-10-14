@@ -9,6 +9,32 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ConversationArchiveCodec', () {
+    test('auto approval round-trips, defaults off, rejects invalid values', () {
+      final archive = ConversationArchive(
+        title: 'Mode',
+        createdAt: .utc(2026),
+        updatedAt: .utc(2026),
+        messages: const [],
+        autoApproveTools: true,
+      );
+      final encoded = ConversationArchiveCodec.encode(archive);
+      expect(ConversationArchiveCodec.decode(encoded).autoApproveTools, isTrue);
+      final json = jsonDecode(encoded) as Map<String, dynamic>;
+      final conversation = json['conversation'] as Map<String, dynamic>;
+      final _ = conversation.remove('autoApproveTools');
+      expect(
+        ConversationArchiveCodec.decode(jsonEncode(json)).autoApproveTools,
+        isFalse,
+      );
+      for (final invalid in [null, 'true', 1]) {
+        conversation['autoApproveTools'] = invalid;
+        expect(
+          () => ConversationArchiveCodec.decode(jsonEncode(json)),
+          throwsA(isA<MalformedConversationArchiveException>()),
+        );
+      }
+    });
+
     test(
       'round-trips safe transcript fields without exporting private data',
       () async {

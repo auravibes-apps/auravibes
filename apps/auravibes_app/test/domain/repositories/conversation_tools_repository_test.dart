@@ -24,6 +24,9 @@ class _StubConversationToolsRepository implements ConversationToolsRepository {
   ToolPermissionResult permissionResult = .granted;
 
   @override
+  Future<bool> isAutoApprovalEnabled(String conversationId) async => false;
+
+  @override
   Future<List<ConversationToolEntity>> getConversationTools(
     String conversationId,
   ) async {

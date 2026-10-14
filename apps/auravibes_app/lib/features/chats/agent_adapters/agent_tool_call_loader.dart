@@ -120,6 +120,7 @@ List<agent.AgentMessageToolCall> _agentToolCalls(
         name: toolCall.name,
         argumentsRaw: toolCall.argumentsRaw,
         lifecycle: AgentToolStatusMapper.toLifecycle(toolCall.resultStatus),
+        approvalRequested: toolCall.hasPendingApproval,
       ),
 ];
 

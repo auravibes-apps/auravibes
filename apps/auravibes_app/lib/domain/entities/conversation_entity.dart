@@ -34,6 +34,8 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
     /// Server revision for optimistic cloud mutations.
     @Default(0) int revision,
 
+    @Default(false) bool autoApproveTools,
+
     /// ID of the AI model used for this conversation.
     String? modelId,
 
@@ -93,6 +95,7 @@ abstract class const ConversationToCreate._() with _$ConversationToCreate {
     required String workspaceId,
     DateTime? createdAt,
     DateTime? updatedAt,
+    @Default(false) bool autoApproveTools,
 
     /// ID of the AI model used for this conversation.
     String? modelId,
@@ -148,6 +151,8 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
     /// Conversation-scoped reasoning override. Null uses provider defaults.
     ReasoningConfiguration? reasoningConfiguration,
 
+    bool? autoApproveTools,
+
     /// Active compaction checkpoint, if one was restored.
     String? activeCompactionCheckpointId,
     @Default(false) bool clearActiveCompactionCheckpointId,
@@ -173,6 +178,7 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
       _isNullOrNonEmpty(activeCompactionCheckpointId);
 
   bool get _hasChanges =>
+      autoApproveTools != null ||
       title != null ||
       modelId != null ||
       agentId != null ||

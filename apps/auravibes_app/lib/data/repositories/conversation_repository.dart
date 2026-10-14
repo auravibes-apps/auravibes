@@ -161,7 +161,12 @@ class ConversationRepository(
     final boundary = _resolveForkBoundary(effective, throughMessageId);
 
     final forkDetails = await _forkDetails(source, effective, boundary);
-    final fork = await _createFork(source, forkDetails);
+    final effectiveSource = source.copyWith(
+      autoApproveTools: await _database.conversationDao.isAutoApprovalEnabled(
+        source.id,
+      ),
+    );
+    final fork = await _createFork(effectiveSource, forkDetails);
 
     return _mapToConversation(fork);
   }
@@ -445,6 +450,7 @@ extension on ConversationRepository {
     modelId: .new(source.modelId),
     agentId: .new(source.agentId),
     reasoningConfigJson: .new(source.reasoningConfigJson),
+    autoApproveTools: .new(source.autoApproveTools),
   );
 
   Future<_ForkDetails> _forkDetails(
@@ -1172,6 +1178,7 @@ extension on ConversationRepository {
       isPinned: conversationTable.isPinned,
       createdAt: conversationTable.createdAt,
       updatedAt: conversationTable.updatedAt,
+      autoApproveTools: conversationTable.autoApproveTools,
       modelId: conversationTable.modelId,
       agentId: conversationTable.agentId,
       reasoningConfiguration: .decode(conversationTable.reasoningConfigJson),
@@ -1199,6 +1206,7 @@ extension on ConversationRepository {
       reasoningConfigJson: .new(conversation.reasoningConfiguration?.encode()),
       parentConversationId: .new(conversation.parentConversationId),
       activeCompactionCheckpointId: const Value(null),
+      autoApproveTools: .new(conversation.autoApproveTools),
       isPinned: .new(conversation.isPinned ?? false),
     );
   }
@@ -1218,6 +1226,7 @@ extension on ConversationRepository {
       activeCompactionCheckpointId: _activeCompactionCheckpointPatch(
         conversation,
       ),
+      autoApproveTools: .absentIfNull(conversation.autoApproveTools),
       isPinned: .absentIfNull(conversation.isPinned),
     );
   }

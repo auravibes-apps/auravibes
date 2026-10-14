@@ -42,6 +42,31 @@ void main() {
     await clearAppDatabase(database);
   });
   tearDownAll(database.close);
+  test('archive import and re-export preserve auto approval', () async {
+    final workspace = await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Mode archive', type: .local),
+    );
+    final usecase = _usecase(database);
+    final json = ConversationArchiveCodec.encode(
+      .new(
+        title: 'Mode',
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+        messages: const [],
+        autoApproveTools: true,
+      ),
+    );
+    final imported = await usecase.importConversation(
+      workspaceId: workspace.id,
+      archiveJson: json,
+    );
+    expect(imported.autoApproveTools, isTrue);
+    final exported = await usecase.exportConversation(
+      conversationId: imported.id,
+    );
+    expect(ConversationArchiveCodec.decode(exported).autoApproveTools, isTrue);
+  });
+
   test(
     'rejects malformed input and unknown versions before creating rows',
     () async {

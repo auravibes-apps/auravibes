@@ -30,6 +30,7 @@ abstract class ConversationArchive with _$ConversationArchive {
     required DateTime updatedAt,
     required List<ConversationArchiveMessage> messages,
     String? modelLabel,
+    @Default(false) bool autoApproveTools,
     ConversationArchiveAgentContext? agentContext,
   }) = _ConversationArchive;
 }
@@ -176,6 +177,7 @@ abstract final class ConversationArchiveCodec {
       updatedAt: conversation.updatedAt,
       messages: archivedMessages,
       modelLabel: modelLabel,
+      autoApproveTools: conversation.autoApproveTools,
       agentContext: agentContext,
     );
   }
@@ -699,6 +701,7 @@ ConversationArchive _decodeArchiveContents(Map<String, Object?> root) {
     updatedAt: conversation.updatedAt,
     messages: _decodeMessages(root['messages']),
     modelLabel: conversation.modelLabel,
+    autoApproveTools: conversation.autoApproveTools,
     agentContext: root['version'] == ConversationArchiveCodec.version
         ? _decodeAgentContext(root['agentContext'])
         : null,
@@ -1078,16 +1081,29 @@ void _validateArchiveRoot(Map<String, Object?> root) {
   );
 }
 
-({String title, DateTime createdAt, DateTime updatedAt, String? modelLabel})
+({
+  String title,
+  DateTime createdAt,
+  DateTime updatedAt,
+  String? modelLabel,
+  bool autoApproveTools,
+})
 _decodeConversation(Object? value) {
   final json = _jsonMap(value);
-  _requireKeys(json, const {'title', 'createdAt', 'updatedAt', 'modelLabel'});
+  _requireAllowedKeys(
+    json,
+    const {'title', 'createdAt', 'updatedAt', 'modelLabel', 'autoApproveTools'},
+    const {'title', 'createdAt', 'updatedAt', 'modelLabel'},
+  );
 
   return (
     title: _nonEmptyString(json['title']),
     createdAt: _dateTime(json['createdAt']),
     updatedAt: _dateTime(json['updatedAt']),
     modelLabel: _nullableString(json['modelLabel']),
+    autoApproveTools:
+        json.containsKey('autoApproveTools') &&
+        _boolean(json['autoApproveTools']),
   );
 }
 
@@ -1196,6 +1212,7 @@ Map<String, Object?> _conversationToJson(ConversationArchive archive) => {
   'createdAt': archive.createdAt.toIso8601String(),
   'updatedAt': archive.updatedAt.toIso8601String(),
   'modelLabel': archive.modelLabel,
+  'autoApproveTools': archive.autoApproveTools,
 };
 
 Map<String, Object?> _messageToJson(ConversationArchiveMessage message) => {

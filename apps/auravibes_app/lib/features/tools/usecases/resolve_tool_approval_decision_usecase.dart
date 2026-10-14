@@ -20,6 +20,7 @@ class ResolveToolApprovalDecisionUsecase({
   required final ToolsGroupsRepositoryContract toolsGroupsRepository,
   required final WorkspaceToolsRepositoryContract workspaceToolsRepository,
   final SyncSkillToolPermissionsUsecase? syncSkillToolPermissionsUsecase,
+  final Future<bool> Function(String conversationId)? isAutoApprovalEnabled,
 }) {
   Future<ToolApprovalDecision> call({
     required String conversationId,
@@ -36,12 +37,18 @@ class ResolveToolApprovalDecisionUsecase({
       return _notConfiguredDecision(toolCallId);
     }
 
-    return await _configuredDecision(conversationToolsRepository, (
+    final decision = await _configuredDecision(conversationToolsRepository, (
       conversationId: conversationId,
       workspaceId: workspaceId,
       toolCallId: toolCallId,
       permissionTableId: permissionTableId,
     ));
+    if (!decision.needsConfirmation) return decision;
+
+    return decision.withAutoApproval(
+      autoApproveTools:
+          await isAutoApprovalEnabled?.call(conversationId) ?? false,
+    );
   }
 
   Future<String?> resolvePermissionTableId({
@@ -149,10 +156,12 @@ resolveToolApprovalDecisionUsecaseProvider =
           .watch(workspaceSessionForRouteProvider(workspaceId))
           .requireValue;
 
+      final repository = ref.watch(
+        conversationToolsRepositoryProvider(workspaceId),
+      );
+
       return ResolveToolApprovalDecisionUsecase(
-        conversationToolsRepository: ref.watch(
-          conversationToolsRepositoryProvider(workspaceId),
-        ),
+        conversationToolsRepository: repository,
         toolsGroupsRepository: ref.watch(
           toolsGroupsRepositoryProvider(session),
         ),
@@ -162,5 +171,6 @@ resolveToolApprovalDecisionUsecaseProvider =
         syncSkillToolPermissionsUsecase: ref.watch(
           syncSkillToolPermissionsUsecaseProvider,
         ),
+        isAutoApprovalEnabled: repository.isAutoApprovalEnabled,
       );
     });

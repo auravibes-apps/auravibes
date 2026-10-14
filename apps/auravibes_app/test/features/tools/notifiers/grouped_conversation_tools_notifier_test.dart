@@ -418,6 +418,9 @@ class _FakeConversationToolsRepository implements ConversationToolsRepository {
   final List<String> enabledToolIds = [];
 
   @override
+  Future<bool> isAutoApprovalEnabled(String conversationId) async => false;
+
+  @override
   Future<bool> setConversationToolEnabled(
     String conversationId,
     String toolId, {

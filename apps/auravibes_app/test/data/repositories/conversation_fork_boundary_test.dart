@@ -56,6 +56,92 @@ void main() {
     ),
   );
 
+  test(
+    'local mode defaults off, persists create and patch, forks independently',
+    () async {
+      await insertSource();
+      final source =
+          await repository.getConversationById('source') ??
+          fail('Expected source conversation');
+      expect(source.autoApproveTools, isFalse);
+      final created = await repository.createConversation(
+        .new(
+          title: 'Auto',
+          workspaceId: source.workspaceId,
+          autoApproveTools: true,
+        ),
+      );
+      expect(created.autoApproveTools, isTrue);
+      final changed = await repository.patchConversation(
+        'source',
+        const .new(autoApproveTools: true),
+      );
+      expect(changed.autoApproveTools, isTrue);
+      final _ = await insertMessage(
+        id: 'mode-terminal',
+        createdAt: .utc(2026),
+        isUser: false,
+        status: .sent,
+      );
+      final fork = await repository.forkConversation('source');
+      expect(fork.autoApproveTools, isTrue);
+      final off = await repository.patchConversation(
+        'source',
+        const .new(autoApproveTools: false),
+      );
+      expect(off.autoApproveTools, isFalse);
+      expect(
+        (await repository.getConversationById(fork.id) ??
+                fail('Expected fork conversation'))
+            .autoApproveTools,
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'child fork snapshots current root mode and then stays independent',
+    () async {
+      await insertSource();
+      final root =
+          await repository.getConversationById('source') ??
+          fail('Expected root');
+      final _ = await repository.patchConversation(
+        root.id,
+        const .new(autoApproveTools: true),
+      );
+      final child = await repository.createConversation(
+        .new(
+          title: 'Child',
+          workspaceId: root.workspaceId,
+          parentConversationId: root.id,
+        ),
+      );
+      expect(child.autoApproveTools, isFalse);
+      final _ = await database.messageDao.insertMessage(
+        .new(
+          conversationId: Value(child.id),
+          content: const Value('Terminal'),
+          messageType: const Value(MessagesTableType.text),
+          isUser: const Value(false),
+          status: const Value(MessageTableStatus.sent),
+        ),
+      );
+      final fork = await repository.forkConversation(child.id);
+      expect(fork.autoApproveTools, isTrue);
+      expect(fork.parentConversationId, isNull);
+      final _ = await repository.patchConversation(
+        root.id,
+        const .new(autoApproveTools: false),
+      );
+      expect(
+        (await repository.getConversationById(fork.id) ?? fail('Expected fork'))
+            .autoApproveTools,
+        isTrue,
+      );
+    },
+  );
+
   test('fork copies conversation reasoning configuration', () async {
     const configuration = ReasoningConfiguration(effort: 'high');
     await insertSource(reasoningConfigJson: configuration.encode());

@@ -34,6 +34,10 @@ mixin _ConversationDaoWriteApi {
 }
 
 mixin _ConversationDaoReadApi {
+  Future<bool> isAutoApprovalEnabled(String conversationId) =>
+      ConversationDaoReadOperations(this as ConversationDao)
+          .isAutoApprovalEnabled(conversationId);
+
   Stream<ConversationsTable?> watchConversationById(String id) =>
       ConversationDaoReadOperations(this as ConversationDao)
           .watchConversationById(id);
@@ -162,6 +166,20 @@ extension ConversationDaoWriteOperations on ConversationDao {
 }
 
 extension ConversationDaoReadOperations on ConversationDao {
+  Future<bool> isAutoApprovalEnabled(String conversationId) async {
+    final visited = <String>{};
+    var currentId = conversationId;
+    while (visited.add(currentId)) {
+      final conversation = await getConversationById(currentId);
+      if (conversation == null) return false;
+      final parentId = conversation.parentConversationId;
+      if (parentId == null) return conversation.autoApproveTools;
+      currentId = parentId;
+    }
+
+    return false;
+  }
+
   Stream<ConversationsTable?> watchConversationById(String id) => (select(
     conversations,
   )..where((tbl) => tbl.id.equals(id))).watchSingleOrNull();
