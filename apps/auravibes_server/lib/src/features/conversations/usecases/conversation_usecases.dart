@@ -153,7 +153,9 @@ class ConversationUseCases {
             stableId: request.conversationId,
             title: request.title.trim(),
             isPinned: request.isPinned,
-            autoApproveTools: request.autoApproveTools,
+            toolAccessMode: ConversationToolAccessModeStorage.decode(
+              request.toolAccessMode,
+            ).storedValue,
             modelId: request.modelId,
             agentId: request.agentId,
             reasoningConfigJson: reasoningConfigJson,
@@ -264,11 +266,11 @@ class ConversationUseCases {
           stableId: request.forkConversationId,
           title: title,
           isPinned: false,
-          autoApproveTools: await _repository.effectiveAutoApproveTools(
+          toolAccessMode: (await _repository.effectiveToolAccessMode(
             session,
             conversation: source,
             transaction: transaction,
-          ),
+          )).storedValue,
           modelId: source.modelId,
           agentId: source.agentId,
           reasoningConfigJson: source.reasoningConfigJson,
@@ -525,8 +527,9 @@ class ConversationUseCases {
         conversation.copyWith(
           title: request.title?.trim() ?? conversation.title,
           isPinned: request.isPinned ?? conversation.isPinned,
-          autoApproveTools:
-              request.autoApproveTools ?? conversation.autoApproveTools,
+          toolAccessMode: ConversationToolAccessModeStorage.decode(
+            request.toolAccessMode ?? conversation.toolAccessMode,
+          ).storedValue,
           modelId: request.clearModel
               ? null
               : request.modelId ?? conversation.modelId,
@@ -1268,7 +1271,7 @@ class ConversationUseCases {
         executionState: conversation.executionState,
         projectionRevision: conversation.projectionRevision,
         sequence: conversation.eventSequence,
-        autoApproveTools: conversation.autoApproveTools,
+        toolAccessMode: conversation.toolAccessMode,
         modelId: conversation.modelId,
         agentId: conversation.agentId,
         forkSourceConversationId: conversation.forkSourceConversationId,
@@ -5327,7 +5330,7 @@ class ConversationUseCases {
         id: conversation.stableId,
         title: conversation.title ?? '',
         isPinned: conversation.isPinned,
-        autoApproveTools: conversation.autoApproveTools,
+        toolAccessMode: conversation.toolAccessMode,
         modelId: conversation.modelId,
         agentId: conversation.agentId,
         reasoningConfigJson: conversation.reasoningConfigJson,

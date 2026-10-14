@@ -1129,11 +1129,11 @@ class Protocol extends _is.DatabaseSerializationManager {
           dartType: 'bool',
         ),
         _isp.ColumnDefinition(
-          name: 'autoApproveTools',
-          columnType: _isp.ColumnType.boolean,
+          name: 'toolAccessMode',
+          columnType: _isp.ColumnType.text,
           isNullable: false,
-          dartType: 'bool',
-          columnDefault: 'false',
+          dartType: 'String',
+          columnDefault: '\'default\'',
         ),
         _isp.ColumnDefinition(
           name: 'modelId',

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
@@ -59,6 +60,39 @@ void main() {
       );
     }
 
+    test('forward migration preserves both legacy boolean values', () async {
+      final session = sessionBuilder.build();
+      final migration = File('migrations/20261014184553933/migration.sql')
+          .readAsStringSync();
+      final statements =
+          RegExp(r'(?:ALTER TABLE|UPDATE) "conversation"[\s\S]*?;')
+              .allMatches(migration)
+              .map(
+                (match) => match
+                    .group(0)!
+                    .replaceAll('"conversation"', '"legacy_conversation_mode"'),
+              );
+      await session.db.transaction((transaction) async {
+        await session.db.unsafeQuery(
+          'CREATE TEMPORARY TABLE legacy_conversation_mode '
+          '(id integer, "autoApproveTools" boolean NOT NULL) ON COMMIT DROP',
+          transaction: transaction,
+        );
+        await session.db.unsafeQuery(
+          'INSERT INTO legacy_conversation_mode VALUES (1, false), (2, true)',
+          transaction: transaction,
+        );
+        for (final statement in statements) {
+          await session.db.unsafeQuery(statement, transaction: transaction);
+        }
+        final rows = await session.db.unsafeQuery(
+          'SELECT id, "toolAccessMode" FROM legacy_conversation_mode ORDER BY id',
+          transaction: transaction,
+        );
+        expect(rows.map((row) => row[1]), ['default', 'allow_all']);
+      });
+    });
+
     test(
       'persists mode through create, update, projection and root/child forks',
       () async {
@@ -70,23 +104,24 @@ void main() {
             requestId: 'create-root',
             conversationId: 'root',
             title: 'Root',
-            isPinned: false,
-            autoApproveTools: true,
+            isPinned: true,
+            toolAccessMode: 'allow_all',
           ),
         );
-        expect(root.autoApproveTools, isTrue);
+        expect(root.toolAccessMode, 'allow_all');
         final child = await endpoints.conversation.create(
           fixture.session,
           CreateConversationRequest(
             workspaceId: fixture.workspaceId,
             requestId: 'create-child',
+            toolAccessMode: 'future_mode',
             conversationId: 'child',
             title: 'Child',
             isPinned: false,
             parentConversationId: root.id,
           ),
         );
-        expect(child.autoApproveTools, isFalse);
+        expect(child.toolAccessMode, 'default');
         final now = DateTime.now().toUtc();
         for (final summary in [root, child]) {
           final row = (await Conversation.db.findFirstRow(
@@ -120,7 +155,7 @@ void main() {
               throughMessageId: '${summary.id}-message',
             ),
           );
-          expect(fork.autoApproveTools, isTrue);
+          expect(fork.toolAccessMode, 'allow_all');
         }
         final updated = await endpoints.conversation.update(
           fixture.session,
@@ -129,15 +164,18 @@ void main() {
             requestId: 'disable-root',
             conversationId: root.id,
             expectedRevision: root.revision,
-            autoApproveTools: false,
+            toolAccessMode: 'default',
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
             clearParent: false,
           ),
         );
-        expect(updated.autoApproveTools, isFalse);
+        expect(updated.toolAccessMode, 'default');
         expect(updated.title, root.title);
+        expect(updated.isPinned, root.isPinned);
+        expect(updated.modelId, root.modelId);
+        expect(updated.agentId, root.agentId);
         final renamed = await endpoints.conversation.update(
           fixture.session,
           UpdateConversationRequest(
@@ -152,7 +190,7 @@ void main() {
             clearParent: false,
           ),
         );
-        expect(renamed.autoApproveTools, isTrue);
+        expect(renamed.toolAccessMode, 'allow_all');
         expect(
           (await endpoints.conversation.get(
             fixture.session,
@@ -160,8 +198,8 @@ void main() {
               workspaceId: fixture.workspaceId,
               conversationId: 'root-fork',
             ),
-          )).autoApproveTools,
-          isTrue,
+          )).toolAccessMode,
+          'allow_all',
         );
         expect(
           (await endpoints.conversation.getConversationSnapshot(
@@ -170,9 +208,41 @@ void main() {
               workspaceId: fixture.workspaceId,
               conversationId: 'root-fork',
             ),
-          )).conversation.autoApproveTools,
-          isTrue,
+          )).conversation.toolAccessMode,
+          'allow_all',
         );
+        final page = await endpoints.conversation.listPage(
+          fixture.session,
+          ListConversationsRequest(workspaceId: fixture.workspaceId, limit: 10),
+        );
+        expect(
+          page.conversations
+              .singleWhere((row) => row.id == root.id)
+              .toolAccessMode,
+          'default',
+        );
+        expect(
+          page.conversations
+              .singleWhere((row) => row.id == renamed.id)
+              .toolAccessMode,
+          'allow_all',
+        );
+        final unknown = await endpoints.conversation.update(
+          fixture.session,
+          UpdateConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'unknown-mode-root-fork',
+            conversationId: renamed.id,
+            expectedRevision: renamed.revision,
+            toolAccessMode: 'future_mode',
+            clearModel: false,
+            clearAgent: false,
+            clearReasoningConfig: false,
+            clearParent: false,
+          ),
+        );
+        expect(unknown.toolAccessMode, 'default');
+        expect(unknown.title, renamed.title);
       },
     );
 
@@ -184,7 +254,7 @@ void main() {
         Future<Conversation> conversation(
           String id, {
           String? parent,
-          bool enabled = false,
+          String mode = 'default',
         }) => Conversation.db.insertRow(
           fixture.database,
           Conversation(
@@ -193,7 +263,7 @@ void main() {
             title: id,
             isPinned: false,
             parentConversationStableId: parent,
-            autoApproveTools: enabled,
+            toolAccessMode: mode,
             revision: 1,
             createdAt: now,
             updatedAt: now,
@@ -203,7 +273,7 @@ void main() {
         var child = await conversation(
           'child',
           parent: root.stableId,
-          enabled: true,
+          mode: 'allow_all',
         );
         final turn = await ConversationTurn.db.insertRow(
           fixture.database,
@@ -293,7 +363,7 @@ void main() {
             requestId: 'enable-root',
             conversationId: root.stableId,
             expectedRevision: 1,
-            autoApproveTools: true,
+            toolAccessMode: 'allow_all',
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
@@ -440,13 +510,13 @@ void main() {
           fixture.database,
           root.id!,
         ))!;
-        for (final autoApprove in [false, true]) {
+        for (final mode in ['default', 'allow_all']) {
           currentRoot = await Conversation.db.updateRow(
             fixture.database,
-            currentRoot.copyWith(autoApproveTools: autoApprove),
+            currentRoot.copyWith(toolAccessMode: mode),
           );
           expect(
-            await call('disabled-config-conversation-grant-$autoApprove'),
+            await call('disabled-config-conversation-grant-$mode'),
             'disabledInWorkspace',
           );
           expect(executions, 3);

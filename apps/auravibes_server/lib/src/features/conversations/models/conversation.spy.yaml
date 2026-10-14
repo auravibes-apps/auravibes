@@ -5,7 +5,7 @@ fields:
   stableId: String
   title: String?
   isPinned: bool
-  autoApproveTools: bool, default=false
+  toolAccessMode: String, default='default'
   modelId: String?
   agentId: String?
   reasoningConfigJson: String?

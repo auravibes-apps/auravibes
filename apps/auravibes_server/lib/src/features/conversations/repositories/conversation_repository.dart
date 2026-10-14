@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
@@ -212,7 +213,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     lockMode: lock ? LockMode.forUpdate : null,
   );
 
-  Future<bool> effectiveAutoApproveTools(
+  Future<ConversationToolAccessMode> effectiveToolAccessMode(
     Session session, {
     required Conversation conversation,
     Transaction? transaction,
@@ -221,9 +222,13 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     final visited = <String>{};
     Conversation? current = conversation;
     while (current != null && visited.add(current.stableId)) {
-      if (current.deletedAt != null) return false;
+      if (current.deletedAt != null) {
+        return ConversationToolAccessMode.defaultMode;
+      }
       final parentId = current.parentConversationStableId;
-      if (parentId == null) return current.autoApproveTools;
+      if (parentId == null) {
+        return ConversationToolAccessModeStorage.decode(current.toolAccessMode);
+      }
       current = await findConversationByStableId(
         session,
         workspaceId: workspaceId,
@@ -231,7 +236,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         transaction: transaction,
       );
     }
-    return false;
+    return ConversationToolAccessMode.defaultMode;
   }
 
   Future<List<Conversation>> listConversations(

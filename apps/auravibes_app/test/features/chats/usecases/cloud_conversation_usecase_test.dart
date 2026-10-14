@@ -68,7 +68,7 @@ void main() {
         id: 'conversation',
         title: 'Conversation',
         isPinned: false,
-        autoApproveTools: true,
+        toolAccessMode: 'allow_all',
         revision: 1,
         createdAt: now,
         updatedAt: now,
@@ -81,13 +81,13 @@ void main() {
         const ConversationToCreate(
           title: 'Conversation',
           workspaceId: 'local',
-          autoApproveTools: true,
+          toolAccessMode: .allowAll,
         ),
       );
       final create =
           verify(() => endpoint.create(captureAny())).captured.single
               as CreateConversationRequest;
-      expect(create.autoApproveTools, isTrue);
+      expect(create.toolAccessMode, 'allow_all');
       expect(create.workspaceId, _workspace.cloudWorkspaceId);
       final conversation = ConversationEntity(
         id: summary.id,
@@ -97,17 +97,21 @@ void main() {
         createdAt: now,
         updatedAt: now,
         revision: 1,
-        autoApproveTools: true,
+        toolAccessMode: .allowAll,
       );
-      for (final mode in [true, false, null]) {
+      for (final mode in [
+        ConversationToolAccessMode.allowAll,
+        ConversationToolAccessMode.defaultMode,
+        null,
+      ]) {
         final _ = await usecase.update(
           conversation,
-          .new(autoApproveTools: mode),
+          .new(toolAccessMode: mode),
         );
         final update =
             verify(() => endpoint.update(captureAny())).captured.single
                 as UpdateConversationRequest;
-        expect(update.autoApproveTools, mode);
+        expect(update.toolAccessMode, mode?.storedValue);
         expect(update.workspaceId, _workspace.cloudWorkspaceId);
         expect(update.expectedRevision, conversation.revision);
       }

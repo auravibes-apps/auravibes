@@ -1,3 +1,5 @@
+import 'package:auravibes_engine/auravibes_engine.dart';
+
 abstract final class ConversationStatuses {
   static const queued = 'queued';
   static const running = 'running';
@@ -57,4 +59,16 @@ abstract final class BackgroundWorkPreviews {
 
   /// Marker used when the completion follow-up ends without succeeding.
   static const continuationFailed = 'continuation_failed';
+}
+
+/// Stable cloud representation, independent of Dart enum names.
+extension ConversationToolAccessModeStorage on ConversationToolAccessMode {
+  String get storedValue => switch (this) {
+    ConversationToolAccessMode.defaultMode => 'default',
+    ConversationToolAccessMode.allowAll => 'allow_all',
+  };
+
+  static ConversationToolAccessMode decode(String value) => value == 'allow_all'
+      ? ConversationToolAccessMode.allowAll
+      : ConversationToolAccessMode.defaultMode;
 }

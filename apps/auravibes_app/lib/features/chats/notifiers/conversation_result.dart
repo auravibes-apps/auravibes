@@ -214,7 +214,9 @@ ConversationEntity _updatedConversation(
   reasoningConfiguration: ReasoningConfiguration.decode(
     updated.reasoningConfigJson,
   ),
-  autoApproveTools: updated.autoApproveTools,
+  toolAccessMode: ConversationToolAccessModeStorage.decode(
+    updated.toolAccessMode,
+  ),
   revision: updated.revision,
   updatedAt: updated.updatedAt,
 );
@@ -224,7 +226,9 @@ ConversationEntity _updatedTitleConversation(
   ConversationSummary updated,
 ) => conversation.copyWith(
   title: updated.title,
-  autoApproveTools: updated.autoApproveTools,
+  toolAccessMode: ConversationToolAccessModeStorage.decode(
+    updated.toolAccessMode,
+  ),
   revision: updated.revision,
   updatedAt: updated.updatedAt,
 );

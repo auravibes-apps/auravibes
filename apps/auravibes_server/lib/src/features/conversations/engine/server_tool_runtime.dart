@@ -1232,17 +1232,15 @@ class ServerToolRuntime({
       agentId: conversation?.agentId,
       conversationStableId: conversation?.stableId,
     );
-    final permission = applyAgentToolAutoApproval(
+    final permission = applyConversationToolAccessMode(
       configuredPermission,
-      autoApproveTools:
+      mode:
           existing == null &&
-          conversation != null &&
-          conversation.workspaceId == turn.workspaceId &&
-          await conversation_repo.ConversationRepository()
-              .effectiveAutoApproveTools(
-                session,
-                conversation: conversation,
-              ),
+              conversation != null &&
+              conversation.workspaceId == turn.workspaceId
+          ? await conversation_repo.ConversationRepository()
+                .effectiveToolAccessMode(session, conversation: conversation)
+          : ConversationToolAccessMode.defaultMode,
     );
     final persistedRequest = request.name == callSkillToolName
         ? ServerToolRequest(

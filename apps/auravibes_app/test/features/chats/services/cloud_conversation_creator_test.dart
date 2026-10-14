@@ -1,6 +1,7 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/services/cloud_conversation_creator.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -9,45 +10,52 @@ class _CloudConversationUsecase extends Mock
     implements CloudConversationUsecase;
 
 void main() {
-  test('maps a cloud conversation into the app entity', () async {
-    final usecase = _CloudConversationUsecase();
-    const value = ConversationToCreate(
-      title: 'New Conversation',
-      workspaceId: 'workspace-1',
-      modelId: 'model-1',
-      agentId: 'agent-1',
-      reasoningConfiguration: .new(effort: 'high'),
-      parentConversationId: 'parent-1',
-      isPinned: true,
-    );
-    final now = DateTime.utc(2026);
-    final summary = ConversationSummary(
-      id: 'conversation-1',
-      title: 'Created',
-      isPinned: true,
-      autoApproveTools: true,
-      modelId: 'model-1',
-      agentId: 'agent-1',
-      reasoningConfigJson: value.reasoningConfiguration?.encode(),
-      parentConversationId: 'parent-1',
-      revision: 4,
-      createdAt: now,
-      updatedAt: now,
-    );
-    when(() => usecase.create(value)).thenAnswer((_) async => summary);
+  for (final mode in ['default', 'allow_all', 'future_mode']) {
+    test('maps cloud mode $mode into the app entity', () async {
+      final usecase = _CloudConversationUsecase();
+      const value = ConversationToCreate(
+        title: 'New Conversation',
+        workspaceId: 'workspace-1',
+        modelId: 'model-1',
+        agentId: 'agent-1',
+        reasoningConfiguration: .new(effort: 'high'),
+        parentConversationId: 'parent-1',
+        isPinned: true,
+      );
+      final now = DateTime.utc(2026);
+      final summary = ConversationSummary(
+        id: 'conversation-1',
+        title: 'Created',
+        isPinned: true,
+        toolAccessMode: mode,
+        modelId: 'model-1',
+        agentId: 'agent-1',
+        reasoningConfigJson: value.reasoningConfiguration?.encode(),
+        parentConversationId: 'parent-1',
+        revision: 4,
+        createdAt: now,
+        updatedAt: now,
+      );
+      when(() => usecase.create(value)).thenAnswer((_) async => summary);
 
-    final conversation = await CloudConversationCreator(
-      load: () async => usecase,
-    ).call(value);
+      final conversation = await CloudConversationCreator(
+        load: () async => usecase,
+      ).call(value);
 
-    expect(conversation.id, 'conversation-1');
-    expect(conversation.autoApproveTools, isTrue);
-    expect(
-      conversation.reasoningConfiguration?.encode(),
-      value.reasoningConfiguration?.encode(),
-    );
-    final _ = verify(() => usecase.create(value)).called(1);
-  });
+      expect(conversation.id, 'conversation-1');
+      expect(
+        conversation.toolAccessMode,
+        mode == 'allow_all'
+            ? ConversationToolAccessMode.allowAll
+            : ConversationToolAccessMode.defaultMode,
+      );
+      expect(
+        conversation.reasoningConfiguration?.encode(),
+        value.reasoningConfiguration?.encode(),
+      );
+      final _ = verify(() => usecase.create(value)).called(1);
+    });
+  }
 
   test('reports an unavailable cloud workspace', () async {
     final creator = CloudConversationCreator(load: () async => null);

@@ -1,0 +1,58 @@
+{
+  "__className__": "serverpod.DatabaseMigration",
+  "actions": [
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "alterTable",
+      "alterTable": {
+        "__className__": "serverpod.TableMigration",
+        "name": "conversation",
+        "schema": "public",
+        "addColumns": [
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "toolAccessMode",
+            "fieldName": "toolAccessMode",
+            "columnType": 0,
+            "isNullable": false,
+            "columnDefault": "'default'",
+            "dartType": "String"
+          }
+        ],
+        "deleteColumns": [
+          "autoApproveTools"
+        ],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": [
+          {
+            "__className__": "serverpod.DatabaseMigrationWarning",
+            "type": "columnDropped",
+            "message": "Column \"autoApproveTools\" of table \"conversation\" will be dropped.",
+            "table": "conversation",
+            "columns": [
+              "autoApproveTools"
+            ],
+            "destrucive": true
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "__className__": "serverpod.DatabaseMigrationWarning",
+      "type": "columnDropped",
+      "message": "Column \"autoApproveTools\" of table \"conversation\" will be dropped.",
+      "table": "conversation",
+      "columns": [
+        "autoApproveTools"
+      ],
+      "destrucive": true
+    }
+  ],
+  "migrationApiVersion": 1
+}
