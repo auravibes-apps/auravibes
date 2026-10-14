@@ -1196,16 +1196,6 @@ class const _ChatConversationBody({
   Widget build(BuildContext context, WidgetRef ref) {
     final backgroundWorkStatus = _backgroundWorkStatusPresence(ref, data);
     final hasOtherStatus = _hasChatConversationStatus(data);
-    final hasIncompleteAgentContext =
-        ref
-            .watch(
-              conversationArchiveIncompleteContextProvider((
-                workspaceId: data.workspaceId,
-                conversationId: data.conversation.id,
-              )),
-            )
-            .value ==
-        true;
     final hasStatusArea =
         backgroundWorkStatus.hasDetachableToolCalls ||
         backgroundWorkStatus.hasBackgroundWorks ||
@@ -1216,7 +1206,6 @@ class const _ChatConversationBody({
       data: data,
       backgroundWorkStatus: backgroundWorkStatus,
       hasOtherStatus: hasOtherStatus,
-      hasIncompleteAgentContext: hasIncompleteAgentContext,
       hasStatusArea: hasStatusArea,
     );
   }
@@ -1245,7 +1234,6 @@ class const _ChatConversationBodyLayout({
   required final _LoadedChatConversationData data,
   required final _BackgroundWorkStatusPresence backgroundWorkStatus,
   required final bool hasOtherStatus,
-  required final bool hasIncompleteAgentContext,
   required final bool hasStatusArea,
 }) extends StatelessWidget {
   @override
@@ -1254,8 +1242,7 @@ class const _ChatConversationBodyLayout({
       if (!data.showInputComposer &&
           data.conversation.parentConversationId != null)
         _ConversationOrientation(data: data),
-      if (hasIncompleteAgentContext)
-        const _IncompleteAgentContextNoticeContent(),
+      _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(data: data),
       if (hasStatusArea)
@@ -1291,6 +1278,28 @@ class const _ChatConversationStatusArea({
     ],
     mainAxisSize: .min,
   );
+}
+
+class const _IncompleteImportedAgentContextNotice({
+  required final _LoadedChatConversationData data,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!_hasIncompleteAgentContext(ref)) return const SizedBox.shrink();
+
+    return const _IncompleteAgentContextNoticeContent();
+  }
+
+  bool _hasIncompleteAgentContext(WidgetRef ref) =>
+      ref
+          .watch(
+            conversationArchiveIncompleteContextProvider((
+              workspaceId: data.workspaceId,
+              conversationId: data.conversation.id,
+            )),
+          )
+          .value ==
+      true;
 }
 
 class const _IncompleteAgentContextNoticeContent() extends StatelessWidget {
@@ -1838,12 +1847,7 @@ class const _ChatControlsPadding({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(
-      left: context.auraTheme.fromSpacing(.md),
-      top: context.auraTheme.fromSpacing(.md),
-      right: context.auraTheme.fromSpacing(.md),
-      bottom: context.auraTheme.fromSpacing(.md),
-    ),
+    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
     child: _ChatControlsAlignment(
       workspaceId: workspaceId,
       conversationId: conversationId,

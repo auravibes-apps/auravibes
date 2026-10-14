@@ -28,6 +28,9 @@ import 'package:path/path.dart' as p;
 
 final _logger = Logger('chat_input_widget');
 
+const double _chatInputHorizontalPadding = 16;
+const double _chatInputVerticalPadding = 8;
+
 const String _attachFileKey =
     LocaleKeys.chats_screens_chat_conversation_attach_file;
 const String _attachPhotoKey =
@@ -78,7 +81,7 @@ class const ChatInputWidget({
   final ValueChanged<bool>? onDraftStatusChanged,
   final String? conversationId,
   final bool autofocus = false,
-  final double topPadding = 8,
+  final double topPadding = _chatInputVerticalPadding,
   final Widget? reasoningControl,
   final ChatDraft? draftToLoad,
   final List<String> modalitiesInput = const [],
@@ -529,10 +532,10 @@ class const _ChatInputPadding({required final _ChatInputState state})
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(
-      left: 16,
+      left: _chatInputHorizontalPadding,
       top: state.input.topPadding,
-      right: 16,
-      bottom: 8,
+      right: _chatInputHorizontalPadding,
+      bottom: _chatInputVerticalPadding,
     ),
     child: _ChatInputFieldComposition(state: state),
   );
