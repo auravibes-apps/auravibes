@@ -297,7 +297,7 @@ class const ChatMessagesWidget({
         ListView.separated(
           reverse: true,
           controller: controller,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           itemBuilder: (context, index) => _buildChatTimelineItem(
             index: index,
             data: data,
