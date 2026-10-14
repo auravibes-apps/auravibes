@@ -89,4 +89,27 @@ void main() {
       ),
     );
   });
+
+  test('maps blob-backed embedded resources', () {
+    final result = McpSdkAdapter.toolResult(
+      .new(
+        content: [
+          mcp.EmbeddedResource(
+            resource: mcp.BlobResourceContents(
+              blob: 'AQID',
+              mimeType: 'application/octet-stream',
+              uri: 'file:///blob',
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final resource = result.content.single as McpResourceContent;
+    expect(resource.uri, 'file:///blob');
+    expect(resource.blob, 'AQID');
+    expect(resource.mimeType, 'application/octet-stream');
+    expect(resource.text, isNull);
+    expect(resource.isLink, isFalse);
+  });
 }
