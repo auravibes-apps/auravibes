@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:path/path.dart' as p;
 
@@ -30,6 +31,8 @@ abstract class ConversationArchive with _$ConversationArchive {
     required DateTime updatedAt,
     required List<ConversationArchiveMessage> messages,
     String? modelLabel,
+    @Default(ConversationToolAccessMode.defaultMode)
+    ConversationToolAccessMode toolAccessMode,
     ConversationArchiveAgentContext? agentContext,
   }) = _ConversationArchive;
 }
@@ -180,6 +183,7 @@ abstract final class ConversationArchiveCodec {
       updatedAt: conversation.updatedAt,
       messages: archivedMessages,
       modelLabel: modelLabel,
+      toolAccessMode: conversation.toolAccessMode,
       agentContext: agentContext,
     );
   }
@@ -757,6 +761,7 @@ ConversationArchive _decodeArchiveContents(Map<String, Object?> root) {
     updatedAt: conversation.updatedAt,
     messages: _decodeMessages(root['messages']),
     modelLabel: conversation.modelLabel,
+    toolAccessMode: conversation.toolAccessMode,
     agentContext: root['version'] == ConversationArchiveCodec.version
         ? _decodeAgentContext(root['agentContext'])
         : null,
@@ -1136,17 +1141,49 @@ void _validateArchiveRoot(Map<String, Object?> root) {
   );
 }
 
-({String title, DateTime createdAt, DateTime updatedAt, String? modelLabel})
+({
+  String title,
+  DateTime createdAt,
+  DateTime updatedAt,
+  String? modelLabel,
+  ConversationToolAccessMode toolAccessMode,
+})
 _decodeConversation(Object? value) {
   final json = _jsonMap(value);
-  _requireKeys(json, const {'title', 'createdAt', 'updatedAt', 'modelLabel'});
+  _requireAllowedKeys(
+    json,
+    const {
+      'title',
+      'createdAt',
+      'updatedAt',
+      'modelLabel',
+      'toolAccessMode',
+      'autoApproveTools',
+    },
+    const {'title', 'createdAt', 'updatedAt', 'modelLabel'},
+  );
 
   return (
     title: _nonEmptyString(json['title']),
     createdAt: _dateTime(json['createdAt']),
     updatedAt: _dateTime(json['updatedAt']),
     modelLabel: _nullableString(json['modelLabel']),
+    toolAccessMode: _decodeToolAccessMode(json),
   );
+}
+
+ConversationToolAccessMode _decodeToolAccessMode(Map<String, Object?> json) {
+  if (json.containsKey('toolAccessMode')) {
+    return ConversationToolAccessModeStorage.decode(
+      _string(json['toolAccessMode']),
+    );
+  }
+  if (json.containsKey('autoApproveTools') &&
+      _boolean(json['autoApproveTools'])) {
+    return .allowAll;
+  }
+
+  return .defaultMode;
 }
 
 Future<List<ConversationArchiveMessage>> _archiveMessages(
@@ -1282,6 +1319,7 @@ Map<String, Object?> _conversationToJson(ConversationArchive archive) => {
   'createdAt': archive.createdAt.toIso8601String(),
   'updatedAt': archive.updatedAt.toIso8601String(),
   'modelLabel': archive.modelLabel,
+  'toolAccessMode': archive.toolAccessMode.storedValue,
 };
 
 Map<String, Object?> _messageToJson(ConversationArchiveMessage message) => {

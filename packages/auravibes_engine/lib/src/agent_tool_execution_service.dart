@@ -18,7 +18,8 @@ class const AgentToolApprovalDecision({
 
 class const AgentToolResultUpdate({
   required final String toolCallId,
-  required final AgentToolResultStatus resultStatus,
+  required final AgentToolResultStatus? resultStatus,
+  final bool approvalRequested = false,
   final String? responseRaw,
   final String? responseContextRaw,
   final List<AgentToolResultMedia> media = const [],
@@ -85,7 +86,7 @@ class const AgentToolExecutionService<TTool extends Object>({
       conversationId: conversationId,
     );
     final updates = <AgentToolResultUpdate>[];
-    var hasPendingTools = false;
+    var hasPendingTools = latestToolCalls.pendingApprovalToolCallIds.isNotEmpty;
 
     if (!latestToolCalls.hasToolCalls) {
       return AgentIterationDecision.done;
@@ -138,6 +139,13 @@ class const AgentToolExecutionService<TTool extends Object>({
           grantedTools.add(toolToCall);
         case .needsConfirmation:
           hasPendingTools = true;
+          updates.add(
+            AgentToolResultUpdate(
+              toolCallId: toolToCall.id,
+              resultStatus: null,
+              approvalRequested: true,
+            ),
+          );
         case .disabledInConversation:
           updates.add(
             AgentToolResultUpdate(

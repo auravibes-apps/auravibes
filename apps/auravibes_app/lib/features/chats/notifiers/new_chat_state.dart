@@ -22,6 +22,8 @@ abstract class NewChatState with _$NewChatState {
     String? agentId,
     ReasoningConfiguration? reasoningConfiguration,
     @Default(false) bool isLoading,
+    @Default(ConversationToolAccessMode.defaultMode)
+    ConversationToolAccessMode toolAccessMode,
   }) = _NewChatState;
 }
 
@@ -51,6 +53,10 @@ class NewChatNotifier extends _$NewChatNotifier {
     state = state.copyWith(reasoningConfiguration: value);
   }
 
+  void setToolAccessMode(ConversationToolAccessMode mode) {
+    state = state.copyWith(toolAccessMode: mode);
+  }
+
   Future<ConversationEntity> startConversation(
     ChatDraft draft,
     SendNewMessageUsecase sendNewMessageUsecase,
@@ -67,6 +73,7 @@ class NewChatNotifier extends _$NewChatNotifier {
         workspaceModelSelectionId: modelId,
         workspaceId: workspaceId,
         agentId: state.agentId,
+        toolAccessMode: state.toolAccessMode,
         reasoningConfiguration: state.reasoningConfiguration,
       ));
     } finally {

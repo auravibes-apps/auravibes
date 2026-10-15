@@ -59,6 +59,7 @@ class const AgentMessageToolCall({
   required final String name,
   required final String argumentsRaw,
   final AgentToolCallLifecycle lifecycle = AgentToolCallLifecycle.pending,
+  final bool approvalRequested = false,
 }) {
   bool get isPending => lifecycle.isPending;
   bool get isResolved => lifecycle.isResolved;
@@ -82,6 +83,7 @@ class const LoadLatestMessageToolCallsResult<TTool extends Object>({
   required final List<AgentToolToCall<TTool>> toolsToRun,
   required final List<String> notFoundToolCallIds,
   required final List<String> previouslyFailedToolCallIds,
+  final List<String> pendingApprovalToolCallIds = const [],
 });
 
 abstract interface class AgentToolCallProvider<TTool extends Object> {
@@ -120,12 +122,17 @@ class const AgentToolCallLoader<TTool extends Object>({
     final toolsToRun = <AgentToolToCall<TTool>>[];
     final notFoundToolCallIds = <String>[];
     final previouslyFailedToolCallIds = <String>[];
+    final pendingApprovalToolCallIds = <String>[];
     final failedToolCalls = _collectFailedToolCalls(
       messages,
       excludeMessageId: latestAssistantMessage.id,
     );
 
     for (final toolCall in toolCalls.where((toolCall) => toolCall.isPending)) {
+      if (toolCall.approvalRequested) {
+        pendingApprovalToolCallIds.add(toolCall.id);
+        continue;
+      }
       if (failedToolCalls.contains(_toolCallIdentity(toolCall))) {
         previouslyFailedToolCallIds.add(toolCall.id);
         continue;
@@ -155,6 +162,7 @@ class const AgentToolCallLoader<TTool extends Object>({
       toolsToRun: toolsToRun,
       notFoundToolCallIds: notFoundToolCallIds,
       previouslyFailedToolCallIds: previouslyFailedToolCallIds,
+      pendingApprovalToolCallIds: pendingApprovalToolCallIds,
     );
   }
 

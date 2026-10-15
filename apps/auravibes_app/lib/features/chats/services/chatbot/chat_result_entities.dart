@@ -54,6 +54,7 @@ MessageToolCallEntity _entityToolCall(
   name: toolCall.toolName,
   argumentsRaw: toolCall.argumentsRaw,
   userFacingDescription: userFacingDescription,
+  approvalRequested: false,
 );
 
 MessageMetadataEntity? _toEntityMetadata(ChatResult<ChatMessage> result) {

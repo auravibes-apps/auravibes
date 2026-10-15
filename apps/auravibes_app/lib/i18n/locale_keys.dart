@@ -519,6 +519,8 @@ abstract class LocaleKeys {
       'chats_screens.new_chat.no_model_selected';
   static const chats_screens_chat_conversation_select_model_selctor =
       'chats_screens.chat_conversation.select_model_selctor';
+  static const chats_screens_chat_conversation_model_effort_selector =
+      'chats_screens.chat_conversation.model_effort_selector';
   static const chats_screens_chat_conversation_archive_export =
       'chats_screens.chat_conversation.archive_export';
   static const chats_screens_chat_conversation_archive_exported =
@@ -1248,6 +1250,19 @@ abstract class LocaleKeys {
       'skills_selector.semantics_refresh';
   static const skills_selector_semantics_credentials =
       'skills_selector.semantics_credentials';
+  static const chat_input_tool_access_label = 'chat_input.tool_access_label';
+  static const chat_input_tool_access_default_label =
+      'chat_input.tool_access_default_label';
+  static const chat_input_tool_access_default_compact_label =
+      'chat_input.tool_access_default_compact_label';
+  static const chat_input_tool_access_allow_all_label =
+      'chat_input.tool_access_allow_all_label';
+  static const chat_input_tool_access_allow_all_compact_label =
+      'chat_input.tool_access_allow_all_compact_label';
+  static const chat_input_tool_access_default_description =
+      'chat_input.tool_access_default_description';
+  static const chat_input_tool_access_allow_all_description =
+      'chat_input.tool_access_allow_all_description';
   static const chat_input_skills_control_count =
       'chat_input.skills_control_count';
   static const skills_tool_section_title = 'skills_tool.section_title';

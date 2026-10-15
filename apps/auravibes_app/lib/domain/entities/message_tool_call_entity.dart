@@ -24,6 +24,9 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
     @JsonKey(includeIfNull: false) int? turnRevision,
     @Default(false) bool backgroundEligible,
 
+    /// Null preserves legacy pending approvals; false marks fresh model calls.
+    @JsonKey(includeIfNull: false) bool? approvalRequested,
+
     /// The raw response from tool execution, if successful.
     String? responseRaw,
 
@@ -82,6 +85,9 @@ extension MessageToolCallEntityHelpers on MessageToolCallEntity {
 
   /// Whether this tool call is waiting for permission.
   bool get isAwaitingApproval => resultStatus == null;
+
+  bool get hasPendingApproval =>
+      isAwaitingApproval && approvalRequested != false;
 
   /// Whether this tool call is currently running.
   bool get isRunning => resultStatus?.agentLifecycle.isPending ?? false;

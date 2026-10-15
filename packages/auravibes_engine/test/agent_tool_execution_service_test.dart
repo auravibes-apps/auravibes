@@ -7,6 +7,27 @@ import 'package:auravibes_engine/src/agent_tool_execution_service.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('already requested approval skips permission re-evaluation', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [],
+        pendingApprovalToolCallIds: ['manual-id'],
+        notFoundToolCallIds: [],
+        previouslyFailedToolCallIds: [],
+      ),
+      decisions: const {'manual-id': AgentToolPermissionResult.granted},
+    );
+    final result = await AgentToolExecutionService<String>(provider: provider)(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+    );
+    expect(result, AgentIterationDecision.waitForToolApproval);
+    expect(provider.approvalArgumentsRaw, isEmpty);
+    expect(provider.updates, isEmpty);
+  });
+
   test('stops pending tools when cancellation is already requested', () async {
     final provider = _FakeExecutionProvider(
       latestToolCalls: _latestToolCalls(),
@@ -254,8 +275,10 @@ void main() {
     );
 
     expect(result, AgentIterationDecision.waitForToolApproval);
+    expect(provider.updates.first.approvalRequested, isTrue);
+    expect(provider.updates.first.resultStatus, isNull);
     expect(
-      provider.updates.single.resultStatus,
+      provider.updates.last.resultStatus,
       AgentToolResultStatus.executionError,
     );
   });

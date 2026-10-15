@@ -17,6 +17,7 @@ export 'src/agent_runtime.dart';
 export 'src/agent_service.dart' hide AgentService;
 export 'src/agent_stop_service.dart' hide AgentStopService;
 export 'src/agent_stream_service.dart' hide AgentStreamService;
+export 'src/agent_tool_approval_policy.dart';
 export 'src/agent_tool_batch_executor.dart';
 export 'src/agent_tool_decision_service.dart' hide AgentToolDecisionService;
 export 'src/agent_tool_execution_service.dart' hide AgentToolExecutionService;
@@ -28,6 +29,7 @@ export 'src/context_window.dart';
 export 'src/continue_agent_result.dart';
 export 'src/conversation_compaction.dart';
 export 'src/conversation_title.dart';
+export 'src/conversation_tool_access_mode.dart';
 export 'src/genkit_providers/chat_completions_provider.dart'
     show
         ChatCompletionsCodec,

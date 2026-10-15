@@ -161,7 +161,10 @@ class ConversationRepository(
     final boundary = _resolveForkBoundary(effective, throughMessageId);
 
     final forkDetails = await _forkDetails(source, effective, boundary);
-    final fork = await _createFork(source, forkDetails);
+    final fork = await _createForkWithEffectiveToolAccessMode(
+      source,
+      forkDetails,
+    );
 
     return _mapToConversation(fork);
   }
@@ -445,6 +448,7 @@ extension on ConversationRepository {
     modelId: .new(source.modelId),
     agentId: .new(source.agentId),
     reasoningConfigJson: .new(source.reasoningConfigJson),
+    toolAccessMode: .new(source.toolAccessMode),
   );
 
   Future<_ForkDetails> _forkDetails(
@@ -542,6 +546,16 @@ extension on ConversationRepository {
 
     return created;
   });
+
+  Future<ConversationsTable> _createForkWithEffectiveToolAccessMode(
+    ConversationsTable source,
+    _ForkDetails details,
+  ) async {
+    final mode = await _database.conversationDao.getToolAccessMode(source.id);
+    final effectiveSource = source.copyWith(toolAccessMode: mode.storedValue);
+
+    return await _createFork(effectiveSource, details);
+  }
 
   Future<String> _forkTitle(String workspaceId, String sourceTitle) async {
     final title = sourceTitle.trim();
@@ -1164,6 +1178,14 @@ extension on ConversationRepository {
 
   ConversationEntity _mapConversationCore(
     ConversationsTable conversationTable,
+  ) => _mapConversationFields(conversationTable).copyWith(
+    toolAccessMode: ConversationToolAccessModeStorage.decode(
+      conversationTable.toolAccessMode,
+    ),
+  );
+
+  ConversationEntity _mapConversationFields(
+    ConversationsTable conversationTable,
   ) {
     return ConversationEntity(
       id: conversationTable.id,
@@ -1196,9 +1218,10 @@ extension on ConversationRepository {
       title: .new(conversation.title),
       modelId: .new(conversation.modelId),
       agentId: .new(conversation.agentId),
-      reasoningConfigJson: .new(conversation.reasoningConfiguration?.encode()),
+      reasoningConfigJson: _reasoningConfigCompanion(conversation),
       parentConversationId: .new(conversation.parentConversationId),
       activeCompactionCheckpointId: const Value(null),
+      toolAccessMode: _toolAccessModeCompanion(conversation),
       isPinned: .new(conversation.isPinned ?? false),
     );
   }
@@ -1209,19 +1232,35 @@ extension on ConversationRepository {
     return ConversationsCompanion(
       title: .absentIfNull(conversation.title),
       modelId: .absentIfNull(conversation.modelId),
-      agentId: conversation.clearAgent
-          ? const Value(null)
-          : Value.absentIfNull(conversation.agentId),
-      reasoningConfigJson: conversation.clearReasoningConfiguration
-          ? const Value(null)
-          : Value.absentIfNull(conversation.reasoningConfiguration?.encode()),
+      agentId: _agentIdCompanionPatch(conversation),
+      reasoningConfigJson: _reasoningConfigCompanionPatch(conversation),
       activeCompactionCheckpointId: _activeCompactionCheckpointPatch(
         conversation,
       ),
+      toolAccessMode: _toolAccessModeCompanionPatch(conversation),
       isPinned: .absentIfNull(conversation.isPinned),
     );
   }
 }
+
+Value<String> _toolAccessModeCompanion(ConversationToCreate conversation) =>
+    .new(conversation.toolAccessMode.storedValue);
+
+Value<String?> _reasoningConfigCompanion(ConversationToCreate conversation) =>
+    .new(conversation.reasoningConfiguration?.encode());
+
+Value<String> _toolAccessModeCompanionPatch(ConversationPatch conversation) =>
+    Value.absentIfNull(conversation.toolAccessMode?.storedValue);
+
+Value<String?> _agentIdCompanionPatch(ConversationPatch conversation) =>
+    conversation.clearAgent
+    ? const Value(null)
+    : Value.absentIfNull(conversation.agentId);
+
+Value<String?> _reasoningConfigCompanionPatch(ConversationPatch conversation) =>
+    conversation.clearReasoningConfiguration
+    ? const Value(null)
+    : Value.absentIfNull(conversation.reasoningConfiguration?.encode());
 
 Value<String?> _activeCompactionCheckpointPatch(
   ConversationPatch conversation,

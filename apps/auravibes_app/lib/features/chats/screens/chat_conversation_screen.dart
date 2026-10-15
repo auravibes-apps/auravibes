@@ -46,7 +46,6 @@ import 'package:auravibes_app/features/chats/widgets/background_work_header_butt
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
@@ -68,6 +67,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentIterationContext,
+        ConversationToolAccessMode,
         ReasoningConfiguration,
         ReasoningOption,
         SelectedModelNotFoundException;
@@ -535,6 +535,7 @@ typedef _LoadedChatConversationSelectorCallbacks = ({
   ValueChanged<String?> onModelChanged,
   ValueChanged<String?> onModelSelectionChanged,
   ValueChanged<String?> onAgentChanged,
+  ValueChanged<ConversationToolAccessMode> onToolAccessModeChanged,
   VoidCallback onSkillsPress,
   VoidCallback? Function({required bool isInputBusy}) continueAgent,
 });
@@ -662,6 +663,7 @@ _LoadedChatConversationSelectorCallbacks _loadedConversationSelectorCallbacks(
   onModelChanged: _loadedConversationModelChanged(request),
   onModelSelectionChanged: _loadedConversationModelChanged(request),
   onAgentChanged: _agentChanged(request),
+  onToolAccessModeChanged: _toolAccessModeChanged(request),
   onSkillsPress: _loadedConversationSkillsPress(request),
   continueAgent: _loadedConversationContinue(request),
 );
@@ -774,6 +776,44 @@ ValueChanged<String?> _agentChanged(_LoadedRuntimeRequest request) =>
           )
           .setAgent(agentId),
     );
+
+ValueChanged<ConversationToolAccessMode> _toolAccessModeChanged(
+  _LoadedRuntimeRequest request,
+) =>
+    (mode) => unawaited(_setToolAccessMode(request, mode));
+
+Future<void> _setToolAccessMode(
+  _LoadedRuntimeRequest request,
+  ConversationToolAccessMode mode,
+) async {
+  try {
+    await request.ref
+        .read(
+          conversationChatProvider(
+            request.workspaceId,
+            request.conversation.id,
+          ).notifier,
+        )
+        .setToolAccessMode(mode);
+  } on Exception catch (error, stackTrace) {
+    _handleToolAccessModeError(request, error, stackTrace);
+  }
+}
+
+void _handleToolAccessModeError(
+  _LoadedRuntimeRequest request,
+  Exception error,
+  StackTrace stackTrace,
+) {
+  _logger.severe('Failed to update tool approval mode', error, stackTrace);
+  if (!request.context.mounted) return;
+
+  final _ = AuraSnackBars.show(
+    context: request.context,
+    content: const TextLocale(LocaleKeys.common_error_message),
+    variant: .error,
+  );
+}
 
 typedef _LoadedChatConversationDependencies = _LoadedConversationWatchParts;
 
@@ -1944,18 +1984,24 @@ class const _ChatComposer({
     return _ChatComposerView(
       data: data,
       modelStatus: modelStatus,
-      reasoningControl: _reasoningControl(ref, modelStatus.reasoningOptions),
+      reasoningSettingsControl: _reasoningSettingsControl(
+        ref,
+        modelStatus.reasoningOptions,
+      ),
       canCompact: _canCompact(ref, modelStatus.available),
       draftToLoad: draftToLoad,
     );
   }
 
-  Widget? _reasoningControl(WidgetRef ref, List<ReasoningOption> options) {
+  Widget? _reasoningSettingsControl(
+    WidgetRef ref,
+    List<ReasoningOption> options,
+  ) {
     if (!ChatReasoningControls.hasSupportedReasoningOptions(options)) {
       return null;
     }
 
-    return ChatReasoningControl(
+    return ChatReasoningControls(
       options: options,
       value: data.conversation.reasoningConfiguration,
       onChanged: (value) =>
@@ -1996,7 +2042,7 @@ class _ChatComposerView extends StatelessWidget {
   new({
     required _LoadedChatConversationData data,
     required _ChatComposerModelStatus modelStatus,
-    required Widget? reasoningControl,
+    required Widget? reasoningSettingsControl,
     required bool canCompact,
     required ChatDraft? draftToLoad,
   }) : offstage = data.state.hasPendingApprovals,
@@ -2004,7 +2050,7 @@ class _ChatComposerView extends StatelessWidget {
          data: data,
          draftToLoad: draftToLoad,
          canCompact: canCompact,
-         reasoningControl: reasoningControl,
+         reasoningSettingsControl: reasoningSettingsControl,
          modelUnavailable: modelStatus.missing,
          compactDisabledHint: modelStatus.hint,
          continueDisabledHint: modelStatus.hint,
@@ -2086,7 +2132,7 @@ class _ChatComposerInput extends StatelessWidget {
     required this.data,
     required this.draftToLoad,
     required this.canCompact,
-    required this.reasoningControl,
+    required this.reasoningSettingsControl,
     required this.modelUnavailable,
     required this.compactDisabledHint,
     required this.continueDisabledHint,
@@ -2121,8 +2167,11 @@ class _ChatComposerInput extends StatelessWidget {
            onCompactTap: onPressed,
          ),
          conversationId: data.conversation.id,
+         toolAccessMode: data.conversation.toolAccessMode,
+         onToolAccessModeChanged:
+             data.callbacks.selectors.onToolAccessModeChanged,
          topPadding: 0,
-         reasoningControl: reasoningControl,
+         reasoningSettingsControl: reasoningSettingsControl,
          draftToLoad: draftToLoad,
          modalitiesInput: data.state.modalitiesInput,
          onSkillsPress: data.callbacks.selectors.onSkillsPress,
@@ -2142,7 +2191,7 @@ class _ChatComposerInput extends StatelessWidget {
   final _LoadedChatConversationData data;
   final ChatDraft? draftToLoad;
   final bool canCompact;
-  final Widget? reasoningControl;
+  final Widget? reasoningSettingsControl;
   final bool modelUnavailable;
   final String? compactDisabledHint;
   final String? continueDisabledHint;

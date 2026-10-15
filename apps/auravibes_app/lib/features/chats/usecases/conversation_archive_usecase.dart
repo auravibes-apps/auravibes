@@ -896,6 +896,7 @@ class _ConversationArchiveMessageImporter(ConversationArchiveUsecase usecase) {
   ) => conversationRepository.createConversation(
     .new(
       title: archive.title,
+      toolAccessMode: archive.toolAccessMode,
       workspaceId: workspaceId,
       createdAt: archive.createdAt,
       updatedAt: archive.updatedAt,

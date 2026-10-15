@@ -41,7 +41,124 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 27);
+      expect(fixture.database.schemaVersion, 29);
+    });
+
+    test(
+      'migration from schema 25 preserves conversations with mode off',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 25
+          ..execute('CREATE TABLE conversations (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO conversations VALUES (?)', ['existing']);
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final row = await database
+            .customSelect(
+              'SELECT tool_access_mode FROM conversations WHERE id = ?',
+              variables: [const Variable<String>('existing')],
+            )
+            .getSingle();
+        expect(row.read<String>('tool_access_mode'), 'default');
+      },
+    );
+
+    test(
+      'schema 26 backfills modes, removes boolean, and adds child link',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 26
+          ..execute(
+            'CREATE TABLE conversations (id TEXT PRIMARY KEY, '
+            'auto_approve_tools INTEGER NOT NULL DEFAULT 0)',
+          )
+          ..execute('CREATE TABLE background_works (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO conversations VALUES (?, ?), (?, ?)', [
+            'off',
+            0,
+            'on',
+            1,
+          ]);
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final rows = await database
+            .customSelect(
+              'SELECT tool_access_mode FROM conversations ORDER BY id',
+            )
+            .get();
+        expect(rows.map((row) => row.read<String>('tool_access_mode')), [
+          'default',
+          'allow_all',
+        ]);
+        final columns = await database
+            .customSelect('PRAGMA table_info(conversations)')
+            .get();
+        expect(
+          columns.map((row) => row.read<String>('name')),
+          isNot(contains('auto_approve_tools')),
+        );
+        final backgroundWorkColumns = await database
+            .customSelect('PRAGMA table_info(background_works)')
+            .get();
+        expect(
+          backgroundWorkColumns.map((row) => row.read<String>('name')),
+          contains('child_conversation_id'),
+        );
+      },
+    );
+
+    test('schema 26 with child link adds default tool access mode', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 26
+        ..execute('CREATE TABLE conversations (id TEXT PRIMARY KEY)')
+        ..execute(
+          'CREATE TABLE background_works (id TEXT PRIMARY KEY, '
+          'child_conversation_id TEXT)',
+        )
+        ..execute('INSERT INTO conversations VALUES (?)', ['existing']);
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final conversation = await database
+          .customSelect('SELECT tool_access_mode FROM conversations')
+          .getSingle();
+      expect(conversation.read<String>('tool_access_mode'), 'default');
+
+      final backgroundWorkColumns = await database
+          .customSelect('PRAGMA table_info(background_works)')
+          .get();
+      expect(
+        backgroundWorkColumns.map((row) => row.read<String>('name')),
+        contains('child_conversation_id'),
+      );
+    });
+
+    test('schema 27 adds background work child link', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 27
+        ..execute(
+          'CREATE TABLE conversations (id TEXT PRIMARY KEY, '
+          '''tool_access_mode TEXT NOT NULL DEFAULT 'default')''',
+        )
+        ..execute('CREATE TABLE background_works (id TEXT PRIMARY KEY)');
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final backgroundWorkColumns = await database
+          .customSelect('PRAGMA table_info(background_works)')
+          .get();
+      expect(
+        backgroundWorkColumns.map((row) => row.read<String>('name')),
+        contains('child_conversation_id'),
+      );
     });
 
     test('migration from schema 24 creates background work storage', () async {

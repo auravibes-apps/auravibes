@@ -59,5 +59,8 @@ class Conversations extends Table with TableMixin {
 
   TextColumn get activeCompactionCheckpointId => text().nullable()();
 
+  TextColumn get toolAccessMode =>
+      text().withDefault(const Constant('default'))();
+
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
 }

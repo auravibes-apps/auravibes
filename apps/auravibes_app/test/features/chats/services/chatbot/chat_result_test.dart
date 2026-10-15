@@ -99,6 +99,8 @@ void main() {
 
       expect(res.entityTools.length, 1);
       expect(res.entityTools.firstOrNull?.id, 'call-1');
+      expect(res.entityTools.single.approvalRequested, isFalse);
+      expect(res.entityTools.single.hasPendingApproval, isFalse);
       expect(res.entityTools.firstOrNull?.name, 'getWeather');
       expect(res.entityTools.firstOrNull?.argumentsRaw, '{"city":"Boston"}');
     });

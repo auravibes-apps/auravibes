@@ -1347,7 +1347,7 @@ MessageEntity? _latestAssistantMessage(List<MessageEntity>? messages) {
 
 List<MessageToolCallEntity> _awaitingApprovalToolCalls(MessageEntity message) =>
     message.metadata?.toolCalls
-        .where((toolCall) => toolCall.isAwaitingApproval)
+        .where((toolCall) => toolCall.hasPendingApproval)
         .toList() ??
     const [];
 
@@ -1366,6 +1366,9 @@ List<PendingToolCall> _toPendingToolCalls(
 
 Future<({MessageToolCallEntity toolCall, bool needsConfirmation})>
 _resolvePendingToolCall(_PendingToolCallDecisionRequest request) async {
+  if (request.toolCall.hasPendingApproval) {
+    return (toolCall: request.toolCall, needsConfirmation: true);
+  }
   final resolvedTool = await _resolvePendingToolTarget(request);
   if (resolvedTool == null) {
     return await _unresolvedPendingToolCall(request);

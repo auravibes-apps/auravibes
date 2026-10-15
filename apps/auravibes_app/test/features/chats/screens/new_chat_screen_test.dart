@@ -23,6 +23,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/features/workspaces/widgets/workspace_selector.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/foundation.dart';
@@ -297,6 +298,7 @@ void main() {
       expect(state.modelId, isNull);
       expect(state.providerId, isNull);
       expect(state.isLoading, isFalse);
+      expect(state.toolAccessMode, ConversationToolAccessMode.defaultMode);
     });
 
     test('copyWith preserves values', () {
@@ -338,6 +340,53 @@ void main() {
       expect(str, contains('m1'));
       expect(str, contains('true'));
     });
+  });
+
+  testWidgets('new chat selects tool access before first message', (
+    tester,
+  ) async {
+    await _pumpNewChatWithinPausedBranch(
+      tester,
+      overrides: _newChatOverrides().skip(1).toList(),
+      tickerEnabled: true,
+    );
+    var input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
+    expect(input.toolAccessMode, ConversationToolAccessMode.defaultMode);
+    expect(input.onToolAccessModeChanged, isNotNull);
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ChatInputWidget)),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_tool_access_mode')),
+    );
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Allow all').last);
+    expect(
+      container.read(newChatProvider('test-ws')).toolAccessMode,
+      ConversationToolAccessMode.allowAll,
+      reason: 'dropdown selection updates notifier',
+    );
+    final _ = await tester.pumpAndSettle();
+    input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
+    expect(
+      input.toolAccessMode,
+      ConversationToolAccessMode.allowAll,
+      reason: 'composer rebuilds from notifier',
+    );
+    expect(
+      container.read(newChatProvider('test-ws')).toolAccessMode,
+      ConversationToolAccessMode.allowAll,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_tool_access_mode')),
+    );
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Default').last);
+    final _ = await tester.pumpAndSettle();
+    expect(
+      container.read(newChatProvider('test-ws')).toolAccessMode,
+      ConversationToolAccessMode.defaultMode,
+    );
   });
 
   group('render', () {
@@ -590,7 +639,7 @@ void main() {
         );
 
         await tester.tap(find.byIcon(Icons.tune_rounded));
-        await tester.pump();
+        final _ = await tester.pumpAndSettle();
         await tester.tap(find.byIcon(Icons.attach_file));
         final _ = await tester.pumpAndSettle();
         expect(draftFile.existsSync(), isTrue);
