@@ -241,7 +241,7 @@ class _AuraPopupMenuData {
                  .bottom;
 
              return Padding(
-               // SafeArea can clear inherited padding before this overlay builds.
+               // SafeArea clears this inset before the overlay builds.
                padding: .only(bottom: safeAreaBottom),
                child: TapRegion(
                  child: Shortcuts(
