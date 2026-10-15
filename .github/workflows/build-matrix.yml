@@ -167,8 +167,8 @@ jobs:
         run: flutter build ios --debug --no-codesign --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
-      # shortcut: repairs this cached plugin release's target name; remove when upstream fixes its Linux CMake metadata.
-      - name: 🩹 Patch Linux WebView CMake target
+      # shortcut: repairs target and compiler metadata in cached plugin; remove when upstream fixes both.
+      - name: 🩹 Patch Linux WebView CMake compatibility
         if: ${{ matrix.platform == 'linux' }}
         shell: bash
         run: |
@@ -182,14 +182,34 @@ jobs:
 
           for package in "${packages[@]}"; do
             cmake_file="$package/linux/CMakeLists.txt"
-            expected='set(PLUGIN_NAME "flutter_inappwebview_linux_plugin")'
-            fixed='set(PLUGIN_NAME "flutter_inappwebview_linux_fx_plugin")'
-            if grep -Fq "$expected" "$cmake_file"; then
-              sed -i "s|$expected|$fixed|" "$cmake_file"
-            elif ! grep -Fq "$fixed" "$cmake_file"; then
-              echo "Unexpected Linux plugin target in $cmake_file" >&2
-              exit 1
-            fi
+            python3 - "$cmake_file" <<'PY'
+          from pathlib import Path
+          import sys
+
+          cmake_file = Path(sys.argv[1])
+          source = cmake_file.read_text()
+          old_target = 'set(PLUGIN_NAME "flutter_inappwebview_linux_plugin")'
+          new_target = 'set(PLUGIN_NAME "flutter_inappwebview_linux_fx_plugin")'
+          if old_target in source:
+              source = source.replace(old_target, new_target, 1)
+          elif new_target not in source:
+              raise SystemExit(f"Unexpected Linux plugin target in {cmake_file}")
+
+          old_flag = 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-literal-operator")'
+          guarded_flag = '''check_cxx_compiler_flag(
+            "-Wno-deprecated-literal-operator"
+            HAS_DEPRECATED_LITERAL_OPERATOR_FLAG
+          )
+          if(HAS_DEPRECATED_LITERAL_OPERATOR_FLAG)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-literal-operator")
+          endif()'''
+          if old_flag in source:
+              source = source.replace(old_flag, guarded_flag, 1)
+          elif "-Wno-deprecated-literal-operator" in source and "HAS_DEPRECATED_LITERAL_OPERATOR_FLAG" not in source:
+              raise SystemExit(f"Unexpected Linux compiler flag in {cmake_file}")
+
+          cmake_file.write_text(source)
+          PY
           done
 
       - name: 🏗️ Build Linux
@@ -210,6 +230,7 @@ jobs:
         run: flutter build web --release --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
+      # shortcut: patches this locked plugin's target and header paths; remove when upstream aligns its Windows metadata.
       - name: 🩹 Patch Windows WebView CMake compatibility
         if: ${{ matrix.platform == 'windows' }}
         shell: pwsh
@@ -238,6 +259,13 @@ jobs:
             if ($source -ne $original) {
               [IO.File]::WriteAllText($path, $source, [Text.UTF8Encoding]::new($false))
             }
+
+            $includeRoot = Join-Path $package.FullName "windows\include"
+            $sourceHeader = Join-Path $includeRoot "flutter_inappwebview_windows\flutter_inappwebview_windows_plugin_c_api.h"
+            $fixedInclude = Join-Path $includeRoot "flutter_inappwebview_windows_fx"
+            if (-not (Test-Path $sourceHeader)) { throw "Windows plugin C API header not found at $sourceHeader" }
+            New-Item -ItemType Directory -Force -Path $fixedInclude | Out-Null
+            Copy-Item -LiteralPath $sourceHeader -Destination $fixedInclude -Force
           }
 
       - name: 🏗️ Build Windows
