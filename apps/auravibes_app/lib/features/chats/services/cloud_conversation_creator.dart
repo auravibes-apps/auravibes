@@ -28,6 +28,15 @@ class const CloudConversationCreator({
   ConversationEntity _conversationCore(
     ConversationSummary created,
     String workspaceId,
+  ) => _conversationFields(created, workspaceId).copyWith(
+    toolAccessMode: ConversationToolAccessModeStorage.decode(
+      created.toolAccessMode,
+    ),
+  );
+
+  ConversationEntity _conversationFields(
+    ConversationSummary created,
+    String workspaceId,
   ) {
     return ConversationEntity(
       id: created.id,
@@ -37,9 +46,6 @@ class const CloudConversationCreator({
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
       revision: created.revision,
-      toolAccessMode: ConversationToolAccessModeStorage.decode(
-        created.toolAccessMode,
-      ),
       modelId: created.modelId,
       agentId: created.agentId,
       reasoningConfiguration: .decode(created.reasoningConfigJson),

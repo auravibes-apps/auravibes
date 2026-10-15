@@ -46,10 +46,11 @@ class ResolveToolApprovalDecisionUsecase({
       toolCallId: toolCallId,
       permissionTableId: permissionTableId,
     ));
-    if (!decision.needsConfirmation) return decision;
 
-    return decision.withToolAccessMode(
-      mode: await getToolAccessMode?.call(conversationId) ?? .defaultMode,
+    return await _applyToolAccessMode(
+      decision: decision,
+      conversationId: conversationId,
+      getToolAccessMode: getToolAccessMode,
     );
   }
 
@@ -57,9 +58,9 @@ class ResolveToolApprovalDecisionUsecase({
     required String conversationId,
     required String workspaceId,
     required ResolvedTool resolvedTool,
-  }) async {
+  }) {
     if (_isSkillTool(resolvedTool)) {
-      return await _resolveSkillPermission(
+      return _resolveSkillPermission(
         conversationId: conversationId,
         workspaceId: workspaceId,
         resolvedTool: resolvedTool,
@@ -68,13 +69,10 @@ class ResolveToolApprovalDecisionUsecase({
 
     final mcpServerId = resolvedTool.mcpServerId;
     if (mcpServerId == null) {
-      return resolvedTool.tableId;
+      return Future.value(resolvedTool.tableId);
     }
 
-    return await _resolveMcpPermission(
-      mcpServerId,
-      resolvedTool.toolIdentifier,
-    );
+    return _resolveMcpPermission(mcpServerId, resolvedTool.toolIdentifier);
   }
 
   Future<String?> _resolveSkillPermission({
@@ -117,6 +115,21 @@ class ResolveToolApprovalDecisionUsecase({
       resolvedTool.isSkillControl ||
       resolvedTool.isSkillTemplate ||
       resolvedTool.isSkillNative;
+}
+
+Future<ToolApprovalDecision> _applyToolAccessMode({
+  required ToolApprovalDecision decision,
+  required String conversationId,
+  required Future<agent.ConversationToolAccessMode> Function(
+    String conversationId,
+  )?
+  getToolAccessMode,
+}) async {
+  if (!decision.needsConfirmation) return decision;
+
+  return decision.withToolAccessMode(
+    mode: await getToolAccessMode?.call(conversationId) ?? .defaultMode,
+  );
 }
 
 ToolApprovalDecision _notConfiguredDecision(String toolCallId) =>

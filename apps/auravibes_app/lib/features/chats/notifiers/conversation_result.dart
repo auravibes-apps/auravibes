@@ -57,6 +57,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final conversation = result.conversation;
 
     final patch = await _modelUpdatePatch(
+      ref,
       _workspaceId,
       modelId,
       conversation.reasoningConfiguration,
@@ -131,25 +132,6 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     state = AsyncData(updatedResult);
   }
 
-  Future<ConversationPatch> _modelUpdatePatch(
-    String workspaceId,
-    String modelId,
-    ReasoningConfiguration? reasoningConfiguration,
-  ) async {
-    final validatedConfiguration = await _validatedReasoningConfiguration(
-      ref,
-      workspaceId,
-      modelId,
-      reasoningConfiguration,
-    );
-
-    return ConversationPatch(
-      modelId: modelId,
-      clearReasoningConfiguration:
-          reasoningConfiguration != null && validatedConfiguration == null,
-    );
-  }
-
   Future<ConversationEntity> _updateConversation(
     ConversationEntity conversation,
     ConversationPatch patch,
@@ -177,6 +159,26 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
 
     state = AsyncData(ConversationFound(updated));
   }
+}
+
+Future<ConversationPatch> _modelUpdatePatch(
+  Ref ref,
+  String workspaceId,
+  String modelId,
+  ReasoningConfiguration? reasoningConfiguration,
+) async {
+  final validatedConfiguration = await _validatedReasoningConfiguration(
+    ref,
+    workspaceId,
+    modelId,
+    reasoningConfiguration,
+  );
+
+  return ConversationPatch(
+    modelId: modelId,
+    clearReasoningConfiguration:
+        reasoningConfiguration != null && validatedConfiguration == null,
+  );
 }
 
 Future<ReasoningConfiguration?> _validatedReasoningConfiguration(

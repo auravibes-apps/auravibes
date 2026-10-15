@@ -8,20 +8,7 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
   Future<ConversationSummary> create(ConversationToCreate value) {
     final id = const UuidV7().generate();
 
-    return _gateway.createConversation(
-      .new(
-        workspaceId: 0,
-        requestId: id,
-        conversationId: id,
-        title: value.title,
-        isPinned: value.isPinned ?? false,
-        toolAccessMode: value.toolAccessMode.storedValue,
-        modelId: value.modelId,
-        agentId: value.agentId,
-        reasoningConfigJson: value.reasoningConfiguration?.encode(),
-        parentConversationId: value.parentConversationId,
-      ),
-    );
+    return _gateway.createConversation(_createRequest(value, id));
   }
 
   Future<ConversationSummary> fork(
@@ -93,21 +80,18 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
     required String conversationId,
     required int revision,
     required ConversationPatch patch,
-  }) => UpdateConversationRequest(
-    workspaceId: 0,
-    requestId: const UuidV7().generate(),
-    conversationId: conversationId,
-    expectedRevision: revision,
-    title: patch.title,
-    isPinned: patch.isPinned,
-    toolAccessMode: patch.toolAccessMode?.storedValue,
-    modelId: patch.modelId,
-    clearModel: false,
-    agentId: patch.agentId,
-    clearAgent: patch.clearAgent,
-    reasoningConfigJson: patch._reasoningConfigJson,
-    clearReasoningConfig: patch.clearReasoningConfiguration,
-    clearParent: false,
+  }) => _withConversationPatch(
+    .new(
+      workspaceId: 0,
+      requestId: const UuidV7().generate(),
+      conversationId: conversationId,
+      expectedRevision: revision,
+      clearModel: false,
+      clearAgent: patch.clearAgent,
+      clearReasoningConfig: patch.clearReasoningConfiguration,
+      clearParent: false,
+    ),
+    patch,
   );
 
   Future<ConversationSummary> _retryUpdateModel(
@@ -125,6 +109,44 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
     );
   }
 }
+
+CreateConversationRequest _createRequest(
+  ConversationToCreate value,
+  String id,
+) {
+  final request = CreateConversationRequest(
+    workspaceId: 0,
+    requestId: id,
+    conversationId: id,
+    title: value.title,
+    isPinned: value.isPinned ?? false,
+  );
+
+  return _withConversationCreationFields(request, value);
+}
+
+CreateConversationRequest _withConversationCreationFields(
+  CreateConversationRequest request,
+  ConversationToCreate value,
+) => request.copyWith(
+  toolAccessMode: value.toolAccessMode.storedValue,
+  modelId: value.modelId,
+  agentId: value.agentId,
+  reasoningConfigJson: value.reasoningConfiguration?.encode(),
+  parentConversationId: value.parentConversationId,
+);
+
+UpdateConversationRequest _withConversationPatch(
+  UpdateConversationRequest request,
+  ConversationPatch patch,
+) => request.copyWith(
+  title: patch.title,
+  isPinned: patch.isPinned,
+  toolAccessMode: patch.toolAccessMode?.storedValue,
+  modelId: patch.modelId,
+  agentId: patch.agentId,
+  reasoningConfigJson: patch._reasoningConfigJson,
+);
 
 extension _ConversationPatchReasoningJson on ConversationPatch {
   String? get _reasoningConfigJson => reasoningConfiguration?.encode();

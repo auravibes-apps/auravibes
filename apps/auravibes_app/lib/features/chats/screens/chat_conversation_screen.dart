@@ -741,15 +741,23 @@ Future<void> _setToolAccessMode(
         )
         .setToolAccessMode(mode);
   } on Exception catch (error, stackTrace) {
-    _logger.severe('Failed to update tool approval mode', error, stackTrace);
-    if (!request.context.mounted) return;
-
-    final _ = AuraSnackBars.show(
-      context: request.context,
-      content: const TextLocale(LocaleKeys.common_error_message),
-      variant: .error,
-    );
+    _handleToolAccessModeError(request, error, stackTrace);
   }
+}
+
+void _handleToolAccessModeError(
+  _LoadedRuntimeRequest request,
+  Exception error,
+  StackTrace stackTrace,
+) {
+  _logger.severe('Failed to update tool approval mode', error, stackTrace);
+  if (!request.context.mounted) return;
+
+  final _ = AuraSnackBars.show(
+    context: request.context,
+    content: const TextLocale(LocaleKeys.common_error_message),
+    variant: .error,
+  );
 }
 
 typedef _LoadedChatConversationDependencies = _LoadedConversationWatchParts;

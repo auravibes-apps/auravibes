@@ -253,6 +253,15 @@ ConversationEntity _cloudConversation(
 ConversationEntity _cloudConversationCore(
   ConversationSummary conversation,
   String localWorkspaceId,
+) => _cloudConversationFields(conversation, localWorkspaceId).copyWith(
+  toolAccessMode: ConversationToolAccessModeStorage.decode(
+    conversation.toolAccessMode,
+  ),
+);
+
+ConversationEntity _cloudConversationFields(
+  ConversationSummary conversation,
+  String localWorkspaceId,
 ) {
   return ConversationEntity(
     id: conversation.id,
@@ -262,9 +271,6 @@ ConversationEntity _cloudConversationCore(
     createdAt: conversation.createdAt,
     updatedAt: conversation.updatedAt,
     revision: conversation.revision,
-    toolAccessMode: ConversationToolAccessModeStorage.decode(
-      conversation.toolAccessMode,
-    ),
     modelId: conversation.modelId,
     agentId: conversation.agentId,
     reasoningConfiguration: .decode(conversation.reasoningConfigJson),

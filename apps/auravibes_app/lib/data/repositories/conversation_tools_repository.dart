@@ -378,6 +378,16 @@ extension ConversationToolsRepositoryAvailability
     );
     if (result != ToolPermissionResult.needsConfirmation) return result;
 
+    return await _permissionAfterConfirmation(
+      conversationId: conversationId,
+      workspaceTool: workspaceTool,
+    );
+  }
+
+  Future<ToolPermissionResult> _permissionAfterConfirmation({
+    required String conversationId,
+    required WorkspaceToolEntity workspaceTool,
+  }) async {
     final agentResult = await _agentToolPermissionResult(
       conversationId: conversationId,
       toolId: workspaceTool.id,
@@ -389,7 +399,7 @@ extension ConversationToolsRepositoryAvailability
       return ToolPermissionResult.disabledInWorkspace;
     }
 
-    return result;
+    return ToolPermissionResult.needsConfirmation;
   }
 }
 

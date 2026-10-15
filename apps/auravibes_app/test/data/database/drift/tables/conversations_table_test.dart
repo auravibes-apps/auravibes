@@ -54,6 +54,7 @@ void main() {
           'agent_id',
           'reasoning_config_json',
           'parent_conversation_id',
+          'tool_access_mode',
           'is_pinned',
 
           'active_compaction_checkpoint_id',
@@ -61,8 +62,8 @@ void main() {
       );
     });
 
-    test('has 15 columns', () {
-      expect(columns.length, 15);
+    test('has 16 columns', () {
+      expect(columns.length, 16);
     });
 
     test('workspace_id is not null', () {

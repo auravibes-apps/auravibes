@@ -210,7 +210,9 @@ class const _NewChatActions({
     final configuration = state.reasoningConfiguration;
     if (state.modelId != modelId || configuration == null) return;
     if (_isInvalidReasoningConfiguration(configuration, selectedModel)) {
-      _resetReasoningConfiguration();
+      ref
+          .read(newChatProvider(workspaceId).notifier)
+          .setReasoningConfiguration(null);
     }
   }
 
@@ -222,10 +224,6 @@ class const _NewChatActions({
       !configuration.isValidFor(
         selectedModel.workspaceModelSelection.reasoningOptions,
       );
-
-  void _resetReasoningConfiguration() => ref
-      .read(newChatProvider(workspaceId).notifier)
-      .setReasoningConfiguration(null);
 
   Future<void> _openNewConversation(ChatDraft draft) async {
     final conversation = await _startNewConversation(ref, workspaceId, draft);

@@ -114,15 +114,23 @@ List<agent.AgentMessageToolCall> _agentToolCalls(
   required bool allowPending,
 }) => [
   for (final toolCall in toolCalls ?? const <MessageToolCallEntity>[])
-    if (!toolCall.isRunning && (allowPending || !toolCall.isPending))
-      agent.AgentMessageToolCall(
-        id: toolCall.id,
-        name: toolCall.name,
-        argumentsRaw: toolCall.argumentsRaw,
-        lifecycle: AgentToolStatusMapper.toLifecycle(toolCall.resultStatus),
-        approvalRequested: toolCall.hasPendingApproval,
-      ),
+    if (_shouldIncludeAgentToolCall(toolCall, allowPending: allowPending))
+      _toAgentToolCall(toolCall),
 ];
+
+bool _shouldIncludeAgentToolCall(
+  MessageToolCallEntity toolCall, {
+  required bool allowPending,
+}) => !toolCall.isRunning && (allowPending || !toolCall.isPending);
+
+agent.AgentMessageToolCall _toAgentToolCall(MessageToolCallEntity toolCall) =>
+    agent.AgentMessageToolCall(
+      id: toolCall.id,
+      name: toolCall.name,
+      argumentsRaw: toolCall.argumentsRaw,
+      lifecycle: AgentToolStatusMapper.toLifecycle(toolCall.resultStatus),
+      approvalRequested: toolCall.hasPendingApproval,
+    );
 
 final agentToolCallLoaderProvider = Provider<AgentToolCallLoader>((ref) {
   return AgentToolCallLoader(
