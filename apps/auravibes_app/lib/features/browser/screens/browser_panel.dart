@@ -810,7 +810,7 @@ class const _BrowserAgentActivity({required final String activity})
         Expanded(
           child: Text(
             '${LocaleKeys.browser_agent_activity.tr()}: '
-            '${_activityLabel(activity).tr()}',
+            '${_browserActivityLabel(activity).tr()}',
             overflow: .ellipsis,
             maxLines: 1,
           ),
@@ -818,8 +818,6 @@ class const _BrowserAgentActivity({required final String activity})
       ],
     ),
   );
-
-  String _activityLabel(String activity) => _browserActivityLabel(activity);
 }
 
 String _browserActivityLabel(String activity) =>

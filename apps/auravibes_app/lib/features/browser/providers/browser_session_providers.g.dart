@@ -97,4 +97,4 @@ final class BrowserWebViewServiceProvider
 }
 
 String _$browserWebViewServiceHash() =>
-    r'840346b903b41f53d8da81631abecc7aa59ace75';
+    r'2db19a56927042b7145d21026f8fb4e3499ca4f1';

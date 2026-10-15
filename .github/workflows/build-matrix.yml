@@ -18,7 +18,8 @@ env:
 jobs:
   build:
     name: Build ${{ matrix.platform }}
-    runs-on: ${{ (matrix.platform == 'ios' || matrix.platform == 'macos') && 'macos-latest' || (matrix.platform == 'windows' && 'windows-latest') || 'ubuntu-latest' }}
+    # shortcut: the Linux WebView plugin needs WPE 1.0 packages absent on Noble; upgrade it before leaving Ubuntu 22.04.
+    runs-on: ${{ (matrix.platform == 'ios' || matrix.platform == 'macos') && 'macos-latest' || (matrix.platform == 'windows' && 'windows-latest') || (matrix.platform == 'linux' && 'ubuntu-22.04') || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -77,7 +78,7 @@ jobs:
         if: ${{ matrix.platform == 'linux' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsqlite3-dev libwebkit2gtk-4.1-dev libwpewebkit-1.0-dev libwpe-1.0-dev libwpebackend-fdo-1.0-dev libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsqlite3-dev libwebkit2gtk-4.0-dev libwpewebkit-1.0-dev libwpe-1.0-dev libwpebackend-fdo-1.0-dev libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
       - name: 🏗️ Build Android APK
         if: ${{ matrix.platform == 'android' }}
@@ -178,7 +179,7 @@ jobs:
         run: flutter build web --release --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
-      - name: 🩹 Fix Windows plugin target name
+      - name: 🩹 Patch Windows WebView CMake compatibility
         if: ${{ matrix.platform == 'windows' }}
         shell: pwsh
         run: |
@@ -187,12 +188,25 @@ jobs:
 
           foreach ($package in $packages) {
             $path = Join-Path $package.FullName "windows\CMakeLists.txt"
-            $source = Get-Content $path -Raw
+            $original = Get-Content $path -Raw
+            $source = $original
             $expected = 'set(PLUGIN_NAME "flutter_inappwebview_windows_plugin")'
             $fixed = 'set(PLUGIN_NAME "flutter_inappwebview_windows_fx_plugin")'
-            if ($source.Contains($fixed)) { continue }
-            if (-not $source.Contains($expected)) { throw "Unexpected Windows plugin target in $path" }
-            [IO.File]::WriteAllText($path, $source.Replace($expected, $fixed), [Text.UTF8Encoding]::new($false))
+            if ($source.Contains($expected)) {
+              $source = $source.Replace($expected, $fixed)
+            } elseif (-not $source.Contains($fixed)) {
+              throw "Unexpected Windows plugin target in $path"
+            }
+
+            $deprecationDefinition = 'add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)'
+            if (-not $source.Contains($deprecationDefinition)) {
+              if (-not $source.Contains($fixed)) { throw "Windows plugin target marker not found in $path" }
+              $source = $source.Replace($fixed, "$fixed`n$deprecationDefinition")
+            }
+
+            if ($source -ne $original) {
+              [IO.File]::WriteAllText($path, $source, [Text.UTF8Encoding]::new($false))
+            }
           }
 
       - name: 🏗️ Build Windows
