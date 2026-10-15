@@ -179,8 +179,9 @@ class AppDatabase extends _$AppDatabase {
       _autoApproveToolsSchemaVersion + 1;
   static const int _backgroundWorkChildLinkSchemaVersion =
       _toolAccessModeSchemaVersion + 1;
-  static const int _currentSchemaVersion =
-      _backgroundWorkChildLinkSchemaVersion;
+  static const int _toolCallAttachmentSchemaVersion =
+      _backgroundWorkChildLinkSchemaVersion + 1;
+  static const int _currentSchemaVersion = _toolCallAttachmentSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -226,6 +227,7 @@ extension on AppDatabase {
     await _upgradeModelCapabilitiesSchema(m);
     await _upgradeModelUsageSchema(m);
     await _upgradeToolAccessModeSchema(m);
+    await _upgradeToolCallAttachmentSchema(m, from);
   }
 
   Future<void> _upgradeToolAccessModeSchema(Migrator m) async {
@@ -240,6 +242,15 @@ extension on AppDatabase {
     await customStatement(
       'ALTER TABLE conversations DROP COLUMN auto_approve_tools',
     );
+  }
+
+  Future<void> _upgradeToolCallAttachmentSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._toolCallAttachmentSchemaVersion ||
+        !await _tableExists('message_attachments') ||
+        await _columnExists('message_attachments', 'tool_call_id')) {
+      return;
+    }
+    await m.addColumn(messageAttachments, messageAttachments.toolCallId);
   }
 
   Future<void> _upgradeModelUsageSchema(Migrator m) async {

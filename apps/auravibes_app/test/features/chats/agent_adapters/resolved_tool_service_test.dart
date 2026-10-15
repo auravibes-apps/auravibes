@@ -919,6 +919,153 @@ void main() {
   });
 
   test(
+    'routes browser call_skill_tool commands through the browser runner',
+    () async {
+      final manifests = _MockBuildLoadedSkillManifestsUsecase();
+      final templateSpecs = _MockBuildSkillTemplateToolSpecsUsecase();
+      final nativeSpecs = _MockBuildAppSkillNativeToolSpecsUsecase();
+      final appSkillTool = _MockRunAppSkillToolUsecase();
+      var browserCalls = 0;
+      var failBrowserCall = false;
+      when(
+        () => manifests.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        ),
+      ).thenAnswer(
+        (_) async => [
+          SkillManifest(
+            slug: AppSkillRegistry.browserSkillSlug,
+            title: 'Browser',
+            description: 'Use browser.',
+            revision: 'browser-r1',
+            tools: [
+              SkillManifestTool(
+                name: 'browser_read_page',
+                description: 'Read the page.',
+                inputJsonSchema: const {
+                  'type': 'object',
+                  'properties': {
+                    'tabId': {
+                      'type': ['string', 'null'],
+                    },
+                    'format': {
+                      'type': ['string', 'null'],
+                    },
+                  },
+                  'required': ['tabId', 'format'],
+                  'additionalProperties': false,
+                },
+              ),
+            ],
+          ),
+        ],
+      );
+      when(
+        () => templateSpecs.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        ),
+      ).thenAnswer((_) async => const []);
+      when(
+        () => nativeSpecs.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        ),
+      ).thenAnswer(
+        (_) async => [
+          ToolSpec(
+            name: 'skill__app_native__browser__browser_read_page',
+            description: 'Read the page.',
+            inputJsonSchema: const {
+              'type': 'object',
+              'properties': {
+                'tabId': {
+                  'type': ['string', 'null'],
+                },
+                'format': {
+                  'type': ['string', 'null'],
+                },
+              },
+              'required': ['tabId', 'format'],
+              'additionalProperties': false,
+            },
+          ),
+        ],
+      );
+
+      final provider = AppResolvedToolProvider(
+        agentCancellationRuntime: cancellationRuntime,
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+        }) async => 'mcp result',
+        loadConversationSkillUsecase: (_) =>
+            _MockLoadConversationSkillUsecase(),
+        runSkillTemplateToolUsecase: _MockRunSkillTemplateToolUsecase(),
+        runAppSkillToolUsecase: appSkillTool,
+        buildLoadedSkillManifestsUsecase: manifests,
+        buildSkillTemplateToolSpecsUsecase: templateSpecs,
+        buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
+        listAvailableSkillsUsecase: (_) => _MockListAvailableSkillsUsecase(),
+        browserSkillToolRunner:
+            ({
+              required workspaceId,
+              required conversationId,
+              required toolSlug,
+              required arguments,
+            }) async {
+              browserCalls++;
+              expect(workspaceId, 'workspace-1');
+              expect(conversationId, 'conversation-1');
+              expect(toolSlug, 'browser_read_page');
+              expect(arguments, {'tabId': 'tab-1', 'format': 'text'});
+              if (failBrowserCall) throw StateError('WebView unavailable.');
+
+              return 'page output';
+            },
+      );
+
+      Future<Object?> callSkillTool(String toolCallId) =>
+          provider.runSkillControlTool((
+            conversationId: 'conversation-1',
+            toolCallId: toolCallId,
+            workspaceId: 'workspace-1',
+            toolIdentifier: callSkillToolName,
+            arguments: const {
+              'skill': AppSkillRegistry.browserSkillSlug,
+              'tool': 'browser_read_page',
+              'args': {'tabId': 'tab-1', 'format': 'text'},
+              'revision': 'browser-r1',
+            },
+          ));
+
+      expect(await callSkillTool('call-1'), {'result': 'page output'});
+      failBrowserCall = true;
+      await expectLater(
+        callSkillTool('call-2'),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.failurePhase,
+            'failurePhase',
+            'callSkillTool.skillNative',
+          ),
+        ),
+      );
+      expect(browserCalls, 2);
+      final _ = verifyNever(
+        () => appSkillTool.call(
+          workspaceId: any(named: 'workspaceId'),
+          skillSlug: any(named: 'skillSlug'),
+          toolSlug: any(named: 'toolSlug'),
+          arguments: any(named: 'arguments'),
+        ),
+      );
+    },
+  );
+
+  test(
     'unwraps approved skill command arguments before native execution',
     () async {
       final appSkillTool = _MockRunAppSkillToolUsecase();

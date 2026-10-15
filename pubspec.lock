@@ -747,6 +747,70 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.21.3+1"
+  flutter_inappwebview_android_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_android_fx
+      sha256: "061d33d1f65faceb3ec37b87e08c979294b6ff0c8e5ab98344f8b1a40801a9e3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
+  flutter_inappwebview_internal_annotations:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_internal_annotations
+      sha256: e30fba942e3debea7b7e6cdd4f0f59ce89dd403a9865193e3221293b6d1544c6
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.0"
+  flutter_inappwebview_ios_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_ios_fx
+      sha256: "41990996e4a27fc25595fd56df5aea46abe70b1ca4496f346e3f19547e400160"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
+  flutter_inappwebview_linux_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_linux_fx
+      sha256: "5da6f472579475c7000b441df8e6309e9914c78a8d6872fe16dbd9bbf2784ebb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
+  flutter_inappwebview_macos_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_macos_fx
+      sha256: "200ccdd3edb30b7a403f7fd4c209d648fc5293df11060d6af95044ba2e251a1a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
+  flutter_inappwebview_platform_interface_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_platform_interface_fx
+      sha256: da2615a1f88710ac1728137bfeeeeb26223085f143fb37dac69859b194aa55e9
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.0"
+  flutter_inappwebview_web_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_web_fx
+      sha256: f3cd22b00a83c32ea7b0fbfe343e5d849abb18695e4cd2ecdf72b750c2dfe2a6
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
+  flutter_inappwebview_windows_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_windows_fx
+      sha256: "00f615504fc33907be98117ae310d4106944c159efc22c3caabc35280a807eb9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.0"
   flutter_launcher_icons:
     dependency: transitive
     description:
@@ -1167,6 +1231,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0-releasecandidate.1"
+  in_app_webview_flutter:
+    dependency: transitive
+    description:
+      name: in_app_webview_flutter
+      sha256: b7869949ab998d94465041a7b78dea6afa7fa9f7caebb0c8d10dac51cebf5ce7
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   intl:
     dependency: transitive
     description:

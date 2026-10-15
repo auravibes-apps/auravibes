@@ -233,6 +233,14 @@ class CriticalConversationAttachmentService
 
   @override
   Future<Uint8List> readAttachmentBytes(String localPath) async => Uint8List(0);
+
+  @override
+  Future<MessageAttachmentToCreate> createToolResultAttachment({
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    required String toolCallId,
+  }) => throw UnimplementedError();
 }
 
 class CriticalConversationBatchApprovalActions

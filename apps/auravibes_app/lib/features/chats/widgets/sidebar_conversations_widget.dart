@@ -8,6 +8,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
@@ -357,6 +358,19 @@ extension on _SidebarConversationTileState {
       );
 }
 
+typedef _SidebarConversationTileStatus = ({
+  bool isAgentWorking,
+  bool hasDraft,
+  bool hasBrowserTabs,
+  bool isBrowserSuspended,
+  String semanticLabel,
+});
+typedef _SidebarTileActivityStatus = ({bool isAgentWorking, bool hasDraft});
+typedef _SidebarBrowserTabStatus = ({
+  bool hasBrowserTabs,
+  bool isBrowserSuspended,
+});
+
 void _openSidebarConversation(BuildContext context, ConversationEntity chat) =>
     ConversationRoute(
       workspaceId: chat.workspaceId,
@@ -388,18 +402,9 @@ class const _SidebarConversationTileContent({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isAgentWorking = _isAgentWorking(ref);
-    final hasDraft = _hasDraft(ref);
-
     return _SidebarConversationTileBody(
       content: this,
-      isAgentWorking: isAgentWorking,
-      hasDraft: hasDraft,
-      semanticLabel: _sidebarConversationTileSemanticLabel(
-        title,
-        isAgentWorking,
-        hasDraft,
-      ),
+      status: _sidebarConversationTileStatus(ref, this),
     );
   }
 
@@ -416,47 +421,107 @@ class const _SidebarConversationTileContent({
       false;
 }
 
+_SidebarConversationTileStatus _sidebarConversationTileStatus(
+  WidgetRef ref,
+  _SidebarConversationTileContent content,
+) {
+  final activity = _sidebarTileActivityStatus(ref, content);
+  final browser = _sidebarBrowserTabStatus(ref, content);
+
+  return (
+    isAgentWorking: activity.isAgentWorking,
+    hasDraft: activity.hasDraft,
+    hasBrowserTabs: browser.hasBrowserTabs,
+    isBrowserSuspended: browser.isBrowserSuspended,
+    semanticLabel: _sidebarConversationTileSemanticLabel(
+      content.title,
+      activity.isAgentWorking,
+      activity.hasDraft,
+    ),
+  );
+}
+
+_SidebarTileActivityStatus _sidebarTileActivityStatus(
+  WidgetRef ref,
+  _SidebarConversationTileContent content,
+) => (
+  isAgentWorking: content._isAgentWorking(ref),
+  hasDraft: content._hasDraft(ref),
+);
+
+_SidebarBrowserTabStatus _sidebarBrowserTabStatus(
+  WidgetRef ref,
+  _SidebarConversationTileContent content,
+) {
+  final session = ref
+      .watch(browserSessionProvider(content.chat.workspaceId, content.chat.id))
+      .value;
+
+  return (
+    hasBrowserTabs: session?.tabs.isNotEmpty ?? false,
+    isBrowserSuspended: session?.isSuspended ?? false,
+  );
+}
+
 class const _SidebarConversationTileTrailing({
   required final _SidebarConversationTileContent content,
-  required final bool isAgentWorking,
+  required final _SidebarConversationTileStatus status,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraRow(
-    children: [
-      if (isAgentWorking)
-        _SidebarAgentWorkingStatus(conversationId: content.chat.id),
-      _SidebarConversationTileMenu(
-        isPinned: content.chat.isPinned,
-        controller: content.controller,
-        onFork: content.onFork,
-        onDelete: content.onDelete,
-        onTogglePin: content.onTogglePin,
-        onRename: content.onRename,
-      ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    return AuraRow(
+      children: [
+        _SidebarConversationStatus(content: content, status: status),
+        _SidebarConversationTileMenu(content: content, status: status),
+      ],
+    );
+  }
 }
 
 class const _SidebarConversationTileBody({
   required final _SidebarConversationTileContent content,
-  required final bool isAgentWorking,
-  required final bool hasDraft,
-  required final String semanticLabel,
+  required final _SidebarConversationTileStatus status,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraTile(
-    child: _SidebarConversationTileLabel(content: content, hasDraft: hasDraft),
-    onTap: content.onTap,
-    variant: content.isActive
-        ? AuraTileVariant.selected
-        : AuraTileVariant.ghost,
-    size: .small,
-    leading: _SidebarConversationTileLeading(isActive: content.isActive),
-    trailing: _SidebarConversationTileTrailing(
-      content: content,
-      isAgentWorking: isAgentWorking,
-    ),
-    semanticLabel: semanticLabel,
+  Widget build(BuildContext context) {
+    return _buildTile();
+  }
+}
+
+extension on _SidebarConversationTileBody {
+  Widget _buildTile() {
+    final tile = content;
+
+    return AuraTile(
+      child: _tileLabel(tile),
+      onTap: tile.onTap,
+      variant: tile.isActive ? AuraTileVariant.selected : AuraTileVariant.ghost,
+      size: .small,
+      leading: _SidebarConversationTileLeading(isActive: tile.isActive),
+      trailing: _SidebarConversationTileTrailing(content: tile, status: status),
+      semanticLabel: status.semanticLabel,
+    );
+  }
+
+  Widget _tileLabel(_SidebarConversationTileContent tile) =>
+      _SidebarConversationTileLabel(content: tile, hasDraft: status.hasDraft);
+}
+
+class const _SidebarConversationStatus({
+  required final _SidebarConversationTileContent content,
+  required final _SidebarConversationTileStatus status,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      if (status.isAgentWorking)
+        _SidebarAgentWorkingStatus(conversationId: content.chat.id),
+      if (status.hasBrowserTabs)
+        _SidebarBrowserStatus(
+          conversationId: content.chat.id,
+          isSuspended: status.isBrowserSuspended,
+        ),
+    ],
   );
 }
 
@@ -478,6 +543,31 @@ class const _SidebarAgentWorkingStatus({required final String conversationId})
     key: ValueKey('sidebar-agent-working-status-$conversationId'),
     size: .small,
     tint: .primary,
+  );
+}
+
+class const _SidebarBrowserStatus({
+  required final String conversationId,
+  required final bool isSuspended,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message:
+        (isSuspended
+                ? LocaleKeys.browser_suspended_indicator
+                : LocaleKeys.browser_open_indicator)
+            .tr(),
+    child: AuraIcon(
+      Icons.language,
+      key: ValueKey('sidebar-browser-status-$conversationId'),
+      size: .small,
+      tint: isSuspended ? AuraTint.secondary : AuraTint.primary,
+      semanticLabel:
+          (isSuspended
+                  ? LocaleKeys.browser_suspended_indicator
+                  : LocaleKeys.browser_open_indicator)
+              .tr(),
+    ),
   );
 }
 
@@ -523,38 +613,83 @@ class const _SidebarConversationTileLeading({required final bool isActive})
 }
 
 class const _SidebarConversationTileMenu({
-  required final bool isPinned,
-  required final AuraPopupMenuController controller,
-  required final VoidCallback onFork,
-  required final VoidCallback onDelete,
-  required final VoidCallback onTogglePin,
-  required final VoidCallback onRename,
-}) extends StatelessWidget {
+  required final _SidebarConversationTileContent content,
+  required final _SidebarConversationTileStatus status,
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => _buildMenu();
+  Widget build(BuildContext context, WidgetRef ref) => _buildMenu(ref);
 }
 
 extension on _SidebarConversationTileMenu {
-  Widget _buildMenu() => AuraPopupMenu(
+  Widget _buildMenu(WidgetRef ref) => AuraPopupMenu(
     child: AuraIconButton(
       icon: Icons.more_vert,
-      onPressed: controller.toggle,
+      onPressed: content.controller.toggle,
       size: .small,
       tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip.tr(),
     ),
-    items: _menuItems(),
-    controller: controller,
+    items: _menuItems(ref),
+    controller: content.controller,
   );
 
-  List<AuraPopupMenuItem> _menuItems() => [
-    _sidebarConversationPinItem(isPinned, onTogglePin),
-    AuraPopupMenuItem(
-      title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_fork),
-      onTap: onFork,
-      leading: const AuraIcon(Icons.call_split_outlined),
+  void _toggleBrowserSuspension(WidgetRef ref) {
+    final notifier = _browserSessionNotifier(ref);
+    unawaited(
+      status.isBrowserSuspended ? notifier.resume() : notifier.suspend(),
+    );
+  }
+
+  void _closeAllBrowserTabs(WidgetRef ref) =>
+      unawaited(_browserSessionNotifier(ref).closeAllTabs());
+
+  BrowserSessionNotifier _browserSessionNotifier(WidgetRef ref) => ref.read(
+    browserSessionProvider(content.chat.workspaceId, content.chat.id).notifier,
+  );
+
+  List<AuraPopupMenuEntry> _menuItems(WidgetRef ref) => [
+    _sidebarConversationPinItem(content.chat.isPinned, content.onTogglePin),
+    _forkConversationItem,
+    ..._browserMenuItems(ref),
+    ..._sidebarConversationMenuItems(
+      onRename: content.onRename,
+      onDelete: content.onDelete,
     ),
-    ..._sidebarConversationMenuItems(onRename: onRename, onDelete: onDelete),
   ];
+
+  AuraPopupMenuItem get _forkConversationItem => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_fork),
+    onTap: content.onFork,
+    leading: const AuraIcon(Icons.call_split_outlined),
+  );
+
+  List<AuraPopupMenuEntry> _browserMenuItems(WidgetRef ref) {
+    if (!status.hasBrowserTabs) return const [];
+
+    return [
+      const AuraPopupMenuDivider(),
+      _browserSuspensionItem(ref),
+      _browserCloseAllItem(ref),
+    ];
+  }
+
+  AuraPopupMenuItem _browserSuspensionItem(WidgetRef ref) => AuraPopupMenuItem(
+    title: TextLocale(
+      status.isBrowserSuspended
+          ? LocaleKeys.browser_resume
+          : LocaleKeys.browser_suspend,
+    ),
+    onTap: () => _toggleBrowserSuspension(ref),
+    leading: AuraIcon(
+      status.isBrowserSuspended ? Icons.play_arrow : Icons.pause,
+    ),
+  );
+
+  AuraPopupMenuItem _browserCloseAllItem(WidgetRef ref) => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.browser_close_all_tabs),
+    onTap: () => _closeAllBrowserTabs(ref),
+    leading: const AuraIcon(Icons.close),
+    variant: .error,
+  );
 }
 
 AuraPopupMenuItem _sidebarConversationPinItem(

@@ -665,6 +665,106 @@ extension MessageRepositoryMutationOperations on MessageRepository {
 
     return await _mapToMessageWithAttachments(updatedMessage);
   }
+
+  Future<MessageEntity> patchMessageWithAttachments(
+    MessagePatchWithAttachmentsRequest request,
+  ) => _patchMessageWithAttachments(this, request);
+}
+
+typedef MessagePatchWithAttachmentsRequest = ({
+  String id,
+  MessagePatch patch,
+  String conversationId,
+  List<MessageAttachmentToCreate> attachments,
+});
+
+Future<MessageEntity> _patchMessageWithAttachments(
+  MessageRepository repository,
+  MessagePatchWithAttachmentsRequest request,
+) async {
+  _validateToolResultAttachments(request.attachments);
+  repository._validateMessagePatch(request.patch);
+  final promotedAttachments = <MessageAttachmentToCreate>[];
+  final updatedMessage = await repository._promoteAndPatchToolCallAttachments(
+    request,
+    promotedAttachments,
+  );
+  await repository._deleteDraftAttachmentFiles(request.attachments);
+
+  return await repository._mapToMessageWithAttachments(updatedMessage);
+}
+
+void _validateToolResultAttachments(
+  List<MessageAttachmentToCreate> attachments,
+) {
+  final invalid =
+      attachments.isEmpty ||
+      attachments.any(
+        (attachment) => attachment.toolCallId?.isNotEmpty != true,
+      );
+  if (invalid) {
+    throw const MessageValidationException(
+      'Tool result attachments require a matching tool call ID.',
+    );
+  }
+}
+
+extension on MessageRepository {
+  Future<MessagesTable> _promoteAndPatchToolCallAttachments(
+    MessagePatchWithAttachmentsRequest request,
+    List<MessageAttachmentToCreate> promotedAttachments,
+  ) async {
+    try {
+      await _promoteAttachments(request.attachments, promotedAttachments);
+
+      return await _database.transaction(
+        () => _patchAndInsertToolCallAttachments(request, promotedAttachments),
+      );
+    } on Exception {
+      await _deleteDraftAttachmentFiles(promotedAttachments);
+      rethrow;
+    }
+  }
+
+  Future<MessagesTable> _patchAndInsertToolCallAttachments(
+    MessagePatchWithAttachmentsRequest request,
+    List<MessageAttachmentToCreate> promotedAttachments,
+  ) async {
+    final updated = await _patchMessageInTransaction(
+      request.id,
+      request.patch,
+      request.conversationId,
+    );
+    if (updated == null) throw MessageNotFoundException(request.id);
+    _validateAttachmentToolCallReferences(request.attachments, updated);
+    await _insertAttachments(updated.id, promotedAttachments);
+
+    return updated;
+  }
+
+  void _validateAttachmentToolCallReferences(
+    List<MessageAttachmentToCreate> attachments,
+    MessagesTable updated,
+  ) {
+    final metadata = MessageMetadataEntity.fromJsonString(updated.metadata);
+    if (metadata == null ||
+        !_allAttachmentToolCallsExist(attachments, metadata.toolCalls)) {
+      throw const MessageValidationException(
+        'Tool result attachment references an unknown tool call.',
+      );
+    }
+  }
+
+  bool _allAttachmentToolCallsExist(
+    List<MessageAttachmentToCreate> attachments,
+    List<MessageToolCallEntity> toolCalls,
+  ) {
+    final toolCallIds = toolCalls.map((toolCall) => toolCall.id).toSet();
+
+    return attachments.every(
+      (attachment) => toolCallIds.contains(attachment.toolCallId),
+    );
+  }
 }
 
 class const MessageRepositoryBatchOperations(
@@ -1386,6 +1486,7 @@ extension on MessageRepository {
       sizeBytes: row.sizeBytes,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      toolCallId: row.toolCallId,
     );
   }
 
@@ -1427,6 +1528,7 @@ extension MessageRepositoryCompanionMappings on MessageRepository {
   ) {
     return MessageAttachmentsCompanion(
       messageId: .new(messageId),
+      toolCallId: .absentIfNull(attachment.toolCallId),
       localPath: .new(attachment.localPath),
       fileName: .new(attachment.fileName),
       displayName: .new(attachment.displayName),

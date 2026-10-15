@@ -423,13 +423,20 @@ void main() {
             status: .sent,
             createdAt: createdAt,
             metadata: const .new(
-              toolCalls: [],
+              toolCalls: [
+                ConversationArchiveToolCall(
+                  id: 'tool-call-0',
+                  displayName: 'Browser capture',
+                  resultStatus: .success,
+                ),
+              ],
               a2uiMessages: [],
               isCompactionSummary: false,
               compactedMessageIndexes: [],
             ),
             attachments: [
               .new(
+                toolCallId: 'tool-call-0',
                 fileName: 'report.txt',
                 displayName: 'Report',
                 mimeType: 'text/plain',
@@ -453,6 +460,11 @@ void main() {
     final importedAttachment = File(
       importedMessage.attachments.single.localPath,
     );
+    expect(
+      importedMessage.attachments.single.toolCallId,
+      importedMessage.metadata?.toolCalls.single.id,
+    );
+    expect(importedMessage.attachments.single.toolCallId, isNot('tool-call-0'));
     expect(importedAttachment.existsSync(), isTrue);
     expect(importedAttachment.readAsBytesSync(), [1, 2, 3]);
     expect(attachmentDirectory.listSync(), isEmpty);
@@ -946,6 +958,7 @@ class _FakeArchiveAttachmentService extends LocalChatAttachmentService {
       mimeType: attachment.mimeType,
       modality: attachment.modality,
       sizeBytes: attachment.bytes.length,
+      toolCallId: attachment.toolCallId,
     );
   }
 

@@ -10,6 +10,7 @@ import 'package:drift/drift.dart';
 class MessageAttachments extends Table with TableMixin {
   TextColumn get messageId =>
       text().references(Messages, #id, onDelete: .cascade)();
+  TextColumn get toolCallId => text().nullable()();
   TextColumn get localPath => text()();
   TextColumn get fileName => text()();
   TextColumn get displayName => text().withDefault(const Constant(''))();

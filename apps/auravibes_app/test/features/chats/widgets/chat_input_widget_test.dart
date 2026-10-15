@@ -2065,6 +2065,14 @@ class _FakeLocalChatAttachmentService(
   }
 
   @override
+  Future<MessageAttachmentToCreate> createToolResultAttachment({
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    required String toolCallId,
+  }) => throw UnimplementedError();
+
+  @override
   @override
   Future<MessageAttachmentToCreate> createArchiveAttachment(
     ConversationArchiveAttachment _,

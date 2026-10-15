@@ -239,6 +239,73 @@ void main() {
       expect(fileStore.deleted, ['/tmp/draft.png']);
     });
 
+    test(
+      'patchMessageWithAttachments preserves tool-call association',
+      () async {
+        final fileStore = _FakeAttachmentFileStore(
+          persistedPaths: {'/tmp/browser-viewport.png': '/support/browser.png'},
+        );
+        repository = MessageRepository(
+          database,
+          attachmentFileStore: fileStore,
+        );
+        const runningMetadata = MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'browser-call',
+              name: 'browser_capture_screenshot',
+              argumentsRaw: '{}',
+              resultStatus: .running,
+            ),
+          ],
+        );
+        final message = await repository.createMessage(
+          .new(
+            conversationId: 'conv-1',
+            content: 'Captured page',
+            messageType: .text,
+            isUser: false,
+            status: .sending,
+            metadata: jsonEncode(runningMetadata.toJson()),
+          ),
+        );
+        const completedMetadata = MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'browser-call',
+              name: 'browser_capture_screenshot',
+              argumentsRaw: '{}',
+              responseRaw: '{"snapshot":"Page content"}',
+              resultStatus: .success,
+            ),
+          ],
+        );
+
+        final patched = await repository.patchMessageWithAttachments((
+          id: message.id,
+          patch: const MessagePatch(metadata: completedMetadata, status: .sent),
+          conversationId: 'conv-1',
+          attachments: const [
+            MessageAttachmentToCreate(
+              localPath: '/tmp/browser-viewport.png',
+              fileName: 'browser-viewport.png',
+              displayName: 'browser-viewport.png',
+              mimeType: 'image/png',
+              modality: .image,
+              sizeBytes: 4,
+              toolCallId: 'browser-call',
+            ),
+          ],
+        ));
+
+        expect(patched.attachments.single.toolCallId, 'browser-call');
+        expect(patched.attachments.single.localPath, '/support/browser.png');
+        expect(patched.metadata?.toolCalls.single.isResolved, isTrue);
+        expect(fileStore.persisted, ['/tmp/browser-viewport.png']);
+        expect(fileStore.deleted, ['/tmp/browser-viewport.png']);
+      },
+    );
+
     test('deleteMessage deletes persisted attachment files', () async {
       final fileStore = _FakeAttachmentFileStore(
         persistedPaths: {'/tmp/draft.png': '/support/image.png'},

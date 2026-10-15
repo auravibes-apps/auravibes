@@ -338,7 +338,7 @@ as ToolCallResultStatus?,
 /// @nodoc
 mixin _$MessageAttachmentEntity {
 
- String get id; String get messageId; String get localPath; String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; int get sizeBytes; DateTime get createdAt; DateTime get updatedAt;
+ String get id; String get messageId; String get localPath; String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; int get sizeBytes; DateTime get createdAt; DateTime get updatedAt; String? get toolCallId;
 /// Create a copy of MessageAttachmentEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -350,20 +350,20 @@ $MessageAttachmentEntityCopyWith<MessageAttachmentEntity> get copyWith => _$Mess
 @override
 bool operator ==(Object other) {
   final _this = this as MessageAttachmentEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.messageId, _this.messageId) || other.messageId == _this.messageId)&&(identical(other.localPath, _this.localPath) || other.localPath == _this.localPath)&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&(identical(other.sizeBytes, _this.sizeBytes) || other.sizeBytes == _this.sizeBytes)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.messageId, _this.messageId) || other.messageId == _this.messageId)&&(identical(other.localPath, _this.localPath) || other.localPath == _this.localPath)&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&(identical(other.sizeBytes, _this.sizeBytes) || other.sizeBytes == _this.sizeBytes)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.toolCallId, _this.toolCallId) || other.toolCallId == _this.toolCallId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as MessageAttachmentEntity;
-  return Object.hash(runtimeType,_this.id,_this.messageId,_this.localPath,_this.fileName,_this.displayName,_this.mimeType,_this.modality,_this.sizeBytes,_this.createdAt,_this.updatedAt);
+  return Object.hash(runtimeType,_this.id,_this.messageId,_this.localPath,_this.fileName,_this.displayName,_this.mimeType,_this.modality,_this.sizeBytes,_this.createdAt,_this.updatedAt,_this.toolCallId);
 }
 
 @override
 String toString() {
   final _this = this as MessageAttachmentEntity;
-  return 'MessageAttachmentEntity(id: ${_this.id}, messageId: ${_this.messageId}, localPath: ${_this.localPath}, fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, sizeBytes: ${_this.sizeBytes}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt})';
+  return 'MessageAttachmentEntity(id: ${_this.id}, messageId: ${_this.messageId}, localPath: ${_this.localPath}, fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, sizeBytes: ${_this.sizeBytes}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, toolCallId: ${_this.toolCallId})';
 }
 
 
@@ -374,7 +374,7 @@ abstract mixin class $MessageAttachmentEntityCopyWith<$Res>  {
   factory $MessageAttachmentEntityCopyWith(MessageAttachmentEntity value, $Res Function(MessageAttachmentEntity) _then) = _$MessageAttachmentEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String messageId, String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, DateTime createdAt, DateTime updatedAt
+ String id, String messageId, String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, DateTime createdAt, DateTime updatedAt, String? toolCallId
 });
 
 
@@ -391,7 +391,7 @@ class _$MessageAttachmentEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageAttachmentEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? messageId = null,Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? messageId = null,Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? createdAt = null,Object? updatedAt = null,Object? toolCallId = freezed,}) {
   return _then(MessageAttachmentEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,messageId: null == messageId ? _self.messageId : messageId // ignore: cast_nullable_to_non_nullable
@@ -403,7 +403,8 @@ as String,modality: null == modality ? _self.modality : modality // ignore: cast
 as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
 as int,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -488,10 +489,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt,  String? toolCallId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageAttachmentEntity() when $default != null:
-return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt,_that.toolCallId);case _:
   return orElse();
 
 }
@@ -509,10 +510,10 @@ return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.di
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt,  String? toolCallId)  $default,) {final _that = this;
 switch (_that) {
 case _MessageAttachmentEntity():
-return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt,_that.toolCallId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -529,10 +530,10 @@ return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.di
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt,  String? toolCallId)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageAttachmentEntity() when $default != null:
-return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt,_that.toolCallId);case _:
   return null;
 
 }
@@ -544,7 +545,7 @@ return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.di
 
 
 class _MessageAttachmentEntity implements MessageAttachmentEntity {
-  const _MessageAttachmentEntity({required this.id, required this.messageId, required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes, required this.createdAt, required this.updatedAt});
+  const _MessageAttachmentEntity({required this.id, required this.messageId, required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes, required this.createdAt, required this.updatedAt, this.toolCallId});
   
 
 @override final  String id;
@@ -557,6 +558,7 @@ class _MessageAttachmentEntity implements MessageAttachmentEntity {
 @override final  int sizeBytes;
 @override final  DateTime createdAt;
 @override final  DateTime updatedAt;
+@override final  String? toolCallId;
 
 /// Create a copy of MessageAttachmentEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -568,18 +570,18 @@ _$MessageAttachmentEntityCopyWith<_MessageAttachmentEntity> get copyWith => __$M
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.messageId, messageId) || other.messageId == messageId)&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.messageId, messageId) || other.messageId == messageId)&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.toolCallId, toolCallId) || other.toolCallId == toolCallId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,messageId,localPath,fileName,displayName,mimeType,modality,sizeBytes,createdAt,updatedAt);
+    return Object.hash(runtimeType,id,messageId,localPath,fileName,displayName,mimeType,modality,sizeBytes,createdAt,updatedAt,toolCallId);
 }
 
 @override
 String toString() {
-    return 'MessageAttachmentEntity(id: $id, messageId: $messageId, localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'MessageAttachmentEntity(id: $id, messageId: $messageId, localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes, createdAt: $createdAt, updatedAt: $updatedAt, toolCallId: $toolCallId)';
 }
 
 
@@ -590,7 +592,7 @@ abstract mixin class _$MessageAttachmentEntityCopyWith<$Res> implements $Message
   factory _$MessageAttachmentEntityCopyWith(_MessageAttachmentEntity value, $Res Function(_MessageAttachmentEntity) _then) = __$MessageAttachmentEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String messageId, String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, DateTime createdAt, DateTime updatedAt
+ String id, String messageId, String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, DateTime createdAt, DateTime updatedAt, String? toolCallId
 });
 
 
@@ -607,7 +609,7 @@ class __$MessageAttachmentEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageAttachmentEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? messageId = null,Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? messageId = null,Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? createdAt = null,Object? updatedAt = null,Object? toolCallId = freezed,}) {
   return _then(_MessageAttachmentEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,messageId: null == messageId ? _self.messageId : messageId // ignore: cast_nullable_to_non_nullable
@@ -619,7 +621,8 @@ as String,modality: null == modality ? _self.modality : modality // ignore: cast
 as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
 as int,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -629,7 +632,7 @@ as DateTime,
 /// @nodoc
 mixin _$MessageAttachmentToCreate {
 
- String get localPath; String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; int get sizeBytes;
+ String get localPath; String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; int get sizeBytes; String? get toolCallId;
 /// Create a copy of MessageAttachmentToCreate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -641,20 +644,20 @@ $MessageAttachmentToCreateCopyWith<MessageAttachmentToCreate> get copyWith => _$
 @override
 bool operator ==(Object other) {
   final _this = this as MessageAttachmentToCreate;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentToCreate&&(identical(other.localPath, _this.localPath) || other.localPath == _this.localPath)&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&(identical(other.sizeBytes, _this.sizeBytes) || other.sizeBytes == _this.sizeBytes));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentToCreate&&(identical(other.localPath, _this.localPath) || other.localPath == _this.localPath)&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&(identical(other.sizeBytes, _this.sizeBytes) || other.sizeBytes == _this.sizeBytes)&&(identical(other.toolCallId, _this.toolCallId) || other.toolCallId == _this.toolCallId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as MessageAttachmentToCreate;
-  return Object.hash(runtimeType,_this.localPath,_this.fileName,_this.displayName,_this.mimeType,_this.modality,_this.sizeBytes);
+  return Object.hash(runtimeType,_this.localPath,_this.fileName,_this.displayName,_this.mimeType,_this.modality,_this.sizeBytes,_this.toolCallId);
 }
 
 @override
 String toString() {
   final _this = this as MessageAttachmentToCreate;
-  return 'MessageAttachmentToCreate(localPath: ${_this.localPath}, fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, sizeBytes: ${_this.sizeBytes})';
+  return 'MessageAttachmentToCreate(localPath: ${_this.localPath}, fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, sizeBytes: ${_this.sizeBytes}, toolCallId: ${_this.toolCallId})';
 }
 
 
@@ -665,7 +668,7 @@ abstract mixin class $MessageAttachmentToCreateCopyWith<$Res>  {
   factory $MessageAttachmentToCreateCopyWith(MessageAttachmentToCreate value, $Res Function(MessageAttachmentToCreate) _then) = _$MessageAttachmentToCreateCopyWithImpl;
 @useResult
 $Res call({
- String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes
+ String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, String? toolCallId
 });
 
 
@@ -682,7 +685,7 @@ class _$MessageAttachmentToCreateCopyWithImpl<$Res>
 
 /// Create a copy of MessageAttachmentToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? toolCallId = freezed,}) {
   return _then(MessageAttachmentToCreate(
 localPath: null == localPath ? _self.localPath : localPath // ignore: cast_nullable_to_non_nullable
 as String,fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
@@ -690,7 +693,8 @@ as String,displayName: null == displayName ? _self.displayName : displayName // 
 as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
 as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
 as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
-as int,
+as int,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -775,10 +779,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  String? toolCallId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageAttachmentToCreate() when $default != null:
-return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes);case _:
+return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.toolCallId);case _:
   return orElse();
 
 }
@@ -796,10 +800,10 @@ return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  String? toolCallId)  $default,) {final _that = this;
 switch (_that) {
 case _MessageAttachmentToCreate():
-return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes);case _:
+return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.toolCallId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -816,10 +820,10 @@ return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  String? toolCallId)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageAttachmentToCreate() when $default != null:
-return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes);case _:
+return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.toolCallId);case _:
   return null;
 
 }
@@ -831,7 +835,7 @@ return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,
 
 
 class _MessageAttachmentToCreate implements MessageAttachmentToCreate {
-  const _MessageAttachmentToCreate({required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes});
+  const _MessageAttachmentToCreate({required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes, this.toolCallId});
   
 
 @override final  String localPath;
@@ -840,6 +844,7 @@ class _MessageAttachmentToCreate implements MessageAttachmentToCreate {
 @override final  String mimeType;
 @override final  MessageAttachmentModality modality;
 @override final  int sizeBytes;
+@override final  String? toolCallId;
 
 /// Create a copy of MessageAttachmentToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -851,18 +856,18 @@ _$MessageAttachmentToCreateCopyWith<_MessageAttachmentToCreate> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentToCreate&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentToCreate&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.toolCallId, toolCallId) || other.toolCallId == toolCallId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,localPath,fileName,displayName,mimeType,modality,sizeBytes);
+    return Object.hash(runtimeType,localPath,fileName,displayName,mimeType,modality,sizeBytes,toolCallId);
 }
 
 @override
 String toString() {
-    return 'MessageAttachmentToCreate(localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes)';
+    return 'MessageAttachmentToCreate(localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes, toolCallId: $toolCallId)';
 }
 
 
@@ -873,7 +878,7 @@ abstract mixin class _$MessageAttachmentToCreateCopyWith<$Res> implements $Messa
   factory _$MessageAttachmentToCreateCopyWith(_MessageAttachmentToCreate value, $Res Function(_MessageAttachmentToCreate) _then) = __$MessageAttachmentToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes
+ String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, String? toolCallId
 });
 
 
@@ -890,7 +895,7 @@ class __$MessageAttachmentToCreateCopyWithImpl<$Res>
 
 /// Create a copy of MessageAttachmentToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? toolCallId = freezed,}) {
   return _then(_MessageAttachmentToCreate(
 localPath: null == localPath ? _self.localPath : localPath // ignore: cast_nullable_to_non_nullable
 as String,fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
@@ -898,7 +903,8 @@ as String,displayName: null == displayName ? _self.displayName : displayName // 
 as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
 as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
 as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
-as int,
+as int,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

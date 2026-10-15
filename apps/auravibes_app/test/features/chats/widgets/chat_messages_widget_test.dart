@@ -14,6 +14,7 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
@@ -39,6 +40,7 @@ import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
+import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
@@ -76,6 +78,7 @@ Widget buildSubject({
   bool showThinking = false,
   bool isStopRequested = false,
   Future<void> Function(MessageEntity message)? onRetryMessage,
+  ValueChanged<SidebarToolResultTab>? onOpenToolResult,
   ConversationEntity? conversation,
   AuraTheme? theme,
   Locale locale = const Locale('en'),
@@ -89,6 +92,7 @@ Widget buildSubject({
     showThinking: showThinking,
     isStopRequested: isStopRequested,
     onRetryMessage: onRetryMessage,
+    onOpenToolResult: onOpenToolResult,
     messageEntitiesById: messageEntitiesById,
     conversation: conversation,
     theme: theme,
@@ -2190,6 +2194,7 @@ void main() {
       testWidgets('discloses $name in expanded activity details', (
         tester,
       ) async {
+        SidebarToolResultTab? openedTab;
         final projection = projectToolOutput(source, policy: policy);
         final toolCall = MessageToolCallEntity(
           id: 'tc-truncated',
@@ -2213,6 +2218,7 @@ void main() {
           buildSubject(
             messages: [message.id],
             overrides: _messageOverrides({message.id: message}),
+            onOpenToolResult: (tab) => openedTab = tab,
           ),
         );
         await revealActivityToolCalls(tester);
@@ -2241,15 +2247,13 @@ void main() {
         await tester.tap(find.text('Show more'));
         await tester.pumpAndSettle();
 
+        expect(openedTab?.id, 'tc-truncated');
         expect(
-          find.descendant(
-            of: find.byType(Dialog),
-            matching: find.bySemanticsLabel(text),
-          ),
-          findsOneWidget,
+          openedTab?.content,
+          ToolMetadataDecoder.decode(projection.persistedText),
         );
-        await tester.tap(find.text('Close'));
-        await tester.pumpAndSettle();
+        expect(openedTab?.status, text);
+        expect(find.byType(Dialog), findsNothing);
         semantics.dispose();
       });
     }
@@ -2359,6 +2363,7 @@ void main() {
           metadata: MessageMetadataEntity(toolCalls: [toolCall]),
         );
         final semantics = tester.ensureSemantics();
+        SidebarToolResultTab? openedTab;
         String? copiedText;
         tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
           SystemChannels.platform,
@@ -2382,6 +2387,7 @@ void main() {
           buildSubject(
             messages: [message.id],
             overrides: _messageOverrides({message.id: message}),
+            onOpenToolResult: (tab) => openedTab = tab,
           ),
         );
         await revealActivityToolCalls(tester);
@@ -2397,20 +2403,13 @@ void main() {
         await tester.tap(find.text('Show more'));
         await tester.pumpAndSettle();
 
-        final modal = find.byType(Dialog);
-        expect(
-          find.descendant(of: modal, matching: find.text(responseRaw)),
-          findsOneWidget,
-        );
-        expect(
-          find.descendant(
-            of: modal,
-            matching: find.bySemanticsLabel(contextStatus),
-          ),
-          findsOneWidget,
-        );
-        await tester.tap(find.text('Close'));
-        await tester.pumpAndSettle();
+        expect(openedTab, (
+          id: 'tc-inspect-short',
+          title: 'built_in_1_read_file',
+          content: responseRaw,
+          status: contextStatus,
+        ));
+        expect(find.byType(Dialog), findsNothing);
         expect(find.text(modelResponse), findsOneWidget);
 
         await tester.tap(find.byTooltip('Copy tool response'));
@@ -2455,6 +2454,7 @@ void main() {
           'Respuesta de la herramienta: $originalBytes bytes. Solo se recortó '
           'el contexto del modelo a $defaultToolOutputBytes bytes; la '
           'respuesta completa sigue guardada.';
+      SidebarToolResultTab? openedTab;
       final semantics = tester.ensureSemantics();
 
       await pumpAndInit(
@@ -2463,6 +2463,7 @@ void main() {
           messages: [message.id],
           locale: const Locale('es'),
           overrides: _messageOverrides({message.id: message}),
+          onOpenToolResult: (tab) => openedTab = tab,
         ),
       );
       await revealActivityToolCalls(tester);
@@ -2481,13 +2482,8 @@ void main() {
       await tester.tap(find.text('Ver más'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.descendant(
-          of: find.byType(Dialog),
-          matching: find.bySemanticsLabel(expectedStatus),
-        ),
-        findsOneWidget,
-      );
+      expect(openedTab?.status, expectedStatus);
+      expect(find.byType(Dialog), findsNothing);
       semantics.dispose();
     });
 
@@ -5207,6 +5203,8 @@ void main() {
                         workspaceId: 'ws-1',
                         conversationId: conversationId,
                         messages: transcripts[conversationId]!.keys.toList(),
+                        onOpenToolResult: (_) =>
+                            fail('Unexpected tool result tab'),
                       ),
                     ),
                   ),
@@ -6526,6 +6524,7 @@ class const _ChatMessagesTestSubject({
   final bool showThinking = false,
   final bool isStopRequested = false,
   final Future<void> Function(MessageEntity message)? onRetryMessage,
+  final ValueChanged<SidebarToolResultTab>? onOpenToolResult,
   final ConversationEntity? conversation,
   final AuraTheme? theme,
   final Locale locale = const Locale('en'),
@@ -6568,6 +6567,9 @@ class const _ChatMessagesTestSubject({
                       workspaceId: 'ws-1',
                       conversationId: conversationId,
                       messages: messages,
+                      onOpenToolResult:
+                          onOpenToolResult ??
+                          (_) => fail('Unexpected tool result tab'),
                       messageEntitiesById: messageEntitiesById,
                       pendingToolCalls: pendingToolCalls,
                       showThinking: showThinking,

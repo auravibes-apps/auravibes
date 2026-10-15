@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_tool_execution_service.dart';
@@ -93,6 +94,45 @@ void main() {
       provider.updates.map((update) => update.responseRaw),
       everyElement(contains('Tool "')),
     );
+  });
+
+  test('preserves typed screenshot media in tool result updates', () async {
+    final media = AgentToolResultMedia(
+      bytes: Uint8List.fromList([1, 2, 3]),
+      mimeType: 'image/png',
+      fileName: 'browser-viewport.png',
+    );
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [
+          AgentToolToCall(
+            tool: 'browser_capture_screenshot',
+            id: 'screenshot-call',
+            argumentsRaw: '{}',
+          ),
+        ],
+        notFoundToolCallIds: [],
+        previouslyFailedToolCallIds: [],
+      ),
+      decisions: const {'screenshot-call': AgentToolPermissionResult.granted},
+      results: {
+        'browser_capture_screenshot': AgentToolExecutionOutput(
+          output: const {'screenshotCaptured': true},
+          media: [media],
+        ),
+      },
+    );
+
+    final result = await AgentToolExecutionService<String>(provider: provider)(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+    );
+
+    expect(result, AgentIterationDecision.continueIteration);
+    expect(provider.updates.single.responseRaw, contains('screenshotCaptured'));
+    expect(provider.updates.single.media, [media]);
   });
 
   test(

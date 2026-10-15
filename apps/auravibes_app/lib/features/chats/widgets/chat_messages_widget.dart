@@ -25,6 +25,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/notifiers/activity_run_expansion_notifier.dart';
@@ -91,6 +92,7 @@ class const ChatMessagesWidget({
   required final String workspaceId,
   required final String conversationId,
   required final List<String> messages,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   final Map<String, MessageEntity>? messageEntitiesById,
   final List<PendingToolCall> pendingToolCalls = const [],
   final bool showThinking = false,
@@ -317,6 +319,7 @@ class const ChatMessagesWidget({
             conversation: conversation,
             retryableMessageId: retryableMessageId,
             onRetryMessage: onRetryMessage,
+            onOpenToolResult: onOpenToolResult,
           ),
           separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
           itemCount: itemCount,
@@ -588,6 +591,7 @@ Widget _buildChatTimelineItem({
   required ConversationEntity? conversation,
   required String? retryableMessageId,
   required Future<void> Function(MessageEntity message)? onRetryMessage,
+  required ValueChanged<SidebarToolResultTab> onOpenToolResult,
 }) {
   if (showThinking && index == 0) {
     return const ChatThinkingIndicator(
@@ -623,6 +627,7 @@ Widget _buildChatTimelineItem({
           : replayPayloadsByMessageId[run.responseMessageId] ?? const [],
       canRetry: run.responseMessageId == retryableMessageId,
       onRetryMessage: onRetryMessage,
+      onOpenToolResult: onOpenToolResult,
     ),
     _MessageTimelineItem(
       :final source,
@@ -646,6 +651,7 @@ Widget _buildChatTimelineItem({
         showResponseActions: showResponseActions,
         canRetry: source.message.id == retryableMessageId,
         onRetryMessage: onRetryMessage,
+        onOpenToolResult: onOpenToolResult,
       ),
   };
   final rendered = _DisclosureSizeReporter(
@@ -1036,6 +1042,7 @@ class const _ChatMessageTimelineItem({
   final bool showResponseActions = true,
   required final bool canRetry,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -1079,6 +1086,7 @@ class const _ChatMessageTimelineItem({
             isCloudWorkspace: isCloudWorkspace,
             backgroundToolCallIds: backgroundToolCallIds,
             isTopLevelConversation: isTopLevelConversation,
+            onOpenToolResult: onOpenToolResult,
           ),
         _ChatMessageContent(
           message: message,
@@ -1793,6 +1801,7 @@ class const _AssistantActivityRun({
   required final bool isCloudWorkspace,
   required final Set<String>? backgroundToolCallIds,
   required final bool isTopLevelConversation,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
   final Map<String, List<String>> a2uiReplayPayloadsByMessageId = const {},
@@ -2050,6 +2059,7 @@ class const _AssistantActivityRun({
             openSkillDetails: activityToolCall.openSkillDetails,
             openSubAgent: activityToolCall.openSubAgent,
             onRunInBackground: activityToolCall.onRunInBackground,
+            onOpenToolResult: onOpenToolResult,
           ),
       ];
       if (toolRows.length == 1) {
@@ -2666,6 +2676,7 @@ class const _ActivityToolCallRow({
   required final VoidCallback? openSubAgent,
   required final VoidCallback? onRunInBackground,
   required final VoidCallback? openSkillDetails,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -2827,6 +2838,7 @@ class const _ActivityToolCallRow({
             toolCall: toolCall,
             decodedArgs: decodedArgs,
             decodedResponse: decodedResponse,
+            onOpenToolResult: onOpenToolResult,
           ),
       ],
     );
@@ -2919,6 +2931,7 @@ class const _ActivityToolCallDetails({
   required final MessageToolCallEntity toolCall,
   required final String? decodedArgs,
   required final String? decodedResponse,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -2998,9 +3011,14 @@ class const _ActivityToolCallDetails({
                     padding: .small,
                     borderRadius: 8,
                     child: ToolCallResponsePreview(
-                      toolName: toolCall.name,
                       content: value,
                       inspectionStatus: truncationMessage,
+                      onShowMore: () => onOpenToolResult((
+                        id: toolCall.id,
+                        title: toolCall.name,
+                        content: value,
+                        status: truncationMessage,
+                      )),
                     ),
                   ),
                 ),

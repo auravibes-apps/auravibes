@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_transcript_context_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
@@ -164,6 +165,9 @@ class AppAgentContinuationAdapter({
       ...skillContextMessages,
       ...await BuildPromptChatMessages(
         modalitiesInput: model.workspaceModelSelection.modalitiesInput,
+        supportsImageToolResults:
+            model.modelsProvider.type == ModelProvidersType.anthropic &&
+            (model.modelConnection.url?.trim().isEmpty ?? true),
       )(messages),
     ];
   }

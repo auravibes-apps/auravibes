@@ -89,6 +89,7 @@ class const BuildAppSkillNativeToolSpecsUsecase(
       isUnknownConversation: conversationState.isUnknown,
       isSubAgentConversation: conversationState.isSubAgent,
     ),
+    ..._browserToolSpecs(runtimeSkills),
     ...await _serviceSkillToolSpecs(runtimeSkills, workspaceId),
   ];
 
@@ -126,6 +127,18 @@ class const BuildAppSkillNativeToolSpecsUsecase(
     if (subAgentsSkill == null) return const [];
 
     return _appSkillToolSpecs(subAgentsSkill, const []);
+  }
+
+  List<ToolSpec> _browserToolSpecs(List<AvailableSkill> runtimeSkills) {
+    if (!_hasAppSkill(runtimeSkills, AppSkillRegistry.browserSkillSlug)) {
+      return const [];
+    }
+    final browserSkill = _appSkillRegistry.getBySlug(
+      AppSkillRegistry.browserSkillSlug,
+    );
+    if (browserSkill == null) return const [];
+
+    return _appSkillToolSpecs(browserSkill, const []);
   }
 
   Future<List<ToolSpec>> _serviceSkillToolSpecs(

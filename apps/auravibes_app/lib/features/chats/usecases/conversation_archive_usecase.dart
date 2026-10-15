@@ -111,6 +111,11 @@ typedef _ArchiveMessageImportRequest = ({
   int contextIndex,
 });
 
+typedef _RestoredImportedMessageParts = ({
+  List<MessageAttachmentToCreate> attachments,
+  String metadata,
+});
+
 class const ConversationArchiveUsecase({
   required final ConversationRepository conversationRepository,
   required final MessageRepository messageRepository,
@@ -985,12 +990,12 @@ class const _ConversationArchiveTranscriptImporter(
     List<MessageAttachmentToCreate> attachments,
     List<String> importedMessageIds,
   ) => messageRepository.createMessage(
-    _toImportedMessage(
-      message,
-      conversationId,
-      attachments,
-      importedMessageIds,
-    ),
+    _toImportedMessage((
+      message: message,
+      conversationId: conversationId,
+      attachments: attachments,
+      importedMessageIds: importedMessageIds,
+    )),
   );
 
   Future<void> _importContextEntry(
@@ -1112,27 +1117,82 @@ typedef _SelectionRestore = ({
   String workspaceToolId,
 });
 
-MessageToCreate _toImportedMessage(
+typedef _ImportedMessageRequest = ({
   ConversationArchiveMessage message,
   String conversationId,
   List<MessageAttachmentToCreate> attachments,
   List<String> importedMessageIds,
-) => MessageToCreate(
-  conversationId: conversationId,
-  content: message.content,
-  messageType: message.messageType,
-  isUser: message.isUser,
-  status: _restoredMessageStatus(message.status),
-  createdAt: message.createdAt,
-  updatedAt: message.createdAt,
-  metadata: _encodedRestoredMetadata(message.metadata, importedMessageIds),
-  attachments: attachments,
-);
+});
 
-String _encodedRestoredMetadata(
+MessageToCreate _toImportedMessage(_ImportedMessageRequest request) {
+  final parts = _restoredImportedMessageParts(request);
+
+  return _createImportedMessage(request, parts);
+}
+
+_RestoredImportedMessageParts _restoredImportedMessageParts(
+  _ImportedMessageRequest request,
+) {
+  final message = request.message;
+  final toolCallIds = _importedToolCallIds(message.metadata.toolCalls);
+
+  return (
+    attachments: _restoreImportedAttachments(request.attachments, toolCallIds),
+    metadata: _importedMessageMetadata(
+      message.metadata,
+      request.importedMessageIds,
+      toolCallIds,
+    ),
+  );
+}
+
+MessageToCreate _createImportedMessage(
+  _ImportedMessageRequest request,
+  _RestoredImportedMessageParts parts,
+) {
+  final message = request.message;
+
+  return MessageToCreate(
+    conversationId: request.conversationId,
+    content: message.content,
+    messageType: message.messageType,
+    isUser: message.isUser,
+    status: _restoredMessageStatus(message.status),
+    createdAt: message.createdAt,
+    updatedAt: message.createdAt,
+    metadata: parts.metadata,
+    attachments: parts.attachments,
+  );
+}
+
+Map<String, String> _importedToolCallIds(
+  List<ConversationArchiveToolCall> toolCalls,
+) {
+  const uuidV7 = UuidV7();
+
+  return {for (final toolCall in toolCalls) ?toolCall.id: uuidV7.generate()};
+}
+
+List<MessageAttachmentToCreate> _restoreImportedAttachments(
+  List<MessageAttachmentToCreate> attachments,
+  Map<String, String> toolCallIds,
+) => [
+  for (final attachment in attachments)
+    attachment.copyWith(
+      toolCallId: switch (attachment.toolCallId) {
+        final id? => toolCallIds[id],
+        null => null,
+      },
+    ),
+];
+
+String _importedMessageMetadata(
   ConversationArchiveMetadata metadata,
   List<String> importedMessageIds,
-) => jsonEncode(_restoreMetadata(metadata, importedMessageIds).toJson());
+  Map<String, String> toolCallIds,
+) => jsonEncode(
+  _restoreMetadata(metadata, importedMessageIds, toolCallIds).toJson(),
+);
 
 MessageStatus _restoredMessageStatus(MessageStatus status) => switch (status) {
   .sending || .unfinished => .error,
@@ -1142,16 +1202,18 @@ MessageStatus _restoredMessageStatus(MessageStatus status) => switch (status) {
 MessageMetadataEntity _restoreMetadata(
   ConversationArchiveMetadata metadata,
   List<String> importedMessageIds,
+  Map<String, String> toolCallIds,
 ) => _restoreMetadataCompaction(
-  _restoreMetadataContent(metadata),
+  _restoreMetadataContent(metadata, toolCallIds),
   metadata,
   importedMessageIds,
 );
 
 MessageMetadataEntity _restoreMetadataContent(
   ConversationArchiveMetadata metadata,
+  Map<String, String> toolCallIds,
 ) => const MessageMetadataEntity().copyWith(
-  toolCalls: _restoreToolCalls(metadata.toolCalls),
+  toolCalls: _restoreToolCalls(metadata.toolCalls, toolCallIds),
   promptTokens: metadata.promptTokens,
   completionTokens: metadata.completionTokens,
   totalTokens: metadata.totalTokens,
@@ -1162,10 +1224,13 @@ MessageMetadataEntity _restoreMetadataContent(
 
 List<MessageToolCallEntity> _restoreToolCalls(
   List<ConversationArchiveToolCall> toolCalls,
+  Map<String, String> restoredToolCallIds,
 ) => [
   for (final toolCall in toolCalls)
     MessageToolCallEntity(
-      id: const UuidV7().generate(),
+      id: toolCall.id == null
+          ? const UuidV7().generate()
+          : restoredToolCallIds[toolCall.id] ?? const UuidV7().generate(),
       name: toolCall.displayName ?? 'archived_tool',
       argumentsRaw: '',
       userFacingDescription: toolCall.displayName,

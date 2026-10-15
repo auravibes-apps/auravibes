@@ -152,6 +152,26 @@ void main() {
 
       expect(conversationSkills.loadedAppSkillIdentifier, 'jina');
     });
+
+    test('loads Browser without looking for a credential', () async {
+      final conversationSkills = _FakeConversationSkillsRepository();
+      final usecase = LoadConversationSkillUsecase(
+        const _FakeSkillsRepository(),
+        conversationSkills,
+        const _FakeAppSkillWorkspaceSettingsRepository({'browser'}),
+        const AppSkillRegistry(),
+        null,
+        .new(() => throw StateError('Browser must not request credentials.')),
+      );
+
+      await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        slug: 'browser',
+      );
+
+      expect(conversationSkills.loadedAppSkillIdentifier, 'browser');
+    });
   });
 }
 

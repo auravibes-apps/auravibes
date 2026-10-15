@@ -306,6 +306,14 @@ class _FakeLocalChatAttachmentService implements LocalChatAttachmentService {
   ) => throw UnimplementedError();
 
   @override
+  Future<MessageAttachmentToCreate> createToolResultAttachment({
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    required String toolCallId,
+  }) => throw UnimplementedError();
+
+  @override
   Future<Uint8List> readAttachmentBytes(String _) => throw UnimplementedError();
 
   @override

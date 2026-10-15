@@ -51,6 +51,7 @@ dependencies:
   image_picker: ^1.2.3
   image_picker_android: ^0.8.13+23
   image_picker_platform_interface: ^2.11.1
+  in_app_webview_flutter: ^1.1.0
   intl: ^0.20.2
   json_annotation: ^4.12.0
   json_schema_builder: ^0.1.7
@@ -81,6 +82,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.6.0
   stupid_simple_sheet: ^1.0.0-dev.4
   textf: ^2.0.0-dev.2
+  toon_dart: ^1.0.0+4
   unorm_dart: ^0.3.2
   url_launcher: ^6.3.2
   uuid: ^4.5.3

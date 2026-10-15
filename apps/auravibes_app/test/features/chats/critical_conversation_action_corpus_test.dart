@@ -483,6 +483,7 @@ class const _MessageSubject({
           workspaceId: criticalConversationWorkspaceId,
           conversationId: criticalConversationId,
           messages: [message.id],
+          onOpenToolResult: (_) => fail('Unexpected tool result tab'),
           messageEntitiesById: {message.id: message},
           onRetryMessage: onRetryMessage,
         ),

@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   desktop_webview_window
   file_selector_windows
+  flutter_inappwebview_windows_fx
   flutter_secure_storage_windows
   media_kit_libs_windows_audio
   record_windows

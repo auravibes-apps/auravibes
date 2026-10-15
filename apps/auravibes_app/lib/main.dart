@@ -28,6 +28,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker_android/image_picker_android.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
+import 'package:in_app_webview_flutter/in_app_webview_flutter.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
 import 'package:material_ui/material_ui.dart';
@@ -35,6 +36,7 @@ import 'package:material_ui/material_ui.dart';
 PrintLogCollector? _marionetteLogCollector;
 
 Future<void> main() async {
+  PlatformInAppWebViewController.debugLoggingSettings.enabled = false;
   _configureFlavor();
   final marionetteInstanceId = _ensureFlutterBinding();
   _configurePlatformPlugins();
