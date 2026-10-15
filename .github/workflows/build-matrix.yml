@@ -218,7 +218,7 @@ jobs:
             debian:trixie-slim bash -euc '
               apt-get update
               apt-get install -y --no-install-recommends \
-                build-essential ca-certificates clang cmake ninja-build pkgconf \
+                build-essential ca-certificates clang cmake git ninja-build pkgconf \
                 libgtk-3-dev liblzma-dev libsqlite3-dev libepoxy-dev libwayland-dev \
                 libwpewebkit-2.0-dev libwpe-1.0-dev libwpebackend-fdo-1.0-dev \
                 libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
