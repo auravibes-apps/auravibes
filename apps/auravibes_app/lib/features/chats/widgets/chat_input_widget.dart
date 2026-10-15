@@ -645,8 +645,8 @@ String _toolAccessModeButtonLabel(
     ? option.compactLabel
     : option.label;
 
-String _toolAccessModeSemanticLabel(_ToolAccessModeOption option) =>
-    '${LocaleKeys.chat_input_tool_access_label.tr()}: ${option.label.tr()}';
+String _toolAccessModeSemanticLabel(_ToolAccessModeOption selected) =>
+    '${LocaleKeys.chat_input_tool_access_label.tr()}: ${selected.label.tr()}';
 
 class const _ChatInputToolAccessModePopup({
   required final ConversationToolAccessMode selectedMode,
