@@ -18,8 +18,8 @@ env:
 jobs:
   build:
     name: Build ${{ matrix.platform }}
-    # shortcut: the Linux WebView plugin needs WPE 1.0 packages absent on Noble; upgrade it before leaving Ubuntu 22.04.
-    runs-on: ${{ (matrix.platform == 'ios' || matrix.platform == 'macos') && 'macos-latest' || (matrix.platform == 'windows' && 'windows-latest') || (matrix.platform == 'linux' && 'ubuntu-22.04') || 'ubuntu-latest' }}
+    # shortcut: Ubuntu archives lack the WPE API 2.0 dev package; build Linux in Debian stable until available.
+    runs-on: ${{ (matrix.platform == 'ios' || matrix.platform == 'macos') && 'macos-latest' || (matrix.platform == 'windows' && 'windows-latest') || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -73,18 +73,6 @@ jobs:
             apps/auravibes_app/android/**/*.gradle*
             apps/auravibes_app/android/gradle.properties
             apps/auravibes_app/android/gradle/wrapper/gradle-wrapper.properties
-
-      - name: 📦 Install Linux Dependencies
-        if: ${{ matrix.platform == 'linux' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkgconf libgtk-3-dev liblzma-dev libstdc++-12-dev libsqlite3-dev libwebkit2gtk-4.1-dev libepoxy-dev libwayland-dev libwpewebkit-1.0-dev libwpe-1.0-dev libwpebackend-fdo-1.0-dev libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libunwind-dev
-          export PKG_CONFIG=/usr/bin/pkgconf
-          export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-          "$PKG_CONFIG" --short-errors --print-errors --exists gstreamer-1.0
-          "$PKG_CONFIG" --modversion gstreamer-1.0 gstreamer-app-1.0 gstreamer-audio-1.0
-          echo "PKG_CONFIG=$PKG_CONFIG" >> "$GITHUB_ENV"
-          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> "$GITHUB_ENV"
 
       - name: 🏗️ Build Android APK
         if: ${{ matrix.platform == 'android' }}
@@ -216,10 +204,29 @@ jobs:
           PY
           done
 
-      - name: 🏗️ Build Linux
+      - name: 🏗️ Build Linux in Debian
         if: ${{ matrix.platform == 'linux' }}
-        run: flutter build linux --debug --no-pub
-        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
+        run: |
+          pub_cache="${PUB_CACHE:-$HOME/.pub-cache}"
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" \
+            --volume "$FLUTTER_ROOT:$FLUTTER_ROOT" \
+            --volume "$pub_cache:$pub_cache" \
+            --env FLUTTER_ROOT \
+            --env PUB_CACHE="$pub_cache" \
+            --workdir "$GITHUB_WORKSPACE/apps/auravibes_app" \
+            debian:trixie-slim bash -euc '
+              apt-get update
+              apt-get install -y --no-install-recommends \
+                build-essential ca-certificates clang cmake ninja-build pkgconf \
+                libgtk-3-dev liblzma-dev libsqlite3-dev libepoxy-dev libwayland-dev \
+                libwpewebkit-2.0-dev libwpe-1.0-dev libwpebackend-fdo-1.0-dev \
+                libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+                libunwind-dev
+              export PATH="$FLUTTER_ROOT/bin:$PATH"
+              export PKG_CONFIG=/usr/bin/pkgconf
+              flutter build linux --debug --no-pub
+            '
 
       - name: 🧪 Test Drift web asset verifier
         if: ${{ matrix.platform == 'web' }}
