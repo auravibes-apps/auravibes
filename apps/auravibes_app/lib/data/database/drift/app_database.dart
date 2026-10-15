@@ -177,7 +177,10 @@ class AppDatabase extends _$AppDatabase {
       _backgroundWorkSchemaVersion + 1;
   static const int _toolAccessModeSchemaVersion =
       _autoApproveToolsSchemaVersion + 1;
-  static const int _currentSchemaVersion = _toolAccessModeSchemaVersion;
+  static const int _backgroundWorkChildLinkSchemaVersion =
+      _toolAccessModeSchemaVersion + 1;
+  static const int _currentSchemaVersion =
+      _backgroundWorkChildLinkSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -282,6 +285,7 @@ extension on AppDatabase {
     await _runConversationUpgrades(m, from);
     await _upgradeToolSamplingPolicySchema(m);
     await _upgradeBackgroundWorkSchema(m, from);
+    await _upgradeBackgroundWorkChildLinkSchema(m, from);
   }
 
   Future<void> _upgradeBackgroundWorkSchema(Migrator m, int from) async {
@@ -289,6 +293,18 @@ extension on AppDatabase {
     if (!await _tableExists('background_works')) {
       await m.createTable(backgroundWorks);
     }
+  }
+
+  Future<void> _upgradeBackgroundWorkChildLinkSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._backgroundWorkChildLinkSchemaVersion ||
+        !await _tableExists('background_works') ||
+        await _columnExists('background_works', 'child_conversation_id')) {
+      return;
+    }
+    await m.addColumn(backgroundWorks, backgroundWorks.childConversationId);
   }
 
   Future<void> _runMcpSchemaUpgrades(Migrator m, int from) async {

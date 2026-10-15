@@ -27,6 +27,7 @@ abstract class ConversationToolCall
     this.userFacingDescription,
     bool? backgroundEligible,
     this.backgroundWorkStableId,
+    this.childConversationStableId,
     required this.status,
     this.decision,
     this.decisionByUserId,
@@ -50,6 +51,7 @@ abstract class ConversationToolCall
     String? userFacingDescription,
     bool? backgroundEligible,
     String? backgroundWorkStableId,
+    String? childConversationStableId,
     required String status,
     String? decision,
     String? decisionByUserId,
@@ -82,6 +84,8 @@ abstract class ConversationToolCall
             ),
       backgroundWorkStableId:
           jsonSerialization['backgroundWorkStableId'] as String?,
+      childConversationStableId:
+          jsonSerialization['childConversationStableId'] as String?,
       status: jsonSerialization['status'] as String,
       decision: jsonSerialization['decision'] as String?,
       decisionByUserId: jsonSerialization['decisionByUserId'] as String?,
@@ -128,6 +132,8 @@ abstract class ConversationToolCall
 
   String? backgroundWorkStableId;
 
+  String? childConversationStableId;
+
   String status;
 
   String? decision;
@@ -160,6 +166,7 @@ abstract class ConversationToolCall
     String? userFacingDescription,
     bool? backgroundEligible,
     String? backgroundWorkStableId,
+    String? childConversationStableId,
     String? status,
     String? decision,
     String? decisionByUserId,
@@ -187,6 +194,8 @@ abstract class ConversationToolCall
       'backgroundEligible': backgroundEligible,
       if (backgroundWorkStableId != null)
         'backgroundWorkStableId': backgroundWorkStableId,
+      if (childConversationStableId != null)
+        'childConversationStableId': childConversationStableId,
       'status': status,
       if (decision != null) 'decision': decision,
       if (decisionByUserId != null) 'decisionByUserId': decisionByUserId,
@@ -216,6 +225,8 @@ abstract class ConversationToolCall
       'backgroundEligible': backgroundEligible,
       if (backgroundWorkStableId != null)
         'backgroundWorkStableId': backgroundWorkStableId,
+      if (childConversationStableId != null)
+        'childConversationStableId': childConversationStableId,
       'status': status,
       if (decision != null) 'decision': decision,
       if (decisionByUserId != null) 'decisionByUserId': decisionByUserId,
@@ -249,6 +260,7 @@ class _ConversationToolCallImpl extends ConversationToolCall {
     String? userFacingDescription,
     bool? backgroundEligible,
     String? backgroundWorkStableId,
+    String? childConversationStableId,
     required String status,
     String? decision,
     String? decisionByUserId,
@@ -270,6 +282,7 @@ class _ConversationToolCallImpl extends ConversationToolCall {
          userFacingDescription: userFacingDescription,
          backgroundEligible: backgroundEligible,
          backgroundWorkStableId: backgroundWorkStableId,
+         childConversationStableId: childConversationStableId,
          status: status,
          decision: decision,
          decisionByUserId: decisionByUserId,
@@ -297,6 +310,7 @@ class _ConversationToolCallImpl extends ConversationToolCall {
     Object? userFacingDescription = _Undefined,
     bool? backgroundEligible,
     Object? backgroundWorkStableId = _Undefined,
+    Object? childConversationStableId = _Undefined,
     String? status,
     Object? decision = _Undefined,
     Object? decisionByUserId = _Undefined,
@@ -323,6 +337,9 @@ class _ConversationToolCallImpl extends ConversationToolCall {
       backgroundWorkStableId: backgroundWorkStableId is String?
           ? backgroundWorkStableId
           : this.backgroundWorkStableId,
+      childConversationStableId: childConversationStableId is String?
+          ? childConversationStableId
+          : this.childConversationStableId,
       status: status ?? this.status,
       decision: decision is String? ? decision : this.decision,
       decisionByUserId: decisionByUserId is String?

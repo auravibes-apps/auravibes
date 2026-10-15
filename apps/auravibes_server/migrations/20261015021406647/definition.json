@@ -804,12 +804,12 @@
         },
         {
           "__className__": "serverpod.ColumnDefinition",
-          "name": "autoApproveTools",
-          "fieldName": "autoApproveTools",
-          "columnType": 1,
+          "name": "toolAccessMode",
+          "fieldName": "toolAccessMode",
+          "columnType": 0,
           "isNullable": false,
-          "columnDefault": "false",
-          "dartType": "bool"
+          "columnDefault": "'default'",
+          "dartType": "String"
         },
         {
           "__className__": "serverpod.ColumnDefinition",
@@ -2028,6 +2028,14 @@
           "__className__": "serverpod.ColumnDefinition",
           "name": "backgroundWorkStableId",
           "fieldName": "backgroundWorkStableId",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "childConversationStableId",
+          "fieldName": "childConversationStableId",
           "columnType": 0,
           "isNullable": true,
           "dartType": "String?"
@@ -8680,7 +8688,7 @@
     {
       "__className__": "serverpod.DatabaseMigrationVersionModel",
       "module": "auravibes",
-      "version": "20261014163011829"
+      "version": "20261015021406647"
     },
     {
       "__className__": "serverpod.DatabaseMigrationVersion",

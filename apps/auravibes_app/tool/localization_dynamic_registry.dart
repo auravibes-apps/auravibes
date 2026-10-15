@@ -2084,8 +2084,8 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
     ],
     keys: {
       'cloud_accounts.title',
+      'menu.new_chat',
       'navigation.agents_skills',
-      'navigation.chats',
       'navigation.connections',
       'settings_screen.title',
     },

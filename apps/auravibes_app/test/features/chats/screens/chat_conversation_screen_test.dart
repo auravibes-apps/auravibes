@@ -38,6 +38,7 @@ import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_wid
 import 'package:auravibes_app/features/chats/widgets/background_work_continuation_status.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_detach_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
@@ -1084,8 +1085,9 @@ void main() {
           if (refresh == 0) {
             return Future.value(
               const ConversationBusyState(
-                isStreaming: true,
+                isStreaming: false,
                 hasPendingTools: false,
+                isAgentWorking: true,
               ),
             );
           }
@@ -1148,6 +1150,11 @@ void main() {
       tester.widget<ChatInputWidget>(find.byType(ChatInputWidget)).isBusy,
       isTrue,
     );
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(find.byType(ChatThinkingIndicator), findsOneWidget);
 
     container.read(_busyRefreshProvider.notifier).refresh();
     await tester.pump();
@@ -1156,6 +1163,11 @@ void main() {
       tester.widget<ChatInputWidget>(find.byType(ChatInputWidget)).isBusy,
       isTrue,
     );
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(find.byType(ChatThinkingIndicator), findsOneWidget);
   });
 
   testWidgets('shows rate-limit retry countdown and marks input busy', (
@@ -1208,6 +1220,7 @@ void main() {
                     (ref, _) async => const ConversationBusyState(
                       isStreaming: false,
                       hasPendingTools: false,
+                      isAgentWorking: true,
                     ),
                   ),
                   conversationRateLimitRetryProvider.overrideWith(
@@ -1270,6 +1283,11 @@ void main() {
     );
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isBusy, isTrue);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(find.byType(ChatThinkingIndicator), findsNothing);
   });
 
   testWidgets(

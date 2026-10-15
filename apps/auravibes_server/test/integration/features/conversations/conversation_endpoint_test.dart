@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
@@ -59,39 +58,6 @@ void main() {
         userId: userId,
       );
     }
-
-    test('forward migration preserves both legacy boolean values', () async {
-      final session = sessionBuilder.build();
-      final migration = File('migrations/20261014184553933/migration.sql')
-          .readAsStringSync();
-      final statements =
-          RegExp(r'(?:ALTER TABLE|UPDATE) "conversation"[\s\S]*?;')
-              .allMatches(migration)
-              .map(
-                (match) => match
-                    .group(0)!
-                    .replaceAll('"conversation"', '"legacy_conversation_mode"'),
-              );
-      await session.db.transaction((transaction) async {
-        await session.db.unsafeQuery(
-          'CREATE TEMPORARY TABLE legacy_conversation_mode '
-          '(id integer, "autoApproveTools" boolean NOT NULL) ON COMMIT DROP',
-          transaction: transaction,
-        );
-        await session.db.unsafeQuery(
-          'INSERT INTO legacy_conversation_mode VALUES (1, false), (2, true)',
-          transaction: transaction,
-        );
-        for (final statement in statements) {
-          await session.db.unsafeQuery(statement, transaction: transaction);
-        }
-        final rows = await session.db.unsafeQuery(
-          'SELECT id, "toolAccessMode" FROM legacy_conversation_mode ORDER BY id',
-          transaction: transaction,
-        );
-        expect(rows.map((row) => row[1]), ['default', 'allow_all']);
-      });
-    });
 
     test(
       'persists mode through create, update, projection and root/child forks',

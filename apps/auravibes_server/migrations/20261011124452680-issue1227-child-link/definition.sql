@@ -147,7 +147,6 @@ CREATE TABLE "conversation" (
     "stableId" text NOT NULL,
     "title" text,
     "isPinned" boolean NOT NULL,
-    "autoApproveTools" boolean NOT NULL DEFAULT false,
     "modelId" text,
     "agentId" text,
     "reasoningConfigJson" text,
@@ -289,6 +288,7 @@ CREATE TABLE "conversation_tool_call" (
     "userFacingDescription" text,
     "backgroundEligible" boolean NOT NULL DEFAULT false,
     "backgroundWorkStableId" text,
+    "childConversationStableId" text,
     "status" text NOT NULL,
     "decision" text,
     "decisionByUserId" text,
@@ -1846,9 +1846,9 @@ ALTER TABLE ONLY "serverpod_auth_idp_passkey_account"
 -- MIGRATION VERSION FOR auravibes
 --
 INSERT INTO "serverpod_migrations" ("module", "version", "timestamp")
-    VALUES ('auravibes', '20261014163011829', now())
+    VALUES ('auravibes', '20261011124452680-issue1227-child-link', now())
     ON CONFLICT ("module")
-    DO UPDATE SET "version" = '20261014163011829', "timestamp" = now();
+    DO UPDATE SET "version" = '20261011124452680-issue1227-child-link', "timestamp" = now();
 
 --
 -- MIGRATION VERSION FOR serverpod

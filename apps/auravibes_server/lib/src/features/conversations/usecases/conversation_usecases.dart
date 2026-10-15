@@ -56,6 +56,15 @@ typedef _ForkCopies = ({
   Map<int, Set<String>> detachedToolCallIdsByMessageId,
 });
 
+Map<String, dynamic> _tryJsonMap(String source) {
+  try {
+    final decoded = jsonDecode(source);
+    return decoded is Map ? Map<String, dynamic>.from(decoded) : const {};
+  } on Object {
+    return const {};
+  }
+}
+
 class _BatchDecisionState {
   _BatchDecisionState(this.jobs);
 
@@ -1379,6 +1388,7 @@ class ConversationUseCases {
         return _backgroundWorkView(
           existing,
           conversation: conversation,
+          childConversationId: call.childConversationStableId,
           message: existing.originatingMessageId == null
               ? null
               : await ConversationMessage.db.findById(
@@ -1399,7 +1409,11 @@ class ConversationUseCases {
           ConversationStatuses.isTerminal(turn.status)) {
         _fail(ConversationErrorCode.turnConflict);
       }
-      if (!call.backgroundEligible || call.status != 'running') {
+      final canDetachAwaitingSubAgent =
+          call.status == 'awaitingSubAgents' &&
+          call.childConversationStableId != null;
+      if (!call.backgroundEligible ||
+          (call.status != 'running' && !canDetachAwaitingSubAgent)) {
         _fail(ConversationErrorCode.turnConflict);
       }
       await _repository.lockBackgroundWorkCapacity(
@@ -1435,9 +1449,15 @@ class ConversationUseCases {
         ),
         transaction: transaction,
       );
+      final priorResult = call.resultJson == null
+          ? const <String, dynamic>{}
+          : _tryJsonMap(call.resultJson!);
+      final children = priorResult['children'];
       final acknowledgement = jsonEncode({
         'status': 'running_in_background',
         'work_id': stableId,
+        'childConversationId': ?call.childConversationStableId,
+        'children': ?children,
       });
       await ConversationToolCall.db.updateRow(
         session,
@@ -1459,6 +1479,7 @@ class ConversationUseCases {
       return _backgroundWorkView(
         work,
         conversation: conversation,
+        childConversationId: call.childConversationStableId,
         message: message,
       );
     });
@@ -1515,11 +1536,20 @@ class ConversationUseCases {
       ),
     );
     final messagesById = {for (final message in messages) message.id: message};
+    final calls = await ConversationToolCall.db.find(
+      session,
+      where: (table) => table.id.inSet(
+        records.map((record) => record.conversationToolCallId).toSet(),
+      ),
+    );
+    final callsById = {for (final call in calls) call.id: call};
     return [
       for (final record in records)
         _backgroundWorkView(
           record,
           conversation: conversation,
+          childConversationId: callsById[record.conversationToolCallId]
+              ?.childConversationStableId,
           message: messagesById[record.originatingMessageId],
         ),
     ];
@@ -1528,11 +1558,13 @@ class ConversationUseCases {
   BackgroundWorkView _backgroundWorkView(
     BackgroundWorkRecord record, {
     required Conversation conversation,
+    String? childConversationId,
     ConversationMessage? message,
   }) => BackgroundWorkView(
     id: record.stableId,
     workspaceId: record.workspaceId,
     conversationId: conversation.stableId,
+    childConversationId: childConversationId,
     originatingMessageId: message?.stableId,
     toolCallId: record.toolCallId,
     toolKind: record.toolKind,
@@ -1553,7 +1585,7 @@ class ConversationUseCases {
     _requireId(request.requestId);
     _requireId(request.conversationId);
     _requireId(request.workId);
-    return session.db.transaction((transaction) async {
+    final view = await session.db.transaction((transaction) async {
       await _requireMember(
         session,
         workspaceId: request.workspaceId,
@@ -1598,12 +1630,121 @@ class ConversationUseCases {
               messageId,
               transaction: transaction,
             );
+      final call = await ConversationToolCall.db.findById(
+        session,
+        current.conversationToolCallId,
+        transaction: transaction,
+      );
       return _backgroundWorkView(
         current,
         conversation: conversation,
+        childConversationId: call?.childConversationStableId,
         message: message,
       );
     });
+    if (view.status == 'stopRequested' && view.childConversationId != null) {
+      await stopBackgroundSubAgentChild(
+        session,
+        userId: userId,
+        workspaceId: request.workspaceId,
+        childConversationId: view.childConversationId!,
+        requestId: '${request.requestId}:child',
+      );
+    }
+    return view;
+  }
+
+  /// Stops the child conversation launched by detached work.
+  Future<void> stopBackgroundSubAgentChild(
+    Session session, {
+    required String userId,
+    required int workspaceId,
+    required String childConversationId,
+    required String requestId,
+  }) async {
+    final child = await _repository.findConversationByStableId(
+      session,
+      workspaceId: workspaceId,
+      conversationId: childConversationId,
+    );
+    final executionId = child?.activeExecutionId;
+    if (child == null ||
+        executionId == null ||
+        (child.executionState != ConversationStatuses.running &&
+            child.executionState != ConversationStatuses.awaitingApproval)) {
+      return;
+    }
+    final execution = await ConversationExecution.db.findById(
+      session,
+      executionId,
+    );
+    if (execution == null ||
+        ConversationStatuses.isTerminal(execution.status)) {
+      return;
+    }
+    final childJob = await ConversationJob.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(child.id) &
+          table.requestId.equals(execution.stableId) &
+          table.kind.equals(ConversationJobKinds.turn),
+    );
+    // Leave a queued child job for the worker to claim and terminalize. That
+    // lets it reconcile the parent work record after observing the stop.
+    if (childJob?.status == ConversationJobStatuses.queued) return;
+    try {
+      await stopConversation(
+        session,
+        userId: userId,
+        request: StopConversationRequest(
+          workspaceId: workspaceId,
+          requestId: requestId,
+          conversationId: childConversationId,
+          expectedProjectionRevision: child.projectionRevision,
+        ),
+      );
+    } on ConversationException catch (error) {
+      if (error.code != ConversationErrorCode.turnConflict &&
+          error.code != ConversationErrorCode.staleRevision) {
+        rethrow;
+      }
+    }
+  }
+
+  /// Stops a detached child whose parent work was interrupted by a restart.
+  Future<void> stopInterruptedBackgroundSubAgent(
+    Session session, {
+    required int workspaceId,
+    required String childConversationId,
+    required String requestId,
+  }) async {
+    final child = await _repository.findConversationByStableId(
+      session,
+      workspaceId: workspaceId,
+      conversationId: childConversationId,
+    );
+    final executionId = child?.activeExecutionId;
+    if (child == null || executionId == null) return;
+    final execution = await ConversationExecution.db.findById(
+      session,
+      executionId,
+    );
+    if (execution == null) return;
+    final turn = await ConversationTurn.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.requestId.equals(execution.stableId),
+    );
+    if (turn == null) return;
+    await stopBackgroundSubAgentChild(
+      session,
+      userId: turn.initiatorUserId,
+      workspaceId: workspaceId,
+      childConversationId: childConversationId,
+      requestId: requestId,
+    );
   }
 
   Future<ConversationSnapshot> queueConversationMessage(
@@ -1968,6 +2109,32 @@ class ConversationUseCases {
               conversation.executionState !=
                   ConversationStatuses.awaitingUserAction) {
             _fail(ConversationErrorCode.turnConflict);
+          }
+          if (parentToolCallId != null) {
+            final parentCall = await ConversationToolCall.db.findFirstRow(
+              session,
+              where: (table) =>
+                  table.workspaceId.equals(request.workspaceId) &
+                  table.stableId.equals(parentToolCallId),
+              transaction: transaction,
+              lockMode: LockMode.forUpdate,
+            );
+            final workId = parentCall?.backgroundWorkStableId;
+            if (parentCall != null && workId != null) {
+              final work = await BackgroundWorkRecord.db.findFirstRow(
+                session,
+                where: (table) =>
+                    table.workspaceId.equals(request.workspaceId) &
+                    table.conversationId.equals(parentCall.conversationId) &
+                    table.conversationToolCallId.equals(parentCall.id) &
+                    table.stableId.equals(workId),
+                transaction: transaction,
+                lockMode: LockMode.forUpdate,
+              );
+              if (work?.status != 'running') {
+                throw const ConversationCancelledException();
+              }
+            }
           }
           final pendingMessages = await _repository.listPendingMessages(
             session,
@@ -3194,6 +3361,36 @@ class ConversationUseCases {
       if (conversation_repo.conversationParentTurnIdForJob(job.payloadJson) !=
           parentTurnId) {
         continue;
+      }
+      final parentToolCallId = conversation_repo
+          .conversationParentToolCallIdForJob(job.payloadJson);
+      if (parentToolCallId != null) {
+        final parentCall = await ConversationToolCall.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(workspaceId) &
+              table.stableId.equals(parentToolCallId),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        final workId = parentCall?.backgroundWorkStableId;
+        if (parentCall != null && workId != null) {
+          final work = await BackgroundWorkRecord.db.findFirstRow(
+            session,
+            where: (table) =>
+                table.workspaceId.equals(workspaceId) &
+                table.conversationId.equals(parentCall.conversationId) &
+                table.conversationToolCallId.equals(parentCall.id) &
+                table.stableId.equals(workId),
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+          );
+          if (work?.status == 'running' || work?.status == 'stopRequested') {
+            // The worker needs to observe the parent cancellation and record
+            // one terminal background-work event for this child.
+            continue;
+          }
+        }
       }
       await _cancelChildJob(
         session,

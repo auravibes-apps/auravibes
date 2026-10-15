@@ -19,40 +19,16 @@
             "dartType": "String"
           }
         ],
-        "deleteColumns": [
-          "autoApproveTools"
-        ],
+        "deleteColumns": [],
         "modifyColumns": [],
         "addIndexes": [],
         "deleteIndexes": [],
         "addForeignKeys": [],
         "deleteForeignKeys": [],
-        "warnings": [
-          {
-            "__className__": "serverpod.DatabaseMigrationWarning",
-            "type": "columnDropped",
-            "message": "Column \"autoApproveTools\" of table \"conversation\" will be dropped.",
-            "table": "conversation",
-            "columns": [
-              "autoApproveTools"
-            ],
-            "destrucive": true
-          }
-        ]
+        "warnings": []
       }
     }
   ],
-  "warnings": [
-    {
-      "__className__": "serverpod.DatabaseMigrationWarning",
-      "type": "columnDropped",
-      "message": "Column \"autoApproveTools\" of table \"conversation\" will be dropped.",
-      "table": "conversation",
-      "columns": [
-        "autoApproveTools"
-      ],
-      "destrucive": true
-    }
-  ],
+  "warnings": [],
   "migrationApiVersion": 1
 }

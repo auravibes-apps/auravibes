@@ -18,6 +18,7 @@ abstract class BackgroundWorkView
     required this.id,
     required this.workspaceId,
     required this.conversationId,
+    this.childConversationId,
     this.originatingMessageId,
     required this.toolCallId,
     required this.toolKind,
@@ -34,6 +35,7 @@ abstract class BackgroundWorkView
     required String id,
     required int workspaceId,
     required String conversationId,
+    String? childConversationId,
     String? originatingMessageId,
     required String toolCallId,
     required String toolKind,
@@ -51,6 +53,7 @@ abstract class BackgroundWorkView
       id: jsonSerialization['id'] as String,
       workspaceId: jsonSerialization['workspaceId'] as int,
       conversationId: jsonSerialization['conversationId'] as String,
+      childConversationId: jsonSerialization['childConversationId'] as String?,
       originatingMessageId:
           jsonSerialization['originatingMessageId'] as String?,
       toolCallId: jsonSerialization['toolCallId'] as String,
@@ -74,6 +77,8 @@ abstract class BackgroundWorkView
   int workspaceId;
 
   String conversationId;
+
+  String? childConversationId;
 
   String? originatingMessageId;
 
@@ -102,6 +107,7 @@ abstract class BackgroundWorkView
     String? id,
     int? workspaceId,
     String? conversationId,
+    String? childConversationId,
     String? originatingMessageId,
     String? toolCallId,
     String? toolKind,
@@ -120,6 +126,8 @@ abstract class BackgroundWorkView
       'id': id,
       'workspaceId': workspaceId,
       'conversationId': conversationId,
+      if (childConversationId != null)
+        'childConversationId': childConversationId,
       if (originatingMessageId != null)
         'originatingMessageId': originatingMessageId,
       'toolCallId': toolCallId,
@@ -141,6 +149,8 @@ abstract class BackgroundWorkView
       'id': id,
       'workspaceId': workspaceId,
       'conversationId': conversationId,
+      if (childConversationId != null)
+        'childConversationId': childConversationId,
       if (originatingMessageId != null)
         'originatingMessageId': originatingMessageId,
       'toolCallId': toolCallId,
@@ -168,6 +178,7 @@ class _BackgroundWorkViewImpl extends BackgroundWorkView {
     required String id,
     required int workspaceId,
     required String conversationId,
+    String? childConversationId,
     String? originatingMessageId,
     required String toolCallId,
     required String toolKind,
@@ -182,6 +193,7 @@ class _BackgroundWorkViewImpl extends BackgroundWorkView {
          id: id,
          workspaceId: workspaceId,
          conversationId: conversationId,
+         childConversationId: childConversationId,
          originatingMessageId: originatingMessageId,
          toolCallId: toolCallId,
          toolKind: toolKind,
@@ -202,6 +214,7 @@ class _BackgroundWorkViewImpl extends BackgroundWorkView {
     String? id,
     int? workspaceId,
     String? conversationId,
+    Object? childConversationId = _Undefined,
     Object? originatingMessageId = _Undefined,
     String? toolCallId,
     String? toolKind,
@@ -217,6 +230,9 @@ class _BackgroundWorkViewImpl extends BackgroundWorkView {
       id: id ?? this.id,
       workspaceId: workspaceId ?? this.workspaceId,
       conversationId: conversationId ?? this.conversationId,
+      childConversationId: childConversationId is String?
+          ? childConversationId
+          : this.childConversationId,
       originatingMessageId: originatingMessageId is String?
           ? originatingMessageId
           : this.originatingMessageId,

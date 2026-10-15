@@ -804,15 +804,6 @@
         },
         {
           "__className__": "serverpod.ColumnDefinition",
-          "name": "autoApproveTools",
-          "fieldName": "autoApproveTools",
-          "columnType": 1,
-          "isNullable": false,
-          "columnDefault": "false",
-          "dartType": "bool"
-        },
-        {
-          "__className__": "serverpod.ColumnDefinition",
           "name": "modelId",
           "fieldName": "modelId",
           "columnType": 0,
@@ -2028,6 +2019,14 @@
           "__className__": "serverpod.ColumnDefinition",
           "name": "backgroundWorkStableId",
           "fieldName": "backgroundWorkStableId",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "childConversationStableId",
+          "fieldName": "childConversationStableId",
           "columnType": 0,
           "isNullable": true,
           "dartType": "String?"

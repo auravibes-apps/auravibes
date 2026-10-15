@@ -127,10 +127,15 @@ void main() {
             _contrast(colors.onBackground, colors.background),
             greaterThanOrEqualTo(4.5),
           );
-          final chats = find.bySemanticsLabel('Chats');
-          expect(chats, findsOneWidget);
+          final selectedNavigationItem = find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics && widget.properties.selected == true,
+          );
+          expect(selectedNavigationItem, findsOneWidget);
+          final selectedSemantics = tester.getSemantics(selectedNavigationItem);
+          expect(selectedSemantics.label, 'New Chat');
           expect(
-            tester.getSemantics(chats).flagsCollection.isSelected,
+            selectedSemantics.flagsCollection.isSelected,
             ui.Tristate.isTrue,
           );
           final connections = find.bySemanticsLabel('Connections');
@@ -189,7 +194,7 @@ void main() {
                       'keyboard':
                           'Tab visible focus and Enter into '
                           'production Connections',
-                      'semantics': 'Chats selected',
+                      'semantics': 'New Chat selected',
                       'limit':
                           'Widget semantics and keyboard only; '
                           'no native screen reader measurement',
@@ -628,7 +633,7 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
     'ChatsRoute' => (
       location: '$base/chats',
       screen: ChatsListScreen,
-      selection: 0,
+      selection: -1,
       expected: null,
     ),
     'ConversationRoute' => (

@@ -8,6 +8,7 @@ import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
 import '../engine/conversation_engine_host.dart';
 import '../engine/conversation_host_effects.dart';
+import '../engine/server_tool_runtime.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
 import 'conversation_job_leases.dart';
@@ -979,6 +980,15 @@ class const ConversationWorker({
     final parentTurnId = conversation_repo.conversationParentTurnIdForJob(
       childJob.payloadJson,
     );
+    final parentToolCallId = conversation_repo
+        .conversationParentToolCallIdForJob(childJob.payloadJson);
+    if (parentToolCallId != null) {
+      await _completeDetachedSubAgentWorkAfterChild(
+        session,
+        childJob: childJob,
+        parentToolCallId: parentToolCallId,
+      );
+    }
     if (parentTurnId == null) return;
     final parentJobs = await ConversationJob.db.find(
       session,
@@ -994,6 +1004,75 @@ class const ConversationWorker({
         await _publishRetryWake(session, resumed!);
       }
     }
+  }
+
+  Future<void> _completeDetachedSubAgentWorkAfterChild(
+    Session session, {
+    required ConversationJob childJob,
+    required String parentToolCallId,
+  }) async {
+    final parentCall = await ConversationToolCall.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(childJob.workspaceId) &
+          table.stableId.equals(parentToolCallId),
+    );
+    if (parentCall == null || parentCall.backgroundWorkStableId == null) {
+      return;
+    }
+    final childConversation = await Conversation.db.findById(
+      session,
+      childJob.conversationId,
+    );
+    if (childConversation == null ||
+        parentCall.childConversationStableId != childConversation.stableId) {
+      return;
+    }
+    final childResult = await session.db.transaction((transaction) async {
+      final recordedChildren = _childEntries(parentCall.resultJson);
+      final children = recordedChildren.isEmpty && childJob.requestId.isNotEmpty
+          ? [
+              {
+                'conversationId': childConversation.stableId,
+                'turnId': childJob.requestId,
+              },
+            ]
+          : recordedChildren;
+      if (children.isEmpty ||
+          !children.any(
+            (entry) => entry['conversationId'] == childConversation.stableId,
+          )) {
+        return null;
+      }
+      final results = <Map<String, Object?>>[];
+      for (final child in children) {
+        final result = await _childTerminalResult(
+          session,
+          workspaceId: childJob.workspaceId,
+          child: child,
+          transaction: transaction,
+        );
+        if (result == null) return null;
+        results.add(result);
+      }
+      final status = switch ((
+        results.every((result) => result['status'] == 'success'),
+        results.any((result) => result['status'] == 'cancelled'),
+      )) {
+        (true, _) => 'success',
+        (_, true) => 'cancelled',
+        _ => 'executionError',
+      };
+      return results.length == 1
+          ? results.single
+          : {'status': status, 'children': results};
+    });
+    if (childResult == null) return;
+    await ServerToolRuntime().completeDetachedSubAgentWork(
+      session,
+      call: parentCall,
+      result: childResult,
+    );
   }
 
   Future<List<String>> _waitingToolCallIds(
@@ -1275,7 +1354,7 @@ class const ConversationWorker({
       job.payloadJson,
     );
     if (parentTurnId == null) return false;
-    return session.db.transaction((transaction) async {
+    final cancelled = await session.db.transaction((transaction) async {
       final now = DateTime.now().toUtc();
       final conversation = await Conversation.db.findFirstRow(
         session,
@@ -1315,8 +1394,36 @@ class const ConversationWorker({
         }
         return true;
       }
-      if (parentTurn.cancellationRequestedAt == null &&
-          !ConversationStatuses.isTerminal(parentTurn.status)) {
+      var shouldCancel =
+          parentTurn.cancellationRequestedAt != null ||
+          ConversationStatuses.isTerminal(parentTurn.status);
+      final parentToolCallId = conversation_repo
+          .conversationParentToolCallIdForJob(job.payloadJson);
+      if (!shouldCancel && parentToolCallId != null) {
+        final parentCall = await ConversationToolCall.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(job.workspaceId) &
+              table.stableId.equals(parentToolCallId),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        final workId = parentCall?.backgroundWorkStableId;
+        if (parentCall != null && workId != null) {
+          final work = await BackgroundWorkRecord.db.findFirstRow(
+            session,
+            where: (table) =>
+                table.workspaceId.equals(job.workspaceId) &
+                table.conversationId.equals(parentCall.conversationId) &
+                table.conversationToolCallId.equals(parentCall.id) &
+                table.stableId.equals(workId),
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+          );
+          shouldCancel = work?.status != 'running';
+        }
+      }
+      if (!shouldCancel) {
         return false;
       }
       final childTurn = await ConversationTurn.db.findFirstRow(
@@ -1338,6 +1445,8 @@ class const ConversationWorker({
       );
       return true;
     });
+    if (cancelled) await _reconcileParentAfterChild(session, job);
+    return cancelled;
   }
 
   Future<ConversationTurn> _turnForJobAssistant(

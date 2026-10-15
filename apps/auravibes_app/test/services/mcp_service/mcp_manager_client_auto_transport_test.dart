@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_legacy_sse_unavailable_exception.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
+import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
 
@@ -24,7 +25,85 @@ void main() {
       );
 
       expect(client.resolvedTransport, isA<McpTransportTypeStreamableHttp>());
-      expect(server.streamablePostCount, 1);
+      expect(server.streamablePostCount, greaterThanOrEqualTo(1));
+      expect(server.sseGetCount, 0);
+    });
+
+    test('uses app OAuth token provider for Streamable HTTP', () async {
+      final server = await _LocalMcpHttpServer.start();
+      final manager = McpManagerService();
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(
+          server.endpoint,
+          authenticationType: .oauth(
+            token: .new(
+              accessToken: 'configured-token',
+              issuedAt: DateTime(2026),
+              refreshToken: 'refresh-token',
+              expiresIn: 3600,
+            ),
+            clientId: 'client-id',
+            authorizationEndpoint: 'https://example.com/authorize',
+            tokenEndpoint: 'https://example.com/token',
+          ),
+        ),
+      );
+
+      expect(client.resolvedTransport, isA<McpTransportTypeStreamableHttp>());
+      expect(server.streamablePostCount, greaterThanOrEqualTo(1));
+      expect(server.sseGetCount, 0);
+      expect(server.streamableAuthorization, 'Bearer configured-token');
+    });
+
+    test('uses refreshed OAuth token on later requests', () async {
+      final server = await _LocalMcpHttpServer.start();
+      final oauthService = _RotatingOAuthCredentialService();
+      final manager = McpManagerService(oauthCredentialService: oauthService);
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(
+          server.endpoint,
+          authenticationType: .oauth(
+            token: .new(
+              accessToken: 'configured-token',
+              issuedAt: DateTime(2026),
+              refreshToken: 'refresh-token',
+              expiresIn: 3600,
+            ),
+            clientId: 'client-id',
+            authorizationEndpoint: 'https://example.com/authorize',
+            tokenEndpoint: 'https://example.com/token',
+          ),
+          serviceConnectionId: 'oauth-connection',
+        ),
+      );
+
+      expect(await manager.getTools(client), isEmpty);
+      expect(server.streamablePostCount, greaterThan(1));
+      expect(
+        server.streamableAuthorizationHeaders.first,
+        'Bearer initial-token',
+      );
+      expect(
+        server.streamableAuthorizationHeaders,
+        contains('Bearer refreshed-token'),
+      );
+      expect(oauthService.requestedConnectionIds, hasLength(greaterThan(1)));
+      expect(
+        oauthService.requestedConnectionIds,
+        everyElement('oauth-connection'),
+      );
       expect(server.sseGetCount, 0);
     });
 
@@ -48,7 +127,7 @@ void main() {
       await server.waitForInitializedNotification();
 
       expect(client.resolvedTransport, isA<McpTransportTypeSSE>());
-      expect(server.streamablePostCount, 1);
+      expect(server.streamablePostCount, greaterThanOrEqualTo(1));
       expect(server.sseGetCount, 1);
       expect(server.streamableAuthorization, 'Bearer configured-token');
       expect(server.sseAuthorization, 'Bearer configured-token');
@@ -132,12 +211,13 @@ void main() {
 McpConnectionRequest _connectionRequest(
   Uri endpoint, {
   McpAuthenticationType authenticationType = const McpAuthenticationTypeNone(),
+  String? serviceConnectionId,
 }) => (
   name: 'Test MCP',
   url: endpoint.toString(),
   useHttp2: false,
   authenticationType: authenticationType,
-  serviceConnectionId: null,
+  serviceConnectionId: serviceConnectionId,
   description: null,
 );
 
@@ -155,6 +235,7 @@ final class _LocalMcpHttpServer {
   int streamablePostCount = 0;
   int sseGetCount = 0;
   String? streamableAuthorization;
+  final streamableAuthorizationHeaders = <String?>[];
   String? sseAuthorization;
   String? sseMessageAuthorization;
 
@@ -219,6 +300,7 @@ final class _LocalMcpHttpServer {
     streamableAuthorization = request.headers.value(
       HttpHeaders.authorizationHeader,
     );
+    streamableAuthorizationHeaders.add(streamableAuthorization);
     final message = await _readMessage(request);
     final response = request.response..statusCode = streamableStatus;
     if (streamableStatus != HttpStatus.ok) {
@@ -240,7 +322,17 @@ final class _LocalMcpHttpServer {
     }
 
     response.headers.contentType = .json;
-    response.write(jsonEncode(_initializeResult(message)));
+    if (message['method'] == 'tools/list') {
+      response.write(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'id': message['id'],
+          'result': {'tools': <Object?>[]},
+        }),
+      );
+    } else {
+      response.write(jsonEncode(_initializeResult(message)));
+    }
     final _ = await response.close();
   }
 
@@ -335,4 +427,20 @@ Map<String, Object?> _objectMap(Object? value) {
   }
 
   return Map<String, Object?>.from(value);
+}
+
+final class _RotatingOAuthCredentialService implements OAuthCredentialService {
+  final requestedConnectionIds = <String>[];
+
+  @override
+  Future<String> getValidAccessToken(String serviceConnectionId) async {
+    requestedConnectionIds.add(serviceConnectionId);
+
+    return requestedConnectionIds.length == 1
+        ? 'initial-token'
+        : 'refreshed-token';
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

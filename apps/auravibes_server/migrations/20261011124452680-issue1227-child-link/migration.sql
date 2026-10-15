@@ -3,18 +3,15 @@ BEGIN;
 --
 -- ACTION ALTER TABLE
 --
-ALTER TABLE "conversation" ADD COLUMN "toolAccessMode" text NOT NULL DEFAULT 'default'::text;
-UPDATE "conversation"
-SET "toolAccessMode" = CASE WHEN "autoApproveTools" THEN 'allow_all' ELSE 'default' END;
-ALTER TABLE "conversation" DROP COLUMN "autoApproveTools";
+ALTER TABLE "conversation_tool_call" ADD COLUMN "childConversationStableId" text;
 
 --
 -- MIGRATION VERSION FOR auravibes
 --
 INSERT INTO "serverpod_migrations" ("module", "version", "timestamp")
-    VALUES ('auravibes', '20261014184553933', now())
+    VALUES ('auravibes', '20261011124452680-issue1227-child-link', now())
     ON CONFLICT ("module")
-    DO UPDATE SET "version" = '20261014184553933', "timestamp" = now();
+    DO UPDATE SET "version" = '20261011124452680-issue1227-child-link', "timestamp" = now();
 
 --
 -- MIGRATION VERSION FOR serverpod

@@ -6,17 +6,16 @@
       "type": "alterTable",
       "alterTable": {
         "__className__": "serverpod.TableMigration",
-        "name": "conversation",
+        "name": "conversation_tool_call",
         "schema": "public",
         "addColumns": [
           {
             "__className__": "serverpod.ColumnDefinition",
-            "name": "autoApproveTools",
-            "fieldName": "autoApproveTools",
-            "columnType": 1,
-            "isNullable": false,
-            "columnDefault": "false",
-            "dartType": "bool"
+            "name": "childConversationStableId",
+            "fieldName": "childConversationStableId",
+            "columnType": 0,
+            "isNullable": true,
+            "dartType": "String?"
           }
         ],
         "deleteColumns": [],

@@ -289,6 +289,52 @@ void main() {
     },
   );
 
+  testWidgets('opens a linked child conversation from background work', (
+    tester,
+  ) async {
+    final now = DateTime.utc(2026, 10, 11, 12);
+    final openedChildIds = <String>[];
+    final _ = await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: SizedBox(
+            width: 420,
+            height: 480,
+            child: BackgroundWorkListView(
+              works: [
+                _work(
+                  'work-child',
+                  .running,
+                  now,
+                  childConversationId: 'child-conversation-1',
+                ),
+              ],
+              onStop: (_) => Future<void>.value(),
+              onOpenResult: (_) => Future<void>.value(),
+              onOpenChild: (work) {
+                final childConversationId = work.identity.childConversationId;
+                if (childConversationId != null) {
+                  openedChildIds.add(childConversationId);
+                }
+
+                return Future<void>.value();
+              },
+              now: now,
+            ),
+          ),
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey('background_work_open_child_work-child')),
+    );
+    final _ = await tester.pump();
+
+    expect(openedChildIds, ['child-conversation-1']);
+  });
+
   testWidgets('failed work keeps a bounded preview without a result action', (
     tester,
   ) async {
@@ -339,6 +385,7 @@ AgentBackgroundWork _work(
   DateTime? updatedAt,
   String? resultContent,
   String? statusPreview,
+  String? childConversationId,
 }) => .new(
   identity: .new(
     id: id,
@@ -347,6 +394,7 @@ AgentBackgroundWork _work(
     toolCallId: 'tool-1',
     toolKind: 'Search',
     originatingMessageId: 'message-1',
+    childConversationId: childConversationId,
   ),
   state: .new(
     status: status,

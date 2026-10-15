@@ -78,9 +78,18 @@ bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
                   ),
             )));
 
-bool serverToolCanRunInBackground(ServerResolvedTool tool) =>
-    tool.descriptor.kind == AgentResolvedToolKind.skillTemplate ||
-    tool.descriptor.kind == AgentResolvedToolKind.skillAppTemplate;
+bool serverToolCanRunInBackground(
+  ServerResolvedTool tool, {
+  bool isTopLevelConversation = false,
+}) {
+  if (!isTopLevelConversation) return false;
+  final descriptor = tool.descriptor;
+  return descriptor.kind == AgentResolvedToolKind.skillTemplate ||
+      descriptor.kind == AgentResolvedToolKind.skillAppTemplate ||
+      (descriptor.kind == AgentResolvedToolKind.skillNative &&
+          descriptor.skillSlug == agentsSkillSlug &&
+          descriptor.toolIdentifier == runSubAgentToolName);
+}
 
 bool isCloudToolEnabled({
   required Map<String, dynamic> toolData,
@@ -1260,7 +1269,12 @@ class ServerToolRuntime({
         argumentsJson: argumentsJson,
         digest: digest,
         status: 'pending',
-        backgroundEligible: serverToolCanRunInBackground(tool),
+        backgroundEligible: serverToolCanRunInBackground(
+          tool,
+          isTopLevelConversation:
+              conversation != null &&
+              conversation.parentConversationStableId == null,
+        ),
       );
       return ServerToolDisposition.awaitingApproval;
     }
@@ -1301,14 +1315,24 @@ class ServerToolRuntime({
         argumentsJson: argumentsJson,
         digest: digest,
         status: 'running',
-        backgroundEligible: serverToolCanRunInBackground(tool),
+        backgroundEligible: serverToolCanRunInBackground(
+          tool,
+          isTopLevelConversation:
+              conversation != null &&
+              conversation.parentConversationStableId == null,
+        ),
       );
     } else {
       await beforeApprovedClaim?.call();
       call = await _claimApproved(
         session,
         existing,
-        backgroundEligible: serverToolCanRunInBackground(tool),
+        backgroundEligible: serverToolCanRunInBackground(
+          tool,
+          isTopLevelConversation:
+              conversation != null &&
+              conversation.parentConversationStableId == null,
+        ),
       );
     }
     if (call == null) return ServerToolDisposition.completed;
@@ -1415,14 +1439,14 @@ class ServerToolRuntime({
       execution: execution,
     );
     final detachment = _waitForBackgroundDetach(session, call.id!);
-    await Future.any<void>([
-      completion,
-      detachment.then<void>((_) {}),
+    final disposition = await Future.any<ServerToolDisposition?>([
+      completion.then<ServerToolDisposition?>((value) => value),
+      detachment.then<ServerToolDisposition?>((_) => null),
     ]);
-    return ServerToolDisposition.completed;
+    return disposition ?? ServerToolDisposition.completed;
   }
 
-  Future<void> _completeCancellableTool(
+  Future<ServerToolDisposition> _completeCancellableTool(
     Session executionSession, {
     required ConversationTurn turn,
     required ConversationToolCall call,
@@ -1431,28 +1455,29 @@ class ServerToolRuntime({
   }) async {
     try {
       final result = await execution;
-      final status = result is ServerToolAwaitingSubAgents
-          ? 'awaitingSubAgents'
-          : 'success';
-      final detached = await _completeCancellableToolRecord(
-        executionSession,
-        call,
-        status: status,
-        result: _boundedJson(
-          result is ServerToolAwaitingSubAgents
-              ? {'children': result.children}
-              : result,
-        ),
-      );
-      if (!detached && result is ServerToolAwaitingSubAgents) {
+      if (result case ServerToolAwaitingSubAgents(:final children)) {
+        final detached = await _completeCancellableToolRecord(
+          executionSession,
+          call,
+          status: 'awaitingSubAgents',
+          result: _boundedJson({'children': children}),
+        );
+        if (detached) return ServerToolDisposition.completed;
         final waiting = await ConversationToolCall.db.findById(
           executionSession,
           call.id!,
         );
-        if (waiting != null) {
-          await _reconcileAwaitingSubAgents(executionSession, waiting);
-        }
+        return waiting == null
+            ? ServerToolDisposition.completed
+            : await _reconcileAwaitingSubAgents(executionSession, waiting);
       }
+      await _completeCancellableToolRecord(
+        executionSession,
+        call,
+        status: 'success',
+        result: _boundedJson(result),
+      );
+      return ServerToolDisposition.completed;
     } on AgentToolExecutionFailure catch (failure) {
       await _completeCancellableToolRecord(
         executionSession,
@@ -1467,6 +1492,7 @@ class ServerToolRuntime({
         'phase=${failure.failurePhase}.',
         level: LogLevel.warning,
       );
+      return ServerToolDisposition.completed;
     } on ConversationCancelledException {
       final detached = await _completeCancellableToolRecord(
         executionSession,
@@ -1476,6 +1502,7 @@ class ServerToolRuntime({
         errorCode: 'cancelled',
       );
       if (!detached) rethrow;
+      return ServerToolDisposition.completed;
     } on Object catch (error) {
       final detached = await _completeCancellableToolRecord(
         executionSession,
@@ -1490,6 +1517,7 @@ class ServerToolRuntime({
         level: LogLevel.warning,
       );
       if (!detached) rethrow;
+      return ServerToolDisposition.completed;
     } finally {
       await executionSession.close();
     }
@@ -1503,6 +1531,7 @@ class ServerToolRuntime({
     String? errorCode,
   }) async {
     var backgroundCompleted = false;
+    var backgroundSubAgentStarted = false;
     final detached = await session.db.transaction((transaction) async {
       final workspace = await CloudWorkspace.db.findFirstRow(
         session,
@@ -1578,6 +1607,37 @@ class ServerToolRuntime({
             transaction: transaction,
           );
 
+          return true;
+        }
+        if (status == 'awaitingSubAgents') {
+          final data = result == null
+              ? const <String, dynamic>{}
+              : _jsonMap(result);
+          final children = (data['children'] as List?)
+              ?.whereType<Map>()
+              .map((child) => Map<String, dynamic>.from(child))
+              .toList(growable: false);
+          final childConversationId =
+              current.childConversationStableId ??
+              children?.firstOrNull?['conversationId'] as String?;
+          final acknowledgement = jsonEncode({
+            'status': 'running_in_background',
+            'work_id': work.stableId,
+            'childConversationId': ?childConversationId,
+            'children': ?children,
+          });
+          await ConversationToolCall.db.updateRow(
+            session,
+            current.copyWith(
+              status: 'runningInBackground',
+              resultJson: acknowledgement,
+              childConversationStableId: childConversationId,
+              revision: current.revision + 1,
+              updatedAt: now,
+            ),
+            transaction: transaction,
+          );
+          backgroundSubAgentStarted = true;
           return true;
         }
         final projection = result == null ? null : projectToolOutput(result);
@@ -1691,6 +1751,25 @@ class ServerToolRuntime({
       );
       return false;
     });
+    if (backgroundSubAgentStarted) {
+      await reconcileDetachedSubAgentWork(
+        session,
+        workspaceId: call.workspaceId,
+        toolCallId: call.stableId,
+      );
+      final parent = await Conversation.db.findById(
+        session,
+        call.conversationId,
+      );
+      if (parent != null) {
+        await SyncWakeups.publishConversation(
+          session,
+          workspaceId: call.workspaceId,
+          conversationId: parent.stableId,
+        );
+      }
+      return true;
+    }
     if (backgroundCompleted) {
       final conversation = await Conversation.db.findById(
         session,
@@ -1705,7 +1784,7 @@ class ServerToolRuntime({
       }
       final turn = await ConversationTurn.db.findById(session, call.turnId);
       if (turn != null) {
-        if (conversation != null) {
+        if (conversation != null && turn.cancellationRequestedAt == null) {
           await ConversationUseCases(
             conversation_repo.ConversationRepository(),
           ).continueOldestQueuedMessage(
@@ -1740,6 +1819,17 @@ class ServerToolRuntime({
         work.conversationToolCallId,
       );
       if (call == null) continue;
+      final childConversationId = call.childConversationStableId;
+      if (childConversationId != null) {
+        await ConversationUseCases(
+          conversation_repo.ConversationRepository(),
+        ).stopInterruptedBackgroundSubAgent(
+          session,
+          workspaceId: work.workspaceId,
+          childConversationId: childConversationId,
+          requestId: 'background-restart:${work.stableId}:child',
+        );
+      }
       await _completeCancellableToolRecord(
         session,
         call,
@@ -1748,6 +1838,96 @@ class ServerToolRuntime({
         errorCode: 'outcome_unknown',
       );
     }
+  }
+
+  /// Reconciles an already-terminal child immediately after detachment.
+  ///
+  /// The child can finish before the UI detaches its parent tool call, so its
+  /// worker callback may have run before a background-work record existed.
+  Future<void> reconcileDetachedSubAgentWork(
+    Session session, {
+    required int workspaceId,
+    required String toolCallId,
+  }) async {
+    final parentCall = await ConversationToolCall.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.stableId.equals(toolCallId),
+    );
+    if (parentCall == null) return;
+    final workId = parentCall.backgroundWorkStableId;
+    if (workId == null) return;
+    final work = await BackgroundWorkRecord.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.equals(parentCall.conversationId) &
+          table.conversationToolCallId.equals(parentCall.id) &
+          table.stableId.equals(workId),
+    );
+    if (work == null ||
+        (work.status != 'running' && work.status != 'stopRequested')) {
+      return;
+    }
+    final metadata = parentCall.resultJson == null
+        ? const <String, dynamic>{}
+        : _jsonMap(parentCall.resultJson!);
+    final children = (metadata['children'] as List?)
+        ?.whereType<Map>()
+        .map((child) => Map<String, dynamic>.from(child))
+        .toList(growable: false);
+    if (children == null || children.isEmpty) return;
+    final results = <Map<String, Object?>>[];
+    for (final child in children) {
+      final result = await _childTerminalResult(
+        session,
+        workspaceId,
+        child,
+      );
+      if (result == null) return;
+      results.add(result);
+    }
+    final status = switch ((
+      results.every((result) => result['status'] == 'success'),
+      results.any((result) => result['status'] == 'cancelled'),
+    )) {
+      (true, _) => 'success',
+      (_, true) => 'cancelled',
+      _ => 'executionError',
+    };
+    await completeDetachedSubAgentWork(
+      session,
+      call: parentCall,
+      result: results.length == 1
+          ? results.single
+          : {'status': status, 'children': results},
+    );
+  }
+
+  /// Completes a detached top-level sub-agent after its child job is terminal.
+  Future<void> completeDetachedSubAgentWork(
+    Session session, {
+    required ConversationToolCall call,
+    required Map<String, Object?> result,
+  }) async {
+    if (call.backgroundWorkStableId == null) return;
+    final status = switch (result['status']) {
+      'success' => 'success',
+      'cancelled' => 'cancelled',
+      _ => 'executionError',
+    };
+    await _completeCancellableToolRecord(
+      session,
+      call,
+      status: status,
+      result: _boundedJson(result),
+      errorCode: switch (status) {
+        'success' => null,
+        'cancelled' => 'cancelled',
+        _ => 'sub_agent_failed',
+      },
+    );
   }
 
   Future<String?> _waitForBackgroundDetach(Session session, int callId) async {

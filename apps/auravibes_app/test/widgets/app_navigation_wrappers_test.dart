@@ -721,7 +721,7 @@ void main() {
         expect(sidebar().selectedIndex, 4);
         sidebar().onNavigationTap.call(0);
         final _ = await tester.pump();
-        expect(router.state.uri.path, '/workspaces/ws-test/chats/chat-A');
+        expect(router.state.uri.path, '/workspaces/ws-test/chat/new');
         expect(confirmations, 2);
         router.go('/workspaces/B/chat/new');
         final _ = await tester.pump();
@@ -868,8 +868,8 @@ void main() {
           expect(_sidebarPanelWidth(tester), 80);
           expect(find.byType(SidebarConversationsWidget), findsNothing);
           expect(find.byTooltip('Expand sidebar'), findsOneWidget);
-          expect(find.bySemanticsLabel('Chats'), findsOneWidget);
-          expect(find.byTooltip('Chats'), findsOneWidget);
+          expect(find.bySemanticsLabel('New Chat'), findsOneWidget);
+          expect(find.byTooltip('New Chat'), findsOneWidget);
         } finally {
           semantics.dispose();
         }
@@ -885,7 +885,7 @@ void main() {
         );
         expect(_sidebarPanelWidth(tester), 320);
         expect(find.byType(SidebarConversationsWidget), findsOneWidget);
-        expect(find.text('Chats'), findsOneWidget);
+        expect(find.text('New Chat'), findsOneWidget);
       },
     );
 

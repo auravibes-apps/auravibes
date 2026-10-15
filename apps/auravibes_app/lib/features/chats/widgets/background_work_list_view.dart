@@ -26,6 +26,7 @@ class const BackgroundWorkListView({
   required final List<AgentBackgroundWork> works,
   required final Future<void> Function(AgentBackgroundWork work) onStop,
   required final Future<void> Function(AgentBackgroundWork work) onOpenResult,
+  final Future<void> Function(AgentBackgroundWork work)? onOpenChild,
   final DateTime? now,
   @visibleForTesting final DateTime Function()? clock,
   super.key,
@@ -40,6 +41,7 @@ class const BackgroundWorkListView({
       works: works,
       onStop: onStop,
       onOpenResult: onOpenResult,
+      onOpenChild: onOpenChild,
     );
   }
 }
@@ -50,6 +52,7 @@ class const _BackgroundWorkListMode({
   required final List<AgentBackgroundWork> works,
   required final Future<void> Function(AgentBackgroundWork work) onStop,
   required final Future<void> Function(AgentBackgroundWork work) onOpenResult,
+  final Future<void> Function(AgentBackgroundWork work)? onOpenChild,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -60,6 +63,7 @@ class const _BackgroundWorkListMode({
         now: initialNow,
         onStop: onStop,
         onOpenResult: onOpenResult,
+        onOpenChild: onOpenChild,
       );
     }
 
@@ -69,6 +73,7 @@ class const _BackgroundWorkListMode({
       works: works,
       onStop: onStop,
       onOpenResult: onOpenResult,
+      onOpenChild: onOpenChild,
     );
   }
 }
@@ -79,6 +84,7 @@ class const _BackgroundWorkElapsedList({
   required final List<AgentBackgroundWork> works,
   required final Future<void> Function(AgentBackgroundWork work) onStop,
   required final Future<void> Function(AgentBackgroundWork work) onOpenResult,
+  final Future<void> Function(AgentBackgroundWork work)? onOpenChild,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => StreamBuilder<DateTime>(
@@ -96,6 +102,7 @@ class const _BackgroundWorkElapsedList({
         now: snapshot.data ?? readNow(),
         onStop: onStop,
         onOpenResult: onOpenResult,
+        onOpenChild: onOpenChild,
       );
 }
 
@@ -104,6 +111,7 @@ class const _BackgroundWorkScrollableList({
   required final DateTime now,
   required final Future<void> Function(AgentBackgroundWork work) onStop,
   required final Future<void> Function(AgentBackgroundWork work) onOpenResult,
+  final Future<void> Function(AgentBackgroundWork work)? onOpenChild,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView.separated(
@@ -119,6 +127,7 @@ class const _BackgroundWorkScrollableList({
     now: now,
     onStop: onStop,
     onOpenResult: onOpenResult,
+    onOpenChild: onOpenChild,
   );
 
   Widget _buildSeparator(BuildContext _, int _) =>
@@ -130,15 +139,21 @@ class const _BackgroundWorkListItem({
   required final DateTime now,
   required final Future<void> Function(AgentBackgroundWork) onStop,
   required final Future<void> Function(AgentBackgroundWork) onOpenResult,
+  final Future<void> Function(AgentBackgroundWork)? onOpenChild,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _BackgroundWorkTile(
-    work: work,
-    now: now,
-    onStop: () => onStop(work),
-    onOpenResult: () => onOpenResult(work),
-    key: ValueKey('background_work_item_${work.identity.id}'),
-  );
+  Widget build(BuildContext context) {
+    final openChild = onOpenChild;
+
+    return _BackgroundWorkTile(
+      work: work,
+      now: now,
+      onStop: () => onStop(work),
+      onOpenResult: () => onOpenResult(work),
+      onOpenChild: openChild == null ? null : () => openChild(work),
+      key: ValueKey('background_work_item_${work.identity.id}'),
+    );
+  }
 }
 
 class const _BackgroundWorkTile({
@@ -146,6 +161,7 @@ class const _BackgroundWorkTile({
   required final DateTime now,
   required final Future<void> Function() onStop,
   required final Future<void> Function() onOpenResult,
+  final Future<void> Function()? onOpenChild,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -158,6 +174,7 @@ class const _BackgroundWorkTile({
         now: now,
         onStop: onStop,
         onOpenResult: onOpenResult,
+        onOpenChild: onOpenChild,
       ),
       padding: .small,
       variant: .surfaceVariant,
@@ -201,6 +218,7 @@ class const _BackgroundWorkTileContent({
   required final DateTime now,
   required final Future<void> Function() onStop,
   required final Future<void> Function() onOpenResult,
+  final Future<void> Function()? onOpenChild,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -214,6 +232,7 @@ class const _BackgroundWorkTileContent({
           data: data,
           onStop: onStop,
           onOpenResult: onOpenResult,
+          onOpenChild: onOpenChild,
         ),
       ],
     );
@@ -359,22 +378,68 @@ class const _BackgroundWorkTileActions({
   required final _BackgroundWorkTileData data,
   required final Future<void> Function() onStop,
   required final Future<void> Function() onOpenResult,
+  final Future<void> Function()? onOpenChild,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final workId = data.identity.id;
+    final actions = [
+      _stopBackgroundWorkTileAction(data, workId, onStop),
+      _openChildBackgroundWorkTileAction(data, workId, onOpenChild),
+      _openResultBackgroundWorkTileAction(data, workId, onOpenResult),
+    ];
 
     return Wrap(
       spacing: _backgroundWorkActionSpacing,
       runSpacing: _backgroundWorkActionRunSpacing,
       children: [
-        if (data.status == .running)
-          _BackgroundWorkStopButton(workId: workId, action: onStop),
-        if (data.hasResult)
-          _BackgroundWorkOpenResultButton(workId: workId, action: onOpenResult),
+        for (final action in actions)
+          if (action != null) action.widget,
       ],
     );
   }
+}
+
+typedef _BackgroundWorkTileAction = ({Widget widget});
+
+_BackgroundWorkTileAction? _stopBackgroundWorkTileAction(
+  _BackgroundWorkTileData data,
+  String workId,
+  Future<void> Function() onStop,
+) {
+  if (data.status != .running) return null;
+
+  return (widget: _BackgroundWorkStopButton(workId: workId, action: onStop));
+}
+
+_BackgroundWorkTileAction? _openChildBackgroundWorkTileAction(
+  _BackgroundWorkTileData data,
+  String workId,
+  Future<void> Function()? onOpenChild,
+) {
+  final openChild = onOpenChild;
+  if (data.identity.childConversationId == null || openChild == null) {
+    return null;
+  }
+
+  return (
+    widget: _BackgroundWorkOpenChildButton(workId: workId, action: openChild),
+  );
+}
+
+_BackgroundWorkTileAction? _openResultBackgroundWorkTileAction(
+  _BackgroundWorkTileData data,
+  String workId,
+  Future<void> Function() onOpenResult,
+) {
+  if (!data.hasResult) return null;
+
+  return (
+    widget: _BackgroundWorkOpenResultButton(
+      workId: workId,
+      action: onOpenResult,
+    ),
+  );
 }
 
 class const _BackgroundWorkStopButton({
@@ -405,6 +470,24 @@ class const _BackgroundWorkOpenResultButton({
     keyPrefix: 'background_work_open_result',
     label: const TextLocale(
       LocaleKeys.chats_screens_chat_conversation_background_work_open_result,
+    ),
+    errorMessage: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_background_work_open_error,
+    ),
+    action: action,
+  );
+}
+
+class const _BackgroundWorkOpenChildButton({
+  required final String workId,
+  required final Future<void> Function() action,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _BackgroundWorkActionButton(
+    workId: workId,
+    keyPrefix: 'background_work_open_child',
+    label: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_activity_open_sub_agent,
     ),
     errorMessage: const TextLocale(
       LocaleKeys.chats_screens_chat_conversation_background_work_open_error,
