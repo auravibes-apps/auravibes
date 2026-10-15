@@ -155,7 +155,7 @@ jobs:
         run: flutter build ios --debug --no-codesign --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
-      # shortcut: repairs target, compiler flag, and WebKit API in cached plugin; remove when upstream fixes them.
+      # shortcut: repairs target, compiler flag, WPE API, and package header path; remove when upstream fixes them.
       - name: 🩹 Patch Linux WebView CMake compatibility
         if: ${{ matrix.platform == 'linux' }}
         shell: bash
@@ -225,6 +225,13 @@ jobs:
           if version_guard not in method or fallback not in method:
               raise SystemExit(f"Theme color compatibility guard missing in {source_file}")
           source_file.write_text(source[:start] + method + source[end:])
+
+          header = cmake_file.parent / "include/flutter_inappwebview_linux/flutter_inappwebview_linux_plugin.h"
+          if not header.is_file():
+              raise SystemExit(f"Linux plugin header not found in {header.parent}")
+          compat_header = cmake_file.parent / "include/flutter_inappwebview_linux_fx/flutter_inappwebview_linux_plugin.h"
+          compat_header.parent.mkdir(parents=True, exist_ok=True)
+          compat_header.write_text(header.read_text())
           PY
           done
 
