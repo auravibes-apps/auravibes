@@ -155,7 +155,7 @@ jobs:
         run: flutter build ios --debug --no-codesign --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
-      # shortcut: repairs target and compiler metadata in cached plugin; remove when upstream fixes both.
+      # shortcut: repairs target, compiler flag, and WebKit API in cached plugin; remove when upstream fixes them.
       - name: 🩹 Patch Linux WebView CMake compatibility
         if: ${{ matrix.platform == 'linux' }}
         shell: bash
@@ -201,6 +201,30 @@ jobs:
               raise SystemExit(f"Unexpected Linux compiler flag in {cmake_file}")
 
           cmake_file.write_text(source)
+
+          source_file = cmake_file.parent / "in_app_webview/in_app_webview.cc"
+          source = source_file.read_text()
+          marker = "std::optional<std::string> InAppWebView::getMetaThemeColor() const {"
+          start = source.find(marker)
+          if start < 0:
+              raise SystemExit(f"Theme color method not found in {source_file}")
+          end = source.find("\n}\n", start)
+          if end < 0:
+              raise SystemExit(f"Theme color method end not found in {source_file}")
+          end += 2
+          method = source[start:end]
+          version_guard = "#if WEBKIT_CHECK_VERSION(2, 50, 0)"
+          fallback = "#else\n  return std::nullopt;\n#endif"
+          if version_guard not in method:
+              color_declaration = "  WebKitColor color;"
+              color_result = "  return std::string(hexColor);"
+              if color_declaration not in method or color_result not in method:
+                  raise SystemExit(f"Unexpected theme color implementation in {source_file}")
+              method = method.replace(color_declaration, f"{version_guard}\n{color_declaration}", 1)
+              method = method.replace(color_result, f"{color_result}\n{fallback}", 1)
+          if version_guard not in method or fallback not in method:
+              raise SystemExit(f"Theme color compatibility guard missing in {source_file}")
+          source_file.write_text(source[:start] + method + source[end:])
           PY
           done
 
