@@ -271,27 +271,47 @@ String _encodeArchiveBundle(List<Map<String, Object?>> archives) {
   return encoded;
 }
 
-Future<ConversationArchiveAttachment> _exportAttachment(
+typedef _ExportAttachmentRequest = ({
   MessageAttachmentEntity attachment,
   Future<Uint8List> Function(String localPath) readAttachmentBytes,
   Map<String, String> toolCallIds,
+});
+
+Future<ConversationArchiveAttachment> _exportAttachment(
+  _ExportAttachmentRequest request,
 ) async {
+  final attachment = request.attachment;
+  final toolCallId = _exportToolCallId(attachment, request.toolCallIds);
+  final bytes = await request.readAttachmentBytes(attachment.localPath);
+  _validateExportAttachmentSize(attachment.sizeBytes, bytes.length);
+
+  return _exportedAttachment(attachment, bytes, toolCallId);
+}
+
+String? _exportToolCallId(
+  MessageAttachmentEntity attachment,
+  Map<String, String> toolCallIds,
+) {
   final toolCallId = attachment.toolCallId;
   if (toolCallId != null && !toolCallIds.containsKey(toolCallId)) {
     throw const MalformedConversationArchiveException();
   }
-  final bytes = await readAttachmentBytes(attachment.localPath);
-  _validateExportAttachmentSize(attachment.sizeBytes, bytes.length);
 
-  return ConversationArchiveAttachment(
-    fileName: _archiveFileName(attachment.fileName),
-    displayName: attachment.displayName,
-    mimeType: attachment.mimeType,
-    modality: attachment.modality,
-    bytes: bytes,
-    toolCallId: toolCallId == null ? null : toolCallIds[toolCallId],
-  );
+  return toolCallId == null ? null : toolCallIds[toolCallId];
 }
+
+ConversationArchiveAttachment _exportedAttachment(
+  MessageAttachmentEntity attachment,
+  Uint8List bytes,
+  String? toolCallId,
+) => ConversationArchiveAttachment(
+  fileName: _archiveFileName(attachment.fileName),
+  displayName: attachment.displayName,
+  mimeType: attachment.mimeType,
+  modality: attachment.modality,
+  bytes: bytes,
+  toolCallId: toolCallId,
+);
 
 Map<String, Object?> _archiveToJson(ConversationArchive archive) => {
   'format': ConversationArchiveCodec.format,
@@ -426,18 +446,26 @@ void _validateMessageIndexes(List<ConversationArchiveMessage> messages) {
 }
 
 void _validateToolCallAttachmentRefs(ConversationArchiveMessage message) {
-  final toolCallIds = [
-    for (final toolCall in message.metadata.toolCalls) ?toolCall.id,
-  ];
-  if (toolCallIds.toSet().length != toolCallIds.length ||
-      message.attachments.any(
-        (attachment) =>
-            attachment.toolCallId != null &&
-            !toolCallIds.contains(attachment.toolCallId),
-      )) {
+  final toolCallIds = _messageToolCallIds(message);
+  if (!_hasValidToolCallAttachmentRefs(message.attachments, toolCallIds)) {
     throw const MalformedConversationArchiveException();
   }
 }
+
+List<String> _messageToolCallIds(ConversationArchiveMessage message) => [
+  for (final toolCall in message.metadata.toolCalls) ?toolCall.id,
+];
+
+bool _hasValidToolCallAttachmentRefs(
+  List<ConversationArchiveAttachment> attachments,
+  List<String> toolCallIds,
+) =>
+    toolCallIds.toSet().length == toolCallIds.length &&
+    attachments.every(
+      (attachment) =>
+          attachment.toolCallId == null ||
+          toolCallIds.contains(attachment.toolCallId),
+    );
 
 void _validateAgentContextMessageIndexes(ConversationArchive archive) {
   final context = archive.agentContext;
@@ -1169,7 +1197,11 @@ Future<List<ConversationArchiveAttachment>> _archiveMessageAttachments(
   final archived = <ConversationArchiveAttachment>[];
   for (final attachment in attachments) {
     archived.add(
-      await _exportAttachment(attachment, readAttachmentBytes, toolCallIds),
+      await _exportAttachment((
+        attachment: attachment,
+        readAttachmentBytes: readAttachmentBytes,
+        toolCallIds: toolCallIds,
+      )),
     );
   }
 

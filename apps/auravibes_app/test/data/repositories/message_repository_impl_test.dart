@@ -281,9 +281,9 @@ void main() {
           ],
         );
 
-        final patched = await repository.patchMessageWithAttachments(
-          message.id,
-          const MessagePatch(metadata: completedMetadata, status: .sent),
+        final patched = await repository.patchMessageWithAttachments((
+          id: message.id,
+          patch: const MessagePatch(metadata: completedMetadata, status: .sent),
           conversationId: 'conv-1',
           attachments: const [
             MessageAttachmentToCreate(
@@ -296,7 +296,7 @@ void main() {
               toolCallId: 'browser-call',
             ),
           ],
-        );
+        ));
 
         expect(patched.attachments.single.toolCallId, 'browser-call');
         expect(patched.attachments.single.localPath, '/support/browser.png');

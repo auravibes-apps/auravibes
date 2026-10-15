@@ -418,6 +418,13 @@ Future<Map<String, Object?>> _callTool(
   return {'result': result};
 }
 
+typedef _SkillCallExecutionRequest = ({
+  RunSkillCommandUsecase usecase,
+  RunSkillCommandRequest request,
+  SkillCommandTarget command,
+  AgentResolvedToolName target,
+});
+
 Future<SkillCommandTarget> _validatedCallTool(
   RunSkillCommandUsecase usecase,
   RunSkillCommandRequest request,
@@ -439,28 +446,60 @@ Future<Object?> _executeCallTool(
     command,
   );
 
+  return await _executeResolvedSkillTool((
+    usecase: usecase,
+    request: request,
+    command: command,
+    target: target,
+  ));
+}
+
+Future<Object?> _executeResolvedSkillTool(_SkillCallExecutionRequest request) =>
+    _handleResolvedSkillToolFailure(
+      request,
+      () => _runResolvedSkillTool(request),
+    );
+
+Future<Object?> _runResolvedSkillTool(_SkillCallExecutionRequest request) {
+  final call = request.request;
+  final target = request.target;
+  final command = request.command;
+
+  return _RunSkillCommandExecution(request.usecase)._runSkillTool((
+    conversationId: call.conversationId,
+    toolCallId: call.toolCallId,
+    workspaceId: call.workspaceId,
+    target: target,
+    command: command,
+  ));
+}
+
+Future<Object?> _handleResolvedSkillToolFailure(
+  _SkillCallExecutionRequest request,
+  Future<Object?> Function() run,
+) async {
   try {
-    return await _RunSkillCommandExecution(usecase)._runSkillTool((
-      conversationId: request.conversationId,
-      toolCallId: request.toolCallId,
-      workspaceId: request.workspaceId,
-      target: target,
-      command: command,
-    ));
+    return await run();
   } on AgentToolExecutionFailure {
     rethrow;
   } on Object catch (error, stackTrace) {
-    Error.throwWithStackTrace(
-      AgentToolExecutionFailure(
-        responseRaw: 'Tool execution failed.',
-        error: error,
-        stackTrace: stackTrace,
-        failurePhase: 'callSkillTool.${target.kind.name}',
-      ),
-      stackTrace,
-    );
+    _throwSkillToolExecutionFailure(request.target, error, stackTrace);
   }
 }
+
+Never _throwSkillToolExecutionFailure(
+  AgentResolvedToolName target,
+  Object error,
+  StackTrace stackTrace,
+) => Error.throwWithStackTrace(
+  AgentToolExecutionFailure(
+    responseRaw: 'Tool execution failed.',
+    error: error,
+    stackTrace: stackTrace,
+    failurePhase: 'callSkillTool.${target.kind.name}',
+  ),
+  stackTrace,
+);
 
 class const _RunSkillCommandValidation(final RunSkillCommandUsecase _usecase) {
   Future<SkillCommandTarget> _validatedCommand(

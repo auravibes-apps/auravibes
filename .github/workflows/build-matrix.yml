@@ -77,7 +77,7 @@ jobs:
         if: ${{ matrix.platform == 'linux' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsqlite3-dev libwebkit2gtk-4.1-dev libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsqlite3-dev libwebkit2gtk-4.1-dev libwpewebkit-1.0-dev libwpe-1.0-dev libwpebackend-fdo-1.0-dev libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
       - name: 🏗️ Build Android APK
         if: ${{ matrix.platform == 'android' }}
@@ -96,7 +96,8 @@ jobs:
           xcodebuild -project macos/Runner.xcodeproj -scheme Runner
           -configuration Debug-prod -derivedDataPath build/macos
           CODE_SIGN_STYLE=Manual CODE_SIGNING_ALLOWED=NO
-          CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+          CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+          MACOSX_DEPLOYMENT_TARGET=12.0 build
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
       - name: 🧪 Test iOS SQLite binary preparer
@@ -176,6 +177,23 @@ jobs:
         if: ${{ matrix.platform == 'web' }}
         run: flutter build web --release --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
+
+      - name: 🩹 Fix Windows plugin target name
+        if: ${{ matrix.platform == 'windows' }}
+        shell: pwsh
+        run: |
+          $packages = Get-ChildItem "$env:LOCALAPPDATA\Pub\Cache\hosted\pub.dev" -Directory -Filter "flutter_inappwebview_windows_fx-*"
+          if ($packages.Count -eq 0) { throw "flutter_inappwebview_windows_fx was not found in the pub cache" }
+
+          foreach ($package in $packages) {
+            $path = Join-Path $package.FullName "windows\CMakeLists.txt"
+            $source = Get-Content $path -Raw
+            $expected = 'set(PLUGIN_NAME "flutter_inappwebview_windows_plugin")'
+            $fixed = 'set(PLUGIN_NAME "flutter_inappwebview_windows_fx_plugin")'
+            if ($source.Contains($fixed)) { continue }
+            if (-not $source.Contains($expected)) { throw "Unexpected Windows plugin target in $path" }
+            [IO.File]::WriteAllText($path, $source.Replace($expected, $fixed), [Text.UTF8Encoding]::new($false))
+          }
 
       - name: 🏗️ Build Windows
         if: ${{ matrix.platform == 'windows' }}

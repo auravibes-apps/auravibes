@@ -1,3 +1,30 @@
+typedef BrowserTabUpdate = ({
+  String? url,
+  String? title,
+  bool? isLoading,
+  bool? hasError,
+  bool? canGoBack,
+  bool? canGoForward,
+});
+typedef _BrowserSessionUpdate = ({
+  List<BrowserTab>? tabs,
+  String? activeTabId,
+  bool? isLoading,
+  bool? hasError,
+  bool? canGoBack,
+  bool? canGoForward,
+  bool? isSuspended,
+  String? agentActivity,
+  int? agentActionRevision,
+  bool clearAgentActivity,
+});
+typedef _BrowserSessionTabs = ({List<BrowserTab> tabs, String activeTabId});
+typedef _BrowserSessionMetadata = ({
+  bool isSuspended,
+  String? agentActivity,
+  int agentActionRevision,
+});
+
 class const BrowserSessionState({
   required final List<BrowserTab> tabs,
   required final String activeTabId,
@@ -11,36 +38,7 @@ class const BrowserSessionState({
 }) {
   factory initial() => const BrowserSessionState(tabs: [], activeTabId: '');
 
-  factory fromJson(Map<String, dynamic> json) {
-    final storedTabs = json['tabs'];
-    final storedActiveTabId = json['activeTabId'];
-    final storedIsSuspended = json['isSuspended'];
-    if (storedTabs is! List ||
-        storedActiveTabId != null && storedActiveTabId is! String ||
-        storedIsSuspended != null && storedIsSuspended is! bool) {
-      throw const FormatException('Invalid browser session.');
-    }
-
-    final tabs = storedTabs.map((item) {
-      if (item is! Map<String, dynamic>) {
-        throw const FormatException('Invalid browser tab.');
-      }
-
-      return BrowserTab.fromJson(item);
-    }).toList();
-    final fallbackTab = tabs.firstOrNull;
-    if (fallbackTab == null) return BrowserSessionState.initial();
-
-    final activeTab = tabs
-        .where((tab) => tab.id == storedActiveTabId)
-        .firstOrNull;
-
-    return BrowserSessionState(
-      tabs: tabs,
-      activeTabId: activeTab?.id ?? fallbackTab.id,
-      isSuspended: storedIsSuspended is bool && storedIsSuspended,
-    );
-  }
+  factory fromJson(Map<String, dynamic> json) => _browserSessionFromJson(json);
 
   BrowserTab? get activeTab =>
       tabs.where((tab) => tab.id == activeTabId).firstOrNull;
@@ -62,20 +60,124 @@ class const BrowserSessionState({
     String? agentActivity,
     int? agentActionRevision,
     bool clearAgentActivity = false,
-  }) => BrowserSessionState(
-    tabs: tabs ?? this.tabs,
-    activeTabId: activeTabId ?? this.activeTabId,
-    isLoading: isLoading ?? this.isLoading,
-    hasError: hasError ?? this.hasError,
-    canGoBack: canGoBack ?? this.canGoBack,
-    canGoForward: canGoForward ?? this.canGoForward,
-    isSuspended: isSuspended ?? this.isSuspended,
-    agentActivity: clearAgentActivity
-        ? null
-        : agentActivity ?? this.agentActivity,
-    agentActionRevision: agentActionRevision ?? this.agentActionRevision,
+  }) => _copyBrowserSession(this, (
+    tabs: tabs,
+    activeTabId: activeTabId,
+    isLoading: isLoading,
+    hasError: hasError,
+    canGoBack: canGoBack,
+    canGoForward: canGoForward,
+    isSuspended: isSuspended,
+    agentActivity: agentActivity,
+    agentActionRevision: agentActionRevision,
+    clearAgentActivity: clearAgentActivity,
+  ));
+}
+
+BrowserSessionState _browserSessionFromJson(Map<String, dynamic> json) {
+  _validateBrowserSessionJson(json);
+  final tabs = _decodeBrowserTabs(json['tabs'] as List<Object?>);
+
+  return _restoreBrowserSession(
+    tabs,
+    json['activeTabId'] as String?,
+    json['isSuspended'] as bool? ?? false,
   );
 }
+
+BrowserSessionState _restoreBrowserSession(
+  List<BrowserTab> tabs,
+  String? activeTabId,
+  bool isSuspended,
+) {
+  final fallbackTab = tabs.firstOrNull;
+  if (fallbackTab == null) return BrowserSessionState.initial();
+  final activeTab = tabs.where((tab) => tab.id == activeTabId).firstOrNull;
+
+  return BrowserSessionState(
+    tabs: tabs,
+    activeTabId: activeTab?.id ?? fallbackTab.id,
+    isSuspended: isSuspended,
+  );
+}
+
+BrowserSessionState _copyBrowserSession(
+  BrowserSessionState current,
+  _BrowserSessionUpdate update,
+) {
+  final tabs = _copyBrowserSessionTabs(current, update);
+  final navigation = _copyBrowserNavigation(current, update);
+  final metadata = _copyBrowserSessionMetadata(current, update);
+
+  return _browserSessionFromUpdates(tabs, navigation, metadata);
+}
+
+BrowserSessionState _browserSessionFromUpdates(
+  _BrowserSessionTabs tabs,
+  ({bool isLoading, bool hasError, bool canGoBack, bool canGoForward})
+  navigation,
+  _BrowserSessionMetadata metadata,
+) => BrowserSessionState(
+  tabs: tabs.tabs,
+  activeTabId: tabs.activeTabId,
+  isLoading: navigation.isLoading,
+  hasError: navigation.hasError,
+  canGoBack: navigation.canGoBack,
+  canGoForward: navigation.canGoForward,
+  isSuspended: metadata.isSuspended,
+  agentActivity: metadata.agentActivity,
+  agentActionRevision: metadata.agentActionRevision,
+);
+
+_BrowserSessionTabs _copyBrowserSessionTabs(
+  BrowserSessionState current,
+  _BrowserSessionUpdate update,
+) => (
+  tabs: update.tabs ?? current.tabs,
+  activeTabId: update.activeTabId ?? current.activeTabId,
+);
+
+({bool isLoading, bool hasError, bool canGoBack, bool canGoForward})
+_copyBrowserNavigation(
+  BrowserSessionState current,
+  _BrowserSessionUpdate update,
+) => (
+  isLoading: update.isLoading ?? current.isLoading,
+  hasError: update.hasError ?? current.hasError,
+  canGoBack: update.canGoBack ?? current.canGoBack,
+  canGoForward: update.canGoForward ?? current.canGoForward,
+);
+
+_BrowserSessionMetadata _copyBrowserSessionMetadata(
+  BrowserSessionState current,
+  _BrowserSessionUpdate update,
+) => (
+  isSuspended: update.isSuspended ?? current.isSuspended,
+  agentActivity: update.clearAgentActivity
+      ? null
+      : update.agentActivity ?? current.agentActivity,
+  agentActionRevision:
+      update.agentActionRevision ?? current.agentActionRevision,
+);
+
+void _validateBrowserSessionJson(Map<String, dynamic> json) {
+  final tabs = json['tabs'];
+  final activeTabId = json['activeTabId'];
+  final isSuspended = json['isSuspended'];
+  if (tabs is! List ||
+      activeTabId != null && activeTabId is! String ||
+      isSuspended != null && isSuspended is! bool) {
+    throw const FormatException('Invalid browser session.');
+  }
+}
+
+List<BrowserTab> _decodeBrowserTabs(List<Object?> tabs) => tabs.map((item) {
+  if (item is! Map<String, dynamic>) {
+    throw const FormatException('Invalid browser tab.');
+  }
+
+  return BrowserTab.fromJson(item);
+}).toList();
 
 class const BrowserTab({
   required final String id,

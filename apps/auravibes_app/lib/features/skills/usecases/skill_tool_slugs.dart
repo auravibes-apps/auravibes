@@ -130,8 +130,12 @@ class const BuildAppSkillNativeToolSpecsUsecase(
   }
 
   List<ToolSpec> _browserToolSpecs(List<AvailableSkill> runtimeSkills) {
-    if (!_hasAppSkill(runtimeSkills, browserSkillSlug)) return const [];
-    final browserSkill = _appSkillRegistry.getBySlug(browserSkillSlug);
+    if (!_hasAppSkill(runtimeSkills, AppSkillRegistry.browserSkillSlug)) {
+      return const [];
+    }
+    final browserSkill = _appSkillRegistry.getBySlug(
+      AppSkillRegistry.browserSkillSlug,
+    );
     if (browserSkill == null) return const [];
 
     return _appSkillToolSpecs(browserSkill, const []);

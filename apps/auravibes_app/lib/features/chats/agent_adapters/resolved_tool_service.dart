@@ -1106,7 +1106,7 @@ Map<String, Object> _credentialResult(
 }
 
 Future<Object?> _runSkillNativeTool(_SkillNativeToolRequest request) {
-  if (request.skillSlug == browserSkillSlug) {
+  if (request.skillSlug == AppSkillRegistry.browserSkillSlug) {
     return _runBrowserSkillTool(request);
   }
   if (request.skillSlug == agent.agentsSkillSlug) {
@@ -1295,29 +1295,36 @@ class _ConfiguredSkillCommandRunner {
   }
 
   Future<Object?> _runSkillNativeTool(RunSkillNativeToolRequest request) async {
-    final target = request.target;
-    if (target.skillSlug == agent.agentsSkillSlug) {
+    if (request.target.skillSlug == agent.agentsSkillSlug) {
       return await _runSubAgentNativeTool(
         _subAgentSkillNativeToolRequest(_provider, request),
       );
     }
-
     await _requireCurrentAppSkillToolForNativeRequest(_provider, request);
-    if (target.skillSlug == browserSkillSlug) {
-      final runner = _provider.browserSkillToolRunner;
-      if (runner == null) {
-        throw StateError('Browser skill tools are not configured.');
-      }
 
-      return await runner(
-        workspaceId: request.workspaceId,
-        conversationId: request.conversationId,
-        toolSlug: target.toolIdentifier,
-        arguments: request.arguments,
-      );
+    return await _runAppSkillTool(request);
+  }
+
+  Future<Object?> _runAppSkillTool(RunSkillNativeToolRequest request) {
+    if (request.target.skillSlug == AppSkillRegistry.browserSkillSlug) {
+      return _runBrowserSkillTool(request);
     }
 
-    return await _runConfiguredAppSkillTool(request);
+    return _runConfiguredAppSkillTool(request);
+  }
+
+  Future<Object?> _runBrowserSkillTool(RunSkillNativeToolRequest request) {
+    final runner = _provider.browserSkillToolRunner;
+    if (runner == null) {
+      throw StateError('Browser skill tools are not configured.');
+    }
+
+    return runner(
+      workspaceId: request.workspaceId,
+      conversationId: request.conversationId,
+      toolSlug: request.target.toolIdentifier,
+      arguments: request.arguments,
+    );
   }
 
   Future<Object?> _runConfiguredAppSkillTool(

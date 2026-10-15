@@ -8,33 +8,34 @@ typedef BrowserPageState = ({
   bool canGoBack,
   bool canGoForward,
 });
+typedef BrowserWebViewRequest = ({
+  String sessionId,
+  String tabId,
+  String initialUrl,
+  ValueChanged<String?> onTitleChanged,
+  ValueChanged<String?> onLoadStart,
+  ValueChanged<String?> onLoadStop,
+  VoidCallback onMainFrameError,
+  ValueChanged<String?> onVisitedHistory,
+});
 
-abstract interface class BrowserWebViewService {
-  Widget buildView({
-    required String sessionId,
-    required String tabId,
-    required String initialUrl,
-    required ValueChanged<String?> onTitleChanged,
-    required ValueChanged<String?> onLoadStart,
-    required ValueChanged<String?> onLoadStop,
-    required VoidCallback onMainFrameError,
-    required ValueChanged<String?> onVisitedHistory,
-  });
+class const BrowserWebViewService({
+  required final BrowserWebViewHostService host,
+  required final BrowserWebViewControllerService controller,
+});
+
+abstract interface class BrowserWebViewHostService {
+  Widget buildView(BrowserWebViewRequest request);
 
   Future<void> removeTab({required String sessionId, required String tabId});
-
-  bool hasController({required String sessionId, required String tabId});
 
   Future<BrowserPageState?> pageStateIfAttached({
     required String sessionId,
     required String tabId,
   });
+}
 
-  Future<BrowserPageState> pageState({
-    required String sessionId,
-    required String tabId,
-  });
-
+abstract interface class BrowserWebViewControllerService {
   Future<bool> canGoBack({required String sessionId, required String tabId});
 
   Future<bool> canGoForward({required String sessionId, required String tabId});

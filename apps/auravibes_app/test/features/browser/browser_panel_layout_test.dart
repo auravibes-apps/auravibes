@@ -31,7 +31,7 @@ void main() {
               'workspace',
               'conversation',
             ).overrideWith(_SuspendedBrowserSessionNotifier.new),
-            browserWebViewServiceProvider.overrideWithValue(runtime),
+            browserWebViewServiceProvider.overrideWithValue(runtime.service),
           ],
         ),
       );
@@ -78,7 +78,7 @@ void main() {
               'workspace',
               'conversation',
             ).overrideWith(_TestBrowserSessionNotifier.new),
-            browserWebViewServiceProvider.overrideWithValue(runtime),
+            browserWebViewServiceProvider.overrideWithValue(runtime.service),
           ],
         ),
       );
@@ -129,19 +129,21 @@ class _SidebarHarnessState extends State<_SidebarHarness> {
         Expanded(
           child: ResponsiveConversationLayout(
             mainContent: ListView(children: const [Text('chat message')]),
-            sidePanelVisible: _sidePanelVisible,
-            sidePanelMounted: _sidePanelMounted,
-            sidePanelWidthPercent: _sidePanelWidthPercent,
-            onSidePanelWidthChanged: (value) =>
-                setState(() => _sidePanelWidthPercent = value),
-            onSidePanelClose: () => setState(() => _sidePanelVisible = false),
-            sidePanelBuilder: () => BrowserPanel(
-              workspaceId: 'workspace',
-              conversationId: 'conversation',
-              toolResultTabs: const <SidebarToolResultTab>[],
-              selectedToolResultTabId: null,
-              onSelectToolResultTab: (id) => expect(id, isNotNull),
-              onCloseToolResultTab: (id) => expect(id, isNotEmpty),
+            sidePanel: .new(
+              visible: _sidePanelVisible,
+              mounted: _sidePanelMounted,
+              widthPercent: _sidePanelWidthPercent,
+              onWidthChanged: (value) =>
+                  setState(() => _sidePanelWidthPercent = value),
+              onClose: () => setState(() => _sidePanelVisible = false),
+              builder: () => BrowserPanel(
+                workspaceId: 'workspace',
+                conversationId: 'conversation',
+                toolResultTabs: const <SidebarToolResultTab>[],
+                selectedToolResultTabId: null,
+                onSelectToolResultTab: (id) => expect(id, isNotNull),
+                onCloseToolResultTab: (id) => expect(id, isNotEmpty),
+              ),
             ),
           ),
         ),

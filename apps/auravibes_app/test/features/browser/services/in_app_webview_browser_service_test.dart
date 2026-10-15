@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/browser/services/browser_web_view_adapter.dart';
+import 'package:auravibes_app/features/browser/services/browser_web_view_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:in_app_webview_flutter/in_app_webview_flutter.dart';
@@ -15,18 +16,19 @@ void main() {
       InAppWebViewPlatform.instance = platform;
       final service = BrowserWebViewAdapter();
 
-      Widget view() => MaterialApp(
-        home: service.buildView(
-          sessionId: 'conversation',
-          tabId: 'tab',
-          initialUrl: 'about:blank',
-          onTitleChanged: (_) => expect(true, isTrue),
-          onLoadStart: (_) => expect(true, isTrue),
-          onLoadStop: (_) => expect(true, isTrue),
-          onMainFrameError: () => expect(true, isTrue),
-          onVisitedHistory: (_) => expect(true, isTrue),
-        ),
+      BrowserWebViewRequest request(String initialUrl) => (
+        sessionId: 'conversation',
+        tabId: 'tab',
+        initialUrl: initialUrl,
+        onTitleChanged: (_) => expect(true, isTrue),
+        onLoadStart: (_) => expect(true, isTrue),
+        onLoadStop: (_) => expect(true, isTrue),
+        onMainFrameError: () => expect(true, isTrue),
+        onVisitedHistory: (_) => expect(true, isTrue),
       );
+
+      Widget view() =>
+          MaterialApp(home: service.buildView(request('about:blank')));
 
       await tester.pumpWidget(view());
       expect(
@@ -69,18 +71,19 @@ void main() {
       InAppWebViewPlatform.instance = platform;
       final service = BrowserWebViewAdapter();
 
-      Widget view() => MaterialApp(
-        home: service.buildView(
-          sessionId: 'conversation',
-          tabId: 'tab',
-          initialUrl: 'https://example.com',
-          onTitleChanged: (_) => expect(true, isTrue),
-          onLoadStart: (_) => expect(true, isTrue),
-          onLoadStop: (_) => expect(true, isTrue),
-          onMainFrameError: () => expect(true, isTrue),
-          onVisitedHistory: (_) => expect(true, isTrue),
-        ),
+      BrowserWebViewRequest request(String initialUrl) => (
+        sessionId: 'conversation',
+        tabId: 'tab',
+        initialUrl: initialUrl,
+        onTitleChanged: (_) => expect(true, isTrue),
+        onLoadStart: (_) => expect(true, isTrue),
+        onLoadStop: (_) => expect(true, isTrue),
+        onMainFrameError: () => expect(true, isTrue),
+        onVisitedHistory: (_) => expect(true, isTrue),
       );
+
+      Widget view() =>
+          MaterialApp(home: service.buildView(request('https://example.com')));
 
       await tester.pumpWidget(view());
       final keepAlive = platform.creationParams.single.keepAlive;

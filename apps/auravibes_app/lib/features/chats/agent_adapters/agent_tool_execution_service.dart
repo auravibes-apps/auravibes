@@ -63,6 +63,14 @@ typedef _ToolResultsRequest = ({
   List<agent.AgentToolResultUpdate> updates,
 });
 
+typedef _PersistToolResultsRequest = ({
+  MessageRepository messageRepository,
+  PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
+  _ToolResultsRequest request,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> toolCalls,
+});
+
 typedef _StoppedToolCallsRequest = ({
   MessageRepository messageRepository,
   String messageId,
@@ -399,51 +407,80 @@ Future<void> _updateToolResults(
     metadata.toolCalls,
     request.updates,
   );
-  await _persistToolResults(
-    messageRepository,
-    persistToolCallResultsUsecase,
-    request,
-    metadata,
-    updatedToolCalls,
+  await _persistToolResults((
+    messageRepository: messageRepository,
+    persistToolCallResultsUsecase: persistToolCallResultsUsecase,
+    request: request,
+    metadata: metadata,
+    toolCalls: updatedToolCalls,
+  ));
+}
+
+Future<void> _persistToolResults(_PersistToolResultsRequest request) async {
+  final patch = _toolResultsPatch(request);
+  final media = _toolResultMedia(request.request.updates);
+  await _persistToolResultsByMedia(request, patch, media);
+}
+
+MessagePatch _toolResultsPatch(_PersistToolResultsRequest request) {
+  final metadata = request.metadata.copyWith(toolCalls: request.toolCalls);
+
+  return MessagePatch(
+    metadata: metadata,
+    status: metadata.hasPendingToolCalls ? null : .sent,
   );
 }
 
-Future<void> _persistToolResults(
-  MessageRepository messageRepository,
-  PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
-  _ToolResultsRequest request,
-  MessageMetadataEntity metadata,
-  List<MessageToolCallEntity> toolCalls,
+Future<void> _persistToolResultsByMedia(
+  _PersistToolResultsRequest request,
+  MessagePatch patch,
+  List<ToolCallResultMedia> media,
 ) async {
-  final updatedMetadata = metadata.copyWith(toolCalls: toolCalls);
-  final patch = MessagePatch(
-    metadata: updatedMetadata,
-    status: updatedMetadata.hasPendingToolCalls ? null : .sent,
-  );
-  final media = [
-    for (final update in request.updates)
-      if (update.media.isNotEmpty)
-        (toolCallId: update.toolCallId, media: update.media),
-  ];
-  if (media.isNotEmpty && persistToolCallResultsUsecase == null) {
+  final usecase = request.persistToolCallResultsUsecase;
+  if (media.isNotEmpty && usecase == null) {
     throw StateError('Tool result media persistence is not configured.');
   }
-  final persist = persistToolCallResultsUsecase;
-  if (persist != null) {
-    await persist.call(
-      messageId: request.messageId,
-      conversationId: request.conversationId,
-      patch: patch,
-      media: media,
-    );
-  } else {
-    final _ = await messageRepository.patchMessage(
-      request.messageId,
-      patch,
-      conversationId: request.conversationId,
-    );
+  if (usecase == null) {
+    await _persistToolResultsWithoutMedia(request, patch);
+
+    return;
   }
+
+  await _persistToolResultsWithMedia(usecase, request.request, patch, media);
 }
+
+Future<void> _persistToolResultsWithoutMedia(
+  _PersistToolResultsRequest request,
+  MessagePatch patch,
+) async {
+  final repository = request.messageRepository;
+  final persistenceRequest = request.request;
+  final _ = await repository.patchMessage(
+    persistenceRequest.messageId,
+    patch,
+    conversationId: persistenceRequest.conversationId,
+  );
+}
+
+Future<void> _persistToolResultsWithMedia(
+  PersistToolCallResultsUsecase usecase,
+  _ToolResultsRequest request,
+  MessagePatch patch,
+  List<ToolCallResultMedia> media,
+) => usecase.call((
+  messageId: request.messageId,
+  conversationId: request.conversationId,
+  patch: patch,
+  media: media,
+));
+
+List<ToolCallResultMedia> _toolResultMedia(
+  List<agent.AgentToolResultUpdate> updates,
+) => [
+  for (final update in updates)
+    if (update.media.isNotEmpty)
+      (toolCallId: update.toolCallId, media: update.media),
+];
 
 List<MessageToolCallEntity> _toolCallsWithResults(
   List<MessageToolCallEntity> toolCalls,
@@ -491,13 +528,17 @@ void _logToolExecutionError(_ToolExecutionErrorRequest request) {
   );
 }
 
-String _toolExecutionErrorMessage(Object error) => switch (error) {
-  UnsupportedError(:final message) => LogRedaction.redact(message),
-  StateError(:final message) => LogRedaction.redact(message),
-  TimeoutException(:final message, :final duration) =>
-    '${LogRedaction.redact(message)} duration=${duration?.inSeconds}s',
-  _ => LogRedaction.redact(error),
-};
+String _toolExecutionErrorMessage(Object error) {
+  const redact = LogRedaction.redact;
+
+  return switch (error) {
+    UnsupportedError(:final message) => redact(message),
+    StateError(:final message) => redact(message),
+    TimeoutException(:final message, :final duration) =>
+      '${redact(message)} duration=${duration?.inSeconds}s',
+    _ => redact(error),
+  };
+}
 
 final Provider<AgentToolExecutionService> agentToolExecutionServiceProvider =
     Provider<AgentToolExecutionService>((ref) {

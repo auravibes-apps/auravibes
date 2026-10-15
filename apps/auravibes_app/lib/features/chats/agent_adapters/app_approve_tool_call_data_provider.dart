@@ -531,31 +531,42 @@ MessageToolCallEntity _applyToolCallPatch(
   fullOutputForContext: request.fullOutputForContext,
 );
 
-Future<void> _persistToolCallPatch(_ToolCallPersistenceRequest request) async {
+Future<void> _persistToolCallPatch(_ToolCallPersistenceRequest request) {
+  final usecase = request.persistToolCallResultsUsecase;
+  if (request.media.isNotEmpty && usecase == null) {
+    throw StateError('Tool result media persistence is not configured.');
+  }
+
   final patch = MessagePatch(
     metadata: request.metadata,
     status: request.status,
   );
-  if (request.media.isNotEmpty &&
-      request.persistToolCallResultsUsecase == null) {
-    throw StateError('Tool result media persistence is not configured.');
-  }
-  final persist = request.persistToolCallResultsUsecase;
-  if (persist != null) {
-    await persist.call(
-      messageId: request.messageId,
-      conversationId: request.conversationId,
-      patch: patch,
-      media: [(toolCallId: request.toolCallId, media: request.media)],
-    );
-  } else {
-    final _ = await request.messageRepository.patchMessage(
-      request.messageId,
-      patch,
-      conversationId: request.conversationId,
-    );
-  }
+  if (usecase == null) return _patchApprovedToolCall(request, patch);
+
+  return _persistApprovedToolCallMedia(request, usecase, patch);
 }
+
+Future<void> _patchApprovedToolCall(
+  _ToolCallPersistenceRequest request,
+  MessagePatch patch,
+) async {
+  final _ = await request.messageRepository.patchMessage(
+    request.messageId,
+    patch,
+    conversationId: request.conversationId,
+  );
+}
+
+Future<void> _persistApprovedToolCallMedia(
+  _ToolCallPersistenceRequest request,
+  PersistToolCallResultsUsecase usecase,
+  MessagePatch patch,
+) => usecase.call((
+  messageId: request.messageId,
+  conversationId: request.conversationId,
+  patch: patch,
+  media: [(toolCallId: request.toolCallId, media: request.media)],
+));
 
 void _logToolExecutionError(_ToolExecutionErrorRequest request) {
   _logger.severe(

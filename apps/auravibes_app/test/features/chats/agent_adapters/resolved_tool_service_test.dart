@@ -935,7 +935,7 @@ void main() {
       ).thenAnswer(
         (_) async => [
           SkillManifest(
-            slug: browserSkillSlug,
+            slug: AppSkillRegistry.browserSkillSlug,
             title: 'Browser',
             description: 'Use browser.',
             revision: 'browser-r1',
@@ -1034,7 +1034,7 @@ void main() {
             workspaceId: 'workspace-1',
             toolIdentifier: callSkillToolName,
             arguments: const {
-              'skill': browserSkillSlug,
+              'skill': AppSkillRegistry.browserSkillSlug,
               'tool': 'browser_read_page',
               'args': {'tabId': 'tab-1', 'format': 'text'},
               'revision': 'browser-r1',

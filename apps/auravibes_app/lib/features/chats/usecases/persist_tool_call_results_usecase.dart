@@ -9,57 +9,106 @@ typedef ToolCallResultMedia = ({
   String toolCallId,
   List<agent.AgentToolResultMedia> media,
 });
+typedef PersistToolCallResultsRequest = ({
+  String messageId,
+  String conversationId,
+  MessagePatch patch,
+  List<ToolCallResultMedia> media,
+});
 
 class const PersistToolCallResultsUsecase({
   required final MessageRepository messageRepository,
   required final LocalChatAttachmentService attachmentService,
 }) {
-  Future<void> call({
-    required String messageId,
-    required String conversationId,
-    required MessagePatch patch,
-    required List<ToolCallResultMedia> media,
-  }) async {
-    if (media.every((result) => result.media.isEmpty)) {
-      final _ = await messageRepository.patchMessage(
-        messageId,
-        patch,
-        conversationId: conversationId,
-      );
+  Future<void> call(PersistToolCallResultsRequest request) =>
+      _persistToolCallResults(this, request);
+}
 
-      return;
-    }
+Future<void> _persistToolCallResults(
+  PersistToolCallResultsUsecase usecase,
+  PersistToolCallResultsRequest request,
+) {
+  if (request.media.every((result) => result.media.isEmpty)) {
+    return _patchToolCallResultWithoutMedia(usecase, request);
+  }
 
-    final attachments = <MessageAttachmentToCreate>[];
-    try {
-      for (final result in media) {
-        for (final item in result.media) {
-          attachments.add(
-            await attachmentService.createToolResultAttachment(
-              bytes: item.bytes,
-              fileName: item.fileName,
-              mimeType: item.mimeType,
-              toolCallId: result.toolCallId,
-            ),
-          );
-        }
-      }
-      final _ = await messageRepository.patchMessageWithAttachments(
-        messageId,
-        patch,
-        conversationId: conversationId,
-        attachments: attachments,
+  return _persistToolCallResultMedia(usecase, request);
+}
+
+Future<void> _persistToolCallResultMedia(
+  PersistToolCallResultsUsecase usecase,
+  PersistToolCallResultsRequest request,
+) async {
+  final attachments = <MessageAttachmentToCreate>[];
+  try {
+    await _createToolResultAttachments(usecase, request.media, attachments);
+    await _patchToolCallResultWithMedia(usecase, request, attachments);
+  } on Object {
+    await _deleteDraftToolResultAttachments(usecase, attachments);
+    rethrow;
+  }
+}
+
+Future<void> _patchToolCallResultWithoutMedia(
+  PersistToolCallResultsUsecase usecase,
+  PersistToolCallResultsRequest request,
+) async {
+  final _ = await usecase.messageRepository.patchMessage(
+    request.messageId,
+    request.patch,
+    conversationId: request.conversationId,
+  );
+}
+
+Future<void> _createToolResultAttachments(
+  PersistToolCallResultsUsecase usecase,
+  List<ToolCallResultMedia> media,
+  List<MessageAttachmentToCreate> attachments,
+) async {
+  for (final result in media) {
+    for (final item in result.media) {
+      attachments.add(
+        await usecase.attachmentService.createToolResultAttachment(
+          bytes: item.bytes,
+          fileName: item.fileName,
+          mimeType: item.mimeType,
+          toolCallId: result.toolCallId,
+        ),
       );
-    } on Object {
-      for (final attachment in attachments) {
-        try {
-          await attachmentService.deleteAttachment(attachment.localPath);
-        } on Object {
-          // Preserve persistence failure if draft cleanup fails too.
-        }
-      }
-      rethrow;
     }
+  }
+}
+
+Future<void> _patchToolCallResultWithMedia(
+  PersistToolCallResultsUsecase usecase,
+  PersistToolCallResultsRequest request,
+  List<MessageAttachmentToCreate> attachments,
+) async {
+  final _ = await usecase.messageRepository.patchMessageWithAttachments((
+    id: request.messageId,
+    patch: request.patch,
+    conversationId: request.conversationId,
+    attachments: attachments,
+  ));
+}
+
+Future<void> _deleteDraftToolResultAttachments(
+  PersistToolCallResultsUsecase usecase,
+  List<MessageAttachmentToCreate> attachments,
+) async {
+  for (final attachment in attachments) {
+    await _tryDeleteDraftToolResultAttachment(usecase, attachment.localPath);
+  }
+}
+
+Future<void> _tryDeleteDraftToolResultAttachment(
+  PersistToolCallResultsUsecase usecase,
+  String localPath,
+) async {
+  try {
+    await usecase.attachmentService.deleteAttachment(localPath);
+  } on Object {
+    // Preserve persistence failure if draft cleanup fails too.
   }
 }
 

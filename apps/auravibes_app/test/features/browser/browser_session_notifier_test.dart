@@ -15,7 +15,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final runtime = FakeBrowserWebViewService();
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -59,7 +61,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final runtime = FakeBrowserWebViewService();
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -174,7 +178,9 @@ void main() {
         'html': '<main><h1>Heading</h1><p>Visible text</p></main>',
       };
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -219,7 +225,9 @@ void main() {
         ],
       };
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -246,7 +254,9 @@ void main() {
     final runtime = FakeBrowserWebViewService()
       ..result = {'value': List.filled(20000, 'x').join()};
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -271,7 +281,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final runtime = FakeBrowserWebViewService()..result = {'clicked': true};
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -301,7 +313,9 @@ void main() {
     final runtime = FakeBrowserWebViewService()
       ..result = {'error': 'Selector must match exactly one element.'};
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -327,7 +341,9 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final runtime = FakeBrowserWebViewService();
       final container = ProviderContainer(
-        overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+        overrides: [
+          browserWebViewServiceProvider.overrideWithValue(runtime.service),
+        ],
       );
       addTearDown(container.dispose);
       final provider = browserSessionProvider('workspace', 'conversation');
@@ -376,7 +392,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final runtime = FakeBrowserWebViewService();
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -402,7 +420,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final runtime = FakeBrowserWebViewService();
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -447,7 +467,9 @@ void main() {
           'elements': elements,
         };
       final container = ProviderContainer(
-        overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+        overrides: [
+          browserWebViewServiceProvider.overrideWithValue(runtime.service),
+        ],
       );
       addTearDown(container.dispose);
       final provider = browserSessionProvider('workspace', 'conversation');
@@ -483,7 +505,9 @@ void main() {
         ],
       };
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -534,7 +558,9 @@ void main() {
         },
       ]);
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -582,7 +608,9 @@ void main() {
         ],
       };
     final container = ProviderContainer(
-      overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+      overrides: [
+        browserWebViewServiceProvider.overrideWithValue(runtime.service),
+      ],
     );
     addTearDown(container.dispose);
     final provider = browserSessionProvider('workspace', 'conversation');
@@ -631,7 +659,9 @@ void main() {
         ..nextResult = {'x': 0, 'y': 500}
         ..screenshotBytes = .fromList([137, 80, 78, 71]);
       final container = ProviderContainer(
-        overrides: [browserWebViewServiceProvider.overrideWithValue(runtime)],
+        overrides: [
+          browserWebViewServiceProvider.overrideWithValue(runtime.service),
+        ],
       );
       addTearDown(container.dispose);
       final provider = browserSessionProvider('workspace', 'conversation');

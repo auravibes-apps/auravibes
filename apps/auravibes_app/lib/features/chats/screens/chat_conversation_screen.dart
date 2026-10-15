@@ -14,6 +14,7 @@ import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
+import 'package:auravibes_app/features/browser/models/browser_session_state.dart';
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/browser/screens/browser_panel.dart';
@@ -77,6 +78,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final _logger = Logger('chat_conversation_screen');
 
@@ -239,6 +241,52 @@ typedef _LoadedRuntimeStateRequest = ({
 });
 
 typedef _LoadedRuntimeStateBuildRequest = _LoadedRuntimeStateRequest;
+
+typedef _LoadedSidePanelValues = ({
+  bool isVisible,
+  bool isMounted,
+  double widthPercent,
+  List<SidebarToolResultTab> toolResultTabs,
+  String? selectedToolResultTabId,
+});
+typedef _LoadedConversationSidePanel = ({
+  _LoadedSidePanelValues values,
+  _LoadedSidePanelActions actions,
+});
+typedef _LoadedSidePanelRequest = ({
+  BuildContext context,
+  WidgetRef ref,
+  _SidePanelHookValues panel,
+  _ToolResultTabHookValues tabs,
+  AsyncValue<SharedPreferences> preferencesAsync,
+  int? browserActionRevision,
+  ObjectRef<bool> hasAutoOpenedSidebar,
+});
+
+typedef _SidePanelHookValues = ({
+  ValueNotifier<bool> visible,
+  ValueNotifier<bool> mounted,
+  ValueNotifier<double> widthPercent,
+  _SidePanelHookFlags flags,
+});
+
+typedef _ToolResultTabHookValues = ({
+  ValueNotifier<List<SidebarToolResultTab>> tabs,
+  ValueNotifier<String?> selectedId,
+});
+typedef _BrowserActionSidebarEffectRequest = ({
+  int? revision,
+  AsyncValue<SharedPreferences> preferencesAsync,
+  ValueNotifier<String?> selectedTabId,
+  ObjectRef<bool> hasAutoOpenedSidebar,
+  VoidCallback openSidebar,
+});
+
+class _SidePanelHookFlags {
+  bool preferencesLoaded = false;
+  bool visibilityChanged = false;
+  bool widthChanged = false;
+}
 
 class const ChatConversationScreen({
   required final String workspaceId,
@@ -1199,150 +1247,326 @@ class const _LoadedChatConversationView({
     final browserSession = ref
         .watch(browserSessionProvider(data.workspaceId, data.conversation.id))
         .value;
-    final preferencesAsync = ref.watch(sharedPreferencesProvider);
-    final preferences = preferencesAsync.value;
-    final toolResultTabs = useState<List<SidebarToolResultTab>>([]);
-    final selectedToolResultTabId = useState<String?>(null);
-    final sidePanelVisible = useState(false);
-    final sidePanelMounted = useState(false);
-    final sidePanelWidthPercent = useState(
-      SidePanelPreferencesRepository.defaultWidthPercent,
+    final sidePanel = _useLoadedConversationSidePanel(
+      context: context,
+      ref: ref,
+      browserActionRevision: browserSession?.agentActionRevision,
     );
-    final preferencesLoaded = useRef(false);
-    final sidePanelVisibilityChanged = useRef(false);
-    final sidePanelWidthChanged = useRef(false);
-    final hasAutoOpenedSidebar = useRef(false);
-    void setSidePanelOpen({required bool isOpen}) {
-      sidePanelVisibilityChanged.value = true;
-      if (isOpen) sidePanelMounted.value = true;
-      sidePanelVisible.value = isOpen;
-      unawaited(_persistSidePanelOpen(ref, isOpen: isOpen));
-    }
 
-    useEffect(
-      () {
-        if (preferences == null && !preferencesAsync.hasError) return null;
-        if (preferences != null && !preferencesLoaded.value) {
-          preferencesLoaded.value = true;
-          final stored = SidePanelPreferencesRepository(preferences);
-          if (!sidePanelWidthChanged.value) {
-            sidePanelWidthPercent.value = stored.widthPercent;
-          }
-          if (!sidePanelVisibilityChanged.value) {
-            sidePanelMounted.value = stored.isOpen;
-            sidePanelVisible.value = stored.isOpen;
-          }
-        }
-        _openSidebarForBrowserAction(
-          browserSession?.agentActionRevision,
-          hasAutoOpenedSidebar,
-          selectedToolResultTabId,
-          () => setSidePanelOpen(isOpen: true),
-        );
-
-        return null;
-      },
-      [
-        browserSession?.agentActionRevision,
-        preferences,
-        preferencesAsync.hasError,
-      ],
+    return _LoadedChatConversationScreen(
+      data: data,
+      browserSession: browserSession,
+      sidePanel: sidePanel,
     );
-    void showSidePanel() {
-      FocusScope.of(context).unfocus();
-      setSidePanelOpen(isOpen: true);
-    }
+  }
+}
 
-    void toggleSidePanel() {
-      if (sidePanelVisible.value) {
-        setSidePanelOpen(isOpen: false);
+_LoadedConversationSidePanel _useLoadedConversationSidePanel({
+  required BuildContext context,
+  required WidgetRef ref,
+  required int? browserActionRevision,
+}) {
+  final preferencesAsync = ref.watch(sharedPreferencesProvider);
+  final panel = _useSidePanelHookValues();
+  final tabs = _useToolResultTabHookValues();
+  final hasAutoOpenedSidebar = useRef(false);
 
-        return;
-      }
-      showSidePanel();
-    }
+  return _prepareLoadedConversationSidePanel((
+    context: context,
+    ref: ref,
+    panel: panel,
+    tabs: tabs,
+    preferencesAsync: preferencesAsync,
+    browserActionRevision: browserActionRevision,
+    hasAutoOpenedSidebar: hasAutoOpenedSidebar,
+  ));
+}
 
-    void updateSidePanelWidth(double widthPercent) {
-      sidePanelWidthChanged.value = true;
-      sidePanelWidthPercent.value = widthPercent;
-      unawaited(_persistSidePanelWidth(ref, widthPercent));
-    }
+_LoadedConversationSidePanel _prepareLoadedConversationSidePanel(
+  _LoadedSidePanelRequest request,
+) {
+  _useStoredSidePanelPreferences(request.preferencesAsync, request.panel);
+  _useBrowserActionSidebarEffect((
+    revision: request.browserActionRevision,
+    preferencesAsync: request.preferencesAsync,
+    selectedTabId: request.tabs.selectedId,
+    hasAutoOpenedSidebar: request.hasAutoOpenedSidebar,
+    openSidebar: () =>
+        _setSidePanelOpen(request.ref, request.panel, isOpen: true),
+  ));
 
-    void openToolResult(SidebarToolResultTab tab) {
-      toolResultTabs.value = [
-        ...toolResultTabs.value.where((existing) => existing.id != tab.id),
-        tab,
-      ];
-      selectedToolResultTabId.value = tab.id;
-      showSidePanel();
-    }
+  return _loadedConversationSidePanelState(request);
+}
 
-    void closeToolResult(String id) {
-      toolResultTabs.value = toolResultTabs.value
-          .where((tab) => tab.id != id)
-          .toList();
-      if (selectedToolResultTabId.value == id) {
-        selectedToolResultTabId.value = null;
-      }
-    }
+_SidePanelHookValues _useSidePanelHookValues() => (
+  visible: useState(false),
+  mounted: useState(false),
+  widthPercent: useState(SidePanelPreferencesRepository.defaultWidthPercent),
+  flags: useMemoized(_SidePanelHookFlags.new),
+);
+
+_ToolResultTabHookValues _useToolResultTabHookValues() => (
+  tabs: useState<List<SidebarToolResultTab>>([]),
+  selectedId: useState<String?>(null),
+);
+
+void _useStoredSidePanelPreferences(
+  AsyncValue<SharedPreferences> preferencesAsync,
+  _SidePanelHookValues panel,
+) {
+  useEffect(() => _restoreSidePanelPreferences(preferencesAsync, panel), [
+    preferencesAsync.value,
+    preferencesAsync.hasError,
+  ]);
+}
+
+VoidCallback? _restoreSidePanelPreferences(
+  AsyncValue<SharedPreferences> preferencesAsync,
+  _SidePanelHookValues panel,
+) {
+  final preferences = preferencesAsync.value;
+  if (preferences == null && !preferencesAsync.hasError) return null;
+  if (preferences != null) _applySidePanelPreferences(preferences, panel);
+
+  return null;
+}
+
+void _applySidePanelPreferences(
+  SharedPreferences preferences,
+  _SidePanelHookValues panel,
+) {
+  final flags = panel.flags;
+  if (flags.preferencesLoaded) return;
+  flags.preferencesLoaded = true;
+  final stored = SidePanelPreferencesRepository(preferences);
+  if (!flags.widthChanged) {
+    panel.widthPercent.value = stored.widthPercent;
+  }
+  if (flags.visibilityChanged) return;
+  panel.mounted.value = stored.isOpen;
+  panel.visible.value = stored.isOpen;
+}
+
+void _useBrowserActionSidebarEffect(
+  _BrowserActionSidebarEffectRequest request,
+) {
+  useEffect(() => _openBrowserActionSidebar(request), [
+    request.revision,
+    request.preferencesAsync.value,
+    request.preferencesAsync.hasError,
+  ]);
+}
+
+VoidCallback? _openBrowserActionSidebar(
+  _BrowserActionSidebarEffectRequest request,
+) {
+  if (request.preferencesAsync.value == null &&
+      !request.preferencesAsync.hasError) {
+    return null;
+  }
+  _openSidebarForBrowserAction(
+    request.revision,
+    request.hasAutoOpenedSidebar,
+    request.selectedTabId,
+    request.openSidebar,
+  );
+
+  return null;
+}
+
+_LoadedConversationSidePanel _loadedConversationSidePanelState(
+  _LoadedSidePanelRequest request,
+) => (
+  values: _loadedSidePanelValues(request.panel, request.tabs),
+  actions: _loadedSidePanelActions(request),
+);
+
+_LoadedSidePanelValues _loadedSidePanelValues(
+  _SidePanelHookValues panel,
+  _ToolResultTabHookValues tabs,
+) => (
+  isVisible: panel.visible.value,
+  isMounted: panel.mounted.value,
+  widthPercent: panel.widthPercent.value,
+  toolResultTabs: tabs.tabs.value,
+  selectedToolResultTabId: tabs.selectedId.value,
+);
+
+_LoadedSidePanelActions _loadedSidePanelActions(
+  _LoadedSidePanelRequest request,
+) => _LoadedSidePanelActions(
+  context: request.context,
+  ref: request.ref,
+  panel: request.panel,
+  tabs: request.tabs,
+);
+
+void _setSidePanelOpen(
+  WidgetRef ref,
+  _SidePanelHookValues panel, {
+  required bool isOpen,
+}) {
+  panel.flags.visibilityChanged = true;
+  if (isOpen) panel.mounted.value = true;
+  panel.visible.value = isOpen;
+  unawaited(_persistSidePanelOpen(ref, isOpen: isOpen));
+}
+
+void _toggleSidePanel(
+  BuildContext context,
+  WidgetRef ref,
+  _SidePanelHookValues panel,
+) {
+  if (!panel.visible.value) {
+    FocusScope.of(context).unfocus();
+    _setSidePanelOpen(ref, panel, isOpen: true);
+
+    return;
+  }
+  _setSidePanelOpen(ref, panel, isOpen: false);
+}
+
+void _updateSidePanelWidth(
+  WidgetRef ref,
+  _SidePanelHookValues panel,
+  double widthPercent,
+) {
+  panel.flags.widthChanged = true;
+  panel.widthPercent.value = widthPercent;
+  unawaited(_persistSidePanelWidth(ref, widthPercent));
+}
+
+void _closeToolResult(_ToolResultTabHookValues tabs, String id) {
+  tabs.tabs.value = tabs.tabs.value.where((tab) => tab.id != id).toList();
+  if (tabs.selectedId.value == id) tabs.selectedId.value = null;
+}
+
+class const _LoadedSidePanelActions({
+  required final BuildContext context,
+  required final WidgetRef ref,
+  required final _SidePanelHookValues panel,
+  required final _ToolResultTabHookValues tabs,
+}) {
+  void onToggle() => _toggleSidePanel(context, ref, panel);
+
+  void onClose() => _setSidePanelOpen(ref, panel, isOpen: false);
+
+  void onWidthChanged(double width) => _updateSidePanelWidth(ref, panel, width);
+
+  void onOpenToolResult(SidebarToolResultTab tab) {
+    _upsertToolResultTab(tabs, tab);
+    _setSelectedToolResult(tabs.selectedId, tab.id);
+    FocusScope.of(context).unfocus();
+    _setSidePanelOpen(ref, panel, isOpen: true);
+  }
+
+  void onCloseToolResult(String id) => _closeToolResult(tabs, id);
+
+  void onSelectToolResult(String? id) =>
+      _setSelectedToolResult(tabs.selectedId, id);
+}
+
+void _upsertToolResultTab(
+  _ToolResultTabHookValues tabs,
+  SidebarToolResultTab tab,
+) {
+  final existingTabs = tabs.tabs.value;
+  final updatedTabs = existingTabs.where((existing) => existing.id != tab.id);
+  tabs.tabs.value = [...updatedTabs, tab];
+}
+
+void _setSelectedToolResult(ValueNotifier<String?> selectedId, String? id) =>
+    selectedId.value = id;
+
+class const _LoadedChatConversationScreen({
+  required final _LoadedChatConversationData data,
+  required final BrowserSessionState? browserSession,
+  required final _LoadedConversationSidePanel sidePanel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final sideValues = sidePanel.values;
+    final actions = sidePanel.actions;
 
     return ChatPrimaryScrollController(
       child: AuraScreen(
-        child: ResponsiveConversationLayout(
-          mainContent: _ChatConversationBody(
-            data: data,
-            onOpenToolResult: openToolResult,
-          ),
-          sidePanelVisible: sidePanelVisible.value,
-          sidePanelMounted: sidePanelMounted.value,
-          sidePanelWidthPercent: sidePanelWidthPercent.value,
-          onSidePanelWidthChanged: updateSidePanelWidth,
-          onSidePanelClose: () => setSidePanelOpen(isOpen: false),
-          sidePanelBuilder: () => BrowserPanel(
-            workspaceId: data.workspaceId,
-            conversationId: data.conversation.id,
-            toolResultTabs: toolResultTabs.value,
-            selectedToolResultTabId: selectedToolResultTabId.value,
-            onSelectToolResultTab: (id) => selectedToolResultTabId.value = id,
-            onCloseToolResultTab: closeToolResult,
-          ),
-        ),
+        child: _LoadedChatConversationLayout(data: data, sidePanel: sidePanel),
         appBar: _ChatConversationAppBar(
-          workspaceId: data.workspaceId,
-          conversationId: data.conversation.id,
-          title: data.conversation.title,
-          sidePanelVisible: sidePanelVisible.value,
-          tabCount: browserSession == null
-              ? null
-              : browserSession.tabs.length + toolResultTabs.value.length,
-          onSidebarToggle: toggleSidePanel,
-          leading: data.leading,
+          data: data,
+          sidePanelVisible: sideValues.isVisible,
+          tabCount: _browserTabCount(browserSession, sideValues.toolResultTabs),
+          onSidebarToggle: actions.onToggle,
         ),
       ),
     );
   }
 }
 
+int? _browserTabCount(
+  BrowserSessionState? browserSession,
+  List<SidebarToolResultTab> resultTabs,
+) => browserSession == null
+    ? null
+    : browserSession.tabs.length + resultTabs.length;
+
+class const _LoadedChatConversationLayout({
+  required final _LoadedChatConversationData data,
+  required final _LoadedConversationSidePanel sidePanel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final values = sidePanel.values;
+    final actions = sidePanel.actions;
+
+    return ResponsiveConversationLayout(
+      mainContent: _LoadedChatConversationMain(data: data, actions: actions),
+      sidePanel: _loadedChatConversationSidePanel(data, values, actions),
+    );
+  }
+}
+
+ResponsiveConversationSidePanel _loadedChatConversationSidePanel(
+  _LoadedChatConversationData data,
+  _LoadedSidePanelValues values,
+  _LoadedSidePanelActions actions,
+) => .new(
+  visible: values.isVisible,
+  mounted: values.isMounted,
+  widthPercent: values.widthPercent,
+  onWidthChanged: actions.onWidthChanged,
+  onClose: actions.onClose,
+  builder: () =>
+      _LoadedChatBrowserPanel(data: data, values: values, actions: actions),
+);
+
+class const _LoadedChatConversationMain({
+  required final _LoadedChatConversationData data,
+  required final _LoadedSidePanelActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ChatConversationBody(
+    data: data,
+    onOpenToolResult: actions.onOpenToolResult,
+  );
+}
+
 class const _ChatConversationAppBar({
-  required final String workspaceId,
-  required final String conversationId,
-  required final String title,
+  required final _LoadedChatConversationData data,
   required final bool sidePanelVisible,
   required final int? tabCount,
   required final VoidCallback onSidebarToggle,
-  required final Widget? leading,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) => AuraAppBarWithDrawer(
-    title: Text(title),
+    title: Text(data.conversation.title),
     actions: [
-      ModelUsageHeaderButton(conversationId: conversationId),
+      ModelUsageHeaderButton(conversationId: data.conversation.id),
       BackgroundWorkHeaderButton(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
+        workspaceId: data.workspaceId,
+        conversationId: data.conversation.id,
       ),
       ConversationSidebarToggleButton(
         isPanelVisible: sidePanelVisible,
@@ -1350,7 +1574,23 @@ class const _ChatConversationAppBar({
         onPressed: onSidebarToggle,
       ),
     ],
-    leading: leading,
+    leading: data.leading,
+  );
+}
+
+class const _LoadedChatBrowserPanel({
+  required final _LoadedChatConversationData data,
+  required final _LoadedSidePanelValues values,
+  required final _LoadedSidePanelActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => BrowserPanel(
+    workspaceId: data.workspaceId,
+    conversationId: data.conversation.id,
+    toolResultTabs: values.toolResultTabs,
+    selectedToolResultTabId: values.selectedToolResultTabId,
+    onSelectToolResultTab: actions.onSelectToolResult,
+    onCloseToolResultTab: actions.onCloseToolResult,
   );
 }
 
@@ -2964,23 +3204,27 @@ class const _ChatListErrorOrResult({
   Widget build(BuildContext context) {
     final asyncError = chatMessages.asError;
     if (asyncError != null) {
-      return _ChatListError(
-        error: asyncError.error,
-        stackTrace: asyncError.stackTrace,
-      );
+      return _buildError(asyncError);
     }
 
-    return _ChatListResult(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-      messages: chatMessages.value ?? const <MessageEntity>[],
-      pendingToolCalls: pendingToolCalls,
-      isStopRequested: isStopRequested,
-      showThinking: showThinking,
-      onRetryMessage: onRetryMessage,
-      onOpenToolResult: onOpenToolResult,
-    );
+    return _buildResult();
   }
+}
+
+extension on _ChatListErrorOrResult {
+  Widget _buildError(AsyncError<List<MessageEntity>> error) =>
+      _ChatListError(error: error.error, stackTrace: error.stackTrace);
+
+  Widget _buildResult() => _ChatListResult(
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+    messages: this.chatMessages.value ?? const <MessageEntity>[],
+    pendingToolCalls: this.pendingToolCalls,
+    isStopRequested: isStopRequested,
+    showThinking: showThinking,
+    onRetryMessage: onRetryMessage,
+    onOpenToolResult: onOpenToolResult,
+  );
 }
 
 bool _isChatMessagesLoading(AsyncValue<List<MessageEntity>> state) =>

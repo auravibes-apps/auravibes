@@ -14,4 +14,8 @@ Future<BrowserSessionRepository> browserSessionRepository(Ref ref) async {
 }
 
 @Riverpod(keepAlive: true)
-BrowserWebViewService browserWebViewService(Ref _) => BrowserWebViewAdapter();
+BrowserWebViewService browserWebViewService(Ref _) {
+  final adapter = BrowserWebViewAdapter();
+
+  return BrowserWebViewService(host: adapter, controller: adapter);
+}

@@ -12,6 +12,30 @@ import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:genkit/genkit.dart';
 import 'package:path/path.dart' as p;
 
+typedef _AgentToolCallPromptRequest = ({
+  List<MessageToolCallEntity>? toolCalls,
+  List<MessageAttachmentEntity> attachments,
+  List<String> modalitiesInput,
+  bool supportsImageToolResults,
+  bool allowPending,
+});
+typedef _ToolResultMediaBuild = ({
+  List<agent.AgentToolResultMedia> media,
+  int totalBytes,
+});
+typedef _ToolResultMediaItem = ({Uint8List? bytes, int totalBytes});
+typedef _ToolResultMediaAttachment = ({
+  agent.AgentToolResultMedia? media,
+  int totalBytes,
+});
+typedef _ToolResultMediaCallRequest = ({
+  String toolCallId,
+  List<MessageAttachmentEntity> attachments,
+  List<String> modalitiesInput,
+  bool supportsImageToolResults,
+  int totalBytes,
+});
+
 class const BuildPromptChatMessages({
   final List<String> modalitiesInput = const [],
   final bool supportsImageToolResults = false,
@@ -160,13 +184,13 @@ Future<agent.AgentPromptMessage> _toAgentPromptMessage(
   bool supportsImageToolResults,
 ) async {
   final metadata = message.metadata;
-  final toolCalls = await _toAgentToolCalls(
-    metadata?.toolCalls,
-    message.attachments,
-    modalitiesInput,
-    supportsImageToolResults,
+  final toolCalls = await _toAgentToolCalls((
+    toolCalls: metadata?.toolCalls,
+    attachments: message.attachments,
+    modalitiesInput: modalitiesInput,
+    supportsImageToolResults: supportsImageToolResults,
     allowPending: !message.isForkReference,
-  );
+  ));
 
   return _agentPromptMessage(message, metadata, toolCalls);
 }
@@ -212,53 +236,161 @@ String _appendA2uiSurfaces(String content, MessageMetadataEntity? metadata) =>
     });
 
 Future<List<agent.AgentPromptToolCall>> _toAgentToolCalls(
-  List<MessageToolCallEntity>? toolCalls,
-  List<MessageAttachmentEntity> attachments,
-  List<String> modalitiesInput,
-  bool supportsImageToolResults, {
-  required bool allowPending,
-}) async {
+  _AgentToolCallPromptRequest request,
+) async {
   final result = <agent.AgentPromptToolCall>[];
-  var totalBytes = 0;
-  for (final toolCall in toolCalls ?? const <MessageToolCallEntity>[]) {
-    if (!allowPending && toolCall.isPending) continue;
-    final media = <agent.AgentToolResultMedia>[];
-    if (supportsImageToolResults && modalitiesInput.contains('image')) {
-      for (final attachment in attachments) {
-        if (attachment.toolCallId != toolCall.id ||
-            attachment.modality != MessageAttachmentModality.image ||
-            !_supportsAttachment(attachment, modalitiesInput)) {
-          continue;
-        }
-        final bytes = await ChatAttachmentBytes.read(attachment.localPath);
-        if (bytes == null ||
-            totalBytes + bytes.length >
-                ChatAttachmentModality.maxChatPromptAttachmentBytes) {
-          continue;
-        }
-        totalBytes += bytes.length;
-        media.add(
-          .new(
-            bytes: Uint8List.fromList(bytes),
-            mimeType: attachment.mimeType,
-            fileName: _safeFileName(attachment.fileName),
-          ),
-        );
-      }
-    }
-    result.add(
-      agent.AgentPromptToolCall(
-        id: toolCall.id,
-        name: toolCall.name,
-        arguments: toolCall.arguments,
-        isResolved: toolCall.isResolved,
-        response: toolCall.getResponseForAI(),
-        media: media,
-      ),
-    );
+  final builder = _AgentToolCallBuilder(request);
+  for (final toolCall in request.toolCalls ?? const <MessageToolCallEntity>[]) {
+    final builtCall = await builder.call(toolCall);
+    if (builtCall != null) result.add(builtCall);
   }
 
   return result;
+}
+
+class _AgentToolCallBuilder(final _AgentToolCallPromptRequest request) {
+  var _totalBytes = 0;
+
+  Future<agent.AgentPromptToolCall?> call(
+    MessageToolCallEntity toolCall,
+  ) async {
+    if (!request.allowPending && toolCall.isPending) return null;
+    final builtCall = await _agentToolCallWithMedia(
+      request,
+      toolCall,
+      _totalBytes,
+    );
+    _totalBytes = builtCall.totalBytes;
+
+    return builtCall.toolCall;
+  }
+}
+
+Future<({agent.AgentPromptToolCall toolCall, int totalBytes})>
+_agentToolCallWithMedia(
+  _AgentToolCallPromptRequest request,
+  MessageToolCallEntity toolCall,
+  int totalBytes,
+) async {
+  final builtMedia = await _toolResultMediaForCall((
+    toolCallId: toolCall.id,
+    attachments: request.attachments,
+    modalitiesInput: request.modalitiesInput,
+    supportsImageToolResults: request.supportsImageToolResults,
+    totalBytes: totalBytes,
+  ));
+
+  return (
+    toolCall: _agentPromptToolCall(toolCall, builtMedia.media),
+    totalBytes: builtMedia.totalBytes,
+  );
+}
+
+agent.AgentPromptToolCall _agentPromptToolCall(
+  MessageToolCallEntity toolCall,
+  List<agent.AgentToolResultMedia> media,
+) => agent.AgentPromptToolCall(
+  id: toolCall.id,
+  name: toolCall.name,
+  arguments: toolCall.arguments,
+  isResolved: toolCall.isResolved,
+  response: toolCall.getResponseForAI(),
+  media: media,
+);
+
+Future<_ToolResultMediaBuild> _toolResultMediaForCall(
+  _ToolResultMediaCallRequest request,
+) {
+  if (!request.supportsImageToolResults ||
+      !request.modalitiesInput.contains('image')) {
+    return Future.value((
+      media: const <agent.AgentToolResultMedia>[],
+      totalBytes: request.totalBytes,
+    ));
+  }
+
+  return _readToolResultMedia(request);
+}
+
+Future<_ToolResultMediaBuild> _readToolResultMedia(
+  _ToolResultMediaCallRequest request,
+) async {
+  final media = <agent.AgentToolResultMedia>[];
+  var totalBytes = request.totalBytes;
+  for (final attachment in request.attachments) {
+    final item = await _toolResultMediaForAttachment(
+      attachment,
+      request,
+      totalBytes,
+    );
+    totalBytes = item.totalBytes;
+    if (item.media case final result?) media.add(result);
+  }
+
+  return (media: media, totalBytes: totalBytes);
+}
+
+Future<_ToolResultMediaAttachment> _toolResultMediaForAttachment(
+  MessageAttachmentEntity attachment,
+  _ToolResultMediaCallRequest request,
+  int totalBytes,
+) async {
+  if (!_isToolResultImage(attachment, (
+    toolCallId: request.toolCallId,
+    modalitiesInput: request.modalitiesInput,
+  ))) {
+    return _unchangedToolResultMedia(totalBytes);
+  }
+  final item = await _readBoundedToolResultMedia(attachment, totalBytes);
+  final bytes = item.bytes;
+  if (bytes == null) return _unchangedToolResultMedia(item.totalBytes);
+
+  return _includedToolResultMedia(
+    attachment: attachment,
+    bytes: bytes,
+    totalBytes: item.totalBytes,
+  );
+}
+
+_ToolResultMediaAttachment _unchangedToolResultMedia(int totalBytes) =>
+    (media: null, totalBytes: totalBytes);
+
+_ToolResultMediaAttachment _includedToolResultMedia({
+  required MessageAttachmentEntity attachment,
+  required Uint8List bytes,
+  required int totalBytes,
+}) => (
+  media: agent.AgentToolResultMedia(
+    bytes: bytes,
+    mimeType: attachment.mimeType,
+    fileName: _safeFileName(attachment.fileName),
+  ),
+  totalBytes: totalBytes,
+);
+
+bool _isToolResultImage(
+  MessageAttachmentEntity attachment,
+  ({String toolCallId, List<String> modalitiesInput}) request,
+) =>
+    attachment.toolCallId == request.toolCallId &&
+    attachment.modality == MessageAttachmentModality.image &&
+    _supportsAttachment(attachment, request.modalitiesInput);
+
+Future<_ToolResultMediaItem> _readBoundedToolResultMedia(
+  MessageAttachmentEntity attachment,
+  int totalBytes,
+) async {
+  final bytes = await ChatAttachmentBytes.read(attachment.localPath);
+  if (bytes == null ||
+      totalBytes + bytes.length >
+          ChatAttachmentModality.maxChatPromptAttachmentBytes) {
+    return (bytes: null, totalBytes: totalBytes);
+  }
+
+  return (
+    bytes: Uint8List.fromList(bytes),
+    totalBytes: totalBytes + bytes.length,
+  );
 }
 
 ChatMessage _toChatMessage(agent.AgentChatMessage message) => ChatMessage(

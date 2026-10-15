@@ -3,7 +3,8 @@ import 'dart:typed_data';
 import 'package:auravibes_app/features/browser/services/browser_web_view_service.dart';
 import 'package:flutter/widgets.dart';
 
-class FakeBrowserWebViewService implements BrowserWebViewService {
+class FakeBrowserWebViewService
+    implements BrowserWebViewHostService, BrowserWebViewControllerService {
   Map<Object?, Object?>? result;
   Map<Object?, Object?>? nextResult;
   final scriptedResults = <Object?>[];
@@ -12,25 +13,15 @@ class FakeBrowserWebViewService implements BrowserWebViewService {
   int buildViewCount = 0;
   final actions = <String>[];
 
+  BrowserWebViewService get service =>
+      BrowserWebViewService(host: this, controller: this);
+
   @override
-  Widget buildView({
-    required String sessionId,
-    required String tabId,
-    required String initialUrl,
-    required ValueChanged<String?> onTitleChanged,
-    required ValueChanged<String?> onLoadStart,
-    required ValueChanged<String?> onLoadStop,
-    required VoidCallback onMainFrameError,
-    required ValueChanged<String?> onVisitedHistory,
-  }) {
+  Widget buildView(BrowserWebViewRequest request) {
     buildViewCount++;
 
     return const SizedBox.expand();
   }
-
-  @override
-  bool hasController({required String sessionId, required String tabId}) =>
-      false;
 
   @override
   Future<bool> canGoBack({
@@ -80,12 +71,6 @@ class FakeBrowserWebViewService implements BrowserWebViewService {
   }) async {
     actions.add('navigate');
   }
-
-  @override
-  Future<BrowserPageState> pageState({
-    required String sessionId,
-    required String tabId,
-  }) async => (url: null, title: null, canGoBack: false, canGoForward: false);
 
   @override
   Future<BrowserPageState?> pageStateIfAttached({

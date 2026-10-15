@@ -22,6 +22,13 @@ const _wavFormatChunkOffset = 16;
 const _mimeHeaderLength = 12;
 const int _maxToolResultAttachmentBytes = 5 * 1024 * 1024;
 
+typedef _ToolResultAttachmentRequest = ({
+  Uint8List bytes,
+  String fileName,
+  String mimeType,
+  String toolCallId,
+});
+
 class LocalChatAttachmentServiceIo({
   AudioRecorder? recorder,
   final String storageNamespace = 'auravibes_app',
@@ -51,8 +58,12 @@ class LocalChatAttachmentServiceIo({
     required String fileName,
     required String mimeType,
     required String toolCallId,
-  }) =>
-      _createToolResultAttachment(this, bytes, fileName, mimeType, toolCallId);
+  }) => _createToolResultAttachment(this, (
+    bytes: bytes,
+    fileName: fileName,
+    mimeType: mimeType,
+    toolCallId: toolCallId,
+  ));
 
   Future<void> startVoiceRecording() => _startVoiceRecording(this);
 
@@ -107,13 +118,31 @@ Future<MessageAttachmentToCreate> _createArchiveAttachment(
 
 Future<MessageAttachmentToCreate> _createToolResultAttachment(
   LocalChatAttachmentServiceIo service,
-  Uint8List bytes,
-  String fileName,
-  String mimeType,
-  String toolCallId,
+  _ToolResultAttachmentRequest request,
 ) async {
-  final safeFileName = _archiveAttachmentFileName(fileName);
+  final fileName = _validateToolResultAttachmentRequest(request);
+  final mimeType = _toolResultAttachmentMimeType(request, fileName);
+  final localPath = await _newAttachmentPath(service, fileName);
+  await _writeArchiveAttachment(.new(localPath), request.bytes);
+
+  return _toolResultAttachmentEntity(request, fileName, mimeType, localPath);
+}
+
+String _validateToolResultAttachmentRequest(
+  _ToolResultAttachmentRequest request,
+) {
+  final fileName = _archiveAttachmentFileName(request.fileName);
+  _validateToolResultToolCallId(request.toolCallId);
+  _validateToolResultImage(request.bytes, request.mimeType);
+
+  return fileName;
+}
+
+void _validateToolResultToolCallId(String toolCallId) {
   if (toolCallId.isEmpty) throw ArgumentError.value(toolCallId, 'toolCallId');
+}
+
+void _validateToolResultImage(Uint8List bytes, String mimeType) {
   if (bytes.isEmpty) throw ArgumentError.value(bytes, 'bytes');
   if (bytes.length > _maxToolResultAttachmentBytes) {
     throw const ChatAttachmentTooLargeException();
@@ -121,29 +150,39 @@ Future<MessageAttachmentToCreate> _createToolResultAttachment(
   if (!mimeType.toLowerCase().startsWith('image/')) {
     throw ArgumentError.value(mimeType, 'mimeType');
   }
-  final resolvedMimeType =
-      lookupMimeType(
-        safeFileName,
-        headerBytes: bytes.take(_mimeHeaderLength).toList(),
-      ) ??
-      mimeType;
-  if (!resolvedMimeType.toLowerCase().startsWith('image/')) {
-    throw ArgumentError.value(resolvedMimeType, 'mimeType');
-  }
-  final localPath = await _newAttachmentPath(service, safeFileName);
-  final file = File(localPath);
-  await _writeArchiveAttachment(file, bytes);
-
-  return MessageAttachmentToCreate(
-    localPath: localPath,
-    fileName: safeFileName,
-    displayName: safeFileName,
-    mimeType: resolvedMimeType,
-    modality: ChatAttachmentModality.forMimeType(resolvedMimeType),
-    sizeBytes: bytes.length,
-    toolCallId: toolCallId,
-  );
 }
+
+String _toolResultAttachmentMimeType(
+  _ToolResultAttachmentRequest request,
+  String fileName,
+) {
+  final mimeType =
+      lookupMimeType(
+        fileName,
+        headerBytes: request.bytes.take(_mimeHeaderLength).toList(),
+      ) ??
+      request.mimeType;
+  if (!mimeType.toLowerCase().startsWith('image/')) {
+    throw ArgumentError.value(mimeType, 'mimeType');
+  }
+
+  return mimeType;
+}
+
+MessageAttachmentToCreate _toolResultAttachmentEntity(
+  _ToolResultAttachmentRequest request,
+  String fileName,
+  String mimeType,
+  String localPath,
+) => MessageAttachmentToCreate(
+  localPath: localPath,
+  fileName: fileName,
+  displayName: fileName,
+  mimeType: mimeType,
+  modality: ChatAttachmentModality.forMimeType(mimeType),
+  sizeBytes: request.bytes.length,
+  toolCallId: request.toolCallId,
+);
 
 MessageAttachmentToCreate _archiveAttachmentToCreate(
   ConversationArchiveAttachment attachment,
