@@ -149,6 +149,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
 
   @override
   Widget build(BuildContext context) => _AuraPopupMenuData(
+    safeAreaBottom: _viewSafeAreaBottom(context),
     visible: _visible,
     menuFocusScopeNode: _requiredMenuFocusScopeNode,
     items: widget.items,
@@ -214,8 +215,13 @@ void _requestMenuFocus(_AuraPopupMenuState state) {
   state._requiredMenuFocusScopeNode.requestFocus();
 }
 
+// SafeArea clears inherited padding, so read the view directly.
+double _viewSafeAreaBottom(BuildContext context) =>
+    MediaQueryData.fromView(View.of(context)).padding.bottom;
+
 class _AuraPopupMenuData {
   new({
+    required double safeAreaBottom,
     required bool visible,
     required FocusScopeNode menuFocusScopeNode,
     required List<AuraPopupMenuEntry> items,
@@ -234,21 +240,24 @@ class _AuraPopupMenuData {
            portal: .bottomCenter,
            shiftToWithinBound: .new(x: true, y: true),
          ),
-         portalFollower: TapRegion(
-           child: Shortcuts(
-             shortcuts: _popupMenuEscapeShortcuts(visible),
-             child: Actions(
-               actions: _popupMenuActions(toggle, closeWithFocusRestore),
-               child: FocusScope(
-                 node: menuFocusScopeNode,
-                 child: _AuraPopupMenuSurface(items: items, close: close),
+         portalFollower: Padding(
+           padding: .only(bottom: safeAreaBottom),
+           child: TapRegion(
+             child: Shortcuts(
+               shortcuts: _popupMenuEscapeShortcuts(visible),
+               child: Actions(
+                 actions: _popupMenuActions(toggle, closeWithFocusRestore),
+                 child: FocusScope(
+                   node: menuFocusScopeNode,
+                   child: _AuraPopupMenuSurface(items: items, close: close),
+                 ),
                ),
+               includeSemantics: false,
              ),
-             includeSemantics: false,
+             behavior: .opaque,
+             onTapOutside: (_) => closeOutside(),
+             groupId: groupId,
            ),
-           behavior: .opaque,
-           onTapOutside: (_) => closeOutside(),
-           groupId: groupId,
          ),
          child: Shortcuts(
            shortcuts: _popupMenuTriggerShortcuts(visible),
