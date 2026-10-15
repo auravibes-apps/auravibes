@@ -223,6 +223,7 @@ jobs:
                 libwpewebkit-2.0-dev libwpe-1.0-dev libwpebackend-fdo-1.0-dev \
                 libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
                 libunwind-dev
+              git config --global --add safe.directory "$FLUTTER_ROOT"
               export PATH="$FLUTTER_ROOT/bin:$PATH"
               export PKG_CONFIG=/usr/bin/pkgconf
               flutter build linux --debug --no-pub
