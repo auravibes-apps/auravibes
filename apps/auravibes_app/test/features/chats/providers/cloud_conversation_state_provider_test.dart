@@ -9,6 +9,18 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('preserves server tool access mode through snapshot and stream', () {
+    final snapshot = _snapshot(sequence: 4);
+    snapshot.conversation.toolAccessMode = 'allow_all';
+    final state = CloudConversationState.fromSnapshot(snapshot);
+    expect(state.conversation.toolAccessMode, 'allow_all');
+    expect(
+      state.apply(_event(sequence: 5))!.conversation.toolAccessMode,
+      'allow_all',
+    );
+    expect(_snapshot(sequence: 6).conversation.toolAccessMode, 'default');
+  });
+
   test('applies a transient assistant delta at its current sequence', () {
     final state = CloudConversationState.fromSnapshot(
       _snapshot(sequence: 4, assistantContent: 'R1'),

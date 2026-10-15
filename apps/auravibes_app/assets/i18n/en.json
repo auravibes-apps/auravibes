@@ -380,6 +380,7 @@
     },
     "chat_conversation": {
       "select_model_selctor": "Select Model",
+      "model_effort_selector": "Model & effort",
       "archive_export": "Export archive",
       "archive_exported": "Conversation archive saved.",
       "archive_invalid": "This conversation archive is invalid or corrupted.",
@@ -855,6 +856,13 @@
     "semantics_credentials": "Set up credentials for {skill}"
   },
   "chat_input": {
+    "tool_access_label": "Tool access",
+    "tool_access_default_label": "Default",
+    "tool_access_default_compact_label": "Default",
+    "tool_access_allow_all_label": "Allow all",
+    "tool_access_allow_all_compact_label": "All",
+    "tool_access_default_description": "Follows normal tool approval rules.",
+    "tool_access_allow_all_description": "Skips prompts for otherwise permitted tools.",
     "skills_control_count": "Skills, {count} added"
   },
   "skills_tool": {

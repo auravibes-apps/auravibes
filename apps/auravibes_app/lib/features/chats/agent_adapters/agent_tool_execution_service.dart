@@ -432,8 +432,26 @@ MessageToolCallEntity _toolCallWithResult(
       .firstOrNull;
   if (update == null) return toolCall;
 
+  if (update.approvalRequested) {
+    return _markToolCallApprovalRequested(toolCall);
+  }
+
+  return _toolCallWithResultStatus(toolCall, update);
+}
+
+MessageToolCallEntity _markToolCallApprovalRequested(
+  MessageToolCallEntity toolCall,
+) => toolCall.copyWith(approvalRequested: true);
+
+MessageToolCallEntity _toolCallWithResultStatus(
+  MessageToolCallEntity toolCall,
+  agent.AgentToolResultUpdate update,
+) {
+  final status = update.resultStatus;
+  if (status == null) return toolCall;
+
   final withStatus = toolCall.copyWith(
-    resultStatus: AgentToolStatusMapper.toResultStatus(update.resultStatus),
+    resultStatus: AgentToolStatusMapper.toResultStatus(status),
   );
 
   return _applyToolExecutionOutput(withStatus, update);

@@ -6,10 +6,13 @@ Make tool approval behavior identical for local and cloud conversations while ke
 
 ## Decisions
 
-- Newly available skill tools ask on first use per conversation.
+- In **Default** mode, newly available skill tools ask on first use per conversation.
 - `list_skills` runs without confirmation.
-- `load_skill` and `unload_skill` ask on first use per conversation.
+- In **Default** mode, `load_skill` and `unload_skill` ask on first use per conversation.
 - “Allow conversation” grants only the exact effective target.
+- Conversations use a tool-access mode: **Default** (the default) or **Allow all**. **Allow all** suppresses prompts for new calls only when the final effective policy result needs confirmation.
+- **Allow all** does not override denied, disabled, malformed, unresolved, or unconfigured tools. Calls already presented for approval stay pending; mode changes affect later calls.
+- Child calls read the current root conversation mode. Forks snapshot the source's effective mode, including the root mode when the source is a child. Local and cloud persistence default missing values to **Default**.
 - Local conversations store and evaluate grants locally.
 - Cloud conversations store and evaluate grants on the server; the client only displays pending approvals and submits decisions.
 - Malformed, stale, ambiguous, unloaded, or unresolved skill targets fail closed.
@@ -56,6 +59,7 @@ Provides one authority but breaks offline/local-first conversations and adds avo
 - `EffectiveToolTarget`: exact target identity used for policy lookup and grants.
 - `ToolApprovalOutcome`: `allow`, `ask`, or `deny` plus reason.
 - approval orchestration: resolve target, query host policy, return execute/pending/rejected disposition.
+- shared conversation tool-access policy: convert only a final `needsConfirmation` result to `granted` for a new call in **Allow all** mode.
 - pending/resume state transitions and shared contract tests.
 
 Engine code does not read Drift, Serverpod, Flutter, or app repositories.
@@ -146,8 +150,11 @@ unload_skill
 For an exact effective target:
 
 1. explicit conversation grant or deny;
-2. workspace tool policy;
-3. default policy.
+2. agent deny;
+3. workspace tool policy;
+4. default policy.
+
+A conversation-level ask does not mask an agent or workspace denial. **Allow all** never promotes denied outcomes. Agent safety classification remains outside this mode's scope.
 
 Defaults:
 
@@ -160,6 +167,8 @@ Defaults:
 | unresolved or malformed target | deny |
 
 “Allow once” changes only current pending call. “Allow conversation” grants only exact effective target for current conversation.
+
+After resolving the exact target and effective host policy, **Allow all** changes only a final `needsConfirmation` result to `granted` for a new call. Other policy outcomes remain unchanged. A local call already marked as presented for approval and a cloud call persisted as pending stay pending if the mode changes. Cloud mode is read from server-owned conversation state, never a client per-call flag. Persisted and wire values are parsed at app and server boundaries.
 
 ## Approval UI
 
@@ -203,7 +212,7 @@ Raw arguments, credentials, headers, response bodies, and secrets are excluded o
 
 ## Migration
 
-No DB schema change is required unless server storage lacks exact tool-name permission records. Existing exact native skill permissions continue working.
+Persist the conversation tool-access mode locally and on the server. Migrate legacy `autoApproveTools: false` to **Default** and `autoApproveTools: true` to **Allow all**; missing legacy values and unknown named mode values default to **Default**. Archive imports follow the same mapping. Persist a local marker for calls already presented for approval; legacy unresolved calls are treated as already pending. Existing exact native skill permissions continue working.
 
 Broad legacy `call_skill_tool` grants must not authorize nested targets. They are ignored for nested execution rather than migrated, because expanding one broad grant into all current skills would preserve unsafe scope.
 
@@ -214,12 +223,14 @@ Existing exact-target grants remain valid. Missing exact-target records receive 
 ### Engine contract tests
 
 - resolves wrapper to exact effective target;
+- **Default** asks; **Allow all** promotes only final confirmation requests, leaving denied, disabled, unconfigured, malformed, stale, and unresolved targets blocked;
 - never evaluates nested execution under wrapper identity;
 - returns `ask` for first use;
 - exact conversation grant returns `allow`;
 - different tool in same skill still asks;
 - malformed/stale/unresolved targets deny;
 - pending call resumes once only.
+- a call already presented for approval remains pending after mode changes and app re-entry.
 
 ### Local app tests
 
@@ -231,6 +242,8 @@ Existing exact-target grants remain valid. Missing exact-target records receive 
 - `load_skill` and `unload_skill` prompt first use;
 - effective target appears in approval card;
 - no network callback runs before approval.
+- child calls read current root mode, including after root setting changes; forks preserve the setting.
+- existing database rows and old archives default to **Default** mode.
 
 ### Server tests
 
@@ -240,6 +253,7 @@ Existing exact-target grants remain valid. Missing exact-target records receive 
 - stale/mismatched approval is rejected;
 - server restart preserves pending state and grants;
 - no server executor runs before authoritative allow.
+- cloud create, mode-only updates, snapshots, summaries, and forks round-trip the conversation tool-access mode without overwriting unrelated conversation settings.
 - built-in DuckDuckGo callback executes only after authoritative approval;
 - callback HTTP rejects private/loopback destinations and redirects;
 - callback response reads remain bounded and cancellation closes the client;

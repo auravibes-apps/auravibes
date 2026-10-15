@@ -48,6 +48,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -745,7 +746,9 @@ void main() {
         .called(1);
   });
 
-  testWidgets('passes running compaction state to chat input', (tester) async {
+  testWidgets('passes compaction and tool access state to chat input', (
+    tester,
+  ) async {
     final conversation = ConversationEntity(
       id: _chatId,
       title: 'Chat',
@@ -753,6 +756,7 @@ void main() {
       isPinned: false,
       createdAt: .new(2026),
       updatedAt: .new(2026),
+      toolAccessMode: .allowAll,
     );
 
     await tester.runAsync(() async {
@@ -850,6 +854,31 @@ void main() {
 
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isCompacting, isTrue);
+    expect(input.toolAccessMode, ConversationToolAccessMode.allowAll);
+    expect(input.onToolAccessModeChanged, isNotNull);
+    final control = find.byKey(const ValueKey<String>('chat_tool_access_mode'));
+    await tester.tap(control);
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text('Default'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<ChatInputWidget>(find.byType(ChatInputWidget))
+          .toolAccessMode,
+      ConversationToolAccessMode.defaultMode,
+    );
+    await tester.tap(control);
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text('Allow all'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<ChatInputWidget>(find.byType(ChatInputWidget))
+          .toolAccessMode,
+      ConversationToolAccessMode.allowAll,
+    );
   });
 
   testWidgets('shows and updates active sub-agent status in chat controls', (
@@ -2067,6 +2096,14 @@ class _ResultChatNotifier(final ConversationResult result)
     String workspaceId,
     String conversationId,
   ) async => result;
+
+  @override
+  Future<void> setToolAccessMode(ConversationToolAccessMode mode) async {
+    final current = state.requireValue as ConversationFound;
+    state = AsyncData(
+      ConversationFound(current.conversation.copyWith(toolAccessMode: mode)),
+    );
+  }
 }
 
 class _StaticRateLimitRetryNotifier(final DateTime retryDeadline)

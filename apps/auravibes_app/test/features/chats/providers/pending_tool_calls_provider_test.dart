@@ -144,8 +144,14 @@ ToolCatalog<ResolvedTool> _buildPendingToolCatalog({
 MessageToolCallEntity _pendingToolCall({
   required String id,
   required String name,
+  bool? approvalRequested,
 }) {
-  return MessageToolCallEntity(id: id, name: name, argumentsRaw: '{}');
+  return MessageToolCallEntity(
+    id: id,
+    name: name,
+    argumentsRaw: '{}',
+    approvalRequested: approvalRequested,
+  );
 }
 
 MessageEntity _assistantMessage({
@@ -482,14 +488,23 @@ void main() {
       container.dispose();
     });
 
-    test('excludes already-granted tool calls from approval UI', () async {
+    test('hides fresh calls and keeps stored approvals', () async {
       final messages = [
         _assistantMessage(
           id: 'msg-2',
           conversationId: 'conv-1',
           toolCalls: [
-            _pendingToolCall(id: 'tc-granted', name: _calculatorToolName),
-            _pendingToolCall(id: 'tc-needs-confirm', name: _urlToolName),
+            _pendingToolCall(
+              id: 'tc-granted',
+              name: _calculatorToolName,
+              approvalRequested: false,
+            ),
+            _pendingToolCall(
+              id: 'tc-needs-confirm',
+              name: _urlToolName,
+              approvalRequested: true,
+            ),
+            _pendingToolCall(id: 'tc-legacy', name: _urlToolName),
           ],
         ),
       ];
@@ -546,8 +561,10 @@ void main() {
         pendingToolCallsProvider('ws-1', 'conv-1').future,
       );
 
-      expect(result.length, 1);
-      expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
+      expect(result.map((entry) => entry.toolCall.id), [
+        'tc-needs-confirm',
+        'tc-legacy',
+      ]);
     });
 
     test('includes needsConfirmation tool calls in approval UI', () async {
@@ -624,7 +641,7 @@ void main() {
       );
     });
 
-    test('shows valid nested list_agents approval by exact target', () async {
+    test('keeps stored nested approvals without resolving', () async {
       const argumentsRaw =
           '{"skill":"agents","tool":"list_agents","args":{},'
           '"revision":"rev-1"}';
@@ -701,15 +718,9 @@ void main() {
 
       expect(result, hasLength(1));
       expect(result.single.toolCall.name, callSkillToolName);
-      expect(
-        effectiveUsecase.lastRequestedTool?.toolIdentifier,
-        callSkillToolName,
-      );
-      expect(effectiveUsecase.lastArgumentsRaw, argumentsRaw);
-      expect(
-        decisionUsecase.lastResolvedTool?.fullName,
-        'skill__app_native__agents__list_agents',
-      );
+      expect(effectiveUsecase.lastRequestedTool, isNull);
+      expect(effectiveUsecase.lastArgumentsRaw, isNull);
+      expect(decisionUsecase.lastResolvedTool, isNull);
     });
 
     test('includes child conversation pending tool calls', () async {
@@ -934,7 +945,7 @@ void main() {
       expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
     });
 
-    test('returns empty when all pending tools are granted', () async {
+    test('keeps legacy approvals after granting permissions', () async {
       final messages = [
         _assistantMessage(
           id: 'msg-2',
@@ -993,10 +1004,10 @@ void main() {
         pendingToolCallsProvider('ws-1', 'conv-1').future,
       );
 
-      expect(result, isEmpty);
+      expect(result.map((entry) => entry.toolCall.id), ['tc-1', 'tc-2']);
     });
 
-    test('T025: reevaluates when decision use case changes', () async {
+    test('T025: keeps approvals through grants on re-entry', () async {
       final messages = [
         _assistantMessage(
           id: 'msg-1',
@@ -1094,13 +1105,16 @@ void main() {
       final second = await container.read(
         pendingToolCallsProvider('ws-1', 'conv-1').future,
       );
-      expect(second, isEmpty);
+      expect(second.single.toolCall.id, 'tc-1');
     });
 
-    test('T026: handles 20 approved-tool updates', () async {
+    test('T026: handles 20 completed-tool updates', () async {
       final toolCalls = List.generate(
         20,
-        (i) => _pendingToolCall(id: 'tc-$i', name: _calculatorToolName),
+        (i) => _pendingToolCall(
+          id: 'tc-$i',
+          name: _calculatorToolName,
+        ).copyWith(resultStatus: .success),
       );
 
       final messages = [
@@ -1237,7 +1251,7 @@ void main() {
       expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
     });
 
-    test('redacts approval resolution errors from logs', () async {
+    test('stored approvals skip resolver errors', () async {
       final previousDebugPrint = debugPrint;
       final previousFlutterError = FlutterError.onError;
       final previousPlatformError = PlatformDispatcher.instance.onError;
@@ -1308,7 +1322,7 @@ void main() {
 
       final joinedLogs = logs.join('\n');
       expect(result, hasLength(1));
-      expect(joinedLogs, contains('[WARNING] message_id_list:'));
+      expect(joinedLogs, isEmpty);
       expect(joinedLogs, isNot(contains('decision-secret')));
       expect(joinedLogs, isNot(contains('argument-secret')));
     });

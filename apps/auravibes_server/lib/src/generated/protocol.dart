@@ -1129,6 +1129,13 @@ class Protocol extends _is.DatabaseSerializationManager {
           dartType: 'bool',
         ),
         _isp.ColumnDefinition(
+          name: 'toolAccessMode',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'default\'',
+        ),
+        _isp.ColumnDefinition(
           name: 'modelId',
           columnType: _isp.ColumnType.text,
           isNullable: true,

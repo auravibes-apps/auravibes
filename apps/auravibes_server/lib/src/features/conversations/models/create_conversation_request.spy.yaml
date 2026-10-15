@@ -5,6 +5,7 @@ fields:
   conversationId: String
   title: String
   isPinned: bool
+  toolAccessMode: String, default='default'
   modelId: String?
   agentId: String?
   reasoningConfigJson: String?

@@ -57,6 +57,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final conversation = result.conversation;
 
     final patch = await _modelUpdatePatch(
+      ref,
       _workspaceId,
       modelId,
       conversation.reasoningConfiguration,
@@ -91,6 +92,16 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     await _saveConversationPatch(result.conversation, _agentPatch(agentId));
   }
 
+  Future<void> setToolAccessMode(ConversationToolAccessMode mode) async {
+    final result = state.value;
+    if (result is! ConversationFound) return;
+
+    await _saveConversationPatch(
+      result.conversation,
+      .new(toolAccessMode: mode),
+    );
+  }
+
   Future<void> rename(ConversationEntity conversation, String title) async {
     final trimmedTitle = title.trim();
     if (trimmedTitle.isEmpty) return;
@@ -121,25 +132,6 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     state = AsyncData(updatedResult);
   }
 
-  Future<ConversationPatch> _modelUpdatePatch(
-    String workspaceId,
-    String modelId,
-    ReasoningConfiguration? reasoningConfiguration,
-  ) async {
-    final validatedConfiguration = await _validatedReasoningConfiguration(
-      ref,
-      workspaceId,
-      modelId,
-      reasoningConfiguration,
-    );
-
-    return ConversationPatch(
-      modelId: modelId,
-      clearReasoningConfiguration:
-          reasoningConfiguration != null && validatedConfiguration == null,
-    );
-  }
-
   Future<ConversationEntity> _updateConversation(
     ConversationEntity conversation,
     ConversationPatch patch,
@@ -167,6 +159,26 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
 
     state = AsyncData(ConversationFound(updated));
   }
+}
+
+Future<ConversationPatch> _modelUpdatePatch(
+  Ref ref,
+  String workspaceId,
+  String modelId,
+  ReasoningConfiguration? reasoningConfiguration,
+) async {
+  final validatedConfiguration = await _validatedReasoningConfiguration(
+    ref,
+    workspaceId,
+    modelId,
+    reasoningConfiguration,
+  );
+
+  return ConversationPatch(
+    modelId: modelId,
+    clearReasoningConfiguration:
+        reasoningConfiguration != null && validatedConfiguration == null,
+  );
 }
 
 Future<ReasoningConfiguration?> _validatedReasoningConfiguration(
@@ -204,6 +216,9 @@ ConversationEntity _updatedConversation(
   reasoningConfiguration: ReasoningConfiguration.decode(
     updated.reasoningConfigJson,
   ),
+  toolAccessMode: ConversationToolAccessModeStorage.decode(
+    updated.toolAccessMode,
+  ),
   revision: updated.revision,
   updatedAt: updated.updatedAt,
 );
@@ -213,6 +228,9 @@ ConversationEntity _updatedTitleConversation(
   ConversationSummary updated,
 ) => conversation.copyWith(
   title: updated.title,
+  toolAccessMode: ConversationToolAccessModeStorage.decode(
+    updated.toolAccessMode,
+  ),
   revision: updated.revision,
   updatedAt: updated.updatedAt,
 );

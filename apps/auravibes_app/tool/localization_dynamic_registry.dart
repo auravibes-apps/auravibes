@@ -2163,4 +2163,38 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       'route_state.sign_in',
     },
   ),
+
+  LocalizationDynamicRegistry(
+    family: 'chat-input-tool-access-mode-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/chat_input_widget.dart',
+        method: 'tr',
+        keyExpression: 'selected.label',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/chat_input_widget.dart',
+        method: 'TextLocale',
+        keyExpression: 'buttonLabel',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/chat_input_widget.dart',
+        method: 'TextLocale',
+        keyExpression: 'option.label',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/chat_input_widget.dart',
+        method: 'TextLocale',
+        keyExpression: 'option.description',
+      ),
+    ],
+    keys: {
+      'chat_input.tool_access_default_label',
+      'chat_input.tool_access_default_compact_label',
+      'chat_input.tool_access_default_description',
+      'chat_input.tool_access_allow_all_label',
+      'chat_input.tool_access_allow_all_compact_label',
+      'chat_input.tool_access_allow_all_description',
+    },
+  ),
 ];

@@ -2,12 +2,134 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('protocol serializes both named modes and nullable updates', () {
+    final now = DateTime.utc(2026);
+    for (final mode in ['default', 'allow_all']) {
+      final create = CreateConversationRequest(
+        workspaceId: 1,
+        requestId: 'create',
+        conversationId: 'conversation',
+        title: 'Conversation',
+        isPinned: false,
+        toolAccessMode: mode,
+      );
+      expect(
+        CreateConversationRequest.fromJson(create.toJson()).toolAccessMode,
+        mode,
+      );
+      final summary = ConversationSummary(
+        id: 'conversation',
+        title: 'Conversation',
+        isPinned: false,
+        toolAccessMode: mode,
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      );
+      expect(
+        ConversationSummary.fromJson(summary.toJson()).toolAccessMode,
+        mode,
+      );
+      final projection = ConversationProjectionView(
+        id: 'conversation',
+        workspaceId: 1,
+        executionState: 'idle',
+        projectionRevision: 1,
+        sequence: 0,
+        toolAccessMode: mode,
+        updatedAt: now,
+      );
+      expect(
+        ConversationProjectionView.fromJson(projection.toJson()).toolAccessMode,
+        mode,
+      );
+      final update = UpdateConversationRequest(
+        workspaceId: 1,
+        requestId: 'update',
+        conversationId: 'conversation',
+        expectedRevision: 1,
+        toolAccessMode: mode,
+        clearModel: false,
+        clearAgent: false,
+        clearReasoningConfig: false,
+        clearParent: false,
+      );
+      expect(
+        UpdateConversationRequest.fromJson(update.toJson()).toolAccessMode,
+        mode,
+      );
+      expect(update.toJson(), isNot(contains('title')));
+      expect(
+        update.copyWith(toolAccessMode: null).toJson(),
+        isNot(contains('toolAccessMode')),
+      );
+    }
+  });
+
+  test('cloud mode decodes unknown strings before policy evaluation', () {
+    for (final mode in ['default', 'future_mode', 'allowAll', '']) {
+      expect(
+        applyConversationToolAccessMode(
+          AgentToolPermissionResult.needsConfirmation,
+          mode: ConversationToolAccessModeStorage.decode(mode),
+        ),
+        AgentToolPermissionResult.needsConfirmation,
+      );
+    }
+    for (final permission in AgentToolPermissionResult.values) {
+      expect(
+        applyConversationToolAccessMode(
+          permission,
+          mode: ConversationToolAccessModeStorage.decode('allow_all'),
+        ),
+        permission == AgentToolPermissionResult.needsConfirmation
+            ? AgentToolPermissionResult.granted
+            : permission,
+      );
+    }
+  });
+
+  test('conversation ask cannot mask agent or workspace denial', () {
+    for (final workspace in [
+      AgentToolPermissionResult.needsConfirmation,
+      AgentToolPermissionResult.disabledInWorkspace,
+    ]) {
+      expect(
+        applyConversationToolAccessMode(
+          resolveCloudToolPermission(
+            workspacePermission: workspace,
+            agentPermissionMode: 'alwaysDeny',
+            conversationPermissionMode: 'alwaysAsk',
+          ),
+          mode: ConversationToolAccessMode.allowAll,
+        ),
+        AgentToolPermissionResult.disabledInWorkspace,
+      );
+    }
+    expect(
+      resolveCloudToolPermission(
+        workspacePermission: AgentToolPermissionResult.disabledInWorkspace,
+        agentPermissionMode: 'alwaysDeny',
+        conversationPermissionMode: 'alwaysAllow',
+      ),
+      AgentToolPermissionResult.granted,
+    );
+    expect(
+      resolveCloudToolPermission(
+        workspacePermission: AgentToolPermissionResult.granted,
+        conversationPermissionMode: 'alwaysDeny',
+      ),
+      AgentToolPermissionResult.disabledInWorkspace,
+    );
+  });
+
   test('authorizes active agent-associated skills for execution', () {
     final now = DateTime.utc(2026);
     WorkspaceResource resource(

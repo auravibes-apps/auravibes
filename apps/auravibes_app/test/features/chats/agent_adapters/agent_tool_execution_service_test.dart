@@ -1,5 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'dart:convert';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_execution_service.dart';
@@ -69,6 +71,15 @@ void main() {
       calledMcpArguments = null;
 
       toolMessage = _runAllowedToolsToolMessage();
+      when(() => messageRepository.getMessageById(any()))
+          .thenAnswer((_) async => toolMessage);
+      when(
+        () => messageRepository.patchMessage(
+          any(),
+          any(),
+          conversationId: any(named: 'conversationId'),
+        ),
+      ).thenAnswer((_) async => toolMessage);
 
       usecase = AgentToolExecutionService(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
@@ -575,9 +586,58 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.waitForToolApproval);
-        final _ = verifyNever(
-          () => messageRepository.patchMessage(any(), any()),
+        final patches = verify(
+          () => messageRepository.patchMessage(
+            any(),
+            captureAny(),
+            conversationId: 'conversation-1',
+          ),
+        ).captured.cast<MessagePatch>();
+        expect(patches, isNotEmpty);
+        final restored =
+            MessageMetadataEntity.fromJsonString(
+              jsonEncode(
+                (patches.last.metadata ?? fail('Expected metadata')).toJson(),
+              ),
+            ) ??
+            fail('Expected restored metadata');
+        expect(restored.toolCalls.first.approvalRequested, isTrue);
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-1',
+            resolvedTool: tool.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-1',
+            permissionResult: .granted,
+          ),
         );
+        when(
+          () => loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => const LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [],
+            notFoundToolCallIds: [],
+            previouslyFailedToolCallIds: [],
+            pendingApprovalToolCallIds: ['tool-1'],
+          ),
+        );
+        clearInteractions(resolveToolApprovalDecision);
+        expect(
+          await usecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+          AgentIterationDecision.waitForToolApproval,
+        );
+        verifyZeroInteractions(resolveToolApprovalDecision);
       },
     );
 
@@ -1121,9 +1181,14 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.waitForToolApproval);
-        final _ = verifyNever(
-          () => messageRepository.patchMessage(any(), any()),
-        );
+        final patches = verify(
+          () => messageRepository.patchMessage(
+            any(),
+            captureAny(),
+            conversationId: 'conversation-1',
+          ),
+        ).captured.cast<MessagePatch>();
+        expect(patches, isNotEmpty);
       },
     );
   });
@@ -1223,6 +1288,27 @@ void main() {
           ),
         );
 
+        final message = _runAllowedToolsToolMessage().copyWith(
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'native-tool-1',
+                name: 'url',
+                argumentsRaw: '{}',
+                approvalRequested: false,
+              ),
+            ],
+          ),
+        );
+        when(() => messageRepository.getMessageById('message-1'))
+            .thenAnswer((_) async => message);
+        when(
+          () => messageRepository.patchMessage(
+            'message-1',
+            any(),
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer((_) async => message);
         final result = await usecase.call(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
@@ -1237,9 +1323,14 @@ void main() {
             resolvedTool: nativeTool.tool,
           ),
         ).called(1);
-        final _ = verifyNever(
-          () => messageRepository.patchMessage(any(), any()),
-        );
+        final patches = verify(
+          () => messageRepository.patchMessage(
+            any(),
+            captureAny(),
+            conversationId: 'conversation-1',
+          ),
+        ).captured.cast<MessagePatch>();
+        expect(patches, isNotEmpty);
       },
     );
 

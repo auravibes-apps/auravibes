@@ -28,6 +28,15 @@ class const CloudConversationCreator({
   ConversationEntity _conversationCore(
     ConversationSummary created,
     String workspaceId,
+  ) => _conversationFields(created, workspaceId).copyWith(
+    toolAccessMode: ConversationToolAccessModeStorage.decode(
+      created.toolAccessMode,
+    ),
+  );
+
+  ConversationEntity _conversationFields(
+    ConversationSummary created,
+    String workspaceId,
   ) {
     return ConversationEntity(
       id: created.id,

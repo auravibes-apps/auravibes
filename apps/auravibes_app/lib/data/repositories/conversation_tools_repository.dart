@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 
 typedef _AvailableWorkspaceToolsInput = ({
   String conversationId,
@@ -37,6 +38,9 @@ class ConversationToolsRepository(
     _ConversationToolsRepositorySecondaryApi,
     _ConversationToolsAvailabilityApi {
   final ConversationToolsDao _dao = _database.conversationToolsDao;
+
+  Future<ConversationToolAccessMode> getToolAccessMode(String conversationId) =>
+      _database.conversationDao.getToolAccessMode(conversationId);
 
   Future<List<ConversationToolEntity>> getConversationTools(
     String conversationId,
@@ -368,10 +372,34 @@ extension ConversationToolsRepositoryAvailability
       return ToolPermissionResult.notConfigured;
     }
 
-    return await _conversationToolPermission(
+    final result = await _conversationToolPermission(
       conversationId: conversationId,
       workspaceTool: workspaceTool,
     );
+    if (result != ToolPermissionResult.needsConfirmation) return result;
+
+    return await _permissionAfterConfirmation(
+      conversationId: conversationId,
+      workspaceTool: workspaceTool,
+    );
+  }
+
+  Future<ToolPermissionResult> _permissionAfterConfirmation({
+    required String conversationId,
+    required WorkspaceToolEntity workspaceTool,
+  }) async {
+    final agentResult = await _agentToolPermissionResult(
+      conversationId: conversationId,
+      toolId: workspaceTool.id,
+    );
+    if (agentResult == ToolPermissionResult.disabledByAgent) {
+      return ToolPermissionResult.disabledByAgent;
+    }
+    if (workspaceTool.permissionMode == ToolPermissionMode.alwaysDeny) {
+      return ToolPermissionResult.disabledInWorkspace;
+    }
+
+    return ToolPermissionResult.needsConfirmation;
   }
 }
 

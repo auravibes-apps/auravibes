@@ -4,6 +4,7 @@ import 'package:auravibes_app/data/repositories/conversation_tools_repository.da
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,6 +52,139 @@ void main() {
     setUp(fixture.setUp);
 
     tearDown(fixture.tearDown);
+
+    test('auto approval follows root and rejects invalid ancestry', () async {
+      await insertConversationToolParents();
+      final root =
+          await database.conversationDao.getConversationById(
+            testConversationId,
+          ) ??
+          fail('Expected root conversation');
+      final repository = fixture.repository;
+      expect(
+        await repository.getToolAccessMode(root.id),
+        ConversationToolAccessMode.defaultMode,
+      );
+      final child = await database.conversationDao.insertConversation(
+        .insert(
+          id: const Value('mode-child'),
+          workspaceId: root.workspaceId,
+          title: 'Child',
+          parentConversationId: Value(root.id),
+          toolAccessMode: const Value('allow_all'),
+        ),
+      );
+      expect(
+        await repository.getToolAccessMode(child.id),
+        ConversationToolAccessMode.defaultMode,
+      );
+      final _ = await database.conversationDao.patchConversation(
+        root.id,
+        const .new(toolAccessMode: Value('allow_all')),
+      );
+      expect(
+        await repository.getToolAccessMode(child.id),
+        ConversationToolAccessMode.allowAll,
+      );
+      expect(
+        await repository.getToolAccessMode('missing'),
+        ConversationToolAccessMode.defaultMode,
+      );
+      final _ = await database.conversationDao.patchConversation(
+        root.id,
+        .new(parentConversationId: Value(child.id)),
+      );
+      expect(
+        await repository.getToolAccessMode(child.id),
+        ConversationToolAccessMode.defaultMode,
+      );
+      await database.customStatement('PRAGMA foreign_keys = OFF');
+      final _ = await database.conversationDao.patchConversation(
+        root.id,
+        const .new(parentConversationId: Value('missing')),
+      );
+      expect(
+        await repository.getToolAccessMode(child.id),
+        ConversationToolAccessMode.defaultMode,
+      );
+      await database.customStatement('PRAGMA foreign_keys = ON');
+    });
+
+    for (final mode in ConversationToolAccessMode.values) {
+      for (final agentDenies in [false, true]) {
+        for (final override in PermissionAccess.values) {
+          test('deny $override, agent $agentDenies, mode $mode', () async {
+            await insertConversationToolParents();
+            final root =
+                await database.conversationDao.getConversationById(
+                  testConversationId,
+                ) ??
+                fail('Expected root');
+            final _ = await database.agentsDao.createAgent(
+              .insert(
+                id: const Value('deny-agent'),
+                workspaceId: root.workspaceId,
+                name: 'Deny agent',
+                content: 'Prompt',
+              ),
+              const [],
+            );
+            final _ = await database.conversationDao.patchConversation(
+              root.id,
+              .new(
+                agentId: const Value('deny-agent'),
+                toolAccessMode: Value(
+                  mode == ConversationToolAccessMode.allowAll
+                      ? 'allow_all'
+                      : 'default',
+                ),
+              ),
+            );
+            final _ = await database.agentToolsDao.setAgentToolPermission(
+              'deny-agent',
+              'workspace-tool-id',
+              permission: agentDenies ? .denied : .granted,
+            );
+            final _ = await database.conversationToolsDao
+                .upsertConversationTool(
+                  root.id,
+                  'workspace-tool-id',
+                  isEnabled: true,
+                  permission: override,
+                );
+            when(
+              () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+                testWorkspaceId,
+                testToolId,
+              ),
+            ).thenAnswer(
+              (_) async => WorkspaceToolEntity(
+                id: 'workspace-tool-id',
+                workspaceId: root.workspaceId,
+                toolId: testToolId,
+                isEnabled: true,
+                permissionMode: agentDenies ? .alwaysAllow : .alwaysDeny,
+                createdAt: .utc(2026),
+                updatedAt: .utc(2026),
+              ),
+            );
+            final result = await fixture.repository.checkToolPermission(
+              conversationId: root.id,
+              workspaceId: testWorkspaceId,
+              toolId: testToolId,
+            );
+            expect(result, switch (override) {
+              .granted => ToolPermissionResult.granted,
+              .denied => ToolPermissionResult.disabledInConversation,
+              .ask =>
+                agentDenies
+                    ? ToolPermissionResult.disabledByAgent
+                    : ToolPermissionResult.disabledInWorkspace,
+            });
+          });
+        }
+      }
+    }
 
     test('returns notConfigured when tool is not in workspace', () async {
       // Arrange.
