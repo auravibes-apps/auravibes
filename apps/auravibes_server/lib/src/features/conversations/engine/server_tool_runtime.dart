@@ -1239,7 +1239,7 @@ class ServerToolRuntime({
       workspaceId: turn.workspaceId,
       descriptor: permissionDescriptor,
       agentId: conversation?.agentId,
-      conversationStableId: conversation?.stableId,
+      conversation: conversation,
     );
     final permission = applyConversationToolAccessMode(
       configuredPermission,
@@ -1986,7 +1986,7 @@ class ServerToolRuntime({
     required int workspaceId,
     required AgentResolvedToolName descriptor,
     required String? agentId,
-    required String? conversationStableId,
+    required Conversation? conversation,
   }) async {
     if (descriptor.kind == AgentResolvedToolKind.builtIn &&
         descriptor.tableId == backgroundWorkResultReaderTableId &&
@@ -2016,6 +2016,40 @@ class ServerToolRuntime({
     if (data?['isEnabled'] == false) {
       return AgentToolPermissionResult.disabledInWorkspace;
     }
+    final conversationPolicies = permissions
+        .where(
+          (candidate) =>
+              candidate.resourceKind ==
+              WorkspaceResourceKind.conversationToolSelection,
+        )
+        .map(_data)
+        .toList();
+    final conversationRepository = conversation_repo.ConversationRepository();
+    final visitedConversationIds = <String>{
+      if (conversation != null) conversation.stableId,
+    };
+    var ancestorConversationId = conversation?.parentConversationStableId;
+    while (ancestorConversationId != null &&
+        visitedConversationIds.add(ancestorConversationId)) {
+      final ancestor = await conversationRepository.findConversationByStableId(
+        session,
+        workspaceId: workspaceId,
+        conversationId: ancestorConversationId,
+      );
+      if (ancestor == null) break;
+      final ancestorPolicy = conversationPolicies
+          .where(
+            (value) =>
+                value['conversationId'] == ancestor.stableId &&
+                value['toolId'] == toolId,
+          )
+          .firstOrNull;
+      if (ancestorPolicy?['isEnabled'] == false ||
+          ancestorPolicy?['permissionMode'] == 'alwaysDeny') {
+        return AgentToolPermissionResult.disabledInWorkspace;
+      }
+      ancestorConversationId = ancestor.parentConversationStableId;
+    }
     final workspacePermission = data == null
         ? defaultCloudToolPermission(descriptor)
         : switch (data['permissionMode']) {
@@ -2023,16 +2057,10 @@ class ServerToolRuntime({
             'alwaysDeny' => AgentToolPermissionResult.disabledInWorkspace,
             _ => AgentToolPermissionResult.needsConfirmation,
           };
-    final conversationPolicy = permissions
-        .where(
-          (candidate) =>
-              candidate.resourceKind ==
-              WorkspaceResourceKind.conversationToolSelection,
-        )
-        .map(_data)
+    final conversationPolicy = conversationPolicies
         .where(
           (value) =>
-              value['conversationId'] == conversationStableId &&
+              value['conversationId'] == conversation?.stableId &&
               value['toolId'] == toolId,
         )
         .firstOrNull;

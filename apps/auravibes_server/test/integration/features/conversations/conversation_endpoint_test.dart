@@ -517,6 +517,30 @@ void main() {
           agentPolicy.copyWith(deletedAt: now),
         );
         await resource(
+          WorkspaceResourceKind.conversationToolSelection,
+          'parent-conversation-deny',
+          {
+            'conversationId': root.stableId,
+            'toolId': listSkillCredentialsToolName,
+            'permissionMode': 'alwaysDeny',
+          },
+        );
+        expect(
+          await call('parent-conversation-deny'),
+          'disabledInWorkspace',
+        );
+        expect(executions, 3);
+        final parentDeny = (await WorkspaceResource.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.resourceId.equals('parent-conversation-deny'),
+        ))!;
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          parentDeny.copyWith(deletedAt: now),
+        );
+        await resource(
           WorkspaceResourceKind.toolPermission,
           'workspace-policy',
           {
