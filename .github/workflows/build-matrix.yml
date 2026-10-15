@@ -79,8 +79,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsqlite3-dev libwebkit2gtk-4.0-dev libepoxy-dev libwayland-dev libwpewebkit-1.0-dev libwpe-1.0-dev libwpebackend-fdo-1.0-dev libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libunwind-15-dev
+          export PKG_CONFIG=/usr/bin/pkg-config
           export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-          pkg-config --modversion gstreamer-1.0 gstreamer-app-1.0 gstreamer-audio-1.0
+          "$PKG_CONFIG" --modversion gstreamer-1.0 gstreamer-app-1.0 gstreamer-audio-1.0
+          echo "PKG_CONFIG=$PKG_CONFIG" >> "$GITHUB_ENV"
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> "$GITHUB_ENV"
 
       - name: 🏗️ Build Android APK
