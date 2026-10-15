@@ -53,7 +53,7 @@ final class ConversationChatNotifierProvider
 }
 
 String _$conversationChatNotifierHash() =>
-    r'a0f8169d5c9a3b4a4183480a63d0ed331f1cde26';
+    r'8d0d42d3078bf320ab7e9ee3a96ca65a716f8771';
 
 final class ConversationChatNotifierFamily extends $Family
     with
