@@ -167,6 +167,31 @@ jobs:
         run: flutter build ios --debug --no-codesign --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
+      # shortcut: repairs this cached plugin release's target name; remove when upstream fixes its Linux CMake metadata.
+      - name: 🩹 Patch Linux WebView CMake target
+        if: ${{ matrix.platform == 'linux' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=("$PUB_CACHE"/hosted/pub.dev/flutter_inappwebview_linux_fx-*)
+          if ((${#packages[@]} == 0)); then
+            echo "flutter_inappwebview_linux_fx was not found in the pub cache" >&2
+            exit 1
+          fi
+
+          for package in "${packages[@]}"; do
+            cmake_file="$package/linux/CMakeLists.txt"
+            expected='set(PLUGIN_NAME "flutter_inappwebview_linux_plugin")'
+            fixed='set(PLUGIN_NAME "flutter_inappwebview_linux_fx_plugin")'
+            if grep -Fq "$expected" "$cmake_file"; then
+              sed -i "s|$expected|$fixed|" "$cmake_file"
+            elif ! grep -Fq "$fixed" "$cmake_file"; then
+              echo "Unexpected Linux plugin target in $cmake_file" >&2
+              exit 1
+            fi
+          done
+
       - name: 🏗️ Build Linux
         if: ${{ matrix.platform == 'linux' }}
         run: flutter build linux --debug --no-pub
