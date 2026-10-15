@@ -380,6 +380,7 @@
     },
     "chat_conversation": {
       "select_model_selctor": "Selecionar Modelo",
+      "model_effort_selector": "Modelo y esfuerzo",
       "archive_export": "Exportar archivo",
       "archive_exported": "Archivo de conversación guardado.",
       "archive_invalid": "Este archivo de conversación no es válido o está dañado.",
@@ -857,7 +858,9 @@
   "chat_input": {
     "tool_access_label": "Acceso a herramientas",
     "tool_access_default_label": "Predeterminado",
+    "tool_access_default_compact_label": "Normal",
     "tool_access_allow_all_label": "Permitir todas",
+    "tool_access_allow_all_compact_label": "Todas",
     "tool_access_default_description": "Sigue las reglas normales de aprobación de herramientas.",
     "tool_access_allow_all_description": "Omite las confirmaciones de herramientas permitidas.",
     "skills_control_count": "Habilidades, {count} agregadas"

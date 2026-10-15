@@ -11,7 +11,6 @@ import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_readiness_summary.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
@@ -406,11 +405,11 @@ class const _NewChatInput({required final Widget child})
            toolAccessMode: data.state.toolAccessMode,
            onToolAccessModeChanged: (mode) =>
                data.actions.setToolAccessMode(mode),
-           reasoningControl:
+           reasoningSettingsControl:
                ChatReasoningControls.hasSupportedReasoningOptions(
                  reasoningOptions,
                )
-               ? ChatReasoningControl(
+               ? ChatReasoningControls(
                    options: reasoningOptions,
                    value: data.state.reasoningConfiguration,
                    onChanged: data.actions.setReasoningConfiguration,

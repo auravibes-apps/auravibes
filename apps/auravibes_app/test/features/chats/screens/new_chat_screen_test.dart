@@ -349,7 +349,7 @@ void main() {
       tester.element(find.byType(ChatInputWidget)),
     );
     await tester.tap(
-      find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
+      find.byKey(const ValueKey<String>('chat_tool_access_mode')),
     );
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Allow all').last);
@@ -370,7 +370,7 @@ void main() {
       ConversationToolAccessMode.allowAll,
     );
     await tester.tap(
-      find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
+      find.byKey(const ValueKey<String>('chat_tool_access_mode')),
     );
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Default').last);

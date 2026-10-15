@@ -72,7 +72,7 @@ void main() {
     Widget agentSheetControl = const SizedBox.shrink(),
     Widget modelCompactControl = const SizedBox.shrink(),
     Widget agentCompactControl = const SizedBox.shrink(),
-    Widget? reasoningControl,
+    Widget? reasoningSettingsControl,
     VoidCallback? onCompact,
     bool canCompact = true,
     String? compactDisabledHint,
@@ -127,7 +127,7 @@ void main() {
               conversationId: conversationId,
               toolAccessMode: toolAccessMode,
               onToolAccessModeChanged: onToolAccessModeChanged,
-              reasoningControl: reasoningControl,
+              reasoningSettingsControl: reasoningSettingsControl,
               draftToLoad: draftToLoad,
               modalitiesInput: modalitiesInput,
               onSkillsPress: onSkillsPress,
@@ -210,7 +210,7 @@ void main() {
   testWidgets('tool access control requires callback', (tester) async {
     await pumpAndInit(tester, buildSubject(onSendMessage: (_) => _noop()));
     expect(
-      find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
+      find.byKey(const ValueKey<String>('chat_tool_access_mode')),
       findsNothing,
     );
   });
@@ -226,16 +226,17 @@ void main() {
           onToolAccessModeChanged: (mode) => changed = mode,
         ),
       );
-      final control = find.byType(
-        AuraDropdownSelector<ConversationToolAccessMode>,
+      final control = find.byKey(
+        const ValueKey<String>('chat_tool_access_mode'),
+      );
+      final popup = find.ancestor(
+        of: control,
+        matching: find.byType(AuraPopupMenu),
       );
       final focus =
           (tester
                     .widgetList<Focus>(
-                      find.descendant(
-                        of: control,
-                        matching: find.byType(Focus),
-                      ),
+                      find.descendant(of: popup, matching: find.byType(Focus)),
                     )
                     .firstWhere((widget) => widget.focusNode != null)
                     .focusNode ??
@@ -256,7 +257,7 @@ void main() {
       final _ = await tester.pumpAndSettle();
       final _ = await tester.sendKeyEvent(.escape);
       final _ = await tester.pumpAndSettle();
-      expect(find.text('Allow all'), findsNothing);
+      expect(find.text('Default'), findsOneWidget);
       expect(focus.hasFocus, isTrue);
       final _ = await tester.sendKeyEvent(.enter);
       final _ = await tester.pumpAndSettle();
@@ -279,28 +280,39 @@ void main() {
             onToolAccessModeChanged: (value) => changed = value,
           ),
         );
-        final control = find.byType(
-          AuraDropdownSelector<ConversationToolAccessMode>,
+        final control = find.byKey(
+          const ValueKey<String>('chat_tool_access_mode'),
         );
         expect(
-          tester
-              .widget<AuraDropdownSelector<ConversationToolAccessMode>>(control)
-              .value,
-          mode,
+          find.descendant(of: find.byType(AuraInput), matching: control),
+          findsOneWidget,
         );
-        expect(find.text('Tool access'), findsOneWidget);
+        expect(find.text('Tool access'), findsNothing);
         expect(
           find.text(
             mode == ConversationToolAccessMode.defaultMode
-                ? 'Follows normal tool approval rules.'
-                : 'Skips prompts for otherwise permitted tools.',
+                ? 'Default'
+                : 'Allow all',
           ),
           findsOneWidget,
+        );
+        expect(find.text('Follows normal tool approval rules.'), findsNothing);
+        expect(
+          find.text('Skips prompts for otherwise permitted tools.'),
+          findsNothing,
         );
         expect(find.bySemanticsLabel(RegExp('Tool access')), findsWidgets);
         for (final option in ConversationToolAccessMode.values) {
           await tester.tap(control);
           final _ = await tester.pumpAndSettle();
+          expect(
+            find.text('Follows normal tool approval rules.'),
+            findsOneWidget,
+          );
+          expect(
+            find.text('Skips prompts for otherwise permitted tools.'),
+            findsOneWidget,
+          );
           await tester.tap(
             find
                 .text(
@@ -327,32 +339,49 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          onSendMessage: (_) => _noop(),
-          toolAccessMode: mode,
-          onToolAccessModeChanged: (_) => _noop(),
-          locale: const Locale('es'),
-        ),
-      );
-      expect(find.text('Acceso a herramientas'), findsOneWidget);
-      expect(
-        find.text(
-          mode == ConversationToolAccessMode.defaultMode
-              ? 'Sigue las reglas normales de '
-                    'aprobaci${String.fromCharCode(0xf3)}n de herramientas.'
-              : 'Omite las confirmaciones de herramientas permitidas.',
-        ),
-        findsOneWidget,
-      );
-      await tester.tap(
-        find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
-      );
-      final _ = await tester.pumpAndSettle();
-      expect(find.text('Predeterminado'), findsWidgets);
-      expect(find.text('Permitir todas'), findsWidgets);
-      expect(tester.takeException(), isNull);
+      final semantics = tester.ensureSemantics();
+      try {
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            onSendMessage: (_) => _noop(),
+            toolAccessMode: mode,
+            onToolAccessModeChanged: (_) => _noop(),
+            locale: const Locale('es'),
+          ),
+        );
+        expect(find.text('Acceso a herramientas'), findsNothing);
+        expect(find.text('Normal'), findsNothing);
+        expect(find.text('Todas'), findsNothing);
+        expect(
+          find.bySemanticsLabel(
+            mode == ConversationToolAccessMode.defaultMode
+                ? 'Acceso a herramientas: Predeterminado'
+                : 'Acceso a herramientas: Permitir todas',
+          ),
+          findsWidgets,
+        );
+        await tester.tap(
+          find.byKey(const ValueKey<String>('chat_tool_access_mode')),
+        );
+        final _ = await tester.pumpAndSettle();
+        expect(find.text('Predeterminado'), findsWidgets);
+        expect(find.text('Permitir todas'), findsWidgets);
+        expect(
+          find.text(
+            'Sigue las reglas normales de '
+            'aprobaci${String.fromCharCode(0xf3)}n de herramientas.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Omite las confirmaciones de herramientas permitidas.'),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
     });
   }
 
@@ -695,7 +724,7 @@ void main() {
         modelSheetControl: const Text('sheet model'),
         agentCompactControl: const Text('compact agent'),
         agentSheetControl: const Text('sheet agent'),
-        reasoningControl: const Text('reasoning control'),
+        reasoningSettingsControl: const Text('reasoning settings'),
         showStopButton: true,
         onStop: _noop,
         onSendMessage: (_) {
@@ -727,7 +756,7 @@ void main() {
       find.byKey(const ValueKey<String>('chat_send_button')),
       findsNothing,
     );
-    expect(find.text('reasoning control'), findsOneWidget);
+    expect(find.text('reasoning settings'), findsNothing);
     final composerRadii = tester
         .widgetList<AuraCornerRadiusScope>(
           find.ancestor(
@@ -1695,7 +1724,7 @@ void main() {
     );
   });
 
-  testWidgets('tabs from input to more button and opens with enter', (
+  testWidgets('tabs through composer controls to model and effort selector', (
     tester,
   ) async {
     await pumpAndInit(
@@ -1704,6 +1733,10 @@ void main() {
         onSendMessage: (_) {
           final _ = Object();
         },
+        onToolAccessModeChanged: (_) => _noop(),
+        modelCompactControl: const Text('compact model'),
+        modelSheetControl: const Text('sheet model'),
+        reasoningSettingsControl: const Text('reasoning settings'),
       ),
     );
 
@@ -1714,14 +1747,21 @@ void main() {
     await tester.pump();
     expect(find.byIcon(Icons.build_circle_outlined), findsNothing);
 
-    expect(await tester.sendKeyEvent(.enter), isTrue);
-    await tester.pump();
+    expect(await tester.sendKeyEvent(.tab), isTrue);
+    expect(await tester.sendKeyEvent(.tab), isTrue);
 
-    expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
+    expect(await tester.sendKeyEvent(.enter), isTrue);
+    final pumpCount = await tester.pumpAndSettle();
+    expect(pumpCount, greaterThanOrEqualTo(0));
+
+    expect(find.text('sheet model'), findsOneWidget);
+    expect(find.text('reasoning settings'), findsOneWidget);
   });
 
-  testWidgets('compact controls use menu model agent layout', (tester) async {
-    tester.view.physicalSize = const Size(400, 800);
+  testWidgets('composer controls share one row in requested order', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -1732,22 +1772,52 @@ void main() {
         onSendMessage: (_) {
           final _ = Object();
         },
-        modelCompactControl: const Text('compact model'),
+        onToolAccessModeChanged: (_) => _noop(),
+        locale: const Locale('es'),
         modelSheetControl: const Text('sheet model'),
-        agentCompactControl: const Text('compact agent'),
         agentSheetControl: const Text('sheet agent'),
+        modelCompactControl: const Text(
+          'compact model',
+          overflow: .ellipsis,
+          maxLines: 1,
+        ),
+        agentCompactControl: const Text('compact agent'),
+        reasoningSettingsControl: const Text('reasoning settings'),
       ),
     );
 
     expect(find.text('compact model'), findsOneWidget);
     expect(find.text('compact agent'), findsOneWidget);
     expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
+    final controlKeys = [
+      'chat_attachment_options_button',
+      'chat_tool_access_mode',
+      'chat_model_selector',
+      'chat_voice_button',
+      'chat_send_button',
+    ];
+    final centers = [
+      for (final key in controlKeys)
+        tester.getCenter(find.byKey(ValueKey<String>(key))),
+    ];
+    for (var index = 1; index < centers.length; index++) {
+      expect(centers[index - 1].dy, closeTo(centers[index].dy, 1));
+      if (index > 0) {
+        expect(centers[index - 1].dx, lessThan(centers[index].dx));
+      }
+    }
+    expect(tester.takeException(), isNull);
+    expect(
+      find.byKey(const ValueKey<String>('chat_reasoning_selector')),
+      findsNothing,
+    );
 
     await tester.tap(find.text('compact model'));
     final pumpCount = await tester.pumpAndSettle();
     expect(pumpCount, greaterThanOrEqualTo(0));
 
     expect(find.text('sheet model'), findsOneWidget);
+    expect(find.text('reasoning settings'), findsOneWidget);
   });
 
   testWidgets('model selector opens from blank space inside its target', (

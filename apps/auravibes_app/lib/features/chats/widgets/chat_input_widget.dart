@@ -86,7 +86,7 @@ class const ChatInputWidget({
       ConversationToolAccessMode.defaultMode,
   final ValueChanged<ConversationToolAccessMode>? onToolAccessModeChanged,
   final double topPadding = _chatInputVerticalPadding,
-  final Widget? reasoningControl,
+  final Widget? reasoningSettingsControl,
   final ChatDraft? draftToLoad,
   final List<String> modalitiesInput = const [],
   final VoidCallback? onSkillsPress,
@@ -541,56 +541,128 @@ class const _ChatInputPadding({required final _ChatInputState state})
       right: _chatInputHorizontalPadding,
       bottom: _chatInputVerticalPadding,
     ),
-    child: AuraColumn(
-      children: [
-        _ChatInputFieldComposition(state: state),
-        if (state.input.onToolAccessModeChanged case final onChanged?)
-          _ChatInputToolAccessMode(
-            value: state.input.toolAccessMode,
-            onChanged: onChanged,
-          ),
-      ],
-      spacing: .xs,
-      mainAxisSize: .min,
-    ),
+    child: _ChatInputFieldComposition(state: state),
   );
 }
 
 class const _ChatInputToolAccessMode({
   required final ConversationToolAccessMode value,
   required final ValueChanged<ConversationToolAccessMode> onChanged,
-}) extends StatelessWidget {
+}) extends StatefulWidget {
   @override
-  Widget build(BuildContext context) =>
-      AuraDropdownSelector<ConversationToolAccessMode>(
-        options: const [
-          AuraDropdownOption(
-            value: ConversationToolAccessMode.defaultMode,
-            child: TextLocale(LocaleKeys.chat_input_tool_access_default_label),
-            identifier: 'chat_tool_access_default',
-          ),
-          AuraDropdownOption(
-            value: ConversationToolAccessMode.allowAll,
-            child: TextLocale(
-              LocaleKeys.chat_input_tool_access_allow_all_label,
+  State<_ChatInputToolAccessMode> createState() =>
+      _ChatInputToolAccessModeState();
+}
+
+class _ChatInputToolAccessModeState extends State<_ChatInputToolAccessMode> {
+  final _focusNode = FocusNode();
+  final _popupController = AuraPopupMenuController();
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [
+      (
+        mode: ConversationToolAccessMode.defaultMode,
+        label: LocaleKeys.chat_input_tool_access_default_label,
+        compactLabel: LocaleKeys.chat_input_tool_access_default_compact_label,
+        description: LocaleKeys.chat_input_tool_access_default_description,
+        identifier: 'chat_tool_access_default',
+      ),
+      (
+        mode: ConversationToolAccessMode.allowAll,
+        label: LocaleKeys.chat_input_tool_access_allow_all_label,
+        compactLabel: LocaleKeys.chat_input_tool_access_allow_all_compact_label,
+        description: LocaleKeys.chat_input_tool_access_allow_all_description,
+        identifier: 'chat_tool_access_allow_all',
+      ),
+    ];
+    final selected = options.firstWhere(
+      (option) => option.mode == widget.value,
+    );
+    final semanticLabel =
+        '${LocaleKeys.chat_input_tool_access_label.tr()}: '
+        '${selected.label.tr()}';
+    final compact = MediaQuery.sizeOf(context).width <= 400;
+    final iconOnly = MediaQuery.sizeOf(context).width <= 360;
+    final buttonLabel = compact ? selected.compactLabel : selected.label;
+
+    return AuraTooltip(
+      message: semanticLabel,
+      child: AuraPopupMenu(
+        child: iconOnly
+            ? AuraIconButton(
+                icon: Icons.security_outlined,
+                onPressed: _popupController.toggle,
+                identifier: 'chat_tool_access_mode',
+                semanticLabel: semanticLabel,
+              )
+            : AuraButton(
+                onPressed: _popupController.toggle,
+                child: Row(
+                  mainAxisSize: .min,
+                  children: [
+                    const AuraIcon(Icons.security_outlined, size: .small),
+                    const AuraSizedBox(width: .sm),
+                    TextLocale(
+                      buttonLabel,
+                      style: const .new(fontWeight: .w600),
+                      overflow: .ellipsis,
+                      maxLines: 1,
+                    ),
+                    const AuraSizedBox(width: .xs),
+                    const AuraIcon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: .small,
+                    ),
+                  ],
+                ),
+                variant: .ghost,
+                size: .small,
+                identifier: 'chat_tool_access_mode',
+                semanticLabel: semanticLabel,
+              ),
+        items: [
+          for (final option in options)
+            AuraPopupMenuItem(
+              title: Column(
+                mainAxisSize: .min,
+                crossAxisAlignment: .start,
+                children: [
+                  TextLocale(option.label),
+                  TextLocale(
+                    option.description,
+                    style: .new(
+                      color: context.auraColors.onSurfaceVariant,
+                      fontSize: context.auraTheme.typography.fontSizeSm,
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () => _selectMode(option.mode),
+              trailing: option.mode == widget.value
+                  ? const AuraIcon(Icons.check_rounded, size: .small)
+                  : null,
+              identifier: option.identifier,
             ),
-            identifier: 'chat_tool_access_allow_all',
-          ),
         ],
-        key: const ValueKey<String>('chat_tool_access_mode'),
-        value: value,
-        onChanged: (mode) {
-          if (mode == null) return;
-          onChanged(mode);
-        },
-        label: const TextLocale(LocaleKeys.chat_input_tool_access_label),
-        hint: TextLocale(switch (value) {
-          .defaultMode => LocaleKeys.chat_input_tool_access_default_description,
-          .allowAll => LocaleKeys.chat_input_tool_access_allow_all_description,
-        }),
-        identifier: 'chat_tool_access_mode',
-        semanticLabel: LocaleKeys.chat_input_tool_access_label.tr(),
-      );
+        controller: _popupController,
+        focusNode: _focusNode,
+      ),
+    );
+  }
+
+  void _selectMode(ConversationToolAccessMode mode) {
+    widget.onChanged(mode);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
 }
 
 class const _ChatInputFieldComposition({required final _ChatInputState state})
@@ -1719,10 +1791,27 @@ class const _ChatInputControlRow({required final _ChatInputState state})
   Widget build(BuildContext context) {
     final input = state.input;
     final onStop = input.onStop;
+    final isRecording = state.hooks.recording.isRecording.value;
+    final compact = MediaQuery.sizeOf(context).width <= 360;
 
     return Row(
       children: [
-        _ChatInputModeControls(state: state),
+        if (!isRecording) _ChatInputBrowseControls(state: state),
+        if (!isRecording || input.onToolAccessModeChanged != null)
+          AuraSizedBox(width: compact ? .none : .xs),
+        if (input.onToolAccessModeChanged case final onChanged?) ...[
+          _ChatInputToolAccessMode(
+            value: input.toolAccessMode,
+            onChanged: onChanged,
+          ),
+          AuraSizedBox(width: compact ? .none : .xs),
+        ],
+        Flexible(child: _ModelSelectorButton(state: state)),
+        if (isRecording) const AuraSizedBox(width: .xs),
+        if (isRecording)
+          _ChatInputRecordingControls(state: state)
+        else if (!kIsWeb)
+          _ChatInputAudioControl(state: state),
         if (state.shouldShowStopButton && state.isEmpty && onStop != null)
           _StopGenerationButtonContent(onStop: onStop)
         else
@@ -1819,41 +1908,10 @@ class const _ChatInputSkillsCount({required final int count})
   );
 }
 
-class const _ChatInputModeControls({required final _ChatInputState state})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final isRecording = state.hooks.recording.isRecording.value;
-    if (isRecording) return _ChatInputRecordingControls(state: state);
-
-    return Expanded(
-      child: Row(
-        children: [
-          Expanded(child: _ChatInputBrowseControls(state: state)),
-          if (!kIsWeb) _ChatInputAudioControl(state: state),
-        ],
-      ),
-    );
-  }
-}
-
 class const _ChatInputBrowseControls({required final _ChatInputState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _AttachmentMenu(state: state),
-        const AuraSizedBox(width: .xs),
-        Expanded(child: _ModelSelectorButton(state: state)),
-        if (state.input.reasoningControl case final reasoning?) ...[
-          const AuraSizedBox(width: .xs),
-          reasoning,
-        ],
-        const AuraSizedBox(width: .xs),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => _AttachmentMenu(state: state);
 }
 
 class const _ChatInputRecordingControls({required final _ChatInputState state})
@@ -1922,7 +1980,6 @@ class const _ChatInputAudioControl({required final _ChatInputState state})
           tooltip: _audioRecordingTooltip(state),
           selectorId: 'chat_voice_button',
         ),
-        const AuraSizedBox(width: .xs),
       ],
     );
   }
@@ -1950,15 +2007,43 @@ class const _ModelSelectorButton({required final _ChatInputState state})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return StableUiSelector(
-      identifier: 'chat_model_selector',
-      child: state.input.modelCompactControl(
-        () => _showSelectorSheet(
-          context: context,
-          title: const TextLocale(LocaleKeys.models_screens_select_model),
-          child: state.input.modelSheetControl,
+    return AuraTooltip(
+      message: LocaleKeys.chats_screens_chat_conversation_model_effort_selector
+          .tr(context: context),
+      child: StableUiSelector(
+        identifier: 'chat_model_selector',
+        child: state.input.modelCompactControl(
+          () => _showSelectorSheet(
+            context: context,
+            title: const TextLocale(
+              LocaleKeys.chats_screens_chat_conversation_model_effort_selector,
+            ),
+            child: _ChatInputModelEffortSheetContent(
+              modelControl: state.input.modelSheetControl,
+              reasoningControl: state.input.reasoningSettingsControl,
+            ),
+          ),
         ),
       ),
+    );
+  }
+}
+
+class const _ChatInputModelEffortSheetContent({
+  required final Widget modelControl,
+  required final Widget? reasoningControl,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final reasoningControl = this.reasoningControl;
+    if (reasoningControl == null) return modelControl;
+
+    return Column(
+      children: [
+        Expanded(flex: 2, child: modelControl),
+        const Divider(height: 1),
+        Expanded(child: SingleChildScrollView(child: reasoningControl)),
+      ],
     );
   }
 }

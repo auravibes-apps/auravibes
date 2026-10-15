@@ -855,17 +855,7 @@ void main() {
     expect(input.isCompacting, isTrue);
     expect(input.toolAccessMode, ConversationToolAccessMode.allowAll);
     expect(input.onToolAccessModeChanged, isNotNull);
-    expect(
-      tester
-          .widget<AuraDropdownSelector<ConversationToolAccessMode>>(
-            find.byType(AuraDropdownSelector<ConversationToolAccessMode>),
-          )
-          .value,
-      ConversationToolAccessMode.allowAll,
-    );
-    final control = find.byType(
-      AuraDropdownSelector<ConversationToolAccessMode>,
-    );
+    final control = find.byKey(const ValueKey<String>('chat_tool_access_mode'));
     await tester.tap(control);
     await tester.pump();
     await tester.pump();
