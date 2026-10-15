@@ -234,21 +234,33 @@ class _AuraPopupMenuData {
            portal: .bottomCenter,
            shiftToWithinBound: .new(x: true, y: true),
          ),
-         portalFollower: TapRegion(
-           child: Shortcuts(
-             shortcuts: _popupMenuEscapeShortcuts(visible),
-             child: Actions(
-               actions: _popupMenuActions(toggle, closeWithFocusRestore),
-               child: FocusScope(
-                 node: menuFocusScopeNode,
-                 child: _AuraPopupMenuSurface(items: items, close: close),
+         portalFollower: Builder(
+           builder: (context) {
+             final safeAreaBottom = MediaQueryData.fromView(View.of(context))
+                 .padding
+                 .bottom;
+
+             return Padding(
+               // SafeArea can clear inherited padding before this overlay builds.
+               padding: .only(bottom: safeAreaBottom),
+               child: TapRegion(
+                 child: Shortcuts(
+                   shortcuts: _popupMenuEscapeShortcuts(visible),
+                   child: Actions(
+                     actions: _popupMenuActions(toggle, closeWithFocusRestore),
+                     child: FocusScope(
+                       node: menuFocusScopeNode,
+                       child: _AuraPopupMenuSurface(items: items, close: close),
+                     ),
+                   ),
+                   includeSemantics: false,
+                 ),
+                 behavior: .opaque,
+                 onTapOutside: (_) => closeOutside(),
+                 groupId: groupId,
                ),
-             ),
-             includeSemantics: false,
-           ),
-           behavior: .opaque,
-           onTapOutside: (_) => closeOutside(),
-           groupId: groupId,
+             );
+           },
          ),
          child: Shortcuts(
            shortcuts: _popupMenuTriggerShortcuts(visible),

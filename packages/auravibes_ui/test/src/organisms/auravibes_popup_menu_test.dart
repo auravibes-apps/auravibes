@@ -68,6 +68,40 @@ void main() {
       expect(find.text('Open Menu'), findsOneWidget);
     });
 
+    testWidgets('keeps the popup above the bottom safe area', (tester) async {
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const ui.Size(400, 800)
+        ..padding = const FakeViewPadding(bottom: 40)
+        ..viewPadding = const FakeViewPadding(bottom: 40);
+      addTearDown(tester.view.reset);
+      final controller = AuraPopupMenuController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: SafeArea(
+                top: false,
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: AuraPopupMenu(
+                    child: const SizedBox(width: 48, height: 48),
+                    items: const [AuraPopupMenuItem(title: Text('Menu item'))],
+                    controller: controller,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      controller.open();
+      await tester.pump();
+
+      expect(tester.getRect(find.byType(AuraCard)).bottom, 760);
+    });
+
     testWidgets('controller opens menu', (tester) async {
       final controller = AuraPopupMenuController();
 
