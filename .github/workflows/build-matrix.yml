@@ -196,10 +196,14 @@ jobs:
               raise SystemExit(f"Unexpected Linux plugin target in {cmake_file}")
 
           old_flag = 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-literal-operator")'
-          guarded_flag = '''check_cxx_compiler_flag(
+          guarded_flag = '''set(_restore_required_flags "${CMAKE_REQUIRED_FLAGS}")
+          set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror")
+          check_cxx_compiler_flag(
             "-Wno-deprecated-literal-operator"
             HAS_DEPRECATED_LITERAL_OPERATOR_FLAG
           )
+          set(CMAKE_REQUIRED_FLAGS "${_restore_required_flags}")
+          unset(_restore_required_flags)
           if(HAS_DEPRECATED_LITERAL_OPERATOR_FLAG)
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-literal-operator")
           endif()'''
