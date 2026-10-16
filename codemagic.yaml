@@ -103,6 +103,12 @@ workflows:
   release-ios:
     name: Release iOS
     <<: *release_build
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'auravibes_app-v*'
+          include: true
     environment:
       flutter: fvm
       groups:
@@ -174,6 +180,12 @@ workflows:
   release-android:
     name: Release Android
     <<: *release_build
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'auravibes_app-v*'
+          include: true
     environment:
       flutter: fvm
       android_signing:
