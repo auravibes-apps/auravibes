@@ -2,6 +2,7 @@
 class const WorkspaceCreationDraft({
   final String name = '',
   final String target = '',
+  final String cloudTarget = '',
   final WorkspaceCreationIntent intent = .local,
 });
 

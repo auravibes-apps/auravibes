@@ -166,10 +166,12 @@ class UxValidationFixture {
     bool dark = false,
     List<Object> overrides = const [],
     List<CloudAccountSession> accounts = const [],
+    Future<List<CloudAccountSession>> Function()? accountsLoad,
     WorkspaceSession? sessionOverride,
     Exception? sessionFailure,
     bool emptyModels = true,
     bool realSessions = false,
+    bool useProductionRouter = false,
   }) async {
     AppFlavorConfig.instance.setAppFlavor(.prod);
     SharedPreferences.setMockInitialValues({
@@ -193,10 +195,11 @@ class UxValidationFixture {
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
-        routerProvider.overrideWithValue(router),
-        routerInformationProvider.overrideWithValue(
-          router.routeInformationProvider,
-        ),
+        if (!useProductionRouter) routerProvider.overrideWithValue(router),
+        if (!useProductionRouter)
+          routerInformationProvider.overrideWithValue(
+            router.routeInformationProvider,
+          ),
         workspaceSessionProvider(session).overrideWithValue(session),
         if (!realSessions)
           workspaceSessionForRouteProvider.overrideWith((ref, id) async {
@@ -204,7 +207,9 @@ class UxValidationFixture {
 
             return session;
           }),
-        cloudAccountsProvider.overrideWith((ref) async => accounts),
+        cloudAccountsProvider.overrideWith(
+          (ref) async => accountsLoad == null ? accounts : await accountsLoad(),
+        ),
         if (emptyModels)
           chatModelConnectionsProvider(workspaceId)
               .overrideWith((ref) => Stream.value([])),
@@ -215,6 +220,13 @@ class UxValidationFixture {
       ],
     );
     addTearDown(container.dispose);
+    final effectiveRouter = useProductionRouter
+        ? container.read(routerProvider)
+        : router;
+    if (useProductionRouter) {
+      addTearDown(effectiveRouter.dispose);
+      effectiveRouter.go(location);
+    }
     await tester.runAsync(
       () => tester.pumpWidget(
         EasyLocalization(
@@ -236,7 +248,7 @@ class UxValidationFixture {
 
     await settle(tester);
 
-    return router;
+    return effectiveRouter;
   }
 
   Future<void> settle(WidgetTester tester) async {

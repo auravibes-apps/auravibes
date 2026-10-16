@@ -1,28 +1,48 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
+import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
-import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_readiness_summary.dart';
+import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_health.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_auth_failure.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/cloud_email_delivery_provider.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_add_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_forgot_password_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_login_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_register_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_accounts_screen.dart';
-import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_detail_state.dart';
+import 'package:auravibes_app/features/cloud_accounts/usecases/cloud_account_usecases.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/screens/cloud_workspace_detail_screen.dart';
+import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
 import 'package:auravibes_app/features/markdown/screens/markdown_editor_screen.dart';
+import 'package:auravibes_app/features/models/models/model_connection_store.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
+import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
+import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
@@ -48,23 +68,37 @@ import 'package:auravibes_app/features/workspaces/models/workspace_route_failure
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
+import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/services/cloud_auth_protocol.dart';
+import 'package:auravibes_app/services/codex_oauth_service.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/route_recovery_view.dart';
+import 'package:auravibes_app/widgets/setup_page_frame.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:crypto/crypto.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../helpers/ux_validation_fixture.dart';
+
+part '../helpers/intro_journey_capture.dart';
 
 final _captureFontMetadata = <Map<String, String>>[];
 
 void main() {
+  _registerIntroJourneyCaptures();
   setUpAll(() async {
     for (final font in const {
       'Inter': 'assets/fonts/Inter.ttf',
@@ -173,7 +207,8 @@ void main() {
                       'accentHue': 186.0,
                       'fonts': _captureFontMetadata,
                       'fontLimitations':
-                          'Family-free Copy code uses test Ahem; '
+                          'Text without an explicit font family '
+                          'uses test Ahem; '
                           'native control typography is unverified.',
                       'control': 'NewChat Add provider',
                       'foreground': foreground.toARGB32(),
@@ -323,6 +358,101 @@ void main() {
       });
     }
   }
+  testWidgets(
+    'production router retains saved Intro and normal startup opens chat',
+    (tester) async {
+      final fixture = await UxValidationFixture.create(empty: true);
+      final router = await fixture.pump(
+        tester,
+        const IntroRoute().location,
+        useProductionRouter: true,
+        realSessions: true,
+        overrides: [
+          chatModelConnectionsProvider.overrideWith(
+            (ref, id) => Stream.value([]),
+          ),
+          listModelsGroupedByProviderProvider.overrideWith(
+            (ref, id) => Stream.value({}),
+          ),
+        ],
+      );
+      await tester.tap(find.byKey(const Key('intro_welcome_skip_button')));
+      await fixture.settle(tester);
+      await tester.tap(find.byKey(const Key('intro_route_local_button')));
+      await fixture.settle(tester);
+      await tester.enterText(find.byType(AuraInput), 'Router journey');
+      await tester.tap(find.byKey(const Key('intro_create_workspace_button')));
+      await fixture.settle(tester);
+      expect(find.text('Workspace created'), findsOneWidget);
+      router.refresh();
+      await fixture.settle(tester);
+      expect(router.routeInformationProvider.value.uri.path, '/intro');
+      expect(find.text('Workspace created'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('intro_skip_ai_button')));
+      await fixture.settle(tester);
+      expect(find.byType(NewChatScreen), findsOneWidget);
+      await fixture.close(tester);
+      final existing = await UxValidationFixture.create();
+      final startup = await existing.pump(
+        tester,
+        '/intro',
+        useProductionRouter: true,
+      );
+      expect(
+        startup.routeInformationProvider.value.uri.path,
+        NewChatRoute(workspaceId: existing.workspaceId).location,
+      );
+      expect(find.byType(NewChatScreen), findsOneWidget);
+      expect(find.byType(IntroScreen), findsNothing);
+      await existing.close(tester);
+    },
+  );
+
+  testWidgets('Intro welcome narrow Spanish large text', (tester) async {
+    final fixture = await UxValidationFixture.create(empty: true);
+    final router = await fixture.pump(
+      tester,
+      const IntroRoute().location,
+      size: const Size(360, 640),
+      locale: 'es',
+      scale: 1.8,
+    );
+    for (var page = 1; page <= 3; page++) {
+      expect(find.text('$page de 4'), findsOneWidget);
+      expect(
+        find.byKey(const Key('intro_route_local_button')).hitTestable(),
+        findsNothing,
+      );
+      final bodyKey = const [
+        'intro_flow.welcome.body',
+        'intro_flow.workspace_context.body',
+        'intro_flow.welcome.ai_body',
+      ][page - 1];
+      await tester.ensureVisible(find.text(bodyKey.tr()));
+      await fixture.settle(tester);
+      expect(find.text(bodyKey.tr()).hitTestable(), findsOneWidget);
+      expect(
+        find.byKey(const Key('intro_welcome_next_button')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      await _capture(
+        tester,
+        'IntroWelcome-es-$page',
+        router.routeInformationProvider.value.uri.toString(),
+        locale: 'es',
+        size: const Size(360, 640),
+        scale: 1.8,
+        dark: false,
+      );
+      await tester.tap(find.byKey(const Key('intro_welcome_next_button')));
+      await fixture.settle(tester);
+    }
+    expect(find.byKey(const Key('intro_route_local_button')), findsOneWidget);
+    expect(find.byKey(const Key('intro_route_cloud_button')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await fixture.close(tester);
+  });
   for (final name in _routeNames) {
     testWidgets('production direct route $name', (tester) async {
       final fixture = await UxValidationFixture.create(
@@ -438,6 +568,26 @@ void main() {
             ? _disabledBadgeMeasurement(tester)
             : null,
       );
+      if (name == 'IntroRoute') {
+        for (final step in const [
+          'IntroWelcomeContext',
+          'IntroWelcomeAI',
+          'IntroWorkspaceChoice',
+        ]) {
+          await tester.tap(find.byKey(const Key('intro_welcome_next_button')));
+          await fixture.settle(tester);
+          expect(tester.takeException(), isNull);
+          await _capture(
+            tester,
+            step,
+            router.routeInformationProvider.value.uri.toString(),
+            locale: 'en',
+            size: const Size(1280, 1200),
+            scale: 1,
+            dark: false,
+          );
+        }
+      }
       await fixture.close(tester);
     });
   }
@@ -897,7 +1047,8 @@ Future<void> _capture(
         'route': route,
         'fixture': _fixtureDescription(name),
         'sourceFingerprint': fingerprint,
-        'renderer': 'Flutter widget-test Skia, Linux',
+        'renderer': 'Flutter widget test; host ${Platform.operatingSystem}',
+        'targetPlatform': defaultTargetPlatform.name,
         'viewport': [size.width, size.height],
         'locale': locale,
         'textScale': scale,
@@ -907,7 +1058,7 @@ Future<void> _capture(
         'disableAnimations': true,
         'fonts': _captureFontMetadata,
         'fontLimitations':
-            'Family-free Copy code uses test Ahem; '
+            'Text without an explicit font family uses test Ahem; '
             'native control typography is unverified.',
       }),
     );
@@ -1121,6 +1272,10 @@ double _contrast(Color foreground, Color background) {
 }
 
 String _fixtureDescription(String name) => switch (name) {
+  final stage when stage.startsWith('Intro-') =>
+    'Production Intro and local persisted workspace; controlled cloud, '
+        'authentication, provider and model stores. '
+        'Fictional credentials only.',
   'IntroRoute' => 'Empty in-memory database; no workspace or account',
   'MixedConnections' =>
     'Four controlled connection rows: model provider, '

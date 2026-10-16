@@ -5,6 +5,8 @@ import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_forg
 import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_login_form.dart';
 import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_register_form.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/setup_page_frame.dart';
+import 'package:auravibes_app/widgets/setup_page_transition.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:material_ui/material_ui.dart';
@@ -33,6 +35,8 @@ class CloudAccountAuthContent extends StatefulWidget {
     this.onModeChanged,
     this.passwordChanged = false,
     this.returnTaskLabel = '',
+    this.pageBuilder,
+    this.onPendingChanged,
     super.key,
   });
   final CloudAuthTarget target;
@@ -42,6 +46,8 @@ class CloudAccountAuthContent extends StatefulWidget {
   final ValueChanged<CloudAccountSession> onSignedIn;
   final VoidCallback onCancel;
   final ValueChanged<CloudAuthNavigation>? onModeChanged;
+  final SetupPageBuilder? pageBuilder;
+  final ValueChanged<bool>? onPendingChanged;
   @override
   State<CloudAccountAuthContent> createState() =>
       _CloudAccountAuthContentState();
@@ -54,6 +60,14 @@ class _CloudAccountAuthContentState extends State<CloudAccountAuthContent> {
   var _pending = false;
   var _code = false;
   var _passwordChanged = false;
+  var _reverse = false;
+  SetupPageBuilder? get _pageBuilder {
+    final builder = widget.pageBuilder;
+    if (builder == null) return null;
+
+    return (page) => SetupPageTransition(child: builder(page));
+  }
+
   @override
   void didUpdateWidget(covariant CloudAccountAuthContent oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -70,18 +84,34 @@ class _CloudAccountAuthContentState extends State<CloudAccountAuthContent> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      _CloudAccountAuthLayout(data: _cloudAuthContentViewData(this, widget));
+  Widget build(BuildContext context) {
+    final builder = widget.pageBuilder;
+    final layout = _CloudAccountAuthLayout(
+      data: _cloudAuthContentViewData(this, widget),
+      pageBuilder: _pageBuilder,
+    );
+    if (builder == null) return layout;
 
-  String _title(CloudAuthMode mode) => _code
-      ? LocaleKeys.cloud_accounts_verify_email
-      : switch (mode) {
-          .login => LocaleKeys.workspace_management_cloud_login,
-          .register => LocaleKeys.cloud_accounts_create_title,
-          .forgotPassword => LocaleKeys.cloud_accounts_forgot_password,
-        };
+    return SetupPageTransition(
+      child: KeyedSubtree(
+        key: ValueKey(_mode ?? widget.initialMode),
+        child: layout,
+      ),
+      reverse: _reverse,
+    );
+  }
+
+  String _title(CloudAuthMode mode) => switch (mode) {
+    .forgotPassword when _code =>
+      LocaleKeys.cloud_accounts_finish_password_reset,
+    _ when _code => LocaleKeys.cloud_accounts_verify_email,
+    .login => LocaleKeys.workspace_management_cloud_login,
+    .register => LocaleKeys.cloud_accounts_create_title,
+    .forgotPassword => LocaleKeys.cloud_accounts_forgot_password,
+  };
 
   void _change(CloudAuthMode mode, {bool passwordChanged = false}) {
+    if (_pending && !passwordChanged) return;
     _applyCloudAuthModeChange(this, widget, (
       mode: mode,
       email: _effectiveEmail(_email, widget.target.email),
@@ -90,15 +120,25 @@ class _CloudAccountAuthContentState extends State<CloudAccountAuthContent> {
   }
 
   void _updateMode(CloudAuthMode mode, String email, bool passwordChanged) {
-    setState(() {
-      _mode = mode;
-      _modeEmail = email.isEmpty ? null : email;
-      _code = false;
-      _passwordChanged = passwordChanged;
-    });
+    setState(() => _setMode(mode, email, passwordChanged));
+    if (passwordChanged) widget.onPendingChanged?.call(false);
   }
 
-  void _pendingChanged(bool value) => setState(() => _pending = value);
+  void _setMode(CloudAuthMode mode, String email, bool passwordChanged) {
+    _reverse = mode == .login;
+    _mode = mode;
+    _modeEmail = email.isEmpty ? null : email;
+    _code = false;
+    _passwordChanged = passwordChanged;
+    if (passwordChanged) _pending = false;
+  }
+
+  void _pendingChanged(bool value) {
+    if (!mounted) return;
+    setState(() => _pending = value);
+    widget.onPendingChanged?.call(value);
+  }
+
   void _codeChanged(bool value) => setState(() => _code = value);
 }
 
@@ -179,26 +219,106 @@ CloudAuthTarget _viewTarget(
 String _effectiveEmail(String? currentEmail, String? targetEmail) =>
     currentEmail ?? targetEmail ?? '';
 
-class const _CloudAccountAuthLayout({
+class _CloudAccountAuthLayout extends StatelessWidget {
+  new({required _CloudAuthContentViewData data, SetupPageBuilder? pageBuilder})
+    : _child = !data.presentation.target.isValid
+          ? _CloudAuthUnavailable(data: data, pageBuilder: pageBuilder)
+          : switch (pageBuilder) {
+              final builder? => _CloudAuthEmbeddedForm(
+                data: data,
+                pageBuilder: builder,
+              ),
+              null => AuraColumn(
+                children: [
+                  _CloudAccountAuthHeader(data: data),
+                  _CloudAccountAuthForm(data: data),
+                  _CloudAccountAuthModeActions(data: data),
+                  _CloudAuthCancelButton(data: data),
+                ],
+                spacing: .sm,
+                crossAxisAlignment: .stretch,
+              ),
+            };
+  final Widget _child;
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _CloudAuthUnavailable({
   required final _CloudAuthContentViewData data,
+  final SetupPageBuilder? pageBuilder,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (!data.presentation.target.isValid) {
+    final builder = pageBuilder;
+    if (builder == null) {
       return _InvalidCloudAccountAuthTarget(onCancel: data.callbacks.onCancel);
     }
 
-    return AuraColumn(
-      children: [
-        _CloudAccountAuthHeader(data: data),
-        _CloudAccountAuthForm(data: data),
-        _CloudAccountAuthModeActions(data: data),
-        _CloudAuthCancelButton(data: data),
-      ],
-      spacing: .sm,
-      crossAxisAlignment: .stretch,
+    return builder(
+      .new(
+        key: const Key('intro_cloud_auth_unavailable'),
+        heading: const AuraText(
+          child: TextLocale('workspace_management.cloud_login'),
+          style: .heading4,
+        ),
+        body: const TextLocale('cloud_accounts.not_configured'),
+        actions: _CloudAuthCancelButton(data: data),
+        pending: data.pending,
+      ),
     );
   }
+}
+
+class const _CloudAuthEmbeddedForm({
+  required final _CloudAuthContentViewData data,
+  required final SetupPageBuilder pageBuilder,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _CloudAccountAuthForm(data: data, contentBuilder: _content);
+
+  Widget _content(Widget fields, Widget action) => pageBuilder(
+    .new(
+      key: ValueKey(data.presentation.title),
+      heading: _CloudAuthTaskHeading(title: data.presentation.title),
+      description: _CloudAuthLoginIntro(returnTaskLabel: data.returnTaskLabel),
+      body: _CloudAuthEmbeddedBody(data: data, fields: fields),
+      actions: _CloudAuthEmbeddedActions(data: data, action: action),
+      pending: data.pending,
+    ),
+  );
+}
+
+class const _CloudAuthEmbeddedBody({
+  required final _CloudAuthContentViewData data,
+  required final Widget fields,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _CloudAuthHeaderDetails(presentation: data.presentation),
+      fields,
+      _CloudAccountAuthModeActions(data: data),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .stretch,
+  );
+}
+
+class const _CloudAuthEmbeddedActions({
+  required final _CloudAuthContentViewData data,
+  required final Widget action,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      action,
+      _CloudAuthCancelButton(data: data),
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .stretch,
+  );
 }
 
 class const _CloudAccountAuthHeader({
@@ -209,6 +329,7 @@ class const _CloudAccountAuthHeader({
     children: [
       AuraText(child: TextLocale(data.presentation.title), style: .heading3),
       _CloudAuthHeaderDetails(presentation: data.presentation),
+      _CloudAuthLoginIntro(returnTaskLabel: data.returnTaskLabel),
     ],
     spacing: .sm,
     crossAxisAlignment: .stretch,
@@ -225,7 +346,7 @@ class const _CloudAuthHeaderDetails({
     return AuraColumn(
       children: [
         if (configuredOrigin case final origin?)
-          Text(origin)
+          AuraText(child: Text(origin), style: .caption)
         else
           const TextLocale(LocaleKeys.cloud_accounts_not_configured),
         if (presentation.showPasswordChanged)
@@ -239,10 +360,11 @@ class const _CloudAuthHeaderDetails({
 
 class const _CloudAccountAuthForm({
   required final _CloudAuthContentViewData data,
+  final SetupFormBuilder? contentBuilder,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      _CloudAuthModeForm(request: _cloudAuthFormRequest(data));
+      _CloudAuthModeForm(request: _cloudAuthFormRequest(data, contentBuilder));
 }
 
 typedef _CloudAuthFormRequest = ({
@@ -250,9 +372,13 @@ typedef _CloudAuthFormRequest = ({
   CloudAuthTarget target,
   _CloudAuthFormCallbacks callbacks,
   Key key,
+  SetupFormBuilder? contentBuilder,
 });
 
-_CloudAuthFormRequest _cloudAuthFormRequest(_CloudAuthContentViewData data) {
+_CloudAuthFormRequest _cloudAuthFormRequest(
+  _CloudAuthContentViewData data,
+  SetupFormBuilder? contentBuilder,
+) {
   final target = data.presentation.target;
   final mode = data.presentation.mode;
 
@@ -261,6 +387,7 @@ _CloudAuthFormRequest _cloudAuthFormRequest(_CloudAuthContentViewData data) {
     target: target,
     callbacks: _CloudAuthFormCallbacks(data.callbacks),
     key: ValueKey((owner: target.owner, mode: mode)),
+    contentBuilder: contentBuilder,
   );
 }
 
@@ -286,6 +413,7 @@ class const _CloudAccountLoginFormView({
       target: request.target,
       onPendingChanged: callbacks.onPendingChanged,
       onEmailChanged: callbacks.onEmailChanged,
+      contentBuilder: request.contentBuilder,
       key: request.key,
     );
   }
@@ -303,6 +431,7 @@ class const _CloudAccountRegisterFormView({
       target: request.target,
       onPendingChanged: callbacks.onPendingChanged,
       onEmailChanged: callbacks.onEmailChanged,
+      contentBuilder: request.contentBuilder,
       onCodeStepChanged: callbacks.onCodeChanged,
       key: request.key,
     );
@@ -321,6 +450,7 @@ class const _CloudAccountForgotPasswordFormView({
       target: request.target,
       onPendingChanged: callbacks.onPendingChanged,
       onEmailChanged: callbacks.onEmailChanged,
+      contentBuilder: request.contentBuilder,
       onCodeStepChanged: callbacks.onCodeChanged,
       key: request.key,
     );
@@ -392,21 +522,7 @@ class const _CloudAuthLoginActionGroup({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      visible ? _CloudAuthLoginActions(data: data) : const SizedBox.shrink();
-}
-
-class const _CloudAuthLoginActions({
-  required final _CloudAuthContentViewData data,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      _CloudAuthLoginIntro(returnTaskLabel: data.returnTaskLabel),
-      _CloudAuthLoginButtons(data: data),
-    ],
-    spacing: .sm,
-    crossAxisAlignment: .stretch,
-  );
+      visible ? _CloudAuthLoginButtons(data: data) : const SizedBox.shrink();
 }
 
 class const _CloudAuthLoginIntro({required final String returnTaskLabel})
@@ -467,7 +583,7 @@ class const _CloudAuthModeButton({
   Widget build(BuildContext context) => AuraButton(
     onPressed: _cloudAuthLoginAction(onChange, mode),
     child: TextLocale(label),
-    variant: .outlined,
+    variant: .ghost,
     disabled: pending,
   );
 }
@@ -485,7 +601,7 @@ class const _CloudAuthCancelButton({
   Widget build(BuildContext context) => AuraButton(
     onPressed: data.callbacks.onCancel,
     child: const TextLocale(LocaleKeys.cloud_accounts_cancel_auth),
-    variant: .outlined,
+    variant: .ghost,
     disabled: data.pending,
   );
 }
@@ -503,4 +619,11 @@ class const _InvalidCloudAccountAuthTarget({
       ),
     ],
   );
+}
+
+class const _CloudAuthTaskHeading({required final String title})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      AuraText(child: TextLocale(title), style: .heading4);
 }

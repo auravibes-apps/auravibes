@@ -16,9 +16,13 @@ class ChatReadinessSummary extends ConsumerWidget {
   const new({
     required this._workspaceId,
     this._isSetupHandoff = false,
+    this.onAddProvider,
+    this.onReviewConnections,
     super.key,
   });
 
+  final VoidCallback? onAddProvider;
+  final VoidCallback? onReviewConnections;
   final String _workspaceId;
   final bool _isSetupHandoff;
 
@@ -27,6 +31,8 @@ class ChatReadinessSummary extends ConsumerWidget {
     workspaceId: _workspaceId,
     state: _watchChatReadinessState(ref, _workspaceId),
     isSetupHandoff: _isSetupHandoff,
+    onAddProvider: onAddProvider,
+    onReviewConnections: onReviewConnections,
   );
 }
 
@@ -43,14 +49,23 @@ class const _ChatReadinessContent({
   required final String workspaceId,
   required final _ChatReadinessState state,
   required final bool isSetupHandoff,
+  final VoidCallback? onAddProvider,
+  final VoidCallback? onReviewConnections,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
       TextLocale('chat_readiness.${state.localeKey()}'),
       if (state == _ChatReadinessState.noProvider)
-        _ChatAddProviderButton(workspaceId: workspaceId),
-      _ChatReadinessActions(workspaceId: workspaceId, state: state),
+        _ChatAddProviderButton(
+          workspaceId: workspaceId,
+          onPressed: onAddProvider,
+        ),
+      _ChatReadinessActions(
+        workspaceId: workspaceId,
+        state: state,
+        onReviewConnections: onReviewConnections,
+      ),
       if (_needsSelectionHint(state))
         TextLocale(
           isSetupHandoff
@@ -65,6 +80,7 @@ class const _ChatReadinessContent({
 class const _ChatReadinessActions({
   required final String workspaceId,
   required final _ChatReadinessState state,
+  final VoidCallback? onReviewConnections,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -76,7 +92,10 @@ class const _ChatReadinessActions({
       mainAxisSize: .min,
       children: [
         if (showConnections)
-          _ChatReviewConnectionsButton(workspaceId: workspaceId),
+          _ChatReviewConnectionsButton(
+            workspaceId: workspaceId,
+            onPressed: onReviewConnections,
+          ),
         if (showRetry) _ChatReadinessRetryButton(workspaceId: workspaceId),
       ],
     );
@@ -174,29 +193,36 @@ bool _containsSelection(
   String selectedId,
 ) => models.any((item) => item.workspaceModelSelection.id == selectedId);
 
-class const _ChatAddProviderButton({required final String workspaceId})
-    extends StatelessWidget {
+class const _ChatAddProviderButton({
+  required final String workspaceId,
+  final VoidCallback? onPressed,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
-    onPressed: () => unawaited(
-      ServiceConnectionCreateRoute(
-        workspaceId: workspaceId,
-        returnPath: NewChatRoute(workspaceId: workspaceId).location,
-        type: 'modelProvider',
-      ).push<void>(context),
-    ),
+    onPressed: onPressed ?? () => _openProvider(context),
     child: const TextLocale('models_screens.add_provider.open_button'),
     key: const ValueKey('workspace_add_model_provider'),
   );
+  void _openProvider(BuildContext context) => unawaited(
+    ServiceConnectionCreateRoute(
+      workspaceId: workspaceId,
+      returnPath: NewChatRoute(workspaceId: workspaceId).location,
+      type: 'modelProvider',
+    ).push<void>(context),
+  );
 }
 
-class const _ChatReviewConnectionsButton({required final String workspaceId})
-    extends StatelessWidget {
+class const _ChatReviewConnectionsButton({
+  required final String workspaceId,
+  final VoidCallback? onPressed,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
-    onPressed: () => unawaited(
-      ServiceConnectionsRoute(workspaceId: workspaceId).push<void>(context),
-    ),
+    onPressed:
+        onPressed ??
+        () => unawaited(
+          ServiceConnectionsRoute(workspaceId: workspaceId).push<void>(context),
+        ),
     child: const TextLocale('chat_readiness.review_connections'),
   );
 }
