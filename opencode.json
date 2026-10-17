@@ -32,6 +32,7 @@
         "type": "local",
         "command": [
           "serverpod",
+          "-q",
           "mcp-server",
           "--server-dir",
           "apps/auravibes_server"

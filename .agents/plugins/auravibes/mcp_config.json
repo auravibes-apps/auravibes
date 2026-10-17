@@ -26,6 +26,7 @@
     "serverpod": {
       "command": "serverpod",
       "args": [
+        "-q",
         "mcp-server",
         "--server-dir",
         "apps/auravibes_server"

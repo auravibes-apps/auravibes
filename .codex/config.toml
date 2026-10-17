@@ -1,3 +1,19 @@
+[mcp_servers.dart]
+command = "fvm"
+args = ["dart", "mcp-server", "--force-roots-fallback"]
+
 [mcp_servers.marionette]
 command = "fvm"
 args = ["dart", "run", "marionette_mcp"]
+
+[mcp_servers.pubdev]
+command = "npx"
+args = ["-y", "@devqxi/pubdev-mcp-server@1.0.1"]
+
+[mcp_servers.serverpod]
+command = "serverpod"
+args = ["-q", "mcp-server", "--server-dir", "apps/auravibes_server"]
+
+[mcp_servers.sonarqube]
+command = "sonar"
+args = ["run", "mcp"]
