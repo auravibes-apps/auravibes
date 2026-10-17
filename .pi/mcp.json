@@ -1,5 +1,15 @@
 {
   "mcpServers": {
+    "dart": {
+      "command": "fvm",
+      "args": [
+        "dart",
+        "mcp-server",
+        "--force-roots-fallback"
+      ],
+      "lifecycle": "lazy",
+      "directTools": true
+    },
     "marionette": {
       "command": "fvm",
       "args": [
@@ -9,6 +19,33 @@
       ],
       "lifecycle": "lazy",
       "directTools": true
+    },
+    "pubdev": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@devqxi/pubdev-mcp-server@1.0.1"
+      ],
+      "lifecycle": "lazy",
+      "directTools": true
+    },
+    "serverpod": {
+      "command": "serverpod",
+      "args": [
+        "-q",
+        "mcp-server",
+        "--server-dir",
+        "apps/auravibes_server"
+      ],
+      "lifecycle": "lazy"
+    },
+    "sonarqube": {
+      "command": "sonar",
+      "args": [
+        "run",
+        "mcp"
+      ],
+      "lifecycle": "lazy"
     }
   }
 }
