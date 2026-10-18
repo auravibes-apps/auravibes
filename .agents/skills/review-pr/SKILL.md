@@ -26,8 +26,7 @@ triggers:
 
 # Review PR
 
-Use this for existing PR feedback, not PR creation. For creation/push, use
-[pr-delivery](../pr-delivery/SKILL.md).
+Use this for existing PR feedback, not PR creation.
 
 1. Use applicable AGENTS and compare local changes with the reviewed head.
 2. Read [workflow.md](references/workflow.md) to collect and validate findings.

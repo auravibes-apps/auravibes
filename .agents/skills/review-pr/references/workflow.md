@@ -55,7 +55,7 @@ Compare the feedback's PR head with local HEAD. Preserve unrelated uncommitted c
 gh pr list --head $(git branch --show-current) --state open --json number,title
 ```
 
-**If no PR:** If creation is authorized, use [pr-delivery](../../pr-delivery/SKILL.md), then collect feedback when available. Otherwise report that no PR exists; do not create one for a review-only request.
+**If no PR:** Create one only when the user authorizes creation. Use the contributor's configured tools and workflow. Otherwise report that no PR exists.
 
 ### Step 3: Collect All Open Review Feedback
 

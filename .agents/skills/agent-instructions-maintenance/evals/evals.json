@@ -18,6 +18,12 @@
       "prompt": "Fix a typo in the chat label.",
       "expected_output": "Fixes localized copy with scoped checks; does not load maintenance policy or perform a harness audit.",
       "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Remove the shared PR delivery skill. Use each contributor's setup instead of preparing a full local environment for PR creation.",
+      "expected_output": "Removes the shared skill and its references. Removes PR-only local setup and validation gates. Keeps ordinary development checks and mandatory CI checks. Runs harness verification without Flutter setup. Reports that model trials did not run.",
+      "files": []
     }
   ]
 }

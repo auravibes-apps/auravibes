@@ -104,8 +104,8 @@
 ## PR Gates
 
 - PR titles use Conventional Commits. Keep each PR to one coherent change with its related tests; describe purpose, behavior, validation, and requested reviewer focus.
-- An authorized PR creation request completes after push, PR creation, and one current-head status snapshot. Wait for all checks or fix CI when requested; pending CI is reported as pending. Use `.agents/skills/pr-delivery/SKILL.md` for delivery.
-- Before opening or updating a code PR, run only scope-appropriate local checks above. Full `validate`, `dependency_validator`, and `import_sorter` are not default local PR gates. Run dependency validation when dependency or package metadata changes, and import sorting when imports change. GitHub's required checks own repository-wide gates.
+- Use each contributor's configured tools and workflow for PR delivery. Do not install tools or prepare a full local environment solely to create or update a PR.
+- PR creation adds no local validation gate. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
 
 ## Agent skills
 
