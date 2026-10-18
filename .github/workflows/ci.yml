@@ -545,6 +545,29 @@ jobs:
           echo "command_completed=true" >> "$GITHUB_OUTPUT"
           exit "$status"
 
+      - name: Upload Widgetbook golden failures
+        id: upload-widgetbook-golden-failures
+        if: ${{ failure() && matrix.package == 'widgetbook' && steps.run-tests.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: widgetbook-golden-failures-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.artifact }}
+          # LocalFileComparator writes beside the test, not the golden baseline.
+          path: widgetbook/test/failures/*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Summarize Widgetbook golden failures
+        if: ${{ always() && matrix.package == 'widgetbook' && steps.run-tests.outcome == 'failure' }}
+        env:
+          ARTIFACT_URL: ${{ steps.upload-widgetbook-golden-failures.outputs.artifact-url }}
+          ARTIFACT_NAME: widgetbook-golden-failures-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.artifact }}
+        run: |
+          if [[ -n "$ARTIFACT_URL" ]]; then
+            printf 'Widgetbook golden failure artifact: [%s](%s)\n' "$ARTIFACT_NAME" "$ARTIFACT_URL" >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'No artifact was produced for Widgetbook golden failures (%s).\n' "$ARTIFACT_NAME" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload shard test report
         if: ${{ !cancelled() && steps.run-tests.outputs.command_completed == 'true' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
