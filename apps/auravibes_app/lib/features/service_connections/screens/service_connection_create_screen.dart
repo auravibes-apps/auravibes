@@ -79,6 +79,7 @@ class _ServiceConnectionCreateScreenState
     extends ConsumerState<ServiceConnectionCreateScreen> {
   final _nameController = TextEditingController();
   final _attributeControllers = <String, TextEditingController>{};
+  final _apiKeyController = TextEditingController();
   ServiceConnectionCreateType _type = .modelProvider;
   String? _definitionId;
   String? _appSkillId;
@@ -93,6 +94,7 @@ class _ServiceConnectionCreateScreenState
     'type': _type.name,
     'definition': _definitionId,
     'appSkill': _appSkillId,
+    if (_type == .appSkillCredential) 'apiKey': _apiKeyController.text,
     'attributes': {
       for (final entry in _attributeControllers.entries)
         if (entry.value.text.isNotEmpty) entry.key: entry.value.text,
@@ -110,13 +112,6 @@ class _ServiceConnectionCreateScreenState
       _isSaving ||
       _type == .modelProvider &&
           ref.read(addCredentialsModelMutationProvider) is MutationPending;
-
-  TextEditingController get _apiKeyController {
-    return _attributeControllers.putIfAbsent(
-      'apiKey',
-      TextEditingController.new,
-    );
-  }
 
   @override
   void initState() {
@@ -278,6 +273,7 @@ bool _isNewCredentialDefinitionForWorkspace(
 
 void _disposeCreateState(_ServiceConnectionCreateScreenState state) {
   state._nameController.dispose();
+  state._apiKeyController.dispose();
   for (final controller in state._attributeControllers.values) {
     controller.dispose();
   }
@@ -675,6 +671,7 @@ void _resetAttributeControllers(_ServiceConnectionCreateScreenState state) {
     controller.dispose();
   }
   state._attributeControllers.clear();
+  state._apiKeyController.clear();
 }
 
 String _describeAttributes(Map<String, String> attributes) => attributes.entries
