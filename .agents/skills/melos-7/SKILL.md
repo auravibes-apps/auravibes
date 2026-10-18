@@ -13,7 +13,7 @@ metadata:
 
 # Melos 7+ Specialist
 
-Use this skill for Melos configuration, workspace membership, bootstrap, or version migration.
+Use this skill for Melos configuration, workspace membership, bootstrap, or version troubleshooting.
 
 ## AuraVibes facts
 
@@ -44,5 +44,3 @@ Use this skill for Melos configuration, workspace membership, bootstrap, or vers
 
 - For workspace configuration, SDK paths, or package discovery, read [workspace configuration](references/workspace-configuration.md).
 - For script syntax, filters, CLI commands, or environment variables, read [scripts and CLI](references/scripts-and-cli.md).
-- For a Melos 6 to 7 migration, read [migration steps](references/migration-6-to-7.md).
-- For optional IDE or release tasks, read [IDE and releases](references/ide-and-releases.md).

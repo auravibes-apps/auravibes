@@ -88,7 +88,3 @@ For a material change to a reusable skill or high-impact rule, compare represent
 For capability-coaching skills, compare against a no-skill baseline, especially after model upgrades. For workflow or preference skills, check whether the result still follows the team's verified process; model capability alone does not make a real policy obsolete.
 
 During relevant work or a requested audit, remove rules whose source has changed, whose behavior is enforced elsewhere, or whose scope no longer exists. Do not use line count alone as a quality score: check whether instructions cause conflicts, unnecessary actions, wrong routing, or measurable task cost. If evaluation data exists, compare task success and quality alongside extra steps, runtime, or token use. Recheck guidance after meaningful model or harness upgrades because effective scaffolding can change; avoid assuming model-specific instructions transfer unchanged across agents.
-
-## Research notes
-
-Read [research.md](research.md) for the evidence behind these practices, study limitations, and source links. The snapshot was checked on 2026-09-26; refresh vendor guidance and research before making a material policy decision.
