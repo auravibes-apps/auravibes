@@ -43,14 +43,6 @@
       ],
       "lifecycle": "lazy",
       "directTools": true
-    },
-    "sonarqube": {
-      "command": "sonar",
-      "args": [
-        "run",
-        "mcp"
-      ],
-      "lifecycle": "lazy"
     }
   }
 }

@@ -31,13 +31,6 @@
         "--server-dir",
         "apps/auravibes_server"
       ]
-    },
-    "sonarqube": {
-      "command": "sonar",
-      "args": [
-        "run",
-        "mcp"
-      ]
     }
   }
 }
