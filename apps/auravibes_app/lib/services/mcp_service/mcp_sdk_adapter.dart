@@ -15,10 +15,21 @@ abstract final class McpSdkAdapter {
         final mcp.AudioContent value => _audioContent(value),
         final mcp.EmbeddedResource value => _resourceContent(value),
         final mcp.ResourceLink value => _resourceLinkContent(value),
-        final mcp.UnknownContentBlock value => throw UnsupportedError(
-          'Unsupported MCP content: ${value.runtimeType}',
-        ),
+        final mcp.UnknownContentBlock value => _unknownContent(value),
       };
+}
+
+McpTextContent _unknownContent(mcp.UnknownContentBlock content) {
+  // Read only a bounded kind token; unknown payloads and metadata stay private.
+  final type = content['type'];
+  if (type is! String ||
+      type.isEmpty ||
+      type.length > 32 ||
+      RegExp('[^a-z0-9_-]').hasMatch(type)) {
+    return McpTextContent('[Unsupported MCP content: unknown]');
+  }
+
+  return McpTextContent('[Unsupported MCP content: $type]');
 }
 
 McpTextContent _textContent(mcp.TextContent content) => McpTextContent(
