@@ -16,13 +16,31 @@
     {
       "id": 3,
       "prompt": "The root `pubspec.yaml` declares a Dart Pub workspace. Can I skip Melos bootstrap on a fresh checkout, or does CI still use it? Explain which setup commands reproduce the repository's CI path.",
-      "expected_output": "The agent distinguishes Pub workspace membership and SDK/Pub setup from the repository's Melos bootstrap. It checks the root Melos dependency and CI setup/integrity workflow, recommends `fvm use` followed by `fvm dart run melos bootstrap`, and explains bootstrap's dependency-resolution and ignored IntelliJ metadata outputs without claiming it is unnecessary or inventing committed artifacts.",
+      "expected_output": "The agent distinguishes Pub workspace membership and SDK/Pub setup from the repository's Melos bootstrap. It checks the root Melos dependency and CI setup, recommends `fvm use` followed by `fvm dart run melos bootstrap`, and does not claim bootstrap is redundant.",
       "files": []
     },
     {
       "id": 4,
       "prompt": "Run the documented focused test command for this package.",
-      "expected_output": "Runs the command using root/scoped instructions without loading the complete Melos configuration skill, bootstrapping an already prepared workspace, or widening validation.",
+      "expected_output": "Runs the command using root and scoped instructions without loading the complete Melos configuration skill, bootstrapping an already prepared workspace, or widening validation.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "I need to add a package to AuraVibes. Should I put it in `melos.yaml` or root `pubspec.yaml`, and what must the member package declare?",
+      "expected_output": "The agent reads `references/workspace-configuration.md`, directs the user to root `pubspec.yaml` and its `workspace:` list, requires `resolution: workspace` in each member, and checks the current root configuration instead of copying placeholder paths.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Our Melos 8 script fails because it has both `run` and `exec`. It also needs concurrency 1. How should I write it?",
+      "expected_output": "The agent reads `references/scripts-and-cli.md`, explains that Melos 8 treats `run` and `exec` as exclusive, and places the command and concurrency under `exec.command` and `exec.concurrency`.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Run the existing `fvm dart run melos run generate:icons` script from the repository root.",
+      "expected_output": "Runs the documented script from root without loading the full Melos skill or changing configuration.",
       "files": []
     }
   ]
