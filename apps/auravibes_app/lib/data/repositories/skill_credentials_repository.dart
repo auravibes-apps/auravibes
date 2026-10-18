@@ -346,16 +346,19 @@ extension SkillCredentialsAttributeOperations on SkillCredentialsRepository {
     final secret = <String, String>{};
     final nonSecret = <String, String>{};
     for (final entry in attributes.entries) {
-      final definition = definitions[entry.key];
-      if (definition == null) {
-        throw SkillCredentialsException.definitionSchemaConflict(entry.key);
-      }
-      final target = definition.secret ? secret : nonSecret;
-      target[entry.key] = entry.value;
+      final definition = _requireAttributeDefinition(definitions, entry.key);
+      (definition.secret ? secret : nonSecret)[entry.key] = entry.value;
     }
 
     return (secret: secret, nonSecret: nonSecret);
   }
+
+  SkillCredentialAttributeDefinition _requireAttributeDefinition(
+    Map<String, SkillCredentialAttributeDefinition> definitions,
+    String key,
+  ) =>
+      definitions[key] ??
+      (throw SkillCredentialsException.definitionSchemaConflict(key));
 
   void _validateRequiredAttributes({
     required Map<String, SkillCredentialAttributeDefinition> definitions,
