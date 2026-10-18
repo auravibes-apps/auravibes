@@ -1,4 +1,5 @@
 // Required: UI callbacks stay local to their widgets.
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -10,6 +11,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/app_content.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -28,7 +30,7 @@ class const ChatsListScreen({required final String workspaceId, super.key})
       AsyncLoading() || AsyncError() => false,
     };
 
-    return AuraScreen(
+    return AppScreen(
       child: _ChatsListBody(
         workspaceId: workspaceId,
         showArchiveActions: showArchiveActions,

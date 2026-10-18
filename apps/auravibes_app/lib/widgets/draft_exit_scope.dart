@@ -87,7 +87,7 @@ class _DraftExitPopScope extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PopScope<Object?>(
     child: _DraftExitTransitionShield(guard: guard, child: child),
-    canPop: guard.isApproved && !guard.isTransitioning,
+    canPop: guard.canPop,
     onPopInvokedWithResult: (didPop, result) {
       if (!didPop) unawaited(guard.pop(context, result));
     },

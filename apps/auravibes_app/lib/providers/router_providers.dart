@@ -26,6 +26,7 @@ final routeObserverProvider = Provider<RouteObserver<ModalRoute<void>>>(
 @Riverpod(keepAlive: true)
 GoRouter router(Ref ref) {
   final routeObserver = ref.read(routeObserverProvider);
+  GoRouter.optionURLReflectsImperativeAPIs = true;
 
   return GoRouter(
     routes: $appRoutes,

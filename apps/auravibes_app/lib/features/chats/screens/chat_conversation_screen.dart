@@ -62,6 +62,7 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
@@ -434,7 +435,7 @@ _ConversationAsyncState _conversationResultState(ConversationResult? result) =>
 class const _ConversationLoading() extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      const AuraScreen(child: Center(child: AuraSpinner()));
+      const AppScreen(child: Center(child: AuraSpinner()));
 }
 
 class const _ConversationLoadError({
@@ -442,7 +443,7 @@ class const _ConversationLoadError({
   required final StackTrace stackTrace,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: AppErrorWidget(error: error, stackTrace: stackTrace),
   );
 }
@@ -451,7 +452,7 @@ class const _ConversationResultError({
   required final ConversationResult? result,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: AppErrorWidget(
       error: _conversationResultErrorMessage(result),
       stackTrace: .empty,
@@ -1529,7 +1530,7 @@ class const _LoadedChatConversationScreen({
     final actions = sidePanel.actions;
 
     return ChatPrimaryScrollController(
-      child: AuraScreen(
+      child: AppScreen(
         child: _LoadedChatConversationLayout(data: data, sidePanel: sidePanel),
         appBar: _ChatConversationAppBar(
           data: data,

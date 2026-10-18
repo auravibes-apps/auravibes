@@ -305,13 +305,6 @@ class const _MaterialAppRouterView({
   }
 }
 
-Brightness _effectiveBrightness(ThemeMode themeMode, BuildContext context) =>
-    switch (themeMode) {
-      .light => .light,
-      .dark => .dark,
-      .system => MediaQuery.platformBrightnessOf(context),
-    };
-
 class _AuraMaterialApp extends MaterialApp {
   new({
     required GoRouter routerConfig,
@@ -341,6 +334,13 @@ class _AuraMaterialApp extends MaterialApp {
        );
 }
 
+Brightness _effectiveBrightness(ThemeMode themeMode, BuildContext context) =>
+    switch (themeMode) {
+      .light => .light,
+      .dark => .dark,
+      .system => MediaQuery.platformBrightnessOf(context),
+    };
+
 class const _AuraAppContent({
   required final GoRouter router,
   required final AuraTheme targetAuraTheme,
@@ -366,11 +366,28 @@ class const _AuraAppThemeContent({
   required final Widget child,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraThemeScope(
-    theme: theme,
-    child: _RouteTitle(router: router, child: child),
-  );
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
+    return AuraThemeScope(
+      theme: theme,
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        child: _RouteTitle(router: router, child: child),
+        value: _statusBarOverlayStyle(brightness),
+      ),
+    );
+  }
 }
+
+SystemUiOverlayStyle _statusBarOverlayStyle(Brightness brightness) =>
+    SystemUiOverlayStyle(
+      statusBarBrightness: brightness == Brightness.dark
+          ? Brightness.dark
+          : Brightness.light,
+      statusBarIconBrightness: brightness == Brightness.dark
+          ? Brightness.light
+          : Brightness.dark,
+    );
 
 class const _RouteTitle({
   required final GoRouter router,

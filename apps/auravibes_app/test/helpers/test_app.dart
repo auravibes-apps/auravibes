@@ -72,25 +72,27 @@ class _TestableAppState extends State<TestableApp> {
           _container ?? (throw StateError('Test app is not initialized')),
       child: EasyLocalization(
         child: Builder(
-          builder: (context) => MaterialApp(
-            home: widget.child,
-            builder: (context, child) => AuraThemeScope(
-              theme: Theme.of(context).brightness == Brightness.light
-                  ? AuraTheme.light
-                  : AuraTheme.dark,
-              child: AuraLegacyMaterialBridge(
-                child: AuraSnackBarHost(
-                  child: child ?? const SizedBox.shrink(),
+          builder: (context) => Portal(
+            child: MaterialApp(
+              home: widget.child,
+              builder: (context, child) => AuraThemeScope(
+                theme: Theme.of(context).brightness == Brightness.light
+                    ? AuraTheme.light
+                    : AuraTheme.dark,
+                child: AuraLegacyMaterialBridge(
+                  child: AuraSnackBarHost(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               ),
+              locale: context.locale,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                sdk_localizations.GlobalMaterialLocalizations.delegate,
+                ...context.localizationDelegates,
+              ],
+              supportedLocales: context.supportedLocales,
             ),
-            locale: context.locale,
-            localizationsDelegates: [
-              ...GlobalMaterialLocalizations.delegates,
-              sdk_localizations.GlobalMaterialLocalizations.delegate,
-              ...context.localizationDelegates,
-            ],
-            supportedLocales: context.supportedLocales,
           ),
         ),
         supportedLocales: const [Locale('en'), Locale('es')],

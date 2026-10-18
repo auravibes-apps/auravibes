@@ -1,10 +1,12 @@
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/agent_list_query.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.dart';
+import 'package:auravibes_app/features/agents/providers/agent_list_notifier.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../helpers/test_app.dart';
@@ -15,6 +17,8 @@ void main() {
   testWidgets('debounces server-backed search and shows no results', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final agents = [
       _agent('research', 'Research Agent', 'Use for source gathering'),
       _agent('release', 'Release Agent', 'Use for launch planning'),
@@ -57,6 +61,94 @@ void main() {
     expect(find.text('No agents match these filters'), findsOneWidget);
   });
 
+  testWidgets(
+    'compact filter sheet restores values and clears filters but keeps search',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(466, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final agents = [
+        _agent('release-enabled', 'Release Agent', 'Launch planning'),
+        const AgentListItem(
+          id: 'release-disabled',
+          name: 'Release Disabled Agent',
+          description: 'Launch planning',
+          isEnabled: false,
+          visibility: .both,
+          skillCount: 0,
+        ),
+      ];
+      final repository = _FakeAgentRepository((query) async {
+        final search = query.search.trim().toLowerCase();
+
+        return AgentListPage(
+          agents: agents
+              .where(
+                (agent) =>
+                    (search.isEmpty ||
+                        agent.name.toLowerCase().contains(search) ||
+                        agent.description.toLowerCase().contains(search)) &&
+                    (query.status == null ||
+                        (query.status == .enabled) == agent.isEnabled),
+              )
+              .toList(),
+        );
+      });
+      await _pumpSubject(tester, repository);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(AgentsScreen)),
+      );
+      final notifier = container.read(agentListProvider(_workspaceId).notifier);
+      await tester.enterText(find.byType(EditableText), 'release');
+      await tester.pump(const Duration(milliseconds: 300));
+      final _ = await tester.pumpAndSettle();
+      notifier
+        ..setType(.chatSelector)
+        ..setStatus(.enabled);
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Filters (2)'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('app_filter_sheet')).first);
+      final _ = await tester.pumpAndSettle();
+      final filters = tester.widgetList<AuraDropdownSelector<String>>(
+        find.byType(AuraDropdownSelector<String>),
+      );
+      expect(filters.map((filter) => filter.value), ['chat', 'enabled']);
+
+      filters.last.onChanged?.call('disabled');
+      final _ = await tester.pumpAndSettle();
+      expect(
+        tester
+            .widgetList<AuraDropdownSelector<String>>(
+              find.byType(AuraDropdownSelector<String>),
+            )
+            .map((filter) => filter.value),
+        ['chat', 'disabled'],
+      );
+      expect(find.text('Release Agent'), findsNothing);
+      expect(find.text('Release Disabled Agent'), findsOneWidget);
+      expect(find.text('Filters (2)'), findsOneWidget);
+
+      await tester.tap(find.text('Clear filters'));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Filters (0)'), findsOneWidget);
+      expect(find.text('Release Agent'), findsOneWidget);
+      expect(find.text('Release Disabled Agent'), findsOneWidget);
+      await tester.tapAt(const Offset(20, 20));
+      final _ = await tester.pumpAndSettle();
+
+      final state = container
+          .read(agentListProvider(_workspaceId))
+          .requireValue;
+      expect(state.search, 'release');
+      expect(state.type, isNull);
+      expect(state.status, isNull);
+      expect(
+        tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+        'release',
+      );
+    },
+  );
+
   testWidgets('shows more pages without replacing loaded agents', (
     tester,
   ) async {
@@ -78,7 +170,7 @@ void main() {
 
     await _scrollToAgent(tester, 'Second Agent');
     expect(find.text('Second Agent'), findsOneWidget);
-    await tester.drag(find.byType(ListView), const Offset(0, 300));
+    await tester.drag(find.byType(ListView).last, const Offset(0, 300));
     final _ = await tester.pumpAndSettle();
     expect(find.text('First Agent'), findsOneWidget);
     expect(find.text('Show more'), findsNothing);
@@ -126,7 +218,7 @@ void main() {
     await _scrollToAgent(tester, 'Helper Copy');
     expect(find.text('Helper Copy'), findsOneWidget);
 
-    await tester.drag(find.byType(ListView), const Offset(0, 300));
+    await tester.drag(find.byType(ListView).last, const Offset(0, 300));
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.more_vert).first);
     final _ = await tester.pumpAndSettle();
@@ -247,7 +339,7 @@ void main() {
 
 Future<void> _scrollToAgent(WidgetTester tester, String name) async {
   if (find.text(name).evaluate().isNotEmpty) return;
-  await tester.drag(find.byType(ListView), const Offset(0, -400));
+  await tester.drag(find.byType(ListView).last, const Offset(0, -400));
   final _ = await tester.pumpAndSettle();
 }
 

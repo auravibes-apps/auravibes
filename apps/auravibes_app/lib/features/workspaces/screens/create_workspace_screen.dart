@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/workspaces/widgets/workspace_setup_content.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -20,7 +21,7 @@ class CreateWorkspaceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
+    return AppScreen(
       child: _CreateWorkspaceContent(workspaceId: workspaceId),
       appBar: const _CreateWorkspaceAppBar(),
     );

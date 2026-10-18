@@ -67,7 +67,7 @@ final class ConnectionsListViewNotifierProvider
 }
 
 String _$connectionsListViewNotifierHash() =>
-    r'a6b2eb869e4545179a56a54672422e49b385a81a';
+    r'95839459856af7156d9b81ea46629dc5dc09945c';
 
 /// Retains list choices across route replacement, independently per workspace.
 

@@ -16,6 +16,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/task_return.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
@@ -66,6 +67,7 @@ class const ServiceConnectionCreateScreen({
   final String? initialCredentialDefinitionId,
   final String? initialAppSkillId,
   final String? returnPath,
+  final GlobalKey<NavigatorState>? returnNavigatorKey,
   super.key,
 }) extends ConsumerStatefulWidget {
   @override
@@ -147,9 +149,45 @@ void _bindCreateExitGuard(_ServiceConnectionCreateScreenState state) {
   state._exitGuard.bind(
     readers: (isDirty: () => state._isDirty, isSaving: () => state._isBusy),
     preferReturn: destination != null,
+    callbacks: _createExitCallbacks(state, destination),
+  );
+}
+
+DraftExitGuardCallbacks _createExitCallbacks(
+  _ServiceConnectionCreateScreenState state,
+  String? destination,
+) {
+  final navigatorKey = state.widget.returnNavigatorKey;
+
+  return DraftExitGuardCallbacks(
     onReturn: (context) =>
         _returnFromCreate(context, state.widget.workspaceId, destination),
+    onPop: navigatorKey == null
+        ? null
+        : (context, result) =>
+              _popOrReturnFromCreate(state, destination, context, result),
   );
+}
+
+void _popOrReturnFromCreate(
+  _ServiceConnectionCreateScreenState state,
+  String? destination,
+  BuildContext context,
+  Object? result,
+) {
+  if (_popCreateReturnNavigator(state, result)) return;
+  _returnFromCreate(context, state.widget.workspaceId, destination);
+}
+
+bool _popCreateReturnNavigator(
+  _ServiceConnectionCreateScreenState state,
+  Object? result,
+) {
+  final navigator = state.widget.returnNavigatorKey?.currentState;
+  if (navigator == null || !navigator.canPop()) return false;
+  navigator.pop(result);
+
+  return true;
 }
 
 String? _createReturnDestination(_ServiceConnectionCreateScreenState state) =>
@@ -179,7 +217,7 @@ class const _CreateScreenHandoff({
   required final _ServiceConnectionCreateScreenState state,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: AuraColumn(
       children: [
         const TextLocale('chat_readiness.saved'),
@@ -560,18 +598,16 @@ void _markCreateSaved(
 Future<void> _navigateAfterCreateSave(
   _ServiceConnectionCreateScreenState state,
 ) async {
-  final destination = TaskReturn.validate(
-    state.widget.returnPath,
-    workspaceId: state.widget.workspaceId,
-  );
+  final destination = _createReturnDestination(state);
   if (state._handoff && destination != null) {
     state.context.go(destination);
 
     return;
   }
+  if (_popCreateReturnNavigator(state, true)) return;
   if (await Navigator.of(state.context).maybePop(true)) return;
   if (!state.mounted) return;
-  _goToServiceConnections(state);
+  _returnFromCreate(state.context, state.widget.workspaceId, destination);
 }
 
 void _resetAfterSave(
@@ -585,12 +621,6 @@ void _resetAfterSave(
   if (refreshServiceConnections) {
     state.ref.invalidate(serviceConnectionsProvider(state.widget.workspaceId));
   }
-}
-
-void _goToServiceConnections(_ServiceConnectionCreateScreenState state) {
-  state.context.go(
-    '/workspaces/${state.widget.workspaceId}/service-connections',
-  );
 }
 
 void _onTypeChanged(
@@ -717,7 +747,7 @@ class const _ServiceConnectionCreateView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
+    return AppScreen(
       child: _ServiceConnectionCreateBody(form: form),
       appBar: _ServiceConnectionCreateAppBar(form: form),
     );
@@ -744,7 +774,7 @@ class const _ServiceConnectionCreateAppBar({
       ),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
-        onPressed: () => Navigator.of(context).maybePop(),
+        onPressed: () => unawaited(form.routeExitGuard.pop(context)),
       ),
     );
   }

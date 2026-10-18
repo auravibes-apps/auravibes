@@ -6,9 +6,9 @@ import 'package:auravibes_app/features/skills/providers/skill_access_summary_pro
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -112,18 +112,24 @@ class const SkillAccessStatusView({
   );
 
   Future<bool?> _openToolAccess(BuildContext context, String toolId) =>
-      SkillToolEditRoute(
-        workspaceId: workspaceId,
-        skillId: skillId,
-        toolId: toolId,
-      ).push<bool>(context);
+      FeatureDestinations.push<bool>(
+        context,
+        SkillToolEditRoute(
+          workspaceId: workspaceId,
+          skillId: skillId,
+          toolId: toolId,
+        ).location,
+      );
 
   Future<bool?> _openUserAccess(BuildContext context, String? definitionId) =>
-      ServiceConnectionCreateRoute(
-        workspaceId: workspaceId,
-        type: 'skillCredential',
-        credentialDefinitionId: definitionId,
-      ).push<bool>(context);
+      FeatureDestinations.push<bool>(
+        context,
+        ServiceConnectionCreateRoute(
+          workspaceId: workspaceId,
+          type: 'skillCredential',
+          credentialDefinitionId: definitionId,
+        ).location,
+      );
 
   Future<_SkillAccessRecoveryResult?> _openAppAccess(
     _AppAccessRouteRequest request,
@@ -133,7 +139,8 @@ class const SkillAccessStatusView({
         .getByIdentifier(skillId);
     if (appSkill == null) return null;
 
-    final result = await request.context.push<bool>(
+    final result = await FeatureDestinations.push<bool>(
+      request.context,
       _appAccessLocation(
         workspaceId,
         skillId,

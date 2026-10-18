@@ -26,6 +26,7 @@ import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
@@ -208,17 +209,39 @@ class _AgentDetailScreenState extends _AgentDetailScreenStateBase
   static const _compactLayoutWidth = 640.0;
 
   @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_bindExitGuard);
+    _descriptionController.addListener(_bindExitGuard);
+    _contentController.addListener(_bindExitGuard);
+  }
+
+  @override
+  void dispose() {
+    _nameController.removeListener(_bindExitGuard);
+    _descriptionController.removeListener(_bindExitGuard);
+    _contentController.removeListener(_bindExitGuard);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    _exitGuard.bind(
-      readers: (isDirty: () => _isDirty, isSaving: () => _saving),
-      confirm: (_) => _confirmDiscardChanges(),
-      onReturn: (context) =>
-          AgentsRoute(workspaceId: widget.workspaceId).go(context),
-    );
+    _bindExitGuard();
 
     return DraftExitScope(
       guard: _exitGuard,
       child: _AgentDetailScreenView(state: this),
+    );
+  }
+
+  void _bindExitGuard() {
+    _exitGuard.bind(
+      readers: (isDirty: () => _isDirty, isSaving: () => _saving),
+      callbacks: .new(
+        confirm: (_) => _confirmDiscardChanges(),
+        onReturn: (context) =>
+            AgentsRoute(workspaceId: widget.workspaceId).go(context),
+      ),
     );
   }
 }
@@ -653,7 +676,7 @@ class const _AgentDetailScreenLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
+    return AppScreen(
       child: _AgentDetailBody(state: state, skills: skills, tools: tools),
       appBar: _AgentDetailAppBar(state: state),
     );
@@ -803,13 +826,13 @@ class const _AgentToolOverridesSnapshot(
   @override
   Widget build(BuildContext context) {
     if (!snapshot.hasData) {
-      return const AuraScreen(child: Center(child: AuraSpinner()));
+      return const AppScreen(child: Center(child: AuraSpinner()));
     }
 
     onLoaded(snapshot.requireData);
     WidgetsBinding.instance.addPostFrameCallback((_) => onInitialized());
 
-    return const AuraScreen(child: Center(child: AuraSpinner()));
+    return const AppScreen(child: Center(child: AuraSpinner()));
   }
 }
 
