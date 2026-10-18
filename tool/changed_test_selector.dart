@@ -629,6 +629,17 @@ Future<int> runSelectedTests(
                     selectedGroups.indexOf(group),
                   ),
           );
+          if (timingsDir != null) {
+            final base = _artifactBase(group.package.relativeRoot);
+            final _ = await File('$timingsDir/command-$base.json')
+                .writeAsString(
+                  jsonEncode({
+                    'package': group.package.relativeRoot,
+                    'tool': group.package.flutter ? 'flutter' : 'dart',
+                    'arguments': command.arguments,
+                  }),
+                );
+          }
           var activeCommand = command;
           reportDiagnostic(
             'changed-test-selector: '

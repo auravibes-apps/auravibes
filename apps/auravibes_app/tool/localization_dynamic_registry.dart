@@ -1611,16 +1611,6 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         occurrence: 1,
       ),
       DynamicTranslationSite(
-        file: 'features/service_connections/widgets/connections_tabs.dart',
-        method: 'TextLocale',
-        keyExpression: 'key',
-      ),
-      DynamicTranslationSite(
-        file: 'features/service_connections/widgets/connections_tabs.dart',
-        method: 'tr',
-        keyExpression: 'key',
-      ),
-      DynamicTranslationSite(
         file: 'features/service_connections/widgets/mcp_catalog_browser.dart',
         method: 'tr',
         keyExpression: 'labelKey',
@@ -2088,6 +2078,53 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       'navigation.agents_skills',
       'navigation.connections',
       'settings_screen.title',
+    },
+  ),
+
+  LocalizationDynamicRegistry(
+    family: 'feature-destination-label-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'widgets/feature_destination_app_bar.dart',
+        method: 'TextLocale',
+        keyExpression: 'masterTitleKey',
+      ),
+      DynamicTranslationSite(
+        file: 'widgets/feature_destination_master.dart',
+        method: 'tr',
+        keyExpression: 'destination.labelKey',
+      ),
+      DynamicTranslationSite(
+        file: 'widgets/feature_destination_master.dart',
+        method: 'TextLocale',
+        keyExpression: 'labelKey',
+      ),
+      DynamicTranslationSite(
+        file: 'widgets/feature_destination_picker.dart',
+        method: 'TextLocale',
+        keyExpression: 'destination.labelKey',
+      ),
+      DynamicTranslationSite(
+        file: 'widgets/feature_destination_picker.dart',
+        method: 'tr',
+        keyExpression: 'selected.labelKey',
+      ),
+      DynamicTranslationSite(
+        file: 'widgets/feature_destination_picker.dart',
+        method: 'TextLocale',
+        keyExpression: 'labelKey',
+      ),
+    ],
+    keys: {
+      'navigation.agents_skills',
+      'navigation.connections',
+      'related_lists.agents',
+      'related_lists.credentials',
+      'related_lists.overview',
+      'related_lists.providers',
+      'related_lists.services',
+      'related_lists.skills',
+      'related_lists.tools',
     },
   ),
 

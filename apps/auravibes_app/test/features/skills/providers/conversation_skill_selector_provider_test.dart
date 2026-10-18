@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manife
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -26,6 +27,57 @@ void main() {
     kind: .template,
     credentialReadiness: .ready,
   );
+
+  for (final failRead in [false, true]) {
+    test('recent history fallback with read failure=$failRead', () async {
+      final records = <LogRecord>[];
+      final subscription = Logger.root.onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      final list = _ListSkills();
+      final manifests = _BuildManifests();
+      _stubSkills(list, skill);
+      when(
+        () => manifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => const []);
+      final repository = _RecentSkillUsageRepository(
+        const [],
+        failRead: failRead,
+      );
+      final container = _container(
+        list,
+        manifests,
+        recentRepository: repository,
+      );
+      addTearDown(container.dispose);
+
+      final state = await container.read(
+        conversationSkillSelectorProvider('workspace', 'conversation').future,
+      );
+
+      expect(state.loaded, [skill]);
+      expect(state.recentSkills, isEmpty);
+      expect(repository.readWorkspaces, ['workspace']);
+      final diagnostics = records
+          .where((record) => record.loggerName == 'conversation_skill_selector')
+          .toList();
+      if (!failRead) {
+        expect(diagnostics, isEmpty);
+
+        return;
+      }
+      expect(diagnostics, hasLength(1));
+      expect(diagnostics.single.level, Level.WARNING);
+      expect(
+        diagnostics.single.message,
+        'Recent skill history read failed. Selector uses empty history.',
+      );
+      expect(diagnostics.single.error, isNull);
+      expect(diagnostics.single.stackTrace, isNull);
+    });
+  }
 
   test('selection survives stale context and revision changes', () async {
     var revision = 'r1';
@@ -359,13 +411,18 @@ ProviderContainer _container(
   ],
 );
 
-class _RecentSkillUsageRepository(final List<String> _slugs)
-    implements RecentSkillUsageRepository {
+class _RecentSkillUsageRepository(
+  final List<String> _slugs, {
+  final bool failRead = false,
+}) implements RecentSkillUsageRepository {
   final List<String> readWorkspaces = [];
 
   @override
   Future<List<String>> readRecentSkillSlugs(String workspaceId) async {
     readWorkspaces.add(workspaceId);
+    if (failRead) {
+      throw StateError('research Research secret-prompt credential-token');
+    }
 
     return _slugs;
   }

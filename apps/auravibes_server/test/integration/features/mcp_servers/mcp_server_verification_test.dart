@@ -154,7 +154,7 @@ void main() {
       expect((await fixture.counts()).events, afterRefresh.events);
       final failed = McpOAuthTokenResolver(
         now: () => DateTime.utc(2026, 1, 2),
-        exchange: (_) => throw const FormatException('refresh failed'),
+        exchange: (_) => throw const McpOAuthReauthRequired(),
       );
       await expectLater(
         failed.resolve(

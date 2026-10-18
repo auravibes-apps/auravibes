@@ -63,7 +63,7 @@ final class SkillsListViewNotifierProvider
 }
 
 String _$skillsListViewNotifierHash() =>
-    r'4b347a20e293f2e907d4038942b55135a7199168';
+    r'b064c394e13b41990e68d9bc4877d6b87c40ad18';
 
 /// Retains list choices across route replacement, independently per workspace.
 

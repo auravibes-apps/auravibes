@@ -16,6 +16,7 @@ class const WorkspaceAccessGate({
   required final WorkspaceSession session,
   required final Widget child,
   required final VoidCallback onChooseWorkspace,
+  final String? returnLocation,
   super.key,
 }) extends ConsumerWidget {
   @override
@@ -29,6 +30,7 @@ class const WorkspaceAccessGate({
       workspaceId: workspaceId,
       session: session,
       child: child,
+      returnLocation: returnLocation,
       onChooseWorkspace: onChooseWorkspace,
     );
   }
@@ -38,6 +40,7 @@ class const _WorkspaceAvailabilityGate({
   required final String workspaceId,
   required final WorkspaceSession session,
   required final Widget child,
+  required final String? returnLocation,
   required final VoidCallback onChooseWorkspace,
 }) extends ConsumerWidget {
   @override
@@ -57,6 +60,7 @@ class const _WorkspaceAvailabilityGate({
     workspaceId: workspaceId,
     session: session,
     onReturn: onChooseWorkspace,
+    returnLocation: returnLocation,
   );
 
   void _retry(WidgetRef ref) {

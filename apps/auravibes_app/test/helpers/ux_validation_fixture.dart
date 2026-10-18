@@ -195,6 +195,7 @@ class UxValidationFixture {
     tester.view.physicalSize = size;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    GoRouter.optionURLReflectsImperativeAPIs = true;
     final router = GoRouter(routes: $appRoutes, initialLocation: location);
     addTearDown(router.dispose);
     final session =
@@ -223,6 +224,7 @@ class UxValidationFixture {
               .overrideWith((ref) => Stream.value({})),
         ...overrides.cast(),
       ],
+      retry: (_, _) => null,
     );
     addTearDown(container.dispose);
     await tester.runAsync(

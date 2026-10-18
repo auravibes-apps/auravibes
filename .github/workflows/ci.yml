@@ -59,7 +59,9 @@ jobs:
         run: dart test tool/changed_test_selector_test.dart tool/merge_lcov_test.dart
 
       - name: Test CI change classifier
-        run: python3 tool/classify_ci_changes_test.py
+        run: |
+          python3 tool/classify_ci_changes_test.py
+          python3 tool/ci_summary_test.py
 
       - name: Audit first-party tool schemas
         working-directory: apps/auravibes_app
@@ -205,6 +207,9 @@ jobs:
           renovate_config_changes=false
           base_sha=''
           head_sha="$GITHUB_SHA"
+          changed_files=''
+          unknown_range=true
+          trap 'status=$?; if ((status == 0)); then printf "%s\n" "$changed_files" | UNKNOWN_RANGE="$unknown_range" python3 tool/ci_summary.py routing --outputs "$GITHUB_OUTPUT"; fi; exit "$status"' EXIT
 
           case "$EVENT_NAME" in
             pull_request)
@@ -252,6 +257,7 @@ jobs:
           fi
 
           changed_files="$(git diff --name-only --diff-filter=ACDMRTUXB "$base_sha" "$head_sha")"
+          unknown_range=false
           classification="$(printf '%s\n' "$changed_files" | python3 tool/classify_ci_changes.py)"
           run_code_checks="$(jq -r '.run_code_checks' <<< "$classification")"
           run_server_integration="$(jq -r '.run_server_integration' <<< "$classification")"
@@ -347,6 +353,7 @@ jobs:
       coverage-report-count: ${{ steps.plan.outputs.coverage-report-count }}
       reason: ${{ steps.plan.outputs.reason }}
       timing-source: ${{ steps.plan.outputs.timing-source }}
+      artifact-url: ${{ steps.upload-test-plan.outputs.artifact-url }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -444,11 +451,17 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Upload test plan
+        id: upload-test-plan
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: test-plan
           path: ${{ runner.temp }}/test-plan
           if-no-files-found: error
+
+      - name: Summarize test plan
+        env:
+          ARTIFACT_URL: ${{ steps.upload-test-plan.outputs.artifact-url }}
+        run: python3 tool/ci_summary.py plan --plan-dir "$RUNNER_TEMP/test-plan"
 
   test:
     name: test (${{ matrix.package }} shard ${{ matrix.shardIndex }})
@@ -515,27 +528,8 @@ jobs:
           )
           command_file="$RUNNER_TEMP/test-timings/test-command.txt"
           dart run tool/changed_test_selector.dart "${selector_args[@]}" --dry-run > "$command_file"
-          package_display="$(ruby -ruri -e 'puts URI::DEFAULT_PARSER.escape(ARGV.fetch(0), /[^A-Za-z0-9\/_.-]/)' "$MATRIX_PACKAGE")"
-          {
-            echo "### Test shard"
-            echo "- Mode: $TEST_MODE"
-            echo "- Reason: $TEST_REASON"
-            echo "- Timing source: $TIMING_SOURCE"
-            printf -- '- Package: `%s`\n' "$package_display"
-            echo "- Sharding: $MATRIX_SHARD_MODE $MATRIX_SHARD_INDEX/$MATRIX_TOTAL_SHARDS"
-            if [ "$MATRIX_SHARD_MODE" = "timed" ]; then
-              echo "- Timed paths:"
-              ruby -rjson -ruri -e '
-                JSON.parse(ARGF.read).each do |path|
-                  encoded = URI::DEFAULT_PARSER.escape(path, /[^A-Za-z0-9\/_.-]/)
-                  puts "- `#{encoded}`"
-                end
-              ' <<< "$MATRIX_PATHS"
-            else
-              printf -- '- Native arguments: `--total-shards %s --shard-index %s`\n' "$MATRIX_TOTAL_SHARDS" "$MATRIX_SHARD_INDEX"
-            fi
-            echo
-          } >> "$GITHUB_STEP_SUMMARY"
+          python3 tool/ci_summary.py replay --report-dir "$RUNNER_TEMP/test-timings"
+          cp -r "$RUNNER_TEMP/test-plan" "$RUNNER_TEMP/test-timings/test-plan"
           status=0
           if dart run tool/changed_test_selector.dart "${selector_args[@]}"; then
             status=0
@@ -569,12 +563,25 @@ jobs:
           fi
 
       - name: Upload shard test report
+        id: upload-test-report
         if: ${{ !cancelled() && steps.run-tests.outputs.command_completed == 'true' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: test-report-${{ matrix.artifact }}
           path: ${{ runner.temp }}/test-timings
           if-no-files-found: ignore
+
+      - name: Summarize test shard
+        if: ${{ !cancelled() && steps.run-tests.outputs.command_completed == 'true' }}
+        env:
+          MATRIX_ROW: ${{ toJSON(matrix) }}
+          TEST_OUTCOME: ${{ steps.run-tests.outcome }}
+          ARTIFACT_URL: ${{ steps.upload-test-report.outputs.artifact-url }}
+          PLAN_ARTIFACT_URL: ${{ needs.test-plan.outputs.artifact-url }}
+        run: |
+          python3 tool/ci_summary.py shard \
+            --plan-dir "$RUNNER_TEMP/test-plan" \
+            --report-dir "$RUNNER_TEMP/test-timings"
 
       - name: Upload shard timing
         if: ${{ success() && needs.test-plan.outputs.mode == 'full' }}

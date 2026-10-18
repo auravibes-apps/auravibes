@@ -409,19 +409,40 @@ class const _ErrorBadge({
   final VoidCallback? onViewError,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _ErrorBadgeLayout(
+      groupWithTools: groupWithTools,
+      isCompact: constraints.maxWidth < 280,
+      onViewError: onViewError,
+      onReconnect: onReconnect,
+    ),
+  );
+}
+
+class const _ErrorBadgeLayout({
+  required final ToolsGroupWithTools groupWithTools,
+  required final bool isCompact,
+  final VoidCallback? onViewError,
+  final VoidCallback? onReconnect,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
-    return AuraRow(
-      children: [
-        _ErrorBadgeLabel(message: groupWithTools.mcpErrorMessage ?? ''),
-        _ErrorBadgeActions(
-          groupWithTools: groupWithTools,
-          onViewError: onViewError,
-          onReconnect: onReconnect,
-        ),
-      ],
-      spacing: .xs,
-      mainAxisSize: .min,
-    );
+    final children = [
+      _ErrorBadgeLabel(message: groupWithTools.mcpErrorMessage ?? ''),
+      _ErrorBadgeActions(
+        groupWithTools: groupWithTools,
+        onViewError: onViewError,
+        onReconnect: onReconnect,
+      ),
+    ];
+
+    return isCompact
+        ? AuraColumn(
+            children: children,
+            spacing: .xs,
+            crossAxisAlignment: .start,
+          )
+        : AuraRow(children: children, spacing: .xs, mainAxisSize: .min);
   }
 }
 
@@ -434,7 +455,13 @@ class const _ErrorBadgeLabel({required final String message})
       child: AuraRow(
         children: [
           const AuraIcon(Icons.error_outline, size: .extraSmall),
-          Text(LocaleKeys.tools_screen_mcp_error.tr()),
+          Flexible(
+            child: Text(
+              LocaleKeys.tools_screen_mcp_error.tr(),
+              overflow: .ellipsis,
+              maxLines: 2,
+            ),
+          ),
         ],
         spacing: .xs,
         mainAxisSize: .min,

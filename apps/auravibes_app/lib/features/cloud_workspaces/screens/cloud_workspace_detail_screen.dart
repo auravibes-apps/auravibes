@@ -1,5 +1,13 @@
 // ignore_for_file: type=lint
 
+import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+import 'package:material_ui/material_ui.dart';
+
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
@@ -14,16 +22,10 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
-import 'package:auravibes_server_client/auravibes_server_client.dart';
-import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:logging/logging.dart';
-import 'package:material_ui/material_ui.dart';
 
 final _logger = Logger('cloud_workspace_detail_screen');
 
@@ -49,8 +51,8 @@ class const CloudWorkspaceDetailScreen({
         account: value,
         cloudWorkspaceId: cloudWorkspaceId,
       ),
-      AsyncLoading() => const AuraScreen(child: Center(child: AuraSpinner())),
-      AsyncError() => AuraScreen(
+      AsyncLoading() => const AppScreen(child: Center(child: AuraSpinner())),
+      AsyncError() => AppScreen(
         child: Column(
           children: [
             const TextLocale(LocaleKeys.cloud_accounts_origin_unresolved),
@@ -95,7 +97,7 @@ class const _ResolvedDetail({
         .where((item) => item.cloudAccount == account)
         .firstOrNull;
 
-    return AuraScreen(
+    return AppScreen(
       appBar: AuraAppBarWithDrawer(
         title: state.value == null
             ? const TextLocale(LocaleKeys.cloud_workspaces_detail_title)

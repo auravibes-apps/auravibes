@@ -1,5 +1,6 @@
 // Required: Existing UI spacing uses small numeric values.
 // Required: Private form row widgets keep this screen self-contained.
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -15,6 +16,7 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_template_too
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
@@ -194,10 +196,12 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
 extension on _SkillToolEditScreenState {
   void _bindExitGuard() => _exitGuard.bind(
     readers: (isDirty: () => _isDirty, isSaving: () => _isSaving),
-    onReturn: (context) => SkillDetailRoute(
-      workspaceId: widget.workspaceId,
-      skillId: widget.skillId,
-    ).go(context),
+    callbacks: .new(
+      onReturn: (context) => SkillDetailRoute(
+        workspaceId: widget.workspaceId,
+        skillId: widget.skillId,
+      ).go(context),
+    ),
   );
 }
 
@@ -1199,7 +1203,7 @@ class const _SkillToolEditViewData({
 class const _SkillToolEditView({required final _SkillToolEditViewData data})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: _SkillToolEditBody(
       toolAsync: data.toolAsync,
       currentTool: data.currentTool,

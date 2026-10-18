@@ -15,10 +15,10 @@ import 'package:auravibes_app/features/skills/widgets/skill_access_status_view.d
 import 'package:auravibes_app/features/skills/widgets/skill_capability_preview_dialog.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -283,11 +283,14 @@ extension _ConversationSkillSelectorContextHandlers
 extension _ConversationSkillCredentialHandlers
     on _ConversationSkillSelectorModalState {
   Future<void> _openUserCredentialSetup(String definitionId) async {
-    final _ = await ServiceConnectionCreateRoute(
-      workspaceId: widget.workspaceId,
-      type: 'skillCredential',
-      credentialDefinitionId: definitionId,
-    ).push<bool>(context);
+    final _ = await FeatureDestinations.push<bool>(
+      context,
+      ServiceConnectionCreateRoute(
+        workspaceId: widget.workspaceId,
+        type: 'skillCredential',
+        credentialDefinitionId: definitionId,
+      ).location,
+    );
   }
 
   Future<bool> _openAppCredentialSetup(AvailableSkill skill) async {
@@ -305,14 +308,18 @@ extension _ConversationSkillCredentialHandlers
   }
 
   Future<void> _openModelProviderSetup() async {
-    final _ = await ServiceConnectionCreateRoute(
-      workspaceId: widget.workspaceId,
-      type: 'modelProvider',
-    ).push<bool>(context);
+    final _ = await FeatureDestinations.push<bool>(
+      context,
+      ServiceConnectionCreateRoute(
+        workspaceId: widget.workspaceId,
+        type: 'modelProvider',
+      ).location,
+    );
   }
 
   Future<void> _openAppSkillCredentialSetup(AvailableSkill skill) async {
-    final _ = await context.push<bool>(
+    final _ = await FeatureDestinations.push<bool>(
+      context,
       '/workspaces/${widget.workspaceId}/service-connections/new'
       '?type=appSkillCredential&appSkillId=${skill.id}',
     );

@@ -19,6 +19,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -128,7 +129,7 @@ void _bindNewChatGuard(_NewChatGuardRequest request) {
       isSaving: () =>
           request.ref.read(newChatProvider(request.workspaceId)).isLoading,
     ),
-    confirm: _confirmNewChatWorkspaceDiscard,
+    callbacks: const .new(confirm: _confirmNewChatWorkspaceDiscard),
   );
 }
 
@@ -284,7 +285,7 @@ class const _NewChatBody({required final _NewChatBodyData data})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
+    return AppScreen(
       child: AuraLoadingOverlay(
         isLoading: data.state.isLoading,
         child: _NewChatInputArea(data: data),
@@ -332,14 +333,52 @@ class const _NewChatInputAreaContent({
   required final bool modelAvailable,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      Expanded(
-        child: SingleChildScrollView(
-          child: ChatReadinessSummary(workspaceId: data.workspaceId),
-        ),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _NewChatInputAreaViewport(
+      data: data,
+      height: constraints.maxHeight,
+      modalitiesInput: modalitiesInput,
+      reasoningOptions: reasoningOptions,
+      modelAvailable: modelAvailable,
+    ),
+  );
+}
+
+class const _NewChatInputAreaViewport({
+  required final _NewChatBodyData data,
+  required final double height,
+  required final List<String> modalitiesInput,
+  required final List<ReasoningOption> reasoningOptions,
+  required final bool modelAvailable,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    reverse: true,
+    child: ConstrainedBox(
+      constraints: .new(minHeight: height),
+      child: _NewChatInputAreaColumns(
+        data: data,
+        modalitiesInput: modalitiesInput,
+        reasoningOptions: reasoningOptions,
+        modelAvailable: modelAvailable,
       ),
+    ),
+  );
+}
+
+class const _NewChatInputAreaColumns({
+  required final _NewChatBodyData data,
+  required final List<String> modalitiesInput,
+  required final List<ReasoningOption> reasoningOptions,
+  required final bool modelAvailable,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisAlignment: .spaceBetween,
+    children: [
+      ChatReadinessSummary(workspaceId: data.workspaceId),
       _NewChatInput.fromData(
+        context,
         data,
         modalitiesInput,
         reasoningOptions,
@@ -382,6 +421,7 @@ List<String> _watchNewChatModalities(
 class const _NewChatInput({required final Widget child})
     extends StatelessWidget {
   new fromData(
+    BuildContext context,
     _NewChatBodyData data,
     List<String> modalitiesInput,
     List<ReasoningOption> reasoningOptions, {
@@ -414,7 +454,9 @@ class const _NewChatInput({required final Widget child})
                  )
                : null,
            modalitiesInput: modalitiesInput,
-           disabledHint: data.state.modelId == null
+           disabledHint:
+               data.state.modelId == null &&
+                   MediaQuery.viewInsetsOf(context).bottom == 0
                ? const TextLocale(
                    LocaleKeys.chats_screens_new_chat_no_model_selected,
                  )
@@ -480,7 +522,7 @@ class const _NewChatAgentCompactControl({
 class const _NewChatUnavailable({required final String workspaceId})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: _NewChatUnavailableBody(workspaceId: workspaceId),
     appBar: const AuraAppBarWithDrawer(
       title: TextLocale(LocaleKeys.menu_new_chat),

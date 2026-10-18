@@ -139,13 +139,20 @@ Map<String, String> _headers(Object? value) {
   return headers;
 }
 
-bool _sensitiveHeader(String name) => const {
-  'set-cookie',
-  'authorization',
-  'proxy-authorization',
-  'www-authenticate',
-  'proxy-authenticate',
-}.contains(name.toLowerCase());
+bool _sensitiveHeader(String name) {
+  final normalized = name.toLowerCase().replaceAll('_', '-');
+  return const {
+        'cookie',
+        'set-cookie',
+        'authorization',
+        'proxy-authorization',
+        'www-authenticate',
+        'proxy-authenticate',
+      }.contains(normalized) ||
+      RegExp(
+        r'(?:^|-)(?:api-?key|auth-?token|access-?token|security-?token)(?:$|-)',
+      ).hasMatch(normalized);
+}
 
 String _truncate(String text, {required int maxBytes, required int maxLines}) {
   final bytes = utf8.encode(text);

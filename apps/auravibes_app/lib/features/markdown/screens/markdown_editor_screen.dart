@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/markdown/widgets/markdown_list_input_form
 import 'package:auravibes_app/features/markdown/widgets/markdown_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
@@ -63,7 +64,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
   Widget build(BuildContext context) {
     _exitGuard.bind(
       readers: (isDirty: () => !_allowPop && _isDirty, isSaving: () => false),
-      confirm: _confirmDiscard,
+      callbacks: .new(confirm: _confirmDiscard),
     );
 
     return DraftExitScope(
@@ -190,7 +191,7 @@ class const _MarkdownEditorView({
   required final _MarkdownEditorActions actions,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => AuraScreen(
+  Widget build(BuildContext _) => AppScreen(
     child: Column(
       crossAxisAlignment: .stretch,
       children: [

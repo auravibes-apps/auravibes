@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/widgets/feature_destination_master.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -190,7 +191,9 @@ void main() {
       expect(resetCalls, 1);
     });
 
-    testWidgets('back button pops ToolsScreen route', (tester) async {
+    testWidgets('wide master detail route hides the back button', (
+      tester,
+    ) async {
       await tester.binding.setSurfaceSize(const Size(800, 600));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.runAsync(() async {
@@ -231,11 +234,9 @@ void main() {
       });
       await tester.pump();
       await tester.pump();
-      final backButton = find.byIcon(Icons.arrow_back);
-      expect(backButton, findsOneWidget);
-      await tester.tap(backButton);
-      final _ = await tester.pumpAndSettle();
-      expect(find.byType(ToolsScreen), findsNothing);
+      expect(find.byType(FeatureDestinationMaster), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back), findsNothing);
+      expect(find.byType(ToolsScreen), findsOneWidget);
     });
 
     testWidgets(

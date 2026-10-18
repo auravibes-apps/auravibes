@@ -6,6 +6,8 @@ import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
 import 'package:auravibes_app/router/workspace_navigation.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
+import 'package:auravibes_app/widgets/feature_destination_shell_scope.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -117,6 +119,7 @@ class _SidebarNavigationContent extends HookConsumerWidget {
       navigationShell: navigationShell,
       workspaceId: workspaceId,
       route: route,
+      router: router,
       tapOwner: (context: context, ref: ref, pending: pending),
     );
   }
@@ -127,12 +130,14 @@ class _SidebarNavigationView extends StatelessWidget {
     required this.navigationShell,
     required this.workspaceId,
     required this.route,
+    required this.router,
     required this.tapOwner,
   });
 
   final StatefulNavigationShell navigationShell;
   final String workspaceId;
   final Uri route;
+  final GoRouter router;
   final _NavigationTapOwner tapOwner;
 
   @override
@@ -142,7 +147,16 @@ class _SidebarNavigationView extends StatelessWidget {
     onNavigationTap: _navigationTapHandler(tapOwner, workspaceId),
     selectedIndex: _selectedNavigationIndex(route),
     workspaceId: workspaceId,
+    canPopCurrentRoute: _canPopCurrentRoute,
   );
+
+  bool _canPopCurrentRoute() {
+    if (_canPopWorkspaceRoute(navigationShell.currentIndex, route)) {
+      return true;
+    }
+
+    return router.state.extra is FeatureDestinationStackPush && router.canPop();
+  }
 }
 
 typedef _WorkspaceRouteOwner = ({
@@ -188,6 +202,25 @@ int _selectedNavigationIndex(Uri route) =>
       ['chats', ...] => -1,
       _ => WorkspaceNavigation.classify(route)?.index ?? -1,
     };
+
+// GoRouter.canPop can report history from a different stateful-shell branch.
+bool _canPopWorkspaceRoute(int branchIndex, Uri route) {
+  final path = WorkspaceNavigation.path(route);
+  final navigatorKey = switch (path.firstOrNull) {
+    'agents' || 'skills' => agentsSkillsFeatureNavigatorKey,
+    'service-connections' ||
+    'skill-credential-definitions' ||
+    'tools' => connectionsFeatureNavigatorKey,
+    _ => switch (branchIndex) {
+      0 => workspaceChatsNavigatorKey,
+      1 => workspaceFeatureNavigatorKey,
+      2 => workspaceSettingsNavigatorKey,
+      _ => null,
+    },
+  };
+
+  return navigatorKey?.currentState?.canPop() ?? false;
+}
 
 typedef _NavigationTap = ({
   BuildContext context,
@@ -258,16 +291,35 @@ WorkspaceNavigationNotifier _workspaceNavigation(_NavigationTap tap) =>
     tap.ref.read(workspaceNavigationProvider(tap.workspaceId).notifier);
 
 String _navigationTarget(_NavigationTap tap) {
-  final workspaceId = tap.workspaceId;
-  final navigation = _workspaceNavigation(tap);
+  return _NavigationTargets.forTap(tap);
+}
 
-  return switch (WorkspaceDestination.values[tap.index]) {
-    .chats => NewChatRoute(workspaceId: workspaceId).location,
-    .agentsAndSkills => navigation.agentsLocation(),
-    .connections => navigation.connectionsLocation(),
-    .appSettings => SettingsRoute(workspaceId: workspaceId).location,
-    .cloudAccounts => CloudAccountsRoute(workspaceId: workspaceId).location,
-  };
+abstract final class _NavigationTargets {
+  static String forTap(_NavigationTap tap) {
+    final destination = WorkspaceDestination.values[tap.index];
+    final workspaceId = tap.workspaceId;
+    final navigation = _workspaceNavigation(tap);
+
+    return switch (destination) {
+      .chats => _newChatLocation(workspaceId),
+      .agentsAndSkills => _featureLocation(navigation.agentsLocation),
+      .connections => _featureLocation(navigation.connectionsLocation),
+      .appSettings => _settingsLocation(workspaceId),
+      .cloudAccounts => _cloudAccountsLocation(workspaceId),
+    };
+  }
+
+  static String _newChatLocation(String workspaceId) =>
+      NewChatRoute(workspaceId: workspaceId).location;
+
+  static String _settingsLocation(String workspaceId) =>
+      SettingsRoute(workspaceId: workspaceId).location;
+
+  static String _cloudAccountsLocation(String workspaceId) =>
+      CloudAccountsRoute(workspaceId: workspaceId).location;
+
+  static String _featureLocation(String Function() location) =>
+      FeatureDestinations.masterLocation(location());
 }
 
 Future<bool> _approveNavigationExit(

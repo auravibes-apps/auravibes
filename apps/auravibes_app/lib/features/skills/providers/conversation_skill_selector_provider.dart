@@ -5,9 +5,12 @@ import 'package:auravibes_app/features/skills/providers/conversation_skill_selec
 import 'package:auravibes_app/features/skills/providers/recent_skill_usage_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_skill_selector_provider.g.dart';
+
+final _logger = Logger('conversation_skill_selector');
 
 typedef _SkillLoadRequest = ({
   ListAvailableSkillsUsecase usecase,
@@ -127,6 +130,12 @@ Future<List<AvailableSkill>> _readRecentSkills(
 
     return _skillsInRecentOrder(recentSlugs, _skillIndex(request));
   } on Object {
+    // Ignore this optional read. A later selector load reads history again.
+    // Storage errors can contain user data. Do not log their details.
+    _logger.warning(
+      'Recent skill history read failed. Selector uses empty history.',
+    );
+
     return const [];
   }
 }

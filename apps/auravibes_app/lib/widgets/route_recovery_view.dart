@@ -1,4 +1,5 @@
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:material_ui/material_ui.dart';
@@ -23,7 +24,7 @@ class RouteRecoveryView extends StatelessWidget {
   final bool isLoading;
 
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: _RouteRecoveryBody(
       messageKey: messageKey,
       onRetry: onRetry,

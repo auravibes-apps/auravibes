@@ -803,6 +803,10 @@ class McpServerUseCases(
       return _unhealthy('invalid_response');
     } on McpOAuthReauthRequired {
       return _unhealthy('reauth_required');
+    } on McpOAuthRefreshFailed catch (error) {
+      return _unhealthy(
+        error.retryable ? 'oauth_refresh_retryable' : 'oauth_refresh_unknown',
+      );
     } on TimeoutException {
       return _unhealthy('timeout');
     } on SocketException {

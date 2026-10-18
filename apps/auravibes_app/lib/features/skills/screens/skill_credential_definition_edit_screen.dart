@@ -1,4 +1,5 @@
 // Required: Existing UI spacing uses small numeric values.
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -13,9 +14,11 @@ import 'package:auravibes_app/features/skills/widgets/credential_definition_usag
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show SkillCredentialAttributeDefinition;
@@ -74,14 +77,20 @@ class _SkillCredentialDefinitionEditScreenState
   Widget build(BuildContext context) {
     final definitionAsync = _watchDefinition();
 
-    _exitGuard.bind(
-      readers: (isDirty: () => _isDirty, isSaving: () => _isSaving),
-      onReturn: (context) =>
-          SkillCredentialDefinitionsRoute(workspaceId: widget.workspaceId)
-              .go(context),
-    );
+    _bindExitGuard();
 
     return DraftExitScope(guard: _exitGuard, child: _screen(definitionAsync));
+  }
+
+  void _bindExitGuard() {
+    _exitGuard.bind(
+      readers: (isDirty: () => _isDirty, isSaving: () => _isSaving),
+      callbacks: .new(
+        onReturn: (context) =>
+            SkillCredentialDefinitionsRoute(workspaceId: widget.workspaceId)
+                .go(context),
+      ),
+    );
   }
 
   void _updateState(VoidCallback callback) {
@@ -100,7 +109,7 @@ extension on _SkillCredentialDefinitionEditScreenState {
 
   Widget _screen(
     AsyncValue<SkillCredentialDefinitionEntity?>? definitionAsync,
-  ) => AuraScreen(
+  ) => AppScreen(
     child: _SkillCredentialDefinitionBody(
       state: this,
       definitionAsync: definitionAsync,
@@ -190,8 +199,10 @@ extension on _SkillCredentialDefinitionEditScreenState {
   }
 
   Future<void> _manageCredentials() async {
-    await ServiceConnectionsRoute(workspaceId: widget.workspaceId)
-        .push<void>(context);
+    await FeatureDestinations.push<void>(
+      context,
+      ServiceConnectionsRoute(workspaceId: widget.workspaceId).location,
+    );
     if (!mounted) return;
     final id = widget.definitionId;
     if (id != null) {

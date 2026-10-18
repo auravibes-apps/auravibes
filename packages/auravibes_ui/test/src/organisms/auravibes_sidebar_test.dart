@@ -72,6 +72,48 @@ void main() {
       expect(icon.left - surface.left, 16);
     });
 
+    testWidgets('applies caller padding inside its full-width surface', (
+      tester,
+    ) async {
+      for (final direction in [TextDirection.ltr, TextDirection.rtl]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Directionality(
+                textDirection: direction,
+                child: AuraSidebar(
+                  navigationItems: const [
+                    AuraNavigationData(
+                      icon: Icon(Icons.home),
+                      label: Text('Home'),
+                    ),
+                  ],
+                  onNavigationTap: (_) =>
+                      fail('padding test must not tap sidebar'),
+                  padding: const EdgeInsetsDirectional.only(
+                    start: 24,
+                    top: 16,
+                    bottom: 12,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        final sidebar = tester.getRect(find.byType(AuraSidebar));
+        final icon = tester.getRect(find.byIcon(Icons.home));
+        expect(sidebar.left, 0);
+        expect(sidebar.width, 280);
+        if (direction == TextDirection.ltr) {
+          expect(icon.left, greaterThanOrEqualTo(sidebar.left + 24));
+        } else {
+          expect(icon.right, lessThanOrEqualTo(sidebar.right - 24));
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    });
+
     testWidgets('fits navigation labels at large RTL text scale', (
       tester,
     ) async {
@@ -294,10 +336,10 @@ void main() {
       );
       expect(
         find.descendant(
-          of: find.byType(SafeArea),
+          of: find.byType(ListView),
           matching: find.text('Logout'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
     });
   });

@@ -4,7 +4,9 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/skills/models/skill_sort.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
+import 'package:auravibes_app/features/skills/notifiers/skills_list_view_notifier.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
@@ -46,13 +48,15 @@ void main() {
         builder: (context) {
           return UncontrolledProviderScope(
             container: container,
-            child: MaterialApp.router(
-              routerConfig: router,
-              builder: (context, child) =>
-                  AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
-              locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
+            child: Portal(
+              child: MaterialApp.router(
+                routerConfig: router,
+                builder: (context, child) =>
+                    AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+              ),
             ),
           );
         },
@@ -82,6 +86,7 @@ void main() {
     String skillTitle = 'Write Summary',
     List<String> additionalUserSkillNames = const [],
     bool failDeletes = false,
+    bool emptyWorkspace = false,
   }) async {
     final workspaceRepository = WorkspaceRepository(database);
     final workspace = await workspaceRepository.createWorkspace(
@@ -141,28 +146,30 @@ void main() {
           appSkillSettings,
         ),
         workspaceSkillsProvider.overrideWith(
-          (_, _) async => [
-            for (final userSkill in userSkills)
-              WorkspaceSkill(
-                id: userSkill.id,
-                slug: userSkill.slug,
-                title: userSkill.title,
-                description: userSkill.description,
-                source: .user,
-                kind: userSkill.kind,
-                isEnabled: userSkill.isEnabled,
-              ),
-            if (includeAppSkill)
-              const WorkspaceSkill(
-                id: 'app-skill',
-                slug: 'native_helper',
-                title: 'Native Helper',
-                description: 'Built-in helper skill.',
-                source: .app,
-                kind: .native,
-                isEnabled: false,
-              ),
-          ],
+          (_, _) async => emptyWorkspace
+              ? []
+              : [
+                  for (final userSkill in userSkills)
+                    WorkspaceSkill(
+                      id: userSkill.id,
+                      slug: userSkill.slug,
+                      title: userSkill.title,
+                      description: userSkill.description,
+                      source: .user,
+                      kind: userSkill.kind,
+                      isEnabled: userSkill.isEnabled,
+                    ),
+                  if (includeAppSkill)
+                    const WorkspaceSkill(
+                      id: 'app-skill',
+                      slug: 'native_helper',
+                      title: 'Native Helper',
+                      description: 'Built-in helper skill.',
+                      source: .app,
+                      kind: .native,
+                      isEnabled: false,
+                    ),
+                ],
         ),
         deleteSkillProvider(workspace.id).overrideWithValue(deleteSkill),
       ],
@@ -210,6 +217,90 @@ void main() {
       initialLocation: '/',
     );
   }
+
+  for (final scenario in ['search', 'source', 'status', 'combined']) {
+    testWidgets('clears $scenario no-results state without changing skills', (
+      tester,
+    ) async {
+      final fixture = await createFixture();
+      final router = createRouter();
+      addTearDown(router.dispose);
+      final _ = await tester.runAsync(
+        () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+      );
+      router.go('/workspaces/${fixture.workspace.id}/skills');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Clear search and filters'), findsNothing);
+      if (scenario != 'search') {
+        await tester.tap(find.byKey(const ValueKey('app_filter_sheet')).first);
+        final _ = await tester.pumpAndSettle();
+        if (scenario == 'source' || scenario == 'combined') {
+          tester
+              .widget<AuraDropdownSelector<String>>(
+                find.descendant(
+                  of: find.byKey(const ValueKey('skills-source-filter')),
+                  matching: find.byType(AuraDropdownSelector<String>),
+                ),
+              )
+              .onChanged
+              ?.call('app');
+        }
+        if (scenario == 'status' || scenario == 'combined') {
+          tester
+              .widget<AuraDropdownSelector<String>>(
+                find.descendant(
+                  of: find.byKey(const ValueKey('skills-status-filter')),
+                  matching: find.byType(AuraDropdownSelector<String>),
+                ),
+              )
+              .onChanged
+              ?.call('disabled');
+        }
+        final _ = await tester.pumpAndSettle();
+        await tester.tapAt(const Offset(20, 20));
+        final _ = await tester.pumpAndSettle();
+      }
+      if (scenario == 'search' || scenario == 'combined') {
+        await tester.enterText(find.byType(EditableText), 'unmatched query');
+        final _ = await tester.pumpAndSettle();
+      }
+      expect(find.text('No skills match these filters'), findsOneWidget);
+      await tester.tap(find.text('Clear search and filters'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Write Summary'), findsOneWidget);
+      expect(find.text('Clear search and filters'), findsNothing);
+      expect(
+        tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+        isEmpty,
+      );
+      final view = fixture.container.read(
+        skillsListViewProvider(fixture.workspace.id),
+      );
+      expect(view.searchQuery, isEmpty);
+      expect(view.sourceFilter, null);
+      expect(view.enabledFilter, null);
+      expect(
+        await SkillsRepository(fixture.database).getSkillById(fixture.skill.id),
+        fixture.skill,
+      );
+      expect(fixture.deleteAttempts, isEmpty);
+    });
+  }
+
+  testWidgets('empty workspace has no filter recovery action', (tester) async {
+    final fixture = await createFixture(emptyWorkspace: true);
+    final router = createRouter();
+    addTearDown(router.dispose);
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    router.go('/workspaces/${fixture.workspace.id}/skills');
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Clear search and filters'), findsNothing);
+    expect(find.byIcon(Icons.search_off), findsNothing);
+    expect(find.byType(EditableText), findsNothing);
+  });
 
   testWidgets('restores visible search after leaving the skills list', (
     tester,
@@ -275,7 +366,7 @@ void main() {
     router.go('/workspaces/${fixture.workspace.id}/skills');
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('Workspace Skills'), findsOneWidget);
+    expect(find.text('Skills'), findsWidgets);
     await tester.ensureVisible(find.text('Write Summary'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Write Summary'), findsOneWidget);
@@ -360,11 +451,19 @@ void main() {
 
     await tester.enterText(search, '');
     final _ = await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('app_filter_sheet')).first);
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('skills-source-filter')));
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('App').first);
+    await tester.tap(find.text('App').hitTestable().last);
     final _ = await tester.pumpAndSettle();
 
+    expect(
+      fixture.container
+          .read(skillsListViewProvider(fixture.workspace.id))
+          .sourceFilter,
+      SkillSource.app,
+    );
     expect(find.text('Native Helper'), findsOneWidget);
     expect(find.text('Write Summary'), findsNothing);
 
@@ -376,6 +475,8 @@ void main() {
     expect(find.text('Native Helper'), findsOneWidget);
     expect(find.text('Write Summary'), findsNothing);
 
+    await tester.tapAt(const Offset(20, 20));
+    final _ = await tester.pumpAndSettle();
     await tester.enterText(search, 'missing');
     final _ = await tester.pump();
     expect(find.byIcon(Icons.search_off), findsOneWidget);
@@ -402,9 +503,13 @@ void main() {
       lessThan(tester.getTopLeft(find.text('Write Summary')).dy),
     );
 
+    await tester.tap(find.byKey(const ValueKey('app_filter_sheet')).first);
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('skills-sort')));
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Enabled first').last);
+    final _ = await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(20, 20));
     final _ = await tester.pumpAndSettle();
 
     expect(
@@ -413,7 +518,152 @@ void main() {
     );
   });
 
+  testWidgets('compact filter sheet restores and clears advanced choices', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(466, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final fixture = await createFixture();
+    final router = createRouter();
+    addTearDown(router.dispose);
+
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    final _ = await tester.pumpAndSettle();
+    router.go('/workspaces/${fixture.workspace.id}/skills');
+    final _ = await tester.pumpAndSettle();
+    final provider = skillsListViewProvider(fixture.workspace.id);
+    final notifier = fixture.container.read(provider.notifier);
+    await tester.enterText(find.byType(EditableText), 'Write');
+    await tester.pump();
+    notifier
+      ..setSourceFilter(.user)
+      ..setEnabledFilter(value: false)
+      ..setSort(.enabled);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Filters (2)'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('app_filter_sheet')).first);
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<AuraDropdownSelector<String>>(
+            find.descendant(
+              of: find.byKey(const ValueKey('skills-source-filter')),
+              matching: find.byType(AuraDropdownSelector<String>),
+            ),
+          )
+          .value,
+      'user',
+    );
+    expect(
+      tester
+          .widget<AuraDropdownSelector<String>>(
+            find.descendant(
+              of: find.byKey(const ValueKey('skills-status-filter')),
+              matching: find.byType(AuraDropdownSelector<String>),
+            ),
+          )
+          .value,
+      'disabled',
+    );
+    expect(
+      tester
+          .widget<AuraDropdownSelector<SkillSort>>(
+            find.byKey(const ValueKey('skills-sort')),
+          )
+          .value,
+      SkillSort.enabled,
+    );
+
+    tester
+        .widget<AuraDropdownSelector<String>>(
+          find.descendant(
+            of: find.byKey(const ValueKey('skills-status-filter')),
+            matching: find.byType(AuraDropdownSelector<String>),
+          ),
+        )
+        .onChanged
+        ?.call('enabled');
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<AuraDropdownSelector<String>>(
+            find.descendant(
+              of: find.byKey(const ValueKey('skills-status-filter')),
+              matching: find.byType(AuraDropdownSelector<String>),
+            ),
+          )
+          .value,
+      'enabled',
+    );
+    expect(find.text('Write Summary'), findsOneWidget);
+    expect(find.text('Filters (2)'), findsOneWidget);
+
+    await tester.tap(find.text('Clear filters'));
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<AuraDropdownSelector<String>>(
+            find.descendant(
+              of: find.byKey(const ValueKey('skills-source-filter')),
+              matching: find.byType(AuraDropdownSelector<String>),
+            ),
+          )
+          .value,
+      'all',
+    );
+    expect(
+      tester
+          .widget<AuraDropdownSelector<String>>(
+            find.descendant(
+              of: find.byKey(const ValueKey('skills-status-filter')),
+              matching: find.byType(AuraDropdownSelector<String>),
+            ),
+          )
+          .value,
+      'all',
+    );
+    expect(
+      tester
+          .widget<AuraDropdownSelector<SkillSort>>(
+            find.byKey(const ValueKey('skills-sort')),
+          )
+          .value,
+      SkillSort.name,
+    );
+    expect(find.text('Filters (0)'), findsOneWidget);
+    await tester.tapAt(const Offset(20, 20));
+    final _ = await tester.pumpAndSettle();
+    expect(fixture.container.read(provider), (
+      searchQuery: 'Write',
+      sourceFilter: null,
+      enabledFilter: null,
+      sort: SkillSort.name,
+    ));
+    expect(find.text('Write Summary'), findsOneWidget);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'Write',
+    );
+    expect(find.text('Filters (0)'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('app_filter_sheet')).first);
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<AuraDropdownSelector<SkillSort>>(
+            find.byKey(const ValueKey('skills-sort')),
+          )
+          .value,
+      SkillSort.name,
+    );
+  });
+
   testWidgets('aligns select-all with the sort field', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final fixture = await createFixture();
     final router = createRouter();
     addTearDown(router.dispose);
