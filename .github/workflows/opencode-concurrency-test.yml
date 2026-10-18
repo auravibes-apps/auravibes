@@ -1,0 +1,32 @@
+name: OpenCode concurrency
+
+on:
+  pull_request:
+    branches: [main, dev, stage]
+    paths:
+      - .github/workflows/opencode.yml
+      - .github/workflows/opencode-concurrency-test.yml
+      - tool/opencode_concurrency_test.py
+  push:
+    branches: [main, dev, stage]
+    paths:
+      - .github/workflows/opencode.yml
+      - .github/workflows/opencode-concurrency-test.yml
+      - tool/opencode_concurrency_test.py
+  merge_group:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: opencode concurrency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Test OpenCode concurrency
+        run: python3 tool/opencode_concurrency_test.py

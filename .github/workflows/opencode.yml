@@ -15,7 +15,8 @@ jobs:
         contains(github.event.comment.body, ' /opencode') ||
         startsWith(github.event.comment.body, '/opencode'))
     concurrency:
-      group: opencode-${{ github.repository }}-${{ github.actor }}
+      group: opencode-${{ github.repository }}-${{ github.actor }}-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+      # A newer command replaces the same actor's run for this issue or PR.
       cancel-in-progress: true
     runs-on: ubuntu-latest
     permissions:
