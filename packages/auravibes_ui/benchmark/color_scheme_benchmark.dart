@@ -1,6 +1,11 @@
-import 'package:auravibes_ui/ui.dart';
+// Flutter imports:
 import 'package:flutter/foundation.dart';
+
+// Package imports:
 import 'package:flutter_test/flutter_test.dart';
+
+// Project imports:
+import 'package:auravibes_ui/ui.dart';
 
 void main() {
   test('measure changing hue and repeated control color resolution', () {

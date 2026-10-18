@@ -18,6 +18,17 @@ gh pr view "$pr" --json \
   number,url,baseRefName,headRefName,headRefOid,mergeable,mergeStateStatus,statusCheckRollup,reviewDecision
 ```
 
+Use periodic status snapshots instead of `--watch`, which repeats the full table.
+Show checks that need attention:
+
+```bash
+gh pr checks "$pr" --json name,workflow,state,bucket,link |
+  jq '[.[] | select(.bucket == "pending" or .bucket == "fail")]'
+```
+
+This filter hides passed and skipped checks. Inspect one full snapshot before
+reporting completion.
+
 Pending, failed, or cancelled required checks are not complete. A summary job
 does not replace individual check rows. Accept intentional skips only when the
 workflow explains them and they are not required. Surface a missing required
