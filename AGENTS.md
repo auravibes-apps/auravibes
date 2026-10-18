@@ -104,7 +104,7 @@
 ## PR Gates
 
 - PR titles use Conventional Commits. Keep each PR to one coherent change with its related tests; describe purpose, behavior, validation, and requested reviewer focus.
-- Use each contributor's configured tools and workflow for PR delivery. Do not install tools or prepare a full local environment solely to create or update a PR.
+- Use each contributor's configured tools and workflow for PR delivery and review. Do not install tools or prepare a full local environment solely for these tasks.
 - PR creation adds no local validation gate. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
 
 ## Agent skills

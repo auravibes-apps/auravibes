@@ -21,8 +21,8 @@
     },
     {
       "id": 4,
-      "prompt": "Remove the shared PR delivery skill. Use each contributor's setup instead of preparing a full local environment for PR creation.",
-      "expected_output": "Removes the shared skill and its references. Removes PR-only local setup and validation gates. Keeps ordinary development checks and mandatory CI checks. Runs harness verification without Flutter setup. Reports that model trials did not run.",
+      "prompt": "Remove shared PR delivery and review skills. Use each contributor's setup instead of preparing a full local environment for these tasks.",
+      "expected_output": "Removes shared delivery and review skills and their references. Removes PR-only local setup and validation gates. Keeps ordinary development checks and mandatory CI checks. Runs harness verification without Flutter setup. Reports that model trials did not run.",
       "files": []
     }
   ]
