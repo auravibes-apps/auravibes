@@ -1,6 +1,7 @@
 import 'dart:io';
 
-final _importDirective = RegExp(r"""^\s*import\s+['"]([^'"]+)['"]""");
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 
 void main() {
   final packageDirectories = <Directory>[];
@@ -33,9 +34,13 @@ void main() {
           ..sort((left, right) => left.path.compareTo(right.path));
 
     for (final file in files) {
-      final imports = file
-          .readAsLinesSync()
-          .map((line) => _importDirective.firstMatch(line)?.group(1))
+      final unit = parseString(
+        content: file.readAsStringSync(),
+        path: file.path,
+      ).unit;
+      final imports = unit.directives
+          .whereType<ImportDirective>()
+          .map((directive) => directive.uri.stringValue)
           .whereType<String>()
           .toList();
       final sortedImports = [...imports]..sort();

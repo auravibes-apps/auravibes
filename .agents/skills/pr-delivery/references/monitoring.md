@@ -23,10 +23,11 @@ Show checks that need attention:
 
 ```bash
 gh pr checks "$pr" --json name,workflow,state,bucket,link |
-  jq '[.[] | select(.bucket == "pending" or .bucket == "fail")]'
+  jq '[.[] | select(.bucket == "pending" or .bucket == "fail" or .bucket == "cancel")]'
 ```
 
-This filter hides passed and skipped checks. Inspect one full snapshot before
+This filter hides passed and skipped checks; shown buckets include pending,
+failed, and cancelled checks. Inspect one full snapshot before
 reporting completion.
 
 Pending, failed, or cancelled required checks are not complete. A summary job
