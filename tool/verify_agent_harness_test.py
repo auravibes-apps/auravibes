@@ -7,7 +7,7 @@ import sys
 import tempfile
 import unittest
 
-from verify_agent_harness import SCOPES, markdown_links, verify
+from verify_agent_harness import markdown_links, verify
 
 
 class HarnessVerificationTest(unittest.TestCase):
@@ -15,11 +15,22 @@ class HarnessVerificationTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        for scope in ("", *SCOPES):
+        scopes = (
+            "apps/auravibes_app",
+            "packages/auravibes_engine",
+            "packages/auravibes_ui",
+            "widgetbook",
+        )
+        for scope in ("", *scopes):
             folder = self.root / scope
             folder.mkdir(parents=True, exist_ok=True)
             (folder / "AGENTS.md").write_text("# Instructions\n")
             (folder / "CLAUDE.md").symlink_to("AGENTS.md")
+        (self.root / "AGENTS.md").write_text(
+            "# Instructions\n\n"
+            + "\n".join(f"[Scope]({scope}/AGENTS.md)" for scope in scopes)
+            + "\n"
+        )
         (self.root / "docs").mkdir()
         (self.root / "docs/ARCHITECTURE.md").write_text("# Architecture\n")
         (self.root / "docs/agents").mkdir()
@@ -40,6 +51,27 @@ class HarnessVerificationTest(unittest.TestCase):
         (self.skill / "SKILL.md").write_text(
             "---\nname: example\ndescription: Use for an example task.\n---\n"
         )
+
+    def test_new_indexed_scope_alias_needs_no_scope_registration(self):
+        instructions = self.root / "AGENTS.md"
+        instructions.write_text(
+            instructions.read_text() + "\n[New scope](new-scope/AGENTS.md)\n"
+        )
+        scope = self.root / "new-scope"
+        scope.mkdir()
+        (scope / "AGENTS.md").write_text("# New scope\n")
+
+        errors = verify(self.root)
+
+        self.assertTrue(
+            any(
+                "new-scope/CLAUDE.md: Expected symlink" in error
+                for error in errors
+            ),
+            errors,
+        )
+        (scope / "CLAUDE.md").symlink_to("AGENTS.md")
+        self.assertEqual(verify(self.root), [])
 
     def test_valid_harness_is_read_only(self):
         before = (self.skill / "SKILL.md").read_bytes()
