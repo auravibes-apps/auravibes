@@ -93,7 +93,7 @@ final class McpConnectionNotifierProvider
 }
 
 String _$mcpConnectionNotifierHash() =>
-    r'0bbd521c02488977c1255ca81d1e365fa81e64da';
+    r'bcfbbaed961ef16c1dcab413caba0867930a21f4';
 
 /// Manages MCP server connections and their tools.
 ///
