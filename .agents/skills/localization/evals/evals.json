@@ -1,0 +1,23 @@
+{
+  "skill_name": "localization",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to add a label for a new empty state. What files and checks do I need?",
+      "expected_output": "The agent loads the skill and reads `references/catalogs.md`. It adds the key to `en.json` and `es.json`, runs generation, uses the generated key, and runs the audit. It does not use runtime fallback to skip a catalog entry.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "My widget test shows `menu.home` instead of `Home`. What should I inspect and how should I render this widget in the test?",
+      "expected_output": "The agent loads the skill and reads `references/runtime.md` and `references/usage-and-testing.md`. It checks `main_locale.dart`, MaterialApp localization settings, and `TextLocale`. It uses `TestableApp` with a relative import, not the invalid package path or nonexistent `testableApp()` call.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Replace this hardcoded widget label with the existing `LocaleKeys.menu_home` key. Do I need a catalog change?",
+      "expected_output": "The agent skips the skill because this task uses an existing key. It tells the user to reuse the key and check its translations. It does not add a catalog key or run the generator.",
+      "files": []
+    }
+  ]
+}
