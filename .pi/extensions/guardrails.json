@@ -1,0 +1,50 @@
+{
+  "$schema": "https://unpkg.com/@aliou/pi-guardrails@0.19.0/schema.json",
+  "version": "0.19.0",
+  "enabled": true,
+  "applyBuiltinDefaults": true,
+  "features": {
+    "policies": true,
+    "permissionGate": true,
+    "pathAccess": true
+  },
+  "pathAccess": { "mode": "ask" },
+  "permissionGate": {
+    "requireConfirmation": true,
+    "patterns": [
+      { "pattern": "git push", "regex": true, "description": "Confirm remote Git writes." },
+      { "pattern": "git reset --hard", "regex": true, "description": "Confirm destructive working-tree reset." },
+      { "pattern": "git clean", "regex": true, "description": "Confirm removal of untracked files." }
+    ]
+  },
+  "policies": {
+    "rules": [
+      {
+        "id": "auravibes-secrets-and-signing",
+        "description": "Local environment, Serverpod credentials, and signing material",
+        "protection": "noAccess",
+        "onlyIfExists": false,
+        "patterns": [
+          { "pattern": ".env" },
+          { "pattern": ".env.*" },
+          { "pattern": "passwords.yaml" },
+          { "pattern": "firebase_service_account_key.json" },
+          { "pattern": "key.properties" },
+          { "pattern": "*.jks" },
+          { "pattern": "*.keystore" },
+          { "pattern": "*.p8" },
+          { "pattern": "*.p12" },
+          { "pattern": "*.pfx" },
+          { "pattern": "*.pem" },
+          { "pattern": "*.key" },
+          { "pattern": "*.mobileprovision" }
+        ],
+        "allowedPatterns": [
+          { "pattern": ".env.example" },
+          { "pattern": ".env.sample" },
+          { "pattern": ".env.test" }
+        ]
+      }
+    ]
+  }
+}
