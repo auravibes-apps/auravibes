@@ -175,13 +175,19 @@ void _popOrReturnFromCreate(
   BuildContext context,
   Object? result,
 ) {
-  final navigator = state.widget.returnNavigatorKey?.currentState;
-  if (navigator != null && navigator.canPop()) {
-    navigator.pop(result);
-
-    return;
-  }
+  if (_popCreateReturnNavigator(state, result)) return;
   _returnFromCreate(context, state.widget.workspaceId, destination);
+}
+
+bool _popCreateReturnNavigator(
+  _ServiceConnectionCreateScreenState state,
+  Object? result,
+) {
+  final navigator = state.widget.returnNavigatorKey?.currentState;
+  if (navigator == null || !navigator.canPop()) return false;
+  navigator.pop(result);
+
+  return true;
 }
 
 String? _createReturnDestination(_ServiceConnectionCreateScreenState state) =>
@@ -592,29 +598,16 @@ void _markCreateSaved(
 Future<void> _navigateAfterCreateSave(
   _ServiceConnectionCreateScreenState state,
 ) async {
-  final destination = TaskReturn.validate(
-    state.widget.returnPath,
-    workspaceId: state.widget.workspaceId,
-  );
+  final destination = _createReturnDestination(state);
   if (state._handoff && destination != null) {
     state.context.go(destination);
 
     return;
   }
-  final returnNavigator = state.widget.returnNavigatorKey?.currentState;
-  if (returnNavigator != null && returnNavigator.canPop()) {
-    returnNavigator.pop(true);
-
-    return;
-  }
+  if (_popCreateReturnNavigator(state, true)) return;
   if (await Navigator.of(state.context).maybePop(true)) return;
   if (!state.mounted) return;
-  if (destination != null) {
-    state.context.go(destination);
-
-    return;
-  }
-  _goToServiceConnections(state);
+  _returnFromCreate(state.context, state.widget.workspaceId, destination);
 }
 
 void _resetAfterSave(
@@ -628,12 +621,6 @@ void _resetAfterSave(
   if (refreshServiceConnections) {
     state.ref.invalidate(serviceConnectionsProvider(state.widget.workspaceId));
   }
-}
-
-void _goToServiceConnections(_ServiceConnectionCreateScreenState state) {
-  state.context.go(
-    '/workspaces/${state.widget.workspaceId}/service-connections',
-  );
 }
 
 void _onTypeChanged(

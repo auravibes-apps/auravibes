@@ -400,9 +400,7 @@ class const _WorkspaceSessionGateContent({
         session: loadedSession,
         child: shell,
         onChooseWorkspace: onChooseWorkspace,
-        returnLocation: _pendingFeatureAuthReturnLocations.remove(
-          GoRouterState.of(context).uri.toString(),
-        ),
+        returnLocation: _takeFeatureAuthReturnLocation(context),
       );
     }
     if (isAppScoped) return shell;
@@ -414,6 +412,11 @@ class const _WorkspaceSessionGateContent({
     );
   }
 }
+
+String? _takeFeatureAuthReturnLocation(BuildContext context) =>
+    _pendingFeatureAuthReturnLocations.remove(
+      GoRouterState.of(context).uri.toString(),
+    );
 
 WorkspaceSession? _loadedWorkspaceSession(
   AsyncValue<WorkspaceSession> session,

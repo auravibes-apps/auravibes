@@ -39,7 +39,7 @@ class const _WorkspaceSignInRecoveryBody({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final _ = ref.watch(cloudAccountsProvider);
-    final onRetry = _signInAction(context, ref, returnLocation);
+    final onRetry = _signInAction(context, ref);
 
     return _WorkspaceSignInRecoveryView(
       onRetry: onRetry,
@@ -48,18 +48,13 @@ class const _WorkspaceSignInRecoveryBody({
     );
   }
 
-  VoidCallback? _signInAction(
-    BuildContext context,
-    WidgetRef ref,
-    String? returnLocation,
-  ) {
+  VoidCallback? _signInAction(BuildContext context, WidgetRef ref) {
     final cloud = session?.cloud;
     if (cloud == null) return null;
-    final uri = GoRouterState.of(context).uri;
+    final location = returnLocation ?? GoRouterState.of(context).uri.toString();
 
-    return () => context.go(
-      _workspaceLoginLocation(ref, uri, workspaceId, cloud, returnLocation),
-    );
+    return () =>
+        context.go(_workspaceLoginLocation(ref, location, workspaceId, cloud));
   }
 }
 
@@ -80,10 +75,9 @@ class const _WorkspaceSignInRecoveryView({
 
 String _workspaceLoginLocation(
   WidgetRef ref,
-  Uri uri,
+  String returnLocation,
   String workspaceId,
   CloudWorkspaceRef cloud,
-  String? returnLocation,
 ) {
   final key = CloudAccountKeyFactory.fromIdentity(
     cloud.serverUrl,
@@ -91,10 +85,7 @@ String _workspaceLoginLocation(
   );
   final route = CloudAccountLoginRoute(
     workspaceId: workspaceId,
-    returnPath: TaskReturn.validate(
-      returnLocation ?? uri.toString(),
-      workspaceId: workspaceId,
-    ),
+    returnPath: TaskReturn.validate(returnLocation, workspaceId: workspaceId),
   ).location;
 
   return _loginLocation(route, key, _accountEmail(ref, key));
