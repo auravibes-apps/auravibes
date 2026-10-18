@@ -1,7 +1,5 @@
-// Dart imports:
 import 'dart:io';
 
-// Project imports:
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 void main() {

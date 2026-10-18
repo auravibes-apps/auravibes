@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:import_sorter/sort.dart';
+final _importDirective = RegExp(r"""^\s*import\s+['"]([^'"]+)['"]""");
 
 void main() {
   final packageDirectories = <Directory>[];
@@ -8,12 +8,14 @@ void main() {
     final root = Directory(rootPath);
     if (!root.existsSync()) continue;
 
-    for (final entry in root.listSync(followLinks: false)) {
-      if (entry is Directory &&
-          File('${entry.path}/pubspec.yaml').existsSync()) {
-        packageDirectories.add(entry);
-      }
-    }
+    packageDirectories.addAll(
+      root
+          .listSync(followLinks: false)
+          .whereType<Directory>()
+          .where(
+            (directory) => File('${directory.path}/pubspec.yaml').existsSync(),
+          ),
+    );
   }
   packageDirectories.add(Directory('widgetbook'));
 
@@ -21,18 +23,6 @@ void main() {
   for (final packageDirectory in packageDirectories) {
     final benchmarkDirectory = Directory('${packageDirectory.path}/benchmark');
     if (!benchmarkDirectory.existsSync()) continue;
-
-    final pubspec = File('${packageDirectory.path}/pubspec.yaml')
-        .readAsStringSync();
-    final packageName = RegExp(
-      r'^name:\s*([^\s#]+)',
-      multiLine: true,
-    ).firstMatch(pubspec)?.group(1);
-    if (packageName == null) {
-      throw StateError(
-        'No package name in ${packageDirectory.path}/pubspec.yaml',
-      );
-    }
 
     final files =
         benchmarkDirectory
@@ -43,15 +33,15 @@ void main() {
           ..sort((left, right) => left.path.compareTo(right.path));
 
     for (final file in files) {
-      final sorted = sortImports(
-        file.readAsLinesSync(),
-        packageName,
-        false,
-        false,
-        false,
-        filePath: file.path,
-      );
-      if (sorted.updated) unsortedFiles.add(file.path);
+      final imports = file
+          .readAsLinesSync()
+          .map((line) => _importDirective.firstMatch(line)?.group(1))
+          .whereType<String>()
+          .toList();
+      final sortedImports = [...imports]..sort();
+      if (imports.join('\n') != sortedImports.join('\n')) {
+        unsortedFiles.add(file.path);
+      }
     }
   }
 
