@@ -2,24 +2,36 @@ import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+class _DraftExitRegistryChanges extends ChangeNotifier {
+  void notify() => notifyListeners();
+}
+
 /// Entries belong to mounted route screens. Only the visible URI can prompt.
 class DraftExitRegistry {
+  final _changes = _DraftExitRegistryChanges();
+  final _listenedGuards = <DraftExitGuard>{};
   final _entries =
       <Uri, List<({BuildContext context, DraftExitGuard guard})>>{};
   GoRouter? _router;
+  bool _notificationPending = false;
+  bool _isDisposed = false;
+
+  Listenable get changes => _changes;
 
   void register(Uri uri, BuildContext context, DraftExitGuard guard) {
     _registerEntry(uri, context, guard);
+    if (_listenedGuards.add(guard)) guard.addListener(_scheduleNotification);
     _listenToRouter(.of(context));
+    _scheduleNotification();
   }
 
   void unregister(Uri uri, DraftExitGuard guard) {
     final entries = _entries[uri];
     if (entries == null) return;
     entries.removeWhere((entry) => identical(entry.guard, guard));
-    if (entries.isEmpty) {
-      final _ = _entries.remove(uri);
-    }
+    if (entries.isEmpty && _entries.remove(uri) == null) return;
+    _unregisterGuardIfUnused(this, guard);
+    _scheduleNotification();
   }
 
   bool hasActiveRoute(GoRouter router) =>
@@ -72,9 +84,14 @@ class DraftExitRegistry {
     }
   }
 
-  void dispose() {
-    _router?.routerDelegate.removeListener(releaseApprovals);
-    _entries.clear();
+  void _scheduleNotification() {
+    if (_notificationPending || _isDisposed) return;
+    _notificationPending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _notificationPending = false;
+      if (!_isDisposed) _changes.notify();
+    });
+    WidgetsBinding.instance.scheduleFrame();
   }
 }
 
@@ -95,6 +112,36 @@ extension _DraftExitRegistryRegistration on DraftExitRegistry {
     _router?.routerDelegate.removeListener(releaseApprovals);
     _router = router;
     router.routerDelegate.addListener(releaseApprovals);
+  }
+}
+
+void _unregisterGuardIfUnused(
+  DraftExitRegistry registry,
+  DraftExitGuard guard,
+) {
+  final isRegistered = registry._entries.values.any(
+    (entries) => entries.any((entry) => identical(entry.guard, guard)),
+  );
+  if (isRegistered) return;
+  guard.removeListener(registry._scheduleNotification);
+  if (!registry._listenedGuards.remove(guard)) return;
+}
+
+extension DraftExitRegistryBackNavigation on DraftExitRegistry {
+  bool canUseNativeBack(GoRouter router) =>
+      _taskEntries(router.state.uri).every((entry) => entry.guard.canPop);
+}
+
+extension DraftExitRegistryLifecycle on DraftExitRegistry {
+  void dispose() {
+    _isDisposed = true;
+    _router?.routerDelegate.removeListener(releaseApprovals);
+    for (final guard in _listenedGuards) {
+      guard.removeListener(_scheduleNotification);
+    }
+    _entries.clear();
+    _listenedGuards.clear();
+    _changes.dispose();
   }
 }
 

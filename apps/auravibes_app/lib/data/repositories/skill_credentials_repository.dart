@@ -346,14 +346,19 @@ extension SkillCredentialsAttributeOperations on SkillCredentialsRepository {
     final secret = <String, String>{};
     final nonSecret = <String, String>{};
     for (final entry in attributes.entries) {
-      final target = definitions[entry.key]?.secret == false
-          ? nonSecret
-          : secret;
-      target[entry.key] = entry.value;
+      final definition = _requireAttributeDefinition(definitions, entry.key);
+      (definition.secret ? secret : nonSecret)[entry.key] = entry.value;
     }
 
     return (secret: secret, nonSecret: nonSecret);
   }
+
+  SkillCredentialAttributeDefinition _requireAttributeDefinition(
+    Map<String, SkillCredentialAttributeDefinition> definitions,
+    String key,
+  ) =>
+      definitions[key] ??
+      (throw SkillCredentialsException.definitionSchemaConflict(key));
 
   void _validateRequiredAttributes({
     required Map<String, SkillCredentialAttributeDefinition> definitions,
@@ -475,6 +480,12 @@ class const SkillCredentialsException(final String message)
   factory definitionNotFound(String definitionId) {
     return SkillCredentialsException(
       'Skill credential definition not found: $definitionId',
+    );
+  }
+
+  factory definitionSchemaConflict(String attribute) {
+    return SkillCredentialsException(
+      'Credential definition changed; attribute no longer exists: $attribute',
     );
   }
 

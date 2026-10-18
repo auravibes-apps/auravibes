@@ -702,6 +702,7 @@
     "empty_subtitle": "Create a skill to make it available in conversations",
     "search_placeholder": "Search skills...",
     "search_no_results": "No skills match these filters",
+    "clear_search_and_filters": "Clear search and filters",
     "filter_all": "All",
     "filter_source": "Source",
     "filter_status": "Status",
@@ -1126,6 +1127,7 @@
     "pending": "Awaiting confirmation"
   },
   "common": {
+    "back": "Back",
     "cancel": "Cancel",
     "remove": "Remove",
     "add": "Add",
@@ -1134,6 +1136,9 @@
     "delete": "Delete",
     "confirm": "Confirm",
     "close": "Close",
+    "filters": "Filters",
+    "filters_count": "Filters ({})",
+    "clear_filters": "Clear filters",
     "failed_items_title": "Some items could not be deleted",
     "retry_failed": "Retry failed",
     "close_dialog": "Close dialog",

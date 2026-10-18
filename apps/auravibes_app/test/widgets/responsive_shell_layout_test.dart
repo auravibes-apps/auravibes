@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('ResponsiveShellLayout.isDesktop', () {
     test('selects mobile immediately below the breakpoint', () {
-      expect(ResponsiveShellLayout.isDesktop(959), isFalse);
+      expect(ResponsiveShellLayout.isDesktop(899), isFalse);
     });
 
     test('selects desktop at the breakpoint', () {
-      expect(ResponsiveShellLayout.isDesktop(960), isTrue);
+      expect(ResponsiveShellLayout.isDesktop(900), isTrue);
     });
 
     test('keeps mid-size widths in overlay mode', () {
@@ -20,7 +20,25 @@ void main() {
     });
 
     test('selects desktop immediately above the breakpoint', () {
-      expect(ResponsiveShellLayout.isDesktop(961), isTrue);
+      expect(ResponsiveShellLayout.isDesktop(901), isTrue);
+    });
+  });
+
+  group('ResponsiveShellLayout.isCompactDesktop', () {
+    test('defaults to overlay navigation below desktop breakpoint', () {
+      expect(ResponsiveShellLayout.isCompactDesktop(899), isFalse);
+    });
+
+    test('defaults to compact navigation at desktop breakpoint', () {
+      expect(ResponsiveShellLayout.isCompactDesktop(900), isTrue);
+    });
+
+    test('keeps compact navigation through the Duo inner width', () {
+      expect(ResponsiveShellLayout.isCompactDesktop(951), isTrue);
+    });
+
+    test('defaults to expanded navigation at expanded breakpoint', () {
+      expect(ResponsiveShellLayout.isCompactDesktop(1100), isFalse);
     });
   });
 }

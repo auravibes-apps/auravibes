@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/skills/providers/credential_definition_us
 import 'package:auravibes_app/features/skills/usecases/credential_definition_schema.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -168,10 +169,13 @@ class const _UsageData({
     BuildContext context,
     CredentialDependency item,
   ) async {
-    await ServiceConnectionEditRoute(
-      workspaceId: workspaceId,
-      connectionId: item.id,
-    ).push<void>(context);
+    await FeatureDestinations.push<void>(
+      context,
+      ServiceConnectionEditRoute(
+        workspaceId: workspaceId,
+        connectionId: item.id,
+      ).location,
+    );
     if (context.mounted) refresh();
   }
 
@@ -179,10 +183,10 @@ class const _UsageData({
     BuildContext context,
     CredentialDependency item,
   ) async {
-    await SkillDetailRoute(
-      workspaceId: workspaceId,
-      skillId: item.id,
-    ).push<void>(context);
+    await FeatureDestinations.push<void>(
+      context,
+      SkillDetailRoute(workspaceId: workspaceId, skillId: item.id).location,
+    );
     if (context.mounted) refresh();
   }
 
@@ -192,11 +196,14 @@ class const _UsageData({
   ) async {
     final parent = item.parentSkillId;
     if (parent == null) return;
-    await SkillToolEditRoute(
-      workspaceId: workspaceId,
-      skillId: parent,
-      toolId: item.id,
-    ).push<void>(context);
+    await FeatureDestinations.push<void>(
+      context,
+      SkillToolEditRoute(
+        workspaceId: workspaceId,
+        skillId: parent,
+        toolId: item.id,
+      ).location,
+    );
     if (context.mounted) refresh();
   }
 }

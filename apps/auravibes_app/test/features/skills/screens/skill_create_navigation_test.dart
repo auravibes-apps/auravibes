@@ -114,16 +114,18 @@ void main() {
               builder: (context) {
                 return UncontrolledProviderScope(
                   container: container,
-                  child: MaterialApp.router(
-                    routerConfig: router,
-                    builder: (_, child) => AuraLegacyMaterialBridge(
-                      child: AuraSnackBarHost(
-                        child: child ?? const SizedBox.shrink(),
+                  child: Portal(
+                    child: MaterialApp.router(
+                      routerConfig: router,
+                      builder: (_, child) => AuraLegacyMaterialBridge(
+                        child: AuraSnackBarHost(
+                          child: child ?? const SizedBox.shrink(),
+                        ),
                       ),
+                      locale: context.locale,
+                      localizationsDelegates: context.localizationDelegates,
+                      supportedLocales: context.supportedLocales,
                     ),
-                    locale: context.locale,
-                    localizationsDelegates: context.localizationDelegates,
-                    supportedLocales: context.supportedLocales,
                   ),
                 );
               },
@@ -262,7 +264,7 @@ void main() {
           'Write Summary',
         );
       } else {
-        expect(find.text('Workspace Skills'), findsOneWidget);
+        expect(find.text('Skills'), findsWidgets);
       }
     });
   }

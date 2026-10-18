@@ -17,6 +17,7 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
       factory: $MyShellRouteDataExtension._fromState,
       branches: [
         StatefulShellBranchData.$branch(
+          navigatorKey: WorkspaceChatsBranchData.$navigatorKey,
           routes: [
             GoRouteData.$route(
               path: 'chat/new',
@@ -43,6 +44,7 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
           ],
         ),
         StatefulShellBranchData.$branch(
+          navigatorKey: WorkspaceFeatureBranchData.$navigatorKey,
           routes: [
             GoRouteData.$route(
               path: 'manage-workspaces',
@@ -89,106 +91,119 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
               ],
             ),
             GoRouteData.$route(
-              path: 'tools',
-              hasOverriddenOnExit: false,
-              factory: $ToolsRoute._fromState,
-            ),
-            GoRouteData.$route(
               path: 'models',
               hasOverriddenOnExit: false,
               factory: $ModelsRoute._fromState,
             ),
-            GoRouteData.$route(
-              path: 'service-connections',
-              hasOverriddenOnExit: false,
-              factory: $ServiceConnectionsRoute._fromState,
+            ShellRouteData.$route(
+              navigatorKey: ConnectionsFeatureShellRouteData.$navigatorKey,
+              factory: $ConnectionsFeatureShellRouteDataExtension._fromState,
               routes: [
                 GoRouteData.$route(
-                  path: 'new',
-                  hasOverriddenOnExit: true,
-                  factory: $ServiceConnectionCreateRoute._fromState,
+                  path: 'tools',
+                  hasOverriddenOnExit: false,
+                  factory: $ToolsRoute._fromState,
                 ),
                 GoRouteData.$route(
-                  path: ':connectionId',
-                  hasOverriddenOnExit: true,
-                  factory: $ServiceConnectionEditRoute._fromState,
+                  path: 'service-connections',
+                  hasOverriddenOnExit: false,
+                  factory: $ServiceConnectionsRoute._fromState,
+                  routes: [
+                    GoRouteData.$route(
+                      path: 'new',
+                      hasOverriddenOnExit: true,
+                      factory: $ServiceConnectionCreateRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: ':connectionId',
+                      hasOverriddenOnExit: true,
+                      factory: $ServiceConnectionEditRoute._fromState,
+                    ),
+                  ],
+                ),
+                GoRouteData.$route(
+                  path: 'skill-credential-definitions',
+                  hasOverriddenOnExit: false,
+                  factory: $SkillCredentialDefinitionsRoute._fromState,
+                  routes: [
+                    GoRouteData.$route(
+                      path: 'new',
+                      hasOverriddenOnExit: true,
+                      factory: $SkillCredentialDefinitionCreateRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: ':definitionId',
+                      hasOverriddenOnExit: true,
+                      factory: $SkillCredentialDefinitionEditRoute._fromState,
+                    ),
+                  ],
                 ),
               ],
             ),
-            GoRouteData.$route(
-              path: 'skills',
-              hasOverriddenOnExit: false,
-              factory: $SkillsRoute._fromState,
+            ShellRouteData.$route(
+              navigatorKey: AgentsSkillsFeatureShellRouteData.$navigatorKey,
+              factory: $AgentsSkillsFeatureShellRouteDataExtension._fromState,
               routes: [
                 GoRouteData.$route(
-                  path: 'new',
-                  hasOverriddenOnExit: true,
-                  factory: $SkillCreateRoute._fromState,
+                  path: 'skills',
+                  hasOverriddenOnExit: false,
+                  factory: $SkillsRoute._fromState,
+                  routes: [
+                    GoRouteData.$route(
+                      path: 'new',
+                      hasOverriddenOnExit: true,
+                      factory: $SkillCreateRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: ':skillId/tools/new',
+                      hasOverriddenOnExit: true,
+                      factory: $SkillToolCreateRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: ':skillId/tools/:toolId',
+                      hasOverriddenOnExit: true,
+                      factory: $SkillToolEditRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: ':skillId/resources/new',
+                      hasOverriddenOnExit: true,
+                      factory: $SkillResourceCreateRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: ':skillId/resources/:resourceId',
+                      hasOverriddenOnExit: true,
+                      factory: $SkillResourceEditRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: ':skillId',
+                      hasOverriddenOnExit: true,
+                      factory: $SkillDetailRoute._fromState,
+                    ),
+                  ],
                 ),
                 GoRouteData.$route(
-                  path: ':skillId/tools/new',
-                  hasOverriddenOnExit: true,
-                  factory: $SkillToolCreateRoute._fromState,
-                ),
-                GoRouteData.$route(
-                  path: ':skillId/tools/:toolId',
-                  hasOverriddenOnExit: true,
-                  factory: $SkillToolEditRoute._fromState,
-                ),
-                GoRouteData.$route(
-                  path: ':skillId/resources/new',
-                  hasOverriddenOnExit: true,
-                  factory: $SkillResourceCreateRoute._fromState,
-                ),
-                GoRouteData.$route(
-                  path: ':skillId/resources/:resourceId',
-                  hasOverriddenOnExit: true,
-                  factory: $SkillResourceEditRoute._fromState,
-                ),
-                GoRouteData.$route(
-                  path: ':skillId',
-                  hasOverriddenOnExit: true,
-                  factory: $SkillDetailRoute._fromState,
-                ),
-              ],
-            ),
-            GoRouteData.$route(
-              path: 'skill-credential-definitions',
-              hasOverriddenOnExit: false,
-              factory: $SkillCredentialDefinitionsRoute._fromState,
-              routes: [
-                GoRouteData.$route(
-                  path: 'new',
-                  hasOverriddenOnExit: true,
-                  factory: $SkillCredentialDefinitionCreateRoute._fromState,
-                ),
-                GoRouteData.$route(
-                  path: ':definitionId',
-                  hasOverriddenOnExit: true,
-                  factory: $SkillCredentialDefinitionEditRoute._fromState,
-                ),
-              ],
-            ),
-            GoRouteData.$route(
-              path: 'agents',
-              hasOverriddenOnExit: false,
-              factory: $AgentsRoute._fromState,
-              routes: [
-                GoRouteData.$route(
-                  path: 'new',
-                  hasOverriddenOnExit: true,
-                  factory: $AgentCreateRoute._fromState,
-                ),
-                GoRouteData.$route(
-                  path: ':agentId',
-                  hasOverriddenOnExit: true,
-                  factory: $AgentDetailRoute._fromState,
+                  path: 'agents',
+                  hasOverriddenOnExit: false,
+                  factory: $AgentsRoute._fromState,
+                  routes: [
+                    GoRouteData.$route(
+                      path: 'new',
+                      hasOverriddenOnExit: true,
+                      factory: $AgentCreateRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: ':agentId',
+                      hasOverriddenOnExit: true,
+                      factory: $AgentDetailRoute._fromState,
+                    ),
+                  ],
                 ),
               ],
             ),
           ],
         ),
         StatefulShellBranchData.$branch(
+          navigatorKey: WorkspaceSettingsBranchData.$navigatorKey,
           routes: [
             GoRouteData.$route(
               path: 'settings',
@@ -578,15 +593,15 @@ mixin $CloudAccountForgotPasswordRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-mixin $ToolsRoute on GoRouteData {
-  static ToolsRoute _fromState(GoRouterState state) =>
-      ToolsRoute(workspaceId: state.pathParameters['workspaceId']!);
+mixin $ModelsRoute on GoRouteData {
+  static ModelsRoute _fromState(GoRouterState state) =>
+      ModelsRoute(workspaceId: state.pathParameters['workspaceId']!);
 
-  ToolsRoute get _self => this as ToolsRoute;
+  ModelsRoute get _self => this as ModelsRoute;
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/tools',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/models',
   );
 
   @override
@@ -603,15 +618,21 @@ mixin $ToolsRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-mixin $ModelsRoute on GoRouteData {
-  static ModelsRoute _fromState(GoRouterState state) =>
-      ModelsRoute(workspaceId: state.pathParameters['workspaceId']!);
+extension $ConnectionsFeatureShellRouteDataExtension
+    on ConnectionsFeatureShellRouteData {
+  static ConnectionsFeatureShellRouteData _fromState(GoRouterState state) =>
+      const ConnectionsFeatureShellRouteData();
+}
 
-  ModelsRoute get _self => this as ModelsRoute;
+mixin $ToolsRoute on GoRouteData {
+  static ToolsRoute _fromState(GoRouterState state) =>
+      ToolsRoute(workspaceId: state.pathParameters['workspaceId']!);
+
+  ToolsRoute get _self => this as ToolsRoute;
 
   @override
   String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/models',
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/tools',
   );
 
   @override
@@ -721,6 +742,108 @@ mixin $ServiceConnectionEditRoute on GoRouteData {
 
   @override
   void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $SkillCredentialDefinitionsRoute on GoRouteData {
+  static SkillCredentialDefinitionsRoute _fromState(GoRouterState state) =>
+      SkillCredentialDefinitionsRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+      );
+
+  SkillCredentialDefinitionsRoute get _self =>
+      this as SkillCredentialDefinitionsRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $SkillCredentialDefinitionCreateRoute on GoRouteData {
+  static SkillCredentialDefinitionCreateRoute _fromState(GoRouterState state) =>
+      SkillCredentialDefinitionCreateRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+        returnCreated:
+            _$convertMapValue(
+              'return-created',
+              state.uri.queryParameters,
+              _$boolConverter,
+            ) ??
+            false,
+      );
+
+  SkillCredentialDefinitionCreateRoute get _self =>
+      this as SkillCredentialDefinitionCreateRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions/new',
+    queryParams: {
+      if (_self.returnCreated != false)
+        'return-created': _self.returnCreated.toString(),
+    },
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $SkillCredentialDefinitionEditRoute on GoRouteData {
+  static SkillCredentialDefinitionEditRoute _fromState(GoRouterState state) =>
+      SkillCredentialDefinitionEditRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+        definitionId: state.pathParameters['definitionId']!,
+      );
+
+  SkillCredentialDefinitionEditRoute get _self =>
+      this as SkillCredentialDefinitionEditRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions/${Uri.encodeComponent(_self.definitionId)}',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+extension $AgentsSkillsFeatureShellRouteDataExtension
+    on AgentsSkillsFeatureShellRouteData {
+  static AgentsSkillsFeatureShellRouteData _fromState(GoRouterState state) =>
+      const AgentsSkillsFeatureShellRouteData();
 }
 
 mixin $SkillsRoute on GoRouteData {
@@ -898,102 +1021,6 @@ mixin $SkillDetailRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skills/${Uri.encodeComponent(_self.skillId)}',
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $SkillCredentialDefinitionsRoute on GoRouteData {
-  static SkillCredentialDefinitionsRoute _fromState(GoRouterState state) =>
-      SkillCredentialDefinitionsRoute(
-        workspaceId: state.pathParameters['workspaceId']!,
-      );
-
-  SkillCredentialDefinitionsRoute get _self =>
-      this as SkillCredentialDefinitionsRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions',
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $SkillCredentialDefinitionCreateRoute on GoRouteData {
-  static SkillCredentialDefinitionCreateRoute _fromState(GoRouterState state) =>
-      SkillCredentialDefinitionCreateRoute(
-        workspaceId: state.pathParameters['workspaceId']!,
-        returnCreated:
-            _$convertMapValue(
-              'return-created',
-              state.uri.queryParameters,
-              _$boolConverter,
-            ) ??
-            false,
-      );
-
-  SkillCredentialDefinitionCreateRoute get _self =>
-      this as SkillCredentialDefinitionCreateRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions/new',
-    queryParams: {
-      if (_self.returnCreated != false)
-        'return-created': _self.returnCreated.toString(),
-    },
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $SkillCredentialDefinitionEditRoute on GoRouteData {
-  static SkillCredentialDefinitionEditRoute _fromState(GoRouterState state) =>
-      SkillCredentialDefinitionEditRoute(
-        workspaceId: state.pathParameters['workspaceId']!,
-        definitionId: state.pathParameters['definitionId']!,
-      );
-
-  SkillCredentialDefinitionEditRoute get _self =>
-      this as SkillCredentialDefinitionEditRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions/${Uri.encodeComponent(_self.definitionId)}',
   );
 
   @override

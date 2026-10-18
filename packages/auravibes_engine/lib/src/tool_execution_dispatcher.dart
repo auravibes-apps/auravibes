@@ -184,17 +184,25 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         failurePhase: failure.failurePhase,
       ));
 
-      final projection = projectToolOutput(failure.responseRaw);
-      return AgentToolExecutionResult(
-        resultStatus: .executionError,
-        responseRaw: projection.persistedText,
-        responseContextRaw: _responseContext(projection),
-        outputTruncated: projection.truncated,
-        originalResponseBytes: projection.truncated
-            ? projection.originalBytes
-            : null,
-        fullOutputForContext: projection.fullOutputForContext,
-      );
+      try {
+        final projection = projectToolOutput(
+          failure.responseRaw,
+          policy:
+              outputPolicyForTool?.call(tool) ?? const AgentToolOutputPolicy(),
+        );
+        return AgentToolExecutionResult(
+          resultStatus: .executionError,
+          responseRaw: projection.persistedText,
+          responseContextRaw: _responseContext(projection),
+          outputTruncated: projection.truncated,
+          originalResponseBytes: projection.truncated
+              ? projection.originalBytes
+              : null,
+          fullOutputForContext: projection.fullOutputForContext,
+        );
+      } on Object {
+        return const AgentToolExecutionResult(resultStatus: .executionError);
+      }
     } on Object catch (error, stackTrace) {
       logToolExecutionError((
         conversationId: conversationId,

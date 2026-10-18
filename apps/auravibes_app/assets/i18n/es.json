@@ -702,6 +702,7 @@
     "empty_subtitle": "Crea una habilidad para hacerla disponible en conversaciones",
     "search_placeholder": "Buscar habilidades...",
     "search_no_results": "Ninguna habilidad coincide con estos filtros",
+    "clear_search_and_filters": "Limpiar búsqueda y filtros",
     "filter_all": "Todas",
     "filter_source": "Fuente",
     "filter_status": "Estado",
@@ -1126,6 +1127,7 @@
     "pending": "Esperando confirmación"
   },
   "common": {
+    "back": "Atrás",
     "cancel": "Cancelar",
     "remove": "Eliminar",
     "add": "Agregar",
@@ -1134,6 +1136,9 @@
     "delete": "Borrar",
     "confirm": "Confirmar",
     "close": "Cerrar",
+    "filters": "Filtros",
+    "filters_count": "Filtros ({})",
+    "clear_filters": "Borrar filtros",
     "failed_items_title": "No se pudieron eliminar algunos elementos",
     "retry_failed": "Reintentar los elementos fallidos",
     "close_dialog": "Cerrar diálogo",

@@ -34,88 +34,202 @@ class A2uiStreamDecoder {
   new({this.codec = activeA2uiWireCodec});
 
   final A2uiWireCodec codec;
-  String _buffer = '';
+  final _buffer = StringBuffer();
+  _A2uiStreamMode _mode = .text;
+  int _bytes = 0;
+  int _ticks = 0;
+  int _depth = 0;
+  bool _inString = false;
+  bool _escaped = false;
+  bool _highSurrogate = false;
+  bool _ordinary = false;
 
   List<A2uiStreamEvent> add(String chunk) {
-    _buffer += chunk;
-    if (utf8.encode(_buffer).length > maxA2uiChatPayloadBytes &&
-        _looksLikeCandidate(_buffer)) {
-      final event = A2uiInvalidEvent(
-        .oversizedPayload,
-        wireSurfaceId: _recoverSurfaceId(_buffer),
-      );
-      _buffer = '';
-      return [event];
-    }
-    return _drain(complete: false);
-  }
-
-  List<A2uiStreamEvent> close() => _drain(complete: true);
-
-  List<A2uiStreamEvent> _drain({required bool complete}) {
     final events = <A2uiStreamEvent>[];
-    while (_buffer.isNotEmpty) {
-      final open = _buffer.indexOf('```');
-      if (open > 0) {
-        events.add(A2uiTextEvent(_buffer.substring(0, open)));
-        _buffer = _buffer.substring(open);
-        continue;
+    final text = StringBuffer();
+    for (final unit in chunk.codeUnits) {
+      _read(unit, events, text);
+      // A pending high surrogate can save two bytes when its pair completes.
+      if (_bytes > maxA2uiChatPayloadBytes + (_highSurrogate ? 2 : 0)) {
+        _releaseOversized(events, text);
       }
-      if (open == 0) {
-        final close = _buffer.indexOf('```', open + 3);
-        if (close < 0) break;
-        final candidate = _buffer
-            .substring(open + 3, close)
-            .replaceFirst(RegExp(r'^\s*json\s*'), '');
-        _emitCandidate(
-          candidate,
-          events,
-          fallbackText: _buffer.substring(0, close + 3),
-        );
-        _buffer = _buffer.substring(close + 3);
-        continue;
-      }
-
-      final start = _buffer.indexOf('{');
-      if (start < 0) {
-        events.add(A2uiTextEvent(_buffer));
-        _buffer = '';
-        break;
-      }
-      if (start > 0) {
-        events.add(A2uiTextEvent(_buffer.substring(0, start)));
-        _buffer = _buffer.substring(start);
-        continue;
-      }
-      final end = _balancedEnd(_buffer);
-      if (end == null) break;
-      final candidate = _buffer.substring(0, end);
-      _emitCandidate(candidate, events, fallbackText: candidate);
-      _buffer = _buffer.substring(end);
     }
-
-    _flushRemainingBuffer(events, complete: complete);
+    _flushText(events, text);
     return events;
   }
 
-  void _flushRemainingBuffer(
-    List<A2uiStreamEvent> events, {
-    required bool complete,
-  }) {
-    if (!complete || _buffer.isEmpty) return;
+  List<A2uiStreamEvent> close() {
+    final events = <A2uiStreamEvent>[];
+    final text = StringBuffer();
+    if (_mode == .text) {
+      text.write('`' * _ticks);
+    } else if (!_ordinary) {
+      final value = _buffer.toString();
+      if (_bytes > maxA2uiChatPayloadBytes && _looksLikeCandidate(value)) {
+        events.add(
+          A2uiInvalidEvent(
+            .oversizedPayload,
+            wireSurfaceId: _recoverSurfaceId(value),
+          ),
+        );
+      } else if (_looksLikeCandidate(value)) {
+        events.add(
+          A2uiInvalidEvent(
+            .malformedPayload,
+            wireSurfaceId: _recoverSurfaceId(value),
+            diagnosticPayloadJson: _diagnosticPayload(value),
+          ),
+        );
+      } else {
+        text.write(value);
+      }
+    }
+    _reset();
+    _flushText(events, text);
+    return events;
+  }
 
-    if (_looksLikeCandidate(_buffer)) {
+  void _read(int unit, List<A2uiStreamEvent> events, StringBuffer text) {
+    if (_mode == .text) {
+      _readText(unit, text);
+      return;
+    }
+    if (_ordinary) {
+      text.writeCharCode(unit);
+    } else {
+      _append(unit);
+    }
+    if (_mode == .fence) {
+      _ticks = unit == 0x60 ? _ticks + 1 : 0;
+      if (_ticks == 3) _finish(events, text);
+      return;
+    }
+    _ticks = unit == 0x60 && !_inString ? _ticks + 1 : 0;
+    if (_ticks == 3 && !_ordinary) {
+      final value = _buffer.toString();
+      text.write(value.substring(0, value.length - 3));
+      _reset();
+      _mode = .fence;
+      _buffer.write('```');
+      _bytes = 3;
+      return;
+    }
+    _scanObject(unit);
+    if (_depth == 0) _finish(events, text);
+  }
+
+  void _readText(int unit, StringBuffer text) {
+    if (unit == 0x60) {
+      _ticks++;
+      if (_ticks == 3) {
+        _mode = .fence;
+        _buffer.write('```');
+        _bytes = 3;
+        _ticks = 0;
+      }
+      return;
+    }
+    text.write('`' * _ticks);
+    _ticks = 0;
+    if (unit == 0x7b) {
+      _mode = .object;
+      _depth = 1;
+      _append(unit);
+    } else {
+      text.writeCharCode(unit);
+    }
+  }
+
+  void _append(int unit) {
+    _buffer.writeCharCode(unit);
+    _bytes += switch (unit) {
+      <= 0x7f => 1,
+      <= 0x7ff => 2,
+      >= 0xdc00 && <= 0xdfff when _highSurrogate => 1,
+      _ => 3,
+    };
+    _highSurrogate = unit >= 0xd800 && unit <= 0xdbff;
+  }
+
+  void _scanObject(int unit) {
+    if (_inString) {
+      if (_escaped) {
+        _escaped = false;
+      } else if (unit == 0x5c) {
+        _escaped = true;
+      } else if (unit == 0x22) {
+        _inString = false;
+      }
+      return;
+    }
+    if (unit == 0x22) {
+      _inString = true;
+    } else if (unit == 0x7b) {
+      _depth++;
+    } else if (unit == 0x7d) {
+      _depth--;
+    }
+  }
+
+  void _finish(List<A2uiStreamEvent> events, StringBuffer text) {
+    if (!_ordinary) {
+      final value = _buffer.toString();
+      final candidate = _mode == .fence
+          ? value
+                .substring(3, value.length - 3)
+                .replaceFirst(RegExp(r'^\s*json\s*'), '')
+          : value;
+      _flushText(events, text);
+      if (_bytes > maxA2uiChatPayloadBytes && _looksLikeCandidate(value)) {
+        events.add(
+          A2uiInvalidEvent(
+            .oversizedPayload,
+            wireSurfaceId: _recoverSurfaceId(value),
+          ),
+        );
+      } else {
+        _emitCandidate(candidate, events, fallbackText: value);
+      }
+    }
+    _reset();
+  }
+
+  void _releaseOversized(List<A2uiStreamEvent> events, StringBuffer text) {
+    final value = _buffer.toString();
+    if (_looksLikeCandidate(value)) {
+      _flushText(events, text);
       events.add(
         A2uiInvalidEvent(
-          .malformedPayload,
-          wireSurfaceId: _recoverSurfaceId(_buffer),
-          diagnosticPayloadJson: _diagnosticPayload(_buffer),
+          .oversizedPayload,
+          wireSurfaceId: _recoverSurfaceId(value),
         ),
       );
-    } else {
-      events.add(A2uiTextEvent(_buffer));
+      _reset();
+      return;
     }
-    _buffer = '';
+    // Classification stops at the payload limit. Later markers stay literal.
+    text.write(value);
+    _buffer.clear();
+    _bytes = 0;
+    _ordinary = true;
+  }
+
+  void _reset() {
+    _buffer.clear();
+    _mode = .text;
+    _bytes = 0;
+    _ticks = 0;
+    _depth = 0;
+    _inString = false;
+    _escaped = false;
+    _highSurrogate = false;
+    _ordinary = false;
+  }
+
+  void _flushText(List<A2uiStreamEvent> events, StringBuffer text) {
+    if (text.isEmpty) return;
+    events.add(A2uiTextEvent(text.toString()));
+    text.clear();
   }
 
   void _emitCandidate(
@@ -182,29 +296,6 @@ class A2uiStreamDecoder {
       return jsonEncode({'rawPayload': value});
     }
   }
-
-  int? _balancedEnd(String value) {
-    var depth = 0;
-    var inString = false;
-    var escaped = false;
-    for (var index = 0; index < value.length; index++) {
-      final char = value[index];
-      if (inString) {
-        if (escaped) {
-          escaped = false;
-        } else if (char == r'\') {
-          escaped = true;
-        } else if (char == '"') {
-          inString = false;
-        }
-      } else if (char == '"') {
-        inString = true;
-      } else if (char == '{') {
-        depth++;
-      } else if (char == '}' && --depth == 0) {
-        return index + 1;
-      }
-    }
-    return null;
-  }
 }
+
+enum _A2uiStreamMode { text, fence, object }

@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/settings/widgets/accent_color_section.dar
 import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
 import 'package:auravibes_app/features/settings/widgets/legal_links_section.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -108,7 +109,7 @@ class const _SettingsPageSurface({
   required final VoidCallback onThemeReset,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: _SettingsBody(
       workspaceId: workspaceId,
       currentTheme: currentTheme,

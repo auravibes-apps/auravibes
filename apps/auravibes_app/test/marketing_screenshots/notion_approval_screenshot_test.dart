@@ -38,6 +38,7 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
@@ -268,6 +269,18 @@ void main() {
           if (scene == 'workspaces') {
             if (!ResponsiveShellLayout.isDesktop(screen.width)) {
               await tester.tap(find.byKey(const ValueKey('app_drawer_menu')));
+              final _ = await tester.pumpAndSettle();
+            } else if (ResponsiveShellLayout.isCompactDesktop(screen.width)) {
+              final shell = tester.element(
+                find.byType(AppWithResponsiveDrawer),
+              );
+              await tester.tap(
+                find.byTooltip(
+                  LocaleKeys.navigation_drawer_expand_sidebar_tooltip.tr(
+                    context: shell,
+                  ),
+                ),
+              );
               final _ = await tester.pumpAndSettle();
             }
             await tester.tap(find.byKey(const ValueKey('workspace_actions')));

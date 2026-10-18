@@ -53,4 +53,13 @@ class SkillsListViewNotifier extends _$SkillsListViewNotifier {
       sort: value,
     );
   }
+
+  void clearFilters() {
+    state = (
+      searchQuery: state.searchQuery,
+      sourceFilter: null,
+      enabledFilter: null,
+      sort: .name,
+    );
+  }
 }

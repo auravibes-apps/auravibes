@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/models/providers/chat_model_connections_p
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -179,17 +180,21 @@ bool _containsSelection(
 
 class const _ChatAddProviderButton({required final String workspaceId})
     extends StatelessWidget {
+  String get _providerSetupLocation => ServiceConnectionCreateRoute(
+    workspaceId: workspaceId,
+    returnPath: NewChatRoute(workspaceId: workspaceId).location,
+    type: 'modelProvider',
+  ).location;
+
   @override
   Widget build(BuildContext context) => AuraButton(
-    onPressed: () => unawaited(
-      ServiceConnectionCreateRoute(
-        workspaceId: workspaceId,
-        returnPath: NewChatRoute(workspaceId: workspaceId).location,
-        type: 'modelProvider',
-      ).push<void>(context),
-    ),
+    onPressed: () => _openProviderSetup(context),
     child: const TextLocale('models_screens.add_provider.open_button'),
     key: const ValueKey('workspace_add_model_provider'),
+  );
+
+  void _openProviderSetup(BuildContext context) => unawaited(
+    FeatureDestinations.push<void>(context, _providerSetupLocation),
   );
 }
 
@@ -198,7 +203,10 @@ class const _ChatReviewConnectionsButton({required final String workspaceId})
   @override
   Widget build(BuildContext context) => AuraButton(
     onPressed: () => unawaited(
-      ServiceConnectionsRoute(workspaceId: workspaceId).push<void>(context),
+      FeatureDestinations.push<void>(
+        context,
+        ServiceConnectionsRoute(workspaceId: workspaceId).location,
+      ),
     ),
     child: const TextLocale('chat_readiness.review_connections'),
   );

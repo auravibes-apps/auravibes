@@ -48,6 +48,24 @@
       "prompt": "A Flutter screen golden passes on macOS but fails on Linux CI with only text and icon edge pixels changed. Make CI pass without dropping visual coverage.",
       "expected_output": "Loads ux-view-clarity, verifies platform rasterization differences, keeps platform-specific baselines, and validates each on its target platform without dropping the golden assertion or redesigning the screen.",
       "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Adapt the whole app for iPhone Duo open and closed postures. Audit every route and shared sheet before changing layouts.",
+      "expected_output": "Loads ux-view-clarity, maps routes and shared surfaces, uses available constraints and edge insets, checks keyboard/scroll/navigation and both themes, and validates every route in each requested posture with captures.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "The foldable's inner screen feels cramped. What should change across the app?",
+      "expected_output": "Recognizes an implied app-wide UX change, loads ux-view-clarity, inspects current route and widget coverage before proposing constraint-based responsive changes, and avoids assuming native fold-region APIs are required.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "Change how foldable device metadata is cached without changing any visible behavior.",
+      "expected_output": "Does not load ux-view-clarity because the task is non-visual; follows the relevant data or architecture guidance instead.",
+      "files": []
     }
   ]
 }

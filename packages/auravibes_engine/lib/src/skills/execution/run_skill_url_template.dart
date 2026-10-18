@@ -43,7 +43,11 @@ class const SkillTemplateExecutor(
       },
     );
 
-    return _httpClient(request)
-        .then((response) => const SkillResponseDecoder().call(response));
+    return _httpClient(request).then(
+      (response) => const SkillResponseDecoder().call(
+        response,
+        secrets: credentials.values,
+      ),
+    );
   }
 }

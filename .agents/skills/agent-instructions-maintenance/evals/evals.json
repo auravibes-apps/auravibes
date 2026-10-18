@@ -24,6 +24,18 @@
       "prompt": "Remove shared PR delivery and review skills. Use each contributor's setup instead of preparing a full local environment for these tasks.",
       "expected_output": "Removes shared delivery and review skills and their references. Removes PR-only local setup and validation gates. Keeps ordinary development checks and mandatory CI checks. Runs harness verification without Flutter setup. Reports that model trials did not run.",
       "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "My code is ready for review. I already use my usual PR tools. What setup do I need?",
+      "expected_output": "Uses the contributor's configured PR workflow. Does not install shared tools or add PR-only local gates. Runs scope-appropriate development checks and reports required GitHub checks.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Run the focused test for this file and help me fix a failing assertion.",
+      "expected_output": "Runs the focused test with the documented project command and fixes the assertion. Does not load PR workflow guidance or run full CI only because the code is on a PR.",
+      "files": []
     }
   ]
 }

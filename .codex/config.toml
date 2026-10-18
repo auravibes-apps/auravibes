@@ -13,7 +13,3 @@ args = ["-y", "@devqxi/pubdev-mcp-server@1.0.1"]
 [mcp_servers.serverpod]
 command = "serverpod"
 args = ["-q", "mcp-server", "--server-dir", "apps/auravibes_server"]
-
-[mcp_servers.sonarqube]
-command = "sonar"
-args = ["run", "mcp"]

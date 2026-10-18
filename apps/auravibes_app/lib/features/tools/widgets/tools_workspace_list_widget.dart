@@ -404,7 +404,7 @@ class const _ToolsManagementControls({
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => _ToolsManagementLayout(
-      compact: constraints.maxWidth < 600,
+      compact: constraints.maxWidth < 520,
       filter: filter,
       selection: selection,
       onSelectAll: onSelectAll,
