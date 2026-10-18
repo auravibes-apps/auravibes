@@ -435,9 +435,9 @@ void main() {
       final release = Completer<void>();
       final mutating = database.transaction(() async {
         if (mutation == 'delete') {
-          await h.definitions.deleteDefinition(definition.id);
+          final _ = await h.definitions.deleteDefinition(definition.id);
         } else {
-          await h.definitions.updateDefinition(
+          final _ = await h.definitions.updateDefinition(
             definition.id,
             .new(
               attributesJson: mutation == 'remove'
@@ -450,29 +450,32 @@ void main() {
         await release.future;
       });
       await locked.future;
-      final creating = expectLater(
-        h.credentials.createCredential(
-          h.workspaceId,
-          .new(
-            credentialDefinitionId: definition.id,
-            name: 'Stale credential',
-            attributes: const {'token': 'fixture', 'old': 'fixture'},
-          ),
-        ),
-        throwsA(
-          mutation == 'delete'
-              ? isA<SkillCredentialsException>()
-              : mutation == 'remove'
-              ? isA<SkillCredentialsException>()
-                    .having((error) => error.isNotFound(), 'not found', isFalse)
-                    .having(
-                      (error) => error.message,
-                      'message',
-                      contains('old'),
-                    )
-              : isA<FormatException>(),
+      final create = h.credentials.createCredential(
+        h.workspaceId,
+        .new(
+          credentialDefinitionId: definition.id,
+          name: 'Stale credential',
+          attributes: const {'token': 'fixture', 'old': 'fixture'},
         ),
       );
+      final Future<void> creating;
+      if (mutation == 'delete') {
+        creating = expectLater(
+          create,
+          throwsA(isA<SkillCredentialsException>()),
+        );
+      } else if (mutation == 'remove') {
+        creating = expectLater(
+          create,
+          throwsA(
+            isA<SkillCredentialsException>()
+                .having((error) => error.isNotFound(), 'not found', isFalse)
+                .having((error) => error.message, 'message', contains('old')),
+          ),
+        );
+      } else {
+        creating = expectLater(create, throwsA(isA<FormatException>()));
+      }
       release.complete();
       await mutating;
       await creating;
