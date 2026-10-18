@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/services/mcp_service/mcp_sdk_adapter.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,23 +73,93 @@ void main() {
     expect(result.structuredContent, ['ok', 2]);
   });
 
-  test('throws on unknown SDK content block', () {
-    expect(
-      () => McpSdkAdapter.toolResult(
-        .new(
-          content: [
-            mcp.UnknownContentBlock.fromJson({'type': 'future'}),
+  for (final isError in [null, false, true]) {
+    test('preserves mixed content and metadata with isError=$isError', () {
+      final result = McpSdkAdapter.toolResult(
+        .fromJson({
+          'content': [
+            {
+              'type': 'text',
+              'text': 'before',
+              'annotations': {'priority': 0.7},
+            },
+            {
+              'type': 'future',
+              'payload': 'secret-payload',
+              'annotations': {'secret': 'secret-annotation'},
+              '_meta': {'token': 'secret-token'},
+            },
+            {'type': 'image', 'data': 'AA==', 'mimeType': 'image/png'},
+            {'type': 'text', 'text': 'after'},
           ],
-        ),
-      ),
-      throwsA(
-        isA<UnsupportedError>().having(
-          (error) => error.message,
-          'message',
-          'Unsupported MCP content: UnknownContentBlock',
-        ),
+          'structuredContent': {'ok': true},
+          'isError': ?isError,
+        }),
+      );
+
+      expect(jsonDecode(result.toModelText()), {
+        'content': [
+          {
+            'type': 'text',
+            'text': 'before',
+            'annotations': {'priority': 0.7},
+          },
+          {'type': 'text', 'text': '[Unsupported MCP content: future]'},
+          {'type': 'image', 'mimeType': 'image/png', 'data': 'AA=='},
+          {'type': 'text', 'text': 'after'},
+        ],
+        'structuredContent': {'ok': true},
+        'isStreaming': false,
+        'isError': ?isError,
+      });
+      expect(result.isError, isError);
+    });
+  }
+
+  test('returns safe fallback for unknown-only content', () {
+    final result = McpSdkAdapter.toolResult(
+      .new(
+        content: [
+          mcp.UnknownContentBlock.fromJson({
+            'type': 'future_block-v2',
+            'payload': 'secret-payload',
+          }),
+        ],
       ),
     );
+
+    expect(result.toModelText(), '[Unsupported MCP content: future_block-v2]');
+    expect(result.structuredContent, isNull);
+    expect(result.isError, isNull);
+  });
+
+  test('omits missing, malformed, unsafe and oversized content kinds', () {
+    for (final type in <Object?>[
+      null,
+      42,
+      ['future'],
+      {'kind': 'future'},
+      '',
+      'future\nsecret',
+      'future\n',
+      'Bearer secret-token',
+      'https://example.test?token=secret-token',
+      String.fromCharCode(0xe9),
+      'a' * 33,
+    ]) {
+      final result = McpSdkAdapter.toolResult(
+        .new(
+          content: [
+            mcp.UnknownContentBlock.fromJson({
+              'type': ?type,
+              'payload': 'secret-payload',
+            }),
+          ],
+        ),
+      );
+
+      expect(result.toModelText(), '[Unsupported MCP content: unknown]');
+    }
   });
 
   test('maps blob-backed embedded resources', () {
