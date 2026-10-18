@@ -960,27 +960,27 @@ class const _SkillsScreenSearchInput({
   required final ValueChanged<String> onChanged,
 }) extends HookWidget {
   @override
-  Widget build(BuildContext _) {
-    final controller = useTextEditingController(text: searchQuery);
-    VoidCallback? syncSearchQuery() {
-      if (controller.text != searchQuery) controller.text = searchQuery;
+  Widget build(BuildContext _) => AuraInput(
+    controller: _useSkillSearchController(searchQuery),
+    placeholder: const TextLocale(LocaleKeys.skills_screen_search_placeholder),
+    prefixIcon: const AuraIcon(Icons.search),
+    size: .small,
+    textInputAction: .search,
+    onChanged: onChanged,
+  );
+}
 
-      return null;
-    }
+TextEditingController _useSkillSearchController(String searchQuery) {
+  final controller = useTextEditingController(text: searchQuery);
+  VoidCallback? syncSearchQuery() {
+    if (controller.text != searchQuery) controller.text = searchQuery;
 
-    useEffect(syncSearchQuery, [searchQuery]);
-
-    return AuraInput(
-      controller: controller,
-      placeholder: const TextLocale(
-        LocaleKeys.skills_screen_search_placeholder,
-      ),
-      prefixIcon: const AuraIcon(Icons.search),
-      size: .small,
-      textInputAction: .search,
-      onChanged: onChanged,
-    );
+    return null;
   }
+
+  useEffect(syncSearchQuery, [searchQuery]);
+
+  return controller;
 }
 
 class const _SkillsScreenFilterRow({
