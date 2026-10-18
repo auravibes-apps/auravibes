@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -18,6 +19,15 @@ class const McpOAuthReauthRequired() implements Exception {
   String toString() => 'MCP OAuth reauthentication required.';
 }
 
+/// Unknown failures preserve credentials and do not trigger automatic retries.
+class const McpOAuthRefreshFailed({required final bool retryable})
+    implements Exception {
+  @override
+  String toString() => retryable
+      ? 'MCP OAuth refresh failed. Retry later.'
+      : 'MCP OAuth refresh outcome is unknown.';
+}
+
 class McpOAuthTokenResolver {
   new({McpOAuthExchange? exchange, DateTime Function()? now})
     : _exchange = exchange ?? refreshMcpOAuthToken,
@@ -31,108 +41,156 @@ class McpOAuthTokenResolver {
     WorkspaceSecret selected, {
     required String actorUserId,
   }) async {
-    final token = await session.db.transaction((transaction) async {
+    final resource = await WorkspaceResource.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(selected.workspaceId) &
+          table.resourceKind.equals(WorkspaceResourceKind.mcpServer) &
+          table.resourceId.equals(selected.resourceId) &
+          table.deletedAt.equals(null),
+    );
+    final snapshot = await WorkspaceSecret.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(selected.id) &
+          table.workspaceId.equals(selected.workspaceId) &
+          table.resourceId.equals(selected.resourceId) &
+          table.deletedAt.equals(null),
+    );
+    if (resource == null || snapshot == null) {
+      throw const McpOAuthReauthRequired();
+    }
+    final cipher = const WorkspaceSecretCipher();
+    McpOAuthCredentials? credentials;
+    var reauth = false;
+    try {
+      credentials = McpOAuthCredentials.parse(
+        await cipher.decrypt(session, snapshot),
+      );
+    } on FormatException {
+      reauth = true;
+    }
+    var refreshed = false;
+    if (credentials != null && credentials.needsRefresh(_now())) {
+      if (credentials.refreshToken?.isNotEmpty != true) {
+        reauth = true;
+      } else {
+        try {
+          credentials = await _exchange(credentials);
+          if (credentials.accessToken.isEmpty) {
+            throw const McpOAuthRefreshFailed(retryable: false);
+          }
+          refreshed = true;
+        } on McpOAuthReauthRequired {
+          reauth = true;
+        } on McpOAuthRefreshFailed {
+          rethrow;
+        } on TimeoutException {
+          throw const McpOAuthRefreshFailed(retryable: true);
+        } on SocketException {
+          throw const McpOAuthRefreshFailed(retryable: true);
+        } on HttpException {
+          throw const McpOAuthRefreshFailed(retryable: true);
+        } on Exception {
+          throw const McpOAuthRefreshFailed(retryable: false);
+        }
+      }
+    }
+    final encrypted = refreshed
+        ? await cipher.encrypt(
+            session,
+            jsonEncode(credentials!.toJson()),
+            workspaceId: snapshot.workspaceId,
+            resourceId: snapshot.resourceId,
+          )
+        : null;
+    String? winningToken;
+    final committed = await session.db.transaction((transaction) async {
       final workspace = await CloudWorkspace.db.findFirstRow(
         session,
         where: (table) =>
-            table.id.equals(selected.workspaceId) &
+            table.id.equals(snapshot.workspaceId) &
             table.deletedAt.equals(null),
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );
-      if (workspace == null) return null;
+      if (workspace == null) throw const McpOAuthReauthRequired();
       final secret = await WorkspaceSecret.db.findFirstRow(
         session,
         where: (table) =>
-            table.id.equals(selected.id) &
-            table.workspaceId.equals(selected.workspaceId) &
-            table.resourceId.equals(selected.resourceId) &
-            table.deletedAt.equals(null),
+            table.id.equals(snapshot.id) & table.deletedAt.equals(null),
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );
-      if (secret == null) return null;
-      final cipher = const WorkspaceSecretCipher();
-      McpOAuthCredentials credentials;
-      try {
-        credentials = McpOAuthCredentials.parse(
-          await cipher.decrypt(session, secret),
-        );
-      } on FormatException {
-        await _setReauth(
-          session,
-          secret,
-          workspace,
-          transaction,
-          actorUserId,
-        );
-        return null;
-      }
-      if (!credentials.needsRefresh(_now())) {
-        await _setActive(
-          session,
-          secret,
-          secret.revision,
-          workspace,
-          transaction,
-          actorUserId,
-        );
-        return credentials.accessToken;
-      }
-      if (credentials.refreshToken?.isNotEmpty != true) {
-        await _setReauth(
-          session,
-          secret,
-          workspace,
-          transaction,
-          actorUserId,
-        );
-        return null;
-      }
-      try {
-        final refreshed = await _exchange(credentials);
-        if (refreshed.accessToken.isEmpty) {
-          throw const FormatException('OAuth refresh returned no token.');
+      final currentResource = await WorkspaceResource.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(resource.id) & table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (secret == null || currentResource == null) return false;
+      final sameDefinition = _sameDefinition(resource, currentResource);
+      // A concurrent rejection can change auth status before successful rotation.
+      // Preserve rotation when credential revision and server definition stay unchanged.
+      if (secret.revision != snapshot.revision ||
+          currentResource.revision != resource.revision &&
+              (!refreshed || !sameDefinition)) {
+        if (sameDefinition) {
+          try {
+            final winner = McpOAuthCredentials.parse(
+              await cipher.decrypt(session, secret),
+            );
+            if (!winner.needsRefresh(_now())) winningToken = winner.accessToken;
+          } on FormatException {
+            throw const McpOAuthRefreshFailed(retryable: false);
+          }
         }
-        final encrypted = await cipher.encrypt(
-          session,
-          jsonEncode(refreshed.toJson()),
-          workspaceId: secret.workspaceId,
-          resourceId: secret.resourceId,
-        );
-        final nextSecret = await WorkspaceSecret.db.updateRow(
-          session,
-          secret.copyWith(
-            ciphertext: encrypted.ciphertext,
-            nonce: encrypted.nonce,
-            authenticationTag: encrypted.authenticationTag,
-            revision: secret.revision + 1,
-            updatedAt: _now().toUtc(),
-          ),
-          transaction: transaction,
-        );
-        await _setActive(
-          session,
-          nextSecret,
-          nextSecret.revision,
-          workspace,
-          transaction,
-          actorUserId,
-        );
-        return refreshed.accessToken;
-      } on Exception {
-        await _setReauth(
-          session,
-          secret,
-          workspace,
-          transaction,
-          actorUserId,
-        );
-        return null;
+        return false;
       }
+      if (reauth) {
+        await _setReauth(session, secret, workspace, transaction, actorUserId);
+        return true;
+      }
+      final nextSecret = encrypted == null
+          ? secret
+          : await WorkspaceSecret.db.updateRow(
+              session,
+              secret.copyWith(
+                ciphertext: encrypted.ciphertext,
+                nonce: encrypted.nonce,
+                authenticationTag: encrypted.authenticationTag,
+                revision: secret.revision + 1,
+                updatedAt: _now().toUtc(),
+              ),
+              transaction: transaction,
+            );
+      await _setActive(
+        session,
+        nextSecret,
+        nextSecret.revision,
+        workspace,
+        transaction,
+        actorUserId,
+      );
+      return true;
     });
-    if (token == null) throw const McpOAuthReauthRequired();
-    return token;
+    if (!committed) {
+      if (winningToken != null) return winningToken!;
+      throw const McpOAuthRefreshFailed(retryable: true);
+    }
+    if (reauth) throw const McpOAuthReauthRequired();
+    return credentials!.accessToken;
+  }
+
+  bool _sameDefinition(WorkspaceResource before, WorkspaceResource after) {
+    final beforeData = jsonDecode(before.data) as Map<String, dynamic>;
+    final afterData = jsonDecode(after.data) as Map<String, dynamic>;
+    for (final data in [beforeData, afterData]) {
+      data.remove('authStatus');
+      data.remove('secretRevision');
+    }
+    return jsonEncode(beforeData) == jsonEncode(afterData);
   }
 
   Future<void> _setReauth(
@@ -233,6 +291,26 @@ class McpOAuthTokenResolver {
 Future<McpOAuthCredentials> refreshMcpOAuthToken(
   McpOAuthCredentials credentials,
 ) async {
+  try {
+    return await _refreshMcpOAuthToken(credentials);
+  } on McpOAuthReauthRequired {
+    rethrow;
+  } on McpOAuthRefreshFailed {
+    rethrow;
+  } on TimeoutException {
+    throw const McpOAuthRefreshFailed(retryable: true);
+  } on SocketException {
+    throw const McpOAuthRefreshFailed(retryable: true);
+  } on HttpException {
+    throw const McpOAuthRefreshFailed(retryable: true);
+  } on Exception {
+    throw const McpOAuthRefreshFailed(retryable: false);
+  }
+}
+
+Future<McpOAuthCredentials> _refreshMcpOAuthToken(
+  McpOAuthCredentials credentials,
+) async {
   final uri = McpServerPolicy.validateUri(credentials.tokenEndpoint);
   final addresses = await InternetAddress.lookup(uri.host).timeout(
     const Duration(seconds: 10),
@@ -265,8 +343,9 @@ Future<McpOAuthCredentials> refreshMcpOAuthToken(
       ).query,
     );
     final response = await request.close().timeout(const Duration(seconds: 10));
-    if (response.isRedirect || response.statusCode != HttpStatus.ok) {
-      throw const McpOAuthReauthRequired();
+    if (response.statusCode == HttpStatus.tooManyRequests ||
+        response.statusCode >= 500 && response.statusCode <= 599) {
+      throw const McpOAuthRefreshFailed(retryable: true);
     }
     final bytes = <int>[];
     await for (final chunk in response.timeout(const Duration(seconds: 10))) {
@@ -276,6 +355,15 @@ Future<McpOAuthCredentials> refreshMcpOAuthToken(
       }
     }
     final decoded = jsonDecode(utf8.decode(bytes));
+    if ((response.statusCode == HttpStatus.badRequest ||
+            response.statusCode == HttpStatus.unauthorized) &&
+        decoded is Map<String, dynamic> &&
+        decoded['error'] == 'invalid_grant') {
+      throw const McpOAuthReauthRequired();
+    }
+    if (response.isRedirect || response.statusCode != HttpStatus.ok) {
+      throw const McpOAuthRefreshFailed(retryable: false);
+    }
     if (decoded is! Map<String, dynamic> ||
         decoded['access_token'] is! String ||
         (decoded['access_token'] as String).isEmpty ||
