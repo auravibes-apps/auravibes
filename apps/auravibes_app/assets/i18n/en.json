@@ -702,6 +702,7 @@
     "empty_subtitle": "Create a skill to make it available in conversations",
     "search_placeholder": "Search skills...",
     "search_no_results": "No skills match these filters",
+    "clear_search_and_filters": "Clear search and filters",
     "filter_all": "All",
     "filter_source": "Source",
     "filter_status": "Status",

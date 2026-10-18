@@ -95,6 +95,7 @@ typedef _SkillsFilterActions = ({
   ValueChanged<SkillSource?> onSourceChanged,
   ValueChanged<bool?> onEnabledChanged,
   ValueChanged<SkillSort> onSortChanged,
+  VoidCallback onClearFilters,
 });
 
 typedef _SkillsBulkActions = ({
@@ -650,7 +651,15 @@ _SkillsFilterActions _skillsFilterActions(_SkillsLoadedHooks hooks) {
     onSourceChanged: notifier.setSourceFilter,
     onEnabledChanged: (value) => notifier.setEnabledFilter(value: value),
     onSortChanged: notifier.setSort,
+    onClearFilters: () => _clearSkillFilters(notifier),
   );
+}
+
+void _clearSkillFilters(SkillsListViewNotifier notifier) {
+  notifier
+    ..setSearchQuery('')
+    ..setSourceFilter(null)
+    ..setEnabledFilter(value: null);
 }
 
 _SkillsBulkActions _skillsBulkActions(_SkillsViewRequest request) => (
@@ -893,7 +902,9 @@ class const _SkillsScreenFilteredList({required final _SkillsViewState state})
     extends StatelessWidget {
   @override
   Widget build(BuildContext _) => state.data.filter.skills.isEmpty
-      ? const _SkillsScreenSearchEmpty()
+      ? _SkillsScreenSearchEmpty(
+          onClearFilters: state.actions.filter.onClearFilters,
+        )
       : _SkillsList(state: state);
 }
 
@@ -950,13 +961,26 @@ class const _SkillsScreenSearchInput({
 }) extends HookWidget {
   @override
   Widget build(BuildContext _) => AuraInput(
-    controller: useTextEditingController(text: searchQuery),
+    controller: _useSkillSearchController(searchQuery),
     placeholder: const TextLocale(LocaleKeys.skills_screen_search_placeholder),
     prefixIcon: const AuraIcon(Icons.search),
     size: .small,
     textInputAction: .search,
     onChanged: onChanged,
   );
+}
+
+TextEditingController _useSkillSearchController(String searchQuery) {
+  final controller = useTextEditingController(text: searchQuery);
+  VoidCallback? syncSearchQuery() {
+    if (controller.text != searchQuery) controller.text = searchQuery;
+
+    return null;
+  }
+
+  useEffect(syncSearchQuery, [searchQuery]);
+
+  return controller;
 }
 
 class const _SkillsScreenFilterRow({
@@ -1212,15 +1236,24 @@ class const _SkillsFilter({
   );
 }
 
-class const _SkillsScreenSearchEmpty() extends StatelessWidget {
+class const _SkillsScreenSearchEmpty({
+  required final VoidCallback onClearFilters,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => const Center(
+  Widget build(BuildContext _) => Center(
     child: AuraColumn(
       children: [
-        AuraIcon(Icons.search_off, size: .large),
-        AuraText(
+        const AuraIcon(Icons.search_off, size: .large),
+        const AuraText(
           child: TextLocale(LocaleKeys.skills_screen_search_no_results),
           textAlign: .center,
+        ),
+        AuraButton(
+          onPressed: onClearFilters,
+          child: const TextLocale(
+            LocaleKeys.skills_screen_clear_search_and_filters,
+          ),
+          key: const ValueKey('skills-clear-search-and-filters'),
         ),
       ],
       spacing: .sm,

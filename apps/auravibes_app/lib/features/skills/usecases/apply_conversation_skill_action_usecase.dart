@@ -11,7 +11,10 @@ import 'package:auravibes_app/features/skills/usecases/list_available_skills_use
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
+
+final _logger = Logger('apply_conversation_skill_action');
 
 class ApplyConversationSkillActionUsecase({
   required final Future<String?> Function(String conversationId)
@@ -237,7 +240,11 @@ extension on ApplyConversationSkillActionUsecase {
         skill.slug,
       );
     } on Object {
-      // A recent-history write must not block an explicit skill request.
+      // Ignore this optional write. Do not retry or block the explicit request.
+      // Storage errors can contain user data. Do not log their details.
+      _logger.warning(
+        'Recent skill history write failed. Request continues without retry.',
+      );
     }
 
     try {
