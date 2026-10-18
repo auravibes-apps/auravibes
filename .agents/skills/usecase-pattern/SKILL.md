@@ -37,10 +37,6 @@ class ActionUseCase {
   final SecondaryDependency _secondary;
 
   Future<ActionOutput> call({required ActionInput input}) async {
-    if (input.items.isEmpty) {
-      throw const ManagedDomainException('Input items are required');
-    }
-
     final prepared = _prepare(input);
     final entity = await _repository.execute(prepared);
     return ActionOutput.fromEntity(entity);
@@ -82,40 +78,17 @@ This keeps behavior deterministic and testable.
 
 ## Error Handling Pattern
 
-Use cases should not wrap errors into generic result objects.
+Do not return generic result objects for errors.
 
-Rules:
+- Return values directly on success.
+- Throw typed exceptions for business errors that the use case owns.
+- For user-facing errors, follow [root exception guidance](../../../AGENTS.md).
+- Do not catch unknown errors and return generic errors.
+- Let infrastructure errors reach the caller unless the use case maps them to a domain error.
 
-- return values directly on success
-- throw only managed domain exceptions when the error is part of the business flow
-- do not catch and re-wrap unknown exceptions into another generic error
-- let infrastructure/unexpected exceptions bubble to the caller unless there is a clear domain mapping requirement
+## Provider Placement
 
-## Provider Co-location
-
-When a use case needs a generated Riverpod provider for dependency wiring, co-locate the provider in the **same file** as the use case class. Do not create a separate provider file.
-
-Example:
-
-```dart
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-part 'my_use_case.g.dart';
-
-class MyUseCase {
-  const MyUseCase({required MyRepository repository})
-    : _repository = repository;
-
-  final MyRepository _repository;
-
-  Future<void> call({required String id}) async { ... }
-}
-
-@riverpod
-MyUseCase myUseCase(Ref ref) {
-  return MyUseCase(repository: ref.watch(myRepositoryProvider));
-}
-```
+Follow [canonical use-case provider placement](../../../doc/architecture/usecases-pattern.md#provider-placement).
 
 ## Quick Checklist
 
@@ -125,7 +98,6 @@ MyUseCase myUseCase(Ref ref) {
 - no provider/UI state mutation in use case
 - side effects are delegated to repositories/other use cases
 - returns a domain value directly whenever possible
-- provider (if needed) is co-located in the same file as the use case
 
 ## Common Mistakes
 
@@ -181,12 +153,12 @@ Prompt examples:
 
 - "Create a new domain use case using the usecase-pattern skill."
 - "Refactor this provider logic into a constructor-injected use case with guard clauses."
-- "Apply immutable update and managed domain exception rules in this use case."
+- "Apply immutable updates and root AGENTS.md error guidance in this use case."
 
 During implementation, follow this order:
 
-1. Define input/output contracts and any managed domain exceptions.
+1. Define input/output contracts and needed error cases.
 2. Write the use case class and constructor dependencies.
 3. Add guard clauses and orchestration flow.
 4. Delegate persistence/external calls.
-5. Add unit tests for success paths and managed error paths.
+5. Add unit tests for success and error paths.

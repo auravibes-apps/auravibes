@@ -19,6 +19,10 @@ Use cases are typically found in:
 
 Using DI to inject dependencies into the use case, such as repositories and services, allows for better separation of concerns and makes the use case easier to test. The use case should not directly create instances of its dependencies but should receive them through its constructor, often using a provider to manage the dependencies.
 
+## Provider Placement
+
+Declare generated Riverpod providers for use cases in the same file as the use case class.
+
 ## Cascade Pattern
 
 Use cases can call other use cases to perform complex actions. For example, a `SendNewMessageUsecase` might call a `GenerateTitleUsecase` to create a title for a conversation after sending a message. This allows for better code reuse and separation of concerns, as each use case is responsible for a specific piece of functionality.
@@ -47,7 +51,9 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/models/providers/model_providers_repository_providers.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'send_new_message_usecase.g.dart';
 
 class SendNewMessageUsecase {
   SendNewMessageUsecase({
@@ -71,17 +77,18 @@ class SendNewMessageUsecase {
     }
 }
 
-final sendNewMessageUsecaseProvider = Provider<SendNewMessageUsecase>((ref) {
-    final conversationRepo = ref.watch(conversationRepositoryProvider);
-    final sendMessageUsecase = ref.watch(sendMessageUsecaseProvider);
-    final credentialsRepository = ref.watch(credentialsModelsRepositoryProvider);
-    final generateTitleUsecase = ref.watch(generateTitleUsecaseProvider);
+@riverpod
+SendNewMessageUsecase sendNewMessageUsecase(Ref ref) {
+  final conversationRepo = ref.watch(conversationRepositoryProvider);
+  final sendMessageUsecase = ref.watch(sendMessageUsecaseProvider);
+  final credentialsRepository = ref.watch(credentialsModelsRepositoryProvider);
+  final generateTitleUsecase = ref.watch(generateTitleUsecaseProvider);
 
-    return SendNewMessageUsecase(
-      conversationRepo: conversationRepo,
-      sendMessageUsecase: sendMessageUsecase,
-      credentialsRepository: credentialsRepository,
-      generateTitleUsecase: generateTitleUsecase,
-    );
-});
+  return SendNewMessageUsecase(
+    conversationRepo: conversationRepo,
+    sendMessageUsecase: sendMessageUsecase,
+    credentialsRepository: credentialsRepository,
+    generateTitleUsecase: generateTitleUsecase,
+  );
+}
 ```

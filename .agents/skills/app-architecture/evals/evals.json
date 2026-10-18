@@ -18,6 +18,24 @@
       "prompt": "Fix a null guard inside an established feature helper.",
       "expected_output": "Does not load the architecture skill for a routine localized fix; follows scoped rules and verifies affected behavior.",
       "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Add a generated Riverpod provider for a feature use case.",
+      "expected_output": "Loads app-architecture and follows canonical provider placement: keep generated use-case provider in the use-case file.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "This use-case wiring feels too scattered. Where should its generated provider live?",
+      "expected_output": "Loads app-architecture, checks canonical use-case provider placement, and does not create a separate provider file.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Fix a null guard in an existing repository provider.",
+      "expected_output": "Does not load app-architecture for a routine local fix. Follows current provider pattern and checks affected behavior.",
+      "files": []
     }
   ]
 }
