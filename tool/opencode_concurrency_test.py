@@ -41,7 +41,7 @@ class OpenCodeConcurrencyTest(unittest.TestCase):
                     value = value.get(part) if isinstance(value, dict) else None
                 if value:
                     return str(value)
-            self.fail(f"Unresolved concurrency expression: {match[1]}")
+            raise AssertionError(f"Unresolved concurrency expression: {match[1]}")
 
         return re.sub(r"\$\{\{(.*?)\}\}", resolve, self.concurrency["group"])
 
