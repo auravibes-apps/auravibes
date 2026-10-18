@@ -31,12 +31,18 @@ void main() {
     final client = Completer<McpManagerClient>();
     when(() => fixture.manager.connectMcp(any()))
         .thenAnswer((_) => client.future);
+    final disconnected = Completer<void>();
+    when(() => fixture.manager.disconnect(fixture.client)).thenAnswer((_) {
+      disconnected.complete();
+
+      return Future.value();
+    });
     fixture.start();
     await fixture.container.pump();
     final switched = fixture.switchTo('cloud');
     await fixture.container.pump();
     client.complete(fixture.client);
-    await fixture.container.pump();
+    await disconnected.future.timeout(const Duration(seconds: 2));
 
     expect(fixture.connections, isEmpty);
     verify(() => fixture.manager.disconnect(fixture.client)).called(1);
@@ -45,6 +51,34 @@ void main() {
     );
     await switched;
     expect(fixture.connections.single.server.workspaceId, 'cloud');
+  });
+
+  test('disposed notifier ignores pending session completion', () async {
+    final session = Completer<WorkspaceSession>();
+    final fixture = _Fixture(initial: 'cloud', cloudSession: session.future);
+    addTearDown(fixture.container.dispose);
+    final sessionProvider = workspaceSessionForRouteProvider('cloud');
+    final sessionSubscription = fixture.container.listen(
+      sessionProvider,
+      (_, next) => expect(next, isNotNull),
+    );
+    addTearDown(sessionSubscription.close);
+    final connectionSubscription = fixture.container.listen(
+      mcpConnectionProvider,
+      (_, next) => expect(next, isEmpty),
+    );
+    await fixture.container.pump();
+    connectionSubscription.close();
+    fixture.container.invalidate(mcpConnectionProvider);
+    session.complete(
+      const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'cloud')),
+    );
+    final _ = await fixture.container.read(sessionProvider.future);
+    await fixture.container.pump();
+
+    final _ = verifyNever(
+      () => fixture.cloud.getEnabledMcpServersForWorkspace('cloud'),
+    );
   });
 
   test('stale session cannot replace returned workspace', () async {
