@@ -11,4 +11,4 @@ This map links workspace areas to their `CONTEXT.md` files. Paths show documenta
 - [packages/auravibes_ui](packages/auravibes_ui/CONTEXT.md)
 - [widgetbook](widgetbook/CONTEXT.md)
 
-Use `docs/adr/` for system-wide ADRs. Use `<context>/docs/adr/` for context-specific ADRs. See [Domain Docs](docs/agents/domain.md) for ADR criteria.
+Use `docs/adr/` for system-wide ADRs. Use `<context>/docs/adr/` for context-specific ADRs.
