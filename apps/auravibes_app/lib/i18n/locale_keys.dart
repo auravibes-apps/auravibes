@@ -1043,6 +1043,8 @@ abstract class LocaleKeys {
       'skills_screen.search_placeholder';
   static const skills_screen_search_no_results =
       'skills_screen.search_no_results';
+  static const skills_screen_clear_search_and_filters =
+      'skills_screen.clear_search_and_filters';
   static const skills_screen_filter_all = 'skills_screen.filter_all';
   static const skills_screen_filter_source = 'skills_screen.filter_source';
   static const skills_screen_filter_status = 'skills_screen.filter_status';
