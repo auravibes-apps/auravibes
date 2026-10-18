@@ -25,6 +25,16 @@ class HarnessVerificationTest(unittest.TestCase):
         (self.root / "docs/agents").mkdir()
         (self.root / "README.md").write_text("# README\n")
         (self.root / "CONTRIBUTING.md").write_text("# Contributing\n")
+        context_map = Path(__file__).resolve().parent.parent / "CONTEXT-MAP.md"
+        (self.root / "CONTEXT-MAP.md").write_text(context_map.read_text())
+        self.contexts = [
+            self.root / target
+            for target in markdown_links(context_map.read_text())
+            if Path(target).name == "CONTEXT.md"
+        ]
+        for path in self.contexts:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("# Context\n\nOwns workspace state and returns typed results.\n")
         self.skill = self.root / ".agents/skills/example"
         self.skill.mkdir(parents=True)
         (self.skill / "SKILL.md").write_text(
@@ -35,6 +45,51 @@ class HarnessVerificationTest(unittest.TestCase):
         before = (self.skill / "SKILL.md").read_bytes()
         self.assertEqual(verify(self.root), [])
         self.assertEqual((self.skill / "SKILL.md").read_bytes(), before)
+
+    def test_all_current_mapped_contexts_are_checked(self):
+        self.assertEqual(len(self.contexts), 6)
+        self.assertIn(self.root / "apps/auravibes_server/CONTEXT.md", self.contexts)
+        self.assertIn(self.root / "packages/auravibes_server_client/CONTEXT.md", self.contexts)
+        for path in self.contexts:
+            with self.subTest(context=path.relative_to(self.root)):
+                content = path.read_text()
+                path.unlink()
+                errors = verify(self.root)
+                self.assertTrue(any(str(path.relative_to(self.root)) in error for error in errors), errors)
+                path.write_text(content)
+                path.write_text("# Context\n\nPlaceholder. Add resolved domain terms here.\n")
+                errors = verify(self.root)
+                self.assertTrue(any(f"{path.relative_to(self.root)}: Placeholder" in error for error in errors), errors)
+                path.write_text(content)
+
+    def test_new_mapped_context_needs_no_scope_registration(self):
+        context_map = self.root / "CONTEXT-MAP.md"
+        context_map.write_text(context_map.read_text() + "\n[New](new/CONTEXT.md)\n")
+        path = self.root / "new/CONTEXT.md"
+        path.parent.mkdir()
+        path.write_text("# New context\n\n## Terms\n\n<!-- Write terms here. -->\n\n## Invariants\n- TBD\n")
+        self.assertTrue(any("new/CONTEXT.md: Empty" in error for error in verify(self.root)))
+        path.write_text("# New context\n\nOwns examples and returns sample output.\n")
+        self.assertEqual(verify(self.root), [])
+
+    def test_template_instructions_are_not_resolved_content(self):
+        path = self.contexts[0]
+        path.write_text("# Context\n## Domain terms\n- TODO: add terms\n## Invariants\n- TBD: add invariants\n")
+        self.assertTrue(any(f"{path.relative_to(self.root)}: Empty" in error for error in verify(self.root)))
+        path.write_text("# Context\n\nOwns workspace state.\n\n- TODO: add more terms\n")
+        self.assertEqual(verify(self.root), [])
+
+    def test_missing_or_empty_context_map_fails(self):
+        path = self.root / "CONTEXT-MAP.md"
+        path.unlink()
+        self.assertTrue(any("CONTEXT-MAP.md: Missing" in error for error in verify(self.root)))
+        path.write_text("# Context Map\n")
+        self.assertTrue(any("CONTEXT-MAP.md: No local context" in error for error in verify(self.root)))
+
+    def test_context_links_use_existing_link_checks(self):
+        self.contexts[0].write_text("# Context\n\nOwns state. See [architecture](missing.md).\n")
+        errors = verify(self.root)
+        self.assertTrue(any("Dead reference: missing.md" in error for error in errors))
 
     def test_nested_reference_uses_own_directory(self):
         (self.skill / "references").mkdir()

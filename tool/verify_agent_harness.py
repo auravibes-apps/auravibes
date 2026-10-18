@@ -289,6 +289,33 @@ def verify(root):
         for path in (root / "README.md", root / "CONTRIBUTING.md")
         if path.is_file()
     )
+    context_map = root / "CONTEXT-MAP.md"
+    if not context_map.is_file():
+        fail(context_map, "Missing context map. Restore CONTEXT-MAP.md.")
+    else:
+        markdown.add(context_map)
+        contexts = set()
+        for target in markdown_links(context_map.read_text()):
+            url = urlsplit(target)
+            if url.scheme or url.netloc or Path(unquote(url.path)).name != "CONTEXT.md":
+                continue
+            path = (context_map.parent / unquote(url.path)).resolve()
+            if not path.is_relative_to(root):
+                continue  # The shared link check reports paths outside the repository.
+            contexts.add(path)
+            if not path.is_file():
+                fail(path, "Missing context document. Restore the mapped CONTEXT.md file.")
+                continue
+            text = _without_code(path.read_text())
+            if re.search(r"\bplaceholder\b|No glossary or context-specific ADRs documented yet", text, re.I):
+                fail(path, "Placeholder context document. Add verified terms, invariants, and relationships.")
+            else:
+                body = re.sub(r"(?m)^\s*#{1,6}\s+.*$", "", text)
+                body = re.sub(r"(?im)^\s*[-*>\s]*(?:(?:TODO|TBD)\b[^\n]*|\.\.\.[.!\s]*)$", "", body)
+                if not re.search(r"[A-Za-z0-9]", body):
+                    fail(path, "Empty context document. Add verified terms, invariants, and relationships.")
+        if not contexts:
+            fail(context_map, "No local context documents. Link the workspace CONTEXT.md files.")
     for directory in (root / "docs/agents", root / ".agents"):
         if directory.is_dir():
             markdown.update(path for path in directory.rglob("*.md") if path.is_file())
@@ -364,7 +391,7 @@ def main():
         return 1
     print(
         "Harness verification passed (documentation links and image references, "
-        "aliases, metadata, evaluation schema)."
+        "context documents, aliases, metadata, evaluation schema)."
     )
     print("Behavioral model trials are separate; this check does not run them.")
     return 0
