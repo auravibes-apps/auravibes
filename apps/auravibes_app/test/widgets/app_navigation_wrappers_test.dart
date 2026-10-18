@@ -166,6 +166,7 @@ void main() {
         },
         selectedIndex: 0,
         workspaceId: 'ws-1',
+        canPopCurrentRoute: () => false,
       );
       expect(widget.workspaceId, 'ws-1');
       expect(widget.selectedIndex, 0);
@@ -180,6 +181,7 @@ void main() {
         },
         selectedIndex: 0,
         workspaceId: 'ws-1',
+        canPopCurrentRoute: () => false,
         key: const Key('drawer-key'),
       );
       expect(widget.key, const Key('drawer-key'));
@@ -194,6 +196,7 @@ void main() {
         },
         selectedIndex: 0,
         workspaceId: 'ws-1',
+        canPopCurrentRoute: () => false,
       );
       expect(widget, isA<StatefulWidget>());
     });
@@ -637,11 +640,13 @@ void main() {
                     builder: (_, _) {
                       guard.bind(
                         readers: (isDirty: () => true, isSaving: () => false),
-                        confirm: (_) {
-                          confirmations++;
+                        callbacks: .new(
+                          confirm: (_) {
+                            confirmations++;
 
-                          return answer.future;
-                        },
+                            return answer.future;
+                          },
+                        ),
                       );
 
                       return DraftExitScope(
@@ -707,10 +712,12 @@ void main() {
           router.state.uri.path,
           '/workspaces/ws-test/service-connections',
         );
+        expect(router.state.uri.queryParameters['destinationList'], 'true');
         expect(sidebar().selectedIndex, 2);
         sidebar().onNavigationTap.call(1);
         final _ = await tester.pump();
         expect(router.state.uri.path, '/workspaces/ws-test/skills');
+        expect(router.state.uri.queryParameters['destinationList'], 'true');
         sidebar().onNavigationTap.call(3);
         final _ = await tester.pump();
         expect(router.state.uri.path, '/workspaces/ws-test/settings');
@@ -728,18 +735,20 @@ void main() {
         sidebar().onNavigationTap.call(1);
         final _ = await tester.pump();
         expect(router.state.uri.path, '/workspaces/B/agents');
+        expect(router.state.uri.queryParameters['destinationList'], 'true');
         router.go('/workspaces/ws-test/chat/new');
         final _ = await tester.pump();
         sidebar().onNavigationTap.call(1);
         final _ = await tester.pump();
         expect(router.state.uri.path, '/workspaces/ws-test/skills');
-        for (final width in [959.0, 960.0]) {
+        expect(router.state.uri.queryParameters['destinationList'], 'true');
+        for (final width in [899.0, 900.0]) {
           tester.view.physicalSize = .new(width, 900);
           final _ = await tester.pumpAndSettle();
           final controller = ResponsiveSlidingDrawerProvider.of(
             tester.element(find.text('Skills list')),
           );
-          expect(controller.isDesktop, width >= 960);
+          expect(controller.isDesktop, width >= 900);
           expect(tester.takeException(), isNull);
         }
       },

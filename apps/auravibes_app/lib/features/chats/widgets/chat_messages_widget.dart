@@ -64,6 +64,7 @@ import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 
 final _a2uiLogger = Logger('chat_a2ui_actions');
@@ -2367,10 +2368,13 @@ _ActivityToolDisplay _activityToolDisplay({
         ? null
         : () {
             unawaited(
-              SkillDetailRoute(
-                workspaceId: workspaceId,
-                skillId: skillId,
-              ).push<void>(context),
+              FeatureDestinations.push<void>(
+                context,
+                SkillDetailRoute(
+                  workspaceId: workspaceId,
+                  skillId: skillId,
+                ).location,
+              ),
             );
           },
   );

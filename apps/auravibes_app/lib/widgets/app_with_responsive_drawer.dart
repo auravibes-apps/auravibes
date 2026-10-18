@@ -4,7 +4,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/responsive_shell_layout.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -18,6 +18,7 @@ class AppWithResponsiveDrawer extends StatefulWidget {
     required this.onNavigationTap,
     required this.selectedIndex,
     required this.workspaceId,
+    required this.canPopCurrentRoute,
     super.key,
   });
 
@@ -36,6 +37,9 @@ class AppWithResponsiveDrawer extends StatefulWidget {
   /// Workspace id.
   final String workspaceId;
 
+  /// Whether the active app route has a page beneath it in its own navigator.
+  final bool Function() canPopCurrentRoute;
+
   @override
   State<AppWithResponsiveDrawer> createState() =>
       _AppWithResponsiveDrawerState();
@@ -45,7 +49,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   final ResponsiveSlidingDrawerController _controller = .new();
   GoRouter? _router;
   Uri? _previousRoute;
-  bool _isSidebarCompact = false;
+  bool? _isSidebarCompactOverride;
 
   GoRouter get _requiredRouter {
     final router = _router;
@@ -53,6 +57,8 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
 
     return router;
   }
+
+  bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
 
   @override
   void initState() {
@@ -80,11 +86,20 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   }
 
   void _toggleDesktopSidebar() {
-    if (!ResponsiveShellLayout.isDesktop(MediaQuery.sizeOf(context).width)) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (!ResponsiveShellLayout.isDesktop(width)) {
       return;
     }
-    setState(() => _isSidebarCompact = !_isSidebarCompact);
+    setState(
+      () => _isSidebarCompactOverride =
+          !(_isSidebarCompactOverride ??
+              ResponsiveShellLayout.isCompactDesktop(width)),
+    );
   }
+
+  bool _isSidebarCompactAt(double width) =>
+      _isSidebarCompactOverride ??
+      ResponsiveShellLayout.isCompactDesktop(width);
 }
 
 class const _ResponsiveDrawerView({
@@ -92,10 +107,9 @@ class const _ResponsiveDrawerView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final isDesktop = ResponsiveShellLayout.isDesktop(
-      MediaQuery.sizeOf(context).width,
-    );
-    final isCompact = isDesktop && state._isSidebarCompact;
+    final width = MediaQuery.sizeOf(context).width;
+    final isDesktop = ResponsiveShellLayout.isDesktop(width);
+    final isCompact = isDesktop && state._isSidebarCompactAt(width);
 
     return _ResponsiveDrawerShell(
       state: state,
@@ -118,10 +132,11 @@ class const _ResponsiveDrawerShell({
       isExpanded: !isCompact,
     ),
     body: _ResponsiveDrawerBody(state: state),
-    isDarkMode: Theme.of(context).brightness == Brightness.dark,
+    isDarkMode: state._isDarkMode,
     controller: state._controller,
     initiallyOpen: isDesktop,
     isDesktopCompact: isCompact,
+    canPopCurrentRoute: state.widget.canPopCurrentRoute,
   );
 }
 
@@ -141,22 +156,71 @@ class const _AppDrawerNavigation({
   required final bool isExpanded,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Material(
-    child: AuraSidebar(
-      navigationItems: state.widget.navigationItems,
-      onNavigationTap: state.widget.onNavigationTap,
+  Widget build(BuildContext context) {
+    return _AppDrawerSurface(
+      state: state,
+      isDesktop: isDesktop,
       isExpanded: isExpanded,
-      selectedIndex: state.widget.selectedIndex,
+      padding: _safePadding(context),
+    );
+  }
+
+  static EdgeInsetsDirectional _safePadding(BuildContext context) {
+    final safePadding = MediaQuery.paddingOf(context)
+        .resolve(Directionality.of(context));
+    final isLtr = Directionality.of(context) == TextDirection.ltr;
+
+    return EdgeInsetsDirectional.only(
+      start: isLtr ? safePadding.left : safePadding.right,
+      top: safePadding.top,
+      bottom: safePadding.bottom,
+    );
+  }
+}
+
+class const _AppDrawerSurface({
+  required final _AppWithResponsiveDrawerState state,
+  required final bool isDesktop,
+  required final bool isExpanded,
+  required final EdgeInsetsDirectional padding,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Material(
+    child: _AppDrawerSidebar(
+      state: state,
+      isDesktop: isDesktop,
+      isExpanded: isExpanded,
+      padding: padding,
+    ),
+  );
+}
+
+class const _AppDrawerSidebar({
+  required final _AppWithResponsiveDrawerState state,
+  required final bool isDesktop,
+  required final bool isExpanded,
+  required final EdgeInsetsDirectional padding,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final app = state.widget;
+
+    return AuraSidebar(
+      navigationItems: app.navigationItems,
+      onNavigationTap: app.onNavigationTap,
+      isExpanded: isExpanded,
+      selectedIndex: app.selectedIndex,
       header: _AppDrawerHeader(
         state: state,
         isDesktop: isDesktop,
         isExpanded: isExpanded,
       ),
       middleSection: isExpanded
-          ? _SidebarConversationsSection(workspaceId: state.widget.workspaceId)
+          ? _SidebarConversationsSection(workspaceId: app.workspaceId)
           : null,
-    ),
-  );
+      padding: padding,
+    );
+  }
 }
 
 class const _AppDrawerHeader({
@@ -195,24 +259,18 @@ class const _WorkspaceHeaderContent({
   required final VoidCallback onToggle,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Column(
-        mainAxisSize: .min,
-        children: [
-          if (isExpanded)
-            _ExpandedWorkspaceHeader(
-              workspaceId: workspaceId,
-              isDesktop: isDesktop,
-              onToggle: onToggle,
-            ),
-          if (isDesktop && !isExpanded)
-            _CompactWorkspaceHeader(onToggle: onToggle),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      if (isExpanded)
+        _ExpandedWorkspaceHeader(
+          workspaceId: workspaceId,
+          isDesktop: isDesktop,
+          onToggle: onToggle,
+        ),
+      if (isDesktop && !isExpanded) _CompactWorkspaceHeader(onToggle: onToggle),
+    ],
+  );
 }
 
 class const _ExpandedWorkspaceHeader({

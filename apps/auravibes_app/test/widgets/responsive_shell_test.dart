@@ -71,17 +71,57 @@ void main() {
       (width: 390.0, isDesktop: false),
       (width: 600.0, isDesktop: false),
       (width: 768.0, isDesktop: false),
-      (width: 959.0, isDesktop: false),
+      (width: 899.0, isDesktop: false),
       (width: 960.0, isDesktop: true),
+      (width: 900.0, isDesktop: true),
+      (width: 951.0, isDesktop: true),
+      (width: 1099.0, isDesktop: true),
+      (width: 1100.0, isDesktop: true),
       (width: 1280.0, isDesktop: true),
     ]) {
       tester.view.physicalSize = .new(scenario.width, 900);
       expect(await tester.pumpAndSettle(), greaterThan(0));
 
       expect(controller.isDesktop, scenario.isDesktop);
+      if (scenario.width >= 900) {
+        expect(
+          tester.widget<AuraSidebar>(find.byType(AuraSidebar)).isExpanded,
+          scenario.width >= 1100,
+          reason: 'Sidebar default at ${scenario.width}px',
+        );
+      }
       expect(content, findsOneWidget);
       expect(tester.takeException(), isNull);
     }
+
+    final shellContext = tester.element(find.byType(AppWithResponsiveDrawer));
+    await tester.tap(
+      find.byTooltip(
+        LocaleKeys.navigation_drawer_collapse_sidebar_tooltip.tr(
+          context: shellContext,
+        ),
+      ),
+    );
+    expect(await tester.pumpAndSettle(), greaterThan(0));
+    expect(
+      tester.widget<AuraSidebar>(find.byType(AuraSidebar)).isExpanded,
+      isFalse,
+    );
+    tester.view.physicalSize = const Size(951, 900);
+    expect(await tester.pumpAndSettle(), greaterThan(0));
+    await tester.tap(
+      find.byTooltip(
+        LocaleKeys.navigation_drawer_expand_sidebar_tooltip.tr(
+          context: tester.element(find.byType(AppWithResponsiveDrawer)),
+        ),
+      ),
+    );
+    expect(await tester.pumpAndSettle(), greaterThan(0));
+    expect(
+      tester.widget<AuraSidebar>(find.byType(AuraSidebar)).isExpanded,
+      isTrue,
+      reason: 'Manual expansion remains available at the Duo inner width',
+    );
 
     const goldenScenarios = [
       (
@@ -133,18 +173,6 @@ void main() {
         brightness: Brightness.dark,
       ),
       (
-        name: 'mobile_959_closed_light',
-        width: 959.0,
-        initiallyOpen: false,
-        brightness: Brightness.light,
-      ),
-      (
-        name: 'mobile_959_open_light',
-        width: 959.0,
-        initiallyOpen: true,
-        brightness: Brightness.light,
-      ),
-      (
         name: 'desktop_960_closed_light',
         width: 960.0,
         initiallyOpen: false,
@@ -172,7 +200,7 @@ void main() {
       }
       expect(await tester.pumpAndSettle(), greaterThan(0));
 
-      expect(controller.isDesktop, scenario.width >= 960);
+      expect(controller.isDesktop, scenario.width >= 900);
       expect(content, findsOneWidget);
       expect(tester.takeException(), isNull);
       await expectLater(
@@ -242,6 +270,79 @@ void main() {
       semantics.dispose();
     }
   });
+
+  testWidgets('sidebar receives logical safe padding inside its surface', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(390, 900)
+      ..padding = const FakeViewPadding(
+        left: 24,
+        top: 30,
+        right: 20,
+        bottom: 16,
+      )
+      ..viewPadding = const FakeViewPadding(
+        left: 24,
+        top: 30,
+        right: 20,
+        bottom: 16,
+      );
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPadding);
+    addTearDown(tester.view.resetViewPadding);
+    addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
+
+    const initialSettings = (
+      brightness: Brightness.light,
+      textDirection: ui.TextDirection.ltr,
+      textScaleFactor: 1.0,
+    );
+    final settings = ValueNotifier<_ResponsiveShellTestSettings>(
+      initialSettings,
+    );
+    final repository = FakeConversationRepository();
+    final (:app, :router) = _buildResponsiveShellApp(
+      settings: settings,
+      repository: repository,
+      onNavigationTap: (_) => fail('safe padding test must not tap sidebar'),
+    );
+    addTearDown(settings.dispose);
+    addTearDown(router.dispose);
+    addTearDown(repository.close);
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(app);
+    });
+    await tester.pump();
+    await tester.pump();
+
+    final content = find.text('Shell content');
+    ResponsiveSlidingDrawerProvider.of(tester.element(content)).open();
+    final _ = await tester.pumpAndSettle();
+
+    final sidebar = find.byType(AuraSidebar);
+    final sidebarRect = tester.getRect(sidebar);
+    final icon = find.byIcon(Icons.chat_outlined);
+    expect(sidebarRect.left, 0);
+    expect(sidebarRect.width, 312);
+    expect(tester.getRect(icon).left, greaterThanOrEqualTo(24));
+
+    settings.value = (
+      brightness: Brightness.light,
+      textDirection: ui.TextDirection.rtl,
+      textScaleFactor: 1,
+    );
+    final _ = await tester.pumpAndSettle();
+
+    final rtlSidebar = tester.getRect(sidebar);
+    expect(rtlSidebar.right, 390);
+    expect(rtlSidebar.width, 312);
+    expect(tester.getRect(icon).right, lessThanOrEqualTo(390 - 20));
+    expect(tester.takeException(), isNull);
+  });
 }
 
 ({Widget app, GoRouter router}) _buildResponsiveShellApp({
@@ -290,6 +391,7 @@ void main() {
               onNavigationTap: onNavigationTap,
               selectedIndex: 0,
               workspaceId: 'ws-test',
+              canPopCurrentRoute: () => false,
             ),
           );
         },

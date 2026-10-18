@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
 import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_health.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
@@ -48,6 +49,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/route_recovery_view.dart';
@@ -353,123 +355,246 @@ void main() {
     await fixture.close(tester);
   });
 
-  for (final name in _routeNames) {
-    testWidgets('production direct route $name', (tester) async {
-      final fixture = await UxValidationFixture.create(
-        empty: name == 'IntroRoute',
-      );
-      if (name == 'CloudTools') {
-        expect(
-          await fixture.database.workspaceDao.patchWorkspace(
-            fixture.workspaceId,
-            const .new(
-              type: .new(.remote),
-              url: .new('https://fixture.example'),
-              cloudAccountId: .new('fixture-account'),
-              cloudWorkspaceId: .new('7'),
-            ),
-          ),
-          isTrue,
-        );
-      }
-      final scenario = _scenario(name, fixture);
-      final router = await fixture.pump(
-        tester,
-        scenario.location,
-        accounts: switch (name) {
-          'CloudWorkspaceDetailRoute' || 'CloudTools' => _accounts,
-          'MixedAccounts' => _mixedAccounts,
-          _ => const [],
-        },
-        sessionOverride: name == 'CloudTools'
-            ? WorkspaceSession(
-                CloudWorkspaceRef(
-                  localWorkspaceId: fixture.workspaceId,
-                  serverUrl: 'https://fixture.example',
-                  accountId: 'fixture-account',
-                  cloudWorkspaceId: 7,
+  for (final viewport in const [
+    (name: 'duo_closed', size: Size(466, 678)),
+    (name: 'duo_open_content', size: Size(671, 669)),
+    (name: 'duo_open', size: Size(951, 669)),
+    (name: 'desktop', size: Size(1280, 1200)),
+  ]) {
+    for (final name in _routeNames) {
+      for (final dark in [false, true]) {
+        final testName =
+            'production direct route $name ${viewport.name} '
+            '${dark ? 'dark' : 'light'}';
+        testWidgets(testName, (tester) async {
+          final fixture = await UxValidationFixture.create(
+            empty: name == 'IntroRoute',
+          );
+          if (name == 'CloudTools') {
+            expect(
+              await fixture.database.workspaceDao.patchWorkspace(
+                fixture.workspaceId,
+                const .new(
+                  type: .new(.remote),
+                  url: .new('https://fixture.example'),
+                  cloudAccountId: .new('fixture-account'),
+                  cloudWorkspaceId: .new('7'),
                 ),
-              )
-            : null,
-        dark: name == 'DarkAgents',
-        sessionFailure: name == 'FailedWorkspace'
-            ? const WorkspaceRouteFailure(invalidMirror: false)
-            : null,
-        overrides: _overrides(fixture, name),
-      );
-      expect(find.byType(scenario.screen), findsOneWidget);
-      expect(tester.takeException(), isNull);
-      if (name == 'CloudTools') {
-        expect(find.text('Design studio / Cloud'), findsOneWidget);
-        expect(find.textContaining('Tap the + button'), findsNothing);
-        expect(find.byIcon(Icons.add), findsNothing);
-        expect(
-          find.textContaining(
-            'Built-in tools can only be added in local workspaces.',
-          ),
-          findsNWidgets(2),
-        );
-        expect(
-          find.textContaining('connect a service to add its tools.'),
-          findsNWidgets(2),
-        );
+              ),
+              isTrue,
+            );
+          }
+          final scenario = _scenario(name, fixture);
+          final router = await fixture.pump(
+            tester,
+            scenario.location,
+            size: viewport.size,
+            accounts: switch (name) {
+              'CloudWorkspaceDetailRoute' || 'CloudTools' => _accounts,
+              'MixedAccounts' => _mixedAccounts,
+              _ => const [],
+            },
+            sessionOverride: name == 'CloudTools'
+                ? WorkspaceSession(
+                    CloudWorkspaceRef(
+                      localWorkspaceId: fixture.workspaceId,
+                      serverUrl: 'https://fixture.example',
+                      accountId: 'fixture-account',
+                      cloudWorkspaceId: 7,
+                    ),
+                  )
+                : null,
+            dark: dark,
+            sessionFailure: name == 'FailedWorkspace'
+                ? const WorkspaceRouteFailure(invalidMirror: false)
+                : null,
+            overrides: _overrides(fixture, name),
+          );
+          expect(find.byType(scenario.screen), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          if (name == 'CloudTools') {
+            if (viewport.name != 'duo_open') {
+              expect(find.text('Design studio / Cloud'), findsOneWidget);
+            }
+            expect(find.textContaining('Tap the + button'), findsNothing);
+            expect(find.byIcon(Icons.add), findsNothing);
+            expect(
+              find.textContaining(
+                'Built-in tools can only be added in local workspaces.',
+              ),
+              findsOneWidget,
+            );
+            expect(
+              find.textContaining('connect a service to add its tools.'),
+              findsOneWidget,
+            );
+          }
+          if (name == 'LocalEmptyTools') {
+            expect(find.textContaining('Tap the + button'), findsOneWidget);
+            expect(find.byIcon(Icons.add), findsOneWidget);
+          }
+          if (name == 'AgentsRoute' || name == 'DarkAgents') {
+            final measurement = _disabledBadgeMeasurement(tester);
+            expect(
+              measurement['ratio'],
+              greaterThanOrEqualTo(4.5),
+              reason: jsonEncode(measurement),
+            );
+          }
+          if (name == 'BuiltInSkillDetail') {
+            await tester.scrollUntilVisible(
+              find.text('reader_url_and_document_modes'),
+              350,
+              scrollable: find
+                  .descendant(
+                    of: find.byType(scenario.screen),
+                    matching: find.byType(Scrollable),
+                  )
+                  .first,
+            );
+            final slug = tester.renderObject<RenderParagraph>(
+              find.text('reader_url_and_document_modes'),
+            );
+            final family = slug.text.style?.fontFamily;
+            expect(family, isNotNull);
+            expect(
+              _captureFontMetadata.map((font) => font['family']),
+              contains(family),
+              reason:
+                  'Actual resource identifier font must be loaded for capture',
+            );
+          }
+          if (name == 'BuiltInResource') {
+            expect(find.text('Save resource'), findsNothing);
+            expect(find.text('Copy code'), findsNWidgets(2));
+          }
+          if (scenario.selection != null) {
+            expect(
+              tester
+                  .widget<AppWithResponsiveDrawer>(
+                    find.byType(AppWithResponsiveDrawer),
+                  )
+                  .selectedIndex,
+              scenario.selection,
+            );
+          }
+          expect(
+            router.routeInformationProvider.value.uri.path,
+            Uri.parse(scenario.expected ?? scenario.location).path,
+          );
+          expect(
+            find.byType(AppScreen),
+            findsWidgets,
+            reason: '$name route must apply the app side safe area',
+          );
+          if (viewport.name != 'desktop') {
+            await _capture(
+              tester,
+              '$name-${viewport.name}-${dark ? 'dark' : 'light'}',
+              router.routeInformationProvider.value.uri.toString(),
+              locale: 'en',
+              size: viewport.size,
+              scale: 1,
+              dark: dark,
+              controlMeasurements: name == 'AgentsRoute' || name == 'DarkAgents'
+                  ? _disabledBadgeMeasurement(tester)
+                  : null,
+            );
+          }
+          for (final side in const [
+            (name: 'left', padding: FakeViewPadding(left: 40)),
+            (name: 'right', padding: FakeViewPadding(right: 40)),
+          ]) {
+            tester.view
+              ..padding = side.padding
+              ..viewPadding = side.padding;
+            await tester.pump();
+            expect(
+              tester.takeException(),
+              isNull,
+              reason: '$name ${viewport.name} ${side.name} safe-area layout',
+            );
+            _expectTextInsideSideSafeArea(
+              tester,
+              viewport.size,
+              side.padding,
+              '$name ${viewport.name} ${side.name}',
+            );
+          }
+          await fixture.close(tester);
+        });
       }
-      if (name == 'LocalEmptyTools') {
-        expect(find.textContaining('Tap the + button'), findsOneWidget);
-        expect(find.byIcon(Icons.add), findsOneWidget);
-      }
-      if (name == 'AgentsRoute' || name == 'DarkAgents') {
-        final measurement = _disabledBadgeMeasurement(tester);
-        expect(
-          measurement['ratio'],
-          greaterThanOrEqualTo(4.5),
-          reason: jsonEncode(measurement),
-        );
-      }
-      if (name == 'BuiltInSkillDetail') {
-        final slug = tester.renderObject<RenderParagraph>(
-          find.text('reader_url_and_document_modes'),
-        );
-        final family = slug.text.style?.fontFamily;
-        expect(family, isNotNull);
-        expect(
-          _captureFontMetadata.map((font) => font['family']),
-          contains(family),
-          reason: 'Actual resource identifier font must be loaded for capture',
-        );
-      }
-      if (name == 'BuiltInResource') {
-        expect(find.text('Save resource'), findsNothing);
-        expect(find.text('Copy code'), findsNWidgets(2));
-      }
-      if (scenario.selection != null) {
-        expect(
-          tester
-              .widget<AppWithResponsiveDrawer>(
-                find.byType(AppWithResponsiveDrawer),
-              )
-              .selectedIndex,
-          scenario.selection,
-        );
-      }
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        Uri.parse(scenario.expected ?? scenario.location).path,
-      );
-      await _capture(
+    }
+  }
+  for (final viewport in const [
+    (name: 'duo_closed', size: Size(466, 678), keyboardInset: 250.0),
+    (name: 'duo_open', size: Size(951, 669), keyboardInset: 433.0),
+  ]) {
+    testWidgets('new chat composer stays above keyboard ${viewport.name}', (
+      tester,
+    ) async {
+      final fixture = await UxValidationFixture.create();
+      final _ = await fixture.pump(
         tester,
-        name,
-        router.routeInformationProvider.value.uri.toString(),
-        locale: 'en',
-        size: const Size(1280, 1200),
-        scale: 1,
-        dark: name == 'DarkAgents',
-        controlMeasurements: name == 'AgentsRoute' || name == 'DarkAgents'
-            ? _disabledBadgeMeasurement(tester)
-            : null,
+        NewChatRoute(workspaceId: fixture.workspaceId).location,
+        size: viewport.size,
       );
+      tester.view.viewInsets = .new(bottom: viewport.keyboardInset);
+      addTearDown(tester.view.resetViewInsets);
+      expect(await tester.pumpAndSettle(), greaterThan(0));
+
+      final composer = tester.getRect(find.byType(ChatInputWidget));
+      expect(composer.top, greaterThanOrEqualTo(0));
+      expect(
+        composer.bottom,
+        lessThanOrEqualTo(viewport.size.height - viewport.keyboardInset),
+      );
+      expect(tester.takeException(), isNull);
       await fixture.close(tester);
     });
+  }
+  for (final viewport in const [
+    (name: 'duo_closed', size: Size(466, 678), keyboardInset: 250.0),
+    (name: 'duo_open', size: Size(951, 669), keyboardInset: 433.0),
+  ]) {
+    for (final name in const [
+      'CloudAccountLoginRoute',
+      'ServiceConnectionCreateRoute',
+      'SkillResourceCreateRoute',
+    ]) {
+      testWidgets('$name form scrolls above keyboard ${viewport.name}', (
+        tester,
+      ) async {
+        final fixture = await UxValidationFixture.create();
+        final scenario = _scenario(name, fixture);
+        final _ = await fixture.pump(
+          tester,
+          scenario.location,
+          size: viewport.size,
+          overrides: _overrides(fixture, name),
+        );
+        tester.view.viewInsets = .new(bottom: viewport.keyboardInset);
+        addTearDown(tester.view.resetViewInsets);
+        await fixture.settle(tester);
+
+        final field = find
+            .descendant(
+              of: find.byType(scenario.screen),
+              matching: find.byType(EditableText),
+            )
+            .last;
+        await tester.ensureVisible(field);
+        await fixture.settle(tester);
+
+        final fieldBounds = tester.getRect(field);
+        expect(
+          fieldBounds.bottom,
+          lessThanOrEqualTo(viewport.size.height - viewport.keyboardInset),
+        );
+        expect(tester.takeException(), isNull);
+        await fixture.close(tester);
+      });
+    }
   }
   for (final name in const [
     'NewChatRoute',
@@ -480,8 +605,8 @@ void main() {
     'CloudAccountLoginRoute',
   ]) {
     for (final variant in const [
-      (width: 959.0, locale: 'en', scale: 1.0, dark: false),
-      (width: 960.0, locale: 'en', scale: 1.0, dark: false),
+      (width: 899.0, locale: 'en', scale: 1.0, dark: false),
+      (width: 900.0, locale: 'en', scale: 1.0, dark: false),
       (width: 360.0, locale: 'es', scale: 1.4, dark: false),
       (width: 1280.0, locale: 'es', scale: 1.4, dark: true),
     ]) {
@@ -518,11 +643,17 @@ void main() {
           final context = tester.element(find.byType(scenario.screen));
           expect(
             ResponsiveSlidingDrawerProvider.of(context).isDesktop,
-            variant.width >= 960,
+            variant.width >= 900,
           );
           expect(MediaQuery.disableAnimationsOf(context), isTrue);
           if ((name == 'SkillsRoute' || name == 'ToolsRoute') &&
               variant.width == 360) {
+            if (name == 'SkillsRoute') {
+              await tester.tap(
+                find.byKey(const ValueKey('app_filter_sheet')).first,
+              );
+              final _ = await tester.pumpAndSettle();
+            }
             final sort = tester.getRect(
               find.byKey(
                 ValueKey(name == 'SkillsRoute' ? 'skills-sort' : 'tools-sort'),
@@ -534,6 +665,10 @@ void main() {
               reason: 'Sort label and value must remain readable: $sort',
             );
             expect(sort.width, greaterThanOrEqualTo(200));
+            if (name == 'SkillsRoute') {
+              await tester.tapAt(const Offset(10, 10));
+              final _ = await tester.pumpAndSettle();
+            }
           }
           await _capture(
             tester,
@@ -884,6 +1019,59 @@ Future<ByteData> _sdkRoboto() async {
   }
 
   throw StateError('Flutter SDK Roboto font is unavailable for capture');
+}
+
+void _expectTextInsideSideSafeArea(
+  WidgetTester tester,
+  Size viewport,
+  FakeViewPadding padding,
+  String route,
+) {
+  final paragraphs = tester.renderObjectList<RenderParagraph>(
+    find.descendant(
+      of: find.byType(AuraScreen),
+      matching: find.byType(RichText),
+    ),
+  );
+  final viewportBounds = Offset.zero & viewport;
+  for (final paragraph in paragraphs) {
+    final bounds = MatrixUtils.transformRect(
+      paragraph.getTransformTo(null),
+      paragraph.paintBounds,
+    );
+    var visibleBounds = bounds;
+    var child = paragraph.parent ?? paragraph;
+    for (
+      var ancestor = paragraph.parent;
+      ancestor != null;
+      ancestor = ancestor.parent
+    ) {
+      final clip = ancestor.describeApproximatePaintClip(child);
+      if (clip != null) {
+        visibleBounds = visibleBounds.intersect(
+          MatrixUtils.transformRect(ancestor.getTransformTo(null), clip),
+        );
+      }
+      child = ancestor;
+    }
+    if (visibleBounds.isEmpty || !visibleBounds.overlaps(viewportBounds)) {
+      continue;
+    }
+    expect(
+      visibleBounds.left,
+      greaterThanOrEqualTo(padding.left - 1),
+      reason:
+          '$route text ${paragraph.text.toPlainText()} enters the '
+          'left unsafe area: $visibleBounds',
+    );
+    expect(
+      visibleBounds.right,
+      lessThanOrEqualTo(viewport.width - padding.right + 1),
+      reason:
+          '$route text ${paragraph.text.toPlainText()} enters the '
+          'right unsafe area: $visibleBounds',
+    );
+  }
 }
 
 Future<void> _capture(

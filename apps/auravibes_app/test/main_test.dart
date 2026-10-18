@@ -19,10 +19,18 @@ void main() {
     expect(
       AndroidDesktopCaptionBackdrop.shouldShow(
         platform: .android,
-        width: 900,
+        width: 899,
         topInset: 42,
       ),
       isFalse,
+    );
+    expect(
+      AndroidDesktopCaptionBackdrop.shouldShow(
+        platform: .android,
+        width: 900,
+        topInset: 42,
+      ),
+      isTrue,
     );
     expect(
       AndroidDesktopCaptionBackdrop.shouldShow(

@@ -14,6 +14,7 @@ class const WorkspaceSignInRecovery({
   required final String workspaceId,
   required final WorkspaceSession? session,
   required final VoidCallback onReturn,
+  final String? returnLocation,
   final String? returnLabelKey,
   super.key,
 }) extends ConsumerWidget {
@@ -23,6 +24,7 @@ class const WorkspaceSignInRecovery({
         workspaceId: workspaceId,
         session: session,
         onReturn: onReturn,
+        returnLocation: returnLocation,
         returnLabelKey: returnLabelKey,
       );
 }
@@ -31,12 +33,13 @@ class const _WorkspaceSignInRecoveryBody({
   required final String workspaceId,
   required final WorkspaceSession? session,
   required final VoidCallback onReturn,
+  required final String? returnLocation,
   required final String? returnLabelKey,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final _ = ref.watch(cloudAccountsProvider);
-    final onRetry = _signInAction(context, ref);
+    final onRetry = _signInAction(context, ref, returnLocation);
 
     return _WorkspaceSignInRecoveryView(
       onRetry: onRetry,
@@ -45,13 +48,18 @@ class const _WorkspaceSignInRecoveryBody({
     );
   }
 
-  VoidCallback? _signInAction(BuildContext context, WidgetRef ref) {
+  VoidCallback? _signInAction(
+    BuildContext context,
+    WidgetRef ref,
+    String? returnLocation,
+  ) {
     final cloud = session?.cloud;
     if (cloud == null) return null;
     final uri = GoRouterState.of(context).uri;
 
-    return () =>
-        context.go(_workspaceLoginLocation(ref, uri, workspaceId, cloud));
+    return () => context.go(
+      _workspaceLoginLocation(ref, uri, workspaceId, cloud, returnLocation),
+    );
   }
 }
 
@@ -75,6 +83,7 @@ String _workspaceLoginLocation(
   Uri uri,
   String workspaceId,
   CloudWorkspaceRef cloud,
+  String? returnLocation,
 ) {
   final key = CloudAccountKeyFactory.fromIdentity(
     cloud.serverUrl,
@@ -82,7 +91,10 @@ String _workspaceLoginLocation(
   );
   final route = CloudAccountLoginRoute(
     workspaceId: workspaceId,
-    returnPath: TaskReturn.validate(uri.toString(), workspaceId: workspaceId),
+    returnPath: TaskReturn.validate(
+      returnLocation ?? uri.toString(),
+      workspaceId: workspaceId,
+    ),
   ).location;
 
   return _loginLocation(route, key, _accountEmail(ref, key));

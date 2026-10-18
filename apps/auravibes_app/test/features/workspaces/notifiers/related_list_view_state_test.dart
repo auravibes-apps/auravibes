@@ -36,6 +36,13 @@ void main() {
       enabledFilter: null,
       sort: SkillSort.name,
     ));
+    container.read(provider.notifier).clearFilters();
+    expect(container.read(provider), (
+      searchQuery: 'summary',
+      sourceFilter: null,
+      enabledFilter: null,
+      sort: SkillSort.name,
+    ));
   });
 
   test(
@@ -93,6 +100,13 @@ void main() {
     ));
     expect(container.read(connectionsListViewProvider('A', .overview)), (
       searchQuery: '',
+      filter: ConnectionFilter.all,
+      kind: ConnectionFilter.all,
+      oauthOnly: false,
+    ));
+    container.read(provider.notifier).clearFilters();
+    expect(container.read(provider), (
+      searchQuery: 'notion',
       filter: ConnectionFilter.all,
       kind: ConnectionFilter.all,
       oauthOnly: false,

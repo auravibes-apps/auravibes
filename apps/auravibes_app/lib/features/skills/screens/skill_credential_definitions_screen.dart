@@ -1,9 +1,11 @@
 // Required: Existing UI spacing uses small numeric values.
+
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_credential_definition_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -23,7 +25,7 @@ class const SkillCredentialDefinitionsScreen({
       skillCredentialDefinitionsProvider(workspaceId),
     );
 
-    return AuraScreen(
+    return AppScreen(
       child: _SkillCredentialDefinitionsBody(
         workspaceId: workspaceId,
         definitionsAsync: definitionsAsync,

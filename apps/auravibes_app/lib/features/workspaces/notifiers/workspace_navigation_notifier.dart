@@ -1,12 +1,12 @@
-import 'package:auravibes_app/router/workspace_navigation.dart' as routes;
+import 'package:auravibes_app/router/workspace_navigation.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_navigation_notifier.g.dart';
 
 typedef WorkspaceNavigationState = ({
-  routes.AgentDestination agents,
-  routes.ConnectionDestination connections,
+  AgentDestination agents,
+  ConnectionDestination connections,
 });
 
 /// Retains safe list categories across listener gaps for each workspace.
@@ -18,7 +18,7 @@ class WorkspaceNavigationNotifier extends _$WorkspaceNavigationNotifier {
 
   void remember(Uri uri) {
     if (!_belongsToWorkspace(uri)) return;
-    _rememberWorkspacePath(routes.WorkspaceNavigation.path(uri), uri);
+    _rememberWorkspacePath(WorkspaceNavigation.path(uri), uri);
   }
 
   String agentsLocation() => switch (state.agents) {
@@ -49,20 +49,18 @@ class WorkspaceNavigationNotifier extends _$WorkspaceNavigationNotifier {
         _rememberAgents(.skills);
       case ['service-connections']:
         _rememberConnections(
-          routes.WorkspaceNavigation.connectionView(
-            uri.queryParameters['view'],
-          ),
+          WorkspaceNavigation.connectionView(uri.queryParameters['view']),
         );
       case ['tools']:
         _rememberConnections(.tools);
     }
   }
 
-  void _rememberAgents(routes.AgentDestination agents) {
+  void _rememberAgents(AgentDestination agents) {
     state = (agents: agents, connections: state.connections);
   }
 
-  void _rememberConnections(routes.ConnectionDestination connections) {
+  void _rememberConnections(ConnectionDestination connections) {
     state = (agents: state.agents, connections: connections);
   }
 }

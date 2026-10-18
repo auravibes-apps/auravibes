@@ -1,4 +1,5 @@
 import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 /// One confirmation owner for Back, route replacement and context switches.
@@ -7,38 +8,45 @@ class DraftExitGuard extends ChangeNotifier {
   bool _preferReturn = false;
   bool _isDirty = false;
   bool _isSaving = false;
+  bool? _lastDirty;
+  bool? _lastSaving;
   bool _approved = false;
   bool _transitioning = false;
   bool _transitionExitAllowed = false;
+  bool _notificationPending = false;
+  bool _isDisposed = false;
   FocusNode? _transitionFocus;
   Future<bool>? _pending;
   bool Function()? _readDirty;
   bool Function()? _readSaving;
   Future<bool?> Function(BuildContext)? _confirm;
   void Function(BuildContext)? _onReturn;
+  void Function(BuildContext, Object?)? _onPop;
 
   bool get isApproved => _approved;
   bool get isTransitioning => _transitioning;
   bool get isDirty => _readDirty?.call() ?? _isDirty;
+  bool get isSaving => _readSaving?.call() ?? _isSaving;
+  bool get canPop => !isSaving && !isTransitioning && (isApproved || !isDirty);
 
   void bind({
     required ({bool Function() isDirty, bool Function() isSaving}) readers,
-    Future<bool?> Function(BuildContext)? confirm,
-    void Function(BuildContext)? onReturn,
+    DraftExitGuardCallbacks callbacks = const DraftExitGuardCallbacks(),
     bool preferReturn = false,
   }) {
-    _preferReturn = preferReturn;
-    _readDirty = readers.isDirty;
-    _readSaving = readers.isSaving;
-    _confirm = confirm;
-    _onReturn = onReturn;
+    _bindCallbacks(readers, callbacks, preferReturn);
+    _syncStateFromReaders();
   }
 
   /// Retained for existing template-tool route callers.
   void update({required bool isDirty, required bool isSaving}) {
-    if (_isDirty != isDirty || _isSaving != isSaving) _approved = false;
+    final didChange = _lastDirty != isDirty || _lastSaving != isSaving;
+    if (didChange) _approved = false;
     _isDirty = isDirty;
     _isSaving = isSaving;
+    _lastDirty = isDirty;
+    _lastSaving = isSaving;
+    if (didChange) _notifyChanged();
   }
 
   /// [discardConfirmed] shares consent only across drafts in the same task
@@ -51,8 +59,65 @@ class DraftExitGuard extends ChangeNotifier {
     return pending.whenComplete(() => _pending = null);
   }
 
-  void _notifyChanged() => notifyListeners();
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+
+  void _notifyChanged() {
+    // Guard owners can update from descendant initState during a build.
+    if (WidgetsBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      if (_notificationPending || _isDisposed) return;
+      _notificationPending = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _notificationPending = false;
+        if (!_isDisposed) notifyListeners();
+      });
+      WidgetsBinding.instance.scheduleFrame();
+
+      return;
+    }
+
+    notifyListeners();
+  }
 }
+
+extension _DraftExitGuardBinding on DraftExitGuard {
+  void _bindCallbacks(
+    ({bool Function() isDirty, bool Function() isSaving}) readers,
+    DraftExitGuardCallbacks callbacks,
+    bool preferReturn,
+  ) {
+    _preferReturn = preferReturn;
+    _readDirty = readers.isDirty;
+    _readSaving = readers.isSaving;
+    _confirm = callbacks.confirm;
+    _onReturn = callbacks.onReturn;
+    _onPop = callbacks.onPop;
+  }
+
+  void _syncStateFromReaders() {
+    final previousDirty = _lastDirty;
+    final previousSaving = _lastSaving;
+    final isDirty = this.isDirty;
+    final isSaving = this.isSaving;
+    final didChange =
+        previousDirty != null &&
+        (previousDirty != isDirty || previousSaving != isSaving);
+    if (didChange) _approved = false;
+    _lastDirty = isDirty;
+    _lastSaving = isSaving;
+    if (previousDirty == null || didChange) _notifyChanged();
+  }
+}
+
+class const DraftExitGuardCallbacks({
+  final Future<bool?> Function(BuildContext)? confirm,
+  final void Function(BuildContext)? onReturn,
+  final void Function(BuildContext, Object?)? onPop,
+});
 
 extension DraftExitGuardTransitions on DraftExitGuard {
   void holdApproval() {
@@ -93,12 +158,15 @@ extension DraftExitGuardTransitions on DraftExitGuard {
     _readSaving = null;
     _confirm = null;
     _onReturn = null;
+    _onPop = null;
     _transitionFocus = null;
     _approved = false;
     _transitioning = false;
     _transitionExitAllowed = false;
     _isDirty = false;
     _isSaving = false;
+    _lastDirty = null;
+    _lastSaving = null;
   }
 }
 
@@ -126,6 +194,11 @@ extension _DraftExitGuardFocus on DraftExitGuard {
 extension _DraftExitGuardExit on DraftExitGuard {
   void _completePop(BuildContext context, Object? result) {
     if (!context.mounted) return;
+    if (_onPop case final onPop?) {
+      onPop(context, result);
+
+      return;
+    }
     if (_preferReturn && _onReturn != null) {
       _onReturn?.call(context);
 

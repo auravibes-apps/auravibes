@@ -20,6 +20,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_repository
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
@@ -116,18 +117,25 @@ class _ServiceConnectionEditScreenState
 
   @override
   Widget build(BuildContext context) {
+    _bindExitGuard();
+
+    return DraftExitScope(
+      guard: _exitGuard,
+      child: _ConnectionEditScreenView(owner: this),
+    );
+  }
+
+  void _bindExitGuard() {
     _exitGuard.bind(
       readers: (
         isDirty: () => _isDirty,
         isSaving: () => _isSaving || _isTestingModelProvider,
       ),
-      onReturn: (context) =>
-          ServiceConnectionsRoute(workspaceId: widget.workspaceId).go(context),
-    );
-
-    return DraftExitScope(
-      guard: _exitGuard,
-      child: _ConnectionEditScreenView(owner: this),
+      callbacks: .new(
+        onReturn: (context) =>
+            ServiceConnectionsRoute(workspaceId: widget.workspaceId)
+                .go(context),
+      ),
     );
   }
 
@@ -950,7 +958,7 @@ class const _ConnectionEditPage({
   required final _ServiceConnectionEditScreenState owner,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: _ConnectionEditSnapshotView(snapshot: snapshot, owner: owner),
     appBar: _ConnectionEditAppBar(owner: owner, state: snapshot.data),
   );

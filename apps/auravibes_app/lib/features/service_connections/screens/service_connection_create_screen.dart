@@ -16,6 +16,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/task_return.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
@@ -66,6 +67,7 @@ class const ServiceConnectionCreateScreen({
   final String? initialCredentialDefinitionId,
   final String? initialAppSkillId,
   final String? returnPath,
+  final GlobalKey<NavigatorState>? returnNavigatorKey,
   super.key,
 }) extends ConsumerStatefulWidget {
   @override
@@ -147,9 +149,39 @@ void _bindCreateExitGuard(_ServiceConnectionCreateScreenState state) {
   state._exitGuard.bind(
     readers: (isDirty: () => state._isDirty, isSaving: () => state._isBusy),
     preferReturn: destination != null,
+    callbacks: _createExitCallbacks(state, destination),
+  );
+}
+
+DraftExitGuardCallbacks _createExitCallbacks(
+  _ServiceConnectionCreateScreenState state,
+  String? destination,
+) {
+  final navigatorKey = state.widget.returnNavigatorKey;
+
+  return DraftExitGuardCallbacks(
     onReturn: (context) =>
         _returnFromCreate(context, state.widget.workspaceId, destination),
+    onPop: navigatorKey == null
+        ? null
+        : (context, result) =>
+              _popOrReturnFromCreate(state, destination, context, result),
   );
+}
+
+void _popOrReturnFromCreate(
+  _ServiceConnectionCreateScreenState state,
+  String? destination,
+  BuildContext context,
+  Object? result,
+) {
+  final navigator = state.widget.returnNavigatorKey?.currentState;
+  if (navigator != null && navigator.canPop()) {
+    navigator.pop(result);
+
+    return;
+  }
+  _returnFromCreate(context, state.widget.workspaceId, destination);
 }
 
 String? _createReturnDestination(_ServiceConnectionCreateScreenState state) =>
@@ -179,7 +211,7 @@ class const _CreateScreenHandoff({
   required final _ServiceConnectionCreateScreenState state,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: AuraColumn(
       children: [
         const TextLocale('chat_readiness.saved'),
@@ -569,8 +601,19 @@ Future<void> _navigateAfterCreateSave(
 
     return;
   }
+  final returnNavigator = state.widget.returnNavigatorKey?.currentState;
+  if (returnNavigator != null && returnNavigator.canPop()) {
+    returnNavigator.pop(true);
+
+    return;
+  }
   if (await Navigator.of(state.context).maybePop(true)) return;
   if (!state.mounted) return;
+  if (destination != null) {
+    state.context.go(destination);
+
+    return;
+  }
   _goToServiceConnections(state);
 }
 
@@ -717,7 +760,7 @@ class const _ServiceConnectionCreateView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
+    return AppScreen(
       child: _ServiceConnectionCreateBody(form: form),
       appBar: _ServiceConnectionCreateAppBar(form: form),
     );
@@ -744,7 +787,7 @@ class const _ServiceConnectionCreateAppBar({
       ),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
-        onPressed: () => Navigator.of(context).maybePop(),
+        onPressed: () => unawaited(form.routeExitGuard.pop(context)),
       ),
     );
   }

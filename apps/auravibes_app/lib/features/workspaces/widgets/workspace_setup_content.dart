@@ -153,7 +153,7 @@ extension _WorkspaceSetupDraftActions on _WorkspaceSetupContentState {
         isDirty: () => !_completedTask && _draftHasChanges(draft),
         isSaving: _isSaving,
       ),
-      onReturn: (_) => widget.onReturn?.call(),
+      callbacks: .new(onReturn: (_) => widget.onReturn?.call()),
     );
   }
 

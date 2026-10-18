@@ -1640,6 +1640,7 @@ abstract class LocaleKeys {
       'tool_call_status.execution_error';
   static const tool_call_status_running = 'tool_call_status.running';
   static const tool_call_status_pending = 'tool_call_status.pending';
+  static const common_back = 'common.back';
   static const common_cancel = 'common.cancel';
   static const common_remove = 'common.remove';
   static const common_add = 'common.add';
@@ -1648,6 +1649,9 @@ abstract class LocaleKeys {
   static const common_delete = 'common.delete';
   static const common_confirm = 'common.confirm';
   static const common_close = 'common.close';
+  static const common_filters = 'common.filters';
+  static const common_filters_count = 'common.filters_count';
+  static const common_clear_filters = 'common.clear_filters';
   static const common_failed_items_title = 'common.failed_items_title';
   static const common_retry_failed = 'common.retry_failed';
   static const common_close_dialog = 'common.close_dialog';

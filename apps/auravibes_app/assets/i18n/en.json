@@ -1126,6 +1126,7 @@
     "pending": "Awaiting confirmation"
   },
   "common": {
+    "back": "Back",
     "cancel": "Cancel",
     "remove": "Remove",
     "add": "Add",
@@ -1134,6 +1135,9 @@
     "delete": "Delete",
     "confirm": "Confirm",
     "close": "Close",
+    "filters": "Filters",
+    "filters_count": "Filters ({})",
+    "clear_filters": "Clear filters",
     "failed_items_title": "Some items could not be deleted",
     "retry_failed": "Retry failed",
     "close_dialog": "Close dialog",

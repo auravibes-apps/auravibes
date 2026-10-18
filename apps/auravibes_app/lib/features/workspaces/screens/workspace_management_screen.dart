@@ -24,6 +24,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/management_list_feedback.dart';
@@ -102,7 +103,7 @@ class const _WorkspaceManagementLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
+    return AppScreen(
       child: _WorkspaceManagementContent(
         connectView: connectView,
         activeWorkspaceId: activeWorkspaceId,

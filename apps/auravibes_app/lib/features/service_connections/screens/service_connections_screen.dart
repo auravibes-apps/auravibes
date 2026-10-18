@@ -13,7 +13,6 @@ import 'package:auravibes_app/features/service_connections/notifiers/connections
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
-import 'package:auravibes_app/features/service_connections/widgets/connections_tabs.dart';
 import 'package:auravibes_app/features/service_connections/widgets/mcp_catalog_browser.dart';
 import 'package:auravibes_app/features/tools/widgets/mcp_error_details.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -21,8 +20,12 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_navigation.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
-import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/adaptive_master_detail_layout.dart';
+import 'package:auravibes_app/widgets/app_filter_sheet_button.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
+import 'package:auravibes_app/widgets/feature_destination_app_bar.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -240,14 +243,17 @@ void _openCreateConnection(
     return;
   }
   unawaited(
-    ServiceConnectionCreateRoute(
-      workspaceId: workspaceId,
-      type: switch (view) {
-        .providers => 'modelProvider',
-        .credentials => 'skillCredential',
-        _ => null,
-      },
-    ).push<bool>(context),
+    FeatureDestinations.push<bool>(
+      context,
+      ServiceConnectionCreateRoute(
+        workspaceId: workspaceId,
+        type: switch (view) {
+          .providers => 'modelProvider',
+          .credentials => 'skillCredential',
+          _ => null,
+        },
+      ).location,
+    ),
   );
 }
 
@@ -267,19 +273,30 @@ class const _ServiceConnectionsView({
   required final VoidCallback onAddConnection,
   required final String workspaceId,
 }) extends StatelessWidget {
+  List<FeatureNavigationDestination> get _destinations =>
+      FeatureDestinations.connections(workspaceId);
+
+  String get _selectedLocation =>
+      FeatureDestinations.connectionLocation(workspaceId, view);
+
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
-      child: _ServiceConnectionsBody(
-        workspaceId: workspaceId,
-        view: view,
-        connectionsAsync: connectionsAsync,
-        onAddConnection: onAddConnection,
+    return AppScreen(
+      child: AdaptiveMasterDetailLayout(
+        destinations: _destinations,
+        selectedLocation: _selectedLocation,
+        child: _ServiceConnectionsBody(
+          workspaceId: workspaceId,
+          view: view,
+          connectionsAsync: connectionsAsync,
+          onAddConnection: onAddConnection,
+        ),
       ),
       appBar: _ServiceConnectionsAppBar(
-        view: view,
         onAddConnection: onAddConnection,
         workspaceId: workspaceId,
+        destinations: _destinations,
+        selectedLocation: _selectedLocation,
       ),
     );
   }
@@ -296,7 +313,6 @@ class const _ServiceConnectionsBody({
     return Column(
       crossAxisAlignment: .stretch,
       children: [
-        const _ModelCatalogSyncStatus(),
         Expanded(
           child: _ServiceConnectionsContent(
             workspaceId: workspaceId,
@@ -466,23 +482,25 @@ class const _ConnectionsLoadError() extends StatelessWidget {
 }
 
 class const _ServiceConnectionsAppBar({
-  required final ConnectionDestination view,
   required final VoidCallback onAddConnection,
   required final String workspaceId,
+  required final List<FeatureNavigationDestination> destinations,
+  required final String selectedLocation,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight * 2);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
-    return AuraAppBarWithDrawer(
-      title: const TextLocale(LocaleKeys.service_connections_title),
+    return FeatureDestinationAppBar(
+      destinations: destinations,
+      selectedLocation: selectedLocation,
+      masterTitleKey: LocaleKeys.navigation_connections,
       actions: [
         _SyncModelCatalogButton(workspaceId: workspaceId),
         _BrowseMcpCatalogButton(workspaceId: workspaceId),
         _ConnectionsAddButton(onPressed: onAddConnection),
       ],
-      bottom: ConnectionsTabs(workspaceId: workspaceId, value: view),
     );
   }
 }
@@ -601,10 +619,7 @@ class const _ConnectionsListControls({
   @override
   Widget build(BuildContext context) => Column(
     mainAxisSize: .min,
-    children: [
-      _CredentialTypesControl(layout: layout),
-      _ConnectionFiltersControl(layout: layout),
-    ],
+    children: [_CredentialTypesControl(layout: layout)],
   );
 }
 
@@ -615,15 +630,6 @@ class const _CredentialTypesControl({
   Widget build(BuildContext context) => layout.view == .credentials
       ? _CredentialTypesButton(workspaceId: layout.workspaceId)
       : const SizedBox.shrink();
-}
-
-class const _ConnectionFiltersControl({
-  required final _ConnectionsListLayout layout,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => layout.connections.isEmpty
-      ? const SizedBox.shrink()
-      : _ConnectionListFilters.fromLayout(layout);
 }
 
 List<ServiceConnectionListItem> _connectionsForList(
@@ -643,8 +649,10 @@ class const _CredentialTypesButton({required final String workspaceId})
   @override
   Widget build(BuildContext context) => AuraButton(
     onPressed: () => unawaited(
-      SkillCredentialDefinitionsRoute(workspaceId: workspaceId)
-          .push<void>(context),
+      FeatureDestinations.push<void>(
+        context,
+        SkillCredentialDefinitionsRoute(workspaceId: workspaceId).location,
+      ),
     ),
     child: const TextLocale(LocaleKeys.related_lists_credential_types),
     variant: .ghost,
@@ -658,16 +666,6 @@ class const _ConnectionListFilters({
   required final ValueChanged<ConnectionFilter> onKindChanged,
   required final ValueChanged<bool> onOauthOnlyChanged,
 }) extends StatelessWidget {
-  new fromLayout(_ConnectionsListLayout layout)
-    : this(
-        view: layout.view,
-        kind: layout.state.kind,
-        oauthOnly: layout.state.oauthOnly,
-        onKindChanged: layout.notifier.setKind,
-        onOauthOnlyChanged: (value) =>
-            layout.notifier.setOauthOnly(value: value),
-      );
-
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -737,7 +735,14 @@ class const _ConnectionsListResultView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => layout.connections.isEmpty
-      ? _EmptyConnections(onAddConnection: layout.onAddConnection)
+      ? Column(
+          children: [
+            const _ModelCatalogSyncStatus(),
+            Expanded(
+              child: _EmptyConnections(onAddConnection: layout.onAddConnection),
+            ),
+          ],
+        )
       : _ConnectionsListContent.fromLayout(layout, key: key);
 }
 
@@ -811,50 +816,127 @@ class const _ConnectionsAddAction({required final VoidCallback onPressed})
 }
 
 class const _ConnectionsListContent({
-  required final List<ServiceConnectionListItem> connections,
-  required final ConnectionFilter filter,
-  required final VoidCallback onAddConnection,
-  required final ValueChanged<ConnectionFilter> onFilterChanged,
-  required final ValueChanged<String> onSearchChanged,
-  required final String searchQuery,
+  required final _ConnectionsListLayout layout,
   super.key,
 }) extends StatelessWidget {
   factory fromLayout(_ConnectionsListLayout layout, {Key? key}) =>
-      _ConnectionsListContent(
-        connections: _connectionsForList(
-          layout.connections,
-          layout.state.kind,
-          layout.state.oauthOnly,
-        ),
-        filter: layout.state.filter,
-        onAddConnection: layout.onAddConnection,
-        onFilterChanged: layout.notifier.setFilter,
-        onSearchChanged: layout.notifier.setSearchQuery,
-        searchQuery: layout.state.searchQuery,
-        key: key,
-      );
+      _ConnectionsListContent(layout: layout, key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        _ConnectionSearchInput(
-          searchQuery: searchQuery,
-          onChanged: onSearchChanged,
-        ),
-        _ConnectionFilterSelector(value: filter, onChanged: onFilterChanged),
-        Expanded(
-          child: _ConnectionsTab(
-            connections: connections,
-            onAddConnection: onAddConnection,
-            filter: filter,
-            searchQuery: searchQuery,
+  Widget build(BuildContext context) =>
+      _ConnectionsListContentLayout(layout: layout);
+}
+
+class const _ConnectionsListContentLayout({
+  required final _ConnectionsListLayout layout,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _ConnectionSearchInput(
+        searchQuery: layout.state.searchQuery,
+        onChanged: layout.notifier.setSearchQuery,
+      ),
+      _ConnectionResponsiveFilterControl(layout: layout),
+      const _ModelCatalogSyncStatus(),
+      Expanded(child: _ConnectionsListTab(layout: layout)),
+    ],
+  );
+}
+
+class const _ConnectionResponsiveFilterControl({
+  required final _ConnectionsListLayout layout,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _ConnectionResponsiveFilterContent(
+      layout: layout,
+      isCompact: constraints.maxWidth < AppFilterSheetButton.breakpoint,
+    ),
+  );
+}
+
+class const _ConnectionResponsiveFilterContent({
+  required final _ConnectionsListLayout layout,
+  required final bool isCompact,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => isCompact
+      ? AppFilterSheetButton(
+          activeFilterCount: _connectionActiveFilterCount(layout),
+          filtersBuilder: (_) => _ConnectionFilterFields(
+            workspaceId: layout.workspaceId,
+            view: layout.view,
           ),
-        ),
-      ],
+          onClearFilters: layout.notifier.clearFilters,
+        )
+      : _ConnectionFilterFields(
+          workspaceId: layout.workspaceId,
+          view: layout.view,
+        );
+}
+
+class const _ConnectionsListTab({required final _ConnectionsListLayout layout})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ConnectionsTab(
+    connections: _connectionsForList(
+      layout.connections,
+      layout.state.kind,
+      layout.state.oauthOnly,
+    ),
+    onAddConnection: layout.onAddConnection,
+    filter: layout.state.filter,
+    searchQuery: layout.state.searchQuery,
+  );
+}
+
+int _connectionActiveFilterCount(_ConnectionsListLayout layout) =>
+    (layout.state.filter == .all ? 0 : 1) +
+    (layout.view == .overview && layout.state.kind != .all ? 1 : 0) +
+    (layout.state.oauthOnly ? 1 : 0);
+
+class const _ConnectionFilterFields({
+  required final String workspaceId,
+  required final ConnectionDestination view,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = connectionsListViewProvider(workspaceId, view);
+    final state = ref.watch(provider);
+    final notifier = ref.read(provider.notifier);
+
+    return _ConnectionFilterFieldsContent(
+      view: view,
+      state: state,
+      notifier: notifier,
     );
   }
+}
+
+class const _ConnectionFilterFieldsContent({
+  required final ConnectionDestination view,
+  required final ConnectionsListViewState state,
+  required final ConnectionsListViewNotifier notifier,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _ConnectionFilterSelector(
+        value: state.filter,
+        onChanged: notifier.setFilter,
+      ),
+      _ConnectionListFilters(
+        view: view,
+        kind: state.kind,
+        oauthOnly: state.oauthOnly,
+        onKindChanged: notifier.setKind,
+        onOauthOnlyChanged: (value) => notifier.setOauthOnly(value: value),
+      ),
+    ],
+  );
 }
 
 class const _ConnectionSearchInput({
