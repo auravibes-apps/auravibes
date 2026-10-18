@@ -2,50 +2,22 @@
   "mcpServers": {
     "dart": {
       "command": "fvm",
-      "args": [
-        "dart",
-        "mcp-server",
-        "--force-roots-fallback"
-      ],
-      "lifecycle": "lazy",
-      "directTools": true
+      "args": ["dart", "mcp-server", "--force-roots-fallback"],
+      "exposure": "direct"
     },
     "marionette": {
       "command": "fvm",
-      "args": [
-        "dart",
-        "run",
-        "marionette_mcp"
-      ],
-      "lifecycle": "lazy",
-      "directTools": true
+      "args": ["dart", "run", "marionette_mcp"],
+      "exposure": "direct"
     },
     "pubdev": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@devqxi/pubdev-mcp-server@1.0.1"
-      ],
-      "lifecycle": "lazy",
-      "directTools": true
+      "args": ["-y", "@devqxi/pubdev-mcp-server@1.0.1"],
+      "exposure": "direct"
     },
     "serverpod": {
       "command": "serverpod",
-      "args": [
-        "-q",
-        "mcp-server",
-        "--server-dir",
-        "apps/auravibes_server"
-      ],
-      "lifecycle": "lazy"
-    },
-    "sonarqube": {
-      "command": "sonar",
-      "args": [
-        "run",
-        "mcp"
-      ],
-      "lifecycle": "lazy"
+      "args": ["-q", "mcp-server", "--server-dir", "apps/auravibes_server"]
     }
   }
 }

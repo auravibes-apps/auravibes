@@ -86,6 +86,7 @@ void main() {
     String skillTitle = 'Write Summary',
     List<String> additionalUserSkillNames = const [],
     bool failDeletes = false,
+    bool emptyWorkspace = false,
   }) async {
     final workspaceRepository = WorkspaceRepository(database);
     final workspace = await workspaceRepository.createWorkspace(
@@ -145,28 +146,30 @@ void main() {
           appSkillSettings,
         ),
         workspaceSkillsProvider.overrideWith(
-          (_, _) async => [
-            for (final userSkill in userSkills)
-              WorkspaceSkill(
-                id: userSkill.id,
-                slug: userSkill.slug,
-                title: userSkill.title,
-                description: userSkill.description,
-                source: .user,
-                kind: userSkill.kind,
-                isEnabled: userSkill.isEnabled,
-              ),
-            if (includeAppSkill)
-              const WorkspaceSkill(
-                id: 'app-skill',
-                slug: 'native_helper',
-                title: 'Native Helper',
-                description: 'Built-in helper skill.',
-                source: .app,
-                kind: .native,
-                isEnabled: false,
-              ),
-          ],
+          (_, _) async => emptyWorkspace
+              ? []
+              : [
+                  for (final userSkill in userSkills)
+                    WorkspaceSkill(
+                      id: userSkill.id,
+                      slug: userSkill.slug,
+                      title: userSkill.title,
+                      description: userSkill.description,
+                      source: .user,
+                      kind: userSkill.kind,
+                      isEnabled: userSkill.isEnabled,
+                    ),
+                  if (includeAppSkill)
+                    const WorkspaceSkill(
+                      id: 'app-skill',
+                      slug: 'native_helper',
+                      title: 'Native Helper',
+                      description: 'Built-in helper skill.',
+                      source: .app,
+                      kind: .native,
+                      isEnabled: false,
+                    ),
+                ],
         ),
         deleteSkillProvider(workspace.id).overrideWithValue(deleteSkill),
       ],
@@ -214,6 +217,90 @@ void main() {
       initialLocation: '/',
     );
   }
+
+  for (final scenario in ['search', 'source', 'status', 'combined']) {
+    testWidgets('clears $scenario no-results state without changing skills', (
+      tester,
+    ) async {
+      final fixture = await createFixture();
+      final router = createRouter();
+      addTearDown(router.dispose);
+      final _ = await tester.runAsync(
+        () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+      );
+      router.go('/workspaces/${fixture.workspace.id}/skills');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Clear search and filters'), findsNothing);
+      if (scenario != 'search') {
+        await tester.tap(find.byKey(const ValueKey('app_filter_sheet')).first);
+        final _ = await tester.pumpAndSettle();
+        if (scenario == 'source' || scenario == 'combined') {
+          tester
+              .widget<AuraDropdownSelector<String>>(
+                find.descendant(
+                  of: find.byKey(const ValueKey('skills-source-filter')),
+                  matching: find.byType(AuraDropdownSelector<String>),
+                ),
+              )
+              .onChanged
+              ?.call('app');
+        }
+        if (scenario == 'status' || scenario == 'combined') {
+          tester
+              .widget<AuraDropdownSelector<String>>(
+                find.descendant(
+                  of: find.byKey(const ValueKey('skills-status-filter')),
+                  matching: find.byType(AuraDropdownSelector<String>),
+                ),
+              )
+              .onChanged
+              ?.call('disabled');
+        }
+        final _ = await tester.pumpAndSettle();
+        await tester.tapAt(const Offset(20, 20));
+        final _ = await tester.pumpAndSettle();
+      }
+      if (scenario == 'search' || scenario == 'combined') {
+        await tester.enterText(find.byType(EditableText), 'unmatched query');
+        final _ = await tester.pumpAndSettle();
+      }
+      expect(find.text('No skills match these filters'), findsOneWidget);
+      await tester.tap(find.text('Clear search and filters'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Write Summary'), findsOneWidget);
+      expect(find.text('Clear search and filters'), findsNothing);
+      expect(
+        tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+        isEmpty,
+      );
+      final view = fixture.container.read(
+        skillsListViewProvider(fixture.workspace.id),
+      );
+      expect(view.searchQuery, isEmpty);
+      expect(view.sourceFilter, null);
+      expect(view.enabledFilter, null);
+      expect(
+        await SkillsRepository(fixture.database).getSkillById(fixture.skill.id),
+        fixture.skill,
+      );
+      expect(fixture.deleteAttempts, isEmpty);
+    });
+  }
+
+  testWidgets('empty workspace has no filter recovery action', (tester) async {
+    final fixture = await createFixture(emptyWorkspace: true);
+    final router = createRouter();
+    addTearDown(router.dispose);
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    router.go('/workspaces/${fixture.workspace.id}/skills');
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Clear search and filters'), findsNothing);
+    expect(find.byIcon(Icons.search_off), findsNothing);
+    expect(find.byType(EditableText), findsNothing);
+  });
 
   testWidgets('restores visible search after leaving the skills list', (
     tester,

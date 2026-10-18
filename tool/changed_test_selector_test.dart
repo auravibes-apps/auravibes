@@ -768,6 +768,14 @@ void main() {
       );
       expect(capturedArguments, isNot(contains('--total-shards=2')));
       expect(capturedArguments, isNot(contains('--shard-index=1')));
+      final command = jsonDecode(
+        await File('${root.path}/command-packages-core.json').readAsString(),
+      );
+      expect(command, {
+        'package': 'packages/core',
+        'tool': 'dart',
+        'arguments': capturedArguments,
+      });
     },
   );
 
@@ -920,6 +928,10 @@ void main() {
 
             return 7;
           },
+      totalShards: 2,
+      shardIndex: 1,
+      coverage: true,
+      timingsDir: root.path,
     );
     expect(code, 7);
     expect(
@@ -931,6 +943,18 @@ void main() {
         '--timeout=30s',
         '--reporter=failures-only',
       ]),
+    );
+    final command = jsonDecode(
+      await File('${root.path}/command-packages-core.json').readAsString(),
+    );
+    expect(command, {
+      'package': 'packages/core',
+      'tool': 'flutter',
+      'arguments': capturedArguments,
+    });
+    expect(
+      capturedArguments,
+      containsAll(['--coverage', '--total-shards=2', '--shard-index=1']),
     );
   });
 
