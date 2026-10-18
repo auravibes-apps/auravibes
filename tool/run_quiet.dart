@@ -2,11 +2,11 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-const _tailBytes = 64 * 1024;
+const int _tailBytes = 64 * 1024;
 
-Future<void> main(List<String> args) async {
-  final streaming = args.firstOrNull == '--stream';
-  if (streaming) args = args.skip(1).toList();
+Future<void> main(List<String> arguments) async {
+  final streaming = arguments.firstOrNull == '--stream';
+  final args = streaming ? arguments.skip(1).toList() : arguments;
   if (args.length < 2 || args.firstOrNull != '--') {
     stderr.writeln(
       'Usage: dart run tool/run_quiet.dart [--stream] -- '
@@ -26,10 +26,10 @@ Future<void> main(List<String> args) async {
     ].map((signal) => signal.watch().listen(process.kill)).toList();
 
     try {
-      await process.stdin.close();
+      final _ = await process.stdin.close();
       final stdoutTail = _OutputTail();
       final stderrTail = _OutputTail();
-      await Future.wait([
+      final _ = await Future.wait([
         if (streaming) ...[
           stdout.addStream(process.stdout),
           stderr.addStream(process.stderr),

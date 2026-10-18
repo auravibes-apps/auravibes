@@ -16,8 +16,8 @@ Future<void> main(List<String> args) async {
   if (args.firstOrNull == 'stream') {
     stdout.writeln('stdout ready');
     stderr.writeln('stderr ready');
-    await stdout.flush();
-    await stderr.flush();
+    final _ = await stdout.flush();
+    final _ = await stderr.flush();
     while (!File(args[1]).existsSync()) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
     }
@@ -35,7 +35,7 @@ Future<void> main(List<String> args) async {
     final subscription = signal.watch().listen((_) {
       if (!received.isCompleted) received.complete();
     });
-    await File(args[2]).writeAsString('$pid');
+    final _ = await File(args[2]).writeAsString('$pid');
     await received.future;
     stdout.writeln('received ${signal.name}');
     stderr.writeln('child cleanup');

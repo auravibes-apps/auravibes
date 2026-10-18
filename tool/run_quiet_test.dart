@@ -92,17 +92,18 @@ void main() {
       }
     });
     var exited = false;
-    final exit = process.exitCode.then((code) {
+    final exit = () async {
+      final code = await process.exitCode;
       exited = true;
 
       return code;
-    });
-    await Future.wait([stdoutReady.future, stderrReady.future])
+    }();
+    final _ = await Future.wait([stdoutReady.future, stderrReady.future])
         .timeout(const Duration(seconds: 10));
     expect(exited, isFalse);
-    await gate.writeAsString('continue');
+    final _ = await gate.writeAsString('continue');
     expect(await exit, 7);
-    await Future.wait([outputDone, errorsDone]);
+    final _ = await Future.wait([outputDone, errorsDone]);
     expect(output, 'stdout ready\nstdout end\n');
     expect(errors, 'stderr ready\nstderr end\n');
   });
@@ -121,9 +122,12 @@ void main() {
         final output = process.stdout.transform(utf8.decoder).join();
         final errors = process.stderr.transform(utf8.decoder).join();
         addTearDown(() async {
-          process.kill(.sigkill);
+          final _ = process.kill(.sigkill);
           if (ready.existsSync()) {
-            Process.killPid(int.parse(await ready.readAsString()), .sigkill);
+            final _ = Process.killPid(
+              .parse(await ready.readAsString()),
+              .sigkill,
+            );
           }
         });
         await (() async {
