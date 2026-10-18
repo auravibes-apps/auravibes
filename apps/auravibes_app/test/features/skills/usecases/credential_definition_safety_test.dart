@@ -421,6 +421,81 @@ void main() {
     );
   });
 
+  for (final mutation in ['remove', 'require', 'delete']) {
+    test('credential creation rechecks after concurrent $mutation', () async {
+      final h = await _LocalHarness.open(database);
+      final definition = await h.create.call(
+        h.workspaceId,
+        const .new(
+          title: 'Race',
+          attributesJson: '{"token":{},"old":{"optional":true}}',
+        ),
+      );
+      final locked = Completer<void>();
+      final release = Completer<void>();
+      final mutating = database.transaction(() async {
+        if (mutation == 'delete') {
+          await h.definitions.deleteDefinition(definition.id);
+        } else {
+          await h.definitions.updateDefinition(
+            definition.id,
+            .new(
+              attributesJson: mutation == 'remove'
+                  ? '{"token":{}}'
+                  : '{"token":{},"old":{"optional":true},"added":{}}',
+            ),
+          );
+        }
+        locked.complete();
+        await release.future;
+      });
+      await locked.future;
+      final creating = expectLater(
+        h.credentials.createCredential(
+          h.workspaceId,
+          .new(
+            credentialDefinitionId: definition.id,
+            name: 'Stale credential',
+            attributes: const {'token': 'fixture', 'old': 'fixture'},
+          ),
+        ),
+        throwsA(
+          mutation == 'delete'
+              ? isA<SkillCredentialsException>()
+              : mutation == 'remove'
+              ? isA<SkillCredentialsException>()
+                    .having((error) => error.isNotFound(), 'not found', isFalse)
+                    .having(
+                      (error) => error.message,
+                      'message',
+                      contains('old'),
+                    )
+              : isA<FormatException>(),
+        ),
+      );
+      release.complete();
+      await mutating;
+      await creating;
+      expect(
+        await h.credentials.countLinkedCredentials(
+          workspaceId: h.workspaceId,
+          credentialDefinitionId: definition.id,
+        ),
+        0,
+      );
+      final saved = await h.definitions.getDefinitionById(definition.id);
+      expect(saved == null, mutation == 'delete');
+      if (saved != null) {
+        expect(
+          saved.attributesJson,
+          mutation == 'remove'
+              ? '{"token":{}}'
+              : '{"token":{},"old":{"optional":true},"added":{}}',
+        );
+      }
+    });
+  }
+
   test('definition creation requires a secret attribute', () async {
     final harness = await _LocalHarness.open(database);
     final create = harness.create;
