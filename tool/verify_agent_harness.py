@@ -9,12 +9,6 @@ import string
 import sys
 from urllib.parse import unquote, urlsplit
 
-SCOPES = (
-    "apps/auravibes_app",
-    "packages/auravibes_engine",
-    "packages/auravibes_ui",
-    "widgetbook",
-)
 HTML_TAG_START = re.compile(
     r"</?[A-Za-z][A-Za-z0-9:-]*(?:[ \t\r\n]|/?>|$)"
 )
@@ -267,15 +261,23 @@ def verify(root):
     def fail(path, message):
         errors.append(f"{path.relative_to(root)}: {message}")
 
-    instructions = [root / "AGENTS.md"]
-    instructions.extend(root / scope / "AGENTS.md" for scope in SCOPES)
+    main = root / "AGENTS.md"
+    instructions = [main]
+    if main.is_file():
+        for target in markdown_links(main.read_text()):
+            url = urlsplit(target)
+            destination = Path(unquote(url.path))
+            if url.scheme or url.netloc or destination.name != "AGENTS.md":
+                continue
+            scoped = main.parent / destination
+            if scoped.resolve().is_relative_to(root) and scoped not in instructions:
+                instructions.append(scoped)
     for path in instructions:
         if not path.is_file():
             fail(path, "Missing instructions. Restore this scope's AGENTS.md.")
         alias = path.with_name("CLAUDE.md")
         if not alias.is_symlink() or alias.readlink() != Path("AGENTS.md"):
             fail(alias, "Expected symlink to AGENTS.md. Restore the local alias.")
-    main = root / "AGENTS.md"
     if main.is_file() and len(main.read_text().splitlines()) > 150:
         fail(main, "Over 150 lines. Move rare procedures to conditional references.")
     architecture = root / "docs/ARCHITECTURE.md"
