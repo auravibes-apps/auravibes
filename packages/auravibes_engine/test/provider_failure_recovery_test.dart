@@ -148,6 +148,7 @@ void main() {
   for (final detail in [
     'Cookie: session=sentinel-cookie; other=sentinel-other\nRequest failed.',
     'sEt-CoOkIe: session=sentinel-cookie; Path=/; HttpOnly\nRequest failed.',
+    'Cookie: session=left}sentinel-tail\nRequest failed.',
     '{"Cookie":"session=sentinel-cookie","message":"Request failed."}',
     "'SET-COOKIE'='session=sentinel-cookie; Path=/', Request failed.",
     '{Cookie: session=sentinel-cookie, message: Request failed.}',
@@ -160,6 +161,9 @@ void main() {
     '"X-Goog-Signature": "sentinel-sig", "message": "Request failed."',
     "'SIGNATURE'='sentinel-sig', Request failed.",
     'signature=sentinel-sig Request failed.',
+    '{"signature":"left,sentinel-tail","message":"Request failed."}',
+    '{"sig":"left sentinel-tail","message":"Request failed."}',
+    r'{"signature":"left\"sentinel-tail","message":"Request failed."}',
   ]) {
     test('redacts provider detail $detail', () {
       final sanitized = ProviderFailureRecovery.safeDetail(

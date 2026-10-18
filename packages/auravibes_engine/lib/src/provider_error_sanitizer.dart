@@ -3,12 +3,12 @@ const _providerErrorTruncationSuffix = '... [truncated]';
 
 final _providerSecretPatterns = <RegExp>[
   RegExp(
-    r'''(\b(?:set-cookie|cookie)["']?\s*[:=][ \t]*)(?:"(?:\\.|[^"\\\r\n])*"|'(?:\\.|[^'\\\r\n])*'|[^"'\r\n][^\r\n]*?(?=,\s*["']?[\w-]+["']?\s*:|}|[\r\n]|$))''',
+    r'''(\b(?:set-cookie|cookie)["']?\s*[:=][ \t]*)(?:"(?:\\.|[^"\\\r\n])*"|'(?:\\.|[^'\\\r\n])*'|[^"'\r\n][^\r\n]*?(?=,\s*["']?[\w-]+["']?\s*:|[\r\n]|$))''',
     caseSensitive: false,
   ),
   RegExp(r'''(\bhttps?://)[^\s/@"<>]+(?=@)''', caseSensitive: false),
   RegExp(
-    r'''(\b(?:sig|signature|x-amz-signature|x-goog-signature)["']?\s*[:=]\s*["']?)[^&\s,;#}"'<>]+''',
+    r'''(\b(?:sig|signature|x-amz-signature|x-goog-signature)["']?\s*[:=]\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^&\s,;#}"'<>]+)''',
     caseSensitive: false,
   ),
   RegExp(
