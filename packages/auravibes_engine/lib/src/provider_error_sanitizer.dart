@@ -3,6 +3,15 @@ const _providerErrorTruncationSuffix = '... [truncated]';
 
 final _providerSecretPatterns = <RegExp>[
   RegExp(
+    r'''(\b(?:set-cookie|cookie)["']?\s*[:=][ \t]*)(?:"(?:\\.|[^"\\\r\n])*"|'(?:\\.|[^'\\\r\n])*'|[^"'\r\n][^\r\n]*?(?=,\s*["']?[\w-]+["']?\s*:|}|[\r\n]|$))''',
+    caseSensitive: false,
+  ),
+  RegExp(r'''(\bhttps?://)[^\s/@"<>]+(?=@)''', caseSensitive: false),
+  RegExp(
+    r'''(\b(?:sig|signature|x-amz-signature|x-goog-signature)["']?\s*[:=]\s*["']?)[^&\s,;#}"'<>]+''',
+    caseSensitive: false,
+  ),
+  RegExp(
     r"""([\"']?(?:authorization|proxy-authorization|x-api-key)[\"']?\s*[:=]\s*(?:[\"']?(?:[A-Za-z]+\s+)?))[^,\s}\"']+""",
     caseSensitive: false,
   ),
@@ -16,7 +25,7 @@ final _providerSecretPatterns = <RegExp>[
 
 /// Redacts provider credentials and caps details before they are persisted.
 String sanitizeProviderErrorDetail(String message) {
-  var sanitized = message.replaceAll(RegExp(r'\s+'), ' ').trim();
+  var sanitized = message;
   for (final pattern in _providerSecretPatterns) {
     sanitized = sanitized.replaceAllMapped(
       pattern,
@@ -25,6 +34,7 @@ String sanitizeProviderErrorDetail(String message) {
     );
   }
 
+  sanitized = sanitized.replaceAll(RegExp(r'\s+'), ' ').trim();
   if (sanitized.length <= _maxProviderErrorLength) return sanitized;
 
   const prefixLength =
