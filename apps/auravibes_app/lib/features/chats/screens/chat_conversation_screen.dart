@@ -1720,8 +1720,9 @@ class const _CloudConversationStreamRecovery({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!_isCloudWorkspace(ref, conversationKey.workspaceId))
+    if (!_isCloudWorkspace(ref, conversationKey.workspaceId)) {
       return const SizedBox.shrink();
+    }
 
     final provider = cloudConversationStateProvider(conversationKey);
     final error = ref.watch(provider).error;
