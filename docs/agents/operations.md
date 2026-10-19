@@ -1,8 +1,14 @@
 # Agent operations
 
-Read only the section relevant to CI failure diagnosis, database queries, or native Flutter driver control.
+Read only the section relevant to PR check monitoring, CI failure diagnosis, database queries, or native Flutter driver control.
 
 ## CI failure triage
+
+### PR check monitoring
+
+- Before polling, compare `gh pr view <number> --json headRefOid` with local `git rev-parse HEAD` to avoid watching stale runs.
+- Monitor required checks with `gh pr checks <number> --required --watch --interval 60`.
+- After a watch interruption, query current status before restarting; follow [validation policy](task-policies.md#validation).
 
 - `ci success` only summarizes fan-out; inspect first failed job. A cancelled PR run may be superseded by newer push.
 - `integrity` generated drift: run `generate` and `generate:serverpod`; review and commit generated diff. Never hand-edit output.
