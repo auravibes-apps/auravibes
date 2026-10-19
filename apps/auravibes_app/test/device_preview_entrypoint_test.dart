@@ -26,4 +26,17 @@ void main() {
     expect(source, contains('package:device_preview/device_preview.dart'));
     expect(source, contains('DevicePreview.enable'));
   });
+
+  test('preview launch command targets macOS', () {
+    final lines = File('../../pubspec.yaml').readAsLinesSync();
+    final previewCommandIndex = lines.indexWhere(
+      (line) => line.trim() == 'start:device-preview:',
+    );
+
+    expect(previewCommandIndex, isNot(-1));
+    expect(
+      lines[previewCommandIndex + 1],
+      contains('fvm flutter run -d macos'),
+    );
+  });
 }
