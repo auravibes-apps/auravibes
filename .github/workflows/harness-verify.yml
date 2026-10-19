@@ -19,6 +19,10 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
+      - name: Check pull request patch whitespace
+        if: github.event_name == 'pull_request'
+        run: git diff --check HEAD^1 HEAD
+
       - name: Verify instructions, skill references, and evaluation cases
         run: python3 tool/verify_agent_harness.py
 
