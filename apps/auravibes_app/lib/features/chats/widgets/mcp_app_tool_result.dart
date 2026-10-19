@@ -9,15 +9,14 @@ import 'package:auravibes_app/services/mcp_service/mcp_app_message_bridge.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_app_resource.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_app_tool_metadata.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
-import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:in_app_webview_flutter/in_app_webview_flutter.dart';
+import 'package:material_ui/material_ui.dart';
 
 class const McpAppToolResult({
   required final String workspaceId,
@@ -30,14 +29,21 @@ class const McpAppToolResult({
   Widget build(BuildContext context, WidgetRef ref) {
     final components = McpToolIdComponents.fromComposite(toolCall.name);
     final response = toolCall.responseRaw;
+    final appData = toolCall.appData;
     final resultStatus = toolCall.resultStatus;
     if (components == null ||
-        response == null ||
+        (response == null && appData == null) ||
         (resultStatus != null &&
             resultStatus != ToolCallResultStatus.success)) {
       return const SizedBox.shrink();
     }
 
+    final resultMetadata = appData?['_meta'];
+    final resultResourceUri = resultMetadata is Map
+        ? McpAppToolMetadata.fromMetadata(
+            Map<String, dynamic>.from(resultMetadata),
+          ).resourceUri
+        : McpAppToolMetadata.fromResultRaw(response).resourceUri;
     final connection = ref
         .watch(mcpConnectionProvider)
         .firstWhereOrNull((value) => value.server.id == components.mcpServerId);
@@ -46,11 +52,10 @@ class const McpAppToolResult({
     );
     final resourceUri =
         McpAppToolMetadata.fromMetadata(tool?.metadata).resourceUri ??
-        McpAppToolMetadata.fromResultRaw(response).resourceUri;
+        resultResourceUri;
     if (resourceUri == null) return const SizedBox.shrink();
 
     return _McpAppResourceLoader(
-      key: ValueKey('mcp_app_${toolCall.id}'),
       workspaceId: workspaceId,
       conversationId: conversationId,
       mcpServerId: components.mcpServerId,
@@ -59,6 +64,7 @@ class const McpAppToolResult({
       resourceUri: resourceUri,
       toolCall: toolCall,
       fallbackText: fallbackText,
+      key: ValueKey('mcp_app_${toolCall.id}'),
     );
   }
 }
@@ -80,12 +86,72 @@ class const _McpAppResourceLoader({
 }
 
 class _McpAppResourceLoaderState extends ConsumerState<_McpAppResourceLoader> {
-  late Future<McpAppResource> _resource;
+  Future<McpAppResource>? _resource;
 
   @override
   void initState() {
     super.initState();
     _resource = _loadResource();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final resourceFuture = _resource;
+    if (resourceFuture == null) return const SizedBox.shrink();
+
+    return FutureBuilder<McpAppResource>(
+      future: resourceFuture,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _McpAppResourceStatus(
+            child: AuraRow(
+              children: [
+                const Expanded(
+                  child: TextLocale(LocaleKeys.mcp_apps_unavailable),
+                ),
+                AuraButton(
+                  onPressed: _retry,
+                  child: const TextLocale(LocaleKeys.mcp_apps_retry),
+                  variant: .ghost,
+                  size: .small,
+                ),
+              ],
+              spacing: .xs,
+            ),
+          );
+        }
+        final resource = snapshot.data;
+        if (resource == null) {
+          return const _McpAppResourceStatus(
+            child: AuraRow(
+              children: [
+                SizedBox.square(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                  dimension: 14,
+                ),
+                TextLocale(LocaleKeys.mcp_apps_loading),
+              ],
+              spacing: .xs,
+              mainAxisSize: .min,
+            ),
+          );
+        }
+
+        return Padding(
+          padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
+          child: _McpAppEmbeddedView(
+            workspaceId: widget.workspaceId,
+            conversationId: widget.conversationId,
+            mcpServerId: widget.mcpServerId,
+            mcpSlug: widget.mcpSlug,
+            toolIdentifier: widget.toolIdentifier,
+            toolCall: widget.toolCall,
+            fallbackText: widget.fallbackText,
+            resource: resource,
+          ),
+        );
+      },
+    );
   }
 
   Future<McpAppResource> _loadResource() async {
@@ -104,65 +170,19 @@ class _McpAppResourceLoaderState extends ConsumerState<_McpAppResourceLoader> {
   }
 
   void _retry() => setState(() => _resource = _loadResource());
+}
 
+class const _McpAppResourceStatus({required final Widget child})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
-    child: FutureBuilder<McpAppResource>(
-      future: _resource,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) return _resourceUnavailable();
-        final resource = snapshot.data;
-        if (resource == null) return _resourceLoading();
-
-        return _McpAppEmbeddedView(
-          workspaceId: widget.workspaceId,
-          conversationId: widget.conversationId,
-          mcpServerId: widget.mcpServerId,
-          mcpSlug: widget.mcpSlug,
-          toolIdentifier: widget.toolIdentifier,
-          toolCall: widget.toolCall,
-          fallbackText: widget.fallbackText,
-          resource: resource,
-        );
-      },
+    child: AuraContainer(
+      child: child,
+      padding: .small,
+      variant: .surfaceVariant,
+      borderRadius: 8,
     ),
-  );
-
-  Widget _resourceLoading() => _resourceStatus(
-    child: const AuraRow(
-      children: [
-        SizedBox.square(
-          dimension: 14,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-        TextLocale(LocaleKeys.mcp_apps_loading),
-      ],
-      spacing: .xs,
-      mainAxisSize: .min,
-    ),
-  );
-
-  Widget _resourceUnavailable() => _resourceStatus(
-    child: AuraRow(
-      children: [
-        const Expanded(child: TextLocale(LocaleKeys.mcp_apps_unavailable)),
-        AuraButton(
-          onPressed: _retry,
-          variant: .ghost,
-          size: .small,
-          child: const TextLocale(LocaleKeys.mcp_apps_retry),
-        ),
-      ],
-      spacing: .xs,
-    ),
-  );
-
-  Widget _resourceStatus({required Widget child}) => AuraContainer(
-    variant: AuraContainerVariant.surfaceVariant,
-    padding: .small,
-    borderRadius: 8,
-    child: child,
   );
 }
 
@@ -183,43 +203,89 @@ class const _McpAppEmbeddedView({
 
 class _McpAppEmbeddedViewState extends ConsumerState<_McpAppEmbeddedView> {
   InAppWebViewController? _controller;
-  late final _bridge = McpAppMessageBridge(
-    initialArguments: _toolArguments(widget.toolCall.argumentsRaw),
-    initialResult: _toolResult(
-      widget.toolCall.responseRaw,
-      widget.fallbackText,
-    ),
-    callTool: _callAppTool,
-  );
+  var _viewFailed = false;
+  var _viewRevision = 0;
+  McpAppMessageBridge? _bridge;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 320,
-    child: Semantics(
-      container: true,
-      child: InAppWebView(
-        key: ValueKey('mcp_app_view_${widget.toolCall.id}'),
-        initialData: InAppWebViewInitialData(
-          data: buildMcpAppHostPage(
-            html: widget.resource.html,
-            csp: widget.resource.csp,
-            isWeb: kIsWeb,
-          ),
-        ),
-        initialSettings: InAppWebViewSettings(
-          javaScriptEnabled: true,
-          javaScriptCanOpenWindowsAutomatically: false,
-          javaScriptBridgeForMainFrameOnly: true,
-          javaScriptHandlersForMainFrameOnly: true,
-          allowFileAccess: false,
-          allowFileAccessFromFileURLs: false,
-          allowUniversalAccessFromFileURLs: false,
-          supportZoom: false,
-        ),
-        onWebViewCreated: _onWebViewCreated,
+  void initState() {
+    super.initState();
+    _bridge = .new(
+      initialArguments: _toolArguments(widget.toolCall.argumentsRaw),
+      initialResult: _toolResult(
+        widget.toolCall.appData,
+        widget.toolCall.responseRaw,
+        widget.fallbackText,
       ),
-    ),
-  );
+      callTool: _callAppTool,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_viewFailed) {
+      return Padding(
+        padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
+        child: AuraContainer(
+          child: AuraRow(
+            children: [
+              const Expanded(
+                child: TextLocale(LocaleKeys.mcp_apps_unavailable),
+              ),
+              AuraButton(
+                onPressed: _retryView,
+                child: const TextLocale(LocaleKeys.mcp_apps_retry),
+                variant: .ghost,
+                size: .small,
+              ),
+            ],
+            spacing: .xs,
+          ),
+          padding: .small,
+          variant: .surfaceVariant,
+          borderRadius: 8,
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 320,
+      child: Semantics(
+        child: InAppWebView(
+          key: ValueKey('mcp_app_view_${widget.toolCall.id}_$_viewRevision'),
+          initialData: .new(
+            data: buildMcpAppHostPage(
+              html: widget.resource.html,
+              csp: widget.resource.csp,
+              isWeb: kIsWeb,
+            ),
+          ),
+          initialSettings: .new(
+            supportZoom: false,
+            allowFileAccess: false,
+            javaScriptHandlersForMainFrameOnly: true,
+            javaScriptBridgeForMainFrameOnly: true,
+          ),
+          onReceivedError: (controller, request, error) {
+            if (request.isForMainFrame ?? true) _showViewFailure();
+          },
+          onWebViewCreated: _onWebViewCreated,
+          onRenderProcessGone: (controller, detail) => _showViewFailure(),
+          onWebContentProcessDidTerminate: (controller) => _showViewFailure(),
+        ),
+        container: true,
+      ),
+    );
+  }
+
+  void _showViewFailure() {
+    if (mounted) setState(() => _viewFailed = true);
+  }
+
+  void _retryView() => setState(() {
+    _viewFailed = false;
+    _viewRevision++;
+  });
 
   void _onWebViewCreated(InAppWebViewController controller) {
     _controller = controller;
@@ -235,10 +301,15 @@ class _McpAppEmbeddedViewState extends ConsumerState<_McpAppEmbeddedView> {
         data.args.single is! String) {
       return null;
     }
-    final messages = await _bridge.handleMessage(data.args.single as String);
+    final bridge = _bridge;
+    if (bridge == null) return null;
+    final controller = _controller;
+    if (controller == null) return null;
+
+    final messages = await bridge.handleMessage(data.args.single as String);
     for (final message in messages) {
       final payload = jsonEncode(message);
-      await _controller?.evaluateJavascript(
+      final _ = await controller.evaluateJavascript(
         source: 'window.mcpAppsReply($payload);',
       );
     }
@@ -278,12 +349,12 @@ class _McpAppEmbeddedViewState extends ConsumerState<_McpAppEmbeddedView> {
           ),
         );
 
+    if (!mounted) throw StateError('MCP tool call was not approved.');
     if (!decision.isGranted()) {
-      if (!decision.needsConfirmation ||
-          !await _confirmToolCall(toolName) ||
-          !mounted) {
+      if (!decision.needsConfirmation || !await _confirmToolCall(toolName)) {
         throw StateError('MCP tool call was not approved.');
       }
+      if (!mounted) throw StateError('MCP tool call was not approved.');
     }
 
     return await ref
@@ -333,24 +404,14 @@ Map<String, dynamic> _toolArguments(String raw) {
   return const {};
 }
 
-Map<String, Object?> _toolResult(String? raw, String? fallbackText) {
-  if (raw != null) {
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map && decoded['content'] is List) {
-        final result = Map<String, Object?>.from(decoded);
-
-        return {
-          'content': result['content'],
-          if (result['structuredContent'] != null)
-            'structuredContent': result['structuredContent'],
-          if (result['isError'] != null) 'isError': result['isError'],
-          if (result['_meta'] != null) '_meta': result['_meta'],
-        };
-      }
-    } on FormatException {
-      // Plain text MCP results are not JSON objects.
-    }
+Map<String, Object?> _toolResult(
+  Map<String, Object?>? appData,
+  String? raw,
+  String? fallbackText,
+) {
+  final resultData = appData ?? _decodeToolResult(raw);
+  if (resultData != null && resultData['content'] is List) {
+    return resultData;
   }
 
   return {
@@ -358,4 +419,19 @@ Map<String, Object?> _toolResult(String? raw, String? fallbackText) {
       {'type': 'text', 'text': fallbackText ?? raw ?? ''},
     ],
   };
+}
+
+Map<String, Object?>? _decodeToolResult(String? raw) {
+  if (raw != null) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map && decoded['content'] is List) {
+        return Map<String, Object?>.from(decoded);
+      }
+    } on FormatException {
+      // Plain text MCP results are not JSON objects.
+    }
+  }
+
+  return null;
 }

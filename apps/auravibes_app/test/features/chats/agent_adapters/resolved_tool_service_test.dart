@@ -326,11 +326,51 @@ void main() {
     expect(mcpCalls, [(serverId: 'server-1', toolIdentifier: 'remote-tool')]);
   });
 
+  test('keeps MCP App result data separate from model output', () async {
+    const appData = <String, Object?>{
+      'content': [
+        {'type': 'text', 'text': 'tool result'},
+      ],
+      '_meta': {
+        'ui': {'resourceUri': 'ui://tool/view'},
+      },
+    };
+    final service = ResolvedToolService(
+      agentCancellationRuntime: .new(),
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => (modelText: 'model result', appData: appData),
+    );
+
+    final result = await service(
+      conversationId: 'conversation-1',
+      tool: ResolvedTool.mcp(
+        tableId: 'tool-1',
+        toolIdentifier: 'remote-tool',
+        mcp: (
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+          outputSchemaJson: null,
+        ),
+      ),
+      arguments: const {},
+    );
+
+    if (result is! AgentToolExecutionOutput) {
+      fail('Expected an MCP tool execution output.');
+    }
+    final output = result;
+    expect(output.output, 'model result');
+    expect(output.appData, appData);
+  });
+
   test('rejects cloud tool execution on the client', () {
     expect(
       () => ResolvedToolService.cloud()(
         conversationId: 'conversation-1',
-        tool: ResolvedTool.mcp(
+        tool: .mcp(
           tableId: 'tool-1',
           toolIdentifier: 'remote-tool',
           mcp: (

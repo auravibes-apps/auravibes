@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/services/mcp_service/mcp_app_message_bridge.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -37,9 +38,13 @@ void main() {
         'ui/notifications/tool-input',
         'ui/notifications/tool-result',
       ]);
-      expect((initialized.first['params']! as Map)['arguments'], {
-        'city': 'Bogota',
-      });
+      final firstInitialized = initialized.firstOrNull;
+      if (firstInitialized == null) fail('Expected initial tool messages.');
+      final params = firstInitialized['params'];
+      if (params is! Map<String, Object?>) {
+        fail('Expected initial tool parameters.');
+      }
+      expect(params['arguments'], {'city': 'Bogota'});
       expect(
         await bridge.handleMessage(
           jsonEncode({
@@ -55,24 +60,30 @@ void main() {
   test(
     'mediates app tool calls and returns server results by request id',
     () async {
-      final calls = <(String, Map<String, dynamic>)>[];
+      final calls = <({String name, Map<String, dynamic> arguments})>[];
       final bridge = McpAppMessageBridge(
         initialArguments: const {},
         initialResult: const {'content': []},
         callTool: (name, arguments) async {
-          calls.add((name, arguments));
+          calls.add((name: name, arguments: arguments));
 
           return const {'content': []};
         },
       );
-      await bridge.handleMessage(
-        jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'ui/initialize'}),
+      expect(
+        await bridge.handleMessage(
+          jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'ui/initialize'}),
+        ),
+        hasLength(1),
       );
-      await bridge.handleMessage(
-        jsonEncode({
-          'jsonrpc': '2.0',
-          'method': 'ui/notifications/initialized',
-        }),
+      expect(
+        await bridge.handleMessage(
+          jsonEncode({
+            'jsonrpc': '2.0',
+            'method': 'ui/notifications/initialized',
+          }),
+        ),
+        hasLength(2),
       );
 
       final response = await bridge.handleMessage(
@@ -87,10 +98,10 @@ void main() {
         }),
       );
 
-      expect(calls.single.$1, 'refresh');
-      expect(calls.single.$2, {'limit': 4});
+      expect(calls.single.name, 'refresh');
+      expect(calls.single.arguments, {'limit': 4});
       expect(response.single['id'], 2);
-      expect(response.single['result'], {'content': []});
+      expect(response.single['result'], {'content': <Object?>[]});
     },
   );
 
@@ -113,21 +124,27 @@ void main() {
       );
       expect((beforeInitialization.single['error']! as Map)['code'], -32002);
 
-      await bridge.handleMessage(
-        jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'ui/initialize'}),
+      expect(
+        await bridge.handleMessage(
+          jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'ui/initialize'}),
+        ),
+        hasLength(1),
       );
-      await bridge.handleMessage(
-        jsonEncode({
-          'jsonrpc': '2.0',
-          'method': 'ui/notifications/initialized',
-        }),
+      expect(
+        await bridge.handleMessage(
+          jsonEncode({
+            'jsonrpc': '2.0',
+            'method': 'ui/notifications/initialized',
+          }),
+        ),
+        hasLength(2),
       );
       final malformed = await bridge.handleMessage(
         jsonEncode({
           'jsonrpc': '2.0',
           'id': 4,
           'method': 'tools/call',
-          'params': {'name': 'refresh', 'arguments': []},
+          'params': {'name': 'refresh', 'arguments': <Object?>[]},
         }),
       );
       expect((malformed.single['error']! as Map)['code'], -32602);

@@ -431,13 +431,21 @@ _CancelableOperationRequest _mcpToolOperationRequest(
 CancelableOperation<Object?> _mcpToolOperation(
   AppResolvedToolProvider provider,
   agent.McpToolCallRequest input,
-) => CancelableOperation<Object?>.fromFuture(
-  provider.mcpToolCaller(
+) => CancelableOperation<Object?>.fromFuture(() async {
+  final result = await provider.mcpToolCaller(
     mcpServerId: input.mcpServerId,
     toolIdentifier: input.toolIdentifier,
     arguments: input.arguments,
-  ),
-);
+  );
+
+  return switch (result) {
+    final McpToolCallerResult value => agent.AgentToolExecutionOutput(
+      output: value.modelText,
+      appData: value.appData,
+    ),
+    _ => result,
+  };
+}());
 
 agent.AgentResolvedToolName _toAgentDescriptor(ResolvedTool tool) {
   return switch (tool.type) {

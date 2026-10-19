@@ -6,7 +6,7 @@ typedef McpAppToolCall = Future<Map<String, Object?>> Function(
 );
 
 class McpAppMessageBridge {
-  McpAppMessageBridge({
+  new({
     required this.initialArguments,
     required this.initialResult,
     required this.callTool,
@@ -23,7 +23,7 @@ class McpAppMessageBridge {
   var _initialDataSent = false;
 
   Future<List<Map<String, Object?>>> handleMessage(String message) async {
-    // shortcut: caps inbound app messages at 1 MiB, raise after measured demand.
+    // Shortcut: 1 MiB inbound cap. Raise after measured demand.
     if (utf8.encode(message).length > (1 << 20)) {
       return [_error(null, -32600, 'MCP App request is too large.')];
     }
@@ -42,8 +42,12 @@ class McpAppMessageBridge {
     final hasId = request.containsKey('id');
 
     if (!hasId) return _handleNotification(method);
-    if (id is! String && id is! num) return const [];
-    final requestId = id as Object;
+    final requestId = switch (id) {
+      final String value => value,
+      final num value => value,
+      _ => null,
+    };
+    if (requestId == null) return const [];
 
     return switch (method) {
       'ui/initialize' => _initialize(requestId),
@@ -60,7 +64,7 @@ class McpAppMessageBridge {
       _success(id, {
         'protocolVersion': '2026-01-26',
         'hostInfo': {'name': 'AuraVibes', 'version': hostVersion},
-        'hostCapabilities': {'serverTools': {}},
+        'hostCapabilities': {'serverTools': <String, Object?>{}},
         'hostContext': {
           'displayMode': 'inline',
           'availableDisplayModes': ['inline'],

@@ -30,6 +30,9 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
     /// The raw response from tool execution, if successful.
     String? responseRaw,
 
+    /// App-only result data that is never sent to the model.
+    @JsonKey(includeIfNull: false) Map<String, Object?>? appData,
+
     /// The bounded response projection used in model context, when different.
     @JsonKey(includeIfNull: false) String? responseContextRaw,
 

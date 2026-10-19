@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('reads declared HTML and CSP from the matching resource content', () {
-    final resource = McpAppResource.fromReadResult({
+    final result = <String, Object?>{
       'contents': [
         {
           'uri': 'ui://weather/view',
@@ -21,14 +21,18 @@ void main() {
           },
         },
       ],
-    }, resourceUri: 'ui://weather/view');
+    };
+    final resource = McpAppResource.fromReadResult(
+      result,
+      resourceUri: 'ui://weather/view',
+    );
 
     expect(resource.html, '<html><script>render()</script></html>');
     expect(resource.csp['connectDomains'], ['https://api.example.com']);
   });
 
   test('decodes a base64 MCP App resource', () {
-    final resource = McpAppResource.fromReadResult({
+    final result = <String, Object?>{
       'contents': [
         {
           'uri': 'ui://weather/view',
@@ -36,34 +40,70 @@ void main() {
           'blob': base64Encode(utf8.encode('<html>app</html>')),
         },
       ],
-    }, resourceUri: 'ui://weather/view');
+    };
+    final resource = McpAppResource.fromReadResult(
+      result,
+      resourceUri: 'ui://weather/view',
+    );
 
     expect(resource.html, '<html>app</html>');
   });
 
-  test('rejects mismatched or unsupported resource content', () {
-    expect(
-      () => McpAppResource.fromReadResult({
-        'contents': [
-          {
-            'uri': 'ui://other/view',
-            'mimeType': 'text/html;profile=mcp-app',
-            'text': '<html></html>',
-          },
-        ],
-      }, resourceUri: 'ui://weather/view'),
-      throwsFormatException,
-    );
-    expect(
-      () => McpAppResource.fromReadResult({
+  test('rejects oversized text and base64 app resources', () {
+    for (final content in [
+      {'text': 'x' * (maxMcpAppResourceBytes + 1)},
+      {'blob': base64Encode(List<int>.filled(maxMcpAppResourceBytes + 1, 120))},
+    ]) {
+      final result = <String, Object?>{
         'contents': [
           {
             'uri': 'ui://weather/view',
-            'mimeType': 'text/html',
-            'text': '<html></html>',
+            'mimeType': 'text/html;profile=mcp-app',
+            ...content,
           },
         ],
-      }, resourceUri: 'ui://weather/view'),
+      };
+      expect(
+        () => McpAppResource.fromReadResult(
+          result,
+          resourceUri: 'ui://weather/view',
+        ),
+        throwsFormatException,
+      );
+    }
+  });
+
+  test('rejects mismatched or unsupported resource content', () {
+    final mismatchedResult = <String, Object?>{
+      'contents': [
+        {
+          'uri': 'ui://other/view',
+          'mimeType': 'text/html;profile=mcp-app',
+          'text': '<html></html>',
+        },
+      ],
+    };
+    expect(
+      () => McpAppResource.fromReadResult(
+        mismatchedResult,
+        resourceUri: 'ui://weather/view',
+      ),
+      throwsFormatException,
+    );
+    final unsupportedResult = <String, Object?>{
+      'contents': [
+        {
+          'uri': 'ui://weather/view',
+          'mimeType': 'text/html',
+          'text': '<html></html>',
+        },
+      ],
+    };
+    expect(
+      () => McpAppResource.fromReadResult(
+        unsupportedResult,
+        resourceUri: 'ui://weather/view',
+      ),
       throwsUnsupportedError,
     );
   });
@@ -85,7 +125,7 @@ void main() {
     expect(appCsp, contains('connect-src https://api.example.com'));
     expect(
       appCsp,
-      contains("script-src 'unsafe-inline' https://cdn.example.com"),
+      contains('''script-src 'unsafe-inline' https://cdn.example.com'''),
     );
     expect(page, isNot(contains(appHtml)));
     expect(utf8.decode(_scriptPayload(page, 'appHtmlBase64')), appHtml);
@@ -116,7 +156,7 @@ void main() {
     expect(appCsp, isNot(contains('javascript:')));
     expect(appCsp, isNot(contains('https://example.com/path')));
     expect(appCsp, isNot(contains('user:pass')));
-    expect(appCsp, contains("connect-src 'none'"));
+    expect(appCsp, contains('''connect-src 'none' '''.trim()));
   });
 
   test('uses a separate sandbox proxy for web hosts', () {
@@ -130,9 +170,9 @@ void main() {
     final proxyPage = utf8.decode(_scriptPayload(page, 'proxyHtmlBase64'));
     expect(proxyPage, contains('ui/notifications/sandbox-proxy-ready'));
     expect(proxyPage, contains('ui/notifications/sandbox-resource-ready'));
-    expect(proxyPage, contains("setAttribute('sandbox', 'allow-scripts')"));
+    expect(proxyPage, contains('''setAttribute('sandbox', 'allow-scripts')'''));
     expect(proxyPage, isNot(contains('allow-same-origin')));
-    expect(proxyPage, contains("startsWith('ui/notifications/sandbox-')"));
+    expect(proxyPage, contains('''startsWith('ui/notifications/sandbox-')'''));
   });
 }
 
@@ -140,5 +180,8 @@ List<int> _scriptPayload(String html, String name) {
   final match = RegExp('$name = "([A-Za-z0-9+/=]*)"').firstMatch(html);
   if (match == null) throw StateError('Missing $name payload.');
 
-  return base64Decode(match.group(1)!);
+  final payload = match.group(1);
+  if (payload == null) throw StateError('Missing $name payload.');
+
+  return base64Decode(payload);
 }

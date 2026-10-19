@@ -1,47 +1,45 @@
 import 'dart:convert';
 
-class McpAppToolMetadata {
-  const McpAppToolMetadata({
-    required this.resourceUri,
-    List<String>? visibility,
-  }) : _visibility = visibility;
-
-  final String? resourceUri;
-  final List<String>? _visibility;
-
-  bool get isVisibleToApp => _visibility?.contains('app') ?? true;
-
-  bool get isVisibleToModel => _visibility?.contains('model') ?? true;
-
-  factory McpAppToolMetadata.fromMetadata(Map<String, dynamic>? metadata) {
+class const McpAppToolMetadata({
+  required final String? resourceUri,
+  final List<String>? visibility,
+}) {
+  factory fromMetadata(Map<String, dynamic>? metadata) {
     final uiValue = metadata?['ui'];
     final ui = uiValue is Map ? Map<String, dynamic>.from(uiValue) : null;
     final resourceUri = ui?.containsKey('resourceUri') == true
         ? _validResourceUri(ui?['resourceUri'])
         : _validResourceUri(metadata?['ui/resourceUri']);
     final visibilityValue = ui?['visibility'];
-    final visibility = visibilityValue is List
-        ? visibilityValue.whereType<String>().toList(growable: false)
-        : visibilityValue == null
-        ? null
-        : const <String>[];
+    final List<String>? visibility;
+    if (visibilityValue is List) {
+      visibility = visibilityValue.whereType<String>().toList(growable: false);
+    } else if (visibilityValue == null) {
+      visibility = null;
+    } else {
+      visibility = const [];
+    }
 
-    return McpAppToolMetadata(resourceUri: resourceUri, visibility: visibility);
+    return .new(resourceUri: resourceUri, visibility: visibility);
   }
 
-  factory McpAppToolMetadata.fromResultRaw(String? responseRaw) {
-    if (responseRaw == null) return McpAppToolMetadata.fromMetadata(null);
+  factory fromResultRaw(String? responseRaw) {
+    if (responseRaw == null) return .fromMetadata(null);
     try {
       final result = jsonDecode(responseRaw);
       final metadata = result is Map ? result['_meta'] : null;
 
-      return McpAppToolMetadata.fromMetadata(
+      return .fromMetadata(
         metadata is Map ? Map<String, dynamic>.from(metadata) : null,
       );
     } on FormatException {
-      return McpAppToolMetadata.fromMetadata(null);
+      return .fromMetadata(null);
     }
   }
+
+  bool get isVisibleToApp => visibility?.contains('app') ?? true;
+
+  bool get isVisibleToModel => visibility?.contains('model') ?? true;
 }
 
 String? _validResourceUri(Object? value) {

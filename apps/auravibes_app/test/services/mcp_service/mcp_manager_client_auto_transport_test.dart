@@ -81,18 +81,34 @@ void main() {
         toolIdentifier: 'refresh',
         arguments: {'day': 'today'},
       );
+      final toolOutput = await manager.callToolOutput(
+        client,
+        toolIdentifier: 'refresh',
+        arguments: {'day': 'today'},
+      );
 
-      expect(resource['contents'], hasLength(1));
-      expect((resource['contents'] as List).single['text'], '<html>app</html>');
-      expect((resource['contents'] as List).single['_meta'], {
+      final contentsValue = resource['contents'];
+      if (contentsValue is! List<Object?>) {
+        fail('Expected one MCP resource content.');
+      }
+      final contentValue = contentsValue.single;
+      if (contentValue is! Map) fail('Expected MCP resource content map.');
+      final content = Map<String, Object?>.from(contentValue);
+
+      expect(contentsValue, hasLength(1));
+      expect(content['text'], '<html>app</html>');
+      expect(content['_meta'], {
         'ui': {
-          'csp': {'connectDomains': []},
+          'csp': {'connectDomains': <String>[]},
         },
       });
       expect(toolResult['_meta'], {
         'ui': {'resourceUri': 'ui://weather/forecast'},
       });
       expect(toolResult['structuredContent'], {'day': 'today'});
+      expect(toolOutput.appData['_meta'], toolResult['_meta']);
+      expect(toolOutput.modelText, contains('"day":"today"'));
+      expect(toolOutput.modelText, isNot(contains('resourceUri')));
     });
 
     test('uses app OAuth token provider for Streamable HTTP', () async {

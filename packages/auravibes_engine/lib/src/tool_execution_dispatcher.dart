@@ -38,6 +38,7 @@ class const AgentToolExecutionResult({
   required final AgentToolResultStatus resultStatus,
   final String? responseRaw,
   final String? responseContextRaw,
+  final Map<String, Object?>? appData,
   final List<AgentToolResultMedia> media = const [],
   final bool outputTruncated = false,
   final int? originalResponseBytes,
@@ -46,6 +47,7 @@ class const AgentToolExecutionResult({
 
 class const AgentToolExecutionOutput({
   required final Object output,
+  final Map<String, Object?>? appData,
   final List<AgentToolResultMedia> media = const [],
 });
 
@@ -140,6 +142,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
           resultStatus: .stoppedByUser,
           responseRaw: projection.persistedText,
           responseContextRaw: _responseContext(projection),
+          appData: executionOutput.appData,
           media: executionOutput.media,
           outputTruncated: projection.truncated,
           originalResponseBytes: projection.truncated
@@ -153,6 +156,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         resultStatus: .success,
         responseRaw: projection.persistedText,
         responseContextRaw: _responseContext(projection),
+        appData: executionOutput.appData,
         media: executionOutput.media,
         outputTruncated: projection.truncated,
         originalResponseBytes: projection.truncated

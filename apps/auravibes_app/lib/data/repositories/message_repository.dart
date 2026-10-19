@@ -1230,6 +1230,7 @@ MessageToolCallEntity _mergeToolCallOutput(
   if (incoming.responseRaw == null) {
     return merged.copyWith(
       responseRaw: current.responseRaw,
+      appData: incoming.appData ?? current.appData,
       responseContextRaw:
           incoming.responseContextRaw ?? current.responseContextRaw,
       outputTruncated: current.outputTruncated,
@@ -1240,6 +1241,7 @@ MessageToolCallEntity _mergeToolCallOutput(
 
   return merged.copyWith(
     responseRaw: incoming.responseRaw,
+    appData: incoming.appData,
     responseContextRaw: incoming.responseContextRaw,
     outputTruncated: incoming.outputTruncated,
     originalResponseBytes: incoming.originalResponseBytes,

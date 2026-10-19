@@ -176,6 +176,19 @@ class McpManagerService {
     return McpSdkAdapter.toolResult(result).toModelText();
   }
 
+  Future<({String modelText, Map<String, Object?> appData})> callToolOutput(
+    McpManagerClient client, {
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+  }) async {
+    final result = await client._client.callTool(toolIdentifier, arguments);
+
+    return (
+      modelText: McpSdkAdapter.toolResult(result).toModelText(),
+      appData: result.toJson(),
+    );
+  }
+
   Future<Map<String, Object?>> callToolResult(
     McpManagerClient client, {
     required String toolIdentifier,
@@ -230,7 +243,7 @@ class McpManagerService {
         name: 'AuraVibes MCP Client',
         version: '1.0.0',
       ).copyWith(
-        capabilities: mcp.ClientCapabilities(
+        capabilities: const .new(
           extensions: {
             'io.modelcontextprotocol/ui': {
               'mimeTypes': ['text/html;profile=mcp-app'],

@@ -1,12 +1,14 @@
 import 'dart:convert';
 
-class McpAppResource {
-  const McpAppResource({required this.html, required this.csp});
+const int maxMcpAppResourceBytes = 2 * 1024 * 1024;
+const int _maxMcpAppResourceBase64Characters =
+    ((maxMcpAppResourceBytes + 2) ~/ 3) * 4;
 
-  final String html;
-  final Map<String, Object?> csp;
-
-  factory McpAppResource.fromReadResult(
+class const McpAppResource({
+  required final String html,
+  required final Map<String, Object?> csp,
+}) {
+  factory fromReadResult(
     Map<String, Object?> result, {
     required String resourceUri,
   }) {
@@ -28,13 +30,20 @@ class McpAppResource {
     final blob = content['blob'];
     final String html;
     if (text is String) {
+      if (text.length > maxMcpAppResourceBytes ||
+          utf8.encode(text).length > maxMcpAppResourceBytes) {
+        throw const FormatException('MCP App resource exceeds size limit.');
+      }
       html = text;
     } else if (blob is String) {
-      try {
-        html = utf8.decode(base64Decode(blob));
-      } on FormatException {
-        throw const FormatException('MCP App resource blob is invalid.');
+      if (blob.length > _maxMcpAppResourceBase64Characters) {
+        throw const FormatException('MCP App resource exceeds size limit.');
       }
+      final bytes = base64Decode(blob);
+      if (bytes.length > maxMcpAppResourceBytes) {
+        throw const FormatException('MCP App resource exceeds size limit.');
+      }
+      html = utf8.decode(bytes);
     } else {
       throw const FormatException('MCP App resource has no HTML content.');
     }
@@ -73,17 +82,21 @@ String buildMcpAppHostPage({
       );
 }
 
-String _hostContentSecurityPolicy(bool isWeb) => [
-  "default-src 'none'",
-  "script-src 'unsafe-inline'",
-  "style-src 'unsafe-inline'",
-  'frame-src ${isWeb ? 'data:' : "'self' data:"}',
-  "img-src 'none'",
-  "connect-src 'none'",
-  "object-src 'none'",
-  "base-uri 'none'",
-  "form-action 'none'",
-].join('; ');
+String _hostContentSecurityPolicy(bool isWeb) {
+  final frameSources = isWeb ? 'data:' : ''' 'self' data: '''.trim();
+
+  return [
+    '''default-src 'none' '''.trim(),
+    '''script-src 'unsafe-inline' '''.trim(),
+    '''style-src 'unsafe-inline' '''.trim(),
+    'frame-src $frameSources',
+    '''img-src 'none' '''.trim(),
+    '''connect-src 'none' '''.trim(),
+    '''object-src 'none' '''.trim(),
+    '''base-uri 'none' '''.trim(),
+    '''form-action 'none' '''.trim(),
+  ].join('; ');
+}
 
 String _contentSecurityPolicy(Map<String, Object?> csp) {
   final resources = _allowedDomains(csp['resourceDomains'], const {
@@ -98,30 +111,41 @@ String _contentSecurityPolicy(Map<String, Object?> csp) {
   });
   final frames = _allowedDomains(csp['frameDomains'], const {'http', 'https'});
   final bases = _allowedDomains(csp['baseUriDomains'], const {'http', 'https'});
+  final baseUriSources = bases.isEmpty
+      ? ''' 'self' '''.trim()
+      : bases.join(' ');
 
   return [
-    "default-src 'none'",
-    "script-src 'unsafe-inline' ${resources.join(' ')}".trim(),
-    "style-src 'unsafe-inline' ${resources.join(' ')}".trim(),
-    "img-src data: blob: ${resources.join(' ')}".trim(),
-    'font-src ${resources.isEmpty ? "'none'" : resources.join(' ')}',
-    'media-src ${resources.isEmpty ? "'none'" : resources.join(' ')}',
-    'connect-src ${connections.isEmpty ? "'none'" : connections.join(' ')}',
-    'frame-src ${frames.isEmpty ? "'none'" : frames.join(' ')}',
-    'base-uri ${bases.isEmpty ? "'self'" : bases.join(' ')}',
-    "object-src 'none'",
-    "form-action 'none'",
+    '''default-src 'none' '''.trim(),
+    '''script-src 'unsafe-inline' ${resources.join(' ')}'''.trim(),
+    '''style-src 'unsafe-inline' ${resources.join(' ')}'''.trim(),
+    'img-src data: blob: ${resources.join(' ')}'.trim(),
+    _sourceDirective('font-src', resources),
+    _sourceDirective('media-src', resources),
+    _sourceDirective('connect-src', connections),
+    _sourceDirective('frame-src', frames),
+    'base-uri $baseUriSources',
+    '''object-src 'none' '''.trim(),
+    '''form-action 'none' '''.trim(),
   ].join('; ');
+}
+
+String _sourceDirective(String name, List<String> sources) {
+  final value = sources.isEmpty ? ''' 'none' '''.trim() : sources.join(' ');
+
+  return '$name $value';
 }
 
 List<String> _allowedDomains(Object? value, Set<String> allowedSchemes) {
   if (value is! List) return const [];
 
-  return [
-    for (final domain in value.whereType<String>())
-      if (_allowedDomain(domain, allowedSchemes) case final safeDomain?)
-        safeDomain,
-  ];
+  final domains = <String>[];
+  for (final domain in value.whereType<String>()) {
+    final safeDomain = _allowedDomain(domain, allowedSchemes);
+    if (safeDomain != null) domains.add(safeDomain);
+  }
+
+  return domains;
 }
 
 String? _allowedDomain(String value, Set<String> allowedSchemes) {
@@ -137,7 +161,7 @@ String? _allowedDomain(String value, Set<String> allowedSchemes) {
   }
   final host = uri.host;
   final wildcard = host.startsWith('*.');
-  final hostWithoutWildcard = wildcard ? host.substring(2) : host;
+  final hostWithoutWildcard = wildcard ? host.replaceFirst('*.', '') : host;
   if ((!wildcard && host.contains('*')) ||
       !RegExp(r'^[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$')
           .hasMatch(hostWithoutWildcard) ||
@@ -226,7 +250,7 @@ const _webHostPage = '''
 </html>
 ''';
 
-const _webSandboxProxyPage = '''
+const _webSandboxProxyPage = r'''
 <!doctype html>
 <html>
 <head>
@@ -240,7 +264,7 @@ const _webSandboxProxyPage = '''
     const escapeAttribute = (value) => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
     const appDocument = (html, csp) => {
       const tag = '<meta http-equiv="Content-Security-Policy" content="' + escapeAttribute(csp) + '">';
-      const head = /<head(?:\\s[^>]*)?>/i;
+      const head = /<head(?:\s[^>]*)?>/i;
       return head.test(html)
         ? html.replace(head, (match) => match + tag)
         : '<!doctype html><html><head>' + tag + '</head><body>' + html + '</body></html>';

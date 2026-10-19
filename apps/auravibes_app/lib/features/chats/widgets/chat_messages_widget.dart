@@ -2695,7 +2695,9 @@ class const _ActivityToolCallRow({
         : null;
     final decodedResponse = ToolMetadataDecoder.decode(toolCall.responseRaw);
     final hasDetails =
-        decodedArgs?.isNotEmpty == true || decodedResponse?.isNotEmpty == true;
+        decodedArgs?.isNotEmpty == true ||
+        decodedResponse?.isNotEmpty == true ||
+        toolCall.appData?.isNotEmpty == true;
     final statusKey = _statusLocaleKey();
     final statusColor = _statusColor(context);
     final onOpenSubAgent = openSubAgent;

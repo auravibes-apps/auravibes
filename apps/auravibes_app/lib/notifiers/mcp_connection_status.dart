@@ -497,6 +497,22 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     );
   }
 
+  Future<({String modelText, Map<String, Object?> appData})>
+  callToolWithAppData({
+    required String mcpServerId,
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+  }) async {
+    if (_isCloud) throw const UnsupportedWorkspaceCapabilityException();
+    final client = _requiredToolClient(mcpServerId, toolIdentifier);
+
+    return await _requiredMcpManager.callToolOutput(
+      client,
+      toolIdentifier: toolIdentifier,
+      arguments: arguments,
+    );
+  }
+
   /// Read a UI resource declared by [toolIdentifier].
   Future<Map<String, Object?>> readAppResource({
     required String mcpServerId,

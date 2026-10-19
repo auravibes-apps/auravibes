@@ -526,6 +526,7 @@ MessageToolCallEntity _applyToolExecutionOutput(
   agent.AgentToolResultUpdate update,
 ) => toolCall.copyWith(
   responseRaw: update.responseRaw,
+  appData: update.appData,
   responseContextRaw: update.responseContextRaw,
   outputTruncated: update.outputTruncated,
   originalResponseBytes: update.originalResponseBytes,

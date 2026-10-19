@@ -394,6 +394,7 @@ ToolCallExecutionBatchUpdate _executionUpdateForResolvedClaim(
     output: (
       responseRaw: entry.responseRaw,
       responseContextRaw: null,
+      appData: null,
       outputTruncated: false,
       originalResponseBytes: null,
       fullOutputForContext: false,
@@ -457,6 +458,7 @@ ToolCallExecutionOutput _batchToolOutput(
 ) => (
   responseRaw: result.responseRaw,
   responseContextRaw: result.responseContextRaw,
+  appData: result.appData,
   outputTruncated: result.outputTruncated,
   originalResponseBytes: result.originalResponseBytes,
   fullOutputForContext: result.fullOutputForContext,
