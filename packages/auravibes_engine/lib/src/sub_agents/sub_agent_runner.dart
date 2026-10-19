@@ -151,6 +151,11 @@ class const SubAgentRunner({
 
         return await _result(child.id, 'stopped', agentId: request.agentId);
       }
+      if (decision == AgentIterationDecision.iterationLimitReached) {
+        completionStatus = SubAgentCompletionStatus.partial;
+
+        return await _result(child.id, 'partial', agentId: request.agentId);
+      }
       if (decision == AgentIterationDecision.waitForToolApproval) {
         failurePhase = 'run.waitForApproval';
         final waitResult = await _waitForToolApproval(
@@ -429,7 +434,7 @@ abstract interface class SubAgentRequestHandle {
   });
 }
 
-enum SubAgentCompletionStatus { done, stopped, error }
+enum SubAgentCompletionStatus { done, partial, stopped, error }
 
 class const SubAgentCompletionFailure({
   required final Object error,

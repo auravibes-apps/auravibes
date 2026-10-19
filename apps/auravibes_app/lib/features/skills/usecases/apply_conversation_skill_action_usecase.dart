@@ -306,9 +306,11 @@ final applyConversationSkillActionUsecaseProvider =
               workspaceId: workspaceId,
               slug: slug,
             ),
-        sendMessage: (workspaceId, conversationId, draft) => ref
-            .read(sendMessageUsecaseProvider(workspaceId))
-            .call(conversationId: conversationId, draft: draft),
+        sendMessage: (workspaceId, conversationId, draft) async {
+          final _ = await ref
+              .read(sendMessageUsecaseProvider(workspaceId))
+              .call(conversationId: conversationId, draft: draft);
+        },
         recordRecentSkillUse: (workspaceId, conversationId, skillSlug) async {
           await ref
               .read(recentSkillUsageRepositoryProvider)

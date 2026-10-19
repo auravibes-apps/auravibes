@@ -1632,6 +1632,32 @@ void main() {
     secondRequest.finish();
   });
 
+  testWidgets('shows partial child status in the active-child chooser', (
+    tester,
+  ) async {
+    final container = await _pumpActiveSubAgentStatusWidget(
+      tester,
+      childConversations: [
+        _childConversation('partial', 'Partial child'),
+        _childConversation('running', 'Running child'),
+      ],
+    );
+    final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
+    final partialRequest = runtime.start(parentId: _chatId, childId: 'partial');
+    final runningRequest = runtime.start(parentId: _chatId, childId: 'running');
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_active_sub_agents')),
+    );
+    await tester.pumpAndSettle();
+
+    partialRequest.finish(status: SubAgentCompletionStatus.partial);
+    await tester.pump();
+
+    expect(find.text('Partial'), findsOneWidget);
+    runningRequest.finish();
+  });
+
   testWidgets('keeps live and terminal status details safe in chooser', (
     tester,
   ) async {

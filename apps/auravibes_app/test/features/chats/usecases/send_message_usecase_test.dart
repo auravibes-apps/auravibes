@@ -81,6 +81,23 @@ void main() {
       );
     });
 
+    test('returns iteration limit decision from foreground send', () async {
+      when(
+        () => fixture.runAgentIterationUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          context: any(named: 'context'),
+        ),
+      ).thenAnswer((_) async => AgentIterationDecision.iterationLimitReached);
+
+      final result = await fixture.usecase.call(
+        conversationId: 'conversation-1',
+        draft: const ChatDraft(text: 'Hello'),
+      );
+
+      expect(result, AgentIterationDecision.iterationLimitReached);
+      verify(() => fixture.messageRepository.createMessage(any())).called(1);
+    });
+
     test(
       'distinguishes a continuation failure after message persistence',
       () async {

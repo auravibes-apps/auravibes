@@ -54,7 +54,7 @@ class SendMessageUsecase {
   final Future<void> Function(String conversationId, ChatDraft draft)?
   cloudSend;
 
-  Future<void> call({
+  Future<AgentIterationDecision?> call({
     required String conversationId,
     required ChatDraft draft,
   }) => _send(conversationId, draft);
@@ -89,14 +89,16 @@ class SendMessageUsecase {
   }) => _withConversationActivity(
     conversationActivityGate,
     conversationId,
-    () => _continueFromUserMessage(
-      conversationId: conversationId,
-      messageId: messageId,
-      origin: .userMessage,
-    ),
+    () async {
+      final _ = await _continueFromUserMessage(
+        conversationId: conversationId,
+        messageId: messageId,
+        origin: .userMessage,
+      );
+    },
   );
 
-  Future<void> retryUserMessage({
+  Future<AgentIterationDecision> retryUserMessage({
     required String conversationId,
     required String messageId,
   }) => _withConversationActivity(
@@ -109,7 +111,7 @@ class SendMessageUsecase {
     ),
   );
 
-  Future<void> _continueFromUserMessage({
+  Future<AgentIterationDecision> _continueFromUserMessage({
     required String conversationId,
     required String messageId,
     required AgentIterationOrigin origin,
@@ -118,7 +120,7 @@ class SendMessageUsecase {
     if (continueTurn == null) {
       throw StateError('Local agent runtime unavailable');
     }
-    final _ = await continueTurn(
+    return await continueTurn(
       conversationId: conversationId,
       context: AgentIterationContext(
         origin: origin,
@@ -127,22 +129,28 @@ class SendMessageUsecase {
     );
   }
 
-  Future<void> _send(String conversationId, ChatDraft draft) async {
-    if (draft.isEmpty) return;
+  Future<AgentIterationDecision?> _send(
+    String conversationId,
+    ChatDraft draft,
+  ) async {
+    if (draft.isEmpty) return null;
     if (cloudSend case final send?) {
       await send(conversationId, draft);
 
-      return;
+      return null;
     }
 
-    await _withConversationActivity(
+    return await _withConversationActivity(
       conversationActivityGate,
       conversationId,
       () => _sendLocal(conversationId, draft),
     );
   }
 
-  Future<void> _sendLocal(String conversationId, ChatDraft draft) async {
+  Future<AgentIterationDecision?> _sendLocal(
+    String conversationId,
+    ChatDraft draft,
+  ) async {
     final getBusyState = getConversationBusyStateUsecase;
     final queue = sendQueueRuntime;
     if (getBusyState == null || queue == null) {
@@ -153,13 +161,13 @@ class SendMessageUsecase {
     if (busyState.isBusy) {
       final _ = queue.enqueue(conversationId: conversationId, draft: draft);
 
-      return;
+      return null;
     }
 
-    await _sendNow(conversationId: conversationId, draft: draft);
+    return await _sendNow(conversationId: conversationId, draft: draft);
   }
 
-  Future<void> _sendNow({
+  Future<AgentIterationDecision> _sendNow({
     required String conversationId,
     required ChatDraft draft,
   }) async {
@@ -168,7 +176,7 @@ class SendMessageUsecase {
       draft: draft,
     );
     try {
-      await _continueFromUserMessage(
+      return await _continueFromUserMessage(
         conversationId: conversationId,
         messageId: createdMessage.id,
         origin: .userMessage,
@@ -197,7 +205,7 @@ Future<T> _withConversationActivity<T>(
   return gate.runActivity(conversationId, action);
 }
 
-Future<void> _retryUserMessage(
+Future<AgentIterationDecision> _retryUserMessage(
   SendMessageUsecase usecase, {
   required String conversationId,
   required String messageId,
@@ -209,7 +217,7 @@ Future<void> _retryUserMessage(
   if (!_isRetryableUserMessage(message, conversationId)) {
     throw StateError('Message cannot be retried');
   }
-  await usecase._continueFromUserMessage(
+  return await usecase._continueFromUserMessage(
     conversationId: conversationId,
     messageId: messageId,
     origin: .manualContinue,
