@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:auravibes_app/services/mcp_service/mcp_app_tool_metadata.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -18,18 +16,6 @@ void main() {
     final metadata = McpAppToolMetadata.fromMetadata({
       'ui/resourceUri': 'ui://weather/forecast',
     });
-
-    expect(metadata.resourceUri, 'ui://weather/forecast');
-  });
-
-  test('reads the UI resource from a raw tool result', () {
-    final metadata = McpAppToolMetadata.fromResultRaw(
-      jsonEncode({
-        '_meta': {
-          'ui': {'resourceUri': 'ui://weather/forecast'},
-        },
-      }),
-    );
 
     expect(metadata.resourceUri, 'ui://weather/forecast');
   });

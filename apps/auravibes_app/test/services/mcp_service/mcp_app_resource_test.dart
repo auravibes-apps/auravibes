@@ -109,7 +109,8 @@ void main() {
   });
 
   test('embeds app HTML in a sandboxed native view with declared CSP', () {
-    const appHtml = '<script>window.app = "</script>";</script>';
+    const appHtml =
+        '<!doctype html><html><head><title>App</title></head><body>View</body></html>';
     final page = buildMcpAppHostPage(
       html: appHtml,
       csp: const {
@@ -127,6 +128,8 @@ void main() {
       appCsp,
       contains('''script-src 'unsafe-inline' https://cdn.example.com'''),
     );
+    expect(page, contains(r'const head = /<head(?:\s[^>]*)?>/i;'));
+    expect(page, contains('html.replace(head, (match) => match + tag)'));
     expect(page, isNot(contains(appHtml)));
     expect(utf8.decode(_scriptPayload(page, 'appHtmlBase64')), appHtml);
   });

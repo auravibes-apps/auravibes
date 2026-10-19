@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result_controller.dart';
 import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
@@ -23,6 +25,7 @@ class const McpAppToolResult({
   required final String conversationId,
   required final MessageToolCallEntity toolCall,
   required final String? fallbackText,
+  required final McpAppToolResultController controller,
   super.key,
 }) extends ConsumerWidget {
   @override
@@ -38,21 +41,14 @@ class const McpAppToolResult({
       return const SizedBox.shrink();
     }
 
-    final resultMetadata = appData?['_meta'];
-    final resultResourceUri = resultMetadata is Map
-        ? McpAppToolMetadata.fromMetadata(
-            Map<String, dynamic>.from(resultMetadata),
-          ).resourceUri
-        : McpAppToolMetadata.fromResultRaw(response).resourceUri;
     final connection = ref
         .watch(mcpConnectionProvider)
         .firstWhereOrNull((value) => value.server.id == components.mcpServerId);
     final tool = connection?.tools.firstWhereOrNull(
       (value) => value.toolName == components.toolIdentifier,
     );
-    final resourceUri =
-        McpAppToolMetadata.fromMetadata(tool?.metadata).resourceUri ??
-        resultResourceUri;
+    final resourceUri = McpAppToolMetadata.fromMetadata(tool?.metadata)
+        .resourceUri;
     if (resourceUri == null) return const SizedBox.shrink();
 
     return _McpAppResourceLoader(
@@ -64,6 +60,7 @@ class const McpAppToolResult({
       resourceUri: resourceUri,
       toolCall: toolCall,
       fallbackText: fallbackText,
+      controller: controller,
       key: ValueKey('mcp_app_${toolCall.id}'),
     );
   }
@@ -78,6 +75,7 @@ class const _McpAppResourceLoader({
   required final String resourceUri,
   required final MessageToolCallEntity toolCall,
   required final String? fallbackText,
+  required final McpAppToolResultController controller,
   super.key,
 }) extends ConsumerStatefulWidget {
   @override
@@ -147,6 +145,7 @@ class _McpAppResourceLoaderState extends ConsumerState<_McpAppResourceLoader> {
             toolIdentifier: widget.toolIdentifier,
             toolCall: widget.toolCall,
             fallbackText: widget.fallbackText,
+            controller: widget.controller,
             resource: resource,
           ),
         );
@@ -194,6 +193,7 @@ class const _McpAppEmbeddedView({
   required final String toolIdentifier,
   required final MessageToolCallEntity toolCall,
   required final String? fallbackText,
+  required final McpAppToolResultController controller,
   required final McpAppResource resource,
 }) extends ConsumerStatefulWidget {
   @override
@@ -206,6 +206,7 @@ class _McpAppEmbeddedViewState extends ConsumerState<_McpAppEmbeddedView> {
   var _viewFailed = false;
   var _viewRevision = 0;
   McpAppMessageBridge? _bridge;
+  Future<void>? _teardownFuture;
 
   @override
   void initState() {
@@ -219,6 +220,24 @@ class _McpAppEmbeddedViewState extends ConsumerState<_McpAppEmbeddedView> {
       ),
       callTool: _callAppTool,
     );
+    widget.controller.teardownHandler = _prepareForResourceTeardown;
+  }
+
+  @override
+  void dispose() {
+    widget.controller.teardownHandler = null;
+    // Flutter dispose is synchronous; start teardown before WebView disposal.
+    unawaited(_prepareForResourceTeardown());
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _McpAppEmbeddedView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.teardownHandler = null;
+      widget.controller.teardownHandler = _prepareForResourceTeardown;
+    }
   }
 
   @override
@@ -279,15 +298,45 @@ class _McpAppEmbeddedViewState extends ConsumerState<_McpAppEmbeddedView> {
   }
 
   void _showViewFailure() {
+    unawaited(_showFailureAfterTeardown());
+  }
+
+  Future<void> _showFailureAfterTeardown() async {
+    await _prepareForResourceTeardown();
     if (mounted) setState(() => _viewFailed = true);
   }
 
-  void _retryView() {
+  void _retryView() => unawaited(_restartView());
+
+  Future<void> _restartView() async {
+    await _prepareForResourceTeardown();
+    if (!mounted) return;
     _bridge?.reset();
+    _teardownFuture = null;
     setState(() {
       _viewFailed = false;
       _viewRevision++;
     });
+  }
+
+  Future<void> _prepareForResourceTeardown() =>
+      _teardownFuture ??= _sendResourceTeardown();
+
+  Future<void> _sendResourceTeardown() async {
+    final bridge = _bridge;
+    final controller = _controller;
+    if (bridge == null || controller == null) return;
+    final teardown = bridge.beginResourceTeardown();
+    if (teardown == null) return;
+
+    try {
+      final _ = await controller.evaluateJavascript(
+        source: 'window.mcpAppsReply(${jsonEncode(teardown.message)});',
+      );
+      await teardown.response;
+    } on Object {
+      // The view can close while the platform WebView is shutting down.
+    }
   }
 
   void _onWebViewCreated(InAppWebViewController controller) {

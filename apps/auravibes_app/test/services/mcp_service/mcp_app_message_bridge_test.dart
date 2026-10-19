@@ -120,6 +120,94 @@ void main() {
     },
   );
 
+  test('waits for app resource teardown response', () async {
+    final bridge = McpAppMessageBridge(
+      initialArguments: const {},
+      initialResult: const {'content': []},
+      callTool: (_, _) async => const {},
+    );
+    expect(
+      await bridge.handleMessage(
+        jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'ui/initialize'}),
+      ),
+      hasLength(1),
+    );
+    expect(
+      await bridge.handleMessage(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'ui/notifications/initialized',
+        }),
+      ),
+      hasLength(2),
+    );
+
+    final teardown = bridge.beginResourceTeardown();
+    if (teardown == null) fail('Expected initialized view teardown.');
+    expect(teardown.message['method'], 'ui/resource-teardown');
+    final response = bridge.handleMessage(
+      jsonEncode({
+        'jsonrpc': '2.0',
+        'id': teardown.message['id'],
+        'result': <String, Object?>{},
+      }),
+    );
+    expect(await response, isEmpty);
+    await teardown.response;
+  });
+
+  test('clears a teardown request after its response times out', () async {
+    final bridge = McpAppMessageBridge(
+      initialArguments: const {},
+      initialResult: const {'content': []},
+      callTool: (_, _) async => const {},
+    );
+    expect(
+      await bridge.handleMessage(
+        jsonEncode({'jsonrpc': '2.0', 'id': 1, 'method': 'ui/initialize'}),
+      ),
+      hasLength(1),
+    );
+    expect(
+      await bridge.handleMessage(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'ui/notifications/initialized',
+        }),
+      ),
+      hasLength(2),
+    );
+
+    final first = bridge.beginResourceTeardown();
+    if (first == null) fail('Expected initialized view teardown.');
+    await first.response;
+    expect(
+      await bridge.handleMessage(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'id': first.message['id'],
+          'result': <String, Object?>{},
+        }),
+      ),
+      isEmpty,
+    );
+
+    final next = bridge.beginResourceTeardown();
+    if (next == null) fail('Expected a new teardown request.');
+    expect(next.message['id'], isNot(first.message['id']));
+    expect(
+      await bridge.handleMessage(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'id': next.message['id'],
+          'result': <String, Object?>{},
+        }),
+      ),
+      isEmpty,
+    );
+    await next.response;
+  });
+
   test(
     'rejects tool calls before initialization and malformed arguments',
     () async {

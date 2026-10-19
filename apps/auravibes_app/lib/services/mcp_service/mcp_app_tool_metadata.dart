@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class const McpAppToolMetadata({
   required final String? resourceUri,
   final List<String>? visibility,
@@ -21,20 +19,6 @@ class const McpAppToolMetadata({
     }
 
     return .new(resourceUri: resourceUri, visibility: visibility);
-  }
-
-  factory fromResultRaw(String? responseRaw) {
-    if (responseRaw == null) return .fromMetadata(null);
-    try {
-      final result = jsonDecode(responseRaw);
-      final metadata = result is Map ? result['_meta'] : null;
-
-      return .fromMetadata(
-        metadata is Map ? Map<String, dynamic>.from(metadata) : null,
-      );
-    } on FormatException {
-      return .fromMetadata(null);
-    }
   }
 
   bool get isVisibleToApp => visibility?.contains('app') ?? true;

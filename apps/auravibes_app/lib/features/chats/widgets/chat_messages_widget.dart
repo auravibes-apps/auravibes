@@ -43,6 +43,7 @@ import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart'
 import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result.dart';
+import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result_controller.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_announcement.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
@@ -1813,6 +1814,9 @@ class const _AssistantActivityRun({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final mcpAppControllers = useMemoized(
+      () => <String, McpAppToolResultController>{},
+    );
     final activityEntries = _buildActivityRunEntries(run);
     final responseEntryIndex = activityEntries.indexWhere(
       (entry) => entry is _ActivityResponseEntry && entry.isFinal,
@@ -2038,6 +2042,10 @@ class const _AssistantActivityRun({
         for (final activityToolCall in activityToolCalls)
           _ActivityToolCallRow(
             key: ValueKey('activity_tool_row_${activityToolCall.toolCall.id}'),
+            controller: mcpAppControllers.putIfAbsent(
+              activityToolCall.toolCall.id,
+              McpAppToolResultController.new,
+            ),
             workspaceId: workspaceId,
             conversationId: parentConversationId,
             toolCall: activityToolCall.toolCall,
@@ -2047,19 +2055,31 @@ class const _AssistantActivityRun({
             isExpanded: renderedExpansionState.expandedToolIds.contains(
               activityToolCall.toolCall.id,
             ),
-            onToggle: () => onDisclosureChanged(() {
-              updateExpansionState(
-                (current) => (
-                  isLive: current.isLive,
-                  traceExpanded: current.traceExpanded,
-                  expandedToolGroupIds: current.expandedToolGroupIds,
-                  expandedToolIds: _toggledToolIds(
-                    current.expandedToolIds,
-                    activityToolCall.toolCall.id,
-                  ),
-                ),
+            onToggle: () async {
+              final toolCallId = activityToolCall.toolCall.id;
+              if (renderedExpansionState.expandedToolIds.contains(toolCallId)) {
+                final controller = mcpAppControllers[toolCallId];
+                if (controller != null) await controller.prepareForTeardown();
+              }
+              if (!context.mounted) return;
+
+              _toggleDisclosure(
+                context: context,
+                update: () => onDisclosureChanged(() {
+                  updateExpansionState(
+                    (current) => (
+                      isLive: current.isLive,
+                      traceExpanded: current.traceExpanded,
+                      expandedToolGroupIds: current.expandedToolGroupIds,
+                      expandedToolIds: _toggledToolIds(
+                        current.expandedToolIds,
+                        toolCallId,
+                      ),
+                    ),
+                  );
+                }),
               );
-            }),
+            },
             openSkillDetails: activityToolCall.openSkillDetails,
             openSubAgent: activityToolCall.openSubAgent,
             onRunInBackground: activityToolCall.onRunInBackground,
@@ -2069,6 +2089,34 @@ class const _AssistantActivityRun({
       if (toolRows.length == 1) {
         toolContents[groupId] = toolRows.single;
       } else {
+        Future<void> toggleToolGroup() async {
+          if (renderedExpansionState.expandedToolGroupIds.contains(groupId)) {
+            await Future.wait([
+              for (final activityToolCall in activityToolCalls)
+                if (renderedExpansionState.expandedToolIds.contains(
+                  activityToolCall.toolCall.id,
+                ))
+                  mcpAppControllers[activityToolCall.toolCall.id]
+                          ?.prepareForTeardown() ??
+                      Future<void>.value(),
+            ]);
+          }
+          if (!context.mounted) return;
+
+          onDisclosureChanged(() {
+            updateExpansionState((current) {
+              final next = {...current.expandedToolGroupIds};
+              if (!next.remove(groupId)) next.add(groupId);
+              return (
+                isLive: current.isLive,
+                traceExpanded: current.traceExpanded,
+                expandedToolGroupIds: next,
+                expandedToolIds: current.expandedToolIds,
+              );
+            });
+          });
+        }
+
         toolContents[groupId] = AuraColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2083,18 +2131,7 @@ class const _AssistantActivityRun({
               isExpanded: renderedExpansionState.expandedToolGroupIds.contains(
                 groupId,
               ),
-              onPressed: () => onDisclosureChanged(() {
-                updateExpansionState((current) {
-                  final next = {...current.expandedToolGroupIds};
-                  if (!next.remove(groupId)) next.add(groupId);
-                  return (
-                    isLive: current.isLive,
-                    traceExpanded: current.traceExpanded,
-                    expandedToolGroupIds: next,
-                    expandedToolIds: current.expandedToolIds,
-                  );
-                });
-              }),
+              onPressed: () => unawaited(toggleToolGroup()),
             ),
             if (renderedExpansionState.expandedToolGroupIds.contains(groupId))
               Padding(
@@ -2674,6 +2711,7 @@ void _toggleDisclosure({
 }
 
 class const _ActivityToolCallRow({
+  required final McpAppToolResultController controller,
   required final String workspaceId,
   required final String conversationId,
   required final MessageToolCallEntity toolCall,
@@ -2681,7 +2719,7 @@ class const _ActivityToolCallRow({
   required final String? description,
   required final bool showArguments,
   required final bool isExpanded,
-  required final VoidCallback onToggle,
+  required final Future<void> Function() onToggle,
   required final VoidCallback? openSubAgent,
   required final VoidCallback? onRunInBackground,
   required final VoidCallback? openSkillDetails,
@@ -2720,10 +2758,7 @@ class const _ActivityToolCallRow({
               child: AuraPressable(
                 key: ValueKey('activity_tool_${toolCall.id}'),
                 color: statusColor,
-                onPressed: hasDetails
-                    ? () =>
-                          _toggleDisclosure(context: context, update: onToggle)
-                    : null,
+                onPressed: hasDetails ? () => unawaited(onToggle()) : null,
                 interaction: AuraPressableInteraction.localNavigation,
                 padding: const AuraEdgeInsetsGeometry.symmetric(
                   horizontal: .sm,
@@ -2846,6 +2881,7 @@ class const _ActivityToolCallRow({
         if (isExpanded && hasDetails)
           _ActivityToolCallDetails(
             key: ValueKey('activity_tool_details_${toolCall.id}'),
+            controller: controller,
             workspaceId: workspaceId,
             conversationId: conversationId,
             toolCall: toolCall,
@@ -2941,6 +2977,7 @@ class const _ActivityToolStatusBadge({
 }
 
 class const _ActivityToolCallDetails({
+  required final McpAppToolResultController controller,
   required final String workspaceId,
   required final String conversationId,
   required final MessageToolCallEntity toolCall,
@@ -3043,6 +3080,7 @@ class const _ActivityToolCallDetails({
               conversationId: conversationId,
               toolCall: toolCall,
               fallbackText: decodedResponse,
+              controller: controller,
             ),
           ],
         ),

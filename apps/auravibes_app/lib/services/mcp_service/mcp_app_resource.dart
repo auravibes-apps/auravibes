@@ -174,7 +174,7 @@ String? _allowedDomain(String value, Set<String> allowedSchemes) {
   return '${uri.scheme}://$host${uri.hasPort ? ':${uri.port}' : ''}';
 }
 
-const _nativeHostPage = '''
+const _nativeHostPage = r'''
 <!doctype html>
 <html>
 <head>
@@ -193,7 +193,13 @@ const _nativeHostPage = '''
     const appHtml = decode(appHtmlBase64);
     const appCsp = decode(appCspBase64);
     const escapeAttribute = (value) => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
-    const appDocument = (html) => '<meta http-equiv="Content-Security-Policy" content="' + escapeAttribute(appCsp) + '">' + html;
+    const appDocument = (html) => {
+      const tag = '<meta http-equiv="Content-Security-Policy" content="' + escapeAttribute(appCsp) + '">';
+      const head = /<head(?:\s[^>]*)?>/i;
+      return head.test(html)
+        ? html.replace(head, (match) => match + tag)
+        : '<!doctype html><html><head>' + tag + '</head><body>' + html + '</body></html>';
+    };
     const callHost = (message) => {
       const send = () => window.flutter_inappwebview.callHandler('mcpAppsMessage', JSON.stringify(message)).catch(() => {});
       if (window.flutter_inappwebview?.callHandler) send();

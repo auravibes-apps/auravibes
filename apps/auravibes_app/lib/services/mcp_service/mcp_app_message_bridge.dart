@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 typedef McpAppToolCall = Future<Map<String, Object?>> Function(
@@ -21,11 +22,45 @@ class McpAppMessageBridge {
   var _initializeReceived = false;
   var _initialized = false;
   var _initialDataSent = false;
+  var _teardownRequestId = '';
+  var _nextTeardownRequestId = 0;
+  Completer<void>? _teardownResponse;
 
   void reset() {
     _initializeReceived = false;
     _initialized = false;
     _initialDataSent = false;
+    _teardownRequestId = '';
+    _teardownResponse?.complete();
+    _teardownResponse = null;
+  }
+
+  ({Map<String, Object?> message, Future<void> response})?
+  beginResourceTeardown() {
+    if (!_initialized) return null;
+
+    final id = 'mcp-app-teardown-${++_nextTeardownRequestId}';
+    final response = Completer<void>();
+    _teardownRequestId = id;
+    _teardownResponse = response;
+
+    return (
+      message: {
+        'jsonrpc': '2.0',
+        'id': id,
+        'method': 'ui/resource-teardown',
+        'params': {'reason': 'View is closing.'},
+      },
+      response: response.future.timeout(
+        const Duration(seconds: 1),
+        onTimeout: () {
+          if (_teardownRequestId == id) {
+            _teardownResponse = null;
+            _teardownRequestId = '';
+          }
+        },
+      ),
+    );
   }
 
   Future<List<Map<String, Object?>>> handleMessage(String message) async {
@@ -43,9 +78,18 @@ class McpAppMessageBridge {
     if (decoded is! Map || decoded['jsonrpc'] != '2.0') return const [];
     final request = Map<String, Object?>.from(decoded);
     final method = request['method'];
-    if (method is! String) return const [];
     final id = request['id'];
     final hasId = request.containsKey('id');
+
+    if (method is! String) {
+      if (hasId && id == _teardownRequestId) {
+        _teardownResponse?.complete();
+        _teardownResponse = null;
+        _teardownRequestId = '';
+      }
+
+      return const [];
+    }
 
     if (!hasId) return _handleNotification(method);
     final requestId = switch (id) {
