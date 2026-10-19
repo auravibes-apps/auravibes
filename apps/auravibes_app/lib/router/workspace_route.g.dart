@@ -41,6 +41,11 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
               hasOverriddenOnExit: false,
               factory: $ChatsRoute._fromState,
             ),
+            GoRouteData.$route(
+              path: 'bookmarks',
+              hasOverriddenOnExit: false,
+              factory: $MessageBookmarksRoute._fromState,
+            ),
           ],
         ),
         StatefulShellBranchData.$branch(
@@ -281,6 +286,7 @@ mixin $ConversationRoute on GoRouteData {
   static ConversationRoute _fromState(GoRouterState state) => ConversationRoute(
     workspaceId: state.pathParameters['workspaceId']!,
     chatId: state.pathParameters['chatId']!,
+    messageId: state.uri.queryParameters['messageId'],
   );
 
   ConversationRoute get _self => this as ConversationRoute;
@@ -288,6 +294,7 @@ mixin $ConversationRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/chats/${Uri.encodeComponent(_self.chatId)}',
+    queryParams: {if (_self.messageId != null) 'messageId': _self.messageId},
   );
 
   @override
@@ -342,6 +349,31 @@ mixin $ChatsRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/chats',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $MessageBookmarksRoute on GoRouteData {
+  static MessageBookmarksRoute _fromState(GoRouterState state) =>
+      MessageBookmarksRoute(workspaceId: state.pathParameters['workspaceId']!);
+
+  MessageBookmarksRoute get _self => this as MessageBookmarksRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/bookmarks',
   );
 
   @override

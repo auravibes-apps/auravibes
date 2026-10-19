@@ -17,6 +17,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/con
     as _icvgm34f;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_summary.dart'
     as _itibmfuz;
+import 'package:auravibes_server/src/generated/features/conversations/models/message_bookmark_view.dart'
+    as _iiqbx0k7;
 import 'package:auravibes_server/src/generated/features/mcp_catalog/models/mcp_catalog_listing.dart'
     as _ii9o7wlj;
 import 'package:auravibes_server/src/generated/features/model_connections/models/api_model.dart'
@@ -64,6 +66,8 @@ import 'features/codex_oauth/models/start_codex_oauth_request.dart'
 import 'features/codex_oauth/models/start_codex_oauth_result.dart' as _itptq7z5;
 import 'features/conversations/models/background_work_record.dart' as _i76zqh14;
 import 'features/conversations/models/background_work_view.dart' as _ikckz8j1;
+import 'features/conversations/models/bookmark_message_request.dart'
+    as _ihrj16d1;
 import 'features/conversations/models/cancel_turn_request.dart' as _iarqshx6;
 import 'features/conversations/models/compact_conversation_request.dart'
     as _isyd7s84;
@@ -120,6 +124,10 @@ import 'features/conversations/models/list_conversation_messages_request.dart'
     as _it91nt4l;
 import 'features/conversations/models/list_conversations_request.dart'
     as _itcpel99;
+import 'features/conversations/models/list_message_bookmarks_request.dart'
+    as _ii5kz2rj;
+import 'features/conversations/models/message_bookmark.dart' as _i7h0nodu;
+import 'features/conversations/models/message_bookmark_view.dart' as _i3vkah52;
 import 'features/conversations/models/provider_admission.dart' as _i32k4voa;
 import 'features/conversations/models/provider_admission_lock.dart'
     as _ih2np1vh;
@@ -148,6 +156,8 @@ import 'features/conversations/models/submit_tool_decision_batch_result.dart'
 import 'features/conversations/models/submit_tool_decision_request.dart'
     as _inla43mu;
 import 'features/conversations/models/turn_snapshot.dart' as _ih4jnnah;
+import 'features/conversations/models/unbookmark_message_request.dart'
+    as _ity1hrw2;
 import 'features/conversations/models/update_conversation_request.dart'
     as _ihs4d7mz;
 import 'features/conversations/models/update_conversation_settings_request.dart'
@@ -334,6 +344,7 @@ export 'features/codex_oauth/models/start_codex_oauth_request.dart';
 export 'features/codex_oauth/models/start_codex_oauth_result.dart';
 export 'features/conversations/models/background_work_record.dart';
 export 'features/conversations/models/background_work_view.dart';
+export 'features/conversations/models/bookmark_message_request.dart';
 export 'features/conversations/models/cancel_turn_request.dart';
 export 'features/conversations/models/compact_conversation_request.dart';
 export 'features/conversations/models/continue_conversation_request.dart';
@@ -370,6 +381,9 @@ export 'features/conversations/models/get_turn_request.dart';
 export 'features/conversations/models/list_background_works_request.dart';
 export 'features/conversations/models/list_conversation_messages_request.dart';
 export 'features/conversations/models/list_conversations_request.dart';
+export 'features/conversations/models/list_message_bookmarks_request.dart';
+export 'features/conversations/models/message_bookmark.dart';
+export 'features/conversations/models/message_bookmark_view.dart';
 export 'features/conversations/models/provider_admission.dart';
 export 'features/conversations/models/provider_admission_lock.dart';
 export 'features/conversations/models/provider_admission_reservation.dart';
@@ -386,6 +400,7 @@ export 'features/conversations/models/submit_tool_decision_batch_request.dart';
 export 'features/conversations/models/submit_tool_decision_batch_result.dart';
 export 'features/conversations/models/submit_tool_decision_request.dart';
 export 'features/conversations/models/turn_snapshot.dart';
+export 'features/conversations/models/unbookmark_message_request.dart';
 export 'features/conversations/models/update_conversation_request.dart';
 export 'features/conversations/models/update_conversation_settings_request.dart';
 export 'features/mcp_catalog/models/mcp_catalog_connection_option.dart';
@@ -2631,6 +2646,112 @@ class Protocol extends _is.DatabaseSerializationManager {
             _isp.IndexElementDefinition(
               type: _isp.IndexElementDefinitionType.column,
               definition: 'name',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _isp.TableDefinition(
+      name: 'message_bookmark',
+      dartName: 'MessageBookmark',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'workspaceId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'userId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'messageId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [
+        _isp.ForeignKeyDefinition(
+          constraintName: 'message_bookmark_fk_0',
+          columns: ['workspaceId'],
+          referenceTable: 'cloud_workspace',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+        _isp.ForeignKeyDefinition(
+          constraintName: 'message_bookmark_fk_1',
+          columns: ['messageId'],
+          referenceTable: 'conversation_message',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'message_bookmark_identity_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'userId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'messageId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _isp.IndexDefinition(
+          indexName: 'message_bookmark_workspace_user_created_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'userId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'createdAt',
             ),
           ],
           type: 'btree',
@@ -4944,6 +5065,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _ikckz8j1.BackgroundWorkView) {
       return _ikckz8j1.BackgroundWorkView.fromJson(data) as T;
     }
+    if (t == _ihrj16d1.BookmarkMessageRequest) {
+      return _ihrj16d1.BookmarkMessageRequest.fromJson(data) as T;
+    }
     if (t == _iarqshx6.CancelTurnRequest) {
       return _iarqshx6.CancelTurnRequest.fromJson(data) as T;
     }
@@ -5053,6 +5177,15 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _itcpel99.ListConversationsRequest) {
       return _itcpel99.ListConversationsRequest.fromJson(data) as T;
     }
+    if (t == _ii5kz2rj.ListMessageBookmarksRequest) {
+      return _ii5kz2rj.ListMessageBookmarksRequest.fromJson(data) as T;
+    }
+    if (t == _i7h0nodu.MessageBookmark) {
+      return _i7h0nodu.MessageBookmark.fromJson(data) as T;
+    }
+    if (t == _i3vkah52.MessageBookmarkView) {
+      return _i3vkah52.MessageBookmarkView.fromJson(data) as T;
+    }
     if (t == _i32k4voa.ProviderAdmission) {
       return _i32k4voa.ProviderAdmission.fromJson(data) as T;
     }
@@ -5102,6 +5235,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _ih4jnnah.TurnSnapshot) {
       return _ih4jnnah.TurnSnapshot.fromJson(data) as T;
+    }
+    if (t == _ity1hrw2.UnbookmarkMessageRequest) {
+      return _ity1hrw2.UnbookmarkMessageRequest.fromJson(data) as T;
     }
     if (t == _ihs4d7mz.UpdateConversationRequest) {
       return _ihs4d7mz.UpdateConversationRequest.fromJson(data) as T;
@@ -5500,6 +5636,12 @@ class Protocol extends _is.DatabaseSerializationManager {
       return (data != null ? _ikckz8j1.BackgroundWorkView.fromJson(data) : null)
           as T;
     }
+    if (t == _is.getType<_ihrj16d1.BookmarkMessageRequest?>()) {
+      return (data != null
+              ? _ihrj16d1.BookmarkMessageRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_iarqshx6.CancelTurnRequest?>()) {
       return (data != null ? _iarqshx6.CancelTurnRequest.fromJson(data) : null)
           as T;
@@ -5699,6 +5841,22 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_ii5kz2rj.ListMessageBookmarksRequest?>()) {
+      return (data != null
+              ? _ii5kz2rj.ListMessageBookmarksRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i7h0nodu.MessageBookmark?>()) {
+      return (data != null ? _i7h0nodu.MessageBookmark.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i3vkah52.MessageBookmarkView?>()) {
+      return (data != null
+              ? _i3vkah52.MessageBookmarkView.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_i32k4voa.ProviderAdmission?>()) {
       return (data != null ? _i32k4voa.ProviderAdmission.fromJson(data) : null)
           as T;
@@ -5789,6 +5947,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _is.getType<_ih4jnnah.TurnSnapshot?>()) {
       return (data != null ? _ih4jnnah.TurnSnapshot.fromJson(data) : null) as T;
+    }
+    if (t == _is.getType<_ity1hrw2.UnbookmarkMessageRequest?>()) {
+      return (data != null
+              ? _ity1hrw2.UnbookmarkMessageRequest.fromJson(data)
+              : null)
+          as T;
     }
     if (t == _is.getType<_ihs4d7mz.UpdateConversationRequest?>()) {
       return (data != null
@@ -6489,6 +6653,12 @@ class Protocol extends _is.DatabaseSerializationManager {
               .toList()
           as T;
     }
+    if (t == List<_iiqbx0k7.MessageBookmarkView>) {
+      return (data as List)
+              .map((e) => deserialize<_iiqbx0k7.MessageBookmarkView>(e))
+              .toList()
+          as T;
+    }
     if (t == List<_idn3a4nr.BackgroundWorkView>) {
       return (data as List)
               .map((e) => deserialize<_idn3a4nr.BackgroundWorkView>(e))
@@ -6589,6 +6759,7 @@ class Protocol extends _is.DatabaseSerializationManager {
       _itptq7z5.StartCodexOAuthResult => 'StartCodexOAuthResult',
       _i76zqh14.BackgroundWorkRecord => 'BackgroundWorkRecord',
       _ikckz8j1.BackgroundWorkView => 'BackgroundWorkView',
+      _ihrj16d1.BookmarkMessageRequest => 'BookmarkMessageRequest',
       _iarqshx6.CancelTurnRequest => 'CancelTurnRequest',
       _isyd7s84.CompactConversationRequest => 'CompactConversationRequest',
       _ialxa16r.ContinueConversationRequest => 'ContinueConversationRequest',
@@ -6627,6 +6798,9 @@ class Protocol extends _is.DatabaseSerializationManager {
       _it91nt4l.ListConversationMessagesRequest =>
         'ListConversationMessagesRequest',
       _itcpel99.ListConversationsRequest => 'ListConversationsRequest',
+      _ii5kz2rj.ListMessageBookmarksRequest => 'ListMessageBookmarksRequest',
+      _i7h0nodu.MessageBookmark => 'MessageBookmark',
+      _i3vkah52.MessageBookmarkView => 'MessageBookmarkView',
       _i32k4voa.ProviderAdmission => 'ProviderAdmission',
       _ih2np1vh.ProviderAdmissionLock => 'ProviderAdmissionLock',
       _i7moywui.ProviderAdmissionReservation => 'ProviderAdmissionReservation',
@@ -6649,6 +6823,7 @@ class Protocol extends _is.DatabaseSerializationManager {
         'SubmitToolDecisionBatchResult',
       _inla43mu.SubmitToolDecisionRequest => 'SubmitToolDecisionRequest',
       _ih4jnnah.TurnSnapshot => 'TurnSnapshot',
+      _ity1hrw2.UnbookmarkMessageRequest => 'UnbookmarkMessageRequest',
       _ihs4d7mz.UpdateConversationRequest => 'UpdateConversationRequest',
       _i8unm495.UpdateConversationSettingsRequest =>
         'UpdateConversationSettingsRequest',
@@ -6815,6 +6990,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'BackgroundWorkRecord';
       case _ikckz8j1.BackgroundWorkView():
         return 'BackgroundWorkView';
+      case _ihrj16d1.BookmarkMessageRequest():
+        return 'BookmarkMessageRequest';
       case _iarqshx6.CancelTurnRequest():
         return 'CancelTurnRequest';
       case _isyd7s84.CompactConversationRequest():
@@ -6887,6 +7064,12 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'ListConversationMessagesRequest';
       case _itcpel99.ListConversationsRequest():
         return 'ListConversationsRequest';
+      case _ii5kz2rj.ListMessageBookmarksRequest():
+        return 'ListMessageBookmarksRequest';
+      case _i7h0nodu.MessageBookmark():
+        return 'MessageBookmark';
+      case _i3vkah52.MessageBookmarkView():
+        return 'MessageBookmarkView';
       case _i32k4voa.ProviderAdmission():
         return 'ProviderAdmission';
       case _ih2np1vh.ProviderAdmissionLock():
@@ -6919,6 +7102,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'SubmitToolDecisionRequest';
       case _ih4jnnah.TurnSnapshot():
         return 'TurnSnapshot';
+      case _ity1hrw2.UnbookmarkMessageRequest():
+        return 'UnbookmarkMessageRequest';
       case _ihs4d7mz.UpdateConversationRequest():
         return 'UpdateConversationRequest';
       case _i8unm495.UpdateConversationSettingsRequest():
@@ -7202,6 +7387,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (dataClassName == 'BackgroundWorkView') {
       return deserialize<_ikckz8j1.BackgroundWorkView>(data['data']);
     }
+    if (dataClassName == 'BookmarkMessageRequest') {
+      return deserialize<_ihrj16d1.BookmarkMessageRequest>(data['data']);
+    }
     if (dataClassName == 'CancelTurnRequest') {
       return deserialize<_iarqshx6.CancelTurnRequest>(data['data']);
     }
@@ -7314,6 +7502,15 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (dataClassName == 'ListConversationsRequest') {
       return deserialize<_itcpel99.ListConversationsRequest>(data['data']);
     }
+    if (dataClassName == 'ListMessageBookmarksRequest') {
+      return deserialize<_ii5kz2rj.ListMessageBookmarksRequest>(data['data']);
+    }
+    if (dataClassName == 'MessageBookmark') {
+      return deserialize<_i7h0nodu.MessageBookmark>(data['data']);
+    }
+    if (dataClassName == 'MessageBookmarkView') {
+      return deserialize<_i3vkah52.MessageBookmarkView>(data['data']);
+    }
     if (dataClassName == 'ProviderAdmission') {
       return deserialize<_i32k4voa.ProviderAdmission>(data['data']);
     }
@@ -7371,6 +7568,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'TurnSnapshot') {
       return deserialize<_ih4jnnah.TurnSnapshot>(data['data']);
+    }
+    if (dataClassName == 'UnbookmarkMessageRequest') {
+      return deserialize<_ity1hrw2.UnbookmarkMessageRequest>(data['data']);
     }
     if (dataClassName == 'UpdateConversationRequest') {
       return deserialize<_ihs4d7mz.UpdateConversationRequest>(data['data']);
@@ -7779,6 +7979,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return _i7mmki1w.ConversationTurn.t;
       case _iii6xlqw.ConversationUsage:
         return _iii6xlqw.ConversationUsage.t;
+      case _i7h0nodu.MessageBookmark:
+        return _i7h0nodu.MessageBookmark.t;
       case _i32k4voa.ProviderAdmission:
         return _i32k4voa.ProviderAdmission.t;
       case _ih2np1vh.ProviderAdmissionLock:

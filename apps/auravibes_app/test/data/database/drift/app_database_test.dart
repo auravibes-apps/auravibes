@@ -41,7 +41,27 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 29);
+      expect(fixture.database.schemaVersion, 30);
+    });
+
+    test('migration from schema 29 adds unbookmarked messages', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 29
+        ..execute('CREATE TABLE messages (id TEXT PRIMARY KEY)')
+        ..execute('INSERT INTO messages VALUES (?)', ['existing']);
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final row = await database
+          .customSelect(
+            'SELECT is_bookmarked FROM messages WHERE id = ?',
+            variables: [const Variable<String>('existing')],
+          )
+          .getSingle();
+
+      expect(row.read<bool>('is_bookmarked'), isFalse);
     });
 
     test(

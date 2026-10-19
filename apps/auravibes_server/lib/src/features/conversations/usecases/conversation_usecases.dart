@@ -104,6 +104,7 @@ class ConversationUseCases {
   };
   static const _cancelledMessageMetadata = '{"errorCode":"cancelled"}';
   static const _subAgentCancelledMessage = 'Sub-agent cancelled.';
+  static const _messageBookmarkExcerptLength = 160;
 
   final conversation_repo.ConversationRepository _repository;
   final ConversationJobPublisher _publishConversationJob;
@@ -387,6 +388,25 @@ class ConversationUseCases {
     final messages = allMessages.length <= request.limit
         ? allMessages
         : allMessages.skip(allMessages.length - request.limit).toList();
+    final requestedMessage = request.messageId == null
+        ? null
+        : allMessages
+              .where((message) => message.stableId == request.messageId)
+              .firstOrNull;
+    if (requestedMessage != null &&
+        !messages.any((message) => message.id == requestedMessage.id)) {
+      messages.insert(0, requestedMessage);
+    }
+    final sourceConversationIds = messages
+        .map((message) => message.conversationId)
+        .toSet();
+    final sourceConversations = await Conversation.db.find(
+      session,
+      where: (table) => table.id.inSet(sourceConversationIds),
+    );
+    final sourceConversationsById = {
+      for (final source in sourceConversations) source.id!: source,
+    };
     final detachedToolCallIdsByMessageId = await _repository
         .listBackgroundWorkToolCallIdsByMessageId(
           session,
@@ -429,6 +449,9 @@ class ConversationUseCases {
       return ConversationMessageView(
         id: message.stableId,
         conversationId: conversation.stableId,
+        sourceConversationId:
+            sourceConversationsById[message.conversationId]?.stableId,
+        sourceMessageId: message.stableId,
         turnId: turn?.requestId,
         turnRevision: turn?.revision,
         role: message.role,
@@ -1483,6 +1506,181 @@ class ConversationUseCases {
         message: message,
       );
     });
+  }
+
+  Future<void> bookmarkMessage(
+    Session session, {
+    required String userId,
+    required BookmarkMessageRequest request,
+  }) => _mutate(
+    session,
+    userId: userId,
+    workspaceId: request.workspaceId,
+    endpoint: 'conversation.bookmarkMessage',
+    requestId: request.requestId,
+    requestBody: request.toJson(),
+    decode: (_) {},
+    run: (transaction, now) async {
+      final conversation = await _repository.findConversationByStableId(
+        session,
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (conversation == null) _fail(ConversationErrorCode.notFound);
+      final message = await _bookmarkSourceMessage(
+        session,
+        source: conversation,
+        sourceConversationId: request.sourceConversationId,
+        messageId: request.messageId,
+        transaction: transaction,
+      );
+      final existing = await MessageBookmark.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.userId.equals(userId) &
+            table.messageId.equals(message.id!),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (existing == null) {
+        await MessageBookmark.db.insertRow(
+          session,
+          MessageBookmark(
+            workspaceId: request.workspaceId,
+            userId: userId,
+            messageId: message.id!,
+            createdAt: now,
+          ),
+          transaction: transaction,
+        );
+      }
+      return _Mutation<void>(
+        null,
+        'messageBookmarked',
+        message.stableId,
+        recordWorkspaceMutation: false,
+      );
+    },
+  );
+
+  Future<void> unbookmarkMessage(
+    Session session, {
+    required String userId,
+    required UnbookmarkMessageRequest request,
+  }) => _mutate(
+    session,
+    userId: userId,
+    workspaceId: request.workspaceId,
+    endpoint: 'conversation.unbookmarkMessage',
+    requestId: request.requestId,
+    requestBody: request.toJson(),
+    decode: (_) {},
+    run: (transaction, now) async {
+      final conversation = await _repository.findConversationByStableId(
+        session,
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (conversation == null) _fail(ConversationErrorCode.notFound);
+      final message = await _bookmarkSourceMessage(
+        session,
+        source: conversation,
+        sourceConversationId: request.sourceConversationId,
+        messageId: request.messageId,
+        transaction: transaction,
+      );
+      final bookmark = await MessageBookmark.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.userId.equals(userId) &
+            table.messageId.equals(message.id!),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (bookmark != null) {
+        await MessageBookmark.db.deleteRow(
+          session,
+          bookmark,
+          transaction: transaction,
+        );
+      }
+      return _Mutation<void>(
+        null,
+        'messageUnbookmarked',
+        message.stableId,
+        recordWorkspaceMutation: false,
+      );
+    },
+  );
+
+  Future<List<MessageBookmarkView>> listMessageBookmarks(
+    Session session, {
+    required String userId,
+    required ListMessageBookmarksRequest request,
+  }) async {
+    await _requireMember(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+    );
+    final bookmarks = await MessageBookmark.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(request.workspaceId) &
+          table.userId.equals(userId),
+      orderBy: (table) => table.createdAt.desc(),
+    );
+    if (bookmarks.isEmpty) return const [];
+
+    final workspace = await CloudWorkspace.db.findById(
+      session,
+      request.workspaceId,
+    );
+    if (workspace == null || workspace.deletedAt != null) return const [];
+    final messages = await ConversationMessage.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(request.workspaceId) &
+          table.id.inSet(
+            bookmarks.map((bookmark) => bookmark.messageId).toSet(),
+          ),
+    );
+    final messagesById = {for (final message in messages) message.id!: message};
+    final conversations = await Conversation.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(request.workspaceId) &
+          table.id.inSet(
+            messages.map((message) => message.conversationId).toSet(),
+          ),
+    );
+    final conversationsById = {
+      for (final conversation in conversations) conversation.id!: conversation,
+    };
+    final result = <MessageBookmarkView>[];
+    for (final bookmark in bookmarks) {
+      final message = messagesById[bookmark.messageId];
+      if (message == null) continue;
+      final conversation = conversationsById[message.conversationId];
+      if (conversation == null || conversation.deletedAt != null) continue;
+      result.add(
+        MessageBookmarkView(
+          conversationId: conversation.stableId,
+          messageId: message.stableId,
+          excerpt: _messageBookmarkExcerpt(message.content),
+          conversationTitle: conversation.title,
+          workspaceName: workspace.name,
+          createdAt: message.createdAt,
+        ),
+      );
+    }
+    return result;
   }
 
   Future<List<BackgroundWorkView>> listBackgroundWorks(
@@ -4240,6 +4438,48 @@ class ConversationUseCases {
       message.pendingOrder == null &&
       !_transientMessageStatuses.contains(message.status) &&
       _isTerminalMessage(message);
+
+  bool _canBookmark(ConversationMessage message) =>
+      (message.role == 'user' || message.role == 'assistant') &&
+      (message.kind == 'text' || message.kind == 'image') &&
+      message.status == ConversationStatuses.completed &&
+      _isDurableMessage(message);
+
+  Future<ConversationMessage> _bookmarkSourceMessage(
+    Session session, {
+    required Conversation source,
+    required String sourceConversationId,
+    required String messageId,
+    required Transaction transaction,
+  }) async {
+    _requireId(messageId);
+    _requireId(sourceConversationId);
+    final visibleMessage = (await _effectiveMessages(
+      session,
+      source: source,
+      transaction: transaction,
+    )).where((message) => message.stableId == messageId).firstOrNull;
+    if (visibleMessage == null || !_canBookmark(visibleMessage)) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final owningConversation = await Conversation.db.findById(
+      session,
+      visibleMessage.conversationId,
+      transaction: transaction,
+    );
+    if (owningConversation?.stableId != sourceConversationId ||
+        owningConversation?.deletedAt != null) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    return visibleMessage;
+  }
+
+  String _messageBookmarkExcerpt(String content) {
+    final trimmed = content.trim();
+    final runes = trimmed.runes;
+    if (runes.length <= _messageBookmarkExcerptLength) return trimmed;
+    return '${String.fromCharCodes(runes.take(_messageBookmarkExcerptLength))}…';
+  }
 
   Future<List<ConversationMessage>> _durableMessages(
     Session session, {

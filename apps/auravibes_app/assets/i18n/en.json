@@ -346,6 +346,10 @@
     "chats_list": {
       "title": "Chats",
       "add_chat": "Add Chat",
+      "saved_messages": "Saved messages",
+      "saved_messages_empty": "No saved messages yet",
+      "saved_message_empty_excerpt": "Image message",
+      "saved_message_untitled_conversation": "Untitled conversation",
       "draft_marker": "Draft",
       "archive_import": "Import archive",
       "search_placeholder": "Search conversations...",
@@ -405,6 +409,9 @@
         "restore_default": "Restore provider default"
       },
       "message_placeholder": "Type your message...",
+      "bookmark_message": "Save message",
+      "unbookmark_message": "Remove saved message",
+      "bookmark_error": "Could not update saved message. Try again.",
       "discard_draft": "Discard draft",
       "attach_file": "Attach file",
       "attach_photo": "Attach photo",

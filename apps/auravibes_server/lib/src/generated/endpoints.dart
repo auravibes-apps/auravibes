@@ -18,6 +18,8 @@ import 'package:auravibes_server/src/generated/features/codex_oauth/models/compl
     as _ir0ud11r;
 import 'package:auravibes_server/src/generated/features/codex_oauth/models/start_codex_oauth_request.dart'
     as _ivuexb4h;
+import 'package:auravibes_server/src/generated/features/conversations/models/bookmark_message_request.dart'
+    as _iqabnln6;
 import 'package:auravibes_server/src/generated/features/conversations/models/cancel_turn_request.dart'
     as _i4j5a2zc;
 import 'package:auravibes_server/src/generated/features/conversations/models/compact_conversation_request.dart'
@@ -48,6 +50,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/lis
     as _i5dqxctc;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_conversations_request.dart'
     as _i0m5o1i2;
+import 'package:auravibes_server/src/generated/features/conversations/models/list_message_bookmarks_request.dart'
+    as _inxcvjob;
 import 'package:auravibes_server/src/generated/features/conversations/models/queue_conversation_message_request.dart'
     as _i605rjdx;
 import 'package:auravibes_server/src/generated/features/conversations/models/remove_pending_conversation_message_request.dart'
@@ -66,6 +70,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/sub
     as _i6vuisoi;
 import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
     as _ii7vetdc;
+import 'package:auravibes_server/src/generated/features/conversations/models/unbookmark_message_request.dart'
+    as _i88e9bqv;
 import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_request.dart'
     as _i8uhzhf3;
 import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_settings_request.dart'
@@ -721,6 +727,66 @@ class Endpoints extends _is.EndpointDispatch {
               ) async =>
                   (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
                       .listMessages(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'bookmarkMessage': _is.MethodConnector(
+          name: 'bookmarkMessage',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iqabnln6.BookmarkMessageRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .bookmarkMessage(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'unbookmarkMessage': _is.MethodConnector(
+          name: 'unbookmarkMessage',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i88e9bqv.UnbookmarkMessageRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .unbookmarkMessage(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'listMessageBookmarks': _is.MethodConnector(
+          name: 'listMessageBookmarks',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_inxcvjob.ListMessageBookmarksRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .listMessageBookmarks(
                         session,
                         params['request'],
                       ),

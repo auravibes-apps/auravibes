@@ -28,6 +28,31 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
     );
   }
 
+  Future<void> bookmarkMessage({
+    required String conversationId,
+    required String sourceConversationId,
+    required String messageId,
+  }) => _gateway.bookmarkMessage(
+    requestId: const UuidV7().generate(),
+    conversationId: conversationId,
+    sourceConversationId: sourceConversationId,
+    messageId: messageId,
+  );
+
+  Future<void> unbookmarkMessage({
+    required String conversationId,
+    required String sourceConversationId,
+    required String messageId,
+  }) => _gateway.unbookmarkMessage(
+    requestId: const UuidV7().generate(),
+    conversationId: conversationId,
+    sourceConversationId: sourceConversationId,
+    messageId: messageId,
+  );
+
+  Future<List<MessageBookmarkView>> listMessageBookmarks() =>
+      _gateway.listMessageBookmarks();
+
   Future<ConversationSummary> update(
     ConversationEntity conversation,
     ConversationPatch patch,

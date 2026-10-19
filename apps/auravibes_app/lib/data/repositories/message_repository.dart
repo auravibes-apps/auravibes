@@ -5,14 +5,17 @@ import 'dart:async';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart';
 
 const _messageContentCannotBeEmpty = 'Message content cannot be empty';
+const _messageBookmarkExcerptLength = 160;
 
 bool _isTerminalStatus(MessageTableStatus status) =>
     status == MessageTableStatus.sent || status == MessageTableStatus.error;
@@ -126,6 +129,80 @@ class MessageRepository(
     String conversationId,
   ) => _getEffectiveMessages(conversationId);
 
+  Future<bool> bookmarkMessage({
+    required String workspaceId,
+    required String conversationId,
+    required String messageId,
+  }) => _setMessageBookmarked(
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+    messageId: messageId,
+    isBookmarked: true,
+  );
+
+  Future<bool> unbookmarkMessage({
+    required String workspaceId,
+    required String conversationId,
+    required String messageId,
+  }) => _setMessageBookmarked(
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+    messageId: messageId,
+    isBookmarked: false,
+  );
+
+  Stream<List<MessageBookmarkEntity>> watchBookmarkedMessages([
+    String? workspaceId,
+  ]) {
+    final workspaceFilter = workspaceId == null
+        ? ''
+        : 'AND conversations.workspace_id = ?';
+
+    return _database
+        .customSelect(
+          '''
+        SELECT conversations.workspace_id AS workspace_id,
+               messages.id AS message_id,
+               messages.conversation_id AS conversation_id,
+               messages.content AS content,
+               messages.created_at AS created_at,
+               conversations.title AS conversation_title,
+               workspaces.name AS workspace_name
+        FROM messages
+        INNER JOIN conversations
+          ON conversations.id = messages.conversation_id
+        INNER JOIN workspaces
+          ON workspaces.id = conversations.workspace_id
+        WHERE messages.is_bookmarked = 1
+          AND workspaces.type = 'local'
+          $workspaceFilter
+        ORDER BY messages.created_at DESC, messages.id DESC
+        ''',
+          variables: [if (workspaceId != null) Variable<String>(workspaceId)],
+          readsFrom: {
+            _database.messages,
+            _database.conversations,
+            _database.workspaces,
+          },
+        )
+        .watch()
+        .map(
+          (rows) => rows
+              .map(
+                (row) => MessageBookmarkEntity(
+                  workspaceId: row.read<String>('workspace_id'),
+                  messageId: row.read<String>('message_id'),
+                  conversationId: row.read<String>('conversation_id'),
+                  excerpt: _messageBookmarkExcerpt(row.read<String>('content')),
+                  workspaceName: row.read<String>('workspace_name'),
+                  createdAt: row.read<DateTime>('created_at'),
+                  conversationTitle: row.read<String>('conversation_title'),
+                ),
+              )
+              .toList(growable: false),
+        );
+  }
+
   /// Includes trusted context entries for continuation replay and fork history.
   Future<List<MessageEntity>> getTranscriptMessagesByConversation(
     String conversationId,
@@ -135,6 +212,49 @@ class MessageRepository(
   Stream<List<MessageEntity>> watchTranscriptMessagesByConversation(
     String conversationId,
   ) => _watchTranscriptMessages(conversationId);
+}
+
+String _messageBookmarkExcerpt(String content) {
+  final trimmed = content.trim();
+  final runes = trimmed.runes;
+  if (runes.length <= _messageBookmarkExcerptLength) return trimmed;
+
+  final excerpt = String.fromCharCodes(
+    runes.take(_messageBookmarkExcerptLength),
+  );
+
+  return '$excerpt...';
+}
+
+extension on MessageRepository {
+  Future<bool> _setMessageBookmarked({
+    required String workspaceId,
+    required String conversationId,
+    required String messageId,
+    required bool isBookmarked,
+  }) async {
+    final conversation = await _database.conversationDao.getConversationById(
+      conversationId,
+    );
+    if (conversation?.workspaceId != workspaceId) return false;
+
+    final visibleMessage = (await _getEffectiveMessages(conversationId))
+        .firstWhereOrNull((message) => message.id == messageId);
+    if (visibleMessage == null || !visibleMessage.isBookmarkEligible) {
+      return false;
+    }
+
+    final sourceMessage = await _database.messageDao.getMessageById(messageId);
+    if (sourceMessage == null) return false;
+    final sourceConversation = await _database.conversationDao
+        .getConversationById(sourceMessage.conversationId);
+    if (sourceConversation?.workspaceId != workspaceId) return false;
+
+    return await _database.messageDao.setBookmarked(
+      messageId,
+      isBookmarked: isBookmarked,
+    );
+  }
 }
 
 mixin _MessageRepositoryReadApi {

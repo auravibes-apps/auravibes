@@ -181,7 +181,9 @@ class AppDatabase extends _$AppDatabase {
       _toolAccessModeSchemaVersion + 1;
   static const int _toolCallAttachmentSchemaVersion =
       _backgroundWorkChildLinkSchemaVersion + 1;
-  static const int _currentSchemaVersion = _toolCallAttachmentSchemaVersion;
+  static const int _messageBookmarkSchemaVersion =
+      _toolCallAttachmentSchemaVersion + 1;
+  static const int _currentSchemaVersion = _messageBookmarkSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -228,6 +230,16 @@ extension on AppDatabase {
     await _upgradeModelUsageSchema(m);
     await _upgradeToolAccessModeSchema(m);
     await _upgradeToolCallAttachmentSchema(m, from);
+    await _upgradeMessageBookmarkSchema(m, from);
+  }
+
+  Future<void> _upgradeMessageBookmarkSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._messageBookmarkSchemaVersion ||
+        !await _tableExists('messages') ||
+        await _columnExists('messages', 'is_bookmarked')) {
+      return;
+    }
+    await m.addColumn(messages, messages.isBookmarked);
   }
 
   Future<void> _upgradeToolAccessModeSchema(Migrator m) async {

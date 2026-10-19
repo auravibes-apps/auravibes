@@ -346,6 +346,10 @@
     "chats_list": {
       "title": "Chats",
       "add_chat": "Agregar Chat",
+      "saved_messages": "Mensajes guardados",
+      "saved_messages_empty": "Aún no hay mensajes guardados",
+      "saved_message_empty_excerpt": "Mensaje con imagen",
+      "saved_message_untitled_conversation": "Conversación sin título",
       "draft_marker": "Borrador",
       "archive_import": "Importar archivo",
       "search_placeholder": "Buscar conversaciones...",
@@ -405,6 +409,9 @@
         "restore_default": "Restaurar predeterminado del proveedor"
       },
       "message_placeholder": "Escribe tu mensaje...",
+      "bookmark_message": "Guardar mensaje",
+      "unbookmark_message": "Quitar mensaje guardado",
+      "bookmark_error": "No se pudo actualizar el mensaje guardado. Inténtalo de nuevo.",
       "discard_draft": "Descartar borrador",
       "attach_file": "Adjuntar archivo",
       "attach_photo": "Adjuntar foto",

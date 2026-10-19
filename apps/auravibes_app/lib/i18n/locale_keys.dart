@@ -467,6 +467,14 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.title';
   static const chats_screens_chats_list_add_chat =
       'chats_screens.chats_list.add_chat';
+  static const chats_screens_chats_list_saved_messages =
+      'chats_screens.chats_list.saved_messages';
+  static const chats_screens_chats_list_saved_messages_empty =
+      'chats_screens.chats_list.saved_messages_empty';
+  static const chats_screens_chats_list_saved_message_empty_excerpt =
+      'chats_screens.chats_list.saved_message_empty_excerpt';
+  static const chats_screens_chats_list_saved_message_untitled_conversation =
+      'chats_screens.chats_list.saved_message_untitled_conversation';
   static const chats_screens_chats_list_draft_marker =
       'chats_screens.chats_list.draft_marker';
   static const chats_screens_chats_list_archive_import =
@@ -565,6 +573,12 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.reasoning.restore_default';
   static const chats_screens_chat_conversation_message_placeholder =
       'chats_screens.chat_conversation.message_placeholder';
+  static const chats_screens_chat_conversation_bookmark_message =
+      'chats_screens.chat_conversation.bookmark_message';
+  static const chats_screens_chat_conversation_unbookmark_message =
+      'chats_screens.chat_conversation.unbookmark_message';
+  static const chats_screens_chat_conversation_bookmark_error =
+      'chats_screens.chat_conversation.bookmark_error';
   static const chats_screens_chat_conversation_discard_draft =
       'chats_screens.chat_conversation.discard_draft';
   static const chats_screens_chat_conversation_attach_file =

@@ -423,18 +423,66 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
         ),
       );
   Future<List<ConversationMessageView>> listConversationMessages(
-    String conversationId,
-  ) => CloudAppErrors.guardCall(
+    String conversationId, {
+    int limit = 500,
+    String? messageId,
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.listMessages(
       .new(
         workspaceId: _workspaceId,
         conversationId: conversationId,
-        limit: 500,
+        limit: limit,
+        messageId: messageId,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
     ),
   );
+
+  Future<void> bookmarkMessage({
+    required String requestId,
+    required String conversationId,
+    required String sourceConversationId,
+    required String messageId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.bookmarkMessage(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        sourceConversationId: sourceConversationId,
+        messageId: messageId,
+      ),
+    ),
+  );
+
+  Future<void> unbookmarkMessage({
+    required String requestId,
+    required String conversationId,
+    required String sourceConversationId,
+    required String messageId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.unbookmarkMessage(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        sourceConversationId: sourceConversationId,
+        messageId: messageId,
+      ),
+    ),
+  );
+
+  Future<List<MessageBookmarkView>> listMessageBookmarks() =>
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.listMessageBookmarks(
+          .new(workspaceId: _workspaceId),
+        ),
+      );
+
   Future<ConversationSummary> updateConversation(
     UpdateConversationRequest request,
   ) => CloudAppErrors.guardCall(

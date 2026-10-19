@@ -16,6 +16,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_activity_pro
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
+import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
@@ -219,6 +220,44 @@ Stream<List<MessageEntity>> _cloudMessages(
   _readCloudConversationMessages,
 );
 
+@riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
+Future<MessageEntity?> fetchConversationMessageById(
+  Ref ref,
+  _MessageLookupRequest request,
+) async {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(request.workspaceId).future,
+  );
+  if (session.cloud == null) {
+    return (await ref
+            .watch(messageRepositoryProvider)
+            .getMessagesByConversation(request.conversationId))
+        .firstWhereOrNull((message) => message.id == request.messageId);
+  }
+
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayProvider(session).future,
+  );
+  if (gateway == null) return null;
+
+  final messages = await CloudChatGateway(gateway).listConversationMessages(
+    request.conversationId,
+    limit: 1,
+    messageId: request.messageId,
+  );
+  final message = messages.firstWhereOrNull(
+    (item) => item.id == request.messageId,
+  );
+  if (message == null) return null;
+
+  return _readCloudMessage(message, (
+    a2uiMessages: null,
+    a2uiIssuesBySurface: null,
+    a2uiMessageIssues: null,
+  ));
+}
+
 Stream<List<MessageEntity>> _messageStream<T>(
   Ref ref,
   ProviderListenable<AsyncValue<T>> provider,
@@ -369,6 +408,8 @@ MessageEntity _cloudMessageEntity(
   status: status,
   createdAt: message.createdAt,
   updatedAt: message.updatedAt,
+  sourceConversationId: message.sourceConversationId,
+  sourceMessageId: message.sourceMessageId,
   metadata: metadata,
   isForkReference: message.isForkReference,
 );

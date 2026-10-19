@@ -1279,7 +1279,8 @@ mixin _$MessageEntity {
  bool get isUser;/// Status of the message.
  MessageStatus get status;/// Timestamp when the message was created.
  DateTime get createdAt;/// Timestamp when the message was last updated.
- DateTime get updatedAt;/// Additional metadata for the message (JSON).
+ DateTime get updatedAt;/// Canonical source IDs for cloud messages materialized into a fork.
+ String? get sourceConversationId; String? get sourceMessageId;/// Additional metadata for the message (JSON).
  MessageMetadataEntity? get metadata; List<MessageAttachmentEntity> get attachments;/// True when the message is inherited from a reference-backed fork
 /// source and cannot be mutated by the current conversation.
  bool get isForkReference;
@@ -1294,20 +1295,20 @@ $MessageEntityCopyWith<MessageEntity> get copyWith => _$MessageEntityCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as MessageEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.messageType, _this.messageType) || other.messageType == _this.messageType)&&(identical(other.isUser, _this.isUser) || other.isUser == _this.isUser)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.metadata, _this.metadata) || other.metadata == _this.metadata)&&const DeepCollectionEquality().equals(other.attachments, _this.attachments)&&(identical(other.isForkReference, _this.isForkReference) || other.isForkReference == _this.isForkReference));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.messageType, _this.messageType) || other.messageType == _this.messageType)&&(identical(other.isUser, _this.isUser) || other.isUser == _this.isUser)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.sourceConversationId, _this.sourceConversationId) || other.sourceConversationId == _this.sourceConversationId)&&(identical(other.sourceMessageId, _this.sourceMessageId) || other.sourceMessageId == _this.sourceMessageId)&&(identical(other.metadata, _this.metadata) || other.metadata == _this.metadata)&&const DeepCollectionEquality().equals(other.attachments, _this.attachments)&&(identical(other.isForkReference, _this.isForkReference) || other.isForkReference == _this.isForkReference));
 }
 
 
 @override
 int get hashCode {
   final _this = this as MessageEntity;
-  return Object.hash(runtimeType,_this.id,_this.conversationId,_this.content,_this.messageType,_this.isUser,_this.status,_this.createdAt,_this.updatedAt,_this.metadata,const DeepCollectionEquality().hash(_this.attachments),_this.isForkReference);
+  return Object.hash(runtimeType,_this.id,_this.conversationId,_this.content,_this.messageType,_this.isUser,_this.status,_this.createdAt,_this.updatedAt,_this.sourceConversationId,_this.sourceMessageId,_this.metadata,const DeepCollectionEquality().hash(_this.attachments),_this.isForkReference);
 }
 
 @override
 String toString() {
   final _this = this as MessageEntity;
-  return 'MessageEntity(id: ${_this.id}, conversationId: ${_this.conversationId}, content: ${_this.content}, messageType: ${_this.messageType}, isUser: ${_this.isUser}, status: ${_this.status}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, metadata: ${_this.metadata}, attachments: ${_this.attachments}, isForkReference: ${_this.isForkReference})';
+  return 'MessageEntity(id: ${_this.id}, conversationId: ${_this.conversationId}, content: ${_this.content}, messageType: ${_this.messageType}, isUser: ${_this.isUser}, status: ${_this.status}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, sourceConversationId: ${_this.sourceConversationId}, sourceMessageId: ${_this.sourceMessageId}, metadata: ${_this.metadata}, attachments: ${_this.attachments}, isForkReference: ${_this.isForkReference})';
 }
 
 
@@ -1318,7 +1319,7 @@ abstract mixin class $MessageEntityCopyWith<$Res>  {
   factory $MessageEntityCopyWith(MessageEntity value, $Res Function(MessageEntity) _then) = _$MessageEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, MessageMetadataEntity? metadata, List<MessageAttachmentEntity> attachments, bool isForkReference
+ String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, String? sourceConversationId, String? sourceMessageId, MessageMetadataEntity? metadata, List<MessageAttachmentEntity> attachments, bool isForkReference
 });
 
 
@@ -1335,7 +1336,7 @@ class _$MessageEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? metadata = freezed,Object? attachments = null,Object? isForkReference = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? sourceConversationId = freezed,Object? sourceMessageId = freezed,Object? metadata = freezed,Object? attachments = null,Object? isForkReference = null,}) {
   return _then(MessageEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
@@ -1345,7 +1346,9 @@ as MessageType,isUser: null == isUser ? _self.isUser : isUser // ignore: cast_nu
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as MessageStatus,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
+as DateTime,sourceConversationId: freezed == sourceConversationId ? _self.sourceConversationId : sourceConversationId // ignore: cast_nullable_to_non_nullable
+as String?,sourceMessageId: freezed == sourceMessageId ? _self.sourceMessageId : sourceMessageId // ignore: cast_nullable_to_non_nullable
+as String?,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
 as MessageMetadataEntity?,attachments: null == attachments ? _self.attachments : attachments // ignore: cast_nullable_to_non_nullable
 as List<MessageAttachmentEntity>,isForkReference: null == isForkReference ? _self.isForkReference : isForkReference // ignore: cast_nullable_to_non_nullable
 as bool,
@@ -1445,10 +1448,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  String? sourceConversationId,  String? sourceMessageId,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageEntity() when $default != null:
-return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments,_that.isForkReference);case _:
+return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.sourceConversationId,_that.sourceMessageId,_that.metadata,_that.attachments,_that.isForkReference);case _:
   return orElse();
 
 }
@@ -1466,10 +1469,10 @@ return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  String? sourceConversationId,  String? sourceMessageId,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)  $default,) {final _that = this;
 switch (_that) {
 case _MessageEntity():
-return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments,_that.isForkReference);case _:
+return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.sourceConversationId,_that.sourceMessageId,_that.metadata,_that.attachments,_that.isForkReference);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1486,10 +1489,10 @@ return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  String? sourceConversationId,  String? sourceMessageId,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageEntity() when $default != null:
-return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments,_that.isForkReference);case _:
+return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.sourceConversationId,_that.sourceMessageId,_that.metadata,_that.attachments,_that.isForkReference);case _:
   return null;
 
 }
@@ -1501,7 +1504,7 @@ return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_t
 
 
 class _MessageEntity extends MessageEntity {
-  const _MessageEntity({required this.id, required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, required this.createdAt, required this.updatedAt, this.metadata,  List<MessageAttachmentEntity> attachments = const <MessageAttachmentEntity>[], this.isForkReference = false}): _attachments = attachments,super._();
+  const _MessageEntity({required this.id, required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, required this.createdAt, required this.updatedAt, this.sourceConversationId, this.sourceMessageId, this.metadata,  List<MessageAttachmentEntity> attachments = const <MessageAttachmentEntity>[], this.isForkReference = false}): _attachments = attachments,super._();
   
 
 /// Unique identifier for the message.
@@ -1520,6 +1523,9 @@ class _MessageEntity extends MessageEntity {
 @override final  DateTime createdAt;
 /// Timestamp when the message was last updated.
 @override final  DateTime updatedAt;
+/// Canonical source IDs for cloud messages materialized into a fork.
+@override final  String? sourceConversationId;
+@override final  String? sourceMessageId;
 /// Additional metadata for the message (JSON).
 @override final  MessageMetadataEntity? metadata;
  final  List<MessageAttachmentEntity> _attachments;
@@ -1543,18 +1549,18 @@ _$MessageEntityCopyWith<_MessageEntity> get copyWith => __$MessageEntityCopyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, _attachments)&&(identical(other.isForkReference, isForkReference) || other.isForkReference == isForkReference));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.sourceConversationId, sourceConversationId) || other.sourceConversationId == sourceConversationId)&&(identical(other.sourceMessageId, sourceMessageId) || other.sourceMessageId == sourceMessageId)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, _attachments)&&(identical(other.isForkReference, isForkReference) || other.isForkReference == isForkReference));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,conversationId,content,messageType,isUser,status,createdAt,updatedAt,metadata,const DeepCollectionEquality().hash(_attachments),isForkReference);
+    return Object.hash(runtimeType,id,conversationId,content,messageType,isUser,status,createdAt,updatedAt,sourceConversationId,sourceMessageId,metadata,const DeepCollectionEquality().hash(_attachments),isForkReference);
 }
 
 @override
 String toString() {
-    return 'MessageEntity(id: $id, conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata, attachments: $attachments, isForkReference: $isForkReference)';
+    return 'MessageEntity(id: $id, conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, sourceConversationId: $sourceConversationId, sourceMessageId: $sourceMessageId, metadata: $metadata, attachments: $attachments, isForkReference: $isForkReference)';
 }
 
 
@@ -1565,7 +1571,7 @@ abstract mixin class _$MessageEntityCopyWith<$Res> implements $MessageEntityCopy
   factory _$MessageEntityCopyWith(_MessageEntity value, $Res Function(_MessageEntity) _then) = __$MessageEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, MessageMetadataEntity? metadata, List<MessageAttachmentEntity> attachments, bool isForkReference
+ String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, String? sourceConversationId, String? sourceMessageId, MessageMetadataEntity? metadata, List<MessageAttachmentEntity> attachments, bool isForkReference
 });
 
 
@@ -1582,7 +1588,7 @@ class __$MessageEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? metadata = freezed,Object? attachments = null,Object? isForkReference = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? sourceConversationId = freezed,Object? sourceMessageId = freezed,Object? metadata = freezed,Object? attachments = null,Object? isForkReference = null,}) {
   return _then(_MessageEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
@@ -1592,7 +1598,9 @@ as MessageType,isUser: null == isUser ? _self.isUser : isUser // ignore: cast_nu
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as MessageStatus,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
+as DateTime,sourceConversationId: freezed == sourceConversationId ? _self.sourceConversationId : sourceConversationId // ignore: cast_nullable_to_non_nullable
+as String?,sourceMessageId: freezed == sourceMessageId ? _self.sourceMessageId : sourceMessageId // ignore: cast_nullable_to_non_nullable
+as String?,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
 as MessageMetadataEntity?,attachments: null == attachments ? _self._attachments : attachments // ignore: cast_nullable_to_non_nullable
 as List<MessageAttachmentEntity>,isForkReference: null == isForkReference ? _self.isForkReference : isForkReference // ignore: cast_nullable_to_non_nullable
 as bool,

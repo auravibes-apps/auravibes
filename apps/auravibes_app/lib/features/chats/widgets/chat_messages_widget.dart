@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -36,6 +37,9 @@ import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provide
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
@@ -55,6 +59,7 @@ import 'package:auravibes_app/features/skills/providers/conversation_skill_selec
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
@@ -231,6 +236,20 @@ class const ChatMessagesWidget({
     final isCompacting =
         compactionState?.status == CompactionExecutionStatus.running;
     final resolvedMessages = <_ResolvedChatMessage?>[];
+    final focusedMessageId = GoRouter.maybeOf(context) == null
+        ? null
+        : GoRouterState.of(context).uri.queryParameters['messageId'];
+    final focusedMessageAsync =
+        focusedMessageId == null || messages.contains(focusedMessageId)
+        ? null
+        : ref.watch(
+            fetchConversationMessageByIdProvider((
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+              messageId: focusedMessageId,
+            )),
+          );
+    final focusedMessage = focusedMessageAsync?.asData?.value;
     for (final messageId in messages) {
       final message =
           ref.watch(
@@ -246,6 +265,11 @@ class const ChatMessagesWidget({
         message == null
             ? null
             : _ResolvedChatMessage(message: message, isStreaming: isStreaming),
+      );
+    }
+    if (focusedMessage != null) {
+      resolvedMessages.add(
+        _ResolvedChatMessage(message: focusedMessage, isStreaming: false),
       );
     }
     final data = _buildChatTimelineItems(
@@ -283,6 +307,40 @@ class const ChatMessagesWidget({
     final thinkingCount = showThinking ? 1 : 0;
     final compactionCount = isCompacting ? 1 : 0;
     final itemCount = data.length + thinkingCount + compactionCount;
+    final focusedItemIndex = focusedMessageId == null
+        ? -1
+        : data.indexWhere(
+            (item) => _timelineItemContainsMessageId(item, focusedMessageId),
+          );
+    final focusedListIndex = focusedItemIndex < 0
+        ? -1
+        : focusedItemIndex + thinkingCount + compactionCount;
+    final itemKeys = useMemoized(
+      () => focusedListIndex < 0
+          ? <GlobalKey>[]
+          : List<GlobalKey>.generate(itemCount, (_) => GlobalKey()),
+      [focusedListIndex, itemCount, messages],
+    );
+    final hasFocusedTarget = useRef(false);
+    useEffect(() {
+      hasFocusedTarget.value = false;
+      return null;
+    }, [focusedMessageId]);
+    useEffect(
+      () => _focusMessageEffect(
+        controller: controller,
+        itemKeys: itemKeys,
+        itemIndex: focusedListIndex,
+        hasFocusedTarget: hasFocusedTarget,
+      ),
+      [
+        controller,
+        focusedListIndex,
+        focusedMessageId,
+        hasFocusedTarget,
+        itemKeys,
+      ],
+    );
 
     void jumpToLatest() {
       if (!controller.hasClients) return;
@@ -301,27 +359,35 @@ class const ChatMessagesWidget({
           reverse: true,
           controller: controller,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemBuilder: (context, index) => _buildChatTimelineItem(
-            index: index,
-            data: data,
-            showThinking: showThinking,
-            isCompacting: isCompacting,
-            thinkingCount: thinkingCount,
-            compactionCount: compactionCount,
-            disclosureController: controller,
-            onDisclosureChanged: updateDisclosure,
-            parentConversationId: parentConversationId,
-            childConversations: childConversations,
-            workspaceId: workspaceId,
-            isCloudWorkspace: isCloudWorkspace,
-            backgroundToolCallIds: backgroundToolCallIds,
-            a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
-            replayPayloadsByMessageId: submittedA2uiReplayPayloads,
-            conversation: conversation,
-            retryableMessageId: retryableMessageId,
-            onRetryMessage: onRetryMessage,
-            onOpenToolResult: onOpenToolResult,
-          ),
+          itemBuilder: (context, index) {
+            final item = _buildChatTimelineItem(
+              context: context,
+              index: index,
+              data: data,
+              focusedMessageId: focusedMessageId,
+              showThinking: showThinking,
+              isCompacting: isCompacting,
+              thinkingCount: thinkingCount,
+              compactionCount: compactionCount,
+              disclosureController: controller,
+              onDisclosureChanged: updateDisclosure,
+              parentConversationId: parentConversationId,
+              childConversations: childConversations,
+              workspaceId: workspaceId,
+              isCloudWorkspace: isCloudWorkspace,
+              backgroundToolCallIds: backgroundToolCallIds,
+              a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
+              replayPayloadsByMessageId: submittedA2uiReplayPayloads,
+              conversation: conversation,
+              retryableMessageId: retryableMessageId,
+              onRetryMessage: onRetryMessage,
+              onOpenToolResult: onOpenToolResult,
+            );
+
+            return focusedListIndex < 0
+                ? item
+                : KeyedSubtree(key: itemKeys[index], child: item);
+          },
           separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
           itemCount: itemCount,
           addAutomaticKeepAlives: false,
@@ -334,6 +400,17 @@ class const ChatMessagesWidget({
           responses: assistantResponseProgress,
           isStopRequested: isStopRequested,
         ),
+        if (focusedMessageAsync case AsyncError(:final error))
+          Positioned(
+            top: 12,
+            left: 16,
+            right: 16,
+            child: AuraCallout(
+              title: CloudAppErrors.localizationKey(error).tr(),
+              icon: Icons.error_outline,
+              tint: .error,
+            ),
+          ),
         Positioned(
           right: 16,
           bottom: 16,
@@ -574,8 +651,10 @@ void _showConversationSkillPicker(
 }
 
 Widget _buildChatTimelineItem({
+  required BuildContext context,
   required int index,
   required List<_ChatTimelineItem> data,
+  required String? focusedMessageId,
   required bool showThinking,
   required bool isCompacting,
   required int thinkingCount,
@@ -659,13 +738,26 @@ Widget _buildChatTimelineItem({
     controller: disclosureController,
     child: child,
   );
+  final highlighted =
+      focusedMessageId != null &&
+      _timelineItemContainsMessageId(item, focusedMessageId);
+  final focused = highlighted
+      ? DecoratedBox(
+          key: ValueKey('focused_message_$focusedMessageId'),
+          decoration: BoxDecoration(
+            border: Border.all(color: context.auraColors.primary, width: 2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: rendered,
+        )
+      : rendered;
   if (conversation != null &&
       messageId != null &&
       conversation.forkThroughMessageId == messageId) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        rendered,
+        focused,
         _ForkBoundaryDivider(
           conversation: conversation!,
           workspaceId: workspaceId,
@@ -673,7 +765,102 @@ Widget _buildChatTimelineItem({
       ],
     );
   }
-  return rendered;
+  return focused;
+}
+
+bool _timelineItemContainsMessageId(_ChatTimelineItem item, String messageId) =>
+    switch (item) {
+      _ActivityRunTimelineItem(:final run) => run.sources.any(
+        (source) => source.message.id == messageId,
+      ),
+      _MessageTimelineItem(:final source) => source.message.id == messageId,
+    };
+
+VoidCallback? _focusMessageEffect({
+  required _DisclosureScrollController controller,
+  required List<GlobalKey> itemKeys,
+  required int itemIndex,
+  required ObjectRef<bool> hasFocusedTarget,
+}) {
+  if (itemIndex < 0 || itemIndex >= itemKeys.length) return null;
+  var active = true;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!active || hasFocusedTarget.value || !controller.hasClients) return;
+    unawaited(
+      _focusMessage(
+        controller: controller,
+        itemKeys: itemKeys,
+        itemIndex: itemIndex,
+        hasFocusedTarget: hasFocusedTarget,
+      ),
+    );
+  });
+  return () {
+    active = false;
+  };
+}
+
+Future<void> _focusMessage({
+  required _DisclosureScrollController controller,
+  required List<GlobalKey> itemKeys,
+  required int itemIndex,
+  required ObjectRef<bool> hasFocusedTarget,
+}) async {
+  if (itemKeys[itemIndex].currentContext case final targetContext?) {
+    await Scrollable.ensureVisible(
+      targetContext,
+      alignment: 0.5,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+    hasFocusedTarget.value = true;
+    return;
+  }
+
+  if (itemKeys.length <= 1) return;
+  final position = controller.position;
+  final scrollRange = position.maxScrollExtent - position.minScrollExtent;
+  controller.jumpTo(
+    (position.minScrollExtent + scrollRange * itemIndex / (itemKeys.length - 1))
+        .clamp(position.minScrollExtent, position.maxScrollExtent),
+  );
+
+  while (controller.hasClients) {
+    await WidgetsBinding.instance.endOfFrame;
+    if (itemKeys[itemIndex].currentContext case final targetContext?) {
+      await Scrollable.ensureVisible(
+        targetContext,
+        alignment: 0.5,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+      hasFocusedTarget.value = true;
+      return;
+    }
+    if (!controller.hasClients) return;
+
+    final mounted = [
+      for (var index = 0; index < itemKeys.length; index++)
+        if (itemKeys[index].currentContext case final context?) index,
+    ];
+    if (mounted.isEmpty) return;
+    final currentPosition = controller.position;
+    final direction = itemIndex < mounted.first
+        ? -1
+        : itemIndex > mounted.last
+        ? 1
+        : 0;
+    if (direction == 0) return;
+    final nextPosition =
+        (currentPosition.pixels +
+                direction * currentPosition.viewportDimension * .8)
+            .clamp(
+              currentPosition.minScrollExtent,
+              currentPosition.maxScrollExtent,
+            );
+    if (nextPosition == currentPosition.pixels) return;
+    controller.jumpTo(nextPosition);
+  }
 }
 
 class _ResolvedChatMessage {
@@ -1224,7 +1411,8 @@ List<Widget> _messageContentChildren({
     if (showResponseActions &&
         !hasA2uiResponse &&
         (_messageCopyText(message, a2uiRuntime) != null ||
-            (canRetry && onRetryMessage != null)))
+            (canRetry && onRetryMessage != null) ||
+            message.isBookmarkEligible))
       _MessageActions(
         message: message,
         resolveContent: () => _messageCopyText(message, a2uiRuntime),
@@ -1479,9 +1667,9 @@ class const _MessageActions({
   required final String workspaceId,
   required final String conversationId,
   final Future<void> Function(MessageEntity message)? onRetryMessage,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final resolve = resolveContent;
     final retry = onRetryMessage;
     final typography = context.auraTheme.typography;
@@ -1510,6 +1698,12 @@ class const _MessageActions({
           if (resolve != null) _MessageCopyAction(resolveContent: resolve),
           if (retry != null)
             _MessageRetryAction(message: message, onRetryMessage: retry),
+          if (message.isBookmarkEligible)
+            _MessageBookmarkAction(
+              message: message,
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            ),
           if (_canForkMessage(message))
             _MessageForkAction(
               message: message,
@@ -1522,6 +1716,79 @@ class const _MessageActions({
           ],
         ],
       ),
+    );
+  }
+}
+
+class const _MessageBookmarkAction({
+  required final MessageEntity message,
+  required final String workspaceId,
+  required final String conversationId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookmarks = ref.watch(messageBookmarksProvider(workspaceId)).value;
+    final messageId = message.sourceMessageId ?? message.id;
+    final isBookmarked =
+        bookmarks?.any(
+          (bookmark) =>
+              bookmark.workspaceId == workspaceId &&
+              bookmark.messageId == messageId,
+        ) ??
+        false;
+    final tooltip = isBookmarked
+        ? LocaleKeys.chats_screens_chat_conversation_unbookmark_message.tr()
+        : LocaleKeys.chats_screens_chat_conversation_bookmark_message.tr();
+
+    return AuraIconButton(
+      key: ValueKey('bookmark_message_${message.id}'),
+      icon: isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+      size: .small,
+      tooltip: tooltip,
+      onPressed: () => unawaited(
+        _toggleMessageBookmark(
+          context,
+          ref,
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          message: message,
+          isBookmarked: isBookmarked,
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _toggleMessageBookmark(
+  BuildContext context,
+  WidgetRef ref, {
+  required String workspaceId,
+  required String conversationId,
+  required MessageEntity message,
+  required bool isBookmarked,
+}) async {
+  try {
+    final cloud = await ref
+        .read(messageBookmarkUseCaseProvider)
+        .toggle(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          message: message,
+          isBookmarked: isBookmarked,
+          resolveCloudConversation: () =>
+              ref.read(cloudConversationUsecaseProvider(workspaceId).future),
+        );
+    if (!context.mounted) return;
+    ref.invalidate(messageBookmarksProvider(workspaceId));
+    if (cloud) ref.invalidate(cloudMessageBookmarksProvider);
+  } on Object {
+    if (!context.mounted) return;
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_bookmark_error,
+      ),
+      variant: .error,
     );
   }
 }
