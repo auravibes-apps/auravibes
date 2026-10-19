@@ -1,5 +1,5 @@
 # AuraVibes Agent Instructions
-<!-- Managed by agent: AuraVibes | Last updated: 2026-10-18 -->
+<!-- Managed by agent: AuraVibes | Last updated: 2026-10-19 -->
 
 AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace management across mobile, desktop, and web.
 
@@ -46,11 +46,13 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 ## Operations
 
 - For `.fvmrc` changes, FVM drift, or CI failure triage, read [CI failure triage](docs/agents/operations.md#ci-failure-triage).
+- For PR-check monitoring, read [PR check monitoring](docs/agents/operations.md#pr-check-monitoring).
 - For scoped database queries or native Flutter driver control, read the relevant section of [operations.md](docs/agents/operations.md).
 
 ## Verification
 
 - Run the smallest scope-appropriate check with pinned FVM. Use `fvm dart run melos run <script>` for root scripts.
+- For Dart syntax checks, use `fvm dart analyze <path>` when generic syntax parsing reports unsupported language.
 - For generated source changes, run the relevant generator and inspect its output.
 - For scope-specific checks, read [validation policy](docs/agents/task-policies.md#validation).
 - If a check cannot run, say why and name the next command.
