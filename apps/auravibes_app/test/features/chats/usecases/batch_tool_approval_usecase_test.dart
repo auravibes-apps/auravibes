@@ -245,8 +245,12 @@ void main() {
           arguments: {'input': 'value'},
         ),
       ).thenAnswer((_) async => 'done');
-      when(() => resolvedToolService.takeMcpAppResultData('success-call'))
-          .thenReturn(appData);
+      when(
+        () => resolvedToolService.takeMcpAppResultData(
+          conversationId: 'child',
+          toolCallId: 'success-call',
+        ),
+      ).thenReturn(appData);
       when(() => messageRepository.persistToolCallBatchResults(any()))
           .thenAnswer((_) => Future<void>.value());
 

@@ -135,10 +135,16 @@ class ResolvedToolService {
   new _cloud() : _delegate = null;
 
   final agent.ResolvedToolRunner<ResolvedTool>? _delegate;
-  final Map<String, Map<String, Object?>> _mcpAppResultData = {};
+  final Map<({String conversationId, String toolCallId}), Map<String, Object?>>
+  _mcpAppResultData = {};
 
-  Map<String, Object?>? takeMcpAppResultData(String toolCallId) =>
-      _mcpAppResultData.remove(toolCallId);
+  Map<String, Object?>? takeMcpAppResultData({
+    required String conversationId,
+    required String toolCallId,
+  }) => _mcpAppResultData.remove((
+    conversationId: conversationId,
+    toolCallId: toolCallId,
+  ));
 
   bool supportsCancellation(ResolvedTool tool) =>
       _delegate?.supportsCancellation(tool) ?? false;
@@ -163,7 +169,11 @@ class ResolvedToolService {
 
     if (result case final McpToolCallerResult appResult) {
       if (toolCallId.isNotEmpty) {
-        _mcpAppResultData[toolCallId] = appResult.appData;
+        _mcpAppResultData[(
+              conversationId: conversationId,
+              toolCallId: toolCallId,
+            )] =
+            appResult.appData;
       }
 
       return appResult.modelText;

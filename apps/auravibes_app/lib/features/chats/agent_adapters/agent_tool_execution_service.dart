@@ -206,7 +206,8 @@ class const AppAllowedToolsDataProvider({
     final appDataByToolCallId = <String, Map<String, Object?>>{};
     for (final update in updates) {
       final appData = resolvedToolService.takeMcpAppResultData(
-        update.toolCallId,
+        conversationId: conversationId,
+        toolCallId: update.toolCallId,
       );
       if (update.resultStatus == .success && appData != null) {
         appDataByToolCallId[update.toolCallId] = appData;

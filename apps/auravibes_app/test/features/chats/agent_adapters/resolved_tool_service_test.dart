@@ -328,9 +328,9 @@ void main() {
   });
 
   test('keeps MCP App result data separate from model output', () async {
-    const appData = <String, Object?>{
+    Map<String, Object?> appData(String text) => {
       'content': [
-        {'type': 'text', 'text': 'tool result'},
+        {'type': 'text', 'text': text},
       ],
       '_meta': {
         'ui': {'resourceUri': 'ui://tool/view'},
@@ -343,13 +343,13 @@ void main() {
             required mcpServerId,
             required toolIdentifier,
             required arguments,
-          }) async => const McpToolCallerResult(
+          }) async => McpToolCallerResult(
             modelText: 'model result',
-            appData: appData,
+            appData: appData(arguments['text'] as String),
           ),
     );
 
-    final result = await service(
+    final firstResult = await service(
       conversationId: 'conversation-1',
       tool: ResolvedTool.mcp(
         tableId: 'tool-1',
@@ -360,12 +360,40 @@ void main() {
           outputSchemaJson: null,
         ),
       ),
-      arguments: const {},
+      arguments: const {'text': 'first conversation'},
+      toolCallId: 'tool-call-1',
+    );
+    final secondResult = await service(
+      conversationId: 'conversation-2',
+      tool: ResolvedTool.mcp(
+        tableId: 'tool-1',
+        toolIdentifier: 'remote-tool',
+        mcp: (
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+          outputSchemaJson: null,
+        ),
+      ),
+      arguments: const {'text': 'second conversation'},
       toolCallId: 'tool-call-1',
     );
 
-    expect(result, 'model result');
-    expect(service.takeMcpAppResultData('tool-call-1'), appData);
+    expect(firstResult, 'model result');
+    expect(secondResult, 'model result');
+    expect(
+      service.takeMcpAppResultData(
+        conversationId: 'conversation-1',
+        toolCallId: 'tool-call-1',
+      ),
+      appData('first conversation'),
+    );
+    expect(
+      service.takeMcpAppResultData(
+        conversationId: 'conversation-2',
+        toolCallId: 'tool-call-1',
+      ),
+      appData('second conversation'),
+    );
   });
 
   test('rejects cloud tool execution on the client', () {

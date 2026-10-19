@@ -136,7 +136,8 @@ extension on BatchToolApprovalUsecase {
     final appDataByToolCallId = <String, Map<String, Object?>>{};
     for (final result in executionResults) {
       final appData = runResolvedTool.takeMcpAppResultData(
-        result.call.toolCallId,
+        conversationId: result.call.conversationId,
+        toolCallId: result.call.toolCallId,
       );
       if (result.result.resultStatus == .success && appData != null) {
         appDataByToolCallId[result.call.toolCallId] = appData;

@@ -69,8 +69,12 @@ String buildMcpAppHostPage({
 }) {
   final appHtmlBase64 = base64Encode(utf8.encode(html));
   final appCspBase64 = base64Encode(utf8.encode(_contentSecurityPolicy(csp)));
-  final hostContentSecurityPolicy = _hostContentSecurityPolicy(isWeb);
+  final hostContentSecurityPolicy = _hostContentSecurityPolicy(csp);
   final template = isWeb ? _webHostPage : _nativeHostPage;
+  final proxyPage = _webSandboxProxyPage.replaceAll(
+    '__PROXY_CONTENT_SECURITY_POLICY__',
+    hostContentSecurityPolicy,
+  );
 
   return template
       .replaceAll('__APP_HTML_BASE64__', appHtmlBase64)
@@ -78,27 +82,17 @@ String buildMcpAppHostPage({
       .replaceAll('__HOST_CONTENT_SECURITY_POLICY__', hostContentSecurityPolicy)
       .replaceAll(
         '__PROXY_HTML_BASE64__',
-        base64Encode(utf8.encode(_webSandboxProxyPage)),
+        base64Encode(utf8.encode(proxyPage)),
       );
 }
 
-String _hostContentSecurityPolicy(bool isWeb) {
-  final frameSources = isWeb ? 'data:' : ''' 'self' data: '''.trim();
+String _hostContentSecurityPolicy(Map<String, Object?> csp) =>
+    _contentSecurityPolicy(csp, frameSources: [''' 'self' '''.trim(), 'data:']);
 
-  return [
-    '''default-src 'none' '''.trim(),
-    '''script-src 'unsafe-inline' '''.trim(),
-    '''style-src 'unsafe-inline' '''.trim(),
-    'frame-src $frameSources',
-    '''img-src 'none' '''.trim(),
-    '''connect-src 'none' '''.trim(),
-    '''object-src 'none' '''.trim(),
-    '''base-uri 'none' '''.trim(),
-    '''form-action 'none' '''.trim(),
-  ].join('; ');
-}
-
-String _contentSecurityPolicy(Map<String, Object?> csp) {
+String _contentSecurityPolicy(
+  Map<String, Object?> csp, {
+  List<String> frameSources = const [],
+}) {
   final resources = _allowedDomains(csp['resourceDomains'], const {
     'http',
     'https',
@@ -109,7 +103,10 @@ String _contentSecurityPolicy(Map<String, Object?> csp) {
     'ws',
     'wss',
   });
-  final frames = _allowedDomains(csp['frameDomains'], const {'http', 'https'});
+  final frames = [
+    ..._allowedDomains(csp['frameDomains'], const {'http', 'https'}),
+    ...frameSources,
+  ];
   final bases = _allowedDomains(csp['baseUriDomains'], const {'http', 'https'});
   final baseUriSources = bases.isEmpty
       ? ''' 'self' '''.trim()
@@ -261,7 +258,7 @@ const _webSandboxProxyPage = r'''
 <html>
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="__PROXY_CONTENT_SECURITY_POLICY__">
   <style>html,body{margin:0;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%}</style>
 </head>
 <body>

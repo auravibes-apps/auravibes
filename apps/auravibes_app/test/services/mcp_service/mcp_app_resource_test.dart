@@ -122,6 +122,9 @@ void main() {
 
     expect(page, contains('sandbox="allow-scripts"'));
     expect(page, isNot(contains('allow-same-origin')));
+    final hostCsp = _contentSecurityPolicy(page);
+    expect(hostCsp, contains('connect-src https://api.example.com'));
+    expect(hostCsp, contains('img-src data: blob: https://cdn.example.com'));
     final appCsp = utf8.decode(_scriptPayload(page, 'appCspBase64'));
     expect(appCsp, contains('connect-src https://api.example.com'));
     expect(
@@ -165,12 +168,24 @@ void main() {
   test('uses a separate sandbox proxy for web hosts', () {
     final page = buildMcpAppHostPage(
       html: '<p>app</p>',
-      csp: const {},
+      csp: const {
+        'resourceDomains': ['https://cdn.example.com'],
+        'connectDomains': ['https://api.example.com'],
+        'frameDomains': ['https://frame.example.com'],
+      },
       isWeb: true,
     );
 
     expect(page, contains('sandbox="allow-scripts allow-same-origin"'));
+    final hostCsp = _contentSecurityPolicy(page);
+    expect(hostCsp, contains('connect-src https://api.example.com'));
     final proxyPage = utf8.decode(_scriptPayload(page, 'proxyHtmlBase64'));
+    final proxyCsp = _contentSecurityPolicy(proxyPage);
+    expect(proxyCsp, contains('connect-src https://api.example.com'));
+    expect(
+      proxyCsp,
+      contains('''frame-src https://frame.example.com 'self' data:'''),
+    );
     expect(proxyPage, contains('ui/notifications/sandbox-proxy-ready'));
     expect(proxyPage, contains('ui/notifications/sandbox-resource-ready'));
     expect(proxyPage, contains('''setAttribute('sandbox', 'allow-scripts')'''));
@@ -187,4 +202,16 @@ List<int> _scriptPayload(String html, String name) {
   if (payload == null) throw StateError('Missing $name payload.');
 
   return base64Decode(payload);
+}
+
+String _contentSecurityPolicy(String html) {
+  final match = RegExp(
+    '''<meta http-equiv="Content-Security-Policy" content="([^"]+)">''',
+  ).firstMatch(html);
+  if (match == null) throw StateError('Missing content security policy.');
+
+  final content = match.group(1);
+  if (content == null) throw StateError('Missing content security policy.');
+
+  return content;
 }

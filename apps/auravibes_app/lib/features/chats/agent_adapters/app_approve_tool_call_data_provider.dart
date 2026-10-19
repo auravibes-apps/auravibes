@@ -122,7 +122,8 @@ class const AppApproveToolCallDataProvider({
     agent.AgentToolCallResultUpdateRequest request,
   ) async {
     final appData = runResolvedToolUsecase.takeMcpAppResultData(
-      request.toolCallId,
+      conversationId: request.conversationId,
+      toolCallId: request.toolCallId,
     );
     await _patchToolCall(
       messageRepository,
