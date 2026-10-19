@@ -5,11 +5,13 @@ import 'dart:async';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
+import 'package:characters/characters.dart';
 import 'package:collection/collection.dart';
 
 const _messageContentCannotBeEmpty = 'Message content cannot be empty';
@@ -165,6 +167,19 @@ mixin _MessageRepositoryQueryApi {
   ) =>
       MessageRepositoryQueryOperations(this as MessageRepository)
           .getMessagesByConversationPaginated(conversationId, limit, offset);
+
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    int offset = 0,
+  }) => MessageRepositoryQueryOperations(this as MessageRepository)
+      .searchMessages(
+        query: query,
+        workspaceIds: workspaceIds,
+        limit: limit,
+        offset: offset,
+      );
 
   Future<List<MessageEntity>> getMessagesByType(
     String conversationId,
@@ -551,6 +566,45 @@ extension MessageRepositoryQueryOperations on MessageRepository {
     final messages = await _getEffectiveMessages(conversationId);
 
     return messages.skip(offset).take(limit).toList();
+  }
+
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    int offset = 0,
+  }) async {
+    final normalizedQuery = query.trim();
+    if (normalizedQuery.isEmpty ||
+        normalizedQuery.length > 256 ||
+        workspaceIds.isEmpty ||
+        limit < 1 ||
+        limit > 50 ||
+        offset < 0 ||
+        offset > 10000) {
+      return const [];
+    }
+
+    final rows = await _database.messageDao.searchMessages(
+      query: normalizedQuery,
+      workspaceIds: workspaceIds,
+      limit: limit,
+      offset: offset,
+    );
+
+    return [
+      for (final row in rows)
+        ConversationMessageSearchResult(
+          workspaceId: row.read<String>('workspace_id'),
+          workspaceName: row.read<String>('workspace_name'),
+          conversationId: row.read<String>('conversation_id'),
+          conversationTitle: row.read<String>('conversation_title'),
+          messageId: row.read<String>('message_id'),
+          role: row.read<bool>('is_user') ? 'user' : 'assistant',
+          createdAt: row.read<DateTime>('created_at'),
+          excerpt: _searchExcerpt(row.read<String>('content'), normalizedQuery),
+        ),
+    ];
   }
 
   Future<List<MessageEntity>> getMessagesByType(
@@ -1651,4 +1705,25 @@ class MessageNotFoundException extends MessageException {
 
   /// ID of the message that was not found.
   final String messageId;
+}
+
+String _searchExcerpt(String content, String query) {
+  final contentCharacters = content.characters;
+  final matchOffset = content.toLowerCase().indexOf(query.toLowerCase());
+  var lowerOffset = 0;
+  var matchCharacterIndex = 0;
+  for (final character in contentCharacters) {
+    if (lowerOffset >= matchOffset) break;
+    lowerOffset += character.toLowerCase().length;
+    matchCharacterIndex++;
+  }
+  final start = matchCharacterIndex > 50 ? matchCharacterIndex - 50 : 0;
+  final excerptLength = (query.characters.length + 100).clamp(120, 356);
+  final end = contentCharacters.length < start + excerptLength
+      ? contentCharacters.length
+      : start + excerptLength;
+  final prefix = start > 0 ? '...' : '';
+  final suffix = end < contentCharacters.length ? '...' : '';
+
+  return '$prefix${contentCharacters.skip(start).take(end - start)}$suffix';
 }

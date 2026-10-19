@@ -1,0 +1,8 @@
+class: ConversationMessageSearchResult
+fields:
+  conversationId: String
+  conversationTitle: String
+  messageId: String
+  role: String
+  createdAt: DateTime
+  excerpt: String

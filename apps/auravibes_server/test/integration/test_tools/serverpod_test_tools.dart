@@ -41,6 +41,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/con
     as _ihn1s8rq;
 import 'package:auravibes_server/src/generated/features/conversations/models/continue_turn_request.dart'
     as _io8jb8cg;
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_search_result.dart'
+    as _inj3grkb;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_view.dart'
     as _icvgm34f;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_mutation_result.dart'
@@ -83,6 +85,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/reo
     as _ilmuzuyl;
 import 'package:auravibes_server/src/generated/features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _if7qtxue;
+import 'package:auravibes_server/src/generated/features/conversations/models/search_conversation_messages_request.dart'
+    as _i71vvsjf;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
     as _ijasfsbp;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_result.dart'
@@ -1161,6 +1165,35 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_icvgm34f.ConversationMessageView>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_inj3grkb.ConversationMessageSearchResult>> searchMessages(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i71vvsjf.SearchConversationMessagesRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'searchMessages',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'searchMessages',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_inj3grkb.ConversationMessageSearchResult>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

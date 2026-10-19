@@ -35,8 +35,16 @@ class const ChatsListScreen({required final String workspaceId, super.key})
         workspaceId: workspaceId,
         showArchiveActions: showArchiveActions,
       ),
-      appBar: const AuraAppBarWithDrawer(
-        title: TextLocale(LocaleKeys.chats_screens_chats_list_title),
+      appBar: AuraAppBarWithDrawer(
+        title: const TextLocale(LocaleKeys.chats_screens_chats_list_title),
+        actions: [
+          AuraIconButton(
+            icon: Icons.search,
+            onPressed: () =>
+                ConversationSearchRoute(workspaceId: workspaceId).go(context),
+            tooltip: LocaleKeys.chats_screens_conversation_search_entry.tr(),
+          ),
+        ],
       ),
     );
   }

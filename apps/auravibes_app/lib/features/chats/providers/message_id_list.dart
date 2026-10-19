@@ -16,6 +16,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_activity_pro
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
+import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
@@ -31,6 +32,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:riverpod/misc.dart' show FutureProviderFamily;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 export 'conversation_selection_provider.dart';
@@ -41,6 +43,42 @@ part 'pending_tool_call.dart';
 part 'streaming_message_metadata.dart';
 
 final _logger = Logger('message_id_list');
+
+typedef ConversationMessageTargetKey = ({
+  String workspaceId,
+  String conversationId,
+  String messageId,
+});
+
+final FutureProviderFamily<List<MessageEntity>, ConversationMessageTargetKey>
+conversationMessageTargetMessagesProvider = FutureProvider.autoDispose
+    .family<List<MessageEntity>, ConversationMessageTargetKey>((
+      ref,
+      key,
+    ) async {
+      final session = await ref.watch(
+        workspaceSessionForRouteProvider(key.workspaceId).future,
+      );
+      final gateway = await ref.watch(
+        cloudWorkspaceStateGatewayProvider(session).future,
+      );
+      if (gateway == null) {
+        throw StateError('Cloud message retrieval unavailable');
+      }
+
+      final messages = await CloudChatGateway(
+        gateway,
+      ).listConversationMessages(key.conversationId, messageId: key.messageId);
+      const _CloudMessageOverlay overlay = (
+        a2uiMessages: null,
+        a2uiIssuesBySurface: null,
+        a2uiMessageIssues: null,
+      );
+
+      return messages.reversed
+          .map((message) => _readCloudMessage(message, overlay))
+          .toList();
+    });
 
 extension MessageIdList on ChatMessagesFamily {
   Override overrideWithValue(Stream<List<MessageEntity>> value) =>

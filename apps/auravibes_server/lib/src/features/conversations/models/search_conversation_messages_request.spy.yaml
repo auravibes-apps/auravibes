@@ -1,0 +1,6 @@
+class: SearchConversationMessagesRequest
+fields:
+  workspaceId: int
+  query: String
+  limit: int
+  offset: int

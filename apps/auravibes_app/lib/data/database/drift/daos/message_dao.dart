@@ -81,6 +81,33 @@ extension MessageDaoConversationOperations on MessageDao {
 
   Future<List<MessagesTable>> getUserMessages(String conversationId) =>
       _messagesByUserQuery(conversationId, isUser: true).get();
+
+  Future<List<QueryRow>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    required int offset,
+  }) {
+    if (query.trim().isEmpty || workspaceIds.isEmpty) return Future.value([]);
+
+    final ids = workspaceIds.toList()..sort();
+
+    return customSelect(
+      _searchMessagesSql(ids.length),
+      variables: [
+        for (final id in ids) Variable<String>(id),
+        Variable<String>(MessagesTableType.text.value),
+        Variable<String>(query.trim()),
+        Variable<int>(limit),
+        Variable<int>(offset),
+      ],
+      readsFrom: {
+        messages,
+        attachedDatabase.conversations,
+        attachedDatabase.workspaces,
+      },
+    ).get();
+  }
 }
 
 extension MessageDaoStatusOperations on MessageDao {
@@ -112,6 +139,27 @@ extension MessageDaoStatusOperations on MessageDao {
 }
 
 extension MessageDaoRawQueryOperations on MessageDao {
+  String _searchMessagesSql(int workspaceCount) =>
+      '''
+    SELECT
+      m.id AS message_id,
+      m.created_at AS created_at,
+      m.conversation_id AS conversation_id,
+      m.content AS content,
+      m.is_user AS is_user,
+      c.title AS conversation_title,
+      c.workspace_id AS workspace_id,
+      w.name AS workspace_name
+    FROM messages AS m
+    INNER JOIN conversations AS c ON c.id = m.conversation_id
+    INNER JOIN workspaces AS w ON w.id = c.workspace_id
+    WHERE c.workspace_id IN (${List.filled(workspaceCount, '?').join(', ')})
+      AND m.message_type = ?
+      AND instr(lower(m.content), lower(?)) > 0
+    ORDER BY m.created_at DESC, c.workspace_id DESC, m.id DESC
+    LIMIT ? OFFSET ?
+    ''';
+
   Selectable<QueryRow> _latestAssistantMessagesQuery(
     List<String> conversationIds,
   ) {
