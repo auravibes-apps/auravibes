@@ -24,14 +24,18 @@ cloudConversationStateProvider = StreamProvider.autoDispose
       retry: _retryCloudConversationProvider,
     );
 
-Duration? _retryCloudConversationProvider(int retryCount, Object error) =>
-    switch (error) {
-      CloudConversationStreamFailure() => null,
-      CloudAppException(:final code) when code != null => null,
-      ServerpodClientHttpException(:final statusCode) when statusCode < 500 =>
-        null,
-      _ => ProviderContainer.defaultRetry(retryCount, error),
-    };
+Duration? _retryCloudConversationProvider(int retryCount, Object error) {
+  if (_isTerminalCloudConversationError(error)) return null;
+
+  return ProviderContainer.defaultRetry(retryCount, error);
+}
+
+bool _isTerminalCloudConversationError(Object error) => switch (error) {
+  CloudConversationStreamFailure() => true,
+  CloudAppException(:final code) when code != null => true,
+  ServerpodClientHttpException(:final statusCode) when statusCode < 500 => true,
+  _ => false,
+};
 
 Stream<CloudConversationState> _watchCloudConversation(
   Ref ref,
@@ -122,7 +126,7 @@ class _CloudConversationStreamRunner {
       _state ?? (throw StateError('Conversation snapshot not loaded'));
 
   Stream<CloudConversationState> run() async* {
-    _state = await _loadSnapshot();
+    _state = await _loadInitialSnapshot();
     _logInitialSnapshot();
     yield _currentState;
 
@@ -132,13 +136,38 @@ class _CloudConversationStreamRunner {
     }
   }
 
-  Future<CloudConversationState> _recoverAfterSubscription() async {
-    _retryCount++;
-    final state = await _loadSnapshot();
-    _state = state.preserveTransientA2uiFrom(_currentState);
-    await (_delay ?? Future<void>.delayed)(_retryDelay());
+  Future<CloudConversationState> _loadInitialSnapshot() async {
+    while (true) {
+      try {
+        return await _loadSnapshot();
+      } on Object catch (error, stackTrace) {
+        _handleSnapshotFailure(error, stackTrace);
+        await _waitBeforeRetry();
+      }
+    }
+  }
 
-    return _currentState;
+  Future<CloudConversationState> _recoverAfterSubscription() async {
+    while (true) {
+      CloudConversationState state;
+      try {
+        state = await _loadSnapshot();
+      } on Object catch (error, stackTrace) {
+        _handleSnapshotFailure(error, stackTrace);
+        await _waitBeforeRetry();
+        continue;
+      }
+
+      _state = state.preserveTransientA2uiFrom(_currentState);
+      await _waitBeforeRetry();
+
+      return _currentState;
+    }
+  }
+
+  Future<void> _waitBeforeRetry() async {
+    _retryCount++;
+    await (_delay ?? Future<void>.delayed)(_retryDelay());
   }
 
   Duration _retryDelay() {
@@ -155,6 +184,19 @@ class _CloudConversationStreamRunner {
       CloudConversationState.fromSnapshot(
         await _chat.getConversationSnapshot(_key.conversationId),
       );
+
+  void _handleSnapshotFailure(Object error, StackTrace stackTrace) {
+    _logger.warning(
+      'Cloud conversation snapshot failed: '
+      'workspaceId=${_key.workspaceId}, '
+      'conversationId=${_key.conversationId}.',
+      error,
+      stackTrace,
+    );
+    if (!_isRetryableStreamFailure(error)) {
+      _throwTerminalStreamFailure(error, stackTrace);
+    }
+  }
 
   Stream<CloudConversationState> _subscribe() async* {
     try {
@@ -208,14 +250,18 @@ class _CloudConversationStreamRunner {
     );
   }
 
-  bool _isRetryableStreamFailure(Object error) => switch (error) {
-    MethodStreamException() ||
-    ServerpodClientNetworkException() ||
-    TimeoutException() => true,
-    ServerpodClientHttpException(:final statusCode) => statusCode >= 500,
-    CloudAppException(:final code) => code == null,
-    _ => false,
-  };
+  bool _isRetryableStreamFailure(Object error) {
+    if (_isTerminalCloudConversationError(error)) return false;
+
+    return switch (error) {
+      MethodStreamException() ||
+      ServerpodClientNetworkException() ||
+      TimeoutException() ||
+      ServerpodClientHttpException() ||
+      CloudAppException() => true,
+      _ => false,
+    };
+  }
 
   Never _throwTerminalStreamFailure(Object error, StackTrace stackTrace) {
     Error.throwWithStackTrace(

@@ -1695,8 +1695,10 @@ class const _ChatConversationBodyLayout({
       _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
       _CloudConversationStreamRecovery(
-        workspaceId: data.workspaceId,
-        conversationId: data.conversation.id,
+        conversationKey: (
+          workspaceId: data.workspaceId,
+          conversationId: data.conversation.id,
+        ),
       ),
       _ChatConversationMessageList(
         data: data,
@@ -1714,17 +1716,14 @@ class const _ChatConversationBodyLayout({
 }
 
 class const _CloudConversationStreamRecovery({
-  required final String workspaceId,
-  required final String conversationId,
+  required final CloudConversationKey conversationKey,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!_isCloudWorkspace(ref, workspaceId)) return const SizedBox.shrink();
+    if (!_isCloudWorkspace(ref, conversationKey.workspaceId))
+      return const SizedBox.shrink();
 
-    final provider = cloudConversationStateProvider((
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-    ));
+    final provider = cloudConversationStateProvider(conversationKey);
     final error = ref.watch(provider).error;
     if (error == null) return const SizedBox.shrink();
     final errorMessageKey = switch (error) {
