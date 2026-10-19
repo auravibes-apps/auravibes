@@ -512,6 +512,7 @@ class const _LoadedChatConversationRuntime({
       workspaceId: workspaceId,
       conversation: conversation,
     ));
+
     return _LoadedChatConversationRender(
       workspaceId: workspaceId,
       conversation: conversation,
