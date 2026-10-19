@@ -82,8 +82,9 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 ## PR Gates
 
-- For PR creation or updates, follow [PR delivery](.agents/skills/pr-delivery/SKILL.md).
-- For code PR local checks, read [PR local checks](docs/agents/task-policies.md#pr-local-checks).
+- PR titles use Conventional Commits. Keep each PR to one coherent change with its related tests; describe purpose, behavior, validation, and requested reviewer focus.
+- Use each contributor's configured tools and workflow for PR delivery and review. Do not install tools or prepare a full local environment solely for these tasks.
+- PR creation adds no local validation gate. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
 
 ## Agent skills
 

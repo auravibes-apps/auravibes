@@ -43,10 +43,3 @@ Read only section that matches current work. Root `AGENTS.md` lists each trigger
 
 - For app localization, user-facing errors, model changes, Drift schema changes, or generated app files, follow [app instructions](../../apps/auravibes_app/AGENTS.md).
 - Freezed 4 classes must not declare abstract `hashCode`, `toString`, or `==`. Such declarations suppress generated implementations.
-
-## PR local checks
-
-- Before opening or updating a code PR, run only scope-appropriate local checks.
-- Full `validate`, `dependency_validator`, and `import_sorter` are not default local PR gates.
-- Run dependency validation when dependency or package metadata changes. Run import sorting when imports change.
-- GitHub `required checks` own repository-wide gates.
