@@ -29,6 +29,72 @@ void main() {
       expect(server.sseGetCount, 0);
     });
 
+    test('advertises MCP Apps and reads tool UI metadata', () async {
+      final server = await _LocalMcpHttpServer.start(
+        tools: [
+          {
+            'name': 'weather',
+            '_meta': {
+              'ui': {'resourceUri': 'ui://weather/forecast'},
+            },
+          },
+        ],
+      );
+      final manager = McpManagerService();
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(server.endpoint),
+      );
+      final tools = await manager.getTools(client);
+      final uiExtension =
+          server.clientExtensions?['io.modelcontextprotocol/ui'] as Map?;
+
+      expect(uiExtension?['mimeTypes'], contains('text/html;profile=mcp-app'));
+      expect(tools.single.metadata, {
+        'ui': {'resourceUri': 'ui://weather/forecast'},
+      });
+    });
+
+    test('reads app resources and preserves tool result metadata', () async {
+      final server = await _LocalMcpHttpServer.start();
+      final manager = McpManagerService();
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(server.endpoint),
+      );
+      final resource = await manager.readResource(
+        client,
+        'ui://weather/forecast',
+      );
+      final toolResult = await manager.callToolResult(
+        client,
+        toolIdentifier: 'refresh',
+        arguments: {'day': 'today'},
+      );
+
+      expect(resource['contents'], hasLength(1));
+      expect((resource['contents'] as List).single['text'], '<html>app</html>');
+      expect((resource['contents'] as List).single['_meta'], {
+        'ui': {
+          'csp': {'connectDomains': []},
+        },
+      });
+      expect(toolResult['_meta'], {
+        'ui': {'resourceUri': 'ui://weather/forecast'},
+      });
+      expect(toolResult['structuredContent'], {'day': 'today'});
+    });
+
     test('uses app OAuth token provider for Streamable HTTP', () async {
       final server = await _LocalMcpHttpServer.start();
       final manager = McpManagerService();
@@ -227,11 +293,14 @@ final class _LocalMcpHttpServer {
     required this.streamableStatus,
     required this.sseStatus,
     required this.useJsonRpcError,
+    required this.tools,
   });
 
   final int streamableStatus;
   final int sseStatus;
   final bool useJsonRpcError;
+  final List<Map<String, Object?>> tools;
+  Map<String, Object?>? clientExtensions;
   int streamablePostCount = 0;
   int sseGetCount = 0;
   String? streamableAuthorization;
@@ -254,6 +323,7 @@ final class _LocalMcpHttpServer {
     int streamableStatus = 200,
     int sseStatus = 200,
     bool useJsonRpcError = false,
+    List<Map<String, Object?>> tools = const [],
   }) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final local = _LocalMcpHttpServer(
@@ -261,6 +331,7 @@ final class _LocalMcpHttpServer {
       streamableStatus: streamableStatus,
       sseStatus: sseStatus,
       useJsonRpcError: useJsonRpcError,
+      tools: tools,
     );
     final _ = server.listen((request) => unawaited(local._handle(request)));
 
@@ -322,12 +393,58 @@ final class _LocalMcpHttpServer {
     }
 
     response.headers.contentType = .json;
+    if (message['method'] == 'initialize') {
+      final capabilities = _objectMap(message['params'])['capabilities'];
+      if (capabilities is Map<Object?, Object?>) {
+        final extensions = capabilities['extensions'];
+        if (extensions is Map<Object?, Object?>) {
+          clientExtensions = Map<String, Object?>.from(extensions);
+        }
+      }
+    }
     if (message['method'] == 'tools/list') {
       response.write(
         jsonEncode({
           'jsonrpc': '2.0',
           'id': message['id'],
-          'result': {'tools': <Object?>[]},
+          'result': {'tools': tools},
+        }),
+      );
+    } else if (message['method'] == 'resources/read') {
+      response.write(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'id': message['id'],
+          'result': {
+            'contents': [
+              {
+                'uri': 'ui://weather/forecast',
+                'mimeType': 'text/html;profile=mcp-app',
+                'text': '<html>app</html>',
+                '_meta': {
+                  'ui': {
+                    'csp': {'connectDomains': <String>[]},
+                  },
+                },
+              },
+            ],
+          },
+        }),
+      );
+    } else if (message['method'] == 'tools/call') {
+      response.write(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'id': message['id'],
+          'result': {
+            'content': [
+              {'type': 'text', 'text': 'refreshed'},
+            ],
+            'structuredContent': {'day': 'today'},
+            '_meta': {
+              'ui': {'resourceUri': 'ui://weather/forecast'},
+            },
+          },
         }),
       );
     } else {
@@ -416,7 +533,10 @@ Map<String, Object?> _initializeResult(Map<String, Object?> request) => {
   'id': request['id'],
   'result': {
     'protocolVersion': _objectMap(request['params'])['protocolVersion'],
-    'capabilities': <String, Object?>{},
+    'capabilities': {
+      'resources': <String, Object?>{},
+      'tools': <String, Object?>{},
+    },
     'serverInfo': {'name': 'test-server', 'version': '1.0'},
   },
 };

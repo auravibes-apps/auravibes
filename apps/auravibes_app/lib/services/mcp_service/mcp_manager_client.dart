@@ -176,6 +176,18 @@ class McpManagerService {
     return McpSdkAdapter.toolResult(result).toModelText();
   }
 
+  Future<Map<String, Object?>> callToolResult(
+    McpManagerClient client, {
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+  }) async =>
+      (await client._client.callTool(toolIdentifier, arguments)).toJson();
+
+  Future<Map<String, Object?>> readResource(
+    McpManagerClient client,
+    String uri,
+  ) async => (await client._client.readResource(uri)).toJson();
+
   Future<McpManagerClient> connectMcp(McpServerToCreate serverInfo) async {
     return await _connectMcp(serverInfo);
   }
@@ -217,6 +229,14 @@ class McpManagerService {
       mcp.McpClient.simpleConfig(
         name: 'AuraVibes MCP Client',
         version: '1.0.0',
+      ).copyWith(
+        capabilities: mcp.ClientCapabilities(
+          extensions: {
+            'io.modelcontextprotocol/ui': {
+              'mimeTypes': ['text/html;profile=mcp-app'],
+            },
+          },
+        ),
       ),
     );
     final transport = await _connectClient(
@@ -467,7 +487,7 @@ McpToolInfo _convertTool(Map<String, Object?> tool) => .new(
   outputSchema: _jsonMap(tool['outputSchema']),
   supportsProgress: tool['supportsProgress'] as bool?,
   supportsCancellation: tool['supportsCancellation'] as bool?,
-  metadata: _jsonMap(tool['metadata']),
+  metadata: _jsonMap(tool['_meta'] ?? tool['metadata']),
 );
 
 String _requiredToolName(Object? value) => switch (value) {

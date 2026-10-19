@@ -42,6 +42,7 @@ import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
+import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_announcement.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
@@ -2037,6 +2038,8 @@ class const _AssistantActivityRun({
         for (final activityToolCall in activityToolCalls)
           _ActivityToolCallRow(
             key: ValueKey('activity_tool_row_${activityToolCall.toolCall.id}'),
+            workspaceId: workspaceId,
+            conversationId: parentConversationId,
             toolCall: activityToolCall.toolCall,
             displayName: activityToolCall.displayName,
             description: activityToolCall.description,
@@ -2671,6 +2674,8 @@ void _toggleDisclosure({
 }
 
 class const _ActivityToolCallRow({
+  required final String workspaceId,
+  required final String conversationId,
   required final MessageToolCallEntity toolCall,
   required final String displayName,
   required final String? description,
@@ -2839,6 +2844,8 @@ class const _ActivityToolCallRow({
         if (isExpanded && hasDetails)
           _ActivityToolCallDetails(
             key: ValueKey('activity_tool_details_${toolCall.id}'),
+            workspaceId: workspaceId,
+            conversationId: conversationId,
             toolCall: toolCall,
             decodedArgs: decodedArgs,
             decodedResponse: decodedResponse,
@@ -2932,6 +2939,8 @@ class const _ActivityToolStatusBadge({
 }
 
 class const _ActivityToolCallDetails({
+  required final String workspaceId,
+  required final String conversationId,
   required final MessageToolCallEntity toolCall,
   required final String? decodedArgs,
   required final String? decodedResponse,
@@ -3027,6 +3036,12 @@ class const _ActivityToolCallDetails({
                   ),
                 ),
               ),
+            McpAppToolResult(
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+              toolCall: toolCall,
+              fallbackText: decodedResponse,
+            ),
           ],
         ),
       ),

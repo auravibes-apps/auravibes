@@ -421,6 +421,34 @@ void main() {
       expect(spec?.inputJsonSchema, isEmpty);
     });
 
+    test('getToolSpec hides app-only MCP tools from the model', () {
+      final notifier = container.read(mcpConnectionProvider.notifier)
+        ..state = [
+          McpConnectionState(
+            server: _server,
+            status: .connected,
+            client: _FakeMcpManagerClient(),
+            tools: const [
+              McpToolInfo(
+                toolName: 'refresh',
+                description: 'Refresh view',
+                inputSchema: {},
+                metadata: {
+                  'ui': {
+                    'visibility': ['app'],
+                  },
+                },
+              ),
+            ],
+          ),
+        ];
+
+      expect(
+        notifier.getToolSpec(mcpServerId: 'server-1', toolName: 'refresh'),
+        isNull,
+      );
+    });
+
     test('disconnectMcpServer sets disconnected and clears client', () {
       final notifier = container.read(mcpConnectionProvider.notifier)
         ..state = [_connectedState()];
