@@ -10,8 +10,8 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_repository
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod/riverpod.dart';
 
 void main() {
   test('searches visible text in workspace with bounded pagination', () async {
