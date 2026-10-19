@@ -5,7 +5,7 @@ Read only section that matches current work. Root `AGENTS.md` lists each trigger
 ## DCL and lint rules
 
 - Read the configured rule before you add a Dart pattern or fix a lint. For routine edits, follow nearby code and run focused analysis.
-- Run `fvm dart run melos run dcl:analyze` for DCL or architecture-boundary changes, or for a relevant CI failure.
+- Run `fvm dart run melos run dcl:analyze` for DCL or architecture-boundary changes, including app route infrastructure, workspace navigation, and shared shell/layout refactors, or for a relevant CI failure.
 - CI runs unused-code, unused-file, and unnecessary-nullable checks. For unused-code scan scope, read [CI failure triage](operations.md#ci-failure-triage).
 - Remove true unused declarations. Add narrow, reasoned exclusions only after reference review. Keep checks on handwritten behavior.
 - Allow DCL metric/rule ignores only for generated-backed Freezed declarations, Drift schema DSL, or symbols needed by generated Drift output. Give a reason.
