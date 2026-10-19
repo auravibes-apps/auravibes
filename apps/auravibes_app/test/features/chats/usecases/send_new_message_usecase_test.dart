@@ -100,7 +100,7 @@ class _SendNewMessageUsecaseFixture {
         conversationId: any(named: 'conversationId'),
         draft: any<ChatDraft>(named: 'draft'),
       ),
-    ).thenAnswer((_) => Future<void>.value());
+    ).thenAnswer((_) => Future<AgentIterationDecision?>.value(.done));
     when(
       () => sendMessageUsecase.createUserMessage(
         conversationId: any(named: 'conversationId'),

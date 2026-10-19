@@ -860,7 +860,9 @@ class _Tracker {
     }
 
     return _completers[childId]?.future ??
-        Future<SubAgentCompletionStatus>.value(SubAgentCompletionStatus.done);
+        Future<SubAgentCompletionStatus>.value(
+          _statuses[childId] ?? SubAgentCompletionStatus.done,
+        );
   }
 
   bool isStopped(String childId) => _stoppedChildIds.contains(childId);

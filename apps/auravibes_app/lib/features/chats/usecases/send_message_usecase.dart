@@ -118,6 +118,7 @@ class SendMessageUsecase {
     if (continueTurn == null) {
       throw StateError('Local agent runtime unavailable');
     }
+
     return await continueTurn(
       conversationId: conversationId,
       context: AgentIterationContext(
@@ -215,6 +216,7 @@ Future<AgentIterationDecision> _retryUserMessage(
   if (!_isRetryableUserMessage(message, conversationId)) {
     throw StateError('Message cannot be retried');
   }
+
   return await usecase._continueFromUserMessage(
     conversationId: conversationId,
     messageId: messageId,
@@ -233,19 +235,19 @@ Future<void> _createAndContinueFirstMessage(
     conversationId: conversationId,
     draft: draft,
   );
-  unawaited(
-    usecase
-        .continueFromUserMessage(
-          conversationId: conversationId,
-          messageId: createdMessage.id,
-        )
-        .then((decision) {
-          if (decision == AgentIterationDecision.iterationLimitReached) {
-            onIterationLimit?.call(conversationId);
-          }
-        })
-        .catchError(onContinueError),
-  );
+  unawaited(() async {
+    try {
+      final decision = await usecase.continueFromUserMessage(
+        conversationId: conversationId,
+        messageId: createdMessage.id,
+      );
+      if (decision == AgentIterationDecision.iterationLimitReached) {
+        onIterationLimit?.call(conversationId);
+      }
+    } on Object catch (error, stackTrace) {
+      onContinueError(error, stackTrace);
+    }
+  }());
 }
 
 bool _isRetryableUserMessage(MessageEntity? message, String conversationId) {

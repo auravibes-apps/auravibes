@@ -84,18 +84,16 @@ void main() {
   });
 
   test('iteration-limit notifier queues only capped decisions', () {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
-    final provider = conversationIterationLimitProvider(_chatId);
-    final notifier = container.read(provider.notifier);
-
-    notifier.markIfIterationLimitReached(AgentIterationDecision.done);
-    expect(container.read(provider), isFalse);
-
-    notifier.markIfIterationLimitReached(
-      AgentIterationDecision.iterationLimitReached,
-    );
-    expect(container.read(provider), isTrue);
+    for (final (decision, expected) in <(AgentIterationDecision, bool)>[
+      (.done, false),
+      (.iterationLimitReached, true),
+    ]) {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final provider = conversationIterationLimitProvider(_chatId);
+      container.read(provider.notifier).markIfIterationLimitReached(decision);
+      expect(container.read(provider), expected);
+    }
   });
 
   setUp(() {
@@ -1267,12 +1265,12 @@ void main() {
                       .overrideWith((ref) => Stream.value(const [])),
                 ],
                 child: MaterialApp(
-                  builder: (_, child) =>
-                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                   home: const ChatConversationScreen(
                     workspaceId: _workspaceId,
                     chatId: _chatId,
                   ),
+                  builder: (_, child) =>
+                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,
                   supportedLocales: context.supportedLocales,
@@ -1297,7 +1295,8 @@ void main() {
     expect(find.textContaining('Rate limit reached'), findsOneWidget);
     expect(
       find.text(
-        'The agent reached its iteration limit. Partial output and completed tool results are available.',
+        'The agent reached its iteration limit. Partial output and completed '
+        'tool results are available.',
       ),
       findsOneWidget,
     );
@@ -1323,7 +1322,7 @@ void main() {
         .pushReplacement<void, void>(
           MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
         );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Continue agent'), findsOneWidget);
     _activateSnackBarAction(tester, 'Continue agent');
@@ -1352,7 +1351,7 @@ void main() {
         .pushReplacement<void, void>(
           MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
         );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     usecaseCompleter.complete(null);
     await tester.pump();
 
@@ -1369,16 +1368,16 @@ void main() {
       content: 'Original prompt',
       messageType: .text,
       isUser: true,
-      status: MessageStatus.unfinished,
-      createdAt: DateTime.utc(2026),
-      updatedAt: DateTime.utc(2026),
+      status: .unfinished,
+      createdAt: .utc(2026),
+      updatedAt: .utc(2026),
     );
     await _pumpCloudConversationScreen(
       tester,
       initialState: _cloudState(projectionRevision: 42),
       updates: const Stream.empty(),
-      usecaseFuture: usecaseCompleter.future,
       chatMessages: [retryableMessage],
+      usecaseFuture: usecaseCompleter.future,
     );
 
     final retryButton = find.byKey(
@@ -1393,7 +1392,7 @@ void main() {
         .pushReplacement<void, void>(
           MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
         );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     usecaseCompleter.complete(null);
     await tester.pump();
 
@@ -1757,9 +1756,9 @@ void main() {
     await tester.tap(
       find.byKey(const ValueKey<String>('chat_active_sub_agents')),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
-    partialRequest.finish(status: SubAgentCompletionStatus.partial);
+    partialRequest.finish(status: .partial);
     await tester.pump();
 
     expect(find.text('Partial'), findsOneWidget);
@@ -2054,16 +2053,16 @@ Future<void> _pumpCloudConversationScreen(
                     .overrideWith((ref) => Stream.value(const [])),
               ],
               child: MaterialApp(
-                builder: iterationLimitReached
-                    ? (_, child) => AuraSnackBarHost(
-                        child: child ?? const SizedBox.shrink(),
-                      )
-                    : null,
                 home: ChatConversationScreen(
                   workspaceId: _workspaceId,
                   chatId: _chatId,
                   showInputComposer: parentId == null,
                 ),
+                builder: iterationLimitReached
+                    ? (_, child) => AuraSnackBarHost(
+                        child: child ?? const SizedBox.shrink(),
+                      )
+                    : null,
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -2265,8 +2264,8 @@ void _activateSnackBarAction(WidgetTester tester, String label) {
         .first,
   );
   final onTap = action.onTap;
-  expect(onTap, isNotNull);
-  onTap!();
+  if (onTap == null) fail('Expected snackbar action to have a tap handler');
+  onTap();
 }
 
 class _StaticIterationLimitNotifier extends ConversationIterationLimitNotifier {

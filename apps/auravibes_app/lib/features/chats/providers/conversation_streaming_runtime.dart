@@ -126,7 +126,8 @@ final conversationRateLimitRetryProvider =
       ConversationRateLimitRetryNotifier.new,
     );
 
-final conversationIterationLimitProvider =
+final NotifierProviderFamily<ConversationIterationLimitNotifier, bool, String>
+conversationIterationLimitProvider =
     NotifierProvider.family<ConversationIterationLimitNotifier, bool, String>(
       (_) => ConversationIterationLimitNotifier(),
     );

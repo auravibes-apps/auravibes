@@ -6,8 +6,8 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/services/cloud_conversation_creator.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
@@ -148,10 +148,10 @@ SendNewMessageUsecase _buildSendNewMessageUsecase(
         ref.read(modelSelectionStoreProvider(workspaceId).future),
     generateTitleUsecase: ref.watch(generateTitleUsecaseProvider),
     monitoringService: ref.watch(monitoringServiceProvider),
+    cloudCreate: _cloudCreate(ref, workspaceId, isCloud),
     onIterationLimit: (conversationId) => ref
         .read(conversationIterationLimitProvider(conversationId).notifier)
         .markReached(),
-    cloudCreate: _cloudCreate(ref, workspaceId, isCloud),
   );
 }
 

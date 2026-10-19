@@ -509,7 +509,7 @@ class const _LoadedChatConversationRuntime({
         ref.read(iterationLimitProvider.notifier).consume();
         _showIterationLimitNoticeIfNeeded(
           context: context,
-          decision: AgentIterationDecision.iterationLimitReached,
+          decision: .iterationLimitReached,
           onContinue: () => unawaited(
             _continueAgent((
               context: context,

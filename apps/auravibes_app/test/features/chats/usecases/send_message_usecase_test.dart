@@ -62,7 +62,7 @@ void main() {
     });
 
     test('forwards the created user message id as the ack target', () async {
-      await fixture.usecase.call(
+      final _ = await fixture.usecase.call(
         conversationId: 'conversation-1',
         draft: const ChatDraft(text: 'Hello'),
       );
@@ -167,7 +167,7 @@ void main() {
         when(() => fixture.messageRepository.getMessageById('failed-user'))
             .thenAnswer((_) async => message);
 
-        await fixture.usecase.retryUserMessage(
+        final _ = await fixture.usecase.retryUserMessage(
           conversationId: 'conversation-1',
           messageId: 'failed-user',
         );
@@ -242,7 +242,7 @@ void main() {
           ),
         );
 
-        await fixture.usecase.call(
+        final _ = await fixture.usecase.call(
           conversationId: 'conversation-1',
           draft: const ChatDraft(text: 'Queued hello'),
         );
@@ -296,7 +296,7 @@ void main() {
             hasPendingTools: false,
           ),
         );
-        await sendFuture;
+        final _ = await sendFuture;
       },
     );
 
@@ -347,7 +347,8 @@ void main() {
       await fixture.usecase.sendFirstMessage(
         conversationId: 'conversation-1',
         draft: const ChatDraft(text: 'Hello'),
-        onContinueError: (error, stackTrace) {},
+        onContinueError: (error, stackTrace) =>
+            fail('Unexpected continuation error: $error'),
         onIterationLimit: (conversationId) {
           expect(conversationId, 'conversation-1');
           iterationLimitReported.complete();
