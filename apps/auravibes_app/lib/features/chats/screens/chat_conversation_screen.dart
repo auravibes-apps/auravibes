@@ -120,14 +120,6 @@ typedef _ConversationContextRequest = ({
   String conversationId,
 });
 
-typedef _LoadedChatConversationRenderRequest = ({
-  BuildContext context,
-  WidgetRef ref,
-  String workspaceId,
-  ConversationEntity conversation,
-  bool showInputComposer,
-});
-
 typedef _BackgroundWorkStatusPresence = ({
   bool hasDetachableToolCalls,
   bool hasBackgroundWorks,
@@ -514,32 +506,21 @@ class const _LoadedChatConversationRuntime({
       if (pending) _schedulePendingIterationLimitNotice(noticeRequest);
     });
 
-    return _renderLoadedChatConversation((
+    final runtimeState = _useLoadedChatConversationRuntimeState((
       context: context,
       ref: ref,
       workspaceId: workspaceId,
       conversation: conversation,
-      showInputComposer: showInputComposer,
     ));
+    return _LoadedChatConversationRender(
+      workspaceId: workspaceId,
+      conversation: conversation,
+      runtimeState: runtimeState,
+      showInputComposer: showInputComposer,
+      leading: showInputComposer ? null : const _ChatConversationBackButton(),
+    );
   }
 }
-
-Widget _renderLoadedChatConversation(
-  _LoadedChatConversationRenderRequest request,
-) => _LoadedChatConversationRender(
-  workspaceId: request.workspaceId,
-  conversation: request.conversation,
-  runtimeState: _useLoadedChatConversationRuntimeState((
-    context: request.context,
-    ref: request.ref,
-    workspaceId: request.workspaceId,
-    conversation: request.conversation,
-  )),
-  showInputComposer: request.showInputComposer,
-  leading: request.showInputComposer
-      ? null
-      : const _ChatConversationBackButton(),
-);
 
 void _schedulePendingIterationLimitNotice(
   _ConversationContextRequest request,
