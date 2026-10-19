@@ -34,7 +34,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 | App/UI focused test     | `fvm flutter test test/path/to/file_test.dart --no-pub` from target package  |
 | App fatal analyzer      | `fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
 | Engine focused test     | `fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
-| Validation              | Prefix `fvm dart run melos run`: `validate:quick` (quick), `validate` (full), `validate:ci` (CI with coverage) |
+| Validation              | Prefix `fvm dart run melos run`: `validate:quick` (quick), `validate` (full), `validate:ci` (Melos CI subset with coverage) |
 | Asset/clean scripts      | `fvm dart run melos run clean`, `fvm dart run melos run generate:flavors`, `fvm dart run melos run generate:icons` |
 | Code generation         | Prefix `fvm dart run melos run`: `generate`, `generate:localization`, `generate:serverpod` |
 
@@ -53,6 +53,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - Run the smallest scope-appropriate check with pinned FVM. Use `fvm dart run melos run <script>` for root scripts.
 - For generated source changes, run the relevant generator and inspect its output.
 - For scope-specific checks, read [validation policy](docs/agents/task-policies.md#validation).
+- For GitHub CI coverage, read the [local CI parity matrix](docs/agents/ci-local-parity.md); `validate:ci` covers the Melos validation subset only.
 - If a check cannot run, say why and name the next command.
 
 ## Analyzer-only migrations
