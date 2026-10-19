@@ -1057,7 +1057,9 @@ void main() {
           overrides: _messageOverrides({
             'markdown-link': _createMessage(
               id: 'markdown-link',
-              content: '[Open docs](https://example.com)',
+              content:
+                  '[Open docs](https://example.com) '
+                  '[Open HTTP](http://example.org)',
               isUser: false,
             ),
             'autolink': _createMessage(
@@ -1074,13 +1076,22 @@ void main() {
       expect(find.textContaining('Host: example.com'), findsOneWidget);
       await tester.tap(find.text('Open link'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Open HTTP'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Host: example.org'), findsOneWidget);
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('https://example.org'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Host: example.org'), findsOneWidget);
       await tester.tap(find.text('Open link'));
       await tester.pumpAndSettle();
 
-      expect(launchedUrls, ['https://example.com', 'https://example.org']);
+      expect(launchedUrls, [
+        'https://example.com',
+        'http://example.org',
+        'https://example.org',
+      ]);
     });
 
     testWidgets('does not open Markdown link without confirmation', (
@@ -1137,6 +1148,7 @@ void main() {
               id: 'unsafe-links',
               content:
                   '[Unsafe](javascript:alert(1)) '
+                  '[Missing authority](https:/missing-authority) '
                   '[Missing host](https:///missing-host) '
                   '[Deceptive](https://accounts.example@attacker.example/sso)',
               isUser: false,
@@ -1146,6 +1158,8 @@ void main() {
       );
 
       await tester.tap(find.text('Unsafe'));
+      await tester.pump();
+      await tester.tap(find.text('Missing authority'));
       await tester.pump();
       await tester.tap(find.text('Missing host'));
       await tester.pump();

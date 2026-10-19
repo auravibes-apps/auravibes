@@ -59,11 +59,11 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
-import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:auravibes_app/widgets/confirmed_external_link.dart';
 import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 
@@ -1715,49 +1715,42 @@ Widget _chatMarkdown({
   ),
 );
 
-Future<void> _openChatMarkdownLink(BuildContext context, String url) async {
-  final uri = Uri.tryParse(url);
-  if (uri == null ||
-      !uri.isAbsolute ||
-      !uri.hasAuthority ||
-      (uri.scheme != 'http' && uri.scheme != 'https') ||
-      uri.host.isEmpty ||
-      uri.userInfo.isNotEmpty) {
-    return;
-  }
+Future<void> _openChatMarkdownLink(BuildContext context, String url) =>
+    openConfirmedExternalLink(
+      context: context,
+      url: url,
+      confirm: (uri) => _confirmChatExternalLink(context, uri),
+      onLaunchFailure: () => _showChatExternalLinkError(context),
+    );
 
-  final confirmed = await AuraDialogs.confirm(
-    context: context,
-    title: Text(
-      LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
-    ),
-    message: AuraSelectableText(
-      LocaleKeys.chats_screens_chat_conversation_external_link_message.tr(
-        namedArgs: {'host': uri.host, 'url': uri.toString()},
+Future<bool?> _confirmChatExternalLink(BuildContext context, Uri uri) =>
+    AuraDialogs.confirm(
+      context: context,
+      title: Text(
+        LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
       ),
-    ),
-    actions: AuraConfirmDialogActions(
-      confirmLabel: Text(
-        LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
-      ),
-      cancelLabel: Text(LocaleKeys.common_cancel.tr()),
-    ),
-  );
-  if (confirmed != true || !context.mounted) return;
-
-  try {
-    await OpenSystemBrowser.call(uri);
-  } on Object {
-    if (!context.mounted) return;
-    unawaited(AuraHaptics.error());
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: TextLocale(
-          LocaleKeys.models_screens_add_provider_device_code_open_link_failed,
+      message: AuraSelectableText(
+        LocaleKeys.chats_screens_chat_conversation_external_link_message.tr(
+          namedArgs: {'host': uri.host, 'url': uri.toString()},
         ),
       ),
+      actions: AuraConfirmDialogActions(
+        confirmLabel: Text(
+          LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
+        ),
+        cancelLabel: Text(LocaleKeys.common_cancel.tr()),
+      ),
     );
-  }
+
+void _showChatExternalLinkError(BuildContext context) {
+  unawaited(AuraHaptics.error());
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: TextLocale(
+        LocaleKeys.models_screens_add_provider_device_code_open_link_failed,
+      ),
+    ),
+  );
 }
 
 class const _AiMessageContent({
