@@ -120,11 +120,6 @@ typedef _ConversationContextRequest = ({
   String conversationId,
 });
 
-typedef _PendingIterationLimitNoticeRequest = ({
-  _ConversationContextRequest conversation,
-  bool pending,
-});
-
 typedef _BackgroundWorkStatusPresence = ({
   bool hasDetachableToolCalls,
   bool hasBackgroundWorks,
@@ -496,21 +491,42 @@ class const _LoadedChatConversationRuntime({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conversationId = conversation.id;
-    final iterationLimitNoticePending = ref.watch(
-      conversationIterationLimitProvider(conversationId),
+    final iterationLimitProvider = conversationIterationLimitProvider(
+      conversationId,
     );
-    useEffect(
-      () => _showPendingIterationLimitNotice((
-        conversation: (
+    final noticeScheduled = useRef(false);
+    void showPendingNotice() {
+      if (noticeScheduled.value) return;
+      noticeScheduled.value = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) {
+          noticeScheduled.value = false;
+
+          return;
+        }
+
+        ref.read(iterationLimitProvider.notifier).consume();
+        _showIterationLimitNoticeIfNeeded(
           context: context,
-          ref: ref,
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ),
-        pending: iterationLimitNoticePending,
-      )),
-      [conversationId, iterationLimitNoticePending],
-    );
+          decision: AgentIterationDecision.iterationLimitReached,
+          onContinue: () => unawaited(
+            _continueAgent((
+              context: context,
+              ref: ref,
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            )),
+          ),
+        );
+        noticeScheduled.value = false;
+      });
+    }
+
+    if (ref.read(iterationLimitProvider)) showPendingNotice();
+    ref.listen(iterationLimitProvider, (_, pending) {
+      if (pending) showPendingNotice();
+    });
 
     return _LoadedChatConversationRender(
       workspaceId: workspaceId,
@@ -2659,6 +2675,7 @@ class const _ModelSwitchConfirmButton() extends StatelessWidget {
 }
 
 Future<void> _continueAgent(_ConversationContextRequest request) async {
+  if (!request.context.mounted) return;
   if (!_canContinueConversation(request)) return;
 
   final decision = await _continueAgentTurnWithErrorHandling(request);
@@ -2717,6 +2734,8 @@ Future<AgentIterationDecision?> _continueAgentTurn(
   final cloud = await request.ref.read(
     cloudTurnUsecaseProvider(request.workspaceId).future,
   );
+  if (!request.context.mounted) return null;
+
   if (cloud == null) {
     return await _continueLocalAgent(request.ref, request.conversationId);
   }
@@ -2799,6 +2818,8 @@ Future<AgentIterationDecision?> _runRetryMessage(
   final cloud = await request.ref.read(
     cloudTurnUsecaseProvider(request.workspaceId).future,
   );
+  if (!request.context.mounted) return null;
+
   if (cloud == null) {
     return await _retryLocalMessage(request);
   }
@@ -3207,31 +3228,6 @@ void _showIterationLimitNoticeIfNeeded({
     actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent.tr(),
     onAction: onContinue,
   );
-}
-
-Dispose? _showPendingIterationLimitNotice(
-  _PendingIterationLimitNoticeRequest request,
-) {
-  if (!request.pending) return null;
-
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    final conversation = request.conversation;
-    if (!conversation.context.mounted) return;
-
-    conversation.ref
-        .read(
-          conversationIterationLimitProvider(conversation.conversationId)
-              .notifier,
-        )
-        .consume();
-    _showIterationLimitNoticeIfNeeded(
-      context: conversation.context,
-      decision: AgentIterationDecision.iterationLimitReached,
-      onContinue: () => unawaited(_continueAgent(conversation)),
-    );
-  });
-
-  return null;
 }
 
 void _reportSendMessageFailure(

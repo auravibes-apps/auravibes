@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
@@ -307,9 +308,13 @@ final applyConversationSkillActionUsecaseProvider =
               slug: slug,
             ),
         sendMessage: (workspaceId, conversationId, draft) async {
-          final _ = await ref
+          final iterationLimitNotifier = ref.read(
+            conversationIterationLimitProvider(conversationId).notifier,
+          );
+          final decision = await ref
               .read(sendMessageUsecaseProvider(workspaceId))
               .call(conversationId: conversationId, draft: draft);
+          iterationLimitNotifier.markIfIterationLimitReached(decision);
         },
         recordRecentSkillUse: (workspaceId, conversationId, skillSlug) async {
           await ref

@@ -72,6 +72,11 @@ class ConversationIterationLimitNotifier extends Notifier<bool> {
     state = true;
   }
 
+  void markIfIterationLimitReached(AgentIterationDecision? decision) {
+    if (decision != AgentIterationDecision.iterationLimitReached) return;
+    markReached();
+  }
+
   void consume() {
     if (!state) return;
     state = false;

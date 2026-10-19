@@ -13,6 +13,7 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/model_usage_aggregation.dart';
 import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/chats/models/background_work_continuation_preview.dart';
@@ -80,6 +81,21 @@ Override _incompleteAgentContextOverride() =>
 void main() {
   setUpAll(() {
     registerFallbackValue(_ContinueConversationRequestFake());
+  });
+
+  test('iteration-limit notifier queues only capped decisions', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final provider = conversationIterationLimitProvider(_chatId);
+    final notifier = container.read(provider.notifier);
+
+    notifier.markIfIterationLimitReached(AgentIterationDecision.done);
+    expect(container.read(provider), isFalse);
+
+    notifier.markIfIterationLimitReached(
+      AgentIterationDecision.iterationLimitReached,
+    );
+    expect(container.read(provider), isTrue);
   });
 
   setUp(() {
@@ -1251,6 +1267,8 @@ void main() {
                       .overrideWith((ref) => Stream.value(const [])),
                 ],
                 child: MaterialApp(
+                  builder: (_, child) =>
+                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                   home: const ChatConversationScreen(
                     workspaceId: _workspaceId,
                     chatId: _chatId,
@@ -1299,6 +1317,87 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(ChatThinkingIndicator), findsNothing);
+
+    tester
+        .state<NavigatorState>(find.byType(Navigator))
+        .pushReplacement<void, void>(
+          MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
+        );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Continue agent'), findsOneWidget);
+    _activateSnackBarAction(tester, 'Continue agent');
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('stops continuation if route unmounts during cloud lookup', (
+    tester,
+  ) async {
+    final usecaseCompleter = Completer<CloudTurnUsecase?>();
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: const Stream.empty(),
+      usecaseFuture: usecaseCompleter.future,
+      iterationLimitReached: true,
+    );
+
+    expect(find.text('Continue agent'), findsOneWidget);
+    _activateSnackBarAction(tester, 'Continue agent');
+    await tester.pump();
+
+    tester
+        .state<NavigatorState>(find.byType(Navigator))
+        .pushReplacement<void, void>(
+          MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
+        );
+    await tester.pumpAndSettle();
+    usecaseCompleter.complete(null);
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('stops retry if route unmounts during cloud lookup', (
+    tester,
+  ) async {
+    final usecaseCompleter = Completer<CloudTurnUsecase?>();
+    final retryableMessage = MessageEntity(
+      id: 'retry-user-message',
+      conversationId: _chatId,
+      content: 'Original prompt',
+      messageType: .text,
+      isUser: true,
+      status: MessageStatus.unfinished,
+      createdAt: DateTime.utc(2026),
+      updatedAt: DateTime.utc(2026),
+    );
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: const Stream.empty(),
+      usecaseFuture: usecaseCompleter.future,
+      chatMessages: [retryableMessage],
+    );
+
+    final retryButton = find.byKey(
+      const ValueKey('retry_message_retry-user-message'),
+    );
+    expect(retryButton, findsOneWidget);
+    await tester.tap(retryButton);
+    await tester.pump();
+
+    tester
+        .state<NavigatorState>(find.byType(Navigator))
+        .pushReplacement<void, void>(
+          MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
+        );
+    await tester.pumpAndSettle();
+    usecaseCompleter.complete(null);
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(
@@ -1844,9 +1943,11 @@ Future<void> _pumpCloudConversationScreen(
   WidgetTester tester, {
   required CloudConversationState initialState,
   required Stream<CloudConversationState> updates,
+  List<MessageEntity> chatMessages = const [],
   List<BackgroundWorkView> backgroundWorks = const [],
   CloudTurnUsecase? usecase,
   Future<CloudTurnUsecase?>? usecaseFuture,
+  bool iterationLimitReached = false,
   String? parentId,
 }) async {
   await tester.binding.setSurfaceSize(const Size(800, 1200));
@@ -1922,6 +2023,9 @@ Future<void> _pumpCloudConversationScreen(
                     hasPendingTools: false,
                   ),
                 ),
+                if (iterationLimitReached)
+                  conversationIterationLimitProvider(_chatId)
+                      .overrideWith(_StaticIterationLimitNotifier.new),
                 cloudConversationStateProvider.overrideWith((ref, _) async* {
                   yield initialState;
                   yield* updates;
@@ -1933,7 +2037,7 @@ Future<void> _pumpCloudConversationScreen(
                   'model-1',
                 ).overrideWithValue(AsyncData(_cloudModelSelection())),
                 chatMessagesProvider.overrideWith(
-                  (ref, _) => Stream.value(const <MessageEntity>[]),
+                  (ref, _) => Stream.value(chatMessages),
                 ),
                 chatMessageIdsProvider.overrideWith(
                   (ref, _) => const <String>[],
@@ -1950,6 +2054,11 @@ Future<void> _pumpCloudConversationScreen(
                     .overrideWith((ref) => Stream.value(const [])),
               ],
               child: MaterialApp(
+                builder: iterationLimitReached
+                    ? (_, child) => AuraSnackBarHost(
+                        child: child ?? const SizedBox.shrink(),
+                      )
+                    : null,
                 home: ChatConversationScreen(
                   workspaceId: _workspaceId,
                   chatId: _chatId,
@@ -2147,6 +2256,17 @@ class _StaticRateLimitRetryNotifier(final DateTime retryDeadline)
     extends ConversationRateLimitRetryNotifier {
   @override
   Map<String, DateTime> build() => {_chatId: retryDeadline};
+}
+
+void _activateSnackBarAction(WidgetTester tester, String label) {
+  final action = tester.widget<GestureDetector>(
+    find
+        .ancestor(of: find.text(label), matching: find.byType(GestureDetector))
+        .first,
+  );
+  final onTap = action.onTap;
+  expect(onTap, isNotNull);
+  onTap!();
 }
 
 class _StaticIterationLimitNotifier extends ConversationIterationLimitNotifier {
