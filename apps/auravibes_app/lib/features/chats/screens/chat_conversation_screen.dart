@@ -3220,7 +3220,9 @@ _ConversationContextRequest _conversationContextForSend(
   conversationId: request.conversationId,
 );
 
-VoidCallback _continueAgentCallback(_ConversationContextRequest request) =>
+VoidCallback _conversationContextContinueCallback(
+  _ConversationContextRequest request,
+) =>
     () => unawaited(_continueAgent(request));
 
 void _showIterationLimitNoticeForConversation(
@@ -3229,7 +3231,7 @@ void _showIterationLimitNoticeForConversation(
 ) => _showIterationLimitNoticeIfNeeded(
   context: request.context,
   decision: decision,
-  onContinue: _continueAgentCallback(request),
+  onContinue: _conversationContextContinueCallback(request),
 );
 
 void _showIterationLimitNoticeIfNeeded({
