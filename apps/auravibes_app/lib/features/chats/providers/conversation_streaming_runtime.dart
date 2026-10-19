@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_activity_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:riverpod/misc.dart' show NotifierProviderFamily;
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 

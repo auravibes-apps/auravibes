@@ -13,7 +13,6 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/model_usage_aggregation.dart';
 import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/chats/models/background_work_continuation_preview.dart';
@@ -84,16 +83,20 @@ void main() {
   });
 
   test('iteration-limit notifier queues only capped decisions', () {
-    for (final (decision, expected) in <(AgentIterationDecision, bool)>[
-      (.done, false),
-      (.iterationLimitReached, true),
-    ]) {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-      final provider = conversationIterationLimitProvider(_chatId);
-      container.read(provider.notifier).markIfIterationLimitReached(decision);
-      expect(container.read(provider), expected);
-    }
+    final provider = conversationIterationLimitProvider(_chatId);
+    final uncappedContainer = ProviderContainer();
+    addTearDown(uncappedContainer.dispose);
+    uncappedContainer
+        .read(provider.notifier)
+        .markIfIterationLimitReached(.done);
+    expect(uncappedContainer.read(provider), isFalse);
+
+    final cappedContainer = ProviderContainer();
+    addTearDown(cappedContainer.dispose);
+    cappedContainer
+        .read(provider.notifier)
+        .markIfIterationLimitReached(.iterationLimitReached);
+    expect(cappedContainer.read(provider), isTrue);
   });
 
   setUp(() {
