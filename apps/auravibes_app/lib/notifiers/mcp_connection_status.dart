@@ -505,11 +505,22 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
   }) async {
     if (_isCloud) throw const UnsupportedWorkspaceCapabilityException();
     final client = _requiredToolClient(mcpServerId, toolIdentifier);
-
-    return await _requiredMcpManager.callToolOutput(
+    final tool = _requiredToolInfo(
+      _requiredConnection(mcpServerId),
+      mcpServerId,
+      toolIdentifier,
+    );
+    final hasAppResource =
+        McpAppToolMetadata.fromMetadata(tool.metadata).resourceUri != null;
+    final result = await _requiredMcpManager.callToolOutput(
       client,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
+    );
+
+    return (
+      modelText: result.modelText,
+      appData: hasAppResource ? result.appData : const <String, Object?>{},
     );
   }
 

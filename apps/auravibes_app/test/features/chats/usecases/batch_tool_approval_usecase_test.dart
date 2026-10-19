@@ -198,11 +198,15 @@ void main() {
   test(
     'preserves MCP App data from approved local calls through batch runner',
     () async {
-      final call = _pending(
-        toolCallId: 'success-call',
-        sourceConversationId: 'child',
-      );
-      final claim = _claim(call, .claimed);
+      final calls = [
+        _pending(toolCallId: 'success-call', sourceConversationId: 'child'),
+        _pending(
+          toolCallId: 'success-call',
+          messageId: 'child-two-message',
+          sourceConversationId: 'child-two',
+        ),
+      ];
+      final claims = [for (final call in calls) _claim(call, .claimed)];
       final resolved = ResolvedTool.mcp(
         tableId: 'tool',
         toolIdentifier: 'tool',
@@ -212,9 +216,14 @@ void main() {
           outputSchemaJson: null,
         ),
       );
-      const appData = <String, Object?>{
+      const firstAppData = <String, Object?>{
         '_meta': {
-          'ui': {'resourceUri': 'ui://tool/view'},
+          'ui': {'resourceUri': 'ui://tool/first'},
+        },
+      };
+      const secondAppData = <String, Object?>{
+        '_meta': {
+          'ui': {'resourceUri': 'ui://tool/second'},
         },
       };
       final catalog = agent.buildToolCatalog<ResolvedTool>([
@@ -228,18 +237,16 @@ void main() {
         ),
       ]);
       when(() => messageRepository.claimToolCallBatch(any(), approve: true))
-          .thenAnswer((_) async => [claim]);
-      when(() => conversationRepository.getConversationById('child'))
-          .thenAnswer((_) async => _conversation('child', 'child-workspace'));
+          .thenAnswer((_) async => claims);
       when(
         () => loadToolSpecs.buildCatalog(
-          conversationId: 'child',
-          workspaceId: 'child-workspace',
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
         ),
       ).thenAnswer((_) async => catalog);
       when(
         () => resolvedToolService.call(
-          conversationId: 'child',
+          conversationId: any(named: 'conversationId'),
           toolCallId: 'success-call',
           tool: resolved,
           arguments: {'input': 'value'},
@@ -250,28 +257,48 @@ void main() {
           conversationId: 'child',
           toolCallId: 'success-call',
         ),
-      ).thenReturn(appData);
+      ).thenReturn(firstAppData);
+      when(
+        () => resolvedToolService.takeMcpAppResultData(
+          conversationId: 'child-two',
+          toolCallId: 'success-call',
+        ),
+      ).thenReturn(secondAppData);
+      when(() => conversationRepository.getConversationById(any()))
+          .thenAnswer((invocation) async {
+            final id = invocation.positionalArguments.single as String;
+
+            return _conversation(id, '$id-workspace');
+          });
       when(() => messageRepository.persistToolCallBatchResults(any()))
           .thenAnswer((_) => Future<void>.value());
 
       final result = await createUsecase().approveOnce(
         rootConversationId: 'root',
         workspaceId: 'workspace',
-        pendingCalls: [call],
+        pendingCalls: calls,
       );
 
-      expect(result.claimed, hasLength(1));
-      expect(changeCount, 2);
+      expect(result.claimed, hasLength(2));
       final updates =
           verify(
                 () =>
                     messageRepository.persistToolCallBatchResults(captureAny()),
               ).captured.single
               as Iterable<ToolCallExecutionBatchUpdate>;
-      expect(updates.single.resultStatus, ToolCallResultStatus.success);
-      expect(updates.single.responseRaw, 'done');
-      expect(updates.single.appData, appData);
-      verify(() => resumeService.call(messageId: call.messageId)).called(1);
+      final firstUpdate = updates.singleWhere(
+        (update) => update.conversationId == 'child',
+      );
+      final secondUpdate = updates.singleWhere(
+        (update) => update.conversationId == 'child-two',
+      );
+      expect(firstUpdate.resultStatus, ToolCallResultStatus.success);
+      expect(firstUpdate.responseRaw, 'done');
+      expect(firstUpdate.appData, firstAppData);
+      expect(secondUpdate.appData, secondAppData);
+      verify(() => resumeService.call(messageId: 'msg-1')).called(1);
+      verify(() => resumeService.call(messageId: 'child-two-message'))
+          .called(1);
     },
   );
 

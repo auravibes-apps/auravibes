@@ -32,6 +32,7 @@ typedef _LocalBatchRequest = ({
   String workspaceId,
   bool approve,
 });
+typedef _McpAppResultIdentity = ({String conversationId, String toolCallId});
 
 class const BatchToolApprovalUsecase({
   required final MessageRepository messageRepository,
@@ -133,19 +134,23 @@ extension on BatchToolApprovalUsecase {
       runResolvedTool: runResolvedTool.call,
       isCancellationRequested: cancellationRuntime.isCancellationRequested,
     );
-    final appDataByToolCallId = <String, Map<String, Object?>>{};
+    final appDataByIdentity = <_McpAppResultIdentity, Map<String, Object?>>{};
     for (final result in executionResults) {
       final appData = runResolvedTool.takeMcpAppResultData(
         conversationId: result.call.conversationId,
         toolCallId: result.call.toolCallId,
       );
       if (result.result.resultStatus == .success && appData != null) {
-        appDataByToolCallId[result.call.toolCallId] = appData;
+        appDataByIdentity[(
+              conversationId: result.call.conversationId,
+              toolCallId: result.call.toolCallId,
+            )] =
+            appData;
       }
     }
     final updates = [
       ...plan.updates,
-      ..._executionUpdates(executionResults, appDataByToolCallId),
+      ..._executionUpdates(executionResults, appDataByIdentity),
     ];
 
     await messageRepository.persistToolCallBatchResults(updates);
@@ -446,14 +451,14 @@ _ResolvedBatchClaim _missingResolvedTool(
 
 List<ToolCallExecutionBatchUpdate> _executionUpdates(
   Iterable<agent.AgentToolBatchResult<ResolvedTool>> results,
-  Map<String, Map<String, Object?>> appDataByToolCallId,
+  Map<_McpAppResultIdentity, Map<String, Object?>> appDataByIdentity,
 ) => [
-  for (final result in results) _executionUpdate(result, appDataByToolCallId),
+  for (final result in results) _executionUpdate(result, appDataByIdentity),
 ];
 
 ToolCallExecutionBatchUpdate _executionUpdate(
   agent.AgentToolBatchResult<ResolvedTool> result,
-  Map<String, Map<String, Object?>> appDataByToolCallId,
+  Map<_McpAppResultIdentity, Map<String, Object?>> appDataByIdentity,
 ) {
   final call = result.call;
   final execution = result.result;
@@ -469,7 +474,11 @@ ToolCallExecutionBatchUpdate _executionUpdate(
     output: (
       responseRaw: output.responseRaw,
       responseContextRaw: output.responseContextRaw,
-      appData: appDataByToolCallId[call.toolCallId],
+      appData:
+          appDataByIdentity[(
+            conversationId: call.conversationId,
+            toolCallId: call.toolCallId,
+          )],
       outputTruncated: output.outputTruncated,
       originalResponseBytes: output.originalResponseBytes,
       fullOutputForContext: output.fullOutputForContext,

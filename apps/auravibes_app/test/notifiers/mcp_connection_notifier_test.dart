@@ -1091,6 +1091,50 @@ void main() {
       expect(fakeService.calledToolIdentifiers, ['sum']);
     });
 
+    test(
+      'only returns raw result data for tools with an MCP App resource',
+      () async {
+        final fakeService = _SuccessfulMcpManagerService();
+        final testContainer = await createInitializedContainer(fakeService);
+        addTearDown(testContainer.dispose);
+        final notifier = testContainer.read(mcpConnectionProvider.notifier)
+          ..state = [
+            McpConnectionState(
+              server: _server,
+              status: .connected,
+              client: _FakeMcpManagerClient(),
+              tools: const [
+                _toolInfo,
+                McpToolInfo(
+                  toolName: 'weather',
+                  description: 'Weather app',
+                  inputSchema: {},
+                  metadata: {
+                    'ui': {'resourceUri': 'ui://weather/view'},
+                  },
+                ),
+              ],
+            ),
+          ];
+
+        final ordinaryTool = await notifier.callToolWithAppData(
+          mcpServerId: 'server-1',
+          toolIdentifier: 'sum',
+          arguments: const {},
+        );
+        final appTool = await notifier.callToolWithAppData(
+          mcpServerId: 'server-1',
+          toolIdentifier: 'weather',
+          arguments: const {},
+        );
+
+        expect(ordinaryTool.modelText, 'tool result');
+        expect(ordinaryTool.appData, isEmpty);
+        expect(appTool.modelText, 'tool result');
+        expect(appTool.appData, contains('_meta'));
+      },
+    );
+
     test('token updates are persisted for added MCP credential', () async {
       final tokenController = StreamController<OAuthTokenEntity>();
       addTearDown(tokenController.close);
@@ -1305,6 +1349,23 @@ class _SuccessfulMcpManagerService extends McpManagerService {
 
     return 'tool result';
   }
+
+  @override
+  Future<({String modelText, Map<String, Object?> appData})> callToolOutput(
+    McpManagerClient client, {
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+  }) async => (
+    modelText: 'tool result',
+    appData: const {
+      'content': [
+        {'type': 'text', 'text': 'tool result'},
+      ],
+      '_meta': {
+        'ui': {'resourceUri': 'ui://weather/view'},
+      },
+    },
+  );
 }
 
 class _FakeMcpManagerClient._(final Stream<OAuthTokenEntity>? _tokenUpdates)

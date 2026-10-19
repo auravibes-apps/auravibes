@@ -396,6 +396,45 @@ void main() {
     );
   });
 
+  test('does not retain empty MCP App result data', () async {
+    final service = ResolvedToolService(
+      agentCancellationRuntime: .new(),
+      mcpToolCaller:
+          ({
+            required mcpServerId,
+            required toolIdentifier,
+            required arguments,
+          }) async => const McpToolCallerResult(
+            modelText: 'ordinary result',
+            appData: {},
+          ),
+    );
+
+    final result = await service(
+      conversationId: 'conversation-1',
+      tool: ResolvedTool.mcp(
+        tableId: 'tool-1',
+        toolIdentifier: 'remote-tool',
+        mcp: (
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+          outputSchemaJson: null,
+        ),
+      ),
+      arguments: const {},
+      toolCallId: 'tool-call-1',
+    );
+
+    expect(result, 'ordinary result');
+    expect(
+      service.takeMcpAppResultData(
+        conversationId: 'conversation-1',
+        toolCallId: 'tool-call-1',
+      ),
+      isNull,
+    );
+  });
+
   test('rejects cloud tool execution on the client', () {
     expect(
       () => ResolvedToolService.cloud()(

@@ -168,7 +168,7 @@ class ResolvedToolService {
     );
 
     if (result case final McpToolCallerResult appResult) {
-      if (toolCallId.isNotEmpty) {
+      if (toolCallId.isNotEmpty && appResult.appData.isNotEmpty) {
         _mcpAppResultData[(
               conversationId: conversationId,
               toolCallId: toolCallId,
