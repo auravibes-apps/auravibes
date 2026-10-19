@@ -136,24 +136,49 @@ bool _isCloud(Ref ref, String workspaceId) =>
         .cloud !=
     null;
 
+typedef _SendNewMessageUsecaseDependencies = ({
+  ConversationRepository conversationRepo,
+  SendMessageUsecase sendMessageUsecase,
+  GenerateTitleUsecase generateTitleUsecase,
+  MonitoringService monitoringService,
+});
+
+_SendNewMessageUsecaseDependencies _sendNewMessageUsecaseDependencies(
+  Ref ref,
+  String workspaceId,
+) => (
+  conversationRepo: ref.watch(conversationRepositoryProvider),
+  sendMessageUsecase: ref.watch(sendMessageUsecaseProvider(workspaceId)),
+  generateTitleUsecase: ref.watch(generateTitleUsecaseProvider),
+  monitoringService: ref.watch(monitoringServiceProvider),
+);
+
 SendNewMessageUsecase _buildSendNewMessageUsecase(
   Ref ref,
   String workspaceId,
   bool isCloud,
 ) {
+  final dependencies = _sendNewMessageUsecaseDependencies(ref, workspaceId);
+
   return SendNewMessageUsecase(
-    conversationRepo: ref.watch(conversationRepositoryProvider),
-    sendMessageUsecase: ref.watch(sendMessageUsecaseProvider(workspaceId)),
-    modelSelectionStore: (workspaceId) =>
-        ref.read(modelSelectionStoreProvider(workspaceId).future),
-    generateTitleUsecase: ref.watch(generateTitleUsecaseProvider),
-    monitoringService: ref.watch(monitoringServiceProvider),
+    conversationRepo: dependencies.conversationRepo,
+    sendMessageUsecase: dependencies.sendMessageUsecase,
+    modelSelectionStore: _loadModelSelectionStore(ref),
+    generateTitleUsecase: dependencies.generateTitleUsecase,
+    monitoringService: dependencies.monitoringService,
     cloudCreate: _cloudCreate(ref, workspaceId, isCloud),
-    onIterationLimit: (conversationId) => ref
-        .read(conversationIterationLimitProvider(conversationId).notifier)
-        .markReached(),
+    onIterationLimit: _reportIterationLimit(ref),
   );
 }
+
+Future<ModelSelectionStore> Function(String workspaceId)
+_loadModelSelectionStore(Ref ref) =>
+    (workspaceId) => ref.read(modelSelectionStoreProvider(workspaceId).future);
+
+void Function(String conversationId) _reportIterationLimit(Ref ref) =>
+    (conversationId) => ref
+        .read(conversationIterationLimitProvider(conversationId).notifier)
+        .markReached();
 
 Future<ConversationEntity> Function(ConversationToCreate)? _cloudCreate(
   Ref ref,

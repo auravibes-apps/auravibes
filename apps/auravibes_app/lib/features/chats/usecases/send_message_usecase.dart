@@ -224,30 +224,56 @@ Future<AgentIterationDecision> _retryUserMessage(
   );
 }
 
+typedef _FirstMessageCallbacks = ({
+  void Function(Object error, StackTrace stackTrace) onContinueError,
+  void Function(String conversationId)? onIterationLimit,
+});
+
 Future<void> _createAndContinueFirstMessage(
   SendMessageUsecase usecase, {
   required String conversationId,
   required ChatDraft draft,
-  required void Function(Object error, StackTrace stackTrace) onContinueError,
-  required void Function(String conversationId)? onIterationLimit,
+  required _FirstMessageCallbacks callbacks,
 }) async {
   final createdMessage = await usecase.createUserMessage(
     conversationId: conversationId,
     draft: draft,
   );
-  unawaited(() async {
-    try {
-      final decision = await usecase.continueFromUserMessage(
-        conversationId: conversationId,
-        messageId: createdMessage.id,
-      );
-      if (decision == AgentIterationDecision.iterationLimitReached) {
-        onIterationLimit?.call(conversationId);
-      }
-    } on Object catch (error, stackTrace) {
-      onContinueError(error, stackTrace);
-    }
-  }());
+  unawaited(
+    _continueFirstMessage(
+      usecase,
+      conversationId,
+      createdMessage.id,
+      callbacks,
+    ),
+  );
+}
+
+Future<void> _continueFirstMessage(
+  SendMessageUsecase usecase,
+  String conversationId,
+  String messageId,
+  _FirstMessageCallbacks callbacks,
+) async {
+  try {
+    final decision = await usecase.continueFromUserMessage(
+      conversationId: conversationId,
+      messageId: messageId,
+    );
+    _reportFirstMessageIterationLimit(callbacks, conversationId, decision);
+  } on Object catch (error, stackTrace) {
+    callbacks.onContinueError(error, stackTrace);
+  }
+}
+
+void _reportFirstMessageIterationLimit(
+  _FirstMessageCallbacks callbacks,
+  String conversationId,
+  AgentIterationDecision decision,
+) {
+  if (decision == .iterationLimitReached) {
+    callbacks.onIterationLimit?.call(conversationId);
+  }
 }
 
 bool _isRetryableUserMessage(MessageEntity? message, String conversationId) {
@@ -284,8 +310,10 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
         this,
         conversationId: conversationId,
         draft: draft,
-        onContinueError: onContinueError,
-        onIterationLimit: onIterationLimit,
+        callbacks: (
+          onContinueError: onContinueError,
+          onIterationLimit: onIterationLimit,
+        ),
       ),
     );
   }

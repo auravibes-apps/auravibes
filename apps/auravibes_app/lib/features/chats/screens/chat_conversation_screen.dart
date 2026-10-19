@@ -120,6 +120,14 @@ typedef _ConversationContextRequest = ({
   String conversationId,
 });
 
+typedef _LoadedChatConversationRenderRequest = ({
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  ConversationEntity conversation,
+  bool showInputComposer,
+});
+
 typedef _BackgroundWorkStatusPresence = ({
   bool hasDetachableToolCalls,
   bool hasBackgroundWorks,
@@ -490,57 +498,62 @@ class const _LoadedChatConversationRuntime({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final conversationId = conversation.id;
     final iterationLimitProvider = conversationIterationLimitProvider(
-      conversationId,
+      conversation.id,
     );
-    final noticeScheduled = useRef(false);
-    void showPendingNotice() {
-      if (noticeScheduled.value) return;
-      noticeScheduled.value = true;
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) {
-          noticeScheduled.value = false;
-
-          return;
-        }
-
-        ref.read(iterationLimitProvider.notifier).consume();
-        _showIterationLimitNoticeIfNeeded(
-          context: context,
-          decision: .iterationLimitReached,
-          onContinue: () => unawaited(
-            _continueAgent((
-              context: context,
-              ref: ref,
-              workspaceId: workspaceId,
-              conversationId: conversationId,
-            )),
-          ),
-        );
-        noticeScheduled.value = false;
-      });
+    final noticeRequest = (
+      context: context,
+      ref: ref,
+      workspaceId: workspaceId,
+      conversationId: conversation.id,
+    );
+    if (ref.read(iterationLimitProvider)) {
+      _schedulePendingIterationLimitNotice(noticeRequest);
     }
-
-    if (ref.read(iterationLimitProvider)) showPendingNotice();
     ref.listen(iterationLimitProvider, (_, pending) {
-      if (pending) showPendingNotice();
+      if (pending) _schedulePendingIterationLimitNotice(noticeRequest);
     });
 
-    return _LoadedChatConversationRender(
+    return _renderLoadedChatConversation((
+      context: context,
+      ref: ref,
       workspaceId: workspaceId,
       conversation: conversation,
-      runtimeState: _useLoadedChatConversationRuntimeState((
-        context: context,
-        ref: ref,
-        workspaceId: workspaceId,
-        conversation: conversation,
-      )),
       showInputComposer: showInputComposer,
-      leading: showInputComposer ? null : const _ChatConversationBackButton(),
-    );
+    ));
   }
+}
+
+Widget _renderLoadedChatConversation(
+  _LoadedChatConversationRenderRequest request,
+) => _LoadedChatConversationRender(
+  workspaceId: request.workspaceId,
+  conversation: request.conversation,
+  runtimeState: _useLoadedChatConversationRuntimeState((
+    context: request.context,
+    ref: request.ref,
+    workspaceId: request.workspaceId,
+    conversation: request.conversation,
+  )),
+  showInputComposer: request.showInputComposer,
+  leading: request.showInputComposer
+      ? null
+      : const _ChatConversationBackButton(),
+);
+
+void _schedulePendingIterationLimitNotice(
+  _ConversationContextRequest request,
+) => WidgetsBinding.instance.addPostFrameCallback(
+  (_) => _showPendingIterationLimitNotice(request),
+);
+
+void _showPendingIterationLimitNotice(_ConversationContextRequest request) {
+  if (!request.context.mounted) return;
+
+  request.ref
+      .read(conversationIterationLimitProvider(request.conversationId).notifier)
+      .consume();
+  _showIterationLimitNoticeForConversation(request, .iterationLimitReached);
 }
 
 class const _ChatConversationBackButton() extends StatelessWidget {
@@ -2679,11 +2692,7 @@ Future<void> _continueAgent(_ConversationContextRequest request) async {
   if (!_canContinueConversation(request)) return;
 
   final decision = await _continueAgentTurnWithErrorHandling(request);
-  _showIterationLimitNoticeIfNeeded(
-    context: request.context,
-    decision: decision,
-    onContinue: () => unawaited(_continueAgent(request)),
-  );
+  _showIterationLimitNoticeForConversation(request, decision);
 }
 
 Future<AgentIterationDecision?> _continueAgentTurnWithErrorHandling(
@@ -2768,17 +2777,9 @@ Future<void> _retryMessage(_RetryMessageRequest request) async {
 
   try {
     final decision = await _runRetryMessage(request);
-    _showIterationLimitNoticeIfNeeded(
-      context: request.context,
-      decision: decision,
-      onContinue: () => unawaited(
-        _continueAgent((
-          context: request.context,
-          ref: request.ref,
-          workspaceId: request.workspaceId,
-          conversationId: request.conversationId,
-        )),
-      ),
+    _showIterationLimitNoticeForConversation(
+      _conversationContextForRetry(request),
+      decision,
     );
   } on Exception catch (error, stackTrace) {
     _reportRetryMessageError(request, error, stackTrace);
@@ -3183,17 +3184,9 @@ bool _canStopCloudState(CloudConversationState state) {
 Future<void> _sendMessage(_SendMessageRequest request) async {
   try {
     final decision = await _sendMessageUsecase(request);
-    _showIterationLimitNoticeIfNeeded(
-      context: request.context,
-      decision: decision,
-      onContinue: () => unawaited(
-        _continueAgent((
-          context: request.context,
-          ref: request.ref,
-          workspaceId: request.workspaceId,
-          conversationId: request.conversationId,
-        )),
-      ),
+    _showIterationLimitNoticeForConversation(
+      _conversationContextForSend(request),
+      decision,
     );
   } on MessagePersistedException catch (error) {
     _reportSendMessageFailure(request, error, error.stackTrace);
@@ -3208,6 +3201,36 @@ Future<AgentIterationDecision?> _sendMessageUsecase(
 ) => request.ref
     .read(sendMessageUsecaseProvider(request.workspaceId))
     .call(conversationId: request.conversationId, draft: request.draft);
+
+_ConversationContextRequest _conversationContextForRetry(
+  _RetryMessageRequest request,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  conversationId: request.conversationId,
+);
+
+_ConversationContextRequest _conversationContextForSend(
+  _SendMessageRequest request,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  conversationId: request.conversationId,
+);
+
+VoidCallback _continueAgentCallback(_ConversationContextRequest request) =>
+    () => unawaited(_continueAgent(request));
+
+void _showIterationLimitNoticeForConversation(
+  _ConversationContextRequest request,
+  AgentIterationDecision? decision,
+) => _showIterationLimitNoticeIfNeeded(
+  context: request.context,
+  decision: decision,
+  onContinue: _continueAgentCallback(request),
+);
 
 void _showIterationLimitNoticeIfNeeded({
   required BuildContext context,
