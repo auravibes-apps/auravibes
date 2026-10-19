@@ -117,9 +117,10 @@ void main() {
     tester,
   ) async {
     const hapticsChannel = MethodChannel('haptic_feedback');
-    final messenger = tester.binding.defaultBinaryMessenger;
-    messenger..setMockMethodCallHandler(hapticsChannel, (_) async => null);
-    addTearDown(() => messenger.setMockMethodCallHandler(hapticsChannel, null));
+    final setMockMethodCallHandler =
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler;
+    setMockMethodCallHandler(hapticsChannel, (_) async => null);
+    addTearDown(() => setMockMethodCallHandler(hapticsChannel, null));
 
     var launchCount = 0;
     _mockUrlLauncher(tester, (_) async {
