@@ -33,6 +33,8 @@ Duration? _retryCloudConversationProvider(int retryCount, Object error) {
 bool _isTerminalCloudConversationError(Object error) => switch (error) {
   CloudConversationStreamFailure() => true,
   CloudAppException(:final code) when code != null => true,
+  CloudAppException(:final httpStatusCode)
+    when httpStatusCode != null && httpStatusCode < 500 => true,
   ServerpodClientHttpException(:final statusCode) when statusCode < 500 => true,
   _ => false,
 };

@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -227,6 +228,67 @@ void main() {
       expect(retries, 0);
     },
   );
+
+  test('stops retrying wrapped terminal HTTP snapshot failures', () async {
+    final delays = <Duration>[];
+    var snapshots = 0;
+    final error = _translateCloudAppException(
+      ServerpodClientUnauthorized(),
+    );
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () {
+          snapshots++;
+          throw error;
+        },
+        events: (_) => const Stream.empty(),
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (duration) {
+        delays.add(duration);
+
+        return Future<void>.value();
+      },
+    );
+
+    await expectLater(
+      states,
+      emitsError(isA<CloudConversationStreamFailure>()),
+    );
+    expect(error.httpStatusCode, 401);
+    expect(snapshots, 1);
+    expect(delays, isEmpty);
+  });
+
+  test('retries wrapped server HTTP snapshot failures', () async {
+    final delays = <Duration>[];
+    var snapshots = 0;
+    final error = _translateCloudAppException(
+      ServerpodClientUnknownHttpException('server failure', 503),
+    );
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () {
+          if (snapshots++ == 0) throw error;
+
+          return _snapshot(sequence: 4);
+        },
+        events: (_) => const Stream.empty(),
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (duration) {
+        delays.add(duration);
+
+        return Future<void>.value();
+      },
+      random: const _FixedRandom(.5),
+    ).take(1);
+
+    expect(await states.map((state) => state.sequence).toList(), [4]);
+    expect(error.httpStatusCode, 503);
+    expect(snapshots, 2);
+    expect(delays, [const Duration(milliseconds: 500)]);
+  });
 
   test(
     'Riverpod does not retry terminal conversation stream failures',
@@ -532,6 +594,14 @@ CloudChatGateway _gateway({
     subscribeConversation: events,
     getConversationSnapshot: (_) async => snapshots(),
   );
+}
+
+CloudAppException _translateCloudAppException(Object error) {
+  try {
+    CloudAppErrors.translateException(error, .conversation);
+  } on CloudAppException catch (translated) {
+    return translated;
+  }
 }
 
 const _workspace = CloudWorkspaceRef(
