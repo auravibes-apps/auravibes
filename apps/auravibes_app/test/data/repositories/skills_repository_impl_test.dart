@@ -1111,6 +1111,7 @@ void main() {
           required mcpServerId,
           required toolIdentifier,
           required arguments,
+          onElicitation,
         }) async => '',
         conversationRepository: conversationRepository,
         listAvailableSkillsUsecase: (_) => listAvailableSkillsUsecase,
