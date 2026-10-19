@@ -28,15 +28,11 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 ## Commands
 
-| Task                    | Command                                                                      |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| Workspace bootstrap     | `fvm dart run melos bootstrap`                                               |
-| App/UI focused test     | `fvm flutter test test/path/to/file_test.dart --no-pub` from target package  |
-| App fatal analyzer      | `fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
-| Engine focused test     | `fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
-| Validation              | Prefix `fvm dart run melos run`: `validate:quick` (quick), `validate` (full), `validate:ci` (CI with coverage) |
-| Asset/clean scripts      | `fvm dart run melos run clean`, `fvm dart run melos run generate:flavors`, `fvm dart run melos run generate:icons` |
-| Code generation         | Prefix `fvm dart run melos run`: `generate`, `generate:localization`, `generate:serverpod` |
+- Script definitions and package filters live in root `pubspec.yaml`.
+- Wrap local test, analyzer, code generation, bootstrap, and workspace validation commands with:
+  `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- <command>`.
+- The lease coordinates linked worktrees that share this repository's Git common directory. Commands started outside the wrapper bypass it; CI runners remain independent.
+- Temp-volume stats are advisory; quotas and container limits may still reject writes.
 
 ## DCL and lint compliance
 
@@ -51,7 +47,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 ## Verification
 
-- Run the smallest scope-appropriate check with pinned FVM. Use `fvm dart run melos run <script>` for root scripts.
+- Run the smallest scope-appropriate check with pinned FVM through the validation lease.
 - For Dart syntax checks, use `fvm dart analyze <path>` when generic syntax parsing reports unsupported language.
 - For generated source changes, run the relevant generator and inspect its output.
 - For scope-specific checks, read [validation policy](docs/agents/task-policies.md#validation).
