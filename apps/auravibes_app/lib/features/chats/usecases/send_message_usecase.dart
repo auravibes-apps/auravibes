@@ -83,19 +83,17 @@ class SendMessageUsecase {
     );
   }
 
-  Future<void> continueFromUserMessage({
+  Future<AgentIterationDecision> continueFromUserMessage({
     required String conversationId,
     required String messageId,
   }) => _withConversationActivity(
     conversationActivityGate,
     conversationId,
-    () async {
-      final _ = await _continueFromUserMessage(
-        conversationId: conversationId,
-        messageId: messageId,
-        origin: .userMessage,
-      );
-    },
+    () => _continueFromUserMessage(
+      conversationId: conversationId,
+      messageId: messageId,
+      origin: .userMessage,
+    ),
   );
 
   Future<AgentIterationDecision> retryUserMessage({
@@ -229,6 +227,7 @@ Future<void> _createAndContinueFirstMessage(
   required String conversationId,
   required ChatDraft draft,
   required void Function(Object error, StackTrace stackTrace) onContinueError,
+  required void Function(String conversationId)? onIterationLimit,
 }) async {
   final createdMessage = await usecase.createUserMessage(
     conversationId: conversationId,
@@ -240,6 +239,11 @@ Future<void> _createAndContinueFirstMessage(
           conversationId: conversationId,
           messageId: createdMessage.id,
         )
+        .then((decision) {
+          if (decision == AgentIterationDecision.iterationLimitReached) {
+            onIterationLimit?.call(conversationId);
+          }
+        })
         .catchError(onContinueError),
   );
 }
@@ -262,6 +266,7 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
     required String conversationId,
     required ChatDraft draft,
     required void Function(Object error, StackTrace stackTrace) onContinueError,
+    void Function(String conversationId)? onIterationLimit,
   }) async {
     if (draft.isEmpty) return;
     if (cloudSend case final send?) {
@@ -278,6 +283,7 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
         conversationId: conversationId,
         draft: draft,
         onContinueError: onContinueError,
+        onIterationLimit: onIterationLimit,
       ),
     );
   }

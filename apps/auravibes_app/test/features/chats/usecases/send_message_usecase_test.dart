@@ -334,6 +334,27 @@ void main() {
 
       completer.complete();
     });
+
+    test('reports an iteration limit from a first message', () async {
+      final iterationLimitReported = Completer<void>();
+      when(
+        () => fixture.runAgentIterationUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          context: any(named: 'context'),
+        ),
+      ).thenAnswer((_) async => AgentIterationDecision.iterationLimitReached);
+
+      await fixture.usecase.sendFirstMessage(
+        conversationId: 'conversation-1',
+        draft: const ChatDraft(text: 'Hello'),
+        onContinueError: (error, stackTrace) {},
+        onIterationLimit: (conversationId) {
+          expect(conversationId, 'conversation-1');
+          iterationLimitReported.complete();
+        },
+      );
+      await iterationLimitReported.future;
+    });
   });
 }
 

@@ -385,6 +385,39 @@ void main() {
     });
 
     test(
+      'returns partial when an approved child reaches iteration limit',
+      () async {
+        final tracker = _Tracker();
+        final messages = _Messages()..latestContent = 'Partial answer';
+        final runner = _runner(
+          tracker: tracker,
+          messages: messages,
+          continueTurn: ({required conversationId, required context}) async {
+            tracker.finish(
+              parentId: 'parent',
+              childId: 'child',
+              status: SubAgentCompletionStatus.partial,
+            );
+
+            return AgentIterationDecision.waitForToolApproval;
+          },
+        );
+
+        final result = jsonDecode(
+          await runner.run(
+            parentConversationId: 'parent',
+            workspaceId: 'w1',
+            arguments: const {'title': 'Task', 'prompt': 'Do it'},
+          ),
+        ) as Map<String, Object?>;
+
+        expect(result['status'], 'partial');
+        expect(result['content'], 'Partial answer');
+        expect(tracker.status('child'), SubAgentCompletionStatus.partial);
+      },
+    );
+
+    test(
       'waits for approval completion before returning final content',
       () async {
         final tracker = _Tracker();

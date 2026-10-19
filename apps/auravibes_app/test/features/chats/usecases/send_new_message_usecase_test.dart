@@ -123,7 +123,9 @@ class _SendNewMessageUsecaseFixture {
         conversationId: any(named: 'conversationId'),
         messageId: any(named: 'messageId'),
       ),
-    ).thenAnswer((_) => Future<void>.value());
+    ).thenAnswer(
+      (_) => Future<AgentIterationDecision>.value(AgentIterationDecision.done),
+    );
     when(
       () => generateTitleUsecase.call(
         conversationId: any(named: 'conversationId'),

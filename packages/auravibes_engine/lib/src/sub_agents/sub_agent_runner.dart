@@ -241,6 +241,12 @@ class const SubAgentRunner({
         await _result(conversationId, 'stopped', agentId: agentId),
       );
     }
+    if (status == SubAgentCompletionStatus.partial) {
+      return _SubAgentWaitResult(
+        .partial,
+        await _result(conversationId, 'partial', agentId: agentId),
+      );
+    }
     if (status == SubAgentCompletionStatus.error) {
       final failure = requestHandle.failure;
       throw _failure(

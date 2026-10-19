@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/services/cloud_conversation_creator.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
@@ -37,6 +38,7 @@ class const SendNewMessageUsecase({
   required final MonitoringService monitoringService,
   final Future<ConversationEntity> Function(ConversationToCreate value)?
   cloudCreate,
+  final void Function(String conversationId)? onIterationLimit,
 }) {
   Future<ConversationEntity> call(_SendNewMessageRequest request) =>
       _send(request);
@@ -65,6 +67,7 @@ class const SendNewMessageUsecase({
             stackTrace: stackTrace,
           );
         },
+        onIterationLimit: onIterationLimit,
       );
     } on Object catch (error, stackTrace) {
       monitoringService.trackError(
@@ -145,6 +148,9 @@ SendNewMessageUsecase _buildSendNewMessageUsecase(
         ref.read(modelSelectionStoreProvider(workspaceId).future),
     generateTitleUsecase: ref.watch(generateTitleUsecaseProvider),
     monitoringService: ref.watch(monitoringServiceProvider),
+    onIterationLimit: (conversationId) => ref
+        .read(conversationIterationLimitProvider(conversationId).notifier)
+        .markReached(),
     cloudCreate: _cloudCreate(ref, workspaceId, isCloud),
   );
 }

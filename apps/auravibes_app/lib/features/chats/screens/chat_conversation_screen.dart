@@ -120,6 +120,11 @@ typedef _ConversationContextRequest = ({
   String conversationId,
 });
 
+typedef _PendingIterationLimitNoticeRequest = ({
+  _ConversationContextRequest conversation,
+  bool pending,
+});
+
 typedef _BackgroundWorkStatusPresence = ({
   bool hasDetachableToolCalls,
   bool hasBackgroundWorks,
@@ -489,19 +494,37 @@ class const _LoadedChatConversationRuntime({
   required final bool showInputComposer,
 }) extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) =>
-      _LoadedChatConversationRender(
-        workspaceId: workspaceId,
-        conversation: conversation,
-        runtimeState: _useLoadedChatConversationRuntimeState((
+  Widget build(BuildContext context, WidgetRef ref) {
+    final conversationId = conversation.id;
+    final iterationLimitNoticePending = ref.watch(
+      conversationIterationLimitProvider(conversationId),
+    );
+    useEffect(
+      () => _showPendingIterationLimitNotice((
+        conversation: (
           context: context,
           ref: ref,
           workspaceId: workspaceId,
-          conversation: conversation,
-        )),
-        showInputComposer: showInputComposer,
-        leading: showInputComposer ? null : const _ChatConversationBackButton(),
-      );
+          conversationId: conversationId,
+        ),
+        pending: iterationLimitNoticePending,
+      )),
+      [conversationId, iterationLimitNoticePending],
+    );
+
+    return _LoadedChatConversationRender(
+      workspaceId: workspaceId,
+      conversation: conversation,
+      runtimeState: _useLoadedChatConversationRuntimeState((
+        context: context,
+        ref: ref,
+        workspaceId: workspaceId,
+        conversation: conversation,
+      )),
+      showInputComposer: showInputComposer,
+      leading: showInputComposer ? null : const _ChatConversationBackButton(),
+    );
+  }
 }
 
 class const _ChatConversationBackButton() extends StatelessWidget {
@@ -3177,13 +3200,38 @@ void _showIterationLimitNoticeIfNeeded({
 
   final _ = AuraSnackBars.show(
     context: context,
-    content: Text(
-      LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached.tr(),
+    content: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
     ),
     duration: const Duration(seconds: 10),
     actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent.tr(),
     onAction: onContinue,
   );
+}
+
+Dispose? _showPendingIterationLimitNotice(
+  _PendingIterationLimitNoticeRequest request,
+) {
+  if (!request.pending) return null;
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final conversation = request.conversation;
+    if (!conversation.context.mounted) return;
+
+    conversation.ref
+        .read(
+          conversationIterationLimitProvider(conversation.conversationId)
+              .notifier,
+        )
+        .consume();
+    _showIterationLimitNoticeIfNeeded(
+      context: conversation.context,
+      decision: AgentIterationDecision.iterationLimitReached,
+      onContinue: () => unawaited(_continueAgent(conversation)),
+    );
+  });
+
+  return null;
 }
 
 void _reportSendMessageFailure(

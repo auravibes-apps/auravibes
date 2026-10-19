@@ -64,6 +64,20 @@ class ConversationRateLimitRetryNotifier
   }
 }
 
+class ConversationIterationLimitNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void markReached() {
+    state = true;
+  }
+
+  void consume() {
+    if (!state) return;
+    state = false;
+  }
+}
+
 final conversationStreamingRuntimeProvider =
     Provider<ConversationStreamingRuntime>((ref) {
       final notifier = ref.watch(conversationStreamingProvider.notifier);
@@ -105,6 +119,11 @@ final titlesStreamingRuntimeProvider = Provider<TitlesStreamingRuntime>((ref) {
 final conversationRateLimitRetryProvider =
     NotifierProvider<ConversationRateLimitRetryNotifier, Map<String, DateTime>>(
       ConversationRateLimitRetryNotifier.new,
+    );
+
+final conversationIterationLimitProvider =
+    NotifierProvider.family<ConversationIterationLimitNotifier, bool, String>(
+      (_) => ConversationIterationLimitNotifier(),
     );
 
 final conversationRateLimitRetryRuntimeProvider =

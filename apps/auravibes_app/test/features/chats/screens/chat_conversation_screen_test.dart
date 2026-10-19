@@ -1172,7 +1172,7 @@ void main() {
     expect(find.byType(ChatThinkingIndicator), findsOneWidget);
   });
 
-  testWidgets('shows rate-limit retry countdown and marks input busy', (
+  testWidgets('shows retry and iteration-limit notices and marks input busy', (
     tester,
   ) async {
     final conversation = ConversationEntity(
@@ -1228,6 +1228,8 @@ void main() {
                   conversationRateLimitRetryProvider.overrideWith(
                     () => _StaticRateLimitRetryNotifier(retryAt),
                   ),
+                  conversationIterationLimitProvider(_chatId)
+                      .overrideWith(_StaticIterationLimitNotifier.new),
                   chatMessagesProvider.overrideWith(
                     (ref, _) => Stream.value(const <MessageEntity>[]),
                   ),
@@ -1275,6 +1277,13 @@ void main() {
     await tester.pump();
 
     expect(find.textContaining('Rate limit reached'), findsOneWidget);
+    expect(
+      find.text(
+        'The agent reached its iteration limit. Partial output and completed tool results are available.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Continue agent'), findsOneWidget);
     expect(find.text('Waiting to retry'), findsOneWidget);
     final retryText = tester.widget<Text>(
       find.textContaining('Rate limit reached'),
@@ -2138,6 +2147,11 @@ class _StaticRateLimitRetryNotifier(final DateTime retryDeadline)
     extends ConversationRateLimitRetryNotifier {
   @override
   Map<String, DateTime> build() => {_chatId: retryDeadline};
+}
+
+class _StaticIterationLimitNotifier extends ConversationIterationLimitNotifier {
+  @override
+  bool build() => true;
 }
 
 class _BusyRefreshNotifier extends Notifier<int> {
