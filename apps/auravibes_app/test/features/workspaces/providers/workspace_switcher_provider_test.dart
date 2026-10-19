@@ -144,6 +144,34 @@ void main() {
     });
 
     test(
+      'navigates to explicit destination after workspace selection',
+      () async {
+        final notifier = container.read(workspaceSwitcherProvider.notifier);
+
+        notifier.switchToWorkspace(
+          'ws-1',
+          destinationLocation: '/workspaces/ws-1/chats/chat-1',
+        );
+        await Future<void>.delayed(_testDebounceWait);
+
+        expect(fakeRouter.lastLocation, '/workspaces/ws-1/chats/chat-1');
+      },
+    );
+
+    test('rejects destination from a different workspace', () {
+      final notifier = container.read(workspaceSwitcherProvider.notifier);
+
+      expect(
+        () => notifier.switchToWorkspace(
+          'ws-1',
+          destinationLocation: '/workspaces/ws-2/chats/chat-1',
+        ),
+        throwsArgumentError,
+      );
+      expect(fakeRouter.lastLocation, isNull);
+    });
+
+    test(
       'queues an in-flight switch before persisting a later selection',
       () async {
         container.dispose();

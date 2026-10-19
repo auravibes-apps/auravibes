@@ -16,6 +16,24 @@
     "collapse_sidebar_tooltip": "Contraer barra lateral",
     "expand_sidebar_tooltip": "Expandir barra lateral"
   },
+  "quick_switcher": {
+    "title": "Selector rápido",
+    "search": "Buscar espacios de trabajo, conversaciones, agentes y habilidades",
+    "keyboard_hint": "Usa ↑ y ↓ para moverte, Enter para abrir, Esc para cerrar",
+    "loading": "Cargando resultados...",
+    "no_results": "No se encontraron resultados.",
+    "load_error": "No se pudieron cargar los resultados del selector.",
+    "partial_results": "Algunos resultados no están disponibles.",
+    "selection_announcement": "Seleccionado: {title}, {subtitle}",
+    "retry": "Reintentar",
+    "workspace": "Espacio de trabajo",
+    "conversation": "Conversación",
+    "agent": "Agente",
+    "skill": "Habilidad",
+    "action": "Acción",
+    "new_conversation": "Nueva conversación",
+    "settings": "Configuración"
+  },
   "intro_flow": {
     "welcome": {
       "title": "Bienvenido a AuraVibes",

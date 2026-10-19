@@ -20,6 +20,7 @@ import 'package:auravibes_app/features/service_connections/screens/service_conne
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
+import 'package:auravibes_app/features/quick_switcher/widgets/quick_switcher_shortcut_scope.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definitions_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
@@ -457,9 +458,12 @@ class const _WorkspaceShell({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PopScope(
-    child: AuraSidebarWrapper(
-      navigationShell: navigationShell,
+    child: QuickSwitcherShortcutScope(
       workspaceId: workspaceId,
+      child: AuraSidebarWrapper(
+        navigationShell: navigationShell,
+        workspaceId: workspaceId,
+      ),
     ),
     canPop: false,
   );
