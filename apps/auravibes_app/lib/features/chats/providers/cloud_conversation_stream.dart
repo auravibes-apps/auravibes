@@ -1,13 +1,19 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_key.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream_failure.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
 
 export 'cloud_conversation_key.dart';
+export 'cloud_conversation_stream_failure.dart';
 
 final Logger _logger = .new('cloud_conversation');
 
@@ -15,7 +21,17 @@ final StreamProviderFamily<CloudConversationState, CloudConversationKey>
 cloudConversationStateProvider = StreamProvider.autoDispose
     .family<CloudConversationState, CloudConversationKey>(
       _watchCloudConversation,
+      retry: _retryCloudConversationProvider,
     );
+
+Duration? _retryCloudConversationProvider(int retryCount, Object error) =>
+    switch (error) {
+      CloudConversationStreamFailure() => null,
+      CloudAppException(:final code) when code != null => null,
+      ServerpodClientHttpException(:final statusCode) when statusCode < 500 =>
+        null,
+      _ => ProviderContainer.defaultRetry(retryCount, error),
+    };
 
 Stream<CloudConversationState> _watchCloudConversation(
   Ref ref,
@@ -38,7 +54,8 @@ abstract final class CloudConversationStream {
     CloudChatGateway chat,
     CloudConversationKey key, {
     Future<void> Function(Duration duration)? delay,
-  }) => _CloudConversationStreamRunner(chat, key, delay).run();
+    Random? random,
+  }) => _CloudConversationStreamRunner(chat, key, delay, random).run();
 
   static Future<CloudConversationState> _applyEvent(
     CloudChatGateway chat,
@@ -91,11 +108,13 @@ abstract final class CloudConversationStream {
 }
 
 class _CloudConversationStreamRunner {
-  new(this._chat, this._key, this._delay);
+  new(this._chat, this._key, this._delay, Random? random)
+    : _random = random ?? Random();
 
   final CloudChatGateway _chat;
   final CloudConversationKey _key;
   final Future<void> Function(Duration duration)? _delay;
+  final Random _random;
   CloudConversationState? _state;
   var _retryCount = 0;
 
@@ -117,11 +136,19 @@ class _CloudConversationStreamRunner {
     _retryCount++;
     final state = await _loadSnapshot();
     _state = state.preserveTransientA2uiFrom(_currentState);
-    await (_delay ?? Future<void>.delayed)(
-      .new(seconds: _retryCount.clamp(1, 8)),
-    );
+    await (_delay ?? Future<void>.delayed)(_retryDelay());
 
     return _currentState;
+  }
+
+  Duration _retryDelay() {
+    final exponent = (_retryCount - 1).clamp(0, 3);
+    final maximumDelay = Duration(seconds: 1 << exponent);
+
+    return Duration(
+      milliseconds: (_random.nextDouble() * maximumDelay.inMilliseconds)
+          .round(),
+    );
   }
 
   Future<CloudConversationState> _loadSnapshot() async =>
@@ -147,6 +174,9 @@ class _CloudConversationStreamRunner {
       _logClosedStream();
     } on Object catch (error, stackTrace) {
       _logFailedStream(error, stackTrace);
+      if (!_isRetryableStreamFailure(error)) {
+        _throwTerminalStreamFailure(error, stackTrace);
+      }
     }
   }
 
@@ -176,5 +206,34 @@ class _CloudConversationStreamRunner {
       error,
       stackTrace,
     );
+  }
+
+  bool _isRetryableStreamFailure(Object error) => switch (error) {
+    MethodStreamException() ||
+    ServerpodClientNetworkException() ||
+    TimeoutException() => true,
+    ServerpodClientHttpException(:final statusCode) => statusCode >= 500,
+    CloudAppException(:final code) => code == null,
+    _ => false,
+  };
+
+  Never _throwTerminalStreamFailure(Object error, StackTrace stackTrace) {
+    Error.throwWithStackTrace(
+      CloudConversationStreamFailure(
+        localizationKey: _terminalStreamErrorLocalizationKey(error),
+      ),
+      stackTrace,
+    );
+  }
+}
+
+String _terminalStreamErrorLocalizationKey(Object error) {
+  try {
+    CloudAppErrors.translateException(error, .conversation);
+  } on Object catch (translatedError) {
+    return switch (translatedError) {
+      CloudAppException(:final localizationKey) => localizationKey,
+      _ => CloudAppErrors.localizationKey(error),
+    };
   }
 }

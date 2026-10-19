@@ -57,6 +57,7 @@ import 'package:auravibes_app/features/models/widgets/compact_workspace_model_se
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -1693,6 +1694,10 @@ class const _ChatConversationBodyLayout({
         _ConversationOrientation(data: data),
       _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
+      _CloudConversationStreamRecovery(
+        workspaceId: data.workspaceId,
+        conversationId: data.conversation.id,
+      ),
       _ChatConversationMessageList(
         data: data,
         onOpenToolResult: onOpenToolResult,
@@ -1706,6 +1711,50 @@ class const _ChatConversationBodyLayout({
     ],
     spacing: .none,
   );
+}
+
+class const _CloudConversationStreamRecovery({
+  required final String workspaceId,
+  required final String conversationId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!_isCloudWorkspace(ref, workspaceId)) return const SizedBox.shrink();
+
+    final provider = cloudConversationStateProvider((
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ));
+    final error = ref.watch(provider).error;
+    if (error == null) return const SizedBox.shrink();
+    final errorMessageKey = switch (error) {
+      CloudConversationStreamFailure(:final localizationKey) => localizationKey,
+      _ => CloudAppErrors.localizationKey(error),
+    };
+
+    return AuraPadding(
+      child: AuraColumn(
+        children: [
+          AuraCallout(
+            title: LocaleKeys.common_error_title.tr(context: context),
+            description: errorMessageKey.tr(context: context),
+            icon: Icons.cloud_off_outlined,
+            tint: .error,
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: AuraButton(
+              onPressed: () => ref.invalidate(provider),
+              child: const TextLocale(LocaleKeys.route_state_retry),
+            ),
+          ),
+        ],
+        spacing: .sm,
+        mainAxisSize: .min,
+      ),
+      padding: const .horizontal(.md),
+    );
+  }
 }
 
 class const _ChatConversationStatusArea({

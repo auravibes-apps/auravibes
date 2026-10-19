@@ -46,6 +46,7 @@ import 'package:auravibes_app/features/skills/providers/conversation_skill_selec
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -1342,6 +1343,48 @@ void main() {
       );
     },
   );
+
+  testWidgets('shows recovery when cloud conversation stream fails', (
+    tester,
+  ) async {
+    var streamSubscriptions = 0;
+    final updates = Stream<CloudConversationState>.multi((controller) {
+      if (streamSubscriptions++ == 0) {
+        controller.addError(
+          const CloudConversationStreamFailure(
+            localizationKey: LocaleKeys.cloud_errors_unavailable,
+          ),
+        );
+      } else {
+        controller.add(_cloudState(projectionRevision: 43));
+      }
+      unawaited(controller.close());
+    });
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: updates,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(
+      find.text('The cloud service is unavailable. Try again.'),
+      findsOneWidget,
+    );
+    expect(find.text('Retry'), findsOneWidget);
+    expect(streamSubscriptions, 1);
+
+    await tester.tap(find.text('Retry'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.text('The cloud service is unavailable. Try again.'),
+      findsNothing,
+    );
+    expect(streamSubscriptions, 2);
+  });
 
   testWidgets(
     'routes cloud Continue with the authoritative projection revision',

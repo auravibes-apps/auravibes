@@ -1,10 +1,13 @@
 // ignore_for_file: type=lint, type=warning
+import 'dart:math';
+
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -123,6 +126,103 @@ void main() {
     },
   );
 
+  test('backs off with jitter and caps retry delay at eight seconds', () async {
+    final delays = <Duration>[];
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () => _snapshot(sequence: 4),
+        events: (_) =>
+            Stream.error(const ServerpodClientNetworkException('offline')),
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (duration) {
+        delays.add(duration);
+
+        return Future<void>.value();
+      },
+      random: const _FixedRandom(.999999),
+    ).take(8);
+
+    await states.drain<void>();
+
+    expect(delays, [
+      const Duration(seconds: 1),
+      const Duration(seconds: 2),
+      const Duration(seconds: 4),
+      const Duration(seconds: 8),
+      const Duration(seconds: 8),
+      const Duration(seconds: 8),
+      const Duration(seconds: 8),
+    ]);
+  });
+
+  test('resets retry progression after stream activity', () async {
+    final delays = <Duration>[];
+    var subscriptions = 0;
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () => _snapshot(sequence: 4),
+        events: (_) => ++subscriptions == 2
+            ? Stream.value(_event(sequence: 4, delta: 'R2'))
+            : const Stream.empty(),
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (duration) {
+        delays.add(duration);
+
+        return Future<void>.value();
+      },
+      random: const _FixedRandom(.5),
+    ).take(4);
+
+    await states.drain<void>();
+
+    expect(delays, [
+      const Duration(milliseconds: 500),
+      const Duration(milliseconds: 500),
+    ]);
+  });
+
+  test('surfaces terminal conversation errors without reconnecting', () async {
+    var subscriptions = 0;
+    var retries = 0;
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () => _snapshot(sequence: 4),
+        events: (_) {
+          subscriptions++;
+
+          return Stream.error(
+            ConversationException(code: .authenticationRequired),
+          );
+        },
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (_) {
+        retries++;
+
+        return Future<void>.value();
+      },
+      random: const _FixedRandom(.5),
+    ).take(2);
+
+    await expectLater(
+      states,
+      emitsInOrder([
+        isA<CloudConversationState>(),
+        emitsError(
+          isA<CloudConversationStreamFailure>().having(
+            (error) => error.localizationKey,
+            'localizationKey',
+            LocaleKeys.cloud_errors_authentication_required,
+          ),
+        ),
+      ]),
+    );
+    expect(subscriptions, 1);
+    expect(retries, 0);
+  });
+
   test('projects A2UI progress without advancing durable sequence', () {
     final state = CloudConversationState.fromSnapshot(_snapshot(sequence: 4));
     const payload =
@@ -239,6 +339,17 @@ void main() {
       payload,
     ]);
   });
+}
+
+class const _FixedRandom(final double value) implements Random {
+  @override
+  bool nextBool() => value < 0.5;
+
+  @override
+  double nextDouble() => value;
+
+  @override
+  int nextInt(int max) => (max * value).floor();
 }
 
 ConversationStreamEvent _a2uiEvent(String payload) => ConversationStreamEvent(
