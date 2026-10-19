@@ -36,23 +36,6 @@ void main() {
     expect((await run('plain')).responseRaw, 'plain');
   });
 
-  test('keeps app data separate from model output', () async {
-    const appData = <String, Object?>{
-      'content': [
-        {'type': 'text', 'text': 'tool result'},
-      ],
-      '_meta': {
-        'ui': {'resourceUri': 'ui://tool/view'},
-      },
-    };
-    final result = await run(
-      const AgentToolExecutionOutput(output: 'model result', appData: appData),
-    );
-
-    expect(result.responseRaw, 'model result');
-    expect(result.appData, appData);
-  });
-
   test('bounds text with a deterministic marker and byte metadata', () async {
     final source = '😀' * defaultToolOutputBytes;
     final result = await run(source);

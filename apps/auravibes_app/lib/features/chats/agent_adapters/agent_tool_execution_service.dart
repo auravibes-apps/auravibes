@@ -61,6 +61,7 @@ typedef _ToolResultsRequest = ({
   String conversationId,
   String messageId,
   List<agent.AgentToolResultUpdate> updates,
+  Map<String, Map<String, Object?>> appDataByToolCallId,
 });
 
 typedef _PersistToolResultsRequest = ({
@@ -202,10 +203,21 @@ class const AppAllowedToolsDataProvider({
     required String messageId,
     required List<agent.AgentToolResultUpdate> updates,
   }) async {
+    final appDataByToolCallId = <String, Map<String, Object?>>{};
+    for (final update in updates) {
+      final appData = resolvedToolService.takeMcpAppResultData(
+        update.toolCallId,
+      );
+      if (update.resultStatus == .success && appData != null) {
+        appDataByToolCallId[update.toolCallId] = appData;
+      }
+    }
+
     await _updateToolResults(messageRepository, persistToolCallResultsUsecase, (
       conversationId: conversationId,
       messageId: messageId,
       updates: updates,
+      appDataByToolCallId: appDataByToolCallId,
     ));
   }
 }
@@ -406,6 +418,7 @@ Future<void> _updateToolResults(
   final updatedToolCalls = _toolCallsWithResults(
     metadata.toolCalls,
     request.updates,
+    request.appDataByToolCallId,
   );
   await _persistToolResults((
     messageRepository: messageRepository,
@@ -485,11 +498,16 @@ List<ToolCallResultMedia> _toolResultMedia(
 List<MessageToolCallEntity> _toolCallsWithResults(
   List<MessageToolCallEntity> toolCalls,
   List<agent.AgentToolResultUpdate> updates,
-) => [for (final toolCall in toolCalls) _toolCallWithResult(toolCall, updates)];
+  Map<String, Map<String, Object?>> appDataByToolCallId,
+) => [
+  for (final toolCall in toolCalls)
+    _toolCallWithResult(toolCall, updates, appDataByToolCallId),
+];
 
 MessageToolCallEntity _toolCallWithResult(
   MessageToolCallEntity toolCall,
   List<agent.AgentToolResultUpdate> updates,
+  Map<String, Map<String, Object?>> appDataByToolCallId,
 ) {
   final update = updates
       .where((candidate) => candidate.toolCallId == toolCall.id)
@@ -500,7 +518,7 @@ MessageToolCallEntity _toolCallWithResult(
     return _markToolCallApprovalRequested(toolCall);
   }
 
-  return _toolCallWithResultStatus(toolCall, update);
+  return _toolCallWithResultStatus(toolCall, update, appDataByToolCallId);
 }
 
 MessageToolCallEntity _markToolCallApprovalRequested(
@@ -510,6 +528,7 @@ MessageToolCallEntity _markToolCallApprovalRequested(
 MessageToolCallEntity _toolCallWithResultStatus(
   MessageToolCallEntity toolCall,
   agent.AgentToolResultUpdate update,
+  Map<String, Map<String, Object?>> appDataByToolCallId,
 ) {
   final status = update.resultStatus;
   if (status == null) return toolCall;
@@ -518,7 +537,10 @@ MessageToolCallEntity _toolCallWithResultStatus(
     resultStatus: AgentToolStatusMapper.toResultStatus(status),
   );
 
-  return _applyToolExecutionOutput(withStatus, update);
+  return _applyToolExecutionOutput(
+    withStatus,
+    update,
+  ).copyWith(appData: appDataByToolCallId[update.toolCallId]);
 }
 
 MessageToolCallEntity _applyToolExecutionOutput(
@@ -526,7 +548,6 @@ MessageToolCallEntity _applyToolExecutionOutput(
   agent.AgentToolResultUpdate update,
 ) => toolCall.copyWith(
   responseRaw: update.responseRaw,
-  appData: update.appData,
   responseContextRaw: update.responseContextRaw,
   outputTruncated: update.outputTruncated,
   originalResponseBytes: update.originalResponseBytes,

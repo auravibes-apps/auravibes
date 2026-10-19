@@ -282,10 +282,13 @@ class _McpAppEmbeddedViewState extends ConsumerState<_McpAppEmbeddedView> {
     if (mounted) setState(() => _viewFailed = true);
   }
 
-  void _retryView() => setState(() {
-    _viewFailed = false;
-    _viewRevision++;
-  });
+  void _retryView() {
+    _bridge?.reset();
+    setState(() {
+      _viewFailed = false;
+      _viewRevision++;
+    });
+  }
 
   void _onWebViewCreated(InAppWebViewController controller) {
     _controller = controller;

@@ -36,6 +36,7 @@ import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
+import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
@@ -134,6 +135,10 @@ class ResolvedToolService {
   new _cloud() : _delegate = null;
 
   final agent.ResolvedToolRunner<ResolvedTool>? _delegate;
+  final Map<String, Map<String, Object?>> _mcpAppResultData = {};
+
+  Map<String, Object?>? takeMcpAppResultData(String toolCallId) =>
+      _mcpAppResultData.remove(toolCallId);
 
   bool supportsCancellation(ResolvedTool tool) =>
       _delegate?.supportsCancellation(tool) ?? false;
@@ -143,18 +148,28 @@ class ResolvedToolService {
     required ResolvedTool tool,
     required Map<String, dynamic> arguments,
     String toolCallId = '',
-  }) {
+  }) async {
     final delegate = _delegate;
     if (delegate == null) {
       throw StateError('Cloud tools execute on the server.');
     }
 
-    return delegate.call(
+    final result = await delegate.call(
       conversationId: conversationId,
       toolCallId: toolCallId,
       tool: tool,
       arguments: _executionArguments(tool, arguments),
     );
+
+    if (result case final McpToolCallerResult appResult) {
+      if (toolCallId.isNotEmpty) {
+        _mcpAppResultData[toolCallId] = appResult.appData;
+      }
+
+      return appResult.modelText;
+    }
+
+    return result;
   }
 }
 
@@ -431,21 +446,13 @@ _CancelableOperationRequest _mcpToolOperationRequest(
 CancelableOperation<Object?> _mcpToolOperation(
   AppResolvedToolProvider provider,
   agent.McpToolCallRequest input,
-) => CancelableOperation<Object?>.fromFuture(() async {
-  final result = await provider.mcpToolCaller(
+) => CancelableOperation<Object?>.fromFuture(
+  provider.mcpToolCaller(
     mcpServerId: input.mcpServerId,
     toolIdentifier: input.toolIdentifier,
     arguments: input.arguments,
-  );
-
-  return switch (result) {
-    final McpToolCallerResult value => agent.AgentToolExecutionOutput(
-      output: value.modelText,
-      appData: value.appData,
-    ),
-    _ => result,
-  };
-}());
+  ),
+);
 
 agent.AgentResolvedToolName _toAgentDescriptor(ResolvedTool tool) {
   return switch (tool.type) {

@@ -445,7 +445,6 @@ void main() {
           resultStatus: entry.key,
           responseRaw: 'response',
           responseContextRaw: null,
-          appData: null,
           media: const [],
           outputTruncated: false,
           originalResponseBytes: null,

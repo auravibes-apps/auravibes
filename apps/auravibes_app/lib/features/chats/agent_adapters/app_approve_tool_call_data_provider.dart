@@ -120,24 +120,31 @@ class const AppApproveToolCallDataProvider({
   @override
   Future<void> updateToolCallResult(
     agent.AgentToolCallResultUpdateRequest request,
-  ) => _patchToolCall(
-    messageRepository,
-    onToolCallChanged,
-    persistToolCallResultsUsecase,
-    (
-      messageId: request.messageId,
-      toolCallId: request.toolCallId,
-      resultStatus: AgentToolStatusMapper.toResultStatus(request.resultStatus),
-      responseRaw: request.responseRaw,
-      responseContextRaw: request.responseContextRaw,
-      appData: request.appData,
-      media: request.media,
-      outputTruncated: request.outputTruncated,
-      originalResponseBytes: request.originalResponseBytes,
-      fullOutputForContext: request.fullOutputForContext,
-      conversationId: request.conversationId,
-    ),
-  );
+  ) async {
+    final appData = runResolvedToolUsecase.takeMcpAppResultData(
+      request.toolCallId,
+    );
+    await _patchToolCall(
+      messageRepository,
+      onToolCallChanged,
+      persistToolCallResultsUsecase,
+      (
+        messageId: request.messageId,
+        toolCallId: request.toolCallId,
+        resultStatus: AgentToolStatusMapper.toResultStatus(
+          request.resultStatus,
+        ),
+        responseRaw: request.responseRaw,
+        responseContextRaw: request.responseContextRaw,
+        appData: request.resultStatus == .success ? appData : null,
+        media: request.media,
+        outputTruncated: request.outputTruncated,
+        originalResponseBytes: request.originalResponseBytes,
+        fullOutputForContext: request.fullOutputForContext,
+        conversationId: request.conversationId,
+      ),
+    );
+  }
 
   @override
   void logToolExecutionError(_ToolExecutionErrorRequest request) =>

@@ -26,6 +26,7 @@ import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_u
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
@@ -337,11 +338,15 @@ void main() {
     };
     final service = ResolvedToolService(
       agentCancellationRuntime: .new(),
-      mcpToolCaller: ({
-        required mcpServerId,
-        required toolIdentifier,
-        required arguments,
-      }) async => (modelText: 'model result', appData: appData),
+      mcpToolCaller:
+          ({
+            required mcpServerId,
+            required toolIdentifier,
+            required arguments,
+          }) async => const McpToolCallerResult(
+            modelText: 'model result',
+            appData: appData,
+          ),
     );
 
     final result = await service(
@@ -356,14 +361,11 @@ void main() {
         ),
       ),
       arguments: const {},
+      toolCallId: 'tool-call-1',
     );
 
-    if (result is! AgentToolExecutionOutput) {
-      fail('Expected an MCP tool execution output.');
-    }
-    final output = result;
-    expect(output.output, 'model result');
-    expect(output.appData, appData);
+    expect(result, 'model result');
+    expect(service.takeMcpAppResultData('tool-call-1'), appData);
   });
 
   test('rejects cloud tool execution on the client', () {

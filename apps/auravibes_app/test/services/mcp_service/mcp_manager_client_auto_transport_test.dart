@@ -111,6 +111,63 @@ void main() {
       expect(toolOutput.modelText, isNot(contains('resourceUri')));
     });
 
+    test('bounds oversized app results and keeps a text fallback', () async {
+      final server = await _LocalMcpHttpServer.start(
+        toolResult: {
+          'content': [
+            {'type': 'text', 'text': 'x' * (300 * 1024)},
+          ],
+          '_meta': {
+            'ui': {'resourceUri': 'ui://weather/forecast'},
+          },
+        },
+      );
+      final manager = McpManagerService();
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(server.endpoint),
+      );
+      final toolOutput = await manager.callToolOutput(
+        client,
+        toolIdentifier: 'refresh',
+        arguments: const {},
+      );
+      final fallbackResult = await manager.callToolResult(
+        client,
+        toolIdentifier: 'refresh',
+        arguments: const {},
+      );
+      final fallbackContentValue = toolOutput.appData['content'];
+      if (fallbackContentValue is! List<Object?>) {
+        fail('Expected fallback MCP content.');
+      }
+      final firstFallbackContent = fallbackContentValue.single;
+      if (firstFallbackContent is! Map<Object?, Object?>) {
+        fail('Expected fallback content item.');
+      }
+      final fallbackText = firstFallbackContent['text'];
+      if (fallbackText is! String) fail('Expected fallback text.');
+
+      expect(
+        utf8.encode(jsonEncode(toolOutput.appData)).length,
+        lessThanOrEqualTo(256 * 1024),
+      );
+      expect(fallbackText.length, lessThan(20 * 1024));
+      expect(toolOutput.appData['_meta'], {
+        'ui': {'resourceUri': 'ui://weather/forecast'},
+      });
+      expect(
+        utf8.encode(jsonEncode(fallbackResult)).length,
+        lessThanOrEqualTo(256 * 1024),
+      );
+      expect(toolOutput.modelText, contains('x'));
+    });
+
     test('uses app OAuth token provider for Streamable HTTP', () async {
       final server = await _LocalMcpHttpServer.start();
       final manager = McpManagerService();
@@ -310,12 +367,14 @@ final class _LocalMcpHttpServer {
     required this.sseStatus,
     required this.useJsonRpcError,
     required this.tools,
+    required this.toolResult,
   });
 
   final int streamableStatus;
   final int sseStatus;
   final bool useJsonRpcError;
   final List<Map<String, Object?>> tools;
+  final Map<String, Object?>? toolResult;
   Map<String, Object?>? clientExtensions;
   int streamablePostCount = 0;
   int sseGetCount = 0;
@@ -340,6 +399,7 @@ final class _LocalMcpHttpServer {
     int sseStatus = 200,
     bool useJsonRpcError = false,
     List<Map<String, Object?>> tools = const [],
+    Map<String, Object?>? toolResult,
   }) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final local = _LocalMcpHttpServer(
@@ -348,6 +408,7 @@ final class _LocalMcpHttpServer {
       sseStatus: sseStatus,
       useJsonRpcError: useJsonRpcError,
       tools: tools,
+      toolResult: toolResult,
     );
     final _ = server.listen((request) => unawaited(local._handle(request)));
 
@@ -448,11 +509,9 @@ final class _LocalMcpHttpServer {
         }),
       );
     } else if (message['method'] == 'tools/call') {
-      response.write(
-        jsonEncode({
-          'jsonrpc': '2.0',
-          'id': message['id'],
-          'result': {
+      final result =
+          toolResult ??
+          {
             'content': [
               {'type': 'text', 'text': 'refreshed'},
             ],
@@ -460,8 +519,9 @@ final class _LocalMcpHttpServer {
             '_meta': {
               'ui': {'resourceUri': 'ui://weather/forecast'},
             },
-          },
-        }),
+          };
+      response.write(
+        jsonEncode({'jsonrpc': '2.0', 'id': message['id'], 'result': result}),
       );
     } else {
       response.write(jsonEncode(_initializeResult(message)));

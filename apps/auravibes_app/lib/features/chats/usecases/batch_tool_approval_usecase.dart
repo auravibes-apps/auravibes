@@ -133,7 +133,19 @@ extension on BatchToolApprovalUsecase {
       runResolvedTool: runResolvedTool.call,
       isCancellationRequested: cancellationRuntime.isCancellationRequested,
     );
-    final updates = [...plan.updates, ..._executionUpdates(executionResults)];
+    final appDataByToolCallId = <String, Map<String, Object?>>{};
+    for (final result in executionResults) {
+      final appData = runResolvedTool.takeMcpAppResultData(
+        result.call.toolCallId,
+      );
+      if (result.result.resultStatus == .success && appData != null) {
+        appDataByToolCallId[result.call.toolCallId] = appData;
+      }
+    }
+    final updates = [
+      ...plan.updates,
+      ..._executionUpdates(executionResults, appDataByToolCallId),
+    ];
 
     await messageRepository.persistToolCallBatchResults(updates);
     onToolCallChanged();
@@ -433,10 +445,14 @@ _ResolvedBatchClaim _missingResolvedTool(
 
 List<ToolCallExecutionBatchUpdate> _executionUpdates(
   Iterable<agent.AgentToolBatchResult<ResolvedTool>> results,
-) => [for (final result in results) _executionUpdate(result)];
+  Map<String, Map<String, Object?>> appDataByToolCallId,
+) => [
+  for (final result in results) _executionUpdate(result, appDataByToolCallId),
+];
 
 ToolCallExecutionBatchUpdate _executionUpdate(
   agent.AgentToolBatchResult<ResolvedTool> result,
+  Map<String, Map<String, Object?>> appDataByToolCallId,
 ) {
   final call = result.call;
   final execution = result.result;
@@ -449,7 +465,14 @@ ToolCallExecutionBatchUpdate _executionUpdate(
       toolCallId: call.toolCallId,
     ),
     resultStatus: AgentToolStatusMapper.toResultStatus(execution.resultStatus),
-    output: output,
+    output: (
+      responseRaw: output.responseRaw,
+      responseContextRaw: output.responseContextRaw,
+      appData: appDataByToolCallId[call.toolCallId],
+      outputTruncated: output.outputTruncated,
+      originalResponseBytes: output.originalResponseBytes,
+      fullOutputForContext: output.fullOutputForContext,
+    ),
   );
 }
 
@@ -458,7 +481,7 @@ ToolCallExecutionOutput _batchToolOutput(
 ) => (
   responseRaw: result.responseRaw,
   responseContextRaw: result.responseContextRaw,
-  appData: result.appData,
+  appData: null,
   outputTruncated: result.outputTruncated,
   originalResponseBytes: result.originalResponseBytes,
   fullOutputForContext: result.fullOutputForContext,

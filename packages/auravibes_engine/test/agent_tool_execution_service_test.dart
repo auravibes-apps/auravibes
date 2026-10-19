@@ -135,38 +135,6 @@ void main() {
     expect(provider.updates.single.media, [media]);
   });
 
-  test('persists app data separately from the model result', () async {
-    const appData = <String, Object?>{
-      'content': [
-        {'type': 'text', 'text': 'tool result'},
-      ],
-      '_meta': {
-        'ui': {'resourceUri': 'ui://tool/view'},
-      },
-    };
-    final provider = _FakeExecutionProvider(
-      latestToolCalls: _latestToolCalls(),
-      decisions: const {'tool-1': AgentToolPermissionResult.granted},
-      results: {
-        'tool-a': const AgentToolExecutionOutput(
-          output: 'model result',
-          appData: appData,
-        ),
-      },
-    );
-
-    await AgentToolExecutionService<String>(provider: provider)(
-      conversationId: 'conversation-1',
-      workspaceId: 'workspace-1',
-    );
-
-    final update = provider.updates.firstWhere(
-      (value) => value.toolCallId == 'tool-1',
-    );
-    expect(update.responseRaw, 'model result');
-    expect(update.appData, appData);
-  });
-
   test(
     'executes granted tools and stores success and failure updates',
     () async {

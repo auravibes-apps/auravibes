@@ -22,6 +22,12 @@ class McpAppMessageBridge {
   var _initialized = false;
   var _initialDataSent = false;
 
+  void reset() {
+    _initializeReceived = false;
+    _initialized = false;
+    _initialDataSent = false;
+  }
+
   Future<List<Map<String, Object?>>> handleMessage(String message) async {
     // Shortcut: 1 MiB inbound cap. Raise after measured demand.
     if (utf8.encode(message).length > (1 << 20)) {

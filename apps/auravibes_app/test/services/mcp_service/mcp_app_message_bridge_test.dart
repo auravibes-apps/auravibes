@@ -54,6 +54,21 @@ void main() {
         ),
         isEmpty,
       );
+
+      bridge.reset();
+      final _ = await bridge.handleMessage(
+        jsonEncode({'jsonrpc': '2.0', 'id': 2, 'method': 'ui/initialize'}),
+      );
+      final retryInitialized = await bridge.handleMessage(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'method': 'ui/notifications/initialized',
+        }),
+      );
+      expect(retryInitialized.map((message) => message['method']), [
+        'ui/notifications/tool-input',
+        'ui/notifications/tool-result',
+      ]);
     },
   );
 

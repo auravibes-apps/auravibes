@@ -1,10 +1,6 @@
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
 import 'package:riverpod/riverpod.dart';
-
-typedef McpToolCallerResult = ({
-  String modelText,
-  Map<String, Object?> appData,
-});
 
 typedef McpToolCaller = Future<Object?> Function({
   required String mcpServerId,
@@ -26,6 +22,9 @@ final mcpToolCallerProvider = Provider<McpToolCaller>((ref) {
           arguments: arguments,
         );
 
-    return (modelText: result.modelText, appData: result.appData);
+    return McpToolCallerResult(
+      modelText: result.modelText,
+      appData: result.appData,
+    );
   };
 });

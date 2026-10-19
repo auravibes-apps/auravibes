@@ -27,6 +27,32 @@ typedef _StreamableHttpAuthConfig = ({
   mcp.RequestHeadersProvider? headersProvider,
 });
 
+const int _maxMcpAppResultBytes = maxPersistedToolOutputBytes - 1024;
+
+Map<String, Object?> _boundedMcpAppResult(
+  Map<String, Object?> result,
+  String modelText,
+) {
+  if (utf8.encode(jsonEncode(result)).length <= _maxMcpAppResultBytes) {
+    return result;
+  }
+
+  final fallback = <String, Object?>{
+    'content': [
+      {'type': 'text', 'text': projectToolOutput(modelText).text},
+    ],
+  };
+  final metadata = result['_meta'];
+  if (metadata == null) return fallback;
+
+  final withMetadata = <String, Object?>{'_meta': metadata, ...fallback};
+  if (utf8.encode(jsonEncode(withMetadata)).length <= _maxMcpAppResultBytes) {
+    return withMetadata;
+  }
+
+  return fallback;
+}
+
 class McpManagerClient._(
   final mcp.Client _client,
   final mcp.ClientTransport _transport,
@@ -182,10 +208,11 @@ class McpManagerService {
     required Map<String, dynamic> arguments,
   }) async {
     final result = await client._client.callTool(toolIdentifier, arguments);
+    final modelText = McpSdkAdapter.toolResult(result).toModelText();
 
     return (
-      modelText: McpSdkAdapter.toolResult(result).toModelText(),
-      appData: result.toJson(),
+      modelText: modelText,
+      appData: _boundedMcpAppResult(result.toJson(), modelText),
     );
   }
 
@@ -193,8 +220,12 @@ class McpManagerService {
     McpManagerClient client, {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
-  }) async =>
-      (await client._client.callTool(toolIdentifier, arguments)).toJson();
+  }) async {
+    final result = await client._client.callTool(toolIdentifier, arguments);
+    final modelText = McpSdkAdapter.toolResult(result).toModelText();
+
+    return _boundedMcpAppResult(result.toJson(), modelText);
+  }
 
   Future<Map<String, Object?>> readResource(
     McpManagerClient client,

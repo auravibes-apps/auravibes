@@ -196,14 +196,27 @@ void main() {
   );
 
   test(
-    'resolves and executes approved local calls through the batch runner',
+    'preserves MCP App data from approved local calls through batch runner',
     () async {
       final call = _pending(
         toolCallId: 'success-call',
         sourceConversationId: 'child',
       );
       final claim = _claim(call, .claimed);
-      final resolved = ResolvedTool.skillCommand(commandName: 'tool');
+      final resolved = ResolvedTool.mcp(
+        tableId: 'tool',
+        toolIdentifier: 'tool',
+        mcp: (
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+          outputSchemaJson: null,
+        ),
+      );
+      const appData = <String, Object?>{
+        '_meta': {
+          'ui': {'resourceUri': 'ui://tool/view'},
+        },
+      };
       final catalog = agent.buildToolCatalog<ResolvedTool>([
         agent.ToolCatalogCandidate.reserved(
           spec: .new(
@@ -232,6 +245,8 @@ void main() {
           arguments: {'input': 'value'},
         ),
       ).thenAnswer((_) async => 'done');
+      when(() => resolvedToolService.takeMcpAppResultData('success-call'))
+          .thenReturn(appData);
       when(() => messageRepository.persistToolCallBatchResults(any()))
           .thenAnswer((_) => Future<void>.value());
 
@@ -251,6 +266,7 @@ void main() {
               as Iterable<ToolCallExecutionBatchUpdate>;
       expect(updates.single.resultStatus, ToolCallResultStatus.success);
       expect(updates.single.responseRaw, 'done');
+      expect(updates.single.appData, appData);
       verify(() => resumeService.call(messageId: call.messageId)).called(1);
     },
   );
