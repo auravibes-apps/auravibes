@@ -27,6 +27,10 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - Required CI gates live in `.github/workflows/ci.yml`.
 - Canonical architecture docs live under `doc/architecture/`.
 
+## Product context
+
+- For product ideation, feature discovery, or user-facing UX changes, read [target users](docs/product/target-users.md) for intended users and product direction.
+
 ## Commands
 
 | Task                    | Command                                                                      |

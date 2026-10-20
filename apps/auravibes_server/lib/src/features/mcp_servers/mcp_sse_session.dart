@@ -31,8 +31,9 @@ class McpSseSession {
     InternetAddress address, {
     String? bearerToken,
     Map<String, String> httpHeaders = const {},
+    HttpClient? httpClient,
   }) async {
-    final client = pinnedHttpClient(uri, address)
+    final client = (httpClient ?? pinnedHttpClient(uri, address))
       ..connectionTimeout = _timeout
       ..autoUncompress = false;
     try {

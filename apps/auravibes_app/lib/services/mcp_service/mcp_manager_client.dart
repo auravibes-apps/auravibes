@@ -5,9 +5,9 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
-import 'package:auravibes_app/services/mcp_service/mcp_legacy_sse_unavailable_exception.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_sdk_adapter.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_streamable_http_response_capture.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_web_sse_client_transport.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter/foundation.dart';
@@ -174,15 +174,13 @@ Future<Map<String, Object?>> _requestToolsPageFromTransport(
 class McpManagerService {
   new({
     this.oauthCredentialService,
-    @visibleForTesting bool? legacySseSupported,
     @visibleForTesting this.legacySseTransportFactory,
-  }) : _legacySseSupported = legacySseSupported ?? !kIsWeb;
+  });
 
   final OAuthCredentialService? oauthCredentialService;
   @visibleForTesting
   final Future<mcp.ClientTransport> Function(McpServerToCreate)?
   legacySseTransportFactory;
-  final bool _legacySseSupported;
 
   Future<void> disconnect(McpManagerClient? client) async {
     if (client == null) return;
@@ -299,10 +297,6 @@ class McpManagerService {
   Future<McpManagerClient> _connectLegacySse(
     McpConnectionRequest request,
   ) async {
-    if (!_legacySseSupported) {
-      throw const McpLegacySseUnavailableException();
-    }
-
     final serverInfo = _serverForTransport(
       request,
       const McpTransportTypeSSE(),
@@ -414,7 +408,10 @@ Future<mcp.ClientTransport> _createTransportConfig(
   required OAuthCredentialService? oauthCredentialService,
   http.Client? httpClient,
 }) => switch (server.transport) {
-  McpTransportTypeSSE() => _createSseTransportConfig(server),
+  McpTransportTypeSSE() => _createSseTransportConfig(
+    server,
+    oauthCredentialService: oauthCredentialService,
+  ),
   McpTransportTypeStreamableHttp() => _createHttpTransportConfig(
     server,
     oauthCredentialService: oauthCredentialService,
@@ -423,24 +420,58 @@ Future<mcp.ClientTransport> _createTransportConfig(
 };
 
 Future<mcp.ClientTransport> _createSseTransportConfig(
-  McpServerToCreate server,
-) {
+  McpServerToCreate server, {
+  required OAuthCredentialService? oauthCredentialService,
+}) {
   final authType = server.authenticationType;
-  if (authType is! McpAuthenticationTypeOAuth) {
-    return mcp.SseClientTransport.create(
-      serverUrl: server.url,
-      headers: _httpHeaders(authType),
+  if (kIsWeb) {
+    return _McpSseTransportFactory.web(
+      server,
+      authType,
+      oauthCredentialService,
     );
   }
+  if (authType is McpAuthenticationTypeOAuth) {
+    return _McpSseTransportFactory.nativeOAuth(server, authType);
+  }
 
-  // ignore: deprecated_member_use - Retain legacy SSE OAuth refresh hooks; v3 SseClientTransport only supports static headers.
-  return mcp.SseAuthClientTransport.create(
+  return _McpSseTransportFactory.native(server, authType);
+}
+
+final class _McpSseTransportFactory {
+  static Future<mcp.ClientTransport> web(
+    McpServerToCreate server,
+    McpAuthenticationType authType,
+    OAuthCredentialService? oauthCredentialService,
+  ) => McpWebSseClientTransport.create(
     serverUrl: server.url,
     headers: _httpHeaders(authType),
-    oauthToken: _getOauthToken(authType),
-    oauthClient: _oauthClient(authType),
-    bearerToken: _bearerToken(authType),
+    headersProvider: authType is McpAuthenticationTypeOAuth
+        ? (_) => _oauthHeaders(server, authType, oauthCredentialService)
+        : null,
   );
+
+  static Future<mcp.ClientTransport> native(
+    McpServerToCreate server,
+    McpAuthenticationType authType,
+  ) => mcp.SseClientTransport.create(
+    serverUrl: server.url,
+    headers: _httpHeaders(authType),
+  );
+
+  static Future<mcp.ClientTransport> nativeOAuth(
+    McpServerToCreate server,
+    McpAuthenticationTypeOAuth authType,
+  ) {
+    // ignore: deprecated_member_use - Retain legacy SSE OAuth refresh hooks; v3 SseClientTransport only supports static headers.
+    return mcp.SseAuthClientTransport.create(
+      serverUrl: server.url,
+      headers: _httpHeaders(authType),
+      oauthToken: _getOauthToken(authType),
+      oauthClient: _oauthClient(authType),
+      bearerToken: _bearerToken(authType),
+    );
+  }
 }
 
 Future<mcp.ClientTransport> _createHttpTransportConfig(
