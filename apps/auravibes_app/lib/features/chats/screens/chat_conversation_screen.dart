@@ -490,28 +490,15 @@ class const _LoadedChatConversationRuntime({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final iterationLimitProvider = conversationIterationLimitProvider(
-      conversation.id,
-    );
-    final noticeRequest = (
-      context: context,
-      ref: ref,
-      workspaceId: workspaceId,
-      conversationId: conversation.id,
-    );
-    if (ref.read(iterationLimitProvider)) {
-      _schedulePendingIterationLimitNotice(noticeRequest);
-    }
-    ref.listen(iterationLimitProvider, (_, pending) {
-      if (pending) _schedulePendingIterationLimitNotice(noticeRequest);
-    });
-
-    final runtimeState = _useLoadedChatConversationRuntimeState((
+    final request = (
       context: context,
       ref: ref,
       workspaceId: workspaceId,
       conversation: conversation,
-    ));
+    );
+    _listenForPendingIterationLimitNotice(request);
+
+    final runtimeState = _useLoadedChatConversationRuntimeState(request);
 
     return _LoadedChatConversationRender(
       workspaceId: workspaceId,
@@ -521,6 +508,24 @@ class const _LoadedChatConversationRuntime({
       leading: showInputComposer ? null : const _ChatConversationBackButton(),
     );
   }
+}
+
+void _listenForPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
+  final iterationLimitProvider = conversationIterationLimitProvider(
+    request.conversation.id,
+  );
+  final noticeRequest = (
+    context: request.context,
+    ref: request.ref,
+    workspaceId: request.workspaceId,
+    conversationId: request.conversation.id,
+  );
+  if (request.ref.read(iterationLimitProvider)) {
+    _schedulePendingIterationLimitNotice(noticeRequest);
+  }
+  request.ref.listen(iterationLimitProvider, (_, pending) {
+    if (pending) _schedulePendingIterationLimitNotice(noticeRequest);
+  });
 }
 
 void _schedulePendingIterationLimitNotice(
