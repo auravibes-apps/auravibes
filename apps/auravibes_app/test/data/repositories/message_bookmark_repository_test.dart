@@ -67,6 +67,31 @@ void main() {
       expect(bookmarks.single.excerpt, message.content);
     });
 
+    test('truncates long excerpts with ellipsis', () async {
+      final content = List.filled(161, 'x').join();
+      final message = await messages.createMessage(
+        .new(
+          conversationId: 'source',
+          content: content,
+          messageType: .text,
+          isUser: true,
+          status: .sent,
+        ),
+      );
+
+      expect(
+        await messages.bookmarkMessage(
+          workspaceId: 'ws-1',
+          conversationId: 'source',
+          messageId: message.id,
+        ),
+        isTrue,
+      );
+
+      final bookmarks = await messages.watchBookmarkedMessages('ws-1').first;
+      expect(bookmarks.single.excerpt, '${List.filled(160, 'x').join()}...');
+    });
+
     test(
       'lists bookmarks across local workspaces with workspace context',
       () async {

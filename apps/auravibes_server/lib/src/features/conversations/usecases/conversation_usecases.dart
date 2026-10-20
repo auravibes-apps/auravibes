@@ -4478,7 +4478,7 @@ class ConversationUseCases {
     final trimmed = content.trim();
     final runes = trimmed.runes;
     if (runes.length <= _messageBookmarkExcerptLength) return trimmed;
-    return '${String.fromCharCodes(runes.take(_messageBookmarkExcerptLength))}…';
+    return '${String.fromCharCodes(runes.take(_messageBookmarkExcerptLength))}...';
   }
 
   Future<List<ConversationMessage>> _durableMessages(

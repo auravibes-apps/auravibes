@@ -56,6 +56,7 @@ void main() {
               table.workspaceId.equals(workspace.id!) &
               table.stableId.equals(created.id),
         ))!;
+        final content = List.filled(161, 'x').join();
         final now = DateTime.now().toUtc();
         final message = await ConversationMessage.db.insertRow(
           database,
@@ -66,7 +67,7 @@ void main() {
             role: 'user',
             kind: 'text',
             status: ConversationStatuses.completed,
-            content: 'A saved message excerpt',
+            content: content,
             revision: 1,
             createdAt: now,
             updatedAt: now,
@@ -154,7 +155,7 @@ void main() {
         expect(bookmarks.single.messageId, message.stableId);
         expect(bookmarks.single.conversationTitle, 'Source');
         expect(bookmarks.single.workspaceName, 'Bookmarks');
-        expect(bookmarks.single.excerpt, 'A saved message excerpt');
+        expect(bookmarks.single.excerpt, '${List.filled(160, 'x').join()}...');
 
         final nonMemberId = const Uuid().v4().toString();
         await AuthUser.db.insertRow(
