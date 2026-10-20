@@ -128,16 +128,14 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
     final currentBuffer = fromStderr
         ? stderrProgressBuffer
         : stdoutProgressBuffer;
-    final lines = ('$currentBuffer$chunk').split(RegExp(r'[\r\n]+'));
+    final lines = '$currentBuffer$chunk'.split(RegExp(r'[\r\n]+'));
     final trailingLine = lines.removeLast();
     if (fromStderr) {
       stderrProgressBuffer = trailingLine;
     } else {
       stdoutProgressBuffer = trailingLine;
     }
-    for (final line in lines) {
-      recordLaunchPhase(line);
-    }
+    lines.forEach(recordLaunchPhase);
   }
 
   writeMarionetteManifest(

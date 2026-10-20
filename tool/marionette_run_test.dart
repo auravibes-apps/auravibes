@@ -20,9 +20,15 @@ void main() {
   });
 
   test('formats Marionette launch elapsed time', () {
-    expect(formatMarionetteElapsed(Duration(seconds: 8)), '8s');
-    expect(formatMarionetteElapsed(Duration(minutes: 2, seconds: 8)), '2m 8s');
-    expect(formatMarionetteElapsed(Duration(hours: 1, seconds: 8)), '1h 0m 8s');
+    expect(formatMarionetteElapsed(const .new(seconds: 8)), '8s');
+    expect(
+      formatMarionetteElapsed(const .new(minutes: 2, seconds: 8)),
+      '2m 8s',
+    );
+    expect(
+      formatMarionetteElapsed(const .new(hours: 1, seconds: 8)),
+      '1h 0m 8s',
+    );
   });
 
   test('extracts the VM service URI from Flutter output', () {
