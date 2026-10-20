@@ -24,13 +24,19 @@ class const ConversationMessageSearchScreen({
 
 class _ConversationMessageSearchScreenState
     extends ConsumerState<ConversationMessageSearchScreen> {
+  static const _searchAppBar = AuraAppBarWithDrawer(
+    title: TextLocale(LocaleKeys.chats_screens_conversation_search_title),
+  );
+
   final _queryController = TextEditingController();
   _ConversationSearchScope _scope = .currentWorkspace;
-  List<ConversationMessageSearchResult> _results = const [];
+  ConversationMessageSearchPage _page = const (
+    results: <ConversationMessageSearchResult>[],
+    hasMore: false,
+    hasError: false,
+  );
   var _pagesLoaded = 0;
-  var _hasMore = false;
   var _isLoading = false;
-  var _hasError = false;
   var _searchGeneration = 0;
   var _activeQuery = '';
 
@@ -52,16 +58,12 @@ class _ConversationMessageSearchScreenState
       ),
       results: _SearchResults(
         isLoading: _isLoading,
-        hasError: _hasError,
         query: _queryController.text,
-        results: _results,
-        hasMore: _hasMore,
+        page: _page,
         loadNextPage: _loadNextPage,
       ),
     ),
-    appBar: const AuraAppBarWithDrawer(
-      title: TextLocale(LocaleKeys.chats_screens_conversation_search_title),
-    ),
+    appBar: _searchAppBar,
   );
 
   void _selectScope(Set<_ConversationSearchScope> selected) {
@@ -81,10 +83,12 @@ class _ConversationMessageSearchScreenState
 
   void _startSearch(String query) {
     _activeQuery = query;
-    _results = const [];
+    _page = const (
+      results: <ConversationMessageSearchResult>[],
+      hasMore: false,
+      hasError: false,
+    );
     _pagesLoaded = 0;
-    _hasMore = false;
-    _hasError = false;
   }
 
   Future<void> _loadNextPage() =>
@@ -93,7 +97,7 @@ class _ConversationMessageSearchScreenState
   Future<void> _loadPage(String query, int pageIndex, int generation) async {
     setState(() {
       _isLoading = true;
-      _hasError = false;
+      _page = _searchPageWithError(_page, false);
     });
     try {
       final page = await _fetchPage(query, pageIndex);
@@ -117,10 +121,8 @@ class _ConversationMessageSearchScreenState
   void _applyPage(ConversationMessageSearchPage page, int generation) {
     if (!mounted || generation != _searchGeneration) return;
     setState(() {
-      _results = _mergeSearchResults(_results, page.results);
+      _page = _mergeSearchPage(_page, page);
       _pagesLoaded++;
-      _hasMore = page.hasMore;
-      _hasError = page.hasError;
       _isLoading = false;
     });
   }
@@ -128,7 +130,7 @@ class _ConversationMessageSearchScreenState
   void _applyPageError(int generation) {
     if (!mounted || generation != _searchGeneration) return;
     setState(() {
-      _hasError = true;
+      _page = _searchPageWithError(_page, true);
       _isLoading = false;
     });
   }
@@ -303,10 +305,8 @@ class const _ConversationMessageSearchResultMetadata({
 
 class const _SearchResults({
   required final bool isLoading,
-  required final bool hasError,
   required final String query,
-  required final List<ConversationMessageSearchResult> results,
-  required final bool hasMore,
+  required final ConversationMessageSearchPage page,
   required final Future<void> Function() loadNextPage,
 }) extends StatelessWidget {
   @override
@@ -315,14 +315,14 @@ class const _SearchResults({
       _SearchResultsStatus(
         query: query,
         isLoading: isLoading,
-        hasError: hasError,
-        hasResults: results.isNotEmpty,
+        hasError: page.hasError,
+        hasResults: page.results.isNotEmpty,
       ),
-      _SearchResultsError(visible: hasError && results.isNotEmpty),
-      Expanded(child: _SearchResultList(results: results)),
+      _SearchResultsError(visible: page.hasError && page.results.isNotEmpty),
+      Expanded(child: _SearchResultList(results: page.results)),
       _SearchResultsFooter(
         isLoading: isLoading,
-        hasMore: hasMore,
+        hasMore: page.hasMore,
         loadNextPage: loadNextPage,
       ),
     ],
@@ -406,3 +406,17 @@ List<ConversationMessageSearchResult> _mergeSearchResults(
   List<ConversationMessageSearchResult> current,
   List<ConversationMessageSearchResult> next,
 ) => [...current, ...next]..sort(compareConversationMessageSearchResults);
+
+ConversationMessageSearchPage _mergeSearchPage(
+  ConversationMessageSearchPage current,
+  ConversationMessageSearchPage next,
+) => (
+  results: _mergeSearchResults(current.results, next.results),
+  hasMore: next.hasMore,
+  hasError: next.hasError,
+);
+
+ConversationMessageSearchPage _searchPageWithError(
+  ConversationMessageSearchPage page,
+  bool hasError,
+) => (results: page.results, hasMore: page.hasMore, hasError: hasError);
