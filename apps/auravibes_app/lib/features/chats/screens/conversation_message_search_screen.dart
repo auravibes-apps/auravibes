@@ -42,37 +42,21 @@ class _ConversationMessageSearchScreenState
 
   @override
   Widget build(BuildContext context) => AppScreen(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: .stretch,
-        children: [
-          _ConversationSearchQueryField(
-            controller: _queryController,
-            onSubmitted: _search,
-          ),
-          const SizedBox(height: 12),
-          _ConversationSearchScopeSelector(
-            scope: _scope,
-            onSelectionChanged: _selectScope,
-          ),
-          const SizedBox(height: 12),
-          _ConversationSearchActionButton(
-            isLoading: _isLoading,
-            onPressed: _search,
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: _SearchResults(
-              isLoading: _isLoading,
-              hasError: _hasError,
-              query: _queryController.text,
-              results: _results,
-              hasMore: _hasMore,
-              loadNextPage: _loadNextPage,
-            ),
-          ),
-        ],
+    child: _ConversationSearchBody(
+      controls: _ConversationSearchControls(
+        controller: _queryController,
+        scope: _scope,
+        onSelectionChanged: _selectScope,
+        isLoading: _isLoading,
+        onSearch: _search,
+      ),
+      results: _SearchResults(
+        isLoading: _isLoading,
+        hasError: _hasError,
+        query: _queryController.text,
+        results: _results,
+        hasMore: _hasMore,
+        loadNextPage: _loadNextPage,
       ),
     ),
     appBar: const AuraAppBarWithDrawer(
@@ -133,8 +117,7 @@ class _ConversationMessageSearchScreenState
   void _applyPage(ConversationMessageSearchPage page, int generation) {
     if (!mounted || generation != _searchGeneration) return;
     setState(() {
-      _results = [..._results, ...page.results]
-        ..sort(compareConversationMessageSearchResults);
+      _results = _mergeSearchResults(_results, page.results);
       _pagesLoaded++;
       _hasMore = page.hasMore;
       _hasError = page.hasError;
@@ -149,6 +132,53 @@ class _ConversationMessageSearchScreenState
       _isLoading = false;
     });
   }
+}
+
+class const _ConversationSearchBody({
+  required final Widget controls,
+  required final Widget results,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        controls,
+        const SizedBox(height: 8),
+        Expanded(child: results),
+      ],
+    ),
+  );
+}
+
+class const _ConversationSearchControls({
+  required final TextEditingController controller,
+  required final _ConversationSearchScope scope,
+  required final ValueChanged<Set<_ConversationSearchScope>> onSelectionChanged,
+  required final bool isLoading,
+  required final Future<void> Function() onSearch,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _ConversationSearchQueryField(
+        controller: controller,
+        onSubmitted: onSearch,
+      ),
+      const SizedBox(height: 12),
+      _ConversationSearchScopeSelector(
+        scope: scope,
+        onSelectionChanged: onSelectionChanged,
+      ),
+      const SizedBox(height: 12),
+      _ConversationSearchActionButton(
+        isLoading: isLoading,
+        onPressed: onSearch,
+      ),
+    ],
+  );
 }
 
 class const _ConversationSearchQueryField({
@@ -371,3 +401,8 @@ class const _SearchResultsFooter({
     );
   }
 }
+
+List<ConversationMessageSearchResult> _mergeSearchResults(
+  List<ConversationMessageSearchResult> current,
+  List<ConversationMessageSearchResult> next,
+) => [...current, ...next]..sort(compareConversationMessageSearchResults);

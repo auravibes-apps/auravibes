@@ -181,7 +181,7 @@ mixin _MessageRepositoryQueryApi {
     required Set<String> workspaceIds,
     required int limit,
     int offset = 0,
-  }) => MessageRepositoryQueryOperations(this as MessageRepository)
+  }) => MessageRepositorySearchOperations(this as MessageRepository)
       .searchMessages(
         query: query,
         workspaceIds: workspaceIds,
@@ -576,55 +576,6 @@ extension MessageRepositoryQueryOperations on MessageRepository {
     return messages.skip(offset).take(limit).toList();
   }
 
-  Future<List<ConversationMessageSearchResult>> searchMessages({
-    required String query,
-    required Set<String> workspaceIds,
-    required int limit,
-    int offset = 0,
-  }) async {
-    final normalizedQuery = query.trim();
-    if (!_isValidSearchRequest(normalizedQuery, workspaceIds, limit, offset)) {
-      return const [];
-    }
-
-    final rows = await _database.messageDao.searchMessages(
-      query: normalizedQuery,
-      workspaceIds: workspaceIds,
-      limit: limit,
-      offset: offset,
-    );
-
-    return [for (final row in rows) _searchResultFromRow(row, normalizedQuery)];
-  }
-
-  bool _isValidSearchRequest(
-    String query,
-    Set<String> workspaceIds,
-    int limit,
-    int offset,
-  ) =>
-      query.isNotEmpty &&
-      query.length <= _maxConversationMessageSearchQueryLength &&
-      workspaceIds.isNotEmpty &&
-      limit >= 1 &&
-      limit <= _maxConversationMessageSearchPageSize &&
-      offset >= 0 &&
-      offset <= _maxConversationMessageSearchOffset;
-
-  ConversationMessageSearchResult _searchResultFromRow(
-    QueryRow row,
-    String query,
-  ) => ConversationMessageSearchResult(
-    workspaceId: row.read<String>('workspace_id'),
-    workspaceName: row.read<String>('workspace_name'),
-    conversationId: row.read<String>('conversation_id'),
-    conversationTitle: row.read<String>('conversation_title'),
-    messageId: row.read<String>('message_id'),
-    role: row.read<bool>('is_user') ? 'user' : 'assistant',
-    createdAt: row.read<DateTime>('created_at'),
-    excerpt: _searchExcerpt(row.read<String>('content'), query),
-  );
-
   Future<List<MessageEntity>> getMessagesByType(
     String conversationId,
     MessageType messageType,
@@ -684,6 +635,83 @@ extension MessageRepositoryQueryOperations on MessageRepository {
 
     return await _mapToMessageWithAttachments(createdMessage);
   }
+}
+
+extension MessageRepositorySearchOperations on MessageRepository {
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    int offset = 0,
+  }) async {
+    final normalizedQuery = query.trim();
+    if (!_isValidSearchRequest(normalizedQuery, workspaceIds, limit, offset)) {
+      return const [];
+    }
+
+    final rows = await _database.messageDao.searchMessages(
+      query: normalizedQuery,
+      workspaceIds: workspaceIds,
+      limit: limit,
+      offset: offset,
+    );
+
+    return [for (final row in rows) _searchResultFromRow(row, normalizedQuery)];
+  }
+
+  bool _isValidSearchRequest(
+    String query,
+    Set<String> workspaceIds,
+    int limit,
+    int offset,
+  ) =>
+      query.isNotEmpty &&
+      query.length <= _maxConversationMessageSearchQueryLength &&
+      workspaceIds.isNotEmpty &&
+      limit >= 1 &&
+      limit <= _maxConversationMessageSearchPageSize &&
+      offset >= 0 &&
+      offset <= _maxConversationMessageSearchOffset;
+
+  ConversationMessageSearchResult _searchResultFromRow(
+    QueryRow row,
+    String query,
+  ) {
+    final conversation = _searchConversationFields(row);
+    final message = _searchMessageFields(row, query);
+
+    return ConversationMessageSearchResult(
+      workspaceId: conversation.workspaceId,
+      workspaceName: conversation.workspaceName,
+      conversationId: conversation.conversationId,
+      conversationTitle: conversation.conversationTitle,
+      messageId: message.messageId,
+      role: message.role,
+      createdAt: message.createdAt,
+      excerpt: message.excerpt,
+    );
+  }
+
+  ({
+    String workspaceId,
+    String workspaceName,
+    String conversationId,
+    String conversationTitle,
+  })
+  _searchConversationFields(QueryRow row) => (
+    workspaceId: row.read<String>('workspace_id'),
+    workspaceName: row.read<String>('workspace_name'),
+    conversationId: row.read<String>('conversation_id'),
+    conversationTitle: row.read<String>('conversation_title'),
+  );
+
+  ({String messageId, String role, DateTime createdAt, String excerpt})
+  _searchMessageFields(QueryRow row, String query) => (
+    messageId: row.read<String>('message_id'),
+    role: row.read<bool>('is_user') ? 'user' : 'assistant',
+    createdAt: row.read<DateTime>('created_at'),
+    excerpt: _searchExcerpt(row.read<String>('content'), query),
+  );
 }
 
 extension on MessageRepository {
@@ -1728,18 +1756,36 @@ class MessageNotFoundException extends MessageException {
 String _searchExcerpt(String content, String query) {
   final contentCharacters = content.characters;
   final start = _searchExcerptStart(contentCharacters, content, query);
-  final excerptLength =
-      (query.characters.length + _conversationMessageSearchContextLength).clamp(
-        _minConversationMessageSearchExcerptLength,
-        _maxConversationMessageSearchExcerptLength,
-      );
-  final end = contentCharacters.length < start + excerptLength
-      ? contentCharacters.length
-      : start + excerptLength;
+  final excerptLength = _searchExcerptLength(query);
+  final end = _searchExcerptEnd(contentCharacters, start, excerptLength);
+
+  return _composeSearchExcerpt(contentCharacters, start, end);
+}
+
+int _searchExcerptLength(String query) =>
+    (query.characters.length + _conversationMessageSearchContextLength)
+        .clamp(
+          _minConversationMessageSearchExcerptLength,
+          _maxConversationMessageSearchExcerptLength,
+        )
+        .toInt();
+
+int _searchExcerptEnd(
+  Characters contentCharacters,
+  int start,
+  int excerptLength,
+) {
+  final end = start + excerptLength;
+
+  return end < contentCharacters.length ? end : contentCharacters.length;
+}
+
+String _composeSearchExcerpt(Characters contentCharacters, int start, int end) {
+  final excerpt = contentCharacters.skip(start).take(end - start);
   final prefix = start > 0 ? '...' : '';
   final suffix = end < contentCharacters.length ? '...' : '';
 
-  return '$prefix${contentCharacters.skip(start).take(end - start)}$suffix';
+  return '$prefix$excerpt$suffix';
 }
 
 int _searchExcerptStart(
