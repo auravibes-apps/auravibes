@@ -449,6 +449,7 @@
       "stop_error": "Could not stop the conversation. Please try again.",
       "send_error": "Could not send the message. Please try again.",
       "continue_agent": "Continue agent",
+      "iteration_limit_reached": "The agent reached its iteration limit. Partial output and completed tool results are available.",
       "retry_message": "Retry message",
       "background_work": {
         "running_task": "A task is running in this conversation.",
@@ -526,6 +527,7 @@
       "sub_agent_error_detail": "Error: {error}",
       "sub_agent_status_awaiting_approval": "Awaiting approval",
       "sub_agent_status_completed": "Completed",
+      "sub_agent_status_partial": "Partial",
       "sub_agent_status_failed": "Failed",
       "sub_agent_status_running": "Running",
       "sub_agent_status_stopped": "Stopped",

@@ -69,6 +69,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentIterationContext,
+        AgentIterationDecision,
         ConversationToolAccessMode,
         ReasoningConfiguration,
         ReasoningOption,
@@ -489,19 +490,61 @@ class const _LoadedChatConversationRuntime({
   required final bool showInputComposer,
 }) extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) =>
-      _LoadedChatConversationRender(
-        workspaceId: workspaceId,
-        conversation: conversation,
-        runtimeState: _useLoadedChatConversationRuntimeState((
-          context: context,
-          ref: ref,
-          workspaceId: workspaceId,
-          conversation: conversation,
-        )),
-        showInputComposer: showInputComposer,
-        leading: showInputComposer ? null : const _ChatConversationBackButton(),
-      );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final request = (
+      context: context,
+      ref: ref,
+      workspaceId: workspaceId,
+      conversation: conversation,
+    );
+    _listenForPendingIterationLimitNotice(request);
+
+    final runtimeState = _useLoadedChatConversationRuntimeState(request);
+
+    return _LoadedChatConversationRender(
+      workspaceId: workspaceId,
+      conversation: conversation,
+      runtimeState: runtimeState,
+      showInputComposer: showInputComposer,
+      leading: showInputComposer ? null : const _ChatConversationBackButton(),
+    );
+  }
+}
+
+void _listenForPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
+  final iterationLimitProvider = conversationIterationLimitProvider(
+    request.conversation.id,
+  );
+  if (request.ref.read(iterationLimitProvider)) {
+    _schedulePendingIterationLimitNotice(request);
+  }
+  request.ref.listen(iterationLimitProvider, (_, pending) {
+    if (pending) _schedulePendingIterationLimitNotice(request);
+  });
+}
+
+void _schedulePendingIterationLimitNotice(_LoadedRuntimeRequest request) =>
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _showPendingIterationLimitNotice(request),
+    );
+
+void _showPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
+  if (!request.context.mounted) return;
+
+  final conversationId = request.conversation.id;
+  request.ref
+      .read(conversationIterationLimitProvider(conversationId).notifier)
+      .consume();
+  final conversationContextRequest = (
+    context: request.context,
+    ref: request.ref,
+    workspaceId: request.workspaceId,
+    conversationId: conversationId,
+  );
+  _showIterationLimitNoticeForConversation(
+    conversationContextRequest,
+    .iterationLimitReached,
+  );
 }
 
 class const _ChatConversationBackButton() extends StatelessWidget {
@@ -2701,18 +2744,22 @@ class const _ModelSwitchConfirmButton() extends StatelessWidget {
 }
 
 Future<void> _continueAgent(_ConversationContextRequest request) async {
+  if (!request.context.mounted) return;
   if (!_canContinueConversation(request)) return;
 
-  await _continueAgentTurnWithErrorHandling(request);
+  final decision = await _continueAgentTurnWithErrorHandling(request);
+  _showIterationLimitNoticeForConversation(request, decision);
 }
 
-Future<void> _continueAgentTurnWithErrorHandling(
+Future<AgentIterationDecision?> _continueAgentTurnWithErrorHandling(
   _ConversationContextRequest request,
 ) async {
   try {
-    await _continueAgentTurn(request);
+    return await _continueAgentTurn(request);
   } on Exception catch (error, stackTrace) {
     _reportContinueAgentFailure(request, error, stackTrace);
+
+    return null;
   }
 }
 
@@ -2746,14 +2793,16 @@ bool _canContinueConversation(_ConversationContextRequest request) =>
       )[request.conversationId],
     );
 
-Future<void> _continueAgentTurn(_ConversationContextRequest request) async {
+Future<AgentIterationDecision?> _continueAgentTurn(
+  _ConversationContextRequest request,
+) async {
   final cloud = await request.ref.read(
     cloudTurnUsecaseProvider(request.workspaceId).future,
   );
-  if (cloud == null) {
-    await _continueLocalAgent(request.ref, request.conversationId);
+  if (!request.context.mounted) return null;
 
-    return;
+  if (cloud == null) {
+    return await _continueLocalAgent(request.ref, request.conversationId);
   }
 
   await _continueCloudAgent((
@@ -2762,10 +2811,15 @@ Future<void> _continueAgentTurn(_ConversationContextRequest request) async {
     workspaceId: request.workspaceId,
     conversationId: request.conversationId,
   ));
+
+  return null;
 }
 
-Future<void> _continueLocalAgent(WidgetRef ref, String conversationId) async {
-  final _ = await ref
+Future<AgentIterationDecision> _continueLocalAgent(
+  WidgetRef ref,
+  String conversationId,
+) async {
+  return await ref
       .read(auraAgentServiceProvider)
       .agent
       .continueTurn(
@@ -2778,7 +2832,11 @@ Future<void> _retryMessage(_RetryMessageRequest request) async {
   if (!_canRetryMessage(request)) return;
 
   try {
-    await _runRetryMessage(request);
+    final decision = await _runRetryMessage(request);
+    _showIterationLimitNoticeForConversation(
+      _conversationContextForRetry(request),
+      decision,
+    );
   } on Exception catch (error, stackTrace) {
     _reportRetryMessageError(request, error, stackTrace);
   }
@@ -2811,20 +2869,26 @@ bool _canRetryProviderMessage(MessageEntity message) =>
         (message.status == .error &&
             ProviderRecoveryMetadata.isRetryEligible(message)));
 
-Future<void> _runRetryMessage(_RetryMessageRequest request) async {
+Future<AgentIterationDecision?> _runRetryMessage(
+  _RetryMessageRequest request,
+) async {
   final cloud = await request.ref.read(
     cloudTurnUsecaseProvider(request.workspaceId).future,
   );
-  if (cloud == null) {
-    await _retryLocalMessage(request);
+  if (!request.context.mounted) return null;
 
-    return;
+  if (cloud == null) {
+    return await _retryLocalMessage(request);
   }
 
   await _retryCloudMessage(request, cloud);
+
+  return null;
 }
 
-Future<void> _retryLocalMessage(_RetryMessageRequest request) => request.ref
+Future<AgentIterationDecision> _retryLocalMessage(
+  _RetryMessageRequest request,
+) => request.ref
     .read(sendMessageUsecaseProvider(request.workspaceId))
     .retryUserMessage(
       conversationId: request.conversationId,
@@ -3175,7 +3239,11 @@ bool _canStopCloudState(CloudConversationState state) {
 
 Future<void> _sendMessage(_SendMessageRequest request) async {
   try {
-    await _sendMessageUsecase(request);
+    final decision = await _sendMessageUsecase(request);
+    _showIterationLimitNoticeForConversation(
+      _conversationContextForSend(request),
+      decision,
+    );
   } on MessagePersistedException catch (error) {
     _reportSendMessageFailure(request, error, error.stackTrace);
   } on Object catch (error, stackTrace) {
@@ -3184,9 +3252,64 @@ Future<void> _sendMessage(_SendMessageRequest request) async {
   }
 }
 
-Future<void> _sendMessageUsecase(_SendMessageRequest request) => request.ref
+Future<AgentIterationDecision?> _sendMessageUsecase(
+  _SendMessageRequest request,
+) => request.ref
     .read(sendMessageUsecaseProvider(request.workspaceId))
     .call(conversationId: request.conversationId, draft: request.draft);
+
+_ConversationContextRequest _conversationContextForRetry(
+  _RetryMessageRequest request,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  conversationId: request.conversationId,
+);
+
+_ConversationContextRequest _conversationContextForSend(
+  _SendMessageRequest request,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  conversationId: request.conversationId,
+);
+
+VoidCallback _conversationContextContinueCallback(
+  _ConversationContextRequest request,
+) =>
+    () => unawaited(_continueAgent(request));
+
+void _showIterationLimitNoticeForConversation(
+  _ConversationContextRequest request,
+  AgentIterationDecision? decision,
+) => _showIterationLimitNoticeIfNeeded(
+  context: request.context,
+  decision: decision,
+  onContinue: _conversationContextContinueCallback(request),
+);
+
+void _showIterationLimitNoticeIfNeeded({
+  required BuildContext context,
+  required AgentIterationDecision? decision,
+  required VoidCallback onContinue,
+}) {
+  if (decision != AgentIterationDecision.iterationLimitReached ||
+      !context.mounted) {
+    return;
+  }
+
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
+    ),
+    duration: const Duration(seconds: 10),
+    actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent.tr(),
+    onAction: onContinue,
+  );
+}
 
 void _reportSendMessageFailure(
   _SendMessageRequest request,

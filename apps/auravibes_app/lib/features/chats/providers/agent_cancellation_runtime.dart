@@ -624,6 +624,7 @@ enum ActiveSubAgentStatus {
   running,
   awaitingApproval,
   completed,
+  partial,
   failed,
   stopped,
 }
@@ -782,9 +783,12 @@ void _recordSubAgentStatus(
   if (request.status == .done) {
     final _ = maps.terminalStatuses.remove(childId);
   } else {
-    maps.terminalStatuses[childId] = request.status == .stopped
-        ? .stopped
-        : .failed;
+    maps.terminalStatuses[childId] = switch (request.status) {
+      .partial => .partial,
+      .stopped => .stopped,
+      .error => .failed,
+      .done => .completed,
+    };
   }
 }
 

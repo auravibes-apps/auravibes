@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_activity_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:riverpod/misc.dart' show NotifierProviderFamily;
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -64,6 +65,25 @@ class ConversationRateLimitRetryNotifier
   }
 }
 
+class ConversationIterationLimitNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void markReached() {
+    state = true;
+  }
+
+  void markIfIterationLimitReached(AgentIterationDecision? decision) {
+    if (decision != AgentIterationDecision.iterationLimitReached) return;
+    markReached();
+  }
+
+  void consume() {
+    if (!state) return;
+    state = false;
+  }
+}
+
 final conversationStreamingRuntimeProvider =
     Provider<ConversationStreamingRuntime>((ref) {
       final notifier = ref.watch(conversationStreamingProvider.notifier);
@@ -105,6 +125,12 @@ final titlesStreamingRuntimeProvider = Provider<TitlesStreamingRuntime>((ref) {
 final conversationRateLimitRetryProvider =
     NotifierProvider<ConversationRateLimitRetryNotifier, Map<String, DateTime>>(
       ConversationRateLimitRetryNotifier.new,
+    );
+
+final NotifierProviderFamily<ConversationIterationLimitNotifier, bool, String>
+conversationIterationLimitProvider =
+    NotifierProvider.family<ConversationIterationLimitNotifier, bool, String>(
+      (_) => ConversationIterationLimitNotifier(),
     );
 
 final conversationRateLimitRetryRuntimeProvider =
