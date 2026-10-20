@@ -1175,6 +1175,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         keyExpression: 'key',
       ),
       DynamicTranslationSite(
+        file: 'features/chats/screens/message_bookmarks_screen.dart',
+        method: 'tr',
+        keyExpression: 'key',
+      ),
+      DynamicTranslationSite(
         file: 'utils/relative_time_formatter.dart',
         method: 'tr',
         keyExpression: 'key',
@@ -1822,6 +1827,21 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         file: 'features/chats/screens/chat_conversation_screen.dart',
         method: 'tr',
         keyExpression: 'errorMessageKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/screens/message_bookmarks_screen.dart',
+        method: 'tr',
+        keyExpression: 'CloudAppErrors.localizationKey(error)',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/screens/message_bookmarks_screen.dart',
+        method: 'tr',
+        keyExpression: 'localizationKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/chat_messages_widget.dart',
+        method: 'tr',
+        keyExpression: 'CloudAppErrors.localizationKey(error)',
       ),
     ],
     keys: {..._cloudAppErrorKeys},
