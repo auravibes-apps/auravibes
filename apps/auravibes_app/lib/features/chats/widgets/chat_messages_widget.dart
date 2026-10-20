@@ -1880,9 +1880,15 @@ class const _AssistantActivityRun({
           ),
         ) ??
         initialExpansionState;
-    final renderedExpansionState = !isLive && expansionState.isLive
-        ? initialExpansionState
-        : expansionState;
+    final renderedExpansionState = expansionState;
+
+    List<McpAppToolResultController?> appControllersForToolIds(
+      Set<String> toolIds,
+    ) => [
+      for (final toolCall in toolCalls)
+        if (toolIds.contains(toolCall.toolCall.id))
+          mcpAppControllers[toolCall.toolCall.id],
+    ];
 
     void updateExpansionState(
       ActivityRunExpansionState Function(ActivityRunExpansionState) update,
@@ -1904,6 +1910,23 @@ class const _AssistantActivityRun({
       });
     }
 
+    Future<void> collapseAfterRun() => runAfterMcpAppToolResultsTeardown(
+      appControllersForToolIds(expansionState.expandedToolIds),
+      () {
+        if (!context.mounted) return;
+        onDisclosureChanged(() {
+          updateExpansionStateAfterBuild(
+            (_) => (
+              isLive: false,
+              traceExpanded: false,
+              expandedToolGroupIds: const {},
+              expandedToolIds: const {},
+            ),
+          );
+        });
+      },
+    );
+
     final previousIsLive = useRef(isLive);
     final previousToolSignature = useRef(toolSignature);
     final previousPendingToolId = useRef(latestPendingToolId);
@@ -1914,17 +1937,8 @@ class const _AssistantActivityRun({
         final hasNewTool = previousToolSignature.value != toolSignature;
         final hasNewPendingTool =
             previousPendingToolId.value != latestPendingToolId;
-        if (!isLive && expansionState.isLive) {
-          onDisclosureChanged(() {
-            updateExpansionStateAfterBuild(
-              (_) => (
-                isLive: false,
-                traceExpanded: false,
-                expandedToolGroupIds: const {},
-                expandedToolIds: const {},
-              ),
-            );
-          });
+        if (!isLive && (expansionState.isLive || wasLive)) {
+          unawaited(collapseAfterRun());
         } else if (isLive && (!wasLive || hasNewTool || hasNewPendingTool)) {
           onDisclosureChanged(() {
             updateExpansionStateAfterBuild(
@@ -1938,17 +1952,6 @@ class const _AssistantActivityRun({
                 expandedToolIds: latestPendingToolId == null
                     ? current.expandedToolIds
                     : {...current.expandedToolIds, latestPendingToolId},
-              ),
-            );
-          });
-        } else if (!isLive && wasLive) {
-          onDisclosureChanged(() {
-            updateExpansionStateAfterBuild(
-              (_) => (
-                isLive: false,
-                traceExpanded: false,
-                expandedToolGroupIds: const {},
-                expandedToolIds: const {},
               ),
             );
           });
@@ -2089,31 +2092,32 @@ class const _AssistantActivityRun({
       if (toolRows.length == 1) {
         toolContents[groupId] = toolRows.single;
       } else {
-        Future<void> toggleToolGroup() async {
-          if (renderedExpansionState.expandedToolGroupIds.contains(groupId)) {
-            await prepareMcpAppToolResultsForTeardown([
-              for (final activityToolCall in activityToolCalls)
-                if (renderedExpansionState.expandedToolIds.contains(
-                  activityToolCall.toolCall.id,
-                ))
-                  mcpAppControllers[activityToolCall.toolCall.id],
-            ]);
-          }
-          if (!context.mounted) return;
-
-          onDisclosureChanged(() {
-            updateExpansionState((current) {
-              final next = {...current.expandedToolGroupIds};
-              if (!next.remove(groupId)) next.add(groupId);
-              return (
-                isLive: current.isLive,
-                traceExpanded: current.traceExpanded,
-                expandedToolGroupIds: next,
-                expandedToolIds: current.expandedToolIds,
-              );
+        Future<void> toggleToolGroup() => runAfterMcpAppToolResultsTeardown(
+          renderedExpansionState.expandedToolGroupIds.contains(groupId)
+              ? [
+                  for (final activityToolCall in activityToolCalls)
+                    if (renderedExpansionState.expandedToolIds.contains(
+                      activityToolCall.toolCall.id,
+                    ))
+                      mcpAppControllers[activityToolCall.toolCall.id],
+                ]
+              : const <McpAppToolResultController?>[],
+          () {
+            if (!context.mounted) return;
+            onDisclosureChanged(() {
+              updateExpansionState((current) {
+                final next = {...current.expandedToolGroupIds};
+                if (!next.remove(groupId)) next.add(groupId);
+                return (
+                  isLive: current.isLive,
+                  traceExpanded: current.traceExpanded,
+                  expandedToolGroupIds: next,
+                  expandedToolIds: current.expandedToolIds,
+                );
+              });
             });
-          });
-        }
+          },
+        );
 
         toolContents[groupId] = AuraColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2151,34 +2155,24 @@ class const _AssistantActivityRun({
         ? LocaleKeys.chats_screens_chat_conversation_activity_thinking.tr()
         : LocaleKeys.chats_screens_chat_conversation_activity_tools_count
               .plural(toolCalls.length, context: context);
-    Future<void> toggleTrace() async {
-      if (renderedExpansionState.traceExpanded) {
-        final controllers = [
-          for (final toolCall in toolCalls)
-            if (renderedExpansionState.expandedToolIds.contains(
-              toolCall.toolCall.id,
-            ))
-              mcpAppControllers[toolCall.toolCall.id],
-        ];
-        if (controllers.any(
-          (controller) => controller?.teardownHandler != null,
-        )) {
-          await prepareMcpAppToolResultsForTeardown(controllers);
-        }
-      }
-      if (!context.mounted) return;
-
-      onDisclosureChanged(() {
-        updateExpansionState(
-          (current) => (
-            isLive: current.isLive,
-            traceExpanded: !current.traceExpanded,
-            expandedToolGroupIds: current.expandedToolGroupIds,
-            expandedToolIds: current.expandedToolIds,
-          ),
-        );
-      });
-    }
+    Future<void> toggleTrace() => runAfterMcpAppToolResultsTeardown(
+      renderedExpansionState.traceExpanded
+          ? appControllersForToolIds(renderedExpansionState.expandedToolIds)
+          : const <McpAppToolResultController?>[],
+      () {
+        if (!context.mounted) return;
+        onDisclosureChanged(() {
+          updateExpansionState(
+            (current) => (
+              isLive: current.isLive,
+              traceExpanded: !current.traceExpanded,
+              expandedToolGroupIds: current.expandedToolGroupIds,
+              expandedToolIds: current.expandedToolIds,
+            ),
+          );
+        });
+      },
+    );
 
     Widget activityEntry(_ActivityRunEntry entry) {
       if (entry case _ActivityNarrativeEntry(

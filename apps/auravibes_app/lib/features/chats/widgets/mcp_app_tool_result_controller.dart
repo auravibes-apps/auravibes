@@ -5,11 +5,19 @@ class McpAppToolResultController {
       teardownHandler?.call() ?? Future<void>.value();
 }
 
-Future<void> prepareMcpAppToolResultsForTeardown(
+Future<void> runAfterMcpAppToolResultsTeardown(
   Iterable<McpAppToolResultController?> controllers,
+  void Function() action,
 ) async {
-  final _ = await Future.wait<void>([
-    for (final controller in controllers)
-      controller?.prepareForTeardown() ?? Future<void>.value(),
-  ]);
+  final activeControllers = controllers
+      .whereType<McpAppToolResultController>()
+      .where((controller) => controller.teardownHandler != null)
+      .toList(growable: false);
+  if (activeControllers.isNotEmpty) {
+    final _ = await Future.wait<void>([
+      for (final controller in activeControllers)
+        controller.prepareForTeardown(),
+    ]);
+  }
+  action();
 }

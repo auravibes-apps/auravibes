@@ -4,23 +4,28 @@ import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result_control
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('waits for every MCP App result teardown', () async {
+  test('runs collapse action after every MCP App teardown', () async {
     final firstTeardown = Completer<void>();
     final secondTeardown = Completer<void>();
-    final teardown = prepareMcpAppToolResultsForTeardown([
-      McpAppToolResultController()
-        ..teardownHandler = () => firstTeardown.future,
-      McpAppToolResultController()
-        ..teardownHandler = () => secondTeardown.future,
-    ]);
+    final collapse = Completer<void>();
+    final teardown = runAfterMcpAppToolResultsTeardown(
+      [
+        McpAppToolResultController()
+          ..teardownHandler = () => firstTeardown.future,
+        McpAppToolResultController()
+          ..teardownHandler = () => secondTeardown.future,
+      ],
+      collapse.complete,
+    );
 
     firstTeardown.complete();
     await expectLater(
-      teardown.timeout(const .new(milliseconds: 10)),
+      collapse.future.timeout(const .new(milliseconds: 10)),
       throwsA(isA<TimeoutException>()),
     );
 
     secondTeardown.complete();
     await teardown;
+    expect(collapse.isCompleted, isTrue);
   });
 }

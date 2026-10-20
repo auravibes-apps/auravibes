@@ -24,6 +24,7 @@ import 'package:material_ui/material_ui.dart';
 const _mcpAppLoadingStrokeWidth = 2.0;
 const _mcpAppLoadingSize = 14.0;
 const _mcpAppViewHeight = 320.0;
+const _mcpAppTeardownEvaluationTimeout = Duration(seconds: 1);
 
 typedef _McpAppToolViewData = ({
   String mcpServerId,
@@ -335,9 +336,11 @@ class _McpAppEmbeddedViewState extends ConsumerState<_McpAppEmbeddedView> {
     if (teardown == null) return;
 
     try {
-      final _ = await controller.evaluateJavascript(
-        source: 'window.mcpAppsReply(${jsonEncode(teardown.message)});',
-      );
+      final _ = await controller
+          .evaluateJavascript(
+            source: 'window.mcpAppsReply(${jsonEncode(teardown.message)});',
+          )
+          .timeout(_mcpAppTeardownEvaluationTimeout);
       await teardown.response;
     } on Object {
       // The view can close while the platform WebView is shutting down.
