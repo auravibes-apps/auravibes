@@ -456,6 +456,7 @@
       "stop_error": "No se pudo detener la conversación. Inténtalo de nuevo.",
       "send_error": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
       "continue_agent": "Continuar agente",
+      "iteration_limit_reached": "El agente alcanzó su límite de iteraciones. La respuesta parcial y los resultados de herramientas completados están disponibles.",
       "retry_message": "Reintentar mensaje",
       "background_work": {
         "running_task": "Hay una tarea en curso en esta conversación.",
@@ -533,6 +534,7 @@
       "sub_agent_error_detail": "Error: {error}",
       "sub_agent_status_awaiting_approval": "Esperando aprobación",
       "sub_agent_status_completed": "Completado",
+      "sub_agent_status_partial": "Parcial",
       "sub_agent_status_failed": "Falló",
       "sub_agent_status_running": "En ejecución",
       "sub_agent_status_stopped": "Detenido",

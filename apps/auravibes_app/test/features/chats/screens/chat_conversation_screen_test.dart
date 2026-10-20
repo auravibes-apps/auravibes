@@ -83,6 +83,23 @@ void main() {
     registerFallbackValue(_ContinueConversationRequestFake());
   });
 
+  test('iteration-limit notifier queues only capped decisions', () {
+    final provider = conversationIterationLimitProvider(_chatId);
+    final uncappedContainer = ProviderContainer();
+    addTearDown(uncappedContainer.dispose);
+    uncappedContainer
+        .read(provider.notifier)
+        .markIfIterationLimitReached(.done);
+    expect(uncappedContainer.read(provider), isFalse);
+
+    final cappedContainer = ProviderContainer();
+    addTearDown(cappedContainer.dispose);
+    cappedContainer
+        .read(provider.notifier)
+        .markIfIterationLimitReached(.iterationLimitReached);
+    expect(cappedContainer.read(provider), isTrue);
+  });
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -1173,7 +1190,7 @@ void main() {
     expect(find.byType(ChatThinkingIndicator), findsOneWidget);
   });
 
-  testWidgets('shows rate-limit retry countdown and marks input busy', (
+  testWidgets('shows retry and iteration-limit notices and marks input busy', (
     tester,
   ) async {
     final conversation = ConversationEntity(
@@ -1229,6 +1246,8 @@ void main() {
                   conversationRateLimitRetryProvider.overrideWith(
                     () => _StaticRateLimitRetryNotifier(retryAt),
                   ),
+                  conversationIterationLimitProvider(_chatId)
+                      .overrideWith(_StaticIterationLimitNotifier.new),
                   chatMessagesProvider.overrideWith(
                     (ref, _) => Stream.value(const <MessageEntity>[]),
                   ),
@@ -1254,6 +1273,8 @@ void main() {
                     workspaceId: _workspaceId,
                     chatId: _chatId,
                   ),
+                  builder: (_, child) =>
+                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,
                   supportedLocales: context.supportedLocales,
@@ -1276,6 +1297,14 @@ void main() {
     await tester.pump();
 
     expect(find.textContaining('Rate limit reached'), findsOneWidget);
+    expect(
+      find.text(
+        'The agent reached its iteration limit. Partial output and completed '
+        'tool results are available.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Continue agent'), findsOneWidget);
     expect(find.text('Waiting to retry'), findsOneWidget);
     final retryText = tester.widget<Text>(
       find.textContaining('Rate limit reached'),
@@ -1291,6 +1320,87 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(ChatThinkingIndicator), findsNothing);
+
+    tester
+        .state<NavigatorState>(find.byType(Navigator))
+        .pushReplacement<void, void>(
+          MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
+        );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Continue agent'), findsOneWidget);
+    _activateSnackBarAction(tester, 'Continue agent');
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('stops continuation if route unmounts during cloud lookup', (
+    tester,
+  ) async {
+    final usecaseCompleter = Completer<CloudTurnUsecase?>();
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: const Stream.empty(),
+      usecaseFuture: usecaseCompleter.future,
+      iterationLimitReached: true,
+    );
+
+    expect(find.text('Continue agent'), findsOneWidget);
+    _activateSnackBarAction(tester, 'Continue agent');
+    await tester.pump();
+
+    tester
+        .state<NavigatorState>(find.byType(Navigator))
+        .pushReplacement<void, void>(
+          MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
+        );
+    final _ = await tester.pumpAndSettle();
+    usecaseCompleter.complete(null);
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('stops retry if route unmounts during cloud lookup', (
+    tester,
+  ) async {
+    final usecaseCompleter = Completer<CloudTurnUsecase?>();
+    final retryableMessage = MessageEntity(
+      id: 'retry-user-message',
+      conversationId: _chatId,
+      content: 'Original prompt',
+      messageType: .text,
+      isUser: true,
+      status: .unfinished,
+      createdAt: .utc(2026),
+      updatedAt: .utc(2026),
+    );
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: const Stream.empty(),
+      chatMessages: [retryableMessage],
+      usecaseFuture: usecaseCompleter.future,
+    );
+
+    final retryButton = find.byKey(
+      const ValueKey('retry_message_retry-user-message'),
+    );
+    expect(retryButton, findsOneWidget);
+    await tester.tap(retryButton);
+    await tester.pump();
+
+    tester
+        .state<NavigatorState>(find.byType(Navigator))
+        .pushReplacement<void, void>(
+          MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
+        );
+    final _ = await tester.pumpAndSettle();
+    usecaseCompleter.complete(null);
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(
@@ -1675,6 +1785,32 @@ void main() {
     secondRequest.finish();
   });
 
+  testWidgets('shows partial child status in the active-child chooser', (
+    tester,
+  ) async {
+    final container = await _pumpActiveSubAgentStatusWidget(
+      tester,
+      childConversations: [
+        _childConversation('partial', 'Partial child'),
+        _childConversation('running', 'Running child'),
+      ],
+    );
+    final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
+    final partialRequest = runtime.start(parentId: _chatId, childId: 'partial');
+    final runningRequest = runtime.start(parentId: _chatId, childId: 'running');
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_active_sub_agents')),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    partialRequest.finish(status: .partial);
+    await tester.pump();
+
+    expect(find.text('Partial'), findsOneWidget);
+    runningRequest.finish();
+  });
+
   testWidgets('keeps live and terminal status details safe in chooser', (
     tester,
   ) async {
@@ -1852,9 +1988,11 @@ Future<void> _pumpCloudConversationScreen(
   WidgetTester tester, {
   required CloudConversationState initialState,
   required Stream<CloudConversationState> updates,
+  List<MessageEntity> chatMessages = const [],
   List<BackgroundWorkView> backgroundWorks = const [],
   CloudTurnUsecase? usecase,
   Future<CloudTurnUsecase?>? usecaseFuture,
+  bool iterationLimitReached = false,
   String? parentId,
 }) async {
   await tester.binding.setSurfaceSize(const Size(800, 1200));
@@ -1930,6 +2068,9 @@ Future<void> _pumpCloudConversationScreen(
                     hasPendingTools: false,
                   ),
                 ),
+                if (iterationLimitReached)
+                  conversationIterationLimitProvider(_chatId)
+                      .overrideWith(_StaticIterationLimitNotifier.new),
                 cloudConversationStateProvider.overrideWith((ref, _) async* {
                   yield initialState;
                   yield* updates;
@@ -1941,7 +2082,7 @@ Future<void> _pumpCloudConversationScreen(
                   'model-1',
                 ).overrideWithValue(AsyncData(_cloudModelSelection())),
                 chatMessagesProvider.overrideWith(
-                  (ref, _) => Stream.value(const <MessageEntity>[]),
+                  (ref, _) => Stream.value(chatMessages),
                 ),
                 chatMessageIdsProvider.overrideWith(
                   (ref, _) => const <String>[],
@@ -1963,6 +2104,11 @@ Future<void> _pumpCloudConversationScreen(
                   chatId: _chatId,
                   showInputComposer: parentId == null,
                 ),
+                builder: iterationLimitReached
+                    ? (_, child) => AuraSnackBarHost(
+                        child: child ?? const SizedBox.shrink(),
+                      )
+                    : null,
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -2155,6 +2301,22 @@ class _StaticRateLimitRetryNotifier(final DateTime retryDeadline)
     extends ConversationRateLimitRetryNotifier {
   @override
   Map<String, DateTime> build() => {_chatId: retryDeadline};
+}
+
+void _activateSnackBarAction(WidgetTester tester, String label) {
+  final action = tester.widget<GestureDetector>(
+    find
+        .ancestor(of: find.text(label), matching: find.byType(GestureDetector))
+        .first,
+  );
+  final onTap = action.onTap;
+  if (onTap == null) fail('Expected snackbar action to have a tap handler');
+  onTap();
+}
+
+class _StaticIterationLimitNotifier extends ConversationIterationLimitNotifier {
+  @override
+  bool build() => true;
 }
 
 class _BusyRefreshNotifier extends Notifier<int> {

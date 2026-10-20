@@ -667,6 +667,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.send_error';
   static const chats_screens_chat_conversation_continue_agent =
       'chats_screens.chat_conversation.continue_agent';
+  static const chats_screens_chat_conversation_iteration_limit_reached =
+      'chats_screens.chat_conversation.iteration_limit_reached';
   static const chats_screens_chat_conversation_retry_message =
       'chats_screens.chat_conversation.retry_message';
   static const chats_screens_chat_conversation_background_work_running_task =
@@ -801,6 +803,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.sub_agent_status_awaiting_approval';
   static const chats_screens_chat_conversation_sub_agent_status_completed =
       'chats_screens.chat_conversation.sub_agent_status_completed';
+  static const chats_screens_chat_conversation_sub_agent_status_partial =
+      'chats_screens.chat_conversation.sub_agent_status_partial';
   static const chats_screens_chat_conversation_sub_agent_status_failed =
       'chats_screens.chat_conversation.sub_agent_status_failed';
   static const chats_screens_chat_conversation_sub_agent_status_running =

@@ -36,6 +36,7 @@ import 'package:auravibes_app/features/chats/providers/background_work_providers
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -1547,7 +1548,10 @@ Future<void> _submitA2uiAction(
   required ChatUiAction action,
 }) async {
   try {
-    await ref
+    final iterationLimitNotifier = ref.read(
+      conversationIterationLimitProvider(conversationId).notifier,
+    );
+    final decision = await ref
         .read(sendMessageUsecaseProvider(workspaceId))
         .call(
           conversationId: conversationId,
@@ -1556,6 +1560,7 @@ Future<void> _submitA2uiAction(
             metadataJson: action.metadataJson,
           ),
         );
+    iterationLimitNotifier.markIfIterationLimitReached(decision);
   } on Object catch (error, stackTrace) {
     runtime.rejectFormSubmission(action.surfaceId);
     _a2uiLogger.warning(
