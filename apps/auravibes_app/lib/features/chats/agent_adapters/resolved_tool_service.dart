@@ -167,20 +167,32 @@ class ResolvedToolService {
       arguments: _executionArguments(tool, arguments),
     );
 
-    if (result case final McpToolCallerResult appResult) {
-      if (toolCallId.isNotEmpty && appResult.appData.isNotEmpty) {
-        _mcpAppResultData[(
-              conversationId: conversationId,
-              toolCallId: toolCallId,
-            )] =
-            appResult.appData;
-      }
+    return _modelToolResult(
+      result,
+      conversationId,
+      toolCallId,
+      _mcpAppResultData,
+    );
+  }
+}
 
-      return appResult.modelText;
+Object? _modelToolResult(
+  Object? result,
+  String conversationId,
+  String toolCallId,
+  Map<({String conversationId, String toolCallId}), Map<String, Object?>>
+  appResults,
+) {
+  if (result case final McpToolCallerResult appResult) {
+    if (toolCallId.isNotEmpty && appResult.appData.isNotEmpty) {
+      appResults[(conversationId: conversationId, toolCallId: toolCallId)] =
+          appResult.appData;
     }
 
-    return result;
+    return appResult.modelText;
   }
+
+  return result;
 }
 
 Map<String, dynamic> _executionArguments(

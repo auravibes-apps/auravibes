@@ -33,25 +33,24 @@ Map<String, Object?> _boundedMcpAppResult(
   Map<String, Object?> result,
   String modelText,
 ) {
-  if (utf8.encode(jsonEncode(result)).length <= _maxMcpAppResultBytes) {
-    return result;
-  }
-
-  final fallback = <String, Object?>{
-    'content': [
-      {'type': 'text', 'text': projectToolOutput(modelText).text},
-    ],
-  };
+  if (_isWithinMcpAppResultLimit(result)) return result;
+  final fallback = _mcpAppTextResult(modelText);
   final metadata = result['_meta'];
   if (metadata == null) return fallback;
 
   final withMetadata = <String, Object?>{'_meta': metadata, ...fallback};
-  if (utf8.encode(jsonEncode(withMetadata)).length <= _maxMcpAppResultBytes) {
-    return withMetadata;
-  }
 
-  return fallback;
+  return _isWithinMcpAppResultLimit(withMetadata) ? withMetadata : fallback;
 }
+
+bool _isWithinMcpAppResultLimit(Map<String, Object?> result) =>
+    utf8.encode(jsonEncode(result)).length <= _maxMcpAppResultBytes;
+
+Map<String, Object?> _mcpAppTextResult(String modelText) => {
+  'content': [
+    {'type': 'text', 'text': projectToolOutput(modelText).text},
+  ],
+};
 
 class McpManagerClient._(
   final mcp.Client _client,
@@ -233,26 +232,33 @@ class McpManagerService {
   ) async => (await client._client.readResource(uri)).toJson();
 
   Future<McpManagerClient> connectMcp(McpServerToCreate serverInfo) async {
-    return await _connectMcp(serverInfo);
+    return await _connectMcp((
+      serverInfo: serverInfo,
+      oauthCredentialService: oauthCredentialService,
+      httpClient: null,
+      clientTransport: null,
+    ));
   }
 
   Future<McpManagerClient> connectMcpWithAutoTransport(
     McpConnectionRequest request,
   ) async {
-    final httpServerInfo = _serverForTransport(
-      request,
-      McpTransportTypeStreamableHttp(useHttp2: request.useHttp2),
-    );
+    final httpServerInfo = _streamableHttpServerInfo(request);
     final responseCapture = McpStreamableHttpResponseCapture();
 
     try {
-      return await _connectMcp(httpServerInfo, httpClient: responseCapture);
+      return await _connectMcp((
+        serverInfo: httpServerInfo,
+        oauthCredentialService: oauthCredentialService,
+        httpClient: responseCapture,
+        clientTransport: null,
+      ));
     } on Object {
       final shouldFallback = responseCapture.shouldFallbackToLegacySse;
       responseCapture.close();
       if (!shouldFallback) rethrow;
 
-      return await _connectLegacySse(request);
+      return await _connectLegacySse(_legacySseConnectRequest(this, request));
     }
   }
 
@@ -262,85 +268,107 @@ class McpManagerService {
 
     return tools.map(_convertTool).toList(growable: false);
   }
+}
 
-  Future<McpManagerClient> _connectMcp(
-    McpServerToCreate serverInfo, {
-    http.Client? httpClient,
-    mcp.ClientTransport? clientTransport,
-  }) async {
-    // Create client configuration.
-    final clientResult = mcp.McpClient.createClient(
-      mcp.McpClient.simpleConfig(
-        name: 'AuraVibes MCP Client',
-        version: '1.0.0',
-      ).copyWith(
-        capabilities: const .new(
-          extensions: {
-            'io.modelcontextprotocol/ui': {
-              'mimeTypes': ['text/html;profile=mcp-app'],
-            },
-          },
-        ),
-      ),
-    );
-    final transport = await _connectClient(
-      clientResult,
-      serverInfo,
-      httpClient: httpClient,
-      clientTransport: clientTransport,
-    );
+typedef _McpConnectRequest = ({
+  McpServerToCreate serverInfo,
+  OAuthCredentialService? oauthCredentialService,
+  http.Client? httpClient,
+  mcp.ClientTransport? clientTransport,
+});
 
-    return McpManagerClient._(
-      clientResult,
-      transport,
-      serverInfo.transport,
-      serverInfo.transport is McpTransportTypeSSE
-          ? _tokenManager(serverInfo)
-          : null,
-    );
-  }
+typedef _LegacySseConnectRequest = ({
+  McpConnectionRequest request,
+  bool supported,
+  Future<mcp.ClientTransport> Function(McpServerToCreate)? transportFactory,
+  OAuthCredentialService? oauthCredentialService,
+});
 
-  Future<mcp.ClientTransport> _connectClient(
-    mcp.Client client,
-    McpServerToCreate serverInfo, {
-    http.Client? httpClient,
-    mcp.ClientTransport? clientTransport,
-  }) async {
-    try {
-      final transport =
-          clientTransport ??
-          await _createTransportConfig(
-            serverInfo,
-            oauthCredentialService: oauthCredentialService,
-            httpClient: httpClient,
-          );
-      await client.connect(transport);
+_LegacySseConnectRequest _legacySseConnectRequest(
+  McpManagerService service,
+  McpConnectionRequest request,
+) => (
+  request: request,
+  supported: service._legacySseSupported,
+  transportFactory: service.legacySseTransportFactory,
+  oauthCredentialService: service.oauthCredentialService,
+);
 
-      return transport;
-    } on Object {
-      client.disconnect();
-      rethrow;
-    }
-  }
-
-  Future<McpManagerClient> _connectLegacySse(
-    McpConnectionRequest request,
-  ) async {
-    if (!_legacySseSupported) {
-      throw const McpLegacySseUnavailableException();
-    }
-
-    final serverInfo = _serverForTransport(
+McpServerToCreate _streamableHttpServerInfo(McpConnectionRequest request) =>
+    _serverForTransport(
       request,
-      const McpTransportTypeSSE(),
+      McpTransportTypeStreamableHttp(useHttp2: request.useHttp2),
     );
-    final factory = legacySseTransportFactory;
-    if (factory == null) return await _connectMcp(serverInfo);
 
-    final transport = await factory(serverInfo);
+Future<McpManagerClient> _connectMcp(_McpConnectRequest request) async {
+  final client = _createMcpClient();
+  final transport = await _connectClient(client, request);
+  final serverInfo = request.serverInfo;
 
-    return await _connectMcp(serverInfo, clientTransport: transport);
+  return McpManagerClient._(
+    client,
+    transport,
+    serverInfo.transport,
+    serverInfo.transport is McpTransportTypeSSE
+        ? _tokenManager(serverInfo)
+        : null,
+  );
+}
+
+// Create client configuration.
+mcp.Client _createMcpClient() => mcp.McpClient.createClient(
+  mcp.McpClient.simpleConfig(
+    name: 'AuraVibes MCP Client',
+    version: '1.0.0',
+  ).copyWith(
+    capabilities: const .new(
+      extensions: {
+        'io.modelcontextprotocol/ui': {
+          'mimeTypes': ['text/html;profile=mcp-app'],
+        },
+      },
+    ),
+  ),
+);
+
+Future<mcp.ClientTransport> _connectClient(
+  mcp.Client client,
+  _McpConnectRequest request,
+) async {
+  try {
+    final transport =
+        request.clientTransport ??
+        await _createTransportConfig(
+          request.serverInfo,
+          oauthCredentialService: request.oauthCredentialService,
+          httpClient: request.httpClient,
+        );
+    await client.connect(transport);
+
+    return transport;
+  } on Object {
+    client.disconnect();
+    rethrow;
   }
+}
+
+Future<McpManagerClient> _connectLegacySse(
+  _LegacySseConnectRequest request,
+) async {
+  if (!request.supported) throw const McpLegacySseUnavailableException();
+  final serverInfo = _serverForTransport(
+    request.request,
+    const McpTransportTypeSSE(),
+  );
+  final factory = request.transportFactory;
+  final clientTransport = factory == null ? null : await factory(serverInfo);
+
+  return await _connectMcp((
+    serverInfo: serverInfo,
+    oauthCredentialService: request.oauthCredentialService,
+    httpClient: null,
+    clientTransport: clientTransport,
+  ));
 }
 
 McpServerToCreate _serverForTransport(

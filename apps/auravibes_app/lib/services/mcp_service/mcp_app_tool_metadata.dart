@@ -1,30 +1,45 @@
-class const McpAppToolMetadata({
-  required final String? resourceUri,
-  final List<String>? visibility,
-}) {
-  factory fromMetadata(Map<String, dynamic>? metadata) {
-    final uiValue = metadata?['ui'];
-    final ui = uiValue is Map ? Map<String, dynamic>.from(uiValue) : null;
-    final resourceUri = ui?.containsKey('resourceUri') == true
-        ? _validResourceUri(ui?['resourceUri'])
-        : _validResourceUri(metadata?['ui/resourceUri']);
-    final visibilityValue = ui?['visibility'];
-    final List<String>? visibility;
-    if (visibilityValue is List) {
-      visibility = visibilityValue.whereType<String>().toList(growable: false);
-    } else if (visibilityValue == null) {
-      visibility = null;
-    } else {
-      visibility = const [];
-    }
+typedef McpAppToolMetadataValue = ({
+  String? resourceUri,
+  List<String>? visibility,
+});
 
-    return .new(resourceUri: resourceUri, visibility: visibility);
-  }
+McpAppToolMetadataValue parseMcpAppToolMetadata(
+  Map<String, dynamic>? metadata,
+) {
+  final ui = _metadataMap(metadata?['ui']);
 
-  bool get isVisibleToApp => visibility?.contains('app') ?? true;
-
-  bool get isVisibleToModel => visibility?.contains('model') ?? true;
+  return (
+    resourceUri: _resourceUri(ui, metadata),
+    visibility: _visibility(ui?['visibility']),
+  );
 }
+
+bool isMcpAppToolVisibleToApp(McpAppToolMetadataValue metadata) =>
+    metadata.visibility?.contains('app') ?? true;
+
+bool isMcpAppToolVisibleToModel(McpAppToolMetadataValue metadata) =>
+    metadata.visibility?.contains('model') ?? true;
+
+Map<String, dynamic>? _metadataMap(Object? value) =>
+    value is Map ? Map<String, dynamic>.from(value) : null;
+
+String? _resourceUri(Map<String, dynamic>? ui, Map<String, dynamic>? metadata) {
+  final Object? value = switch (ui) {
+    final Map<String, dynamic> uiMap when uiMap.containsKey('resourceUri') =>
+      uiMap['resourceUri'],
+    _ => metadata?['ui/resourceUri'],
+  };
+
+  return _validResourceUri(value);
+}
+
+List<String>? _visibility(Object? value) => switch (value) {
+  final List<Object?> items => items.whereType<String>().toList(
+    growable: false,
+  ),
+  null => null,
+  _ => const [],
+};
 
 String? _validResourceUri(Object? value) {
   if (value is! String || !value.startsWith('ui://')) return null;

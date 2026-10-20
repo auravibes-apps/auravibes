@@ -203,17 +203,11 @@ class const AppAllowedToolsDataProvider({
     required String messageId,
     required List<agent.AgentToolResultUpdate> updates,
   }) async {
-    final appDataByToolCallId = <String, Map<String, Object?>>{};
-    for (final update in updates) {
-      final appData = resolvedToolService.takeMcpAppResultData(
-        conversationId: conversationId,
-        toolCallId: update.toolCallId,
-      );
-      if (update.resultStatus == .success && appData != null) {
-        appDataByToolCallId[update.toolCallId] = appData;
-      }
-    }
-
+    final appDataByToolCallId = _takeSuccessfulAppResults(
+      resolvedToolService,
+      conversationId,
+      updates,
+    );
     await _updateToolResults(messageRepository, persistToolCallResultsUsecase, (
       conversationId: conversationId,
       messageId: messageId,
@@ -222,6 +216,27 @@ class const AppAllowedToolsDataProvider({
     ));
   }
 }
+
+Map<String, Map<String, Object?>> _takeSuccessfulAppResults(
+  ResolvedToolService resolvedToolService,
+  String conversationId,
+  List<agent.AgentToolResultUpdate> updates,
+) {
+  final appDataByToolCallId = <String, Map<String, Object?>>{};
+  for (final update in updates) {
+    final appData = resolvedToolService.takeMcpAppResultData(
+      conversationId: conversationId,
+      toolCallId: update.toolCallId,
+    );
+    if (appData == null || !_hasSuccessfulAppResult(update)) continue;
+    appDataByToolCallId[update.toolCallId] = appData;
+  }
+
+  return appDataByToolCallId;
+}
+
+bool _hasSuccessfulAppResult(agent.AgentToolResultUpdate update) =>
+    update.resultStatus == .success;
 
 Future<agent.AgentToolApprovalDecision> _resolveToolApprovalDecision(
   _ToolApprovalRequest request,
@@ -415,7 +430,20 @@ Future<void> _updateToolResults(
   final message = await messageRepository.getMessageById(request.messageId);
   if (message == null) return;
 
-  final metadata = message.metadata ?? const MessageMetadataEntity();
+  await _persistUpdatedToolResults(
+    messageRepository,
+    persistToolCallResultsUsecase,
+    request,
+    message.metadata ?? const MessageMetadataEntity(),
+  );
+}
+
+Future<void> _persistUpdatedToolResults(
+  MessageRepository messageRepository,
+  PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
+  _ToolResultsRequest request,
+  MessageMetadataEntity metadata,
+) async {
   final updatedToolCalls = _toolCallsWithResults(
     metadata.toolCalls,
     request.updates,

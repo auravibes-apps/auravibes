@@ -1,55 +1,85 @@
 import 'dart:convert';
 
+typedef McpAppResource = ({String html, Map<String, Object?> csp});
+
 const int maxMcpAppResourceBytes = 2 * 1024 * 1024;
 const int _maxMcpAppResourceBase64Characters =
     ((maxMcpAppResourceBytes + 2) ~/ 3) * 4;
+final _cspHostPattern = RegExp(r'^[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$');
 
-class const McpAppResource({
-  required final String html,
-  required final Map<String, Object?> csp,
+McpAppResource parseMcpAppResource(
+  Map<String, Object?> result, {
+  required String resourceUri,
 }) {
-  factory fromReadResult(
-    Map<String, Object?> result, {
-    required String resourceUri,
-  }) {
-    final contents = result['contents'];
-    if (contents is! List) {
-      throw const FormatException('MCP App resource has no content.');
-    }
-    final matchingContents = contents.where(
-      (content) => content is Map && content['uri'] == resourceUri,
-    );
-    if (matchingContents.length != 1) {
-      throw const FormatException('MCP App resource content did not match.');
-    }
-    final content = Map<String, Object?>.from(matchingContents.single as Map);
-    if (content['mimeType'] != 'text/html;profile=mcp-app') {
-      throw UnsupportedError('Unsupported MCP App resource MIME type.');
-    }
-    final text = content['text'];
-    final blob = content['blob'];
-    final String html;
-    if (text is String) {
-      if (text.length > maxMcpAppResourceBytes ||
-          utf8.encode(text).length > maxMcpAppResourceBytes) {
-        throw const FormatException('MCP App resource exceeds size limit.');
-      }
-      html = text;
-    } else if (blob is String) {
-      if (blob.length > _maxMcpAppResourceBase64Characters) {
-        throw const FormatException('MCP App resource exceeds size limit.');
-      }
-      final bytes = base64Decode(blob);
-      if (bytes.length > maxMcpAppResourceBytes) {
-        throw const FormatException('MCP App resource exceeds size limit.');
-      }
-      html = utf8.decode(bytes);
-    } else {
-      throw const FormatException('MCP App resource has no HTML content.');
-    }
+  final content = _matchingResourceContent(result, resourceUri);
 
-    return McpAppResource(html: html, csp: _resourceCsp(content['_meta']));
+  return (html: _resourceHtml(content), csp: _resourceCsp(content['_meta']));
+}
+
+Map<String, Object?> _matchingResourceContent(
+  Map<String, Object?> result,
+  String resourceUri,
+) => Map<String, Object?>.from(
+  _singleMcpAppResourceContent(_resourceContents(result), resourceUri),
+);
+
+Map<Object?, Object?> _singleMcpAppResourceContent(
+  List<Object?> contents,
+  String resourceUri,
+) {
+  final matches = contents.whereType<Map<Object?, Object?>>().where(
+    (content) => _hasMcpAppResourceUri(content, resourceUri),
+  );
+  if (matches.length != 1) {
+    throw const FormatException('MCP App resource content did not match.');
   }
+
+  return matches.single;
+}
+
+bool _hasMcpAppResourceUri(Map<Object?, Object?> content, String resourceUri) =>
+    content['uri'] == resourceUri;
+
+List<Object?> _resourceContents(Map<String, Object?> result) {
+  final contents = result['contents'];
+  if (contents is! List<Object?>) {
+    throw const FormatException('MCP App resource has no content.');
+  }
+
+  return contents;
+}
+
+String _resourceHtml(Map<String, Object?> content) {
+  if (content['mimeType'] != 'text/html;profile=mcp-app') {
+    throw UnsupportedError('Unsupported MCP App resource MIME type.');
+  }
+  final text = content['text'];
+  if (text is String) return _validatedResourceText(text);
+  final blob = content['blob'];
+  if (blob is String) return _decodedResourceBlob(blob);
+
+  throw const FormatException('MCP App resource has no HTML content.');
+}
+
+String _validatedResourceText(String text) {
+  if (text.length > maxMcpAppResourceBytes ||
+      utf8.encode(text).length > maxMcpAppResourceBytes) {
+    throw const FormatException('MCP App resource exceeds size limit.');
+  }
+
+  return text;
+}
+
+String _decodedResourceBlob(String blob) {
+  if (blob.length > _maxMcpAppResourceBase64Characters) {
+    throw const FormatException('MCP App resource exceeds size limit.');
+  }
+  final bytes = base64Decode(blob);
+  if (bytes.length > maxMcpAppResourceBytes) {
+    throw const FormatException('MCP App resource exceeds size limit.');
+  }
+
+  return utf8.decode(bytes);
 }
 
 Map<String, Object?> _resourceCsp(Object? metadata) {
@@ -66,24 +96,45 @@ String buildMcpAppHostPage({
   required String html,
   required Map<String, Object?> csp,
   required bool isWeb,
-}) {
-  final appHtmlBase64 = base64Encode(utf8.encode(html));
-  final appCspBase64 = base64Encode(utf8.encode(_contentSecurityPolicy(csp)));
-  final hostContentSecurityPolicy = _hostContentSecurityPolicy(csp);
-  final template = isWeb ? _webHostPage : _nativeHostPage;
-  final proxyPage = _webSandboxProxyPage.replaceAll(
-    '__PROXY_CONTENT_SECURITY_POLICY__',
-    hostContentSecurityPolicy,
+}) => _renderHostPage(_hostPageData(html, csp, isWeb), isWeb);
+
+typedef _McpAppHostPageData = ({
+  String html,
+  String csp,
+  String hostCsp,
+  String proxyHtml,
+});
+
+_McpAppHostPageData _hostPageData(
+  String html,
+  Map<String, Object?> csp,
+  bool isWeb,
+) {
+  final appCsp = _contentSecurityPolicy(csp);
+  final hostCsp = _hostContentSecurityPolicy(csp);
+  final proxyHtml = isWeb
+      ? _webSandboxProxyPage.replaceAll(
+          '__PROXY_CONTENT_SECURITY_POLICY__',
+          hostCsp,
+        )
+      : '';
+
+  return (
+    html: base64Encode(utf8.encode(html)),
+    csp: base64Encode(utf8.encode(appCsp)),
+    hostCsp: hostCsp,
+    proxyHtml: base64Encode(utf8.encode(proxyHtml)),
   );
+}
+
+String _renderHostPage(_McpAppHostPageData data, bool isWeb) {
+  final template = isWeb ? _webHostPage : _nativeHostPage;
 
   return template
-      .replaceAll('__APP_HTML_BASE64__', appHtmlBase64)
-      .replaceAll('__APP_CSP_BASE64__', appCspBase64)
-      .replaceAll('__HOST_CONTENT_SECURITY_POLICY__', hostContentSecurityPolicy)
-      .replaceAll(
-        '__PROXY_HTML_BASE64__',
-        base64Encode(utf8.encode(proxyPage)),
-      );
+      .replaceAll('__APP_HTML_BASE64__', data.html)
+      .replaceAll('__APP_CSP_BASE64__', data.csp)
+      .replaceAll('__HOST_CONTENT_SECURITY_POLICY__', data.hostCsp)
+      .replaceAll('__PROXY_HTML_BASE64__', data.proxyHtml);
 }
 
 String _hostContentSecurityPolicy(Map<String, Object?> csp) =>
@@ -92,7 +143,20 @@ String _hostContentSecurityPolicy(Map<String, Object?> csp) =>
 String _contentSecurityPolicy(
   Map<String, Object?> csp, {
   List<String> frameSources = const [],
-}) {
+}) => _cspDirectives(csp, frameSources).join('; ');
+
+List<String> _cspDirectives(
+  Map<String, Object?> csp,
+  List<String> frameSources,
+) => [
+  '''default-src 'none' '''.trim(),
+  ..._resourceDirectives(csp),
+  ..._frameAndBaseDirectives(csp, frameSources),
+  '''object-src 'none' '''.trim(),
+  '''form-action 'none' '''.trim(),
+];
+
+List<String> _resourceDirectives(Map<String, Object?> csp) {
   final resources = _allowedDomains(csp['resourceDomains'], const {
     'http',
     'https',
@@ -103,6 +167,22 @@ String _contentSecurityPolicy(
     'ws',
     'wss',
   });
+  final resourceSources = resources.join(' ');
+
+  return [
+    '''script-src 'unsafe-inline' $resourceSources'''.trim(),
+    '''style-src 'unsafe-inline' $resourceSources'''.trim(),
+    'img-src data: blob: $resourceSources'.trim(),
+    _sourceDirective('font-src', resources),
+    _sourceDirective('media-src', resources),
+    _sourceDirective('connect-src', connections),
+  ];
+}
+
+List<String> _frameAndBaseDirectives(
+  Map<String, Object?> csp,
+  List<String> frameSources,
+) {
   final frames = [
     ..._allowedDomains(csp['frameDomains'], const {'http', 'https'}),
     ...frameSources,
@@ -112,19 +192,7 @@ String _contentSecurityPolicy(
       ? ''' 'self' '''.trim()
       : bases.join(' ');
 
-  return [
-    '''default-src 'none' '''.trim(),
-    '''script-src 'unsafe-inline' ${resources.join(' ')}'''.trim(),
-    '''style-src 'unsafe-inline' ${resources.join(' ')}'''.trim(),
-    'img-src data: blob: ${resources.join(' ')}'.trim(),
-    _sourceDirective('font-src', resources),
-    _sourceDirective('media-src', resources),
-    _sourceDirective('connect-src', connections),
-    _sourceDirective('frame-src', frames),
-    'base-uri $baseUriSources',
-    '''object-src 'none' '''.trim(),
-    '''form-action 'none' '''.trim(),
-  ].join('; ');
+  return [_sourceDirective('frame-src', frames), 'base-uri $baseUriSources'];
 }
 
 String _sourceDirective(String name, List<String> sources) {
@@ -147,29 +215,38 @@ List<String> _allowedDomains(Object? value, Set<String> allowedSchemes) {
 
 String? _allowedDomain(String value, Set<String> allowedSchemes) {
   final uri = Uri.tryParse(value);
-  if (uri == null ||
-      !allowedSchemes.contains(uri.scheme) ||
-      uri.host.isEmpty ||
-      uri.userInfo.isNotEmpty ||
-      (uri.path.isNotEmpty && uri.path != '/') ||
-      uri.hasQuery ||
-      uri.hasFragment) {
-    return null;
-  }
+  if (uri == null || !_isAllowedCspOrigin(uri, allowedSchemes)) return null;
   final host = uri.host;
+  if (!_isValidCspHost(host)) return null;
+
+  return _formatCspOrigin(uri, host);
+}
+
+bool _isAllowedCspOrigin(Uri? uri, Set<String> allowedSchemes) =>
+    uri != null &&
+    allowedSchemes.contains(uri.scheme) &&
+    uri.host.isNotEmpty &&
+    uri.userInfo.isEmpty &&
+    (!uri.path.isNotEmpty || uri.path == '/') &&
+    !uri.hasQuery &&
+    !uri.hasFragment;
+
+bool _isValidCspHost(String host) {
   final wildcard = host.startsWith('*.');
   final hostWithoutWildcard = wildcard ? host.replaceFirst('*.', '') : host;
-  if ((!wildcard && host.contains('*')) ||
-      !RegExp(r'^[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$')
-          .hasMatch(hostWithoutWildcard) ||
-      hostWithoutWildcard
-          .split('.')
-          .any((label) => label.startsWith('-') || label.endsWith('-'))) {
-    return null;
-  }
+  if (!wildcard && host.contains('*')) return false;
 
-  return '${uri.scheme}://$host${uri.hasPort ? ':${uri.port}' : ''}';
+  return _validCspHostLabels(hostWithoutWildcard);
 }
+
+bool _validCspHostLabels(String host) =>
+    _cspHostPattern.hasMatch(host) &&
+    host
+        .split('.')
+        .every((label) => !label.startsWith('-') && !label.endsWith('-'));
+
+String _formatCspOrigin(Uri uri, String host) =>
+    '${uri.scheme}://$host${uri.hasPort ? ':${uri.port}' : ''}';
 
 const _nativeHostPage = r'''
 <!doctype html>

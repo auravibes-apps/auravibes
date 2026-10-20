@@ -22,7 +22,7 @@ void main() {
         },
       ],
     };
-    final resource = McpAppResource.fromReadResult(
+    final resource = parseMcpAppResource(
       result,
       resourceUri: 'ui://weather/view',
     );
@@ -41,7 +41,7 @@ void main() {
         },
       ],
     };
-    final resource = McpAppResource.fromReadResult(
+    final resource = parseMcpAppResource(
       result,
       resourceUri: 'ui://weather/view',
     );
@@ -64,10 +64,7 @@ void main() {
         ],
       };
       expect(
-        () => McpAppResource.fromReadResult(
-          result,
-          resourceUri: 'ui://weather/view',
-        ),
+        () => parseMcpAppResource(result, resourceUri: 'ui://weather/view'),
         throwsFormatException,
       );
     }
@@ -84,7 +81,7 @@ void main() {
       ],
     };
     expect(
-      () => McpAppResource.fromReadResult(
+      () => parseMcpAppResource(
         mismatchedResult,
         resourceUri: 'ui://weather/view',
       ),
@@ -100,7 +97,7 @@ void main() {
       ],
     };
     expect(
-      () => McpAppResource.fromReadResult(
+      () => parseMcpAppResource(
         unsupportedResult,
         resourceUri: 'ui://weather/view',
       ),

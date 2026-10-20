@@ -129,21 +129,7 @@ class const AppApproveToolCallDataProvider({
       messageRepository,
       onToolCallChanged,
       persistToolCallResultsUsecase,
-      (
-        messageId: request.messageId,
-        toolCallId: request.toolCallId,
-        resultStatus: AgentToolStatusMapper.toResultStatus(
-          request.resultStatus,
-        ),
-        responseRaw: request.responseRaw,
-        responseContextRaw: request.responseContextRaw,
-        appData: request.resultStatus == .success ? appData : null,
-        media: request.media,
-        outputTruncated: request.outputTruncated,
-        originalResponseBytes: request.originalResponseBytes,
-        fullOutputForContext: request.fullOutputForContext,
-        conversationId: request.conversationId,
-      ),
+      _toolCallPatchRequest(request, appData),
     );
   }
 
@@ -255,6 +241,26 @@ class const AppApproveToolCallDataProvider({
     return agentCancellationRuntime.isCancellationRequested(conversationId);
   }
 }
+
+_ToolCallPatchRequest _toolCallPatchRequest(
+  agent.AgentToolCallResultUpdateRequest request,
+  Map<String, Object?>? appData,
+) => (
+  messageId: request.messageId,
+  toolCallId: request.toolCallId,
+  resultStatus: AgentToolStatusMapper.toResultStatus(request.resultStatus),
+  responseRaw: request.responseRaw,
+  responseContextRaw: request.responseContextRaw,
+  appData: _successfulToolCall(request) ? appData : null,
+  media: request.media,
+  outputTruncated: request.outputTruncated,
+  originalResponseBytes: request.originalResponseBytes,
+  fullOutputForContext: request.fullOutputForContext,
+  conversationId: request.conversationId,
+);
+
+bool _successfulToolCall(agent.AgentToolCallResultUpdateRequest request) =>
+    request.resultStatus == .success;
 
 Future<agent.AgentApprovableToolCall?> _loadToolCall(
   MessageRepository messageRepository,
