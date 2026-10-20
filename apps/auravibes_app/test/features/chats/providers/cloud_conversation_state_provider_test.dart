@@ -1,14 +1,25 @@
 // ignore_for_file: type=lint, type=warning
+import 'dart:math';
+
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/riverpod.dart';
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(_GetConversationRequestFake());
+  });
+
   test('preserves server tool access mode through snapshot and stream', () {
     final snapshot = _snapshot(sequence: 4);
     snapshot.conversation.toolAccessMode = 'allow_all';
@@ -122,6 +133,298 @@ void main() {
       expect(await states.map((state) => state.sequence).toList(), [4, 8]);
     },
   );
+
+  test('retries a transient initial snapshot failure with jitter', () async {
+    final delays = <Duration>[];
+    var snapshots = 0;
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () {
+          if (snapshots++ == 0) {
+            throw const ServerpodClientNetworkException('offline');
+          }
+
+          return _snapshot(sequence: 4);
+        },
+        events: (_) => const Stream.empty(),
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (duration) {
+        delays.add(duration);
+
+        return Future<void>.value();
+      },
+      random: const _FixedRandom(.5),
+    ).take(1);
+
+    expect(await states.map((state) => state.sequence).toList(), [4]);
+    expect(snapshots, 2);
+    expect(delays, [const Duration(milliseconds: 500)]);
+  });
+
+  test('retries a transient recovery snapshot failure with jitter', () async {
+    final delays = <Duration>[];
+    var snapshots = 0;
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () {
+          if (snapshots++ == 1) {
+            throw const ServerpodClientNetworkException('offline');
+          }
+
+          return _snapshot(sequence: snapshots == 1 ? 4 : 5);
+        },
+        events: (_) => const Stream.empty(),
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (duration) {
+        delays.add(duration);
+
+        return Future<void>.value();
+      },
+      random: const _FixedRandom(.5),
+    ).take(2);
+
+    expect(await states.map((state) => state.sequence).toList(), [4, 5]);
+    expect(snapshots, 3);
+    expect(delays, [
+      const Duration(milliseconds: 500),
+      const Duration(seconds: 1),
+    ]);
+  });
+
+  test(
+    'surfaces terminal initial snapshot failures without retrying',
+    () async {
+      var snapshots = 0;
+      var retries = 0;
+      final states = CloudConversationStream.watch(
+        _gateway(
+          snapshots: () {
+            snapshots++;
+            throw ConversationException(code: .authenticationRequired);
+          },
+          events: (_) => const Stream.empty(),
+        ),
+        (workspaceId: 'local', conversationId: 'conversation-1'),
+        delay: (_) {
+          retries++;
+
+          return Future<void>.value();
+        },
+      );
+
+      await expectLater(
+        states,
+        emitsError(
+          isA<CloudConversationStreamFailure>().having(
+            (error) => error.localizationKey,
+            'localizationKey',
+            LocaleKeys.cloud_errors_authentication_required,
+          ),
+        ),
+      );
+      expect(snapshots, 1);
+      expect(retries, 0);
+    },
+  );
+
+  test('stops retrying wrapped terminal HTTP snapshot failures', () async {
+    final delays = <Duration>[];
+    var snapshots = 0;
+    final error = _translateCloudAppException(ServerpodClientUnauthorized());
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () {
+          snapshots++;
+          throw error;
+        },
+        events: (_) => const Stream.empty(),
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (duration) {
+        delays.add(duration);
+
+        return Future<void>.value();
+      },
+    );
+
+    await expectLater(
+      states,
+      emitsError(isA<CloudConversationStreamFailure>()),
+    );
+    expect(error.httpStatusCode, 401);
+    expect(snapshots, 1);
+    expect(delays, isEmpty);
+  });
+
+  test('retries wrapped server HTTP snapshot failures', () async {
+    final delays = <Duration>[];
+    var snapshots = 0;
+    final error = _translateCloudAppException(
+      ServerpodClientUnknownHttpException('server failure', 503),
+    );
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () {
+          if (snapshots++ == 0) throw error;
+
+          return _snapshot(sequence: 4);
+        },
+        events: (_) => const Stream.empty(),
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (duration) {
+        delays.add(duration);
+
+        return Future<void>.value();
+      },
+      random: const _FixedRandom(.5),
+    ).take(1);
+
+    expect(await states.map((state) => state.sequence).toList(), [4]);
+    expect(error.httpStatusCode, 503);
+    expect(snapshots, 2);
+    expect(delays, [const Duration(milliseconds: 500)]);
+  });
+
+  test(
+    'Riverpod does not retry terminal conversation stream failures',
+    () async {
+      const session = WorkspaceSession(_workspace);
+      final stateGateway = _StateGateway();
+      final client = _Client();
+      final conversation = _ConversationEndpoint();
+      when(() => stateGateway.isDisposed()).thenReturn(false);
+      when(() => stateGateway.workspace).thenReturn(_workspace);
+      when(() => stateGateway.client).thenReturn(client);
+      when(() => client.conversation).thenReturn(conversation);
+      when(() => conversation.getConversationSnapshot(any()))
+          .thenThrow(ConversationException(code: .authenticationRequired));
+      final container = ProviderContainer(
+        overrides: [
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, _) async => session,
+          ),
+          cloudWorkspaceStateGatewayProvider.overrideWith(
+            (_, _) async => stateGateway,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final provider = cloudConversationStateProvider((
+        workspaceId: 'local',
+        conversationId: 'conversation-1',
+      ));
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+
+      await expectLater(
+        container.read(provider.future),
+        throwsA(isA<CloudConversationStreamFailure>()),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+
+      verify(() => conversation.getConversationSnapshot(any())).called(1);
+    },
+  );
+
+  test('backs off with jitter and caps retry delay at eight seconds', () async {
+    final delays = <Duration>[];
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () => _snapshot(sequence: 4),
+        events: (_) =>
+            Stream.error(const ServerpodClientNetworkException('offline')),
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (duration) {
+        delays.add(duration);
+
+        return Future<void>.value();
+      },
+      random: const _FixedRandom(.999999),
+    ).take(8);
+
+    await states.drain<void>();
+
+    expect(delays, [
+      const Duration(seconds: 1),
+      const Duration(seconds: 2),
+      const Duration(seconds: 4),
+      const Duration(seconds: 8),
+      const Duration(seconds: 8),
+      const Duration(seconds: 8),
+      const Duration(seconds: 8),
+    ]);
+  });
+
+  test('resets retry progression after stream activity', () async {
+    final delays = <Duration>[];
+    var subscriptions = 0;
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () => _snapshot(sequence: 4),
+        events: (_) => ++subscriptions == 2
+            ? Stream.value(_event(sequence: 4, delta: 'R2'))
+            : const Stream.empty(),
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (duration) {
+        delays.add(duration);
+
+        return Future<void>.value();
+      },
+      random: const _FixedRandom(.5),
+    ).take(4);
+
+    await states.drain<void>();
+
+    expect(delays, [
+      const Duration(milliseconds: 500),
+      const Duration(milliseconds: 500),
+    ]);
+  });
+
+  test('surfaces terminal conversation errors without reconnecting', () async {
+    var subscriptions = 0;
+    var retries = 0;
+    final states = CloudConversationStream.watch(
+      _gateway(
+        snapshots: () => _snapshot(sequence: 4),
+        events: (_) {
+          subscriptions++;
+
+          return Stream.error(
+            ConversationException(code: .authenticationRequired),
+          );
+        },
+      ),
+      (workspaceId: 'local', conversationId: 'conversation-1'),
+      delay: (_) {
+        retries++;
+
+        return Future<void>.value();
+      },
+      random: const _FixedRandom(.5),
+    ).take(2);
+
+    await expectLater(
+      states,
+      emitsInOrder([
+        isA<CloudConversationState>(),
+        emitsError(
+          isA<CloudConversationStreamFailure>().having(
+            (error) => error.localizationKey,
+            'localizationKey',
+            LocaleKeys.cloud_errors_authentication_required,
+          ),
+        ),
+      ]),
+    );
+    expect(subscriptions, 1);
+    expect(retries, 0);
+  });
 
   test('projects A2UI progress without advancing durable sequence', () {
     final state = CloudConversationState.fromSnapshot(_snapshot(sequence: 4));
@@ -241,6 +544,26 @@ void main() {
   });
 }
 
+class const _FixedRandom(final double value) implements Random {
+  @override
+  bool nextBool() => value < 0.5;
+
+  @override
+  double nextDouble() => value;
+
+  @override
+  int nextInt(int max) => (max * value).floor();
+}
+
+class _StateGateway extends Mock implements CloudWorkspaceStateGateway;
+
+class _Client extends Mock implements Client;
+
+class _ConversationEndpoint extends Mock implements EndpointConversation;
+
+class _GetConversationRequestFake extends Fake
+    implements GetConversationRequest;
+
 ConversationStreamEvent _a2uiEvent(String payload) => ConversationStreamEvent(
   workspaceId: 7,
   conversationId: 'conversation-1',
@@ -269,6 +592,14 @@ CloudChatGateway _gateway({
     subscribeConversation: events,
     getConversationSnapshot: (_) async => snapshots(),
   );
+}
+
+CloudAppException _translateCloudAppException(Object error) {
+  try {
+    CloudAppErrors.translateException(error, .conversation);
+  } on CloudAppException catch (translated) {
+    return translated;
+  }
 }
 
 const _workspace = CloudWorkspaceRef(

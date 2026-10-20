@@ -1818,6 +1818,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         method: 'tr',
         keyExpression: 'CloudAppErrors.localizationKey(error)',
       ),
+      DynamicTranslationSite(
+        file: 'features/chats/screens/chat_conversation_screen.dart',
+        method: 'tr',
+        keyExpression: 'errorMessageKey',
+      ),
     ],
     keys: {..._cloudAppErrorKeys},
   ),

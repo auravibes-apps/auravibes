@@ -1,21 +1,119 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_key.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream_failure.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
 
 export 'cloud_conversation_key.dart';
+export 'cloud_conversation_stream_failure.dart';
 
 final Logger _logger = .new('cloud_conversation');
+const _serverErrorStatusThreshold = 500;
 
 final StreamProviderFamily<CloudConversationState, CloudConversationKey>
 cloudConversationStateProvider = StreamProvider.autoDispose
     .family<CloudConversationState, CloudConversationKey>(
       _watchCloudConversation,
+      retry: _retryCloudConversationProvider,
     );
+
+Duration? _retryCloudConversationProvider(int retryCount, Object error) {
+  if (_isTerminalCloudConversationError(error)) return null;
+
+  return ProviderContainer.defaultRetry(retryCount, error);
+}
+
+bool _isTerminalCloudConversationError(Object error) => switch (error) {
+  CloudConversationStreamFailure() => true,
+  CloudAppException(:final code) when code != null => true,
+  CloudAppException(:final httpStatusCode)
+      when httpStatusCode != null &&
+          httpStatusCode < _serverErrorStatusThreshold =>
+    true,
+  ServerpodClientHttpException(:final statusCode)
+      when statusCode < _serverErrorStatusThreshold =>
+    true,
+  _ => false,
+};
+
+bool _isRetryableStreamFailure(Object error) {
+  if (_isTerminalCloudConversationError(error)) return false;
+
+  return switch (error) {
+    MethodStreamException() ||
+    ServerpodClientNetworkException() ||
+    TimeoutException() ||
+    ServerpodClientHttpException() ||
+    CloudAppException() => true,
+    _ => false,
+  };
+}
+
+void _throwIfTerminalStreamFailure(Object error, StackTrace stackTrace) {
+  if (_isRetryableStreamFailure(error)) return;
+
+  Error.throwWithStackTrace(
+    CloudConversationStreamFailure(
+      localizationKey: _terminalStreamErrorLocalizationKey(error),
+    ),
+    stackTrace,
+  );
+}
+
+Future<CloudConversationState> _loadCloudConversationSnapshot(
+  CloudChatGateway chat,
+  CloudConversationKey key,
+) async => CloudConversationState.fromSnapshot(
+  await chat.getConversationSnapshot(key.conversationId),
+);
+
+Duration _retryDelay(int retryCount, Random random) {
+  final exponent = (retryCount - 1).clamp(0, 3);
+  final maximumDelay = Duration(seconds: 1 << exponent);
+
+  return Duration(
+    milliseconds: (random.nextDouble() * maximumDelay.inMilliseconds).round(),
+  );
+}
+
+void _handleSnapshotFailure(
+  CloudConversationKey key,
+  Object error,
+  StackTrace stackTrace,
+) {
+  _logger.warning(
+    'Cloud conversation snapshot failed: '
+    'workspaceId=${key.workspaceId}, '
+    'conversationId=${key.conversationId}.',
+    error,
+    stackTrace,
+  );
+  _throwIfTerminalStreamFailure(error, stackTrace);
+}
+
+void _handleFailedStream(
+  CloudConversationKey key,
+  CloudConversationState state,
+  Object error,
+  StackTrace stackTrace,
+) {
+  _logger.warning(
+    'Cloud conversation stream failed: workspaceId=${key.workspaceId}, '
+    'conversationId=${key.conversationId}, '
+    'sequence=${state.sequence}.',
+    error,
+    stackTrace,
+  );
+  _throwIfTerminalStreamFailure(error, stackTrace);
+}
 
 Stream<CloudConversationState> _watchCloudConversation(
   Ref ref,
@@ -38,7 +136,8 @@ abstract final class CloudConversationStream {
     CloudChatGateway chat,
     CloudConversationKey key, {
     Future<void> Function(Duration duration)? delay,
-  }) => _CloudConversationStreamRunner(chat, key, delay).run();
+    Random? random,
+  }) => _CloudConversationStreamRunner(chat, key, delay, random).run();
 
   static Future<CloudConversationState> _applyEvent(
     CloudChatGateway chat,
@@ -91,11 +190,13 @@ abstract final class CloudConversationStream {
 }
 
 class _CloudConversationStreamRunner {
-  new(this._chat, this._key, this._delay);
+  new(this._chat, this._key, this._delay, Random? random)
+    : _random = random ?? Random();
 
   final CloudChatGateway _chat;
   final CloudConversationKey _key;
   final Future<void> Function(Duration duration)? _delay;
+  final Random _random;
   CloudConversationState? _state;
   var _retryCount = 0;
 
@@ -103,7 +204,7 @@ class _CloudConversationStreamRunner {
       _state ?? (throw StateError('Conversation snapshot not loaded'));
 
   Stream<CloudConversationState> run() async* {
-    _state = await _loadSnapshot();
+    _state = await _loadInitialSnapshot();
     _logInitialSnapshot();
     yield _currentState;
 
@@ -113,21 +214,39 @@ class _CloudConversationStreamRunner {
     }
   }
 
-  Future<CloudConversationState> _recoverAfterSubscription() async {
-    _retryCount++;
-    final state = await _loadSnapshot();
-    _state = state.preserveTransientA2uiFrom(_currentState);
-    await (_delay ?? Future<void>.delayed)(
-      .new(seconds: _retryCount.clamp(1, 8)),
-    );
-
-    return _currentState;
+  Future<CloudConversationState> _loadInitialSnapshot() async {
+    while (true) {
+      try {
+        return await _loadCloudConversationSnapshot(_chat, _key);
+      } on Object catch (error, stackTrace) {
+        _handleSnapshotFailure(_key, error, stackTrace);
+        await _waitBeforeRetry();
+      }
+    }
   }
 
-  Future<CloudConversationState> _loadSnapshot() async =>
-      CloudConversationState.fromSnapshot(
-        await _chat.getConversationSnapshot(_key.conversationId),
-      );
+  Future<CloudConversationState> _recoverAfterSubscription() async {
+    while (true) {
+      CloudConversationState state;
+      try {
+        state = await _loadCloudConversationSnapshot(_chat, _key);
+      } on Object catch (error, stackTrace) {
+        _handleSnapshotFailure(_key, error, stackTrace);
+        await _waitBeforeRetry();
+        continue;
+      }
+
+      _state = state.preserveTransientA2uiFrom(_currentState);
+      await _waitBeforeRetry();
+
+      return _currentState;
+    }
+  }
+
+  Future<void> _waitBeforeRetry() async {
+    _retryCount++;
+    await (_delay ?? Future<void>.delayed)(_retryDelay(_retryCount, _random));
+  }
 
   Stream<CloudConversationState> _subscribe() async* {
     try {
@@ -146,7 +265,7 @@ class _CloudConversationStreamRunner {
       }
       _logClosedStream();
     } on Object catch (error, stackTrace) {
-      _logFailedStream(error, stackTrace);
+      _handleFailedStream(_key, _currentState, error, stackTrace);
     }
   }
 
@@ -167,14 +286,15 @@ class _CloudConversationStreamRunner {
       'sequence=${_currentState.sequence}.',
     );
   }
+}
 
-  void _logFailedStream(Object error, StackTrace stackTrace) {
-    _logger.warning(
-      'Cloud conversation stream failed: workspaceId=${_key.workspaceId}, '
-      'conversationId=${_key.conversationId}, '
-      'sequence=${_currentState.sequence}.',
-      error,
-      stackTrace,
-    );
+String _terminalStreamErrorLocalizationKey(Object error) {
+  try {
+    CloudAppErrors.translateException(error, .conversation);
+  } on Object catch (translatedError) {
+    return switch (translatedError) {
+      CloudAppException(:final localizationKey) => localizationKey,
+      _ => CloudAppErrors.localizationKey(error),
+    };
   }
 }
