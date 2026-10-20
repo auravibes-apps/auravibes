@@ -27,23 +27,33 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - Required CI gates live in `.github/workflows/ci.yml`.
 - Canonical architecture docs live under `doc/architecture/`.
 
+## Product context
+
+- For product ideation, feature discovery, or user-facing UX changes, read [target users](docs/product/target-users.md) for intended users and product direction.
+
 ## Commands
 
 | Task                    | Command                                                                      |
 | ----------------------- | ---------------------------------------------------------------------------- |
-| Workspace bootstrap     | `fvm dart run melos bootstrap`                                               |
-| App/UI focused test     | `fvm flutter test test/path/to/file_test.dart --no-pub` from target package  |
-| App fatal analyzer      | `fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
-| Engine focused test     | `fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
-| Validation              | Prefix `fvm dart run melos run`: `validate:quick` (quick), `validate` (full), `validate:ci` (Melos CI subset with coverage) |
-| Asset/clean scripts      | `fvm dart run melos run clean`, `fvm dart run melos run generate:flavors`, `fvm dart run melos run generate:icons` |
-| Code generation         | Prefix `fvm dart run melos run`: `generate`, `generate:localization`, `generate:serverpod` |
+| Worktree setup          | `fvm use "$(python3 -c 'import json; print(json.load(open(".fvmrc"))["flutter"])')" --skip-pub-get`, then `python3 tool/validation_lease.py -- fvm dart run melos bootstrap` |
+| Workspace bootstrap     | `python3 tool/validation_lease.py -- fvm dart run melos bootstrap` |
+| App/UI focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm flutter test test/path/to/file_test.dart --no-pub` from target package |
+| App fatal analyzer      | `python3 tool/validation_lease.py -- fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
+| Engine focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
+| Validation              | `python3 tool/validation_lease.py -- fvm dart run melos run validate:quick` (same form for `validate` and `validate:ci`) |
+| Asset/clean scripts     | `python3 tool/validation_lease.py -- fvm dart run melos run generate:icons` (same form for `clean` and `generate:flavors`) |
+| Code generation         | `python3 tool/validation_lease.py -- fvm dart run melos run generate` (same form for `generate:localization` and `generate:serverpod`) |
 
 - Script definitions and package filters live in root `pubspec.yaml`.
-- Wrap local test, analyzer, code generation, bootstrap, and workspace validation commands with:
-  `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- <command>`.
+- For a new checkout or worktree, use the `fvm use` command above, then bootstrap before running `--no-pub` checks.
+- Run local test, analyzer, code generation, bootstrap, and workspace validation commands through `tool/validation_lease.py`. From a package directory, use its absolute path via `$(git rev-parse --show-toplevel)`.
 - The lease coordinates linked worktrees that share this repository's Git common directory. Commands started outside the wrapper bypass it; CI runners remain independent.
 - Temp-volume stats are advisory; quotas and container limits may still reject writes.
+
+## Git context
+
+- For routine context, use `git status --short --branch` and `git log -1 --oneline --decorate`; inspect named refs only when the task needs them.
+- Avoid `git branch -avv` for routine context; linked worktrees and remote refs can produce large output.
 
 ## DCL and lint compliance
 
@@ -99,7 +109,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - PR titles use Conventional Commits. Keep each PR to one coherent change with its related tests; describe purpose, behavior, validation, and requested reviewer focus.
 - Use each contributor's configured tools and workflow for PR delivery and review. Do not install tools or prepare a full local environment solely for these tasks.
 - If a requested Codex review rejects its configured model as unsupported, retry once with a model supported by the current host. Report a blocker if none is available.
-- Before pushing code changes for review, run `validate:pr` through the validation lease. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
+- Before pushing code changes for review, run `python3 tool/validation_lease.py -- fvm dart run melos run validate:pr`. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
 
 ## Agent skills
 

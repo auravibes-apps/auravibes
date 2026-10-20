@@ -58,6 +58,7 @@ typedef _ToolCallPatchRequest = ({
   ToolCallResultStatus resultStatus,
   String? responseRaw,
   String? responseContextRaw,
+  Map<String, Object?>? appData,
   List<agent.AgentToolResultMedia> media,
   bool outputTruncated,
   int? originalResponseBytes,
@@ -119,23 +120,18 @@ class const AppApproveToolCallDataProvider({
   @override
   Future<void> updateToolCallResult(
     agent.AgentToolCallResultUpdateRequest request,
-  ) => _patchToolCall(
-    messageRepository,
-    onToolCallChanged,
-    persistToolCallResultsUsecase,
-    (
-      messageId: request.messageId,
-      toolCallId: request.toolCallId,
-      resultStatus: AgentToolStatusMapper.toResultStatus(request.resultStatus),
-      responseRaw: request.responseRaw,
-      responseContextRaw: request.responseContextRaw,
-      media: request.media,
-      outputTruncated: request.outputTruncated,
-      originalResponseBytes: request.originalResponseBytes,
-      fullOutputForContext: request.fullOutputForContext,
+  ) async {
+    final appData = runResolvedToolUsecase.takeMcpAppResultData(
       conversationId: request.conversationId,
-    ),
-  );
+      toolCallId: request.toolCallId,
+    );
+    await _patchToolCall(
+      messageRepository,
+      onToolCallChanged,
+      persistToolCallResultsUsecase,
+      _toolCallPatchRequest(request, appData),
+    );
+  }
 
   @override
   void logToolExecutionError(_ToolExecutionErrorRequest request) =>
@@ -223,6 +219,7 @@ class const AppApproveToolCallDataProvider({
         resultStatus: .running,
         responseRaw: null,
         responseContextRaw: null,
+        appData: null,
         media: const [],
         outputTruncated: false,
         originalResponseBytes: null,
@@ -244,6 +241,26 @@ class const AppApproveToolCallDataProvider({
     return agentCancellationRuntime.isCancellationRequested(conversationId);
   }
 }
+
+_ToolCallPatchRequest _toolCallPatchRequest(
+  agent.AgentToolCallResultUpdateRequest request,
+  Map<String, Object?>? appData,
+) => (
+  messageId: request.messageId,
+  toolCallId: request.toolCallId,
+  resultStatus: AgentToolStatusMapper.toResultStatus(request.resultStatus),
+  responseRaw: request.responseRaw,
+  responseContextRaw: request.responseContextRaw,
+  appData: _successfulToolCall(request) ? appData : null,
+  media: request.media,
+  outputTruncated: request.outputTruncated,
+  originalResponseBytes: request.originalResponseBytes,
+  fullOutputForContext: request.fullOutputForContext,
+  conversationId: request.conversationId,
+);
+
+bool _successfulToolCall(agent.AgentToolCallResultUpdateRequest request) =>
+    request.resultStatus == .success;
 
 Future<agent.AgentApprovableToolCall?> _loadToolCall(
   MessageRepository messageRepository,
@@ -526,6 +543,7 @@ MessageToolCallEntity _applyToolCallPatch(
 ) => toolCall.copyWith(
   responseRaw: request.responseRaw,
   responseContextRaw: request.responseContextRaw,
+  appData: request.appData,
   outputTruncated: request.outputTruncated,
   originalResponseBytes: request.originalResponseBytes,
   fullOutputForContext: request.fullOutputForContext,

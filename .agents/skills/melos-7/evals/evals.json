@@ -42,6 +42,12 @@
       "prompt": "Run the existing `fvm dart run melos run generate:icons` script from the repository root.",
       "expected_output": "Runs the documented script from root without loading the full Melos skill or changing configuration.",
       "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "I created a fresh isolated worktree. `fvm flutter test --no-pub` fails because the Flutter SDK link is missing. How do I prepare this checkout without racing another worktree's bootstrap?",
+      "expected_output": "Reads the pinned Flutter version from `.fvmrc`, runs `fvm use <version> --skip-pub-get`, then runs `fvm dart run melos bootstrap` through `tool/validation_lease.py` from the repository root. Does not run Pub resolution twice or claim bootstrap is redundant.",
+      "files": []
     }
   ]
 }

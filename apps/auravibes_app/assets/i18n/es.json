@@ -1347,6 +1347,13 @@
     "missing_fields": "Completa todos los campos obligatorios.",
     "unsupported_option": "Esta opción no está disponible en este espacio de trabajo."
   },
+  "mcp_apps": {
+    "loading": "Cargando resultado interactivo…",
+    "unavailable": "El resultado interactivo no está disponible. El resultado de texto sigue arriba.",
+    "retry": "Intentar de nuevo",
+    "tool_approval_title": "¿Permitir llamada de herramienta?",
+    "tool_approval_message": "El resultado interactivo quiere ejecutar \"{tool}\". ¿Permitir una vez?"
+  },
   "mcp_modal": {
     "title": "Agregar Servidor MCP",
     "add_mcp_tooltip": "Agregar Servidor MCP",
@@ -1428,7 +1435,7 @@
     "verification_success": "Conexión verificada · {} herramientas encontradas",
     "verification_required": "Verifica la conexión antes de guardar.",
     "verification_expired": "La verificación expiró. Verifica la conexión de nuevo.",
-    "legacy_sse_unavailable": "El endpoint rechazó HTTP Streamable. Puede requerir SSE heredado, que la aplicación web no admite. Conéctate desde la aplicación nativa o configura el servidor para usar HTTP Streamable."
+    "legacy_sse_unavailable": "SSE heredado falló en el navegador. Revisa la configuración CORS del servidor, incluido el origen de la aplicación y los encabezados Authorization/Content-Type."
   },
   "mcp_edit": {
     "secret_saved": "Guardado de forma segura",

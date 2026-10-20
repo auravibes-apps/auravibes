@@ -27,6 +27,7 @@ import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_u
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
@@ -329,6 +330,116 @@ void main() {
     expect(mcpCalls, [(serverId: 'server-1', toolIdentifier: 'remote-tool')]);
   });
 
+  test('keeps MCP App result data separate from model output', () async {
+    Map<String, Object?> appData(String text) => {
+      'content': [
+        {'type': 'text', 'text': text},
+      ],
+      '_meta': {
+        'ui': {'resourceUri': 'ui://tool/view'},
+      },
+    };
+    final service = ResolvedToolService(
+      agentCancellationRuntime: .new(),
+      mcpToolCaller:
+          ({
+            required mcpServerId,
+            required toolIdentifier,
+            required arguments,
+            onElicitation,
+          }) async => McpToolCallerResult(
+            modelText: 'model result',
+            appData: appData(arguments['text'] as String),
+          ),
+    );
+
+    final firstResult = await service(
+      conversationId: 'conversation-1',
+      tool: ResolvedTool.mcp(
+        tableId: 'tool-1',
+        toolIdentifier: 'remote-tool',
+        mcp: (
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+          outputSchemaJson: null,
+        ),
+      ),
+      arguments: const {'text': 'first conversation'},
+      toolCallId: 'tool-call-1',
+    );
+    final secondResult = await service(
+      conversationId: 'conversation-2',
+      tool: ResolvedTool.mcp(
+        tableId: 'tool-1',
+        toolIdentifier: 'remote-tool',
+        mcp: (
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+          outputSchemaJson: null,
+        ),
+      ),
+      arguments: const {'text': 'second conversation'},
+      toolCallId: 'tool-call-1',
+    );
+
+    expect(firstResult, 'model result');
+    expect(secondResult, 'model result');
+    expect(
+      service.takeMcpAppResultData(
+        conversationId: 'conversation-1',
+        toolCallId: 'tool-call-1',
+      ),
+      appData('first conversation'),
+    );
+    expect(
+      service.takeMcpAppResultData(
+        conversationId: 'conversation-2',
+        toolCallId: 'tool-call-1',
+      ),
+      appData('second conversation'),
+    );
+  });
+
+  test('does not retain empty MCP App result data', () async {
+    final service = ResolvedToolService(
+      agentCancellationRuntime: .new(),
+      mcpToolCaller:
+          ({
+            required mcpServerId,
+            required toolIdentifier,
+            required arguments,
+            onElicitation,
+          }) async => const McpToolCallerResult(
+            modelText: 'ordinary result',
+            appData: {},
+          ),
+    );
+
+    final result = await service(
+      conversationId: 'conversation-1',
+      tool: ResolvedTool.mcp(
+        tableId: 'tool-1',
+        toolIdentifier: 'remote-tool',
+        mcp: (
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+          outputSchemaJson: null,
+        ),
+      ),
+      arguments: const {},
+      toolCallId: 'tool-call-1',
+    );
+
+    expect(result, 'ordinary result');
+    expect(
+      service.takeMcpAppResultData(
+        conversationId: 'conversation-1',
+        toolCallId: 'tool-call-1',
+      ),
+      isNull,
+    );
+  });
+
   test('routes MCP elicitation to the requesting conversation', () async {
     String? requestedConversationId;
     McpElicitationRequest? requestedElicitation;
@@ -397,7 +508,7 @@ void main() {
     expect(
       () => ResolvedToolService.cloud()(
         conversationId: 'conversation-1',
-        tool: ResolvedTool.mcp(
+        tool: .mcp(
           tableId: 'tool-1',
           toolIdentifier: 'remote-tool',
           mcp: (
