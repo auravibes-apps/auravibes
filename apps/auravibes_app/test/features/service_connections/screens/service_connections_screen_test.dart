@@ -169,10 +169,9 @@ void main() {
     expect(find.textContaining('Authentication expired'), findsOneWidget);
   });
 
-  testWidgets('tests MCP connection and copies a safe diagnostic report', (
-    tester,
-  ) async {
+  Future<void> renderRedactedMcpDiagnostics(WidgetTester tester) async {
     _addWidgetTearDown(tester);
+    await tester.binding.setSurfaceSize(const Size(960, 1200));
     PackageInfo.setMockInitialValues(
       appName: 'AuraVibes',
       packageName: 'me.auravibes.app',
@@ -206,8 +205,8 @@ void main() {
         toolCount: 0,
         durationMilliseconds: 0,
         errorDetails:
-            'https://mcp.example.com/mcp?api_key=secret '
-            'Authorization: Bearer secret',
+            'https://mcp.example.test/mcp?api_key=fixture-secret '
+            'Authorization: Bearer fixture-secret',
       );
     });
     final container = _syncTestContainer(
@@ -233,6 +232,10 @@ void main() {
     expect(find.textContaining('Tested '), findsOneWidget);
     await tester.tap(find.text('View details'));
     final _ = await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/service_connection_diagnostics.png'),
+    );
     await tester.tap(find.text('Copy'));
     final _ = await tester.pumpAndSettle();
 
@@ -240,10 +243,16 @@ void main() {
     expect(copied.single, contains('Status category: network'));
     expect(copied.single, contains('Attempt time: 2026-09-27T12:30:00.000Z'));
     expect(copied.single, contains('App version: 0.0.4'));
-    expect(copied.single, isNot(contains('mcp.example.com')));
+    expect(copied.single, isNot(contains('mcp.example.test')));
     expect(copied.single, isNot(contains('secret')));
     verify(() => testUsecase('Failed MCP-server')).called(1);
-  });
+  }
+
+  testWidgets(
+    'renders redacted MCP diagnostic output from fixtures',
+    renderRedactedMcpDiagnostics,
+    tags: ['golden'],
+  );
 
   testWidgets('localizes authentication recovery and historic diagnostics', (
     tester,
@@ -1202,6 +1211,55 @@ void main() {
 
     await _unmountScreen(tester);
   });
+
+  for (final width in [420.0, 960.0]) {
+    final layout = width == 420.0 ? 'compact' : 'wide';
+    Future<void> renderConnectionStates(WidgetTester tester) async {
+      _addWidgetTearDown(tester);
+      await tester.binding.setSurfaceSize(.new(width, 1000));
+      final container = _syncTestContainer(
+        .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+        connections: [
+          _mcpConnection(
+            name: 'Notion',
+            displayStatus: .needsReauth,
+            serviceName: 'mcp.notion.test',
+            canReconnect: true,
+          ),
+          _mcpConnection(
+            name: 'Linear',
+            displayStatus: .connected,
+            serviceName: 'mcp.linear.test',
+            transport: const McpTransportTypeStreamableHttp(),
+          ),
+          _mcpConnection(
+            name: 'Sentry',
+            displayStatus: .failed,
+            serviceName: 'mcp.sentry.test',
+            canReconnect: true,
+            lastAuthError: 'Fixture connection failed',
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await _pumpScreen(tester, container, _syncWorkspaceId);
+
+      await expectLater(
+        find.byType(ServiceConnectionsScreen),
+        matchesGoldenFile('goldens/service_connections_$layout.png'),
+      );
+      expect(find.text('Notion'), findsOneWidget);
+      expect(find.text('Linear'), findsOneWidget);
+      expect(find.text('Sentry'), findsOneWidget);
+    }
+
+    testWidgets(
+      'renders $layout connection and authentication states',
+      renderConnectionStates,
+      tags: ['golden'],
+    );
+  }
 }
 
 ProviderContainer _syncTestContainer(

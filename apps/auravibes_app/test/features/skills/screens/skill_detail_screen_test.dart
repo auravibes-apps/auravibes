@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
@@ -78,7 +80,9 @@ void main() {
     fail('Expected finder to appear: $finder');
   }
 
-  testWidgets('renders skill detail credential states', (tester) async {
+  Future<void> renderSkillCredentialStates(WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const ui.Size(960, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final appSkillDatabase = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
@@ -139,7 +143,8 @@ void main() {
             kind: SkillKind.template,
             title: 'TheCatAPI',
             description: 'Fetch cat images.',
-            content: 'Use TheCatAPI.',
+            content:
+                '# Cat images\n\nUse **TheCatAPI** to fetch sample images.',
             credentialDefinitionId: definition.id,
           ),
         );
@@ -152,7 +157,7 @@ void main() {
           .new(
             credentialDefinitionId: definition.id,
             name: 'TheCatAPI Key',
-            attributes: const {'apiKey': 'secret-value'},
+            attributes: const {'apiKey': 'fixture-token'},
           ),
         );
     final optionalDefinition =
@@ -232,10 +237,18 @@ void main() {
     final _ = await tester.pumpAndSettle();
     final _ = await tester.pump();
     final _ = await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(SkillDetailScreen),
+      matchesGoldenFile('goldens/skill_detail_user_markdown.png'),
+    );
 
     await pumpUntilFound(tester, find.byType(Scrollable));
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
     final _ = await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(SkillDetailScreen),
+      matchesGoldenFile('goldens/skill_detail_user_configured_credential.png'),
+    );
 
     expect(find.text('TheCatAPI Key'), findsOneWidget);
     expect(find.text('Credential type not found'), findsNothing);
@@ -273,7 +286,13 @@ void main() {
     );
     await tester.pumpWidget(const SizedBox.shrink());
     final _ = await tester.pumpAndSettle();
-  });
+  }
+
+  testWidgets(
+    'renders skill markdown and credential states',
+    renderSkillCredentialStates,
+    tags: ['golden'],
+  );
 }
 
 class _FakeSecretKeyManager extends SecretKeyManager {

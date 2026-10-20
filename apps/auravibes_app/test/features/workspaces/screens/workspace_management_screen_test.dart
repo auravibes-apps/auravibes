@@ -2360,5 +2360,89 @@ void main() {
       expect(await repository.getWorkspaceById(failedThree.id), isNull);
       expect(find.byType(AlertDialog), findsNothing);
     });
+
+    testWidgets(
+      'captures workspace layout, bulk selection, and sign-in status goldens',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(960, 1200));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final active = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Design system', type: .local),
+        );
+        final planning = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Planning', type: .local),
+        );
+        final research = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Research', type: .local),
+        );
+        final viewNotifier = ValueNotifier(false);
+        addTearDown(viewNotifier.dispose);
+
+        await _pumpAndInit(
+          tester,
+          _buildScreen(
+            workspaceId: active.id,
+            repo: repository,
+            viewNotifier: viewNotifier,
+            accounts: const [
+              CloudAccountSession(
+                serverUrl: 'http://localhost:8080',
+                userId: 'account-1',
+                email: 'dev@example.com',
+              ),
+            ],
+            cloudAuthenticationRequired: true,
+          ),
+        );
+        final _ = await tester.pumpAndSettle();
+
+        await expectLater(
+          find.byType(WorkspaceManagementScreen),
+          matchesGoldenFile('goldens/workspace_management.png'),
+        );
+
+        final selectAll = find.byKey(const ValueKey('workspace-select-all'));
+        await tester.tap(selectAll);
+        final _ = await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<AuraCheckbox>(
+                find.byKey(ValueKey('workspace-selection-${planning.id}')),
+              )
+              .value,
+          isTrue,
+        );
+        expect(
+          tester
+              .widget<AuraCheckbox>(
+                find.byKey(ValueKey('workspace-selection-${research.id}')),
+              )
+              .value,
+          isTrue,
+        );
+        await expectLater(
+          find.byType(WorkspaceManagementScreen),
+          matchesGoldenFile('goldens/workspace_management_bulk_selection.png'),
+        );
+
+        await tester.tap(selectAll);
+        final _ = await tester.pumpAndSettle();
+        await tester.binding.setSurfaceSize(const Size(420, 900));
+        final _ = await tester.pumpAndSettle();
+        await expectLater(
+          find.byType(WorkspaceManagementScreen),
+          matchesGoldenFile('goldens/workspace_management_compact.png'),
+        );
+
+        viewNotifier.value = true;
+        final _ = await tester.pumpAndSettle();
+        expect(find.text('Needs sign in'), findsOneWidget);
+        await expectLater(
+          find.byType(WorkspaceManagementScreen),
+          matchesGoldenFile('goldens/workspace_management_account_status.png'),
+        );
+      },
+      tags: ['golden'],
+    );
   });
 }
