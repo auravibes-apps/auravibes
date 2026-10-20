@@ -67,7 +67,7 @@ final class QuickSwitcherEntriesProvider
 }
 
 String _$quickSwitcherEntriesHash() =>
-    r'e1ad7a46a6b8542370f6245319f5cc957acbcac2';
+    r'e12171ce16f2beeea1b253d4e3aee494304cb0f4';
 
 final class QuickSwitcherEntriesFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<QuickSwitcherEntries>, String> {
