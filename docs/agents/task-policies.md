@@ -29,6 +29,7 @@ Read only section that matches current work. Root `AGENTS.md` lists each trigger
 | Scope | Local validation |
 | --- | --- |
 | Focused file or bug | Run focused test or analyzer. Format changed Dart when relevant. |
+| App dependency or direct import change | Run `fvm dart run melos run validate:app` for app analysis and dependency validation. |
 | Shared app logic or broad refactor | Run focused tests and `validate:quick` once after stabilization. |
 | CI reproduction or explicit request | Run the requested CI command. |
 | Documentation or skill-only | Run relevant documentation checks and `git diff --check`. Do not run Dart suites. |
