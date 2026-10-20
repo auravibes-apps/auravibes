@@ -56,6 +56,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/reo
     as _ilmuzuyl;
 import 'package:auravibes_server/src/generated/features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _if7qtxue;
+import 'package:auravibes_server/src/generated/features/conversations/models/search_conversation_messages_request.dart'
+    as _i71vvsjf;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
     as _ijasfsbp;
 import 'package:auravibes_server/src/generated/features/conversations/models/stop_background_work_request.dart'
@@ -721,6 +723,26 @@ class Endpoints extends _is.EndpointDispatch {
               ) async =>
                   (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
                       .listMessages(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'searchMessages': _is.MethodConnector(
+          name: 'searchMessages',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i71vvsjf.SearchConversationMessagesRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .searchMessages(
                         session,
                         params['request'],
                       ),

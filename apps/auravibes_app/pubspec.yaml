@@ -89,8 +89,9 @@ dependencies:
 dev_dependencies:
   # Code generation for JSON serialization
   build_runner: ^2.16.1
-  # Code generation for Drift
+  # Device preview and screenshot-test helpers.
   device_preview: ^3.0.0
+  # Code generation for Drift
   drift_dev: ^2.35.1
   flutter_flavorizr: ^2.5.0
   flutter_launcher_icons: ^0.14.4

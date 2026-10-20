@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:path/path.dart' as p;
 
 const _defaultServerUrl = 'http://localhost:8080/';
+const _startupProgressInterval = Duration(seconds: 30);
 final _vmServiceUriPattern = RegExp(r'ws://[^\s]+/ws');
 
 Future<void> main(List<String> args) async {
@@ -21,6 +22,40 @@ Future<void> main(List<String> args) async {
 /// Extracts the VM service URI emitted by `flutter run`.
 String? extractVmServiceUri(String output) {
   return _vmServiceUriPattern.firstMatch(output)?.group(0);
+}
+
+/// Detects a launch phase from Flutter or Xcode output.
+String? detectMarionetteLaunchPhase(String output) {
+  final line = output.trim().toLowerCase();
+  if (line.contains('resolving package graph') ||
+      line.contains('resolving dependencies') ||
+      line.contains('fetching from')) {
+    return 'resolving dependencies';
+  }
+  if (line.contains('launching lib/main.dart')) return 'preparing app';
+  if (line.contains('xcode build done')) return 'starting app';
+  if (line.contains('running xcode build') ||
+      line.contains('building macos application') ||
+      line.contains('xcodebuild')) {
+    return 'building app';
+  }
+  if (line.contains('syncing files to device')) return 'syncing app';
+  if (line.contains('dart vm service')) return 'starting VM service';
+
+  return null;
+}
+
+/// Formats elapsed launch time for progress reports.
+String formatMarionetteElapsed(Duration elapsed) {
+  final hours = elapsed.inHours;
+  final minutes = elapsed.inMinutes.remainder(60);
+  final seconds = elapsed.inSeconds.remainder(60);
+  if (hours > 0) {
+    return '${hours}h ${minutes}m ${seconds}s';
+  }
+  if (minutes > 0) return '${minutes}m ${seconds}s';
+
+  return '${seconds}s';
 }
 
 Future<void> _runMarionetteApp(_RunOptions options) async {
@@ -65,6 +100,44 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
 
   final startedAt = DateTime.now().toUtc().toIso8601String();
   String? vmServiceUri;
+  final startupClock = Stopwatch()..start();
+  var launchPhase = 'starting Flutter';
+  var lastOutputAt = Duration.zero;
+  var stdoutProgressBuffer = '';
+  var stderrProgressBuffer = '';
+
+  void writeLaunchProgress() {
+    final elapsed = startupClock.elapsed;
+    stderr.writeln(
+      'Marionette launch phase=$launchPhase '
+      'elapsed=${formatMarionetteElapsed(elapsed)} '
+      'output-idle=${formatMarionetteElapsed(elapsed - lastOutputAt)}',
+    );
+  }
+
+  void recordLaunchPhase(String line) {
+    final phase = detectMarionetteLaunchPhase(line);
+    if (phase == null || phase == launchPhase) return;
+
+    launchPhase = phase;
+    writeLaunchProgress();
+  }
+
+  void recordOutput(String chunk, {required bool fromStderr}) {
+    lastOutputAt = startupClock.elapsed;
+    final currentBuffer = fromStderr
+        ? stderrProgressBuffer
+        : stdoutProgressBuffer;
+    final lines = '$currentBuffer$chunk'.split(RegExp(r'[\r\n]+'));
+    final trailingLine = lines.removeLast();
+    if (fromStderr) {
+      stderrProgressBuffer = trailingLine;
+    } else {
+      stdoutProgressBuffer = trailingLine;
+    }
+    lines.forEach(recordLaunchPhase);
+  }
+
   writeMarionetteManifest(
     manifestFile: manifestFile,
     instanceId: instanceId,
@@ -77,11 +150,18 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
     ..writeln('AURAVIBES_MARIONETTE_INSTANCE_ID=$instanceId')
     ..writeln('AURAVIBES_MARIONETTE_MANIFEST=${manifestFile.path}');
 
+  writeLaunchProgress();
+  final startupProgressTimer = Timer.periodic(_startupProgressInterval, (_) {
+    if (vmServiceUri != null) return;
+    writeLaunchProgress();
+  });
+
   var outputBuffer = '';
   final stdoutSubscription = process.stdout.transform(utf8.decoder).listen((
     chunk,
   ) {
     stdout.write(chunk);
+    recordOutput(chunk, fromStderr: false);
     outputBuffer = '$outputBuffer$chunk';
     if (outputBuffer.length > 8192) {
       final codePoints = outputBuffer.runes.toList(growable: false);
@@ -94,6 +174,9 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
     if (uri == null || uri == vmServiceUri) return;
 
     vmServiceUri = uri;
+    startupProgressTimer.cancel();
+    launchPhase = 'VM service ready';
+    writeLaunchProgress();
     writeMarionetteManifest(
       manifestFile: manifestFile,
       instanceId: instanceId,
@@ -103,9 +186,12 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
     );
     stdout.writeln('AURAVIBES_MARIONETTE_VM_SERVICE_URI=$uri');
   });
-  final stderrSubscription = process.stderr
-      .transform(utf8.decoder)
-      .listen(stderr.write);
+  final stderrSubscription = process.stderr.transform(utf8.decoder).listen((
+    chunk,
+  ) {
+    stderr.write(chunk);
+    recordOutput(chunk, fromStderr: true);
+  });
   final sigintSubscription = ProcessSignal.sigint.watch().listen((_) {
     if (!process.kill(.sigint)) return;
   });
@@ -121,6 +207,7 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
     await stderrSubscription.cancel();
     await sigintSubscription.cancel();
     await sigtermSubscription.cancel();
+    startupProgressTimer.cancel();
     if (manifestFile.existsSync()) manifestFile.deleteSync();
   }
 }

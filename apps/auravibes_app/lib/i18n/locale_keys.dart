@@ -511,6 +511,40 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.bulk_pin_failures';
   static const chats_screens_chats_list_bulk_delete_failures =
       'chats_screens.chats_list.bulk_delete_failures';
+  static const chats_screens_conversation_search_title =
+      'chats_screens.conversation_search.title';
+  static const chats_screens_conversation_search_entry =
+      'chats_screens.conversation_search.entry';
+  static const chats_screens_conversation_search_query =
+      'chats_screens.conversation_search.query';
+  static const chats_screens_conversation_search_current_workspace =
+      'chats_screens.conversation_search.current_workspace';
+  static const chats_screens_conversation_search_all_workspaces =
+      'chats_screens.conversation_search.all_workspaces';
+  static const chats_screens_conversation_search_search =
+      'chats_screens.conversation_search.search';
+  static const chats_screens_conversation_search_loading =
+      'chats_screens.conversation_search.loading';
+  static const chats_screens_conversation_search_empty =
+      'chats_screens.conversation_search.empty';
+  static const chats_screens_conversation_search_error =
+      'chats_screens.conversation_search.error';
+  static const chats_screens_conversation_search_load_more =
+      'chats_screens.conversation_search.load_more';
+  static const chats_screens_conversation_search_user_role =
+      'chats_screens.conversation_search.user_role';
+  static const chats_screens_conversation_search_assistant_role =
+      'chats_screens.conversation_search.assistant_role';
+  static const chats_screens_conversation_search_untitled_conversation =
+      'chats_screens.conversation_search.untitled_conversation';
+  static const chats_screens_conversation_search_highlight =
+      'chats_screens.conversation_search.highlight';
+  static const chats_screens_conversation_search_target_not_found =
+      'chats_screens.conversation_search.target_not_found';
+  static const chats_screens_conversation_search_target_load_error =
+      'chats_screens.conversation_search.target_load_error';
+  static const chats_screens_conversation_search_target_retry =
+      'chats_screens.conversation_search.target_retry';
   static const chats_screens_new_chat_starting =
       'chats_screens.new_chat.starting';
   static const chats_screens_new_chat_start_error =
@@ -653,6 +687,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.send_error';
   static const chats_screens_chat_conversation_continue_agent =
       'chats_screens.chat_conversation.continue_agent';
+  static const chats_screens_chat_conversation_iteration_limit_reached =
+      'chats_screens.chat_conversation.iteration_limit_reached';
   static const chats_screens_chat_conversation_retry_message =
       'chats_screens.chat_conversation.retry_message';
   static const chats_screens_chat_conversation_background_work_running_task =
@@ -787,6 +823,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.sub_agent_status_awaiting_approval';
   static const chats_screens_chat_conversation_sub_agent_status_completed =
       'chats_screens.chat_conversation.sub_agent_status_completed';
+  static const chats_screens_chat_conversation_sub_agent_status_partial =
+      'chats_screens.chat_conversation.sub_agent_status_partial';
   static const chats_screens_chat_conversation_sub_agent_status_failed =
       'chats_screens.chat_conversation.sub_agent_status_failed';
   static const chats_screens_chat_conversation_sub_agent_status_running =
@@ -2522,4 +2560,28 @@ abstract class LocaleKeys {
   static const credential_usage_skill = 'credential_usage.skill';
   static const credential_usage_tool = 'credential_usage.tool';
   static const credential_usage_disabled = 'credential_usage.disabled';
+  static const mcp_elicitation_form_title = 'mcp.elicitation.form_title';
+  static const mcp_elicitation_url_title = 'mcp.elicitation.url_title';
+  static const mcp_elicitation_unsupported_title =
+      'mcp.elicitation.unsupported_title';
+  static const mcp_elicitation_unsupported_mode =
+      'mcp.elicitation.unsupported_mode';
+  static const mcp_elicitation_unsupported_fields =
+      'mcp.elicitation.unsupported_fields';
+  static const mcp_elicitation_url_host = 'mcp.elicitation.url_host';
+  static const mcp_elicitation_url_punycode_warning =
+      'mcp.elicitation.url_punycode_warning';
+  static const mcp_elicitation_url_ascii_host =
+      'mcp.elicitation.url_ascii_host';
+  static const mcp_elicitation_url_ascii_host_error =
+      'mcp.elicitation.url_ascii_host_error';
+  static const mcp_elicitation_url_review = 'mcp.elicitation.url_review';
+  static const mcp_elicitation_invalid_url = 'mcp.elicitation.invalid_url';
+  static const mcp_elicitation_select_option = 'mcp.elicitation.select_option';
+  static const mcp_elicitation_submit = 'mcp.elicitation.submit';
+  static const mcp_elicitation_open_url = 'mcp.elicitation.open_url';
+  static const mcp_elicitation_decline = 'mcp.elicitation.decline';
+  static const mcp_elicitation_cancel = 'mcp.elicitation.cancel';
+  static const mcp_elicitation_invalid = 'mcp.elicitation.invalid';
+  static const mcp_elicitation_open_error = 'mcp.elicitation.open_error';
 }

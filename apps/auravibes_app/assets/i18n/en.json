@@ -373,6 +373,25 @@
       "bulk_pin_failures": "Could not update pin for: {}",
       "bulk_delete_failures": "Could not delete: {}"
     },
+    "conversation_search": {
+      "title": "Search conversations",
+      "entry": "Search messages",
+      "query": "Search messages",
+      "current_workspace": "Current workspace",
+      "all_workspaces": "All workspaces",
+      "search": "Search",
+      "loading": "Searching messages…",
+      "empty": "No messages found",
+      "error": "Could not search messages. Try again.",
+      "load_more": "Load more",
+      "user_role": "You",
+      "assistant_role": "Assistant",
+      "untitled_conversation": "Untitled conversation",
+      "highlight": "Search match",
+      "target_not_found": "This message is no longer available.",
+      "target_load_error": "Could not load this message. Check your connection and try again.",
+      "target_retry": "Retry"
+    },
     "new_chat": {
       "starting": "Starting conversation...",
       "start_error": "Could not start the conversation. Please try again.",
@@ -449,6 +468,7 @@
       "stop_error": "Could not stop the conversation. Please try again.",
       "send_error": "Could not send the message. Please try again.",
       "continue_agent": "Continue agent",
+      "iteration_limit_reached": "The agent reached its iteration limit. Partial output and completed tool results are available.",
       "retry_message": "Retry message",
       "background_work": {
         "running_task": "A task is running in this conversation.",
@@ -526,6 +546,7 @@
       "sub_agent_error_detail": "Error: {error}",
       "sub_agent_status_awaiting_approval": "Awaiting approval",
       "sub_agent_status_completed": "Completed",
+      "sub_agent_status_partial": "Partial",
       "sub_agent_status_failed": "Failed",
       "sub_agent_status_running": "Running",
       "sub_agent_status_stopped": "Stopped",
@@ -1851,5 +1872,27 @@
     "skill": "Skill",
     "tool": "Tool",
     "disabled": "Disabled"
+  },
+  "mcp": {
+    "elicitation": {
+      "form_title": "Information requested by {}",
+      "url_title": "External page requested by {}",
+      "unsupported_title": "Request from {}",
+      "unsupported_mode": "This server requested an interaction AuraVibes cannot display.",
+      "unsupported_fields": "This request uses fields AuraVibes cannot display.",
+      "url_host": "Host: {}",
+      "url_punycode_warning": "This domain uses Unicode or Punycode. Review the host carefully.",
+      "url_ascii_host": "ASCII host: {}",
+      "url_ascii_host_error": "AuraVibes cannot verify this host's ASCII destination, so it cannot open this link.",
+      "url_review": "Review the host and full URL before opening this link.",
+      "invalid_url": "This link is invalid or uses a scheme AuraVibes cannot open.",
+      "select_option": "Choose an option",
+      "submit": "Send response",
+      "open_url": "Open link",
+      "decline": "Decline",
+      "cancel": "Cancel",
+      "invalid": "Some values are missing or invalid. Review the form and try again.",
+      "open_error": "Could not open this link. The request remains pending."
+    }
   }
 }

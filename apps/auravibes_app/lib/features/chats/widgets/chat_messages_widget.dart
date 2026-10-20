@@ -35,6 +35,7 @@ import 'package:auravibes_app/features/chats/providers/background_work_providers
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
@@ -55,20 +56,74 @@ import 'package:auravibes_app/features/skills/providers/conversation_skill_selec
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
-import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:auravibes_app/widgets/confirmed_external_link.dart';
 import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 
 final _a2uiLogger = Logger('chat_a2ui_actions');
 const _latestMessageScrollThreshold = 64.0;
+
+String? _searchTargetMessageId(BuildContext context) {
+  final arguments = ModalRoute.of(context)?.settings.arguments;
+  if (arguments is! Map) return null;
+  final messageId = arguments['message-id'];
+
+  return messageId is String ? messageId : null;
+}
+
+List<String> _messageIdsAroundTarget(List<String> messages, String targetId) {
+  final targetIndex = messages.indexOf(targetId);
+  if (targetIndex < 0) return const [];
+  final start = targetIndex < 500 ? 0 : targetIndex - 499;
+  final end = targetIndex + 501 < messages.length
+      ? targetIndex + 501
+      : messages.length;
+
+  return messages.sublist(start, end);
+}
+
+List<String> _messageIdsWithTargetContext({
+  required String targetId,
+  required List<String> liveMessageIds,
+  required List<MessageEntity> targetMessages,
+  required Map<String, MessageEntity>? liveMessagesById,
+}) {
+  final targetIds = targetMessages.map((message) => message.id).toList();
+  final targetIdIndex = liveMessageIds.indexOf(targetId);
+  MessageEntity? targetMessage;
+  for (final message in targetMessages) {
+    if (message.id == targetId) {
+      targetMessage = message;
+      break;
+    }
+  }
+  final targetCreatedAt = targetMessage?.createdAt;
+  final liveTail = targetIdIndex >= 0
+      ? liveMessageIds.skip(targetIdIndex + 1)
+      : targetCreatedAt == null
+      ? const <String>[]
+      : liveMessageIds.where((messageId) {
+          final message = liveMessagesById?[messageId];
+
+          return message != null && message.createdAt.isAfter(targetCreatedAt);
+        });
+  final includedIds = targetIds.toSet();
+
+  return [
+    ...targetIds,
+    for (final messageId in liveTail.take(500))
+      if (includedIds.add(messageId)) messageId,
+  ];
+}
 
 typedef _ActivityToolDisplay = ({
   String displayName,
@@ -108,9 +163,22 @@ class const ChatMessagesWidget({
     final controller =
         PrimaryScrollController.of(context) as _DisclosureScrollController;
     final parentConversationId = conversationId;
+    final targetMessageId = _searchTargetMessageId(context);
     final isCloudWorkspace =
         ref.watch(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
         null;
+    final targetMessageRequest = targetMessageId == null || !isCloudWorkspace
+        ? null
+        : (
+            workspaceId: workspaceId,
+            conversationId: conversationId,
+            messageId: targetMessageId,
+          );
+    final targetMessagesAsync = targetMessageRequest == null
+        ? null
+        : ref.watch(
+            conversationMessageTargetMessagesProvider(targetMessageRequest),
+          );
     final backgroundWorksAsync = isCloudWorkspace
         ? ref.watch(
             cloudConversationBackgroundWorksProvider((
@@ -230,17 +298,37 @@ class const ChatMessagesWidget({
     );
     final isCompacting =
         compactionState?.status == CompactionExecutionStatus.running;
+    final targetMessages = targetMessagesAsync?.asData?.value;
+    final effectiveMessageIds = switch (targetMessageId) {
+      null => messages,
+      _ when isCloudWorkspace =>
+        targetMessages == null
+            ? messages
+            : _messageIdsWithTargetContext(
+                targetId: targetMessageId,
+                liveMessageIds: messages,
+                targetMessages: targetMessages,
+                liveMessagesById: messageEntitiesById,
+              ),
+      final messageId => _messageIdsAroundTarget(messages, messageId),
+    };
+    final effectiveMessageEntities = {
+      ...?messageEntitiesById,
+      for (final message in targetMessages ?? const <MessageEntity>[])
+        message.id: message,
+    };
     final resolvedMessages = <_ResolvedChatMessage?>[];
-    for (final messageId in messages) {
-      final message =
-          ref.watch(
-            messageConversationByIdProvider((
-              workspaceId: workspaceId,
-              conversationId: conversationId,
-              messageId: messageId,
-            )),
-          ) ??
-          messageEntitiesById?[messageId];
+    for (final messageId in effectiveMessageIds) {
+      final storedMessage = ref.watch(
+        messageConversationByIdProvider((
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          messageId: messageId,
+        )),
+      );
+      final message = messageId == targetMessageId
+          ? effectiveMessageEntities[messageId] ?? storedMessage
+          : storedMessage ?? effectiveMessageEntities[messageId];
       final isStreaming = ref.watch(isMessageStreamingProvider(messageId));
       resolvedMessages.add(
         message == null
@@ -248,9 +336,53 @@ class const ChatMessagesWidget({
             : _ResolvedChatMessage(message: message, isStreaming: isStreaming),
       );
     }
+    if (targetMessageId != null && targetMessagesAsync?.isLoading == true) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (targetMessagesAsync?.hasError == true) {
+      if (targetMessagesAsync?.error case CloudAppException(code: 'notFound')) {
+        return const Center(
+          child: TextLocale(
+            LocaleKeys.chats_screens_conversation_search_target_not_found,
+          ),
+        );
+      }
+      return Center(
+        child: Column(
+          mainAxisSize: .min,
+          children: [
+            const TextLocale(
+              LocaleKeys.chats_screens_conversation_search_target_load_error,
+            ),
+            TextButton(
+              onPressed: () {
+                if (targetMessageRequest == null) return;
+                ref.invalidate(
+                  conversationMessageTargetMessagesProvider(
+                    targetMessageRequest,
+                  ),
+                );
+              },
+              child: const TextLocale(
+                LocaleKeys.chats_screens_conversation_search_target_retry,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    if (targetMessageId != null &&
+        !effectiveMessageIds.contains(targetMessageId)) {
+      return const Center(
+        child: TextLocale(
+          LocaleKeys.chats_screens_conversation_search_target_not_found,
+        ),
+      );
+    }
     final data = _buildChatTimelineItems(
       resolvedMessages,
       submittedA2uiReplayPayloads,
+      searchTargetMessageId: targetMessageId,
       pendingToolCallKeys: {
         for (final pendingCall in pendingToolCalls)
           _activityToolCallKey(pendingCall.messageId, pendingCall.toolCall.id),
@@ -318,6 +450,7 @@ class const ChatMessagesWidget({
             a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
             replayPayloadsByMessageId: submittedA2uiReplayPayloads,
             conversation: conversation,
+            searchTargetMessageId: targetMessageId,
             retryableMessageId: retryableMessageId,
             onRetryMessage: onRetryMessage,
             onOpenToolResult: onOpenToolResult,
@@ -585,6 +718,7 @@ Widget _buildChatTimelineItem({
   required String parentConversationId,
   required List<ConversationEntity> childConversations,
   required String workspaceId,
+  required String? searchTargetMessageId,
   required bool isCloudWorkspace,
   required Set<String>? backgroundToolCallIds,
   required ChatA2uiRuntime? a2uiRuntime,
@@ -638,6 +772,7 @@ Widget _buildChatTimelineItem({
       _ChatMessageTimelineItem(
         key: ValueKey(source.message.id),
         source: source,
+        isSearchTarget: messageId == searchTargetMessageId,
         activityRenderedInSession: activityRenderedInSession,
         onDisclosureChanged: onDisclosureChanged,
         parentConversationId: parentConversationId,
@@ -843,6 +978,7 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
   List<_ResolvedChatMessage?> messages,
   Map<String, List<String>> replayPayloadsByMessageId, {
   Set<String> pendingToolCallKeys = const {},
+  String? searchTargetMessageId,
 }) {
   final items = <_ChatTimelineItem>[];
   final activitySources = <_ResolvedChatMessage>[];
@@ -874,6 +1010,11 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
     }
 
     final message = source.message;
+    if (message.id == searchTargetMessageId) {
+      addActivityRun();
+      items.add(_MessageTimelineItem(source));
+      continue;
+    }
     final hasVisibleResponse = _hasVisibleAssistantResponse(
       message,
       replayPayloadsByMessageId,
@@ -1030,6 +1171,7 @@ bool _canRetryUserMessage(MessageEntity message) =>
 
 class const _ChatMessageTimelineItem({
   required final _ResolvedChatMessage source,
+  final bool isSearchTarget = false,
   final bool activityRenderedInSession = false,
   required final void Function(VoidCallback update) onDisclosureChanged,
   required final String parentConversationId,
@@ -1071,7 +1213,7 @@ class const _ChatMessageTimelineItem({
         !activityRenderedInSession &&
         !_isTimelineBoundary(message) &&
         _hasAssistantActivity(message);
-    return AuraColumn(
+    final content = AuraColumn(
       crossAxisAlignment: message.isUser
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
@@ -1101,6 +1243,19 @@ class const _ChatMessageTimelineItem({
           onRetryMessage: onRetryMessage,
         ),
       ],
+    );
+    if (!isSearchTarget) return content;
+
+    return Semantics(
+      container: true,
+      label: LocaleKeys.chats_screens_conversation_search_highlight.tr(),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(color: context.auraColors.primary, width: 2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: content,
+      ),
     );
   }
 }
@@ -1359,7 +1514,10 @@ Future<void> _submitA2uiAction(
   required ChatUiAction action,
 }) async {
   try {
-    await ref
+    final iterationLimitNotifier = ref.read(
+      conversationIterationLimitProvider(conversationId).notifier,
+    );
+    final decision = await ref
         .read(sendMessageUsecaseProvider(workspaceId))
         .call(
           conversationId: conversationId,
@@ -1368,6 +1526,7 @@ Future<void> _submitA2uiAction(
             metadataJson: action.metadataJson,
           ),
         );
+    iterationLimitNotifier.markIfIterationLimitReached(decision);
   } on Object catch (error, stackTrace) {
     runtime.rejectFormSubmission(action.surfaceId);
     _a2uiLogger.warning(
@@ -1715,49 +1874,42 @@ Widget _chatMarkdown({
   ),
 );
 
-Future<void> _openChatMarkdownLink(BuildContext context, String url) async {
-  final uri = Uri.tryParse(url);
-  if (uri == null ||
-      !uri.isAbsolute ||
-      !uri.hasAuthority ||
-      (uri.scheme != 'http' && uri.scheme != 'https') ||
-      uri.host.isEmpty ||
-      uri.userInfo.isNotEmpty) {
-    return;
-  }
+Future<void> _openChatMarkdownLink(BuildContext context, String url) =>
+    openConfirmedExternalLink(
+      context: context,
+      url: url,
+      confirm: (uri) => _confirmChatExternalLink(context, uri),
+      onLaunchFailure: () => _showChatExternalLinkError(context),
+    );
 
-  final confirmed = await AuraDialogs.confirm(
-    context: context,
-    title: Text(
-      LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
-    ),
-    message: AuraSelectableText(
-      LocaleKeys.chats_screens_chat_conversation_external_link_message.tr(
-        namedArgs: {'host': uri.host, 'url': uri.toString()},
+Future<bool?> _confirmChatExternalLink(BuildContext context, Uri uri) =>
+    AuraDialogs.confirm(
+      context: context,
+      title: Text(
+        LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
       ),
-    ),
-    actions: AuraConfirmDialogActions(
-      confirmLabel: Text(
-        LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
-      ),
-      cancelLabel: Text(LocaleKeys.common_cancel.tr()),
-    ),
-  );
-  if (confirmed != true || !context.mounted) return;
-
-  try {
-    await OpenSystemBrowser.call(uri);
-  } on Object {
-    if (!context.mounted) return;
-    unawaited(AuraHaptics.error());
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: TextLocale(
-          LocaleKeys.models_screens_add_provider_device_code_open_link_failed,
+      message: AuraSelectableText(
+        LocaleKeys.chats_screens_chat_conversation_external_link_message.tr(
+          namedArgs: {'host': uri.host, 'url': uri.toString()},
         ),
       ),
+      actions: AuraConfirmDialogActions(
+        confirmLabel: Text(
+          LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
+        ),
+        cancelLabel: Text(LocaleKeys.common_cancel.tr()),
+      ),
     );
-  }
+
+void _showChatExternalLinkError(BuildContext context) {
+  unawaited(AuraHaptics.error());
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: TextLocale(
+        LocaleKeys.models_screens_add_provider_device_code_open_link_failed,
+      ),
+    ),
+  );
 }
 
 class const _AiMessageContent({

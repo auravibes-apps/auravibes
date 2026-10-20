@@ -25,6 +25,7 @@ conversation:
   - listPage:
   - get:
   - listMessages:
+  - searchMessages:
   - update:
   - delete:
   - startTurn:

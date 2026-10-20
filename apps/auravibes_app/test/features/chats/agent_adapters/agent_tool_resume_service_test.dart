@@ -201,6 +201,53 @@ void main() {
       },
     );
 
+    test(
+      'marks a resumed child partial when the iteration limit is reached',
+      () async {
+        when(() => messageRepository.getMessageById(messageId))
+            .thenAnswer((_) async => message);
+        when(() => conversationRepository.getConversationById(conversationId))
+            .thenAnswer((_) async => conversation);
+        when(
+          () => toolExecutionService.call(
+            conversationId: conversationId,
+            workspaceId: workspaceId,
+          ),
+        ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final activeSubAgents = container.read(
+          activeSubAgentRuntimeProvider.notifier,
+        );
+        final request = activeSubAgents.start(
+          parentId: 'parent-1',
+          childId: conversationId,
+        );
+        usecase = AgentToolResumeService(
+          messageRepository: messageRepository,
+          conversationRepository: conversationRepository,
+          toolExecutionService: toolExecutionService,
+          agentLoop: agentLoop,
+          activeSubAgents: activeSubAgents,
+        );
+        when(
+          () => agentLoop.call(
+            conversationId: conversationId,
+            context: const AgentIterationContext(origin: .toolResume),
+          ),
+        ).thenAnswer((_) async => AgentIterationDecision.iterationLimitReached);
+
+        await usecase.call(messageId: messageId);
+
+        expect(
+          activeSubAgents.statusOf(conversationId),
+          ActiveSubAgentStatus.partial,
+        );
+        expect(await request.completion, SubAgentCompletionStatus.partial);
+      },
+    );
+
     test('continues an active conversation only once', () async {
       when(() => messageRepository.getMessageById(messageId))
           .thenAnswer((_) async => message);

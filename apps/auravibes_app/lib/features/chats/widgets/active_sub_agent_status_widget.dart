@@ -405,6 +405,8 @@ String _statusLabel(ActiveSubAgentStatus status) => switch (status) {
         .tr(),
   .completed =>
     LocaleKeys.chats_screens_chat_conversation_sub_agent_status_completed.tr(),
+  .partial =>
+    LocaleKeys.chats_screens_chat_conversation_sub_agent_status_partial.tr(),
   .failed =>
     LocaleKeys.chats_screens_chat_conversation_sub_agent_status_failed.tr(),
   .stopped =>

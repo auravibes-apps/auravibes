@@ -1,8 +1,26 @@
 # Agent operations
 
-Read only the section relevant to CI failure diagnosis, database queries, or native Flutter driver control.
+Read only the section relevant to PR check monitoring, CI failure diagnosis, database queries, or native Flutter driver control.
 
 ## CI failure triage
+
+### PR check monitoring
+
+- Before polling, compare `gh pr view <number> --json headRefOid` with local `git rev-parse HEAD` to avoid watching stale runs.
+- For a compact check snapshot, show only pending, failed, or cancelled checks:
+
+```sh
+gh pr checks <number> --json name,bucket \
+  --jq '.[] | select(.bucket == "pending" or .bucket == "fail" or .bucket == "cancel") | "\(.bucket): \(.name)"'
+```
+
+- Repeat every 60 seconds while rows remain. Exit code 8 means checks are pending; empty output means no checks need attention. Use `--watch` only when full live output is useful.
+- After a watch interruption, query current status before restarting; follow [validation policy](task-policies.md#validation).
+- For job-level diagnosis, with `run_id` set to the relevant run, project unfinished jobs instead of printing full job objects:
+  ```sh
+  gh run view "$run_id" --json jobs --jq \
+    '[.jobs[] | select(.status != "completed") | {name, status, activeStep: ([.steps[]? | select(.status == "in_progress") | .name][0])}]'
+  ```
 
 - `ci success` only summarizes fan-out; inspect first failed job. A cancelled PR run may be superseded by newer push.
 - `integrity` generated drift: run `generate` and `generate:serverpod`; review and commit generated diff. Never hand-edit output.

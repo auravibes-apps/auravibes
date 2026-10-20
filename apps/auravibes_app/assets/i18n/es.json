@@ -373,6 +373,25 @@
       "bulk_pin_failures": "No se pudo cambiar la fijación de: {}",
       "bulk_delete_failures": "No se pudo eliminar: {}"
     },
+    "conversation_search": {
+      "title": "Buscar conversaciones",
+      "entry": "Buscar mensajes",
+      "query": "Buscar mensajes",
+      "current_workspace": "Espacio de trabajo actual",
+      "all_workspaces": "Todos los espacios de trabajo",
+      "search": "Buscar",
+      "loading": "Buscando mensajes…",
+      "empty": "No se encontraron mensajes",
+      "error": "No se pudieron buscar los mensajes. Inténtalo de nuevo.",
+      "load_more": "Cargar más",
+      "user_role": "Tú",
+      "assistant_role": "Asistente",
+      "untitled_conversation": "Conversación sin título",
+      "highlight": "Coincidencia de búsqueda",
+      "target_not_found": "Este mensaje ya no está disponible.",
+      "target_load_error": "No se pudo cargar este mensaje. Comprueba la conexión e inténtalo de nuevo.",
+      "target_retry": "Reintentar"
+    },
     "new_chat": {
       "starting": "Iniciando conversación...",
       "start_error": "No se pudo iniciar la conversación. Inténtalo de nuevo.",
@@ -449,6 +468,7 @@
       "stop_error": "No se pudo detener la conversación. Inténtalo de nuevo.",
       "send_error": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
       "continue_agent": "Continuar agente",
+      "iteration_limit_reached": "El agente alcanzó su límite de iteraciones. La respuesta parcial y los resultados de herramientas completados están disponibles.",
       "retry_message": "Reintentar mensaje",
       "background_work": {
         "running_task": "Hay una tarea en curso en esta conversación.",
@@ -526,6 +546,7 @@
       "sub_agent_error_detail": "Error: {error}",
       "sub_agent_status_awaiting_approval": "Esperando aprobación",
       "sub_agent_status_completed": "Completado",
+      "sub_agent_status_partial": "Parcial",
       "sub_agent_status_failed": "Falló",
       "sub_agent_status_running": "En ejecución",
       "sub_agent_status_stopped": "Detenido",
@@ -1851,5 +1872,27 @@
     "skill": "Habilidad",
     "tool": "Herramienta",
     "disabled": "Desactivado"
+  },
+  "mcp": {
+    "elicitation": {
+      "form_title": "Información solicitada por {}",
+      "url_title": "Página externa solicitada por {}",
+      "unsupported_title": "Solicitud de {}",
+      "unsupported_mode": "Este servidor solicitó una interacción que AuraVibes no puede mostrar.",
+      "unsupported_fields": "Esta solicitud usa campos que AuraVibes no puede mostrar.",
+      "url_host": "Host: {}",
+      "url_punycode_warning": "Este dominio usa Unicode o Punycode. Revisa el host con cuidado.",
+      "url_ascii_host": "Host ASCII: {}",
+      "url_ascii_host_error": "AuraVibes no puede verificar el destino ASCII de este host, así que no puede abrir este enlace.",
+      "url_review": "Revisa el host y la URL completa antes de abrir este enlace.",
+      "invalid_url": "Este enlace no es válido o usa un esquema que AuraVibes no puede abrir.",
+      "select_option": "Elige una opción",
+      "submit": "Enviar respuesta",
+      "open_url": "Abrir enlace",
+      "decline": "Rechazar",
+      "cancel": "Cancelar",
+      "invalid": "Faltan valores o algunos no son válidos. Revisa el formulario e inténtalo de nuevo.",
+      "open_error": "No se pudo abrir este enlace. La solicitud sigue pendiente."
+    }
   }
 }

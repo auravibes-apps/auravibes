@@ -5,14 +5,24 @@ import 'dart:async';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
+import 'package:characters/characters.dart';
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart';
 
 const _messageContentCannotBeEmpty = 'Message content cannot be empty';
+const _maxConversationMessageSearchQueryLength = 256;
+const _maxConversationMessageSearchPageSize = 50;
+const _maxConversationMessageSearchOffset = 10000;
+const _conversationMessageSearchContextBefore = 50;
+const _conversationMessageSearchContextLength = 100;
+const _minConversationMessageSearchExcerptLength = 120;
+const _maxConversationMessageSearchExcerptLength = 356;
 
 bool _isTerminalStatus(MessageTableStatus status) =>
     status == MessageTableStatus.sent || status == MessageTableStatus.error;
@@ -165,6 +175,19 @@ mixin _MessageRepositoryQueryApi {
   ) =>
       MessageRepositoryQueryOperations(this as MessageRepository)
           .getMessagesByConversationPaginated(conversationId, limit, offset);
+
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    int offset = 0,
+  }) => MessageRepositorySearchOperations(this as MessageRepository)
+      .searchMessages(
+        query: query,
+        workspaceIds: workspaceIds,
+        limit: limit,
+        offset: offset,
+      );
 
   Future<List<MessageEntity>> getMessagesByType(
     String conversationId,
@@ -612,6 +635,83 @@ extension MessageRepositoryQueryOperations on MessageRepository {
 
     return await _mapToMessageWithAttachments(createdMessage);
   }
+}
+
+extension MessageRepositorySearchOperations on MessageRepository {
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    int offset = 0,
+  }) async {
+    final normalizedQuery = query.trim();
+    if (!_isValidSearchRequest(normalizedQuery, workspaceIds, limit, offset)) {
+      return const [];
+    }
+
+    final rows = await _database.messageDao.searchMessages(
+      query: normalizedQuery,
+      workspaceIds: workspaceIds,
+      limit: limit,
+      offset: offset,
+    );
+
+    return [for (final row in rows) _searchResultFromRow(row, normalizedQuery)];
+  }
+
+  bool _isValidSearchRequest(
+    String query,
+    Set<String> workspaceIds,
+    int limit,
+    int offset,
+  ) =>
+      query.isNotEmpty &&
+      query.length <= _maxConversationMessageSearchQueryLength &&
+      workspaceIds.isNotEmpty &&
+      limit >= 1 &&
+      limit <= _maxConversationMessageSearchPageSize &&
+      offset >= 0 &&
+      offset <= _maxConversationMessageSearchOffset;
+
+  ConversationMessageSearchResult _searchResultFromRow(
+    QueryRow row,
+    String query,
+  ) {
+    final conversation = _searchConversationFields(row);
+    final message = _searchMessageFields(row, query);
+
+    return ConversationMessageSearchResult(
+      workspaceId: conversation.workspaceId,
+      workspaceName: conversation.workspaceName,
+      conversationId: conversation.conversationId,
+      conversationTitle: conversation.conversationTitle,
+      messageId: message.messageId,
+      role: message.role,
+      createdAt: message.createdAt,
+      excerpt: message.excerpt,
+    );
+  }
+
+  ({
+    String workspaceId,
+    String workspaceName,
+    String conversationId,
+    String conversationTitle,
+  })
+  _searchConversationFields(QueryRow row) => (
+    workspaceId: row.read<String>('workspace_id'),
+    workspaceName: row.read<String>('workspace_name'),
+    conversationId: row.read<String>('conversation_id'),
+    conversationTitle: row.read<String>('conversation_title'),
+  );
+
+  ({String messageId, String role, DateTime createdAt, String excerpt})
+  _searchMessageFields(QueryRow row, String query) => (
+    messageId: row.read<String>('message_id'),
+    role: row.read<bool>('is_user') ? 'user' : 'assistant',
+    createdAt: row.read<DateTime>('created_at'),
+    excerpt: _searchExcerpt(row.read<String>('content'), query),
+  );
 }
 
 extension on MessageRepository {
@@ -1651,4 +1751,56 @@ class MessageNotFoundException extends MessageException {
 
   /// ID of the message that was not found.
   final String messageId;
+}
+
+String _searchExcerpt(String content, String query) {
+  final contentCharacters = content.characters;
+  final start = _searchExcerptStart(contentCharacters, content, query);
+  final excerptLength = _searchExcerptLength(query);
+  final end = _searchExcerptEnd(contentCharacters, start, excerptLength);
+
+  return _composeSearchExcerpt(contentCharacters, start, end);
+}
+
+int _searchExcerptLength(String query) =>
+    (query.characters.length + _conversationMessageSearchContextLength).clamp(
+      _minConversationMessageSearchExcerptLength,
+      _maxConversationMessageSearchExcerptLength,
+    );
+
+int _searchExcerptEnd(
+  Characters contentCharacters,
+  int start,
+  int excerptLength,
+) {
+  final end = start + excerptLength;
+
+  return end < contentCharacters.length ? end : contentCharacters.length;
+}
+
+String _composeSearchExcerpt(Characters contentCharacters, int start, int end) {
+  final excerpt = contentCharacters.skip(start).take(end - start);
+  final prefix = start > 0 ? '...' : '';
+  final suffix = end < contentCharacters.length ? '...' : '';
+
+  return '$prefix$excerpt$suffix';
+}
+
+int _searchExcerptStart(
+  Characters contentCharacters,
+  String content,
+  String query,
+) {
+  final matchOffset = content.toLowerCase().indexOf(query.toLowerCase());
+  var lowerOffset = 0;
+  var matchCharacterIndex = 0;
+  for (final character in contentCharacters) {
+    if (lowerOffset >= matchOffset) break;
+    lowerOffset += character.toLowerCase().length;
+    matchCharacterIndex++;
+  }
+
+  return matchCharacterIndex > _conversationMessageSearchContextBefore
+      ? matchCharacterIndex - _conversationMessageSearchContextBefore
+      : 0;
 }
