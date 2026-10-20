@@ -25,18 +25,35 @@ class const SkillResponseDecoder() {
     UrlResponse response, {
     Iterable<String> secrets = const [],
   }) {
-    if (!_isEventStream(response)) return response;
+    final redactedBody = _redactSecrets(response.body, secrets);
+    if (!_isEventStream(response)) return _withBody(response, redactedBody);
 
     final body = _SseTextAccumulator.decode(response.body, secrets);
-    if (body == null) return response;
+    if (body == null) return _withBody(response, redactedBody);
 
-    return UrlResponse(
-      statusCode: response.statusCode,
-      body: body,
-      headers: response.headers,
-      elapsed: response.elapsed,
-    );
+    return _withBody(response, _redactSecrets(body, secrets));
   }
+}
+
+UrlResponse _withBody(UrlResponse response, String body) {
+  if (body == response.body) return response;
+
+  return UrlResponse(
+    statusCode: response.statusCode,
+    body: body,
+    headers: response.headers,
+    elapsed: response.elapsed,
+  );
+}
+
+String _redactSecrets(String value, Iterable<String> secrets) {
+  var redacted = value;
+  final values = secrets.where((secret) => secret.isNotEmpty).toList()
+    ..sort((left, right) => right.length.compareTo(left.length));
+  for (final secret in values) {
+    redacted = redacted.replaceAll(secret, '[REDACTED]');
+  }
+  return redacted;
 }
 
 bool _isEventStream(UrlResponse response) {
@@ -111,12 +128,7 @@ final class _SseTextAccumulator(final Iterable<String> _secrets) {
     }.contains(type)) {
       return;
     }
-    var partial = _text.toString();
-    final secrets = _secrets.where((value) => value.isNotEmpty).toList()
-      ..sort((left, right) => right.length.compareTo(left.length));
-    for (final secret in secrets) {
-      partial = partial.replaceAll(secret, '[REDACTED]');
-    }
+    final partial = _redactSecrets(_text.toString(), _secrets);
     throw SkillStreamFailure._(type, sanitizeProviderErrorDetail(partial));
   }
 
