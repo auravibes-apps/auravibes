@@ -232,9 +232,7 @@ void main() {
   test('stops retrying wrapped terminal HTTP snapshot failures', () async {
     final delays = <Duration>[];
     var snapshots = 0;
-    final error = _translateCloudAppException(
-      ServerpodClientUnauthorized(),
-    );
+    final error = _translateCloudAppException(ServerpodClientUnauthorized());
     final states = CloudConversationStream.watch(
       _gateway(
         snapshots: () {

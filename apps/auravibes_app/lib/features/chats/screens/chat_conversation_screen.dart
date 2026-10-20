@@ -1686,20 +1686,16 @@ class const _ChatConversationBodyLayout({
   required final bool hasOtherStatus,
   required final bool hasStatusArea,
 }) extends StatelessWidget {
+  CloudConversationKey get _conversationKey =>
+      (workspaceId: data.workspaceId, conversationId: data.conversation.id);
+
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      if (!data.showInputComposer &&
-          data.conversation.parentConversationId != null)
-        _ConversationOrientation(data: data),
+      _ConversationOrientation(data: data),
       _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
-      _CloudConversationStreamRecovery(
-        conversationKey: (
-          workspaceId: data.workspaceId,
-          conversationId: data.conversation.id,
-        ),
-      ),
+      _CloudConversationStreamRecovery(conversationKey: _conversationKey),
       _ChatConversationMessageList(
         data: data,
         onOpenToolResult: onOpenToolResult,
@@ -1727,32 +1723,53 @@ class const _CloudConversationStreamRecovery({
     final provider = cloudConversationStateProvider(conversationKey);
     final error = ref.watch(provider).error;
     if (error == null) return const SizedBox.shrink();
+
+    return _CloudConversationStreamRecoveryContent(
+      error: error,
+      onRetry: () => ref.invalidate(provider),
+    );
+  }
+}
+
+class const _CloudConversationStreamRecoveryContent({
+  required final Object error,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPadding(
+    child: AuraColumn(
+      children: [
+        _CloudConversationStreamFailureCallout(error: error),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: AuraButton(
+            onPressed: onRetry,
+            child: const TextLocale(LocaleKeys.route_state_retry),
+          ),
+        ),
+      ],
+      spacing: .sm,
+      mainAxisSize: .min,
+    ),
+    padding: const .horizontal(.md),
+  );
+}
+
+class const _CloudConversationStreamFailureCallout({
+  required final Object error,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final errorMessageKey = switch (error) {
       CloudConversationStreamFailure(:final localizationKey) => localizationKey,
       _ => CloudAppErrors.localizationKey(error),
     };
 
-    return AuraPadding(
-      child: AuraColumn(
-        children: [
-          AuraCallout(
-            title: LocaleKeys.common_error_title.tr(context: context),
-            description: errorMessageKey.tr(context: context),
-            icon: Icons.cloud_off_outlined,
-            tint: .error,
-          ),
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: AuraButton(
-              onPressed: () => ref.invalidate(provider),
-              child: const TextLocale(LocaleKeys.route_state_retry),
-            ),
-          ),
-        ],
-        spacing: .sm,
-        mainAxisSize: .min,
-      ),
-      padding: const .horizontal(.md),
+    return AuraCallout(
+      title: LocaleKeys.common_error_title.tr(context: context),
+      description: errorMessageKey.tr(context: context),
+      icon: Icons.cloud_off_outlined,
+      tint: .error,
     );
   }
 }
