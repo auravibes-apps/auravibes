@@ -146,11 +146,17 @@ server, credentials, or user data.
      "workspaceId":"marionette-demo-workspace",
      "modelSelectionId":"marionette-demo-model-selection"
    }
+   auravibes.navigate {
+     "route":"demo_conversation",
+     "workspaceId":"marionette-demo-workspace"
+   }
    ```
 
    After each extension call, call `get_logs`. Then inspect until the UI shows
-   `Marionette Demo` and `marionette-demo-model`. These fixed IDs are local
-   development fixtures, not production records.
+   `Marionette Demo`, `marionette-demo-model`, and the seeded
+   `Marionette Demo Conversation`. These fixed IDs are local development
+   fixtures, not production records. The `demo_conversation` route opens only
+   that seeded conversation in the local demo workspace.
 
 5. Exercise the deterministic composer path with stable keys:
 

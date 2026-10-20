@@ -30,14 +30,16 @@ gh pr checks <number> --json name,bucket \
 
 ## GitHub CLI merge preflight
 
-- `gh pr merge` has no dry-run option. Before an authorized merge, inspect the PR head with this read-only command:
+- `gh pr merge` has no dry-run; treat it as a remote write. Before invoking it, inspect the current head and merge requirements:
   ```sh
-  gh pr view <number> --json headRefOid
+  gh pr view <number> --json headRefOid,mergeStateStatus,reviewDecision,reviewRequests
   ```
-- Compare `headRefOid` with the reviewed commit, then guard the merge with that exact SHA:
+- Compare `headRefOid` with the reviewed commit and guard the merge with that SHA:
   ```sh
   gh pr merge <number> --match-head-commit <reviewed-head-sha>
   ```
+- Stop and report when `mergeStateStatus` is `BLOCKED`, `reviewDecision` is `REVIEW_REQUIRED`, required checks are pending or failing, or required approval is absent. Requested review is not approval.
+- On merge-queue branches, omit strategy flags. When requirements remain unmet, `gh pr merge` may enable auto-merge; do not use it to probe readiness.
 - Use `--admin` only when the user explicitly authorizes bypassing repository requirements.
 
 ## Codemagic release triage

@@ -50,7 +50,7 @@ void main() {
 
     test('dispatches allowlisted values and schema defaults', () async {
       final navigation = await dispatcher.navigate({
-        'route': 'settings',
+        'route': 'demo_conversation',
         'workspaceId': 'local-workspace',
       });
       final workspace = await dispatcher.selectWorkspace({

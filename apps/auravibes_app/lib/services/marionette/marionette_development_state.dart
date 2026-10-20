@@ -26,6 +26,7 @@ class MarionetteDevelopmentState({
   static const allowedRouteValues = <String>[
     'new_chat',
     'chats',
+    'demo_conversation',
     'tools',
     'models',
     'service_connections',
@@ -62,7 +63,9 @@ class MarionetteDevelopmentState({
     }
 
     await _requireLocalWorkspace(workspaceId);
-    final location = _routeLocation(route, workspaceId);
+    final location = route == 'demo_conversation'
+        ? await _demoConversationLocation(database, workspaceId)
+        : _routeLocation(route, workspaceId);
     navigateTo(location);
 
     return {'route': route, 'workspaceId': workspaceId, 'location': location};
@@ -235,6 +238,44 @@ String _routeLocation(String route, String workspaceId) => switch (route) {
 
 Never _throwMarionetteNotAllowlisted(Object value, String parameter) =>
     throw ArgumentError.value(value, parameter, 'is not allowlisted');
+
+Future<String> _demoConversationLocation(
+  AppDatabase database,
+  String workspaceId,
+) async {
+  _requireDemoWorkspace(workspaceId);
+
+  final conversation = await database.conversationDao.getConversationById(
+    MarionetteDevelopmentState.demoConversationId,
+  );
+  _requireDemoConversation(conversation?.workspaceId, conversation?.modelId);
+
+  return ConversationRoute(
+    workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
+    chatId: MarionetteDevelopmentState.demoConversationId,
+  ).location;
+}
+
+void _requireDemoWorkspace(String workspaceId) {
+  if (workspaceId != MarionetteDevelopmentState.demoWorkspaceId) {
+    throw ArgumentError.value(
+      workspaceId,
+      'workspaceId',
+      'must identify the Marionette demo workspace',
+    );
+  }
+}
+
+void _requireDemoConversation(String? workspaceId, String? modelId) {
+  if (workspaceId != MarionetteDevelopmentState.demoWorkspaceId ||
+      modelId != MarionetteDevelopmentState.demoModelSelectionId) {
+    throw ArgumentError.value(
+      MarionetteDevelopmentState.demoConversationId,
+      'conversationId',
+      'must identify the local Marionette demo conversation',
+    );
+  }
+}
 
 Future<void> _seedMarionetteDemoData(AppDatabase database) async {
   await _seedMarionetteWorkspace(database);
