@@ -230,7 +230,7 @@ melos:
       description: Run AuraVibes app with workspace data
 
     start:device-preview:
-      run: cd apps/auravibes_app && fvm flutter run -d macos --flavor dev --target lib/main_device_preview.dart --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/ "--dart-define=DB_HASH_SOURCE=$MELOS_ROOT_PATH"
+      run: cd apps/auravibes_app && fvm flutter run -d macos --flavor dev --target tool/main_device_preview.dart --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/ "--dart-define=DB_HASH_SOURCE=$MELOS_ROOT_PATH"
       stdio: inherit
       description: Run AuraVibes app with device preview
 

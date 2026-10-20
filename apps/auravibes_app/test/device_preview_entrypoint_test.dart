@@ -9,8 +9,10 @@ void main() {
     expect(source, isNot(contains('package:device_preview/')));
   });
 
-  test('preview entrypoint enables device preview', () {
-    final entrypoint = File('lib/main_device_preview.dart');
+  test('preview entrypoint enables device preview outside lib', () {
+    expect(File('lib/main_device_preview.dart').existsSync(), isFalse);
+
+    final entrypoint = File('tool/main_device_preview.dart');
     if (!entrypoint.existsSync()) {
       expect(
         entrypoint.existsSync(),
@@ -34,9 +36,9 @@ void main() {
     );
 
     expect(previewCommandIndex, isNot(-1));
-    expect(
-      lines[previewCommandIndex + 1],
-      contains('fvm flutter run -d macos'),
-    );
+    final previewCommand = lines[previewCommandIndex + 1];
+
+    expect(previewCommand, contains('fvm flutter run -d macos'));
+    expect(previewCommand, contains('--target tool/main_device_preview.dart'));
   });
 }
