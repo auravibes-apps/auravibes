@@ -33,15 +33,15 @@ dependency_overrides:
   # melos 8 needs cli_util ^0.5.0; flutter_launcher_icons 0.14.4 pins ^0.4.1 (no newer release).
   # 0.5.0 only deprecates applicationConfigHome (still present), safe override.
   cli_util: ^0.5.0
+  # super_native_extensions 0.10.0-dev.2 needs the missing lib.name fix in native_toolchain_rust 1.0.7.
+  # irondash_engine_context 0.6.0-dev.0 still caps code_assets at 1.x; remove when upstream raises that constraint.
+  code_assets: 2.1.0
+  native_toolchain_rust: 1.0.7
   # ponytail: drift_dev 2.34.5 needs sqlparser ^0.45; Serverpod beta.0 still caps ^0.44.3. Remove when Serverpod raises its constraint.
   sqlparser: 0.45.0
   # Flutter 3.47.4 pins test_api 0.7.12; test 1.32.0 requires 0.7.14.
   # Keep override until Flutter updates its flutter_test pin.
   test_api: 0.7.14
-  # super_native_extensions 0.10.0-dev.2 needs the missing lib.name fix in native_toolchain_rust 1.0.7.
-  # irondash_engine_context 0.6.0-dev.0 still caps code_assets at 1.x; remove when upstream raises that constraint.
-  code_assets: 2.1.0
-  native_toolchain_rust: 1.0.7
 
 melos:
   sdkPath: .fvm/flutter_sdk
