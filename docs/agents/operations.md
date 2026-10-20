@@ -1,6 +1,6 @@
 # Agent operations
 
-Read only the section relevant to PR check monitoring, CI failure diagnosis, Codemagic release triage, database queries, or native Flutter driver control.
+Read only the section relevant to PR check monitoring, GitHub CLI merge preflight, CI failure diagnosis, Codemagic release triage, database queries, or native Flutter driver control.
 
 ## CI failure triage
 
@@ -27,6 +27,18 @@ gh pr checks <number> --json name,bucket \
 - `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; it selects the SDK and runs `flutter pub get` by default when switching SDKs (`--skip-pub-get` skips it). CI's setup action runs Melos bootstrap before checking dependency artifact drift; do not infer bootstrap is redundant from the Pub workspace declaration. Commit `.vscode/settings.json` sync.
 - Workspace setup failures are dependency/version issues; inspect pub solver output before changing Dart code.
 - DCL unused-code scans production `lib`, not tests. Remove true dead code; test-only contracts or generated/route reachability need narrow, reasoned excludes only after reference review.
+
+## GitHub CLI merge preflight
+
+- `gh pr merge` has no dry-run option. Before an authorized merge, inspect the PR head with this read-only command:
+  ```sh
+  gh pr view <number> --json headRefOid
+  ```
+- Compare `headRefOid` with the reviewed commit, then guard the merge with that exact SHA:
+  ```sh
+  gh pr merge <number> --match-head-commit <reviewed-head-sha>
+  ```
+- Use `--admin` only when the user explicitly authorizes bypassing repository requirements.
 
 ## Codemagic release triage
 

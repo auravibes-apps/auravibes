@@ -54,6 +54,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 - For `.fvmrc` changes, FVM drift, or CI failure triage, read [CI failure triage](docs/agents/operations.md#ci-failure-triage).
 - For PR-check monitoring, read [PR check monitoring](docs/agents/operations.md#pr-check-monitoring).
+- For GitHub CLI PR merges, follow [PR merge preflight](docs/agents/operations.md#github-cli-merge-preflight).
 - For release tags or Codemagic build triage, read [Codemagic release triage](docs/agents/operations.md#codemagic-release-triage).
 - For scoped database queries or native Flutter driver control, read the relevant section of [operations.md](docs/agents/operations.md).
 
