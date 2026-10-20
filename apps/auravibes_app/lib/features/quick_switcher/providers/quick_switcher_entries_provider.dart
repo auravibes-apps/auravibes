@@ -21,85 +21,172 @@ Future<QuickSwitcherEntries> quickSwitcherEntries(
   String currentWorkspaceId,
 ) async {
   final workspaces = await ref.watch(allWorkspacesProvider.future);
-  final currentWorkspace = workspaces
-      .where((workspace) => workspace.id == currentWorkspaceId)
-      .firstOrNull;
-  final entries = <QuickSwitcherEntry>[
-    QuickSwitcherEntry(
-      type: .newConversation,
-      workspaceId: currentWorkspaceId,
-      workspaceName: currentWorkspace?.name ?? '',
-      title: '',
-      titleKey: LocaleKeys.quick_switcher_new_conversation,
-    ),
-    QuickSwitcherEntry(
-      type: .settings,
-      workspaceId: currentWorkspaceId,
-      workspaceName: currentWorkspace?.name ?? '',
-      title: '',
-      titleKey: LocaleKeys.quick_switcher_settings,
-    ),
-  ];
+  final currentWorkspace = _currentWorkspace(workspaces, currentWorkspaceId);
+  final results = await _loadWorkspaceResults(ref, workspaces);
 
-  final availabilityLoads = workspaces
-      .map(
-        (workspace) => _capture(
-          ref.watch(workspaceAvailabilityProvider(workspace.id).future),
-        ),
-      )
-      .toList();
-  final availability = await Future.wait(availabilityLoads);
-  var hasUnavailableResults = false;
+  return _quickSwitcherEntries(currentWorkspaceId, currentWorkspace, results);
+}
 
-  for (var index = 0; index < workspaces.length; index++) {
-    final workspace = workspaces[index];
-    final workspaceAvailability = availability[index];
-    if (workspaceAvailability.hasError) {
-      hasUnavailableResults = true;
-      continue;
-    }
-    if (workspaceAvailability.value is! WorkspaceAvailable) continue;
+WorkspaceEntity? _currentWorkspace(
+  List<WorkspaceEntity> workspaces,
+  String workspaceId,
+) => workspaces.where((workspace) => workspace.id == workspaceId).firstOrNull;
 
-    entries.add(_workspaceEntry(workspace));
-    final conversationsLoad = _capture(
-      ref.watch(
-        conversationsStreamProvider(
-          workspaceId: workspace.id,
-          pagination: (limit: _recentConversationLimit, offset: 0),
-        ).future,
-      ),
-    );
-    final agentsLoad = _capture(ref.watch(agentsProvider(workspace.id).future));
-    final skillsLoad = _capture(
-      ref.watch(workspaceSkillsProvider(workspace.id).future),
-    );
-    final conversations = await conversationsLoad;
-    final agents = await agentsLoad;
-    final skills = await skillsLoad;
+Future<List<_WorkspaceResult>> _loadWorkspaceResults(
+  Ref ref,
+  List<WorkspaceEntity> workspaces,
+) => Future.wait(
+  workspaces.map((workspace) => _workspaceResult(ref, workspace)),
+);
 
-    hasUnavailableResults |=
-        conversations.hasError || agents.hasError || skills.hasError;
-    if (conversations.value case final conversationList?) {
-      entries.addAll(
-        conversationList.map(
-          (conversation) => _conversationEntry(conversation, workspace),
-        ),
-      );
-    }
-    if (agents.value case final agentList?) {
-      entries.addAll(agentList.map((agent) => _agentEntry(agent, workspace)));
-    }
-    if (skills.value case final skillList?) {
-      entries.addAll(skillList.map((skill) => _skillEntry(skill, workspace)));
-    }
-  }
+QuickSwitcherEntries _quickSwitcherEntries(
+  String workspaceId,
+  WorkspaceEntity? currentWorkspace,
+  List<_WorkspaceResult> results,
+) => QuickSwitcherEntries(
+  entries: _quickSwitcherEntryList(workspaceId, currentWorkspace, results),
+  hasUnavailableResults: results.any(_hasUnavailableResults),
+);
 
-  return QuickSwitcherEntries(
-    entries: entries,
-    hasUnavailableResults: hasUnavailableResults,
+List<QuickSwitcherEntry> _quickSwitcherEntryList(
+  String workspaceId,
+  WorkspaceEntity? currentWorkspace,
+  List<_WorkspaceResult> results,
+) =>
+    _actionEntries(workspaceId, currentWorkspace)
+      ..addAll(results.expand((result) => result.entries));
+
+List<QuickSwitcherEntry> _actionEntries(
+  String currentWorkspaceId,
+  WorkspaceEntity? currentWorkspace,
+) => [
+  QuickSwitcherEntry(
+    type: .newConversation,
+    workspaceId: currentWorkspaceId,
+    workspaceName: currentWorkspace?.name ?? '',
+    title: '',
+    titleKey: LocaleKeys.quick_switcher_new_conversation,
+  ),
+  QuickSwitcherEntry(
+    type: .settings,
+    workspaceId: currentWorkspaceId,
+    workspaceName: currentWorkspace?.name ?? '',
+    title: '',
+    titleKey: LocaleKeys.quick_switcher_settings,
+  ),
+];
+
+Future<_WorkspaceResult> _workspaceResult(
+  Ref ref,
+  WorkspaceEntity workspace,
+) async {
+  final availability = await _capture(
+    ref.watch(workspaceAvailabilityProvider(workspace.id).future),
+  );
+
+  return await _workspaceResultForAvailability(
+    ref,
+    workspace,
+    availability.hasError,
+    availability.value is WorkspaceAvailable,
   );
 }
 
+Future<_WorkspaceResult> _workspaceResultForAvailability(
+  Ref ref,
+  WorkspaceEntity workspace,
+  bool hasError,
+  bool isAvailable,
+) async {
+  if (hasError) {
+    return (entries: const <QuickSwitcherEntry>[], hasUnavailableResults: true);
+  }
+  if (!isAvailable) {
+    return (
+      entries: const <QuickSwitcherEntry>[],
+      hasUnavailableResults: false,
+    );
+  }
+
+  final data = await _loadWorkspaceData(ref, workspace);
+
+  return (
+    entries: _workspaceEntries(workspace, data),
+    hasUnavailableResults: _hasUnavailableWorkspaceData(data),
+  );
+}
+
+Future<_WorkspaceData> _loadWorkspaceData(
+  Ref ref,
+  WorkspaceEntity workspace,
+) async {
+  final conversations = _loadConversations(ref, workspace);
+  final agents = _loadAgents(ref, workspace);
+  final skills = _loadSkills(ref, workspace);
+
+  return (
+    conversations: await conversations,
+    agents: await agents,
+    skills: await skills,
+  );
+}
+
+Future<_Captured<List<ConversationEntity>>> _loadConversations(
+  Ref ref,
+  WorkspaceEntity workspace,
+) {
+  final provider = conversationsStreamProvider(
+    workspaceId: workspace.id,
+    pagination: (limit: _recentConversationLimit, offset: 0),
+  );
+
+  return _capture(ref.watch(provider.future));
+}
+
+Future<_Captured<List<AgentEntity>>> _loadAgents(
+  Ref ref,
+  WorkspaceEntity workspace,
+) => _capture(ref.watch(agentsProvider(workspace.id).future));
+
+Future<_Captured<List<WorkspaceSkill>>> _loadSkills(
+  Ref ref,
+  WorkspaceEntity workspace,
+) => _capture(ref.watch(workspaceSkillsProvider(workspace.id).future));
+
+List<QuickSwitcherEntry> _workspaceEntries(
+  WorkspaceEntity workspace,
+  _WorkspaceData data,
+) => [
+  _workspaceEntry(workspace),
+  ..._entriesFor(
+    data.conversations.value,
+    (value) => _conversationEntry(value, workspace),
+  ),
+  ..._entriesFor(data.agents.value, (value) => _agentEntry(value, workspace)),
+  ..._entriesFor(data.skills.value, (value) => _skillEntry(value, workspace)),
+];
+
+Iterable<QuickSwitcherEntry> _entriesFor<T>(
+  Iterable<T>? values,
+  QuickSwitcherEntry Function(T) toEntry,
+) => values?.map(toEntry) ?? const [];
+
+bool _hasUnavailableResults(_WorkspaceResult result) =>
+    result.hasUnavailableResults;
+
+bool _hasUnavailableWorkspaceData(_WorkspaceData data) =>
+    data.conversations.hasError || data.agents.hasError || data.skills.hasError;
+
+typedef _WorkspaceResult = ({
+  List<QuickSwitcherEntry> entries,
+  bool hasUnavailableResults,
+});
+
+typedef _WorkspaceData = ({
+  _Captured<List<ConversationEntity>> conversations,
+  _Captured<List<AgentEntity>> agents,
+  _Captured<List<WorkspaceSkill>> skills,
+});
 QuickSwitcherEntry _workspaceEntry(WorkspaceEntity workspace) =>
     QuickSwitcherEntry(
       type: .workspace,

@@ -9,6 +9,8 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+const double _quickSwitcherPlaceholderHeight = 180;
+
 class const QuickSwitcherDialog({required final String workspaceId, super.key})
     extends ConsumerStatefulWidget {
   @override
@@ -45,64 +47,13 @@ class _QuickSwitcherDialogState extends ConsumerState<QuickSwitcherDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = quickSwitcherEntriesProvider(widget.workspaceId);
-    final state = ref.watch(provider);
+    final results = ref.watch(quickSwitcherEntriesProvider(widget.workspaceId));
 
     return AuraAlertDialog(
       title: const TextLocale(LocaleKeys.quick_switcher_title),
-      message: SizedBox(
-        width: 360,
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            Focus(
-              child: TextField(
-                controller: _queryController,
-                focusNode: _searchFocus,
-                decoration: .new(
-                  hintText: LocaleKeys.quick_switcher_search.tr(),
-                  prefixIcon: const Icon(Icons.search),
-                ),
-                autofocus: true,
-                onChanged: _onQueryChanged,
-                onSubmitted: (_) => _activateSelected(),
-              ),
-              onKeyEvent: _handleSearchKey,
-            ),
-            const SizedBox(height: 8),
-            switch (state) {
-              AsyncLoading() => const SizedBox(
-                height: 180,
-                child: Center(
-                  child: TextLocale(LocaleKeys.quick_switcher_loading),
-                ),
-              ),
-              AsyncError() => _QuickSwitcherLoadError(onRetry: _retry),
-              AsyncData(:final value) => _QuickSwitcherResultsList(
-                entries: _filterEntries(
-                  context,
-                  value.entries,
-                  _queryController.text,
-                ),
-                hasUnavailableResults: value.hasUnavailableResults,
-                selectedIndex: _selectedIndex,
-                scrollController: _resultsScrollController,
-                onSelect: _select,
-              ),
-            },
-            const SizedBox(height: 8),
-            const TextLocale(LocaleKeys.quick_switcher_keyboard_hint),
-          ],
-        ),
-      ),
+      message: _QuickSwitcherDialogBody(state: this, results: results),
       dismissLabel: const TextLocale(LocaleKeys.common_close),
     );
-  }
-
-  void _retry() {
-    ref
-      ..invalidate(allWorkspacesProvider)
-      ..invalidate(quickSwitcherEntriesProvider(widget.workspaceId));
   }
 
   KeyEventResult _handleSearchKey(FocusNode _, KeyEvent event) {
@@ -112,7 +63,7 @@ class _QuickSwitcherDialogState extends ConsumerState<QuickSwitcherDialog> {
       .arrowDown => _moveSelection(1),
       .arrowUp => _moveSelection(-1),
       .enter || .numpadEnter => _activateSelected(),
-      .escape => _dismiss(),
+      .escape => _dismissDialog(context),
       _ => .ignored,
     };
   }
@@ -121,10 +72,12 @@ class _QuickSwitcherDialogState extends ConsumerState<QuickSwitcherDialog> {
     final entries = _visibleEntries;
     if (entries.isEmpty) return .handled;
 
-    final selectedIndex = _selectedIndex < entries.length ? _selectedIndex : 0;
     setState(() {
-      _selectedIndex =
-          (selectedIndex + direction + entries.length) % entries.length;
+      _selectedIndex = _nextSelectionIndex(
+        _selectedIndex,
+        direction,
+        entries.length,
+      );
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureSelectedItemVisible();
@@ -142,23 +95,13 @@ class _QuickSwitcherDialogState extends ConsumerState<QuickSwitcherDialog> {
 
   void _ensureSelectedItemVisible() {
     if (!mounted || !_resultsScrollController.hasClients) return;
-    final entryCount = _visibleEntries.length;
-    if (entryCount < 2) return;
 
     final position = _resultsScrollController.position;
-    final itemExtent =
-        (position.maxScrollExtent + position.viewportDimension) / entryCount;
-    final selectedIndex = _selectedIndex < entryCount ? _selectedIndex : 0;
-    final itemTop = position.minScrollExtent + selectedIndex * itemExtent;
-    final itemBottom = itemTop + itemExtent;
-    final viewportTop = position.pixels;
-    final viewportBottom = viewportTop + position.viewportDimension;
-    final target = switch (itemTop < viewportTop) {
-      true => itemTop,
-      false when itemBottom > viewportBottom =>
-        itemBottom - position.viewportDimension,
-      _ => null,
-    };
+    final target = _selectedItemScrollTarget(
+      position,
+      _selectedIndex,
+      _visibleEntries.length,
+    );
     if (target == null) return;
 
     _resultsScrollController.animateTo(
@@ -171,20 +114,93 @@ class _QuickSwitcherDialogState extends ConsumerState<QuickSwitcherDialog> {
   KeyEventResult _activateSelected() {
     final entries = _visibleEntries;
     if (entries.isNotEmpty) {
-      final index = _selectedIndex < entries.length ? _selectedIndex : 0;
-      _select(entries[index]);
+      Navigator.of(context)
+          .pop(entries[_safeSelectedIndex(_selectedIndex, entries.length)]);
     }
 
     return .handled;
   }
 
-  KeyEventResult _dismiss() {
-    Navigator.of(context).pop();
-
-    return .handled;
-  }
+  void _retry() => _retryQuickSwitcher(ref, widget.workspaceId);
 
   void _select(QuickSwitcherEntry entry) => Navigator.of(context).pop(entry);
+}
+
+class const _QuickSwitcherDialogBody({
+  required final _QuickSwitcherDialogState state,
+  required final AsyncValue<QuickSwitcherEntries> results,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 360,
+    child: Column(
+      mainAxisSize: .min,
+      children: [
+        _QuickSwitcherSearchField(state: state),
+        const SizedBox(height: 8),
+        _QuickSwitcherAsyncResults(state: state, results: results),
+        const SizedBox(height: 8),
+        const TextLocale(LocaleKeys.quick_switcher_keyboard_hint),
+      ],
+    ),
+  );
+}
+
+class const _QuickSwitcherSearchField({
+  required final _QuickSwitcherDialogState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Focus(
+    child: _QuickSwitcherSearchInput(state: state),
+    onKeyEvent: state._handleSearchKey,
+  );
+}
+
+class const _QuickSwitcherSearchInput({
+  required final _QuickSwitcherDialogState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextField(
+    controller: state._queryController,
+    focusNode: state._searchFocus,
+    decoration: .new(
+      hintText: LocaleKeys.quick_switcher_search.tr(),
+      prefixIcon: const Icon(Icons.search),
+    ),
+    autofocus: true,
+    onChanged: state._onQueryChanged,
+    onSubmitted: (_) => state._activateSelected(),
+  );
+}
+
+class const _QuickSwitcherAsyncResults({
+  required final _QuickSwitcherDialogState state,
+  required final AsyncValue<QuickSwitcherEntries> results,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (results) {
+    AsyncLoading() => const _QuickSwitcherLoading(),
+    AsyncError() => _QuickSwitcherLoadError(onRetry: state._retry),
+    AsyncData(:final value) => _QuickSwitcherResultsList(
+      entries: _filterEntries(
+        context,
+        value.entries,
+        state._queryController.text,
+      ),
+      hasUnavailableResults: value.hasUnavailableResults,
+      selectedIndex: state._selectedIndex,
+      scrollController: state._resultsScrollController,
+      onSelect: state._select,
+    ),
+  };
+}
+
+class const _QuickSwitcherLoading() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+    height: _quickSwitcherPlaceholderHeight,
+    child: Center(child: TextLocale(LocaleKeys.quick_switcher_loading)),
+  );
 }
 
 class const _QuickSwitcherResultsList({
@@ -196,85 +212,162 @@ class const _QuickSwitcherResultsList({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final selectedIndex = this.selectedIndex < entries.length
-        ? this.selectedIndex
-        : 0;
-    if (entries.isEmpty) {
-      return const SizedBox(
-        height: 180,
-        child: Center(child: TextLocale(LocaleKeys.quick_switcher_no_results)),
-      );
-    }
+    if (entries.isEmpty) return const _QuickSwitcherNoResults();
+
+    final safeSelectedIndex = _safeSelectedIndex(selectedIndex, entries.length);
 
     return Column(
       mainAxisSize: .min,
       crossAxisAlignment: .stretch,
       children: [
-        Semantics(
-          key: const ValueKey<String>('quick_switcher_selection_announcement'),
-          child: const SizedBox.shrink(),
-          container: true,
-          liveRegion: true,
-          label: LocaleKeys.quick_switcher_selection_announcement.tr(
-            namedArgs: {
-              'title': _entryTitle(context, entries[selectedIndex]),
-              'subtitle': _entrySubtitle(context, entries[selectedIndex]),
-            },
-            context: context,
-          ),
-        ),
-        if (hasUnavailableResults)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
-            child: TextLocale(LocaleKeys.quick_switcher_partial_results),
-          ),
-        SizedBox(
-          height: 240,
-          child: ListView.builder(
-            controller: scrollController,
-            itemBuilder: (context, index) {
-              final entry = entries[index];
-              final title = _entryTitle(context, entry);
-              final subtitle = _entrySubtitle(context, entry);
-              final isSelected = index == selectedIndex;
-
-              return Semantics(
-                child: ExcludeSemantics(
-                  child: Material(
-                    type: .transparency,
-                    child: ListTile(
-                      leading: Icon(_entryIcon(entry.type)),
-                      title: Text(title, overflow: .ellipsis, maxLines: 1),
-                      subtitle: Text(
-                        subtitle,
-                        overflow: .ellipsis,
-                        maxLines: 1,
-                      ),
-                      dense: true,
-                      onTap: () => onSelect(entry),
-                      selected: isSelected,
-                    ),
-                  ),
-                ),
-                selected: isSelected,
-                button: true,
-                label: '$title, $subtitle',
-                onTap: () => onSelect(entry),
-              );
-            },
-            itemCount: entries.length,
-          ),
+        _QuickSwitcherSelectionAnnouncement(entry: entries[safeSelectedIndex]),
+        _QuickSwitcherEntryList(
+          entries: entries,
+          hasUnavailableResults: hasUnavailableResults,
+          selectedIndex: safeSelectedIndex,
+          scrollController: scrollController,
+          onSelect: onSelect,
         ),
       ],
     );
   }
 }
 
+class const _QuickSwitcherNoResults() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+    height: _quickSwitcherPlaceholderHeight,
+    child: Center(child: TextLocale(LocaleKeys.quick_switcher_no_results)),
+  );
+}
+
+class const _QuickSwitcherPartialResults() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.symmetric(vertical: 4),
+    child: TextLocale(LocaleKeys.quick_switcher_partial_results),
+  );
+}
+
+class const _QuickSwitcherSelectionAnnouncement({
+  required final QuickSwitcherEntry entry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('quick_switcher_selection_announcement'),
+    child: const SizedBox.shrink(),
+    container: true,
+    liveRegion: true,
+    label: _selectionAnnouncementLabel(context, entry),
+  );
+}
+
+class const _QuickSwitcherEntryList({
+  required final List<QuickSwitcherEntry> entries,
+  required final bool hasUnavailableResults,
+  required final int selectedIndex,
+  required final ScrollController scrollController,
+  required final ValueChanged<QuickSwitcherEntry> onSelect,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      if (hasUnavailableResults) const _QuickSwitcherPartialResults(),
+      _QuickSwitcherEntryListView(
+        entries: entries,
+        selectedIndex: selectedIndex,
+        scrollController: scrollController,
+        onSelect: onSelect,
+      ),
+    ],
+  );
+}
+
+class const _QuickSwitcherEntryListView({
+  required final List<QuickSwitcherEntry> entries,
+  required final int selectedIndex,
+  required final ScrollController scrollController,
+  required final ValueChanged<QuickSwitcherEntry> onSelect,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 240,
+    child: ListView.builder(
+      controller: scrollController,
+      itemBuilder: (context, index) => _QuickSwitcherEntryTile(
+        entry: entries[index],
+        isSelected: index == selectedIndex,
+        onSelect: onSelect,
+      ),
+      itemCount: entries.length,
+    ),
+  );
+}
+
+class const _QuickSwitcherEntryTile({
+  required final QuickSwitcherEntry entry,
+  required final bool isSelected,
+  required final ValueChanged<QuickSwitcherEntry> onSelect,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final title = _entryTitle(context, entry);
+    final subtitle = _entrySubtitle(context, entry);
+
+    return Semantics(
+      child: ExcludeSemantics(
+        child: _QuickSwitcherTileContent(
+          type: entry.type,
+          title: title,
+          subtitle: subtitle,
+          isSelected: isSelected,
+          onTap: _select,
+        ),
+      ),
+      selected: isSelected,
+      button: true,
+      label: _entryAccessibilityLabel(title, subtitle),
+      onTap: _select,
+    );
+  }
+
+  void _select() => onSelect(entry);
+}
+
+class const _QuickSwitcherTileContent({
+  required final QuickSwitcherEntryType type,
+  required final String title,
+  required final String subtitle,
+  required final bool isSelected,
+  required final VoidCallback onTap,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Material(
+    type: .transparency,
+    child: ListTile(
+      leading: Icon(_entryIcon(type)),
+      title: _QuickSwitcherEntryText(text: title),
+      subtitle: _QuickSwitcherEntryText(text: subtitle),
+      dense: true,
+      onTap: onTap,
+      selected: isSelected,
+    ),
+  );
+}
+
+class const _QuickSwitcherEntryText({required final String text})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      Text(text, overflow: .ellipsis, maxLines: 1);
+}
+
 class const _QuickSwitcherLoadError({required final VoidCallback onRetry})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox(
-    height: 180,
+    height: _quickSwitcherPlaceholderHeight,
     child: Column(
       mainAxisAlignment: .center,
       children: [
@@ -298,15 +391,23 @@ List<QuickSwitcherEntry> _filterEntries(
   final normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery.isEmpty) return entries;
 
-  return entries.where((entry) {
-    final title = _entryTitle(context, entry);
-    final type = _entryKindKey(entry.type).tr(context: context);
-    final searchable =
-        '$title ${entry.searchTerms} ${entry.workspaceName} $type'
-            .toLowerCase();
+  return entries
+      .where((entry) => _matchesQuery(context, entry, normalizedQuery))
+      .toList();
+}
 
-    return searchable.contains(normalizedQuery);
-  }).toList();
+bool _matchesQuery(
+  BuildContext context,
+  QuickSwitcherEntry entry,
+  String query,
+) => _entrySearchableText(context, entry).contains(query);
+
+String _entrySearchableText(BuildContext context, QuickSwitcherEntry entry) {
+  final title = _entryTitle(context, entry);
+  final type = _entryKindKey(entry.type).tr(context: context);
+
+  return '$title ${entry.searchTerms} ${entry.workspaceName} $type'
+      .toLowerCase();
 }
 
 String _entryTitle(BuildContext context, QuickSwitcherEntry entry) =>
@@ -348,3 +449,72 @@ IconData _entryIcon(QuickSwitcherEntryType type) => switch (type) {
   .newConversation => Icons.add_comment_outlined,
   .settings => Icons.settings_outlined,
 };
+
+int _nextSelectionIndex(int selectedIndex, int direction, int entryCount) =>
+    (selectedIndex + direction + entryCount) % entryCount;
+
+int _safeSelectedIndex(int selectedIndex, int entryCount) =>
+    selectedIndex < entryCount ? selectedIndex : 0;
+
+double? _selectedItemScrollTarget(
+  ScrollPosition position,
+  int selectedIndex,
+  int entryCount,
+) {
+  if (entryCount < 2) return null;
+
+  final itemExtent =
+      (position.maxScrollExtent + position.viewportDimension) / entryCount;
+  final itemTop =
+      position.minScrollExtent +
+      _safeSelectedIndex(selectedIndex, entryCount) * itemExtent;
+
+  return _visibleItemScrollTarget(position, itemTop, itemExtent);
+}
+
+double? _visibleItemScrollTarget(
+  ScrollPosition position,
+  double itemTop,
+  double itemExtent,
+) {
+  final itemBottom = itemTop + itemExtent;
+  final viewportTop = position.pixels;
+  final viewportBottom = viewportTop + position.viewportDimension;
+  if (itemTop < viewportTop) return itemTop;
+  if (itemBottom > viewportBottom) {
+    return itemBottom - position.viewportDimension;
+  }
+
+  return null;
+}
+
+void _retryQuickSwitcher(WidgetRef ref, String workspaceId) {
+  ref
+    ..invalidate(allWorkspacesProvider)
+    ..invalidate(quickSwitcherEntriesProvider(workspaceId));
+}
+
+KeyEventResult _dismissDialog(BuildContext context) {
+  Navigator.of(context).pop();
+
+  return .handled;
+}
+
+String _selectionAnnouncementLabel(
+  BuildContext context,
+  QuickSwitcherEntry entry,
+) => LocaleKeys.quick_switcher_selection_announcement.tr(
+  namedArgs: _selectionAnnouncementArgs(context, entry),
+  context: context,
+);
+
+Map<String, String> _selectionAnnouncementArgs(
+  BuildContext context,
+  QuickSwitcherEntry entry,
+) => {
+  'title': _entryTitle(context, entry),
+  'subtitle': _entrySubtitle(context, entry),
+};
+
+String _entryAccessibilityLabel(String title, String subtitle) =>
+    '$title, $subtitle';

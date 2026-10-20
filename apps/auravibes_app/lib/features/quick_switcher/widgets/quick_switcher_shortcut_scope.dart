@@ -61,38 +61,59 @@ class _QuickSwitcherShortcutScopeState
   }
 
   Future<void> _openSwitcher() async {
-    final selected = await showDialog<QuickSwitcherEntry>(
-      context: context,
-      builder: (_) => QuickSwitcherDialog(workspaceId: widget.workspaceId),
+    final selected = await _showQuickSwitcherDialog(
+      context,
+      widget.workspaceId,
     );
     if (!mounted || selected == null) return;
 
-    ref
-        .read(workspaceSwitcherProvider.notifier)
-        .switchToWorkspace(
-          selected.workspaceId,
-          destinationLocation: _destinationFor(selected),
-        );
+    _switchToSelection(ref, selected);
   }
-
-  String _destinationFor(QuickSwitcherEntry entry) => switch (entry.type) {
-    .workspace ||
-    .newConversation => NewChatRoute(workspaceId: entry.workspaceId).location,
-    .conversation => ConversationRoute(
-      workspaceId: entry.workspaceId,
-      chatId: _requiredEntryId(entry),
-    ).location,
-    .agent => AgentDetailRoute(
-      workspaceId: entry.workspaceId,
-      agentId: _requiredEntryId(entry),
-    ).location,
-    .skill => SkillDetailRoute(
-      workspaceId: entry.workspaceId,
-      skillId: _requiredEntryId(entry),
-    ).location,
-    .settings => SettingsRoute(workspaceId: entry.workspaceId).location,
-  };
 }
+
+Future<QuickSwitcherEntry?> _showQuickSwitcherDialog(
+  BuildContext context,
+  String workspaceId,
+) => showDialog<QuickSwitcherEntry>(
+  context: context,
+  builder: (_) => QuickSwitcherDialog(workspaceId: workspaceId),
+);
+
+void _switchToSelection(WidgetRef ref, QuickSwitcherEntry entry) => ref
+    .read(workspaceSwitcherProvider.notifier)
+    .switchToWorkspace(
+      entry.workspaceId,
+      destinationLocation: _destinationFor(entry),
+    );
+
+String _destinationFor(QuickSwitcherEntry entry) => switch (entry.type) {
+  .workspace || .newConversation => _newChatLocation(entry.workspaceId),
+  .conversation => _conversationLocation(entry),
+  .agent => _agentLocation(entry),
+  .skill => _skillLocation(entry),
+  .settings => _settingsLocation(entry.workspaceId),
+};
+
+String _newChatLocation(String workspaceId) =>
+    NewChatRoute(workspaceId: workspaceId).location;
+
+String _conversationLocation(QuickSwitcherEntry entry) => ConversationRoute(
+  workspaceId: entry.workspaceId,
+  chatId: _requiredEntryId(entry),
+).location;
+
+String _agentLocation(QuickSwitcherEntry entry) => AgentDetailRoute(
+  workspaceId: entry.workspaceId,
+  agentId: _requiredEntryId(entry),
+).location;
+
+String _skillLocation(QuickSwitcherEntry entry) => SkillDetailRoute(
+  workspaceId: entry.workspaceId,
+  skillId: _requiredEntryId(entry),
+).location;
+
+String _settingsLocation(String workspaceId) =>
+    SettingsRoute(workspaceId: workspaceId).location;
 
 String _requiredEntryId(QuickSwitcherEntry entry) {
   final id = entry.id;
