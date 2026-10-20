@@ -16,6 +16,11 @@ gh pr checks <number> --json name,bucket \
 
 - Repeat every 60 seconds while rows remain. Exit code 8 means checks are pending; empty output means no checks need attention. Use `--watch` only when full live output is useful.
 - After a watch interruption, query current status before restarting; follow [validation policy](task-policies.md#validation).
+- For job-level diagnosis, with `run_id` set to the relevant run, project unfinished jobs instead of printing full job objects:
+  ```sh
+  gh run view "$run_id" --json jobs --jq \
+    '[.jobs[] | select(.status != "completed") | {name, status, activeStep: ([.steps[]? | select(.status == "in_progress") | .name][0])}]'
+  ```
 
 - `ci success` only summarizes fan-out; inspect first failed job. A cancelled PR run may be superseded by newer push.
 - `integrity` generated drift: run `generate` and `generate:serverpod`; review and commit generated diff. Never hand-edit output.
