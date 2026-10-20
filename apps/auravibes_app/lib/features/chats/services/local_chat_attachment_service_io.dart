@@ -50,7 +50,11 @@ class LocalChatAttachmentServiceIo({
     Uint8List bytes, {
     required String fileName,
     required String displayName,
-  }) => _copyBytesIntoAppStorage(this, bytes, fileName, displayName);
+  }) => _copyBytesIntoAppStorage(this, (
+    bytes: bytes,
+    fileName: fileName,
+    displayName: displayName,
+  ));
 
   Future<Uint8List> readAttachmentBytes(String localPath) =>
       File(localPath).readAsBytes();
@@ -95,6 +99,11 @@ typedef _AttachmentSource = ({
   int sizeBytes,
   String mimeType,
 });
+typedef _DroppedFileRequest = ({
+  Uint8List bytes,
+  String fileName,
+  String displayName,
+});
 
 Future<MessageAttachmentToCreate> _copyIntoAppStorage(
   LocalChatAttachmentServiceIo service,
@@ -111,31 +120,34 @@ Future<MessageAttachmentToCreate> _copyIntoAppStorage(
 
 Future<MessageAttachmentToCreate> _copyBytesIntoAppStorage(
   LocalChatAttachmentServiceIo service,
-  Uint8List bytes,
-  String fileName,
-  String displayName,
+  _DroppedFileRequest request,
 ) async {
-  _ensureAttachmentSize(bytes.length);
-  final safeFileName = _safeAttachmentFileName(fileName);
+  _ensureAttachmentSize(request.bytes.length);
   final localPath = await _newAttachmentPath(service, 'attachment');
   final file = File(localPath);
-  await _writeArchiveAttachment(file, bytes);
-  final mimeType =
-      lookupMimeType(
-        safeFileName,
-        headerBytes: bytes.take(_mimeHeaderLength).toList(),
-      ) ??
-      'application/octet-stream';
+  await _writeArchiveAttachment(file, request.bytes);
+  final source = _droppedFileSource(file, request);
 
-  final source = (
-    file: file,
-    fileName: safeFileName,
-    sizeBytes: bytes.length,
-    mimeType: mimeType,
-  );
-
-  return _newAttachment(file, source, displayName);
+  return _newAttachment(file, source, request.displayName);
 }
+
+_AttachmentSource _droppedFileSource(File file, _DroppedFileRequest request) {
+  final fileName = _safeAttachmentFileName(request.fileName);
+
+  return (
+    file: file,
+    fileName: fileName,
+    sizeBytes: request.bytes.length,
+    mimeType: _attachmentMimeType(fileName, request.bytes),
+  );
+}
+
+String _attachmentMimeType(String fileName, Uint8List bytes) =>
+    lookupMimeType(
+      fileName,
+      headerBytes: bytes.take(_mimeHeaderLength).toList(),
+    ) ??
+    'application/octet-stream';
 
 String _safeAttachmentFileName(String fileName) {
   final safeFileName = p.posix

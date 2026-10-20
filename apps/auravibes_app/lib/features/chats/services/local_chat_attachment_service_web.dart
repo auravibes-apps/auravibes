@@ -37,20 +37,17 @@ class LocalChatAttachmentServiceWeb({
     }
 
     final safeFileName = _safeAttachmentFileName(fileName);
-    final localPath = 'web-draft:${const UuidV7().generate()}';
-    final mimeType =
-        lookupMimeType(safeFileName, headerBytes: bytes.take(12).toList()) ??
-        'application/octet-stream';
+    final localPath = _newWebDraftPath();
+    final mimeType = _attachmentMimeType(safeFileName, bytes);
     ChatAttachmentBytesWeb.storeDraftFile(localPath, bytes);
 
-    return MessageAttachmentToCreate(
+    return _newWebDraftAttachment((
       localPath: localPath,
       fileName: safeFileName,
       displayName: displayName,
       mimeType: mimeType,
-      modality: ChatAttachmentModality.forMimeType(mimeType),
       sizeBytes: bytes.length,
-    );
+    ));
   }
 
   Future<Uint8List> readAttachmentBytes(String _) {
@@ -93,6 +90,31 @@ class LocalChatAttachmentServiceWeb({
     return Future.value();
   }
 }
+
+typedef _WebDraftAttachment = ({
+  String localPath,
+  String fileName,
+  String displayName,
+  String mimeType,
+  int sizeBytes,
+});
+
+String _newWebDraftPath() => 'web-draft:${const UuidV7().generate()}';
+
+String _attachmentMimeType(String fileName, Uint8List bytes) =>
+    lookupMimeType(fileName, headerBytes: bytes.take(12).toList()) ??
+    'application/octet-stream';
+
+MessageAttachmentToCreate _newWebDraftAttachment(
+  _WebDraftAttachment attachment,
+) => MessageAttachmentToCreate(
+  localPath: attachment.localPath,
+  fileName: attachment.fileName,
+  displayName: attachment.displayName,
+  mimeType: attachment.mimeType,
+  modality: ChatAttachmentModality.forMimeType(attachment.mimeType),
+  sizeBytes: attachment.sizeBytes,
+);
 
 String _safeAttachmentFileName(String fileName) {
   final safeFileName = p.posix

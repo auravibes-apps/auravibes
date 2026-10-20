@@ -27,6 +27,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
+import 'package:super_clipboard/super_clipboard.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 final _logger = Logger('chat_input_widget');
@@ -561,85 +562,75 @@ class const _ChatInputLayout({required final _ChatInputState state})
 class const _ChatInputDropOverlay({required final bool isHighlighted})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Positioned.fill(
-    child: IgnorePointer(
-      child: DecoratedBox(
-        decoration: isHighlighted
-            ? BoxDecoration(
-                color: context.auraColors.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(
-                  context.auraTheme.fromBorderRadius(.xl),
-                ),
-              )
-            : const BoxDecoration(),
-        child: CustomPaint(
+  Widget build(BuildContext context) {
+    final color = context.auraColors.primary;
+    final radius = context.auraTheme.fromBorderRadius(.xl);
+
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: DecoratedBox(
           key: isHighlighted
               ? const ValueKey('chat_input_drop_highlight')
               : null,
-          painter: isHighlighted
-              ? _ChatInputDropOutlinePainter(
-                  color: context.auraColors.primary,
-                  radius: context.auraTheme.fromBorderRadius(.xl),
-                )
-              : null,
+          decoration: _chatInputDropDecoration(isHighlighted, color, radius),
           child: Column(
             mainAxisAlignment: .center,
             mainAxisSize: .min,
             children: [
-              Icon(
-                Icons.file_upload_outlined,
-                size: 36,
-                color: context.auraColors.primary,
-              ),
+              Icon(Icons.file_upload_outlined, size: 36, color: color),
               const SizedBox(height: 8),
               const TextLocale(LocaleKeys.chat_input_drop_files_to_attach),
             ],
           ),
         ),
       ),
-    ),
+    );
+  }
+}
+
+BoxDecoration _chatInputDropDecoration(
+  bool isHighlighted,
+  Color color,
+  double radius,
+) => isHighlighted
+    ? BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        border: Border.all(color: color, width: 1.5),
+        borderRadius: BorderRadius.circular(radius),
+      )
+    : const BoxDecoration();
+
+class const _ChatInputDropStack({
+  required final Widget child,
+  required final bool isActive,
+  required final bool isHighlighted,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      child,
+      if (isActive) _ChatInputDropOverlay(isHighlighted: isHighlighted),
+    ],
   );
 }
 
-class const _ChatInputDropOutlinePainter({
-  required final Color color,
-  required final double radius,
-}) extends CustomPainter {
-  static const _dashLength = 5.0;
-  static const _dashGap = 4.0;
-  static const _strokeWidth = 1.5;
+void _handleChatInputDropOver(
+  _ChatInputState state,
+  ValueNotifier<bool> isActive,
+  ValueNotifier<bool> isHovered,
+  MonitorDropOverEvent event,
+) {
+  final canAccept = _canAcceptChatInputDrop(state, event.session);
+  isActive.value = canAccept;
+  isHovered.value = canAccept && event.isInside;
+}
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (size.isEmpty) return;
-
-    const inset = _strokeWidth / 2;
-    final rect = (Offset.zero & size).deflate(inset);
-    final path = Path()
-      ..addRRect(
-        .fromRectAndRadius(
-          rect,
-          .circular((radius - inset).clamp(0.0, double.infinity)),
-        ),
-      );
-    final paint = Paint()
-      ..color = color
-      ..style = .stroke
-      ..strokeWidth = _strokeWidth;
-
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        final end = (distance + _dashLength).clamp(0.0, metric.length);
-        canvas.drawPath(metric.extractPath(distance, end), paint);
-        distance = end + _dashGap;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ChatInputDropOutlinePainter oldDelegate) =>
-      color != oldDelegate.color || radius != oldDelegate.radius;
+void _clearChatInputDropState(
+  ValueNotifier<bool> isActive,
+  ValueNotifier<bool> isHovered,
+) {
+  isActive.value = false;
+  isHovered.value = false;
 }
 
 DropOperation _chatInputDropOperation(
@@ -661,17 +652,20 @@ Future<void> _handleChatInputDrop(
   for (final item in event.session.items) {
     if (!_chatInputDropFormats.any(item.canProvide)) continue;
 
-    try {
-      final file = await _readDroppedChatFile(item);
-      if (file == null) continue;
-      if (!state.actions.ref.context.mounted) return;
+    await _addDroppedChatFile(state, item);
+  }
+}
 
-      await state.actions.addDroppedFile(file.bytes, fileName: file.fileName);
-    } on ChatAttachmentTooLargeException catch (error) {
-      state.actions._showAttachmentError(error.localizationKey);
-    } on Object catch (error, stackTrace) {
-      _logger.warning('Failed to attach dropped file', error, stackTrace);
-    }
+Future<void> _addDroppedChatFile(_ChatInputState state, DropItem item) async {
+  try {
+    final file = await _readDroppedChatFile(item);
+    if (file == null || !state.actions.ref.context.mounted) return;
+
+    await state.actions.addDroppedFile(file.bytes, fileName: file.fileName);
+  } on ChatAttachmentTooLargeException catch (error) {
+    state.actions._showAttachmentError(error.localizationKey);
+  } on Object catch (error, stackTrace) {
+    _logger.warning('Failed to attach dropped file', error, stackTrace);
   }
 }
 
@@ -684,46 +678,68 @@ Future<_DroppedChatFile?> _readDroppedChatFile(DropItem item) {
   final completer = Completer<_DroppedChatFile?>();
   final progress = reader.getFile(
     null,
-    (file) async {
-      try {
-        final fileSize = file.fileSize;
-        if (fileSize != null &&
-            fileSize > ChatAttachmentModality.maxChatAttachmentBytes) {
-          file.close();
-          throw const ChatAttachmentTooLargeException();
-        }
-
-        final builder = BytesBuilder(copy: false);
-        var totalBytes = 0;
-        await for (final chunk in file.getStream()) {
-          totalBytes += chunk.length;
-          if (totalBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
-            file.close();
-            throw const ChatAttachmentTooLargeException();
-          }
-          builder.add(chunk);
-        }
-
-        final suggestedName =
-            file.fileName ?? await reader.getSuggestedName() ?? 'attachment';
-        final baseName = p.posix.basename(suggestedName.replaceAll(r'\', '/'));
-        final fileName = baseName.isEmpty || baseName == '.'
-            ? 'attachment'
-            : baseName;
-        completer.complete((fileName: fileName, bytes: builder.takeBytes()));
-      } on Object catch (error, stackTrace) {
-        if (!completer.isCompleted) {
-          completer.completeError(error, stackTrace);
-        }
-      }
-    },
-    onError: (error) {
-      if (!completer.isCompleted) completer.completeError(error);
-    },
+    (file) => _completeDroppedChatFile(reader, file, completer),
+    onError: (error) => _completeDroppedChatFileError(completer, error),
   );
   if (progress == null) return Future.value();
 
   return completer.future;
+}
+
+Future<void> _completeDroppedChatFile(
+  DataReader reader,
+  DataReaderFile file,
+  Completer<_DroppedChatFile?> completer,
+) async {
+  try {
+    final bytes = await _readDroppedChatFileBytes(file);
+    final fileName = await _droppedChatFileName(reader, file);
+    completer.complete((fileName: fileName, bytes: bytes));
+  } on Object catch (error, stackTrace) {
+    _completeDroppedChatFileError(completer, error, stackTrace);
+  }
+}
+
+Future<Uint8List> _readDroppedChatFileBytes(DataReaderFile file) async {
+  final fileSize = file.fileSize;
+  if (fileSize != null &&
+      fileSize > ChatAttachmentModality.maxChatAttachmentBytes) {
+    final _ = file.close();
+    throw const ChatAttachmentTooLargeException();
+  }
+
+  final builder = BytesBuilder(copy: false);
+  var totalBytes = 0;
+  await for (final chunk in file.getStream()) {
+    totalBytes += chunk.length;
+    if (totalBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
+      final _ = file.close();
+      throw const ChatAttachmentTooLargeException();
+    }
+    builder.add(chunk);
+  }
+
+  return builder.takeBytes();
+}
+
+Future<String> _droppedChatFileName(
+  DataReader reader,
+  DataReaderFile file,
+) async {
+  final suggestedName =
+      file.fileName ?? await reader.getSuggestedName() ?? 'attachment';
+  final baseName = p.posix.basename(suggestedName.replaceAll(r'\', '/'));
+
+  return baseName.isEmpty || baseName == '.' ? 'attachment' : baseName;
+}
+
+void _completeDroppedChatFileError(
+  Completer<_DroppedChatFile?> completer,
+  Object error, [
+  StackTrace? stackTrace,
+]) {
+  if (completer.isCompleted) return;
+  completer.completeError(error, stackTrace);
 }
 
 class const _ChatInputGestureDetector({required final _ChatInputState state})
@@ -968,11 +984,9 @@ class const _ChatInputToolAccessModeMenuItemTitle({
 }
 
 class const _ChatInputFieldComposition({required final _ChatInputState state})
-    extends HookWidget {
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final isDropActive = useState(false);
-    final isDropZoneHovered = useState(false);
     final field = _ChatInputField(
       state: state,
       footer: _ChatInputFooter(state: state),
@@ -983,37 +997,52 @@ class const _ChatInputFieldComposition({required final _ChatInputState state})
       return field;
     }
 
-    void handleDropOver(MonitorDropOverEvent event) {
-      final canAccept = _canAcceptChatInputDrop(state, event.session);
-      isDropActive.value = canAccept;
-      isDropZoneHovered.value = canAccept && event.isInside;
-    }
+    return _ChatInputDropTarget(state: state, child: field);
+  }
+}
 
-    return DropMonitor(
-      child: DropRegion(
-        child: Stack(
-          children: [
-            field,
-            if (isDropActive.value)
-              _ChatInputDropOverlay(isHighlighted: isDropZoneHovered.value),
-          ],
-        ),
-        formats: _chatInputDropFormats,
-        onDropOver: (event) => _chatInputDropOperation(state, event),
-        onPerformDrop: (event) => _handleChatInputDrop(state, event),
+class const _ChatInputDropTarget({
+  required final _ChatInputState state,
+  required final Widget child,
+}) extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isActive = useState(false);
+    final isHovered = useState(false);
+
+    return _ChatInputDropMonitor(
+      state: state,
+      child: _ChatInputDropStack(
+        child: child,
+        isActive: isActive.value,
+        isHighlighted: isHovered.value,
       ),
-      formats: _chatInputDropFormats,
-      onDropOver: handleDropOver,
-      onDropLeave: (_) {
-        isDropActive.value = false;
-        isDropZoneHovered.value = false;
-      },
-      onDropEnded: (_) {
-        isDropActive.value = false;
-        isDropZoneHovered.value = false;
-      },
+      onDropOver: (event) =>
+          _handleChatInputDropOver(state, isActive, isHovered, event),
+      onDropEnd: () => _clearChatInputDropState(isActive, isHovered),
     );
   }
+}
+
+class const _ChatInputDropMonitor({
+  required final _ChatInputState state,
+  required final Widget child,
+  required final ValueChanged<MonitorDropOverEvent> onDropOver,
+  required final VoidCallback onDropEnd,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => DropMonitor(
+    child: DropRegion(
+      child: child,
+      formats: _chatInputDropFormats,
+      onDropOver: (event) => _chatInputDropOperation(state, event),
+      onPerformDrop: (event) => _handleChatInputDrop(state, event),
+    ),
+    formats: _chatInputDropFormats,
+    onDropOver: onDropOver,
+    onDropLeave: (_) => onDropEnd(),
+    onDropEnded: (_) => onDropEnd(),
+  );
 }
 
 class const _ChatInputField({
@@ -1300,16 +1329,22 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
       return;
     }
 
-    if (!input.acceptDroppedFilesWhenDisabled &&
-        !_supportsAttachment(attachment)) {
-      deleteUnsentAttachment(attachment);
-      _showAttachmentError(_modelAttachmentReasonKey(attachment.modality));
-      _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
-
-      return;
-    }
+    if (!_canAddAttachment(attachment)) return;
 
     _draft.attachments.value = [..._draft.attachments.value, attachment];
+  }
+
+  bool _canAddAttachment(MessageAttachmentToCreate attachment) {
+    if (input.acceptDroppedFilesWhenDisabled ||
+        _supportsAttachment(attachment)) {
+      return true;
+    }
+
+    deleteUnsentAttachment(attachment);
+    _showAttachmentError(_modelAttachmentReasonKey(attachment.modality));
+    _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
+
+    return false;
   }
 
   void _showAttachmentError(String localizationKey) {
@@ -1575,11 +1610,7 @@ extension _ChatInputMessageActions on _ChatInputActions {
   ) async {
     try {
       await sendResult;
-      if (kIsWeb) {
-        for (final attachment in draft.attachments) {
-          await _attachmentUsecase.deleteAttachment(attachment.localPath);
-        }
-      }
+      await _deleteWebDraftAttachments(draft);
 
       return true;
     } on Object catch (error, stackTrace) {
@@ -1587,6 +1618,13 @@ extension _ChatInputMessageActions on _ChatInputActions {
       _restoreDraftAfterSendFailure(draft);
 
       return false;
+    }
+  }
+
+  Future<void> _deleteWebDraftAttachments(ChatDraft draft) async {
+    if (!kIsWeb) return;
+    for (final attachment in draft.attachments) {
+      await _attachmentUsecase.deleteAttachment(attachment.localPath);
     }
   }
 
