@@ -253,6 +253,7 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(changed, ConversationToolAccessMode.allowAll);
       expect(focus.hasFocus, isTrue);
+      expect(focus.descendants.any((node) => node.hasPrimaryFocus), isTrue);
       final _ = await tester.sendKeyEvent(.space);
       final _ = await tester.pumpAndSettle();
       final _ = await tester.sendKeyEvent(.escape);
