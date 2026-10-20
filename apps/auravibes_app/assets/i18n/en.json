@@ -1879,5 +1879,27 @@
     "skill": "Skill",
     "tool": "Tool",
     "disabled": "Disabled"
+  },
+  "mcp": {
+    "elicitation": {
+      "form_title": "Information requested by {}",
+      "url_title": "External page requested by {}",
+      "unsupported_title": "Request from {}",
+      "unsupported_mode": "This server requested an interaction AuraVibes cannot display.",
+      "unsupported_fields": "This request uses fields AuraVibes cannot display.",
+      "url_host": "Host: {}",
+      "url_punycode_warning": "This domain uses Unicode or Punycode. Review the host carefully.",
+      "url_ascii_host": "ASCII host: {}",
+      "url_ascii_host_error": "AuraVibes cannot verify this host's ASCII destination, so it cannot open this link.",
+      "url_review": "Review the host and full URL before opening this link.",
+      "invalid_url": "This link is invalid or uses a scheme AuraVibes cannot open.",
+      "select_option": "Choose an option",
+      "submit": "Send response",
+      "open_url": "Open link",
+      "decline": "Decline",
+      "cancel": "Cancel",
+      "invalid": "Some values are missing or invalid. Review the form and try again.",
+      "open_error": "Could not open this link. The request remains pending."
+    }
   }
 }

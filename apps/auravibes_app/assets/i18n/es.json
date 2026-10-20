@@ -1879,5 +1879,27 @@
     "skill": "Habilidad",
     "tool": "Herramienta",
     "disabled": "Desactivado"
+  },
+  "mcp": {
+    "elicitation": {
+      "form_title": "Información solicitada por {}",
+      "url_title": "Página externa solicitada por {}",
+      "unsupported_title": "Solicitud de {}",
+      "unsupported_mode": "Este servidor solicitó una interacción que AuraVibes no puede mostrar.",
+      "unsupported_fields": "Esta solicitud usa campos que AuraVibes no puede mostrar.",
+      "url_host": "Host: {}",
+      "url_punycode_warning": "Este dominio usa Unicode o Punycode. Revisa el host con cuidado.",
+      "url_ascii_host": "Host ASCII: {}",
+      "url_ascii_host_error": "AuraVibes no puede verificar el destino ASCII de este host, así que no puede abrir este enlace.",
+      "url_review": "Revisa el host y la URL completa antes de abrir este enlace.",
+      "invalid_url": "Este enlace no es válido o usa un esquema que AuraVibes no puede abrir.",
+      "select_option": "Elige una opción",
+      "submit": "Enviar respuesta",
+      "open_url": "Abrir enlace",
+      "decline": "Rechazar",
+      "cancel": "Cancelar",
+      "invalid": "Faltan valores o algunos no son válidos. Revisa el formulario e inténtalo de nuevo.",
+      "open_error": "No se pudo abrir este enlace. La solicitud sigue pendiente."
+    }
   }
 }

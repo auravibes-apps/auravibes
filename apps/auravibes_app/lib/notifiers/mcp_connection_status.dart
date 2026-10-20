@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_use_case.dart';
@@ -483,6 +484,7 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     required String mcpServerId,
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    McpElicitationHandler? onElicitation,
   }) async {
     if (_isCloud) {
       throw const UnsupportedWorkspaceCapabilityException();
@@ -493,6 +495,10 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
       client,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
+      elicitation: (
+        serverName: _requiredConnection(mcpServerId).server.name,
+        onElicitation: onElicitation,
+      ),
     );
   }
 

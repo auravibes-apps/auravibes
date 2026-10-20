@@ -215,6 +215,16 @@ void _requestMenuFocus(_AuraPopupMenuState state) {
   state._requiredMenuFocusScopeNode.requestFocus();
 }
 
+void _focusFirstPopupTriggerDescendant(FocusNode focusNode) {
+  for (final descendant in focusNode.descendants) {
+    if (!descendant.canRequestFocus) continue;
+
+    descendant.requestFocus();
+
+    return;
+  }
+}
+
 // SafeArea clears inherited padding, so read the view directly.
 double _viewSafeAreaBottom(BuildContext context) =>
     MediaQueryData.fromView(View.of(context)).padding.bottom;
@@ -266,7 +276,11 @@ class _AuraPopupMenuData {
              child: Focus(
                child: TapRegion(child: trigger, groupId: groupId),
                focusNode: focusNode,
-               descendantsAreFocusable: false,
+               onFocusChange: (focused) {
+                 if (focused) _focusFirstPopupTriggerDescendant(focusNode);
+               },
+               descendantsAreFocusable: true,
+               descendantsAreTraversable: false,
              ),
            ),
            includeSemantics: false,

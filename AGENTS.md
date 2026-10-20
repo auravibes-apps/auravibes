@@ -1,5 +1,5 @@
 # AuraVibes Agent Instructions
-<!-- Managed by agent: AuraVibes | Last updated: 2026-10-19 -->
+<!-- Managed by agent: AuraVibes | Last updated: 2026-10-20 -->
 
 AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace management across mobile, desktop, and web.
 
@@ -10,6 +10,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - Check `git status --short` before and after edits.
 - Do not revert unrelated changes.
 - Precedence: closest `AGENTS.md` to changed file wins; root rules apply otherwise.
+- Before returning a local file link, resolve its path from the current workspace and verify the target exists.
 
 ## Index of scoped AGENTS.md
 
@@ -28,6 +29,16 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 ## Commands
 
+| Task                    | Command                                                                      |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| Workspace bootstrap     | `fvm dart run melos bootstrap`                                               |
+| App/UI focused test     | `fvm flutter test test/path/to/file_test.dart --no-pub` from target package  |
+| App fatal analyzer      | `fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
+| Engine focused test     | `fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
+| Validation              | Prefix `fvm dart run melos run`: `validate:quick` (quick), `validate` (full), `validate:ci` (Melos CI subset with coverage) |
+| Asset/clean scripts      | `fvm dart run melos run clean`, `fvm dart run melos run generate:flavors`, `fvm dart run melos run generate:icons` |
+| Code generation         | Prefix `fvm dart run melos run`: `generate`, `generate:localization`, `generate:serverpod` |
+
 - Script definitions and package filters live in root `pubspec.yaml`.
 - Wrap local test, analyzer, code generation, bootstrap, and workspace validation commands with:
   `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- <command>`.
@@ -43,6 +54,8 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 - For `.fvmrc` changes, FVM drift, or CI failure triage, read [CI failure triage](docs/agents/operations.md#ci-failure-triage).
 - For PR-check monitoring, read [PR check monitoring](docs/agents/operations.md#pr-check-monitoring).
+- For GitHub CLI PR merges, follow [PR merge preflight](docs/agents/operations.md#github-cli-merge-preflight).
+- For release tags or Codemagic build triage, read [Codemagic release triage](docs/agents/operations.md#codemagic-release-triage).
 - For scoped database queries or native Flutter driver control, read the relevant section of [operations.md](docs/agents/operations.md).
 
 ## Verification
@@ -51,6 +64,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - For Dart syntax checks, use `fvm dart analyze <path>` when generic syntax parsing reports unsupported language.
 - For generated source changes, run the relevant generator and inspect its output.
 - For scope-specific checks, read [validation policy](docs/agents/task-policies.md#validation).
+- For GitHub CI coverage, read the [local CI parity matrix](docs/agents/ci-local-parity.md); `validate:ci` covers the Melos validation subset only.
 - For shared result or status contract changes, follow [behavior-path review](docs/agents/task-policies.md#behavior-path-review).
 - If a check cannot run, say why and name the next command.
 
@@ -84,7 +98,8 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 - PR titles use Conventional Commits. Keep each PR to one coherent change with its related tests; describe purpose, behavior, validation, and requested reviewer focus.
 - Use each contributor's configured tools and workflow for PR delivery and review. Do not install tools or prepare a full local environment solely for these tasks.
-- PR creation adds no local validation gate. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
+- If a requested Codex review rejects its configured model as unsupported, retry once with a model supported by the current host. Report a blocker if none is available.
+- Before pushing code changes for review, run `validate:pr` through the validation lease. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
 
 ## Agent skills
 

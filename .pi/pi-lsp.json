@@ -1,8 +1,0 @@
-{
-  "servers": {
-    "dart": {
-      "command": ["fvm", "dart", "language-server"],
-      "extensions": [".dart"]
-    }
-  }
-}

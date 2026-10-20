@@ -225,6 +225,16 @@ melos:
         - dart run dependency_validator -C apps/auravibes_app
       description: Validate app analysis and declared dependencies
 
+    validate:pr:
+      steps:
+        - melos run format:check
+        - dart run import_sorter:main --exit-if-changed
+        - dart run tool/check_benchmark_imports.dart
+        - melos run analyze:workspace
+        - melos run dcl:analyze
+        - cd apps/auravibes_app && dart run tool/localization_audit.dart
+      description: Run CI formatting, analysis, DCL, and localization checks
+
     # Development Scripts
     outdated:
       run: flutter pub outdated
