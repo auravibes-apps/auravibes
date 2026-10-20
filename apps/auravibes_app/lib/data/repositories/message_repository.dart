@@ -1763,12 +1763,10 @@ String _searchExcerpt(String content, String query) {
 }
 
 int _searchExcerptLength(String query) =>
-    (query.characters.length + _conversationMessageSearchContextLength)
-        .clamp(
-          _minConversationMessageSearchExcerptLength,
-          _maxConversationMessageSearchExcerptLength,
-        )
-        .toInt();
+    (query.characters.length + _conversationMessageSearchContextLength).clamp(
+      _minConversationMessageSearchExcerptLength,
+      _maxConversationMessageSearchExcerptLength,
+    );
 
 int _searchExcerptEnd(
   Characters contentCharacters,
