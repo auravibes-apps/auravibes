@@ -108,7 +108,7 @@ final class MessageBookmarksProvider
   }
 }
 
-String _$messageBookmarksHash() => r'e14f4672333162f66bcde45a7b6ebefcd15f6ce1';
+String _$messageBookmarksHash() => r'e23f7bee353a6a2574cd25f293998d5702d61205';
 
 final class MessageBookmarksFamily extends $Family
     with
