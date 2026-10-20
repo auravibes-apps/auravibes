@@ -1,5 +1,5 @@
 # AuraVibes Agent Instructions
-<!-- Managed by agent: AuraVibes | Last updated: 2026-10-19 -->
+<!-- Managed by agent: AuraVibes | Last updated: 2026-10-20 -->
 
 AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace management across mobile, desktop, and web.
 
@@ -10,6 +10,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - Check `git status --short` before and after edits.
 - Do not revert unrelated changes.
 - Precedence: closest `AGENTS.md` to changed file wins; root rules apply otherwise.
+- Before returning a local file link, resolve its path from the current workspace and verify the target exists.
 
 ## Index of scoped AGENTS.md
 
@@ -53,6 +54,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 - For `.fvmrc` changes, FVM drift, or CI failure triage, read [CI failure triage](docs/agents/operations.md#ci-failure-triage).
 - For PR-check monitoring, read [PR check monitoring](docs/agents/operations.md#pr-check-monitoring).
+- For release tags or Codemagic build triage, read [Codemagic release triage](docs/agents/operations.md#codemagic-release-triage).
 - For scoped database queries or native Flutter driver control, read the relevant section of [operations.md](docs/agents/operations.md).
 
 ## Verification
