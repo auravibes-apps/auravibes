@@ -37,17 +37,21 @@ class const ChatsListScreen({required final String workspaceId, super.key})
       ),
       appBar: AuraAppBarWithDrawer(
         title: const TextLocale(LocaleKeys.chats_screens_chats_list_title),
-        actions: [
-          AuraIconButton(
-            icon: Icons.search,
-            onPressed: () =>
-                ConversationSearchRoute(workspaceId: workspaceId).go(context),
-            tooltip: LocaleKeys.chats_screens_conversation_search_entry.tr(),
-          ),
-        ],
+        actions: [_ChatsListSearchButton(workspaceId: workspaceId)],
       ),
     );
   }
+}
+
+class const _ChatsListSearchButton({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.search,
+    onPressed: () =>
+        ConversationSearchRoute(workspaceId: workspaceId).go(context),
+    tooltip: LocaleKeys.chats_screens_conversation_search_entry.tr(),
+  );
 }
 
 class const _ChatsListBody({

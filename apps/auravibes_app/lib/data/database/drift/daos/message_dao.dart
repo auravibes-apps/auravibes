@@ -88,25 +88,44 @@ extension MessageDaoConversationOperations on MessageDao {
     required int limit,
     required int offset,
   }) {
-    if (query.trim().isEmpty || workspaceIds.isEmpty) return Future.value([]);
+    final normalizedQuery = query.trim();
+    if (normalizedQuery.isEmpty || workspaceIds.isEmpty) {
+      return Future.value([]);
+    }
 
+    return _searchMessageRows(normalizedQuery, workspaceIds, limit, offset);
+  }
+
+  Future<List<QueryRow>> _searchMessageRows(
+    String query,
+    Set<String> workspaceIds,
+    int limit,
+    int offset,
+  ) => customSelect(
+    _searchMessagesSql(workspaceIds.length),
+    variables: _searchMessageVariables(query, workspaceIds, limit, offset),
+    readsFrom: {
+      messages,
+      attachedDatabase.conversations,
+      attachedDatabase.workspaces,
+    },
+  ).get();
+
+  List<Variable> _searchMessageVariables(
+    String query,
+    Set<String> workspaceIds,
+    int limit,
+    int offset,
+  ) {
     final ids = workspaceIds.toList()..sort();
 
-    return customSelect(
-      _searchMessagesSql(ids.length),
-      variables: [
-        for (final id in ids) Variable<String>(id),
-        Variable<String>(MessagesTableType.text.value),
-        Variable<String>(query.trim()),
-        Variable<int>(limit),
-        Variable<int>(offset),
-      ],
-      readsFrom: {
-        messages,
-        attachedDatabase.conversations,
-        attachedDatabase.workspaces,
-      },
-    ).get();
+    return [
+      for (final id in ids) Variable<String>(id),
+      Variable<String>(MessagesTableType.text.value),
+      Variable<String>(query),
+      Variable<int>(limit),
+      Variable<int>(offset),
+    ];
   }
 }
 

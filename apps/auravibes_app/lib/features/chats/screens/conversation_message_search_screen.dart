@@ -47,44 +47,19 @@ class _ConversationMessageSearchScreenState
       child: Column(
         crossAxisAlignment: .stretch,
         children: [
-          TextField(
+          _ConversationSearchQueryField(
             controller: _queryController,
-            decoration: .new(
-              labelText: LocaleKeys.chats_screens_conversation_search_query
-                  .tr(),
-              prefixIcon: const Icon(Icons.search),
-            ),
-            textInputAction: .search,
-            maxLength: 256,
-            onSubmitted: (_) => unawaited(_search()),
+            onSubmitted: _search,
           ),
           const SizedBox(height: 12),
-          SegmentedButton<_ConversationSearchScope>(
-            segments: const [
-              ButtonSegment(
-                value: .currentWorkspace,
-                label: TextLocale(
-                  LocaleKeys
-                      .chats_screens_conversation_search_current_workspace,
-                ),
-              ),
-              ButtonSegment(
-                value: .allWorkspaces,
-                label: TextLocale(
-                  LocaleKeys.chats_screens_conversation_search_all_workspaces,
-                ),
-              ),
-            ],
-            selected: {_scope},
+          _ConversationSearchScopeSelector(
+            scope: _scope,
             onSelectionChanged: _selectScope,
           ),
           const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: _isLoading ? null : () => unawaited(_search()),
-            icon: const Icon(Icons.search),
-            label: const TextLocale(
-              LocaleKeys.chats_screens_conversation_search_search,
-            ),
+          _ConversationSearchActionButton(
+            isLoading: _isLoading,
+            onPressed: _search,
           ),
           const SizedBox(height: 8),
           Expanded(
@@ -116,14 +91,16 @@ class _ConversationMessageSearchScreenState
     final query = _queryController.text.trim();
     if (query.isEmpty) return;
     final generation = ++_searchGeneration;
-    setState(() {
-      _activeQuery = query;
-      _results = const [];
-      _pagesLoaded = 0;
-      _hasMore = false;
-      _hasError = false;
-    });
+    setState(() => _startSearch(query));
     await _loadPage(query, 0, generation);
+  }
+
+  void _startSearch(String query) {
+    _activeQuery = query;
+    _results = const [];
+    _pagesLoaded = 0;
+    _hasMore = false;
+    _hasError = false;
   }
 
   Future<void> _loadNextPage() =>
@@ -135,64 +112,160 @@ class _ConversationMessageSearchScreenState
       _hasError = false;
     });
     try {
-      final page = await ref.read(
-        conversationMessageSearchPageProvider((
-          query: query,
-          workspaceId: _scope == .currentWorkspace ? widget.workspaceId : null,
-          offset: pageIndex * conversationMessageSearchPageSize,
-        )).future,
-      );
-      if (!mounted || generation != _searchGeneration) return;
-      setState(() {
-        _results = [..._results, ...page.results]
-          ..sort(compareConversationMessageSearchResults);
-        _pagesLoaded++;
-        _hasMore = page.hasMore;
-        _hasError = page.hasError;
-        _isLoading = false;
-      });
+      final page = await _fetchPage(query, pageIndex);
+      _applyPage(page, generation);
     } on Object {
-      if (!mounted || generation != _searchGeneration) return;
-      setState(() {
-        _hasError = true;
-        _isLoading = false;
-      });
+      _applyPageError(generation);
     }
   }
+
+  Future<ConversationMessageSearchPage> _fetchPage(
+    String query,
+    int pageIndex,
+  ) => ref.read(
+    conversationMessageSearchPageProvider((
+      query: query,
+      workspaceId: _scope == .currentWorkspace ? widget.workspaceId : null,
+      offset: pageIndex * conversationMessageSearchPageSize,
+    )).future,
+  );
+
+  void _applyPage(ConversationMessageSearchPage page, int generation) {
+    if (!mounted || generation != _searchGeneration) return;
+    setState(() {
+      _results = [..._results, ...page.results]
+        ..sort(compareConversationMessageSearchResults);
+      _pagesLoaded++;
+      _hasMore = page.hasMore;
+      _hasError = page.hasError;
+      _isLoading = false;
+    });
+  }
+
+  void _applyPageError(int generation) {
+    if (!mounted || generation != _searchGeneration) return;
+    setState(() {
+      _hasError = true;
+      _isLoading = false;
+    });
+  }
+}
+
+class const _ConversationSearchQueryField({
+  required final TextEditingController controller,
+  required final Future<void> Function() onSubmitted,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextField(
+    controller: controller,
+    decoration: .new(
+      labelText: LocaleKeys.chats_screens_conversation_search_query.tr(),
+      prefixIcon: const Icon(Icons.search),
+    ),
+    textInputAction: .search,
+    maxLength: 256,
+    onSubmitted: (_) => unawaited(onSubmitted()),
+  );
+}
+
+const _conversationSearchScopeSegments = [
+  ButtonSegment(
+    value: _ConversationSearchScope.currentWorkspace,
+    label: TextLocale(
+      LocaleKeys.chats_screens_conversation_search_current_workspace,
+    ),
+  ),
+  ButtonSegment(
+    value: _ConversationSearchScope.allWorkspaces,
+    label: TextLocale(
+      LocaleKeys.chats_screens_conversation_search_all_workspaces,
+    ),
+  ),
+];
+
+class const _ConversationSearchScopeSelector({
+  required final _ConversationSearchScope scope,
+  required final ValueChanged<Set<_ConversationSearchScope>> onSelectionChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      SegmentedButton<_ConversationSearchScope>(
+        segments: _conversationSearchScopeSegments,
+        selected: {scope},
+        onSelectionChanged: onSelectionChanged,
+      );
+}
+
+class const _ConversationSearchActionButton({
+  required final bool isLoading,
+  required final Future<void> Function() onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FilledButton.icon(
+    onPressed: isLoading ? null : () => unawaited(onPressed()),
+    icon: const Icon(Icons.search),
+    label: const TextLocale(
+      LocaleKeys.chats_screens_conversation_search_search,
+    ),
+  );
 }
 
 class const _ConversationMessageSearchResultTile({
   required final ConversationMessageSearchResult result,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final title = result.conversationTitle.isEmpty
+  Widget build(BuildContext context) => ListTile(
+    title: _ConversationMessageSearchResultTitle(result: result),
+    subtitle: _ConversationMessageSearchResultSubtitle(result: result),
+    onTap: () => ConversationRoute(
+      workspaceId: result.workspaceId,
+      chatId: result.conversationId,
+      messageId: result.messageId,
+    ).go(context),
+  );
+}
+
+class const _ConversationMessageSearchResultTitle({
+  required final ConversationMessageSearchResult result,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    result.conversationTitle.isEmpty
         ? LocaleKeys.chats_screens_conversation_search_untitled_conversation
               .tr()
-        : result.conversationTitle;
+        : result.conversationTitle,
+    overflow: .ellipsis,
+    maxLines: 1,
+  );
+}
+
+class const _ConversationMessageSearchResultSubtitle({
+  required final ConversationMessageSearchResult result,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      _ConversationMessageSearchResultMetadata(result: result),
+      Text(result.excerpt, overflow: .ellipsis, maxLines: 3),
+    ],
+  );
+}
+
+class const _ConversationMessageSearchResultMetadata({
+  required final ConversationMessageSearchResult result,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final role = result.role == 'user'
         ? LocaleKeys.chats_screens_conversation_search_user_role.tr()
         : LocaleKeys.chats_screens_conversation_search_assistant_role.tr();
 
-    return ListTile(
-      title: Text(title, overflow: .ellipsis, maxLines: 1),
-      subtitle: Column(
-        crossAxisAlignment: .start,
-        children: [
-          Text(
-            '${result.workspaceName} | $role | '
-            '${DateFormat.yMMMd().add_jm().format(result.createdAt)}',
-            overflow: .ellipsis,
-            maxLines: 1,
-          ),
-          Text(result.excerpt, overflow: .ellipsis, maxLines: 3),
-        ],
-      ),
-      onTap: () => ConversationRoute(
-        workspaceId: result.workspaceId,
-        chatId: result.conversationId,
-        messageId: result.messageId,
-      ).go(context),
+    return Text(
+      '${result.workspaceName} | $role | '
+      '${DateFormat.yMMMd().add_jm().format(result.createdAt)}',
+      overflow: .ellipsis,
+      maxLines: 1,
     );
   }
 }
@@ -206,51 +279,94 @@ class const _SearchResults({
   required final Future<void> Function() loadNextPage,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      _SearchResultsStatus(
+        query: query,
+        isLoading: isLoading,
+        hasError: hasError,
+        hasResults: results.isNotEmpty,
+      ),
+      _SearchResultsError(visible: hasError && results.isNotEmpty),
+      Expanded(child: _SearchResultList(results: results)),
+      _SearchResultsFooter(
+        isLoading: isLoading,
+        hasMore: hasMore,
+        loadNextPage: loadNextPage,
+      ),
+    ],
+  );
+}
+
+class const _SearchResultsStatus({
+  required final String query,
+  required final bool isLoading,
+  required final bool hasError,
+  required final bool hasResults,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
-    if (isLoading && results.isEmpty) {
+    if (isLoading && !hasResults) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (hasError && results.isEmpty) {
+    if (hasError && !hasResults) {
       return const Center(
         child: TextLocale(LocaleKeys.chats_screens_conversation_search_error),
       );
     }
-    if (query.trim().isNotEmpty && !isLoading && results.isEmpty) {
+    if (query.trim().isNotEmpty && !isLoading && !hasResults) {
       return const Center(
         child: TextLocale(LocaleKeys.chats_screens_conversation_search_empty),
       );
     }
 
-    return Column(
-      children: [
-        if (hasError)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: TextLocale(
-              LocaleKeys.chats_screens_conversation_search_error,
-            ),
-          ),
-        Expanded(
-          child: ListView.separated(
-            itemBuilder: (context, index) =>
-                _ConversationMessageSearchResultTile(result: results[index]),
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemCount: results.length,
-          ),
-        ),
-        if (isLoading)
-          const Padding(
-            padding: EdgeInsets.all(8),
-            child: CircularProgressIndicator(),
-          )
-        else if (hasMore)
-          OutlinedButton(
-            onPressed: () => unawaited(loadNextPage()),
-            child: const TextLocale(
-              LocaleKeys.chats_screens_conversation_search_load_more,
-            ),
-          ),
-      ],
+    return const SizedBox.shrink();
+  }
+}
+
+class const _SearchResultsError({required final bool visible})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => visible
+      ? const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: TextLocale(LocaleKeys.chats_screens_conversation_search_error),
+        )
+      : const SizedBox.shrink();
+}
+
+class const _SearchResultList({
+  required final List<ConversationMessageSearchResult> results,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListView.separated(
+    itemBuilder: (context, index) =>
+        _ConversationMessageSearchResultTile(result: results[index]),
+    separatorBuilder: (context, index) => const Divider(height: 1),
+    itemCount: results.length,
+  );
+}
+
+class const _SearchResultsFooter({
+  required final bool isLoading,
+  required final bool hasMore,
+  required final Future<void> Function() loadNextPage,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(8),
+        child: CircularProgressIndicator(),
+      );
+    }
+    if (!hasMore) return const SizedBox.shrink();
+
+    return OutlinedButton(
+      onPressed: () => unawaited(loadNextPage()),
+      child: const TextLocale(
+        LocaleKeys.chats_screens_conversation_search_load_more,
+      ),
     );
   }
 }
