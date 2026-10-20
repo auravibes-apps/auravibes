@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart'
@@ -34,6 +36,8 @@ void main() {
   testWidgets(
     'refreshes an app-skill credential after creation without error',
     (tester) async {
+      await tester.binding.setSurfaceSize(const ui.Size(960, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       final database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
@@ -126,6 +130,11 @@ void main() {
         300,
         scrollable: find.byType(Scrollable).first,
       );
+
+      await expectLater(
+        find.byType(SkillDetailScreen),
+        matchesGoldenFile('goldens/skill_detail_app_missing_credential.png'),
+      );
       await tester.tap(addCredential);
       final _ = await tester.pumpAndSettle();
 
@@ -134,5 +143,6 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(find.text('Unsaved changes'), findsNothing);
     },
+    tags: ['golden'],
   );
 }

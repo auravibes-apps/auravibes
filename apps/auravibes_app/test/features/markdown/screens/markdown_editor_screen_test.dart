@@ -15,6 +15,31 @@ const _initialMarkdown = 'Saved content';
 const _editedMarkdown = 'Unsaved content';
 
 void main() {
+  Future<void> renderMarkdownToolbar(WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const ui.Size(960, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await _openMarkdownEditor(
+      tester,
+      onResult: (_) => fail('Unexpected editor close'),
+      initialMarkdown: 'Workspace notes - keep changes small.',
+      maxCharacters: 80,
+    );
+    tester.widget<EditableText>(_markdownEditorInput).focusNode.unfocus();
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('37/80'), findsOneWidget);
+
+    await expectLater(
+      find.byType(MarkdownEditorScreen),
+      matchesGoldenFile('goldens/markdown_editor.png'),
+    );
+  }
+
+  testWidgets(
+    'renders markdown toolbar and workspace note limit',
+    renderMarkdownToolbar,
+    tags: ['golden'],
+  );
+
   testWidgets('field context and limits govern Apply changes', (tester) async {
     String? result;
     await _openMarkdownEditor(
