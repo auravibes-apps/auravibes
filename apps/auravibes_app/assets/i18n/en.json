@@ -16,6 +16,24 @@
     "collapse_sidebar_tooltip": "Collapse sidebar",
     "expand_sidebar_tooltip": "Expand sidebar"
   },
+  "quick_switcher": {
+    "title": "Quick switcher",
+    "search": "Search workspaces, conversations, agents, and skills",
+    "keyboard_hint": "Use ↑ and ↓ to navigate, Enter to open, Esc to close",
+    "loading": "Loading results...",
+    "no_results": "No results found.",
+    "load_error": "Could not load quick switcher results.",
+    "partial_results": "Some results are unavailable.",
+    "selection_announcement": "Selected: {title}, {subtitle}",
+    "retry": "Retry",
+    "workspace": "Workspace",
+    "conversation": "Conversation",
+    "agent": "Agent",
+    "skill": "Skill",
+    "action": "Action",
+    "new_conversation": "New conversation",
+    "settings": "Settings"
+  },
   "intro_flow": {
     "welcome": {
       "title": "Welcome to AuraVibes",
