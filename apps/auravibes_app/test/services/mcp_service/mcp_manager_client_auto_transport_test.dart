@@ -94,13 +94,13 @@ void main() {
         arguments: {'day': 'today'},
         elicitation: (serverName: 'Test MCP server', onElicitation: null),
       );
-      final toolOutput = await manager.callToolOutput(
-        client,
+      final toolOutput = await manager.callToolOutput((
+        client: client,
         toolIdentifier: 'refresh',
         arguments: {'day': 'today'},
         includeAppData: true,
         elicitation: (serverName: 'Test MCP server', onElicitation: null),
-      );
+      ));
 
       final contentsValue = resource['contents'];
       if (contentsValue is! List<Object?>) {
@@ -147,13 +147,13 @@ void main() {
       client = await manager.connectMcpWithAutoTransport(
         _connectionRequest(server.endpoint),
       );
-      final toolOutput = await manager.callToolOutput(
-        client,
+      final toolOutput = await manager.callToolOutput((
+        client: client,
         toolIdentifier: 'refresh',
         arguments: const {},
         includeAppData: true,
         elicitation: (serverName: 'Test MCP server', onElicitation: null),
-      );
+      ));
       final fallbackResult = await manager.callToolResult(
         client,
         toolIdentifier: 'refresh',
@@ -250,13 +250,13 @@ void main() {
         client = await manager.connectMcpWithAutoTransport(
           _connectionRequest(server.endpoint),
         );
-        final toolOutput = await manager.callToolOutput(
-          client,
+        final toolOutput = await manager.callToolOutput((
+          client: client,
           toolIdentifier: 'refresh',
           arguments: const {},
           includeAppData: false,
           elicitation: (serverName: 'Test MCP server', onElicitation: null),
-        );
+        ));
 
         expect(toolOutput.appData, isEmpty);
         expect(toolOutput.modelText, contains('x'));

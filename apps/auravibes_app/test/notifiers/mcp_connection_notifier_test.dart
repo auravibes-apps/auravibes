@@ -1355,17 +1355,13 @@ class _SuccessfulMcpManagerService extends McpManagerService {
 
   @override
   Future<({String modelText, Map<String, Object?> appData})> callToolOutput(
-    McpManagerClient client, {
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-    required bool includeAppData,
-    required McpToolElicitationContext elicitation,
-  }) async {
-    includeAppDataCalls.add(includeAppData);
+    McpToolOutputRequest request,
+  ) async {
+    includeAppDataCalls.add(request.includeAppData);
 
     return (
       modelText: 'tool result',
-      appData: includeAppData
+      appData: request.includeAppData
           ? const {
               'content': [
                 {'type': 'text', 'text': 'tool result'},

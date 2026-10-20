@@ -143,6 +143,7 @@ typedef _McpToolCallRequest = ({
   String mcpServerId,
   String toolIdentifier,
   Map<String, dynamic> arguments,
+  McpElicitationHandler? onElicitation,
 });
 
 typedef _McpAppResourceRequest = ({
@@ -525,7 +526,8 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     mcpServerId: mcpServerId,
     toolIdentifier: toolIdentifier,
     arguments: arguments,
-  ), onElicitation: onElicitation);
+    onElicitation: onElicitation,
+  ));
 
   /// Read a UI resource declared by [toolIdentifier].
   Future<Map<String, Object?>> readAppResource({
@@ -548,7 +550,8 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     mcpServerId: mcpServerId,
     toolIdentifier: toolIdentifier,
     arguments: arguments,
-  ), onElicitation: onElicitation);
+    onElicitation: onElicitation,
+  ));
 
   /// Get a connection state by server ID.
   McpConnectionState? getConnection(String serverId) => _currentState
@@ -587,29 +590,38 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
 
 Future<({String modelText, Map<String, Object?> appData})> _callToolWithAppData(
   McpConnectionNotifier notifier,
-  _McpToolCallRequest request, {
-  McpElicitationHandler? onElicitation,
-}) async {
-  final client = _localToolClient(notifier, request);
+  _McpToolCallRequest request,
+) => notifier._requiredMcpManager.callToolOutput(
+  _mcpToolOutputRequest(notifier, request),
+);
+
+McpToolOutputRequest _mcpToolOutputRequest(
+  McpConnectionNotifier notifier,
+  _McpToolCallRequest request,
+) {
   final connection = notifier._requiredConnection(request.mcpServerId);
-  final tool = _mcpToolInfo(
-    notifier,
+  final tool = notifier._requiredToolInfo(
+    connection,
     request.mcpServerId,
     request.toolIdentifier,
   );
-  final result = await notifier._requiredMcpManager.callToolOutput(
-    client,
+
+  return (
+    client: _localToolClient(notifier, request),
     toolIdentifier: request.toolIdentifier,
     arguments: request.arguments,
     includeAppData: _hasMcpAppResource(tool),
-    elicitation: (
-      serverName: connection.server.name,
-      onElicitation: onElicitation,
+    elicitation: _mcpToolElicitation(
+      connection.server.name,
+      request.onElicitation,
     ),
   );
-
-  return (modelText: result.modelText, appData: result.appData);
 }
+
+McpToolElicitationContext _mcpToolElicitation(
+  String serverName,
+  McpElicitationHandler? onElicitation,
+) => (serverName: serverName, onElicitation: onElicitation);
 
 Future<Map<String, Object?>> _readAppResource(
   McpConnectionNotifier notifier,
@@ -633,9 +645,8 @@ Future<Map<String, Object?>> _readAppResource(
 
 Future<Map<String, Object?>> _callAppTool(
   McpConnectionNotifier notifier,
-  _McpToolCallRequest request, {
-  McpElicitationHandler? onElicitation,
-}) async {
+  _McpToolCallRequest request,
+) async {
   final client = _appToolClient(notifier, request);
   final connection = notifier._requiredConnection(request.mcpServerId);
 
@@ -645,7 +656,7 @@ Future<Map<String, Object?>> _callAppTool(
     arguments: request.arguments,
     elicitation: (
       serverName: connection.server.name,
-      onElicitation: onElicitation,
+      onElicitation: request.onElicitation,
     ),
   );
 }
@@ -677,16 +688,6 @@ McpManagerClient _localToolClient(
     request.toolIdentifier,
   );
 }
-
-McpToolInfo _mcpToolInfo(
-  McpConnectionNotifier notifier,
-  String mcpServerId,
-  String toolIdentifier,
-) => notifier._requiredToolInfo(
-  notifier._requiredConnection(mcpServerId),
-  mcpServerId,
-  toolIdentifier,
-);
 
 void _requireLocalMcp(McpConnectionNotifier notifier) {
   if (notifier._isCloud) throw const UnsupportedWorkspaceCapabilityException();

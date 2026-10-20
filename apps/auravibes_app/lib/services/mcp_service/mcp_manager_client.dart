@@ -55,12 +55,11 @@ bool _isWithinMcpAppResultLimit(Map<String, Object?> result) {
   return true;
 }
 
-class _McpAppResultTooLarge implements Exception {
-  const _McpAppResultTooLarge();
-}
+class const _McpAppResultTooLarge() implements Exception;
 
 class _McpAppResultSizeSink extends ByteConversionSink {
   var _byteCount = 0;
+  var _isClosed = false;
 
   @override
   void add(List<int> chunk) {
@@ -73,15 +72,20 @@ class _McpAppResultSizeSink extends ByteConversionSink {
     if (isLast) close();
   }
 
+  @override
+  void close() {
+    _isClosed = true;
+  }
+
   void _addBytes(int count) {
+    if (_isClosed) {
+      throw StateError('Cannot add bytes after closing MCP App result sink.');
+    }
     _byteCount += count;
     if (_byteCount > _maxMcpAppResultBytes) {
       throw const _McpAppResultTooLarge();
     }
   }
-
-  @override
-  void close() {}
 }
 
 Map<String, Object?> _mcpAppTextResult(String modelText) => {
@@ -101,6 +105,14 @@ String _mcpAppFallbackText(mcp.CallToolResult result) {
 typedef McpToolElicitationContext = ({
   String serverName,
   McpElicitationHandler? onElicitation,
+});
+
+typedef McpToolOutputRequest = ({
+  McpManagerClient client,
+  String toolIdentifier,
+  Map<String, dynamic> arguments,
+  bool includeAppData,
+  McpToolElicitationContext elicitation,
 });
 
 class McpManagerClient._(
@@ -263,41 +275,27 @@ class McpManagerService {
     required Map<String, dynamic> arguments,
     required McpToolElicitationContext elicitation,
   }) async {
-    final result = await client._serializeToolCall(
-      () => _callToolWithElicitation(
-        client: client,
-        toolIdentifier: toolIdentifier,
-        arguments: arguments,
-        context: elicitation,
-      ),
+    final result = await _callSerializedMcpTool(
+      client,
+      toolIdentifier,
+      arguments,
+      elicitation,
     );
 
     return McpSdkAdapter.toolResult(result).toModelText();
   }
 
   Future<({String modelText, Map<String, Object?> appData})> callToolOutput(
-    McpManagerClient client, {
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-    required bool includeAppData,
-    required McpToolElicitationContext elicitation,
-  }) async {
-    final result = await client._serializeToolCall(
-      () => _callToolWithElicitation(
-        client: client,
-        toolIdentifier: toolIdentifier,
-        arguments: arguments,
-        context: elicitation,
-      ),
+    McpToolOutputRequest request,
+  ) async {
+    final result = await _callSerializedMcpTool(
+      request.client,
+      request.toolIdentifier,
+      request.arguments,
+      request.elicitation,
     );
-    final modelText = McpSdkAdapter.toolResult(result).toModelText();
 
-    return (
-      modelText: modelText,
-      appData: includeAppData
-          ? _boundedMcpAppResult(result.toJson(), () => modelText)
-          : const <String, Object?>{},
-    );
+    return _mcpToolOutput(result, request.includeAppData);
   }
 
   Future<Map<String, Object?>> callToolResult(
@@ -306,14 +304,13 @@ class McpManagerService {
     required Map<String, dynamic> arguments,
     required McpToolElicitationContext elicitation,
   }) async {
-    final result = await client._serializeToolCall(
-      () => _callToolWithElicitation(
-        client: client,
-        toolIdentifier: toolIdentifier,
-        arguments: arguments,
-        context: elicitation,
-      ),
+    final result = await _callSerializedMcpTool(
+      client,
+      toolIdentifier,
+      arguments,
+      elicitation,
     );
+
     return _boundedMcpAppResult(
       result.toJson(),
       () => _mcpAppFallbackText(result),
@@ -477,6 +474,32 @@ Future<mcp.CallToolResult> _callToolWithElicitation({
   } finally {
     handler.stopAccepting();
   }
+}
+
+Future<mcp.CallToolResult> _callSerializedMcpTool(
+  McpManagerClient client,
+  String toolIdentifier,
+  Map<String, dynamic> arguments,
+  McpToolElicitationContext elicitation,
+) => client._serializeToolCall(
+  () => _callToolWithElicitation(
+    client: client,
+    toolIdentifier: toolIdentifier,
+    arguments: arguments,
+    context: elicitation,
+  ),
+);
+
+({String modelText, Map<String, Object?> appData}) _mcpToolOutput(
+  mcp.CallToolResult result,
+  bool includeAppData,
+) {
+  final modelText = McpSdkAdapter.toolResult(result).toModelText();
+  final appData = includeAppData
+      ? _boundedMcpAppResult(result.toJson(), () => modelText)
+      : const <String, Object?>{};
+
+  return (modelText: modelText, appData: appData);
 }
 
 final class _McpToolElicitationHandler(
