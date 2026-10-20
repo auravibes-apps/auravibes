@@ -6,19 +6,24 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
-  test('captures eligible rejection and replays response body', () async {
-    const body = 'legacy endpoint';
-    final capture = McpStreamableHttpResponseCapture(
-      innerClient: MockClient((_) async => http.Response(body, 405)),
+  for (final statusCode in [400, 404, 405]) {
+    test(
+      'captures eligible HTTP $statusCode rejection and replays body',
+      () async {
+        const body = 'legacy endpoint';
+        final capture = McpStreamableHttpResponseCapture(
+          innerClient: MockClient((_) async => http.Response(body, statusCode)),
+        );
+        addTearDown(capture.close);
+
+        final response = await capture.send(_initializeRequest());
+
+        expect(capture.shouldFallbackToLegacySse, isTrue);
+        expect(response.statusCode, statusCode);
+        expect(await response.stream.bytesToString(), body);
+      },
     );
-    addTearDown(capture.close);
-
-    final response = await capture.send(_initializeRequest());
-
-    expect(capture.shouldFallbackToLegacySse, isTrue);
-    expect(response.statusCode, 405);
-    expect(await response.stream.bytesToString(), body);
-  });
+  }
 
   test('does not capture valid JSON-RPC errors', () async {
     final body = jsonEncode({

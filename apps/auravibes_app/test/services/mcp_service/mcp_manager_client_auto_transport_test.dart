@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/services/mcp_service/mcp_legacy_sse_unavailable_exception.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_web_sse_client_transport.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
@@ -417,6 +417,41 @@ void main() {
       expect(server.sseMessageAuthorization, 'Bearer configured-token');
     });
 
+    test('uses browser-compatible transport for legacy SSE fallback', () async {
+      final server = await _LocalMcpHttpServer.start(streamableStatus: 405);
+      final manager = McpManagerService(
+        legacySseTransportFactory: (serverInfo) {
+          expect(serverInfo.transport, isA<McpTransportTypeSSE>());
+
+          return McpWebSseClientTransport.create(
+            serverUrl: serverInfo.url,
+            headers: const {'Authorization': 'Bearer configured-token'},
+          );
+        },
+      );
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(
+          server.endpoint,
+          authenticationType: const McpAuthenticationType.bearerToken(
+            bearerToken: 'configured-token',
+          ),
+        ),
+      );
+      final _ = await manager.getTools(client);
+      await server.waitForInitializedNotification();
+
+      expect(client.resolvedTransport, isA<McpTransportTypeSSE>());
+      expect(server.sseGetCount, 1);
+      expect(server.sseAuthorization, 'Bearer configured-token');
+      expect(server.sseMessageAuthorization, 'Bearer configured-token');
+    });
+
     test('does not fall back for a JSON-RPC error response', () async {
       final server = await _LocalMcpHttpServer.start(
         streamableStatus: 400,
@@ -471,21 +506,6 @@ void main() {
       );
 
       expect(legacySseAttempted, isTrue);
-      expect(server.sseGetCount, 0);
-    });
-
-    test('reports legacy SSE unavailable when platform disallows it', () async {
-      final server = await _LocalMcpHttpServer.start(streamableStatus: 405);
-      final manager = McpManagerService(legacySseSupported: false);
-      addTearDown(server.close);
-
-      await expectLater(
-        manager.connectMcpWithAutoTransport(
-          _connectionRequest(server.endpoint),
-        ),
-        throwsA(isA<McpLegacySseUnavailableException>()),
-      );
-
       expect(server.sseGetCount, 0);
     });
   });
@@ -706,10 +726,19 @@ final class _LocalMcpHttpServer {
       HttpHeaders.authorizationHeader,
     );
     final message = await _readMessage(request);
-    if (message['method'] == 'initialize') {
+    final responseMessage = switch (message['method']) {
+      'initialize' => _initializeResult(message),
+      'tools/list' => {
+        'jsonrpc': '2.0',
+        'id': message['id'],
+        'result': {'tools': <Object?>[]},
+      },
+      _ => null,
+    };
+    if (responseMessage != null) {
       final response = await _sseResponse.future;
       response.write(
-        'event: message\ndata: ${jsonEncode(_initializeResult(message))}\n\n',
+        'event: message\ndata: ${jsonEncode(responseMessage)}\n\n',
       );
       final _ = await response.flush();
     }
