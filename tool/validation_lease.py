@@ -17,6 +17,10 @@ import time
 LOCK_NAME = "codex-validation.lock"
 REPORT_INTERVAL_SECONDS = 30
 POLL_INTERVAL_SECONDS = 1
+# Keep headroom for compiler temp growth; prior run hit ENOSPC with 7 GiB free.
+MINIMUM_AVAILABLE_BYTES = 20 * 1024**3
+TEMP_DIRECTORY_SCAN_TIMEOUT_SECONDS = 10
+MAX_TEMP_ENTRIES = 5
 
 
 def try_acquire(fd):
@@ -27,21 +31,65 @@ def try_acquire(fd):
     return True
 
 
-def _temp_volume_usage():
-    temp_dir = Path(tempfile.gettempdir())
+def _volume_usage(path):
     try:
-        stats = os.statvfs(temp_dir)
+        stats = os.statvfs(path)
+        device = os.stat(path).st_dev
     except OSError as error:
-        return {"path": str(temp_dir), "error": str(error)}
+        return {"path": str(path), "error": str(error)}
 
     block_size = stats.f_frsize or stats.f_bsize
     total_bytes = stats.f_blocks * block_size
     return {
-        "path": str(temp_dir),
+        "path": str(path),
+        "device": device,
         "total_bytes": total_bytes,
         "used_bytes": total_bytes - stats.f_bfree * block_size,
         "available_bytes": stats.f_bavail * block_size,
         "free_inodes": stats.f_favail,
+    }
+
+
+def _temp_volume_usage():
+    return _volume_usage(Path(tempfile.gettempdir()))
+
+
+def _temp_directory_usage(temp_dir):
+    try:
+        result = subprocess.run(
+            ["du", "-k", "-d", "1", str(temp_dir)],
+            capture_output=True,
+            text=True,
+            timeout=TEMP_DIRECTORY_SCAN_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return {"path": str(temp_dir), "error": str(error)}
+
+    used_bytes = None
+    entries = []
+    for line in result.stdout.splitlines():
+        try:
+            size_kib, entry_path = line.split(maxsplit=1)
+            size_bytes = int(size_kib) * 1024
+        except (ValueError, TypeError):
+            continue
+
+        if os.path.abspath(entry_path) == os.path.abspath(temp_dir):
+            used_bytes = size_bytes
+        else:
+            entries.append({"path": entry_path, "bytes": size_bytes})
+
+    if used_bytes is None:
+        return {
+            "path": str(temp_dir),
+            "error": result.stderr.strip()
+            or f"du exited with status {result.returncode}",
+        }
+
+    return {
+        "path": str(temp_dir),
+        "used_bytes": used_bytes,
+        "entries": sorted(entries, key=lambda entry: entry["bytes"], reverse=True),
     }
 
 
@@ -62,6 +110,79 @@ def _format_temp_usage(usage):
         f"{_format_bytes(usage['available_bytes'])} available, "
         f"{usage['free_inodes']} free inodes"
     )
+
+
+def _validation_preflight():
+    paths = [Path.cwd(), Path(tempfile.gettempdir())]
+    usages = []
+    seen_devices = set()
+    for path in paths:
+        usage = _volume_usage(path)
+        if "error" in usage:
+            print(
+                f"Validation blocked: cannot inspect volume {usage['path']}: "
+                f"{usage['error']}",
+                file=sys.stderr,
+                flush=True,
+            )
+            return False
+        if usage["device"] in seen_devices:
+            continue
+        seen_devices.add(usage["device"])
+        usages.append(usage)
+        print(
+            f"validation volume {usage['path']}: "
+            f"{_format_bytes(usage['used_bytes'])} used / "
+            f"{_format_bytes(usage['total_bytes'])} total, "
+            f"{_format_bytes(usage['available_bytes'])} available",
+            file=sys.stderr,
+            flush=True,
+        )
+
+    temp_dir = Path(tempfile.gettempdir())
+    temp_usage = _temp_directory_usage(temp_dir)
+    if "error" in temp_usage:
+        print(
+            f"temp directory {temp_usage['path']}: usage unavailable "
+            f"({temp_usage['error']})",
+            file=sys.stderr,
+            flush=True,
+        )
+    else:
+        print(
+            f"temp directory {temp_usage['path']}: "
+            f"{_format_bytes(temp_usage['used_bytes'])} used",
+            file=sys.stderr,
+            flush=True,
+        )
+
+    low_volumes = [
+        usage
+        for usage in usages
+        if usage["available_bytes"] < MINIMUM_AVAILABLE_BYTES
+    ]
+    if not low_volumes:
+        return True
+
+    for usage in low_volumes:
+        print(
+            f"Validation blocked: {usage['path']} has "
+            f"{_format_bytes(usage['available_bytes'])} available; "
+            f"reserve is {_format_bytes(MINIMUM_AVAILABLE_BYTES)}. "
+            "No files were deleted.",
+            file=sys.stderr,
+            flush=True,
+        )
+    if "error" not in temp_usage:
+        for entry in temp_usage["entries"][:MAX_TEMP_ENTRIES]:
+            entry_name = Path(entry["path"]).name
+            print(
+                f"largest temp entry: {_format_bytes(entry['bytes'])} "
+                f"{entry_name}",
+                file=sys.stderr,
+                flush=True,
+            )
+    return False
 
 
 def _write_owner(fd, owner):
@@ -163,6 +284,11 @@ def main(argv=None):
         os.close(fd)
         print(f"Cannot acquire repository validation lease: {error}", file=sys.stderr)
         return 2
+
+    if not _validation_preflight():
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+        return 3
 
     owner = {
         "pid": os.getpid(),
