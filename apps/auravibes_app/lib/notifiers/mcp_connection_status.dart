@@ -545,7 +545,7 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     required String mcpServerId,
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
-    McpElicitationHandler? onElicitation,
+    required McpElicitationHandler onElicitation,
   }) => _callAppTool(this, (
     mcpServerId: mcpServerId,
     toolIdentifier: toolIdentifier,
