@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart';
+import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/organisms/aura_popup_menu_controller.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -572,7 +573,11 @@ void main() {
       await tester.pump();
 
       expect(controller.isShowing, isFalse);
-      expect(triggerFocusNode.hasPrimaryFocus, isTrue);
+      expect(triggerFocusNode.hasFocus, isTrue);
+      expect(
+        triggerFocusNode.descendants.any((node) => node.hasPrimaryFocus),
+        isTrue,
+      );
     });
 
     testWidgets('menu item tap works while outside dismissal is active', (
@@ -704,6 +709,59 @@ void main() {
       await tester.pump();
 
       expect(nextPressed, isTrue);
+    });
+
+    testWidgets('Aura trigger shows focus ring when reached by keyboard', (
+      tester,
+    ) async {
+      final previousStrategy = FocusManager.instance.highlightStrategy;
+      FocusManager.instance.highlightStrategy = .alwaysTraditional;
+      addTearDown(
+        () => FocusManager.instance.highlightStrategy = previousStrategy,
+      );
+      final controller = AuraPopupMenuController();
+
+      await tester.pumpWidget(
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: Portal(
+                child: Row(
+                  children: [
+                    const TextButton(onPressed: _noop, child: Text('Before')),
+                    AuraPopupMenu(
+                      child: const AuraButton(
+                        onPressed: _noop,
+                        child: Text('Menu'),
+                      ),
+                      items: const [],
+                      controller: controller,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      await tester.pump();
+
+      final trigger = find.ancestor(
+        of: find.text('Menu'),
+        matching: find.byType(AuraPressable),
+      );
+      final focusRing = find.descendant(
+        of: trigger,
+        matching: find.byType(CustomPaint),
+      );
+      expect(
+        tester.widget<CustomPaint>(focusRing.first).foregroundPainter,
+        isNotNull,
+      );
     });
 
     testWidgets('tab loops inside open popup menu', (tester) async {
