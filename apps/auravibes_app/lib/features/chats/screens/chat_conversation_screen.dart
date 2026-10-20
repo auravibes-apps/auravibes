@@ -534,12 +534,15 @@ void _showPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
   request.ref
       .read(conversationIterationLimitProvider(conversationId).notifier)
       .consume();
-  _showIterationLimitNoticeForConversation((
-    context: request.context,
-    ref: request.ref,
-    workspaceId: request.workspaceId,
-    conversationId: conversationId,
-  ), .iterationLimitReached);
+  _showIterationLimitNoticeForConversation(
+    (
+      context: request.context,
+      ref: request.ref,
+      workspaceId: request.workspaceId,
+      conversationId: conversationId,
+    ),
+    .iterationLimitReached,
+  );
 }
 
 class const _ChatConversationBackButton() extends StatelessWidget {
