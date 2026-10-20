@@ -168,10 +168,13 @@ class const ChatMessagesWidget({
         PrimaryScrollController.of(context) as _DisclosureScrollController;
     final parentConversationId = conversationId;
     final targetMessageId = _searchTargetMessageId(context);
+    final isTargetInLiveMessages =
+        targetMessageId != null && messages.contains(targetMessageId);
     final isCloudWorkspace =
         ref.watch(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
         null;
-    final targetMessageRequest = targetMessageId == null || !isCloudWorkspace
+    final targetMessageRequest =
+        targetMessageId == null || !isCloudWorkspace || isTargetInLiveMessages
         ? null
         : (
             workspaceId: workspaceId,
@@ -1898,8 +1901,8 @@ class const _MessageBookmarkAction({
     final isBookmarked =
         bookmarks?.any(
           (bookmark) =>
-              bookmark.workspaceId == workspaceId &&
-              bookmark.messageId == messageId,
+              bookmark.workspace.workspaceId == workspaceId &&
+              bookmark.details.messageId == messageId,
         ) ??
         false;
     final tooltip = isBookmarked
@@ -1912,14 +1915,12 @@ class const _MessageBookmarkAction({
       size: .small,
       tooltip: tooltip,
       onPressed: () => unawaited(
-        _toggleMessageBookmark(
-          context,
-          ref,
+        _toggleMessageBookmark(context, ref, (
           workspaceId: workspaceId,
           conversationId: conversationId,
           message: message,
           isBookmarked: isBookmarked,
-        ),
+        )),
       ),
     );
   }
@@ -1927,25 +1928,27 @@ class const _MessageBookmarkAction({
 
 Future<void> _toggleMessageBookmark(
   BuildContext context,
-  WidgetRef ref, {
-  required String workspaceId,
-  required String conversationId,
-  required MessageEntity message,
-  required bool isBookmarked,
-}) async {
+  WidgetRef ref,
+  ({
+    String workspaceId,
+    String conversationId,
+    MessageEntity message,
+    bool isBookmarked,
+  })
+  request,
+) async {
   try {
-    final cloud = await ref
-        .read(messageBookmarkUseCaseProvider)
-        .toggle(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-          message: message,
-          isBookmarked: isBookmarked,
-          resolveCloudConversation: () =>
-              ref.read(cloudConversationUsecaseProvider(workspaceId).future),
-        );
+    final cloud = await ref.read(messageBookmarkUseCaseProvider).toggle((
+      workspaceId: request.workspaceId,
+      conversationId: request.conversationId,
+      message: request.message,
+      isBookmarked: request.isBookmarked,
+      resolveCloudConversation: () => ref.read(
+        cloudConversationUsecaseProvider(request.workspaceId).future,
+      ),
+    ));
     if (!context.mounted) return;
-    ref.invalidate(messageBookmarksProvider(workspaceId));
+    ref.invalidate(messageBookmarksProvider(request.workspaceId));
     if (cloud) ref.invalidate(cloudMessageBookmarksProvider);
   } on Object {
     if (!context.mounted) return;
@@ -2149,7 +2152,7 @@ Widget _chatMarkdown({
 );
 
 Future<void> _openChatMarkdownLink(BuildContext context, String url) =>
-    openConfirmedExternalLink(
+    ConfirmedExternalLink.open(
       context: context,
       url: url,
       confirm: (uri) => _confirmChatExternalLink(context, uri),

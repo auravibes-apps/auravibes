@@ -59,12 +59,12 @@ void main() {
 
       final bookmarks = await messages.watchBookmarkedMessages('ws-1').first;
       expect(bookmarks, hasLength(1));
-      expect(bookmarks.single.workspaceId, 'ws-1');
-      expect(bookmarks.single.messageId, message.id);
-      expect(bookmarks.single.conversationId, 'source');
-      expect(bookmarks.single.conversationTitle, 'Conversation source');
-      expect(bookmarks.single.workspaceName, 'Workspace');
-      expect(bookmarks.single.excerpt, message.content);
+      expect(bookmarks.single.workspace.workspaceId, 'ws-1');
+      expect(bookmarks.single.details.messageId, message.id);
+      expect(bookmarks.single.details.conversationId, 'source');
+      expect(bookmarks.single.details.conversationTitle, 'Conversation source');
+      expect(bookmarks.single.details.workspaceName, 'Workspace');
+      expect(bookmarks.single.details.excerpt, message.content);
     });
 
     test('truncates long excerpts with ellipsis', () async {
@@ -89,7 +89,10 @@ void main() {
       );
 
       final bookmarks = await messages.watchBookmarkedMessages('ws-1').first;
-      expect(bookmarks.single.excerpt, '${List.filled(160, 'x').join()}...');
+      expect(
+        bookmarks.single.details.excerpt,
+        '${List.filled(160, 'x').join()}...',
+      );
     });
 
     test(
@@ -118,11 +121,11 @@ void main() {
         final bookmarks = await messages.watchBookmarkedMessages().first;
         expect(bookmarks, hasLength(2));
         expect(
-          bookmarks.map((bookmark) => bookmark.workspaceId),
+          bookmarks.map((bookmark) => bookmark.workspace.workspaceId),
           containsAll(['ws-1', 'ws-2']),
         );
         expect(
-          bookmarks.map((bookmark) => bookmark.workspaceName),
+          bookmarks.map((bookmark) => bookmark.details.workspaceName),
           containsAll(['Workspace', 'Other workspace']),
         );
       },
@@ -143,8 +146,8 @@ void main() {
 
       final bookmarks = await messages.watchBookmarkedMessages('ws-1').first;
       expect(bookmarks, hasLength(1));
-      expect(bookmarks.single.conversationId, 'source');
-      expect(bookmarks.single.messageId, message.id);
+      expect(bookmarks.single.details.conversationId, 'source');
+      expect(bookmarks.single.details.messageId, message.id);
     });
 
     test(

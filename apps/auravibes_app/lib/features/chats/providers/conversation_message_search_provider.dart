@@ -7,7 +7,21 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:riverpod/misc.dart' show FutureProviderFamily;
 import 'package:riverpod/riverpod.dart';
 
-const conversationMessageSearchPageSize = 25;
+abstract final class ConversationMessageSearchProvider {
+  static const pageSize = 25;
+
+  static int compareResults(
+    search.ConversationMessageSearchResult left,
+    search.ConversationMessageSearchResult right,
+  ) {
+    final createdAt = right.createdAt.compareTo(left.createdAt);
+    if (createdAt != 0) return createdAt;
+    final workspaceId = right.workspaceId.compareTo(left.workspaceId);
+    if (workspaceId != 0) return workspaceId;
+
+    return right.messageId.compareTo(left.messageId);
+  }
+}
 
 typedef ConversationMessageSearchPageRequest = ({
   String query,
@@ -56,7 +70,7 @@ conversationMessageSearchPageProvider = FutureProvider.autoDispose
                 .searchMessages(
                   query: query,
                   workspaceIds: localWorkspaceIds,
-                  limit: conversationMessageSearchPageSize,
+                  limit: ConversationMessageSearchProvider.pageSize,
                   offset: request.offset,
                 );
       // Shortcut: 25 hits per workspace. Use global paging if count grows.
@@ -75,7 +89,7 @@ conversationMessageSearchPageProvider = FutureProvider.autoDispose
 
             final page = await CloudChatGateway(gateway).searchMessages(
               query: query,
-              limit: conversationMessageSearchPageSize,
+              limit: ConversationMessageSearchProvider.pageSize,
               offset: request.offset,
             );
 
@@ -83,7 +97,8 @@ conversationMessageSearchPageProvider = FutureProvider.autoDispose
               hasError: false,
               workspaceId: workspace.id,
               workspaceName: workspace.name,
-              hasMore: page.length == conversationMessageSearchPageSize,
+              hasMore:
+                  page.length == ConversationMessageSearchProvider.pageSize,
               results: [
                 for (final result in page)
                   search.ConversationMessageSearchResult(
@@ -111,12 +126,13 @@ conversationMessageSearchPageProvider = FutureProvider.autoDispose
       );
       final localResults = await localFuture;
       final remoteResults = await remoteFuture;
-      final hasMore = localResults.length == conversationMessageSearchPageSize;
+      final hasMore =
+          localResults.length == ConversationMessageSearchProvider.pageSize;
       final results = [
         ...localResults,
         for (final workspaceResults in remoteResults)
           ...workspaceResults.results,
-      ]..sort(compareConversationMessageSearchResults);
+      ]..sort(ConversationMessageSearchProvider.compareResults);
 
       return (
         results: results,
@@ -124,15 +140,3 @@ conversationMessageSearchPageProvider = FutureProvider.autoDispose
         hasError: remoteResults.any((page) => page.hasError),
       );
     });
-
-int compareConversationMessageSearchResults(
-  search.ConversationMessageSearchResult left,
-  search.ConversationMessageSearchResult right,
-) {
-  final createdAt = right.createdAt.compareTo(left.createdAt);
-  if (createdAt != 0) return createdAt;
-  final workspaceId = right.workspaceId.compareTo(left.workspaceId);
-  if (workspaceId != 0) return workspaceId;
-
-  return right.messageId.compareTo(left.messageId);
-}

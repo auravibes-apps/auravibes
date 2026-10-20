@@ -162,14 +162,33 @@ class MessageRepository(
 
   Stream<List<MessageBookmarkEntity>> watchBookmarkedMessages([
     String? workspaceId,
-  ]) {
-    final workspaceFilter = workspaceId == null
-        ? ''
-        : 'AND conversations.workspace_id = ?';
+  ]) => _watchBookmarkedMessageRows(
+    _database,
+    workspaceId,
+  ).map(_messageBookmarksFromRows);
 
-    return _database
-        .customSelect(
-          '''
+  /// Includes trusted context entries for continuation replay and fork history.
+  Future<List<MessageEntity>> getTranscriptMessagesByConversation(
+    String conversationId,
+  ) => _getEffectiveTranscriptMessages(conversationId);
+
+  /// Watches the full transcript, including internal agent context entries.
+  Stream<List<MessageEntity>> watchTranscriptMessagesByConversation(
+    String conversationId,
+  ) => _watchTranscriptMessages(conversationId);
+}
+
+Stream<List<QueryRow>> _watchBookmarkedMessageRows(
+  AppDatabase database,
+  String? workspaceId,
+) {
+  final workspaceFilter = workspaceId == null
+      ? ''
+      : 'AND conversations.workspace_id = ?';
+
+  return database
+      .customSelect(
+        '''
         SELECT conversations.workspace_id AS workspace_id,
                messages.id AS message_id,
                messages.conversation_id AS conversation_id,
@@ -187,41 +206,37 @@ class MessageRepository(
           $workspaceFilter
         ORDER BY messages.created_at DESC, messages.id DESC
         ''',
-          variables: [if (workspaceId != null) Variable<String>(workspaceId)],
-          readsFrom: {
-            _database.messages,
-            _database.conversations,
-            _database.workspaces,
-          },
-        )
-        .watch()
-        .map(
-          (rows) => rows
-              .map(
-                (row) => MessageBookmarkEntity(
-                  workspaceId: row.read<String>('workspace_id'),
-                  messageId: row.read<String>('message_id'),
-                  conversationId: row.read<String>('conversation_id'),
-                  excerpt: _messageBookmarkExcerpt(row.read<String>('content')),
-                  workspaceName: row.read<String>('workspace_name'),
-                  createdAt: row.read<DateTime>('created_at'),
-                  conversationTitle: row.read<String>('conversation_title'),
-                ),
-              )
-              .toList(growable: false),
-        );
-  }
-
-  /// Includes trusted context entries for continuation replay and fork history.
-  Future<List<MessageEntity>> getTranscriptMessagesByConversation(
-    String conversationId,
-  ) => _getEffectiveTranscriptMessages(conversationId);
-
-  /// Watches the full transcript, including internal agent context entries.
-  Stream<List<MessageEntity>> watchTranscriptMessagesByConversation(
-    String conversationId,
-  ) => _watchTranscriptMessages(conversationId);
+        variables: [if (workspaceId != null) Variable<String>(workspaceId)],
+        readsFrom: {
+          database.messages,
+          database.conversations,
+          database.workspaces,
+        },
+      )
+      .watch();
 }
+
+List<MessageBookmarkEntity> _messageBookmarksFromRows(List<QueryRow> rows) =>
+    rows.map(_messageBookmarkFromRow).toList(growable: false);
+
+MessageBookmarkEntity _messageBookmarkFromRow(QueryRow row) =>
+    MessageBookmarkEntity(
+      details: _messageBookmarkDetailsFromRow(row),
+      workspace: _messageBookmarkWorkspaceFromRow(row),
+    );
+
+MessageBookmarkDetails _messageBookmarkDetailsFromRow(QueryRow row) =>
+    MessageBookmarkDetails(
+      messageId: row.read<String>('message_id'),
+      conversationId: row.read<String>('conversation_id'),
+      excerpt: _messageBookmarkExcerpt(row.read<String>('content')),
+      workspaceName: row.read<String>('workspace_name'),
+      createdAt: row.read<DateTime>('created_at'),
+      conversationTitle: row.read<String>('conversation_title'),
+    );
+
+MessageBookmarkWorkspace _messageBookmarkWorkspaceFromRow(QueryRow row) =>
+    MessageBookmarkWorkspace(workspaceId: row.read<String>('workspace_id'));
 
 String _messageBookmarkExcerpt(String content) {
   final trimmed = content.trim();
@@ -242,6 +257,43 @@ extension on MessageRepository {
     required String messageId,
     required bool isBookmarked,
   }) async {
+    if (!await _isBookmarkableMessage(workspaceId, conversationId, messageId)) {
+      return false;
+    }
+
+    return await _database.messageDao.setBookmarked(
+      messageId,
+      isBookmarked: isBookmarked,
+    );
+  }
+
+  Future<bool> _isBookmarkableMessage(
+    String workspaceId,
+    String conversationId,
+    String messageId,
+  ) async {
+    if (!await _isVisibleBookmarkableMessage(
+      workspaceId,
+      conversationId,
+      messageId,
+    )) {
+      return false;
+    }
+
+    final sourceMessage = await _database.messageDao.getMessageById(messageId);
+    if (sourceMessage == null) return false;
+
+    return await _sourceConversationBelongsToWorkspace(
+      workspaceId,
+      sourceMessage.conversationId,
+    );
+  }
+
+  Future<bool> _isVisibleBookmarkableMessage(
+    String workspaceId,
+    String conversationId,
+    String messageId,
+  ) async {
     final conversation = await _database.conversationDao.getConversationById(
       conversationId,
     );
@@ -249,20 +301,18 @@ extension on MessageRepository {
 
     final visibleMessage = (await _getEffectiveMessages(conversationId))
         .firstWhereOrNull((message) => message.id == messageId);
-    if (visibleMessage == null || !visibleMessage.isBookmarkEligible) {
-      return false;
-    }
 
-    final sourceMessage = await _database.messageDao.getMessageById(messageId);
-    if (sourceMessage == null) return false;
+    return visibleMessage != null && visibleMessage.isBookmarkEligible;
+  }
+
+  Future<bool> _sourceConversationBelongsToWorkspace(
+    String workspaceId,
+    String conversationId,
+  ) async {
     final sourceConversation = await _database.conversationDao
-        .getConversationById(sourceMessage.conversationId);
-    if (sourceConversation?.workspaceId != workspaceId) return false;
+        .getConversationById(conversationId);
 
-    return await _database.messageDao.setBookmarked(
-      messageId,
-      isBookmarked: isBookmarked,
-    );
+    return sourceConversation?.workspaceId == workspaceId;
   }
 }
 

@@ -37,18 +37,33 @@ class const ChatsListScreen({required final String workspaceId, super.key})
       ),
       appBar: AuraAppBarWithDrawer(
         title: const TextLocale(LocaleKeys.chats_screens_chats_list_title),
-        actions: [
-          AuraIconButton(
-            icon: Icons.bookmark_border,
-            onPressed: () =>
-                MessageBookmarksRoute(workspaceId: workspaceId).go(context),
-            tooltip: LocaleKeys.chats_screens_chats_list_saved_messages.tr(),
-          ),
-          _ChatsListSearchButton(workspaceId: workspaceId),
-        ],
+        actions: [_ChatsListActions(workspaceId: workspaceId)],
       ),
     );
   }
+}
+
+class const _ChatsListActions({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      _ChatsListSavedMessagesButton(workspaceId: workspaceId),
+      _ChatsListSearchButton(workspaceId: workspaceId),
+    ],
+  );
+}
+
+class const _ChatsListSavedMessagesButton({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.bookmark_border,
+    onPressed: () =>
+        MessageBookmarksRoute(workspaceId: workspaceId).go(context),
+    tooltip: LocaleKeys.chats_screens_chats_list_saved_messages.tr(),
+  );
 }
 
 class const _ChatsListSearchButton({required final String workspaceId})

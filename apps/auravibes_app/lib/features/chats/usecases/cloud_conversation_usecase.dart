@@ -57,7 +57,7 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
     ConversationEntity conversation,
     ConversationPatch patch,
   ) => _gateway.updateConversation(
-    _updateRequest(
+    _conversationUpdateRequest(
       conversationId: conversation.id,
       revision: conversation.revision,
       patch: patch,
@@ -67,7 +67,7 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
   Future<ConversationSummary> updateModel(
     ConversationEntity conversation,
     String modelId,
-  ) => _updateModel(conversation, modelId);
+  ) => _updateModel(this, conversation, modelId);
 
   Future<void> delete(ConversationEntity conversation) async {
     await _gateway.deleteConversation(
@@ -86,53 +86,55 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
         conversationId: conversation.id,
         expectedConversationRevision: conversation.revision,
       );
+}
 
-  Future<ConversationSummary> _updateModel(
-    ConversationEntity conversation,
-    String modelId,
-  ) async {
-    final patch = ConversationPatch(modelId: modelId);
-    try {
-      return await update(conversation, patch);
-    } on CloudAppException catch (error) {
-      if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
+Future<ConversationSummary> _updateModel(
+  CloudConversationUsecase usecase,
+  ConversationEntity conversation,
+  String modelId,
+) async {
+  final patch = ConversationPatch(modelId: modelId);
+  try {
+    return await usecase.update(conversation, patch);
+  } on CloudAppException catch (error) {
+    if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
 
-      return await _retryUpdateModel(conversation.id, patch);
-    }
+    return await _retryUpdateModel(usecase, conversation.id, patch);
   }
+}
 
-  UpdateConversationRequest _updateRequest({
-    required String conversationId,
-    required int revision,
-    required ConversationPatch patch,
-  }) => _withConversationPatch(
-    .new(
-      workspaceId: 0,
-      requestId: const UuidV7().generate(),
+UpdateConversationRequest _conversationUpdateRequest({
+  required String conversationId,
+  required int revision,
+  required ConversationPatch patch,
+}) => _withConversationPatch(
+  .new(
+    workspaceId: 0,
+    requestId: const UuidV7().generate(),
+    conversationId: conversationId,
+    expectedRevision: revision,
+    clearModel: false,
+    clearAgent: patch.clearAgent,
+    clearReasoningConfig: patch.clearReasoningConfiguration,
+    clearParent: false,
+  ),
+  patch,
+);
+
+Future<ConversationSummary> _retryUpdateModel(
+  CloudConversationUsecase usecase,
+  String conversationId,
+  ConversationPatch patch,
+) async {
+  final latest = await usecase._gateway.getConversation(conversationId);
+
+  return await usecase._gateway.updateConversation(
+    _conversationUpdateRequest(
       conversationId: conversationId,
-      expectedRevision: revision,
-      clearModel: false,
-      clearAgent: patch.clearAgent,
-      clearReasoningConfig: patch.clearReasoningConfiguration,
-      clearParent: false,
+      revision: latest.revision,
+      patch: patch,
     ),
-    patch,
   );
-
-  Future<ConversationSummary> _retryUpdateModel(
-    String conversationId,
-    ConversationPatch patch,
-  ) async {
-    final latest = await _gateway.getConversation(conversationId);
-
-    return await _gateway.updateConversation(
-      _updateRequest(
-        conversationId: conversationId,
-        revision: latest.revision,
-        patch: patch,
-      ),
-    );
-  }
 }
 
 CreateConversationRequest _createRequest(

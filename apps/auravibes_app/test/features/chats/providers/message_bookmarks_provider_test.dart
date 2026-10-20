@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -20,6 +21,7 @@ class _Client extends Mock implements Client;
 
 class _ConversationEndpoint extends Mock implements EndpointConversation;
 class _MessageRepository extends Mock implements MessageRepository;
+class _WorkspaceRepository extends Mock implements WorkspaceRepository;
 
 void main() {
   setUpAll(() {
@@ -67,6 +69,8 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
+          messageRepositoryProvider.overrideWithValue(_MessageRepository()),
+          workspaceRepositoryProvider.overrideWithValue(_WorkspaceRepository()),
           cloudAccountsProvider.overrideWith((ref) async => [account]),
           allWorkspacesProvider.overrideWith(
             (ref) => Stream.value([
@@ -107,15 +111,21 @@ void main() {
         cloudMessageBookmarksProvider.future,
       );
       final byMessageId = {
-        for (final bookmark in bookmarks) bookmark.messageId: bookmark,
+        for (final bookmark in bookmarks) bookmark.details.messageId: bookmark,
       };
 
       expect(byMessageId, hasLength(2));
-      expect(byMessageId['message-11']?.workspaceId, 'mirror-11');
-      expect(byMessageId['message-12']?.workspaceId, isNull);
-      expect(byMessageId['message-12']?.cloudServerUrl, account.serverUrl);
-      expect(byMessageId['message-12']?.cloudAccountId, account.userId);
-      expect(byMessageId['message-12']?.cloudWorkspaceId, 12);
+      expect(byMessageId['message-11']?.workspace.workspaceId, 'mirror-11');
+      expect(byMessageId['message-12']?.workspace.workspaceId, isNull);
+      expect(
+        byMessageId['message-12']?.workspace.cloudServerUrl,
+        account.serverUrl,
+      );
+      expect(
+        byMessageId['message-12']?.workspace.cloudAccountId,
+        account.userId,
+      );
+      expect(byMessageId['message-12']?.workspace.cloudWorkspaceId, 12);
       verify(() => conversation.listMessageBookmarks(any())).called(3);
     },
   );
@@ -145,6 +155,8 @@ void main() {
         .thenThrow(StateError('Cloud unavailable.'));
     final container = ProviderContainer(
       overrides: [
+        messageRepositoryProvider.overrideWithValue(_MessageRepository()),
+        workspaceRepositoryProvider.overrideWithValue(_WorkspaceRepository()),
         cloudAccountsProvider.overrideWith((ref) async => [account]),
         allWorkspacesProvider.overrideWith((ref) => Stream.value(mirrors)),
         cloudWorkspaceStateProvider.overrideWith(
@@ -182,12 +194,14 @@ void main() {
   test('keeps local bookmarks when cloud fetch fails', () async {
     const workspaceId = 'local-1';
     final localBookmark = MessageBookmarkEntity(
-      workspaceId: workspaceId,
-      messageId: 'message-local',
-      conversationId: 'conversation-local',
-      excerpt: 'Local saved message',
-      workspaceName: 'Local workspace',
-      createdAt: .utc(2026),
+      details: .new(
+        messageId: 'message-local',
+        conversationId: 'conversation-local',
+        excerpt: 'Local saved message',
+        workspaceName: 'Local workspace',
+        createdAt: .utc(2026),
+      ),
+      workspace: const MessageBookmarkWorkspace(workspaceId: workspaceId),
     );
     final messageRepository = _MessageRepository();
     when(messageRepository.watchBookmarkedMessages)
@@ -195,6 +209,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         messageRepositoryProvider.overrideWithValue(messageRepository),
+        workspaceRepositoryProvider.overrideWithValue(_WorkspaceRepository()),
         workspaceSessionForRouteProvider(workspaceId).overrideWithValue(
           const AsyncData(
             WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspaceId)),

@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_s
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:collection/collection.dart';
 
 export '../models/cloud_workspace_state.dart';
 
@@ -89,11 +90,7 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
       (item) => _isMirrorForWorkspace(item, workspace, account),
     );
 
-    if (accountOnly) {
-      return mirrors.where((item) => item.cloudAccount == account).firstOrNull;
-    }
-
-    return _preferredMirror(mirrors, account);
+    return _findExistingMirrorForAccount(mirrors, account, accountOnly);
   }
 
   bool _isMirrorForWorkspace(
@@ -103,13 +100,6 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
   ) =>
       item.cloudWorkspaceId == workspace.id.toString() &&
       item.cloudAccount?.serverUrl == account.serverUrl;
-
-  WorkspaceEntity? _preferredMirror(
-    Iterable<WorkspaceEntity> mirrors,
-    CloudAccountKey account,
-  ) =>
-      mirrors.where((item) => item.cloudAccount == account).firstOrNull ??
-      mirrors.firstOrNull;
 
   Future<void> detach(CloudWorkspaceSummary workspace) async {
     final deleted = await _workspaceRepository.deleteCloudWorkspaceMirror(
@@ -143,6 +133,21 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
     return await _attachCreatedMirror(workspace);
   }
 }
+
+WorkspaceEntity? _findExistingMirrorForAccount(
+  Iterable<WorkspaceEntity> mirrors,
+  CloudAccountKey account,
+  bool accountOnly,
+) => accountOnly
+    ? mirrors.firstWhereOrNull((item) => item.cloudAccount == account)
+    : _preferredMirror(mirrors, account);
+
+WorkspaceEntity? _preferredMirror(
+  Iterable<WorkspaceEntity> mirrors,
+  CloudAccountKey account,
+) =>
+    mirrors.where((item) => item.cloudAccount == account).firstOrNull ??
+    mirrors.firstOrNull;
 
 extension CloudWorkspaceUseCasesMembers on CloudWorkspaceUseCases {
   Future<List<CloudWorkspaceMemberSummary>> listMembers(int workspaceId) {

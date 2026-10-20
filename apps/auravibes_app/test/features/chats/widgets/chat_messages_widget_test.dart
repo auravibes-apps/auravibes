@@ -6684,9 +6684,12 @@ void main() {
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 
-    testWidgets('shows and highlights the message from a search deep link', (
-      tester,
-    ) async {
+    testWidgets('shows loaded cloud target offline', (tester) async {
+      const targetRequest = (
+        workspaceId: 'ws-1',
+        conversationId: 'conv-1',
+        messageId: 'msg-2',
+      );
       final earlierMessage = _createMessage(
         id: 'msg-1',
         content: 'Earlier message',
@@ -6725,6 +6728,10 @@ void main() {
           messages: messages.keys.toList(),
           messageEntitiesById: messages,
           overrides: [
+            conversationMessageTargetMessagesProvider(targetRequest)
+                .overrideWithValue(
+                  AsyncError(StateError('offline'), StackTrace.current),
+                ),
             messageConversationByIdProvider.overrideWith(
               (ref, id) => messages[id.messageId]!,
             ),
@@ -6736,6 +6743,14 @@ void main() {
               ),
             ),
           ],
+          workspaceSession: const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'ws-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account-1',
+              cloudWorkspaceId: 1,
+            ),
+          ),
           conversation: ConversationEntity(
             id: 'conv-1',
             title: 'Chat',

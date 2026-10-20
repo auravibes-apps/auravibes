@@ -129,13 +129,13 @@ void main() {
     );
 
     expect(
-      await usecase.toggle(
+      await usecase.toggle((
         workspaceId: 'local',
         conversationId: 'conversation',
         message: _message(),
         isBookmarked: false,
         resolveCloudConversation: () async => null,
-      ),
+      )),
       isFalse,
     );
 
@@ -164,13 +164,13 @@ void main() {
     );
 
     await expectLater(
-      usecase.toggle(
+      usecase.toggle((
         workspaceId: 'local',
         conversationId: 'conversation',
         message: _message(),
         isBookmarked: false,
         resolveCloudConversation: () async => null,
-      ),
+      )),
       throwsA(isA<StateError>()),
     );
   });
@@ -192,7 +192,7 @@ void main() {
     );
 
     expect(
-      await usecase.toggle(
+      await usecase.toggle((
         workspaceId: 'cloud-mirror',
         conversationId: 'fork',
         message: _message(
@@ -201,7 +201,7 @@ void main() {
         ),
         isBookmarked: true,
         resolveCloudConversation: () async => cloud,
-      ),
+      )),
       isTrue,
     );
 
@@ -246,15 +246,19 @@ MessageBookmarkEntity _bookmark({
   String? cloudAccountId,
   int? cloudWorkspaceId,
 }) => MessageBookmarkEntity(
-  workspaceId: workspaceId,
-  messageId: 'message',
-  conversationId: 'conversation',
-  excerpt: 'excerpt',
-  workspaceName: 'Workspace',
-  createdAt: .new(2026),
-  cloudServerUrl: cloudServerUrl,
-  cloudAccountId: cloudAccountId,
-  cloudWorkspaceId: cloudWorkspaceId,
+  details: .new(
+    messageId: 'message',
+    conversationId: 'conversation',
+    excerpt: 'excerpt',
+    workspaceName: 'Workspace',
+    createdAt: .new(2026),
+  ),
+  workspace: .new(
+    workspaceId: workspaceId,
+    cloudServerUrl: cloudServerUrl,
+    cloudAccountId: cloudAccountId,
+    cloudWorkspaceId: cloudWorkspaceId,
+  ),
 );
 
 WorkspaceEntity _localWorkspace(String id) => WorkspaceEntity(

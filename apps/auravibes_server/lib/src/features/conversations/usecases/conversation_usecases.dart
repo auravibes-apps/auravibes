@@ -1568,8 +1568,10 @@ class ConversationUseCases {
       final message = await _bookmarkSourceMessage(
         session,
         source: conversation,
-        sourceConversationId: request.sourceConversationId,
-        messageId: request.messageId,
+        sourceIds: (
+          sourceConversationId: request.sourceConversationId,
+          messageId: request.messageId,
+        ),
         transaction: transaction,
       );
       final existing = await MessageBookmark.db.findFirstRow(
@@ -1626,8 +1628,10 @@ class ConversationUseCases {
       final message = await _bookmarkSourceMessage(
         session,
         source: conversation,
-        sourceConversationId: request.sourceConversationId,
-        messageId: request.messageId,
+        sourceIds: (
+          sourceConversationId: request.sourceConversationId,
+          messageId: request.messageId,
+        ),
         transaction: transaction,
       );
       final bookmark = await MessageBookmark.db.findFirstRow(
@@ -4484,17 +4488,16 @@ class ConversationUseCases {
   Future<ConversationMessage> _bookmarkSourceMessage(
     Session session, {
     required Conversation source,
-    required String sourceConversationId,
-    required String messageId,
+    required ({String sourceConversationId, String messageId}) sourceIds,
     required Transaction transaction,
   }) async {
-    _requireId(messageId);
-    _requireId(sourceConversationId);
+    _requireId(sourceIds.messageId);
+    _requireId(sourceIds.sourceConversationId);
     final visibleMessage = (await _effectiveMessages(
       session,
       source: source,
       transaction: transaction,
-    )).where((message) => message.stableId == messageId).firstOrNull;
+    )).where((message) => message.stableId == sourceIds.messageId).firstOrNull;
     if (visibleMessage == null || !_canBookmark(visibleMessage)) {
       _fail(ConversationErrorCode.validationFailed);
     }
@@ -4503,7 +4506,7 @@ class ConversationUseCases {
       visibleMessage.conversationId,
       transaction: transaction,
     );
-    if (owningConversation?.stableId != sourceConversationId ||
+    if (owningConversation?.stableId != sourceIds.sourceConversationId ||
         owningConversation?.deletedAt != null) {
       _fail(ConversationErrorCode.validationFailed);
     }
