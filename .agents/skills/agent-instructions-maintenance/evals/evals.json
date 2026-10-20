@@ -54,6 +54,12 @@
       "prompt": "Add a test that verifies the device-preview Melos command targets macOS.",
       "expected_output": "Adds the focused command test. Does not modify agent guidance, invoke instruction-maintenance workflow, or automate the UI.",
       "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Codex review rejects its configured model as unsupported on this host. Make the smallest reusable repo guidance fix; do not install tools or change global configuration.",
+      "expected_output": "Adds a conditional one-time retry with a host-supported model to PR guidance, reports a blocker if none is available, and runs harness verification. Does not hard-code a model name or change global configuration.",
+      "files": []
     }
   ]
 }
