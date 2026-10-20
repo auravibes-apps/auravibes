@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_shortcut_scope.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
 import 'package:auravibes_app/features/quick_switcher/models/quick_switcher_entry.dart';
 import 'package:auravibes_app/features/quick_switcher/providers/quick_switcher_entries_provider.dart';
+import 'package:auravibes_app/features/quick_switcher/widgets/quick_switcher_dialog.dart';
 import 'package:auravibes_app/features/quick_switcher/widgets/quick_switcher_shortcut_scope.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +16,30 @@ import 'package:material_ui/material_ui.dart';
 import '../../helpers/test_app.dart';
 
 void main() {
+  Future<void> _sendKeyDown(WidgetTester tester, LogicalKeyboardKey key) async {
+    final _ = await tester.sendKeyDownEvent(key);
+  }
+
+  Future<void> _sendKeyUp(WidgetTester tester, LogicalKeyboardKey key) async {
+    final _ = await tester.sendKeyUpEvent(key);
+  }
+
+  Future<void> _pumpAndSettle(WidgetTester tester) async {
+    final _ = await tester.pumpAndSettle();
+  }
+
+  Future<void> _openSwitcher(
+    BuildContext context,
+    ValueChanged<QuickSwitcherEntry?> onSelected,
+  ) async {
+    onSelected(
+      await showDialog<QuickSwitcherEntry>(
+        context: context,
+        builder: (_) => const QuickSwitcherDialog(workspaceId: 'active'),
+      ),
+    );
+  }
+
   Future<void> pumpScope(
     WidgetTester tester, {
     required TargetPlatform platform,
@@ -21,6 +48,13 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
+          child: Theme(
+            data: .new(platform: platform),
+            child: QuickSwitcherShortcutScope(
+              workspaceId: 'active',
+              child: child,
+            ),
+          ),
           overrides: [
             quickSwitcherEntriesProvider('active').overrideWith(
               (_) async => const QuickSwitcherEntries(
@@ -29,32 +63,21 @@ void main() {
               ),
             ),
           ],
-          child: Theme(
-            data: ThemeData(platform: platform),
-            child: QuickSwitcherShortcutScope(
-              workspaceId: 'active',
-              child: child,
-            ),
-          ),
         ),
       );
     });
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
   }
 
-  Future<void> sendShortcut(
-    WidgetTester tester, {
-    required bool meta,
-    required bool control,
-  }) async {
+  Future<void> sendShortcut(WidgetTester tester, {required bool meta}) async {
     final modifier = meta
         ? LogicalKeyboardKey.metaLeft
         : LogicalKeyboardKey.controlLeft;
-    await tester.sendKeyDownEvent(modifier);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.keyK);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.keyK);
-    await tester.sendKeyUpEvent(modifier);
-    await tester.pumpAndSettle();
+    await _sendKeyDown(tester, modifier);
+    await _sendKeyDown(tester, .keyK);
+    await _sendKeyUp(tester, .keyK);
+    await _sendKeyUp(tester, modifier);
+    await _pumpAndSettle(tester);
   }
 
   testWidgets('uses Command on macOS and restores focus after dismissal', (
@@ -64,22 +87,22 @@ void main() {
     addTearDown(originFocus.dispose);
     await pumpScope(
       tester,
-      platform: TargetPlatform.macOS,
+      platform: .macOS,
       child: TextButton(
+        onPressed: originFocus.requestFocus,
         focusNode: originFocus,
-        onPressed: () {},
         child: const Text('Origin'),
       ),
     );
     originFocus.requestFocus();
     await tester.pump();
 
-    await sendShortcut(tester, meta: true, control: false);
+    await sendShortcut(tester, meta: true);
 
     expect(find.text('Quick switcher'), findsOneWidget);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
+    await _sendKeyDown(tester, .escape);
+    await _sendKeyUp(tester, .escape);
+    await _pumpAndSettle(tester);
     expect(originFocus.hasFocus, isTrue);
   });
 
@@ -88,29 +111,25 @@ void main() {
     addTearDown(originFocus.dispose);
     await pumpScope(
       tester,
-      platform: TargetPlatform.windows,
+      platform: .windows,
       child: TextButton(
+        onPressed: originFocus.requestFocus,
         focusNode: originFocus,
-        onPressed: () {},
         child: const Text('Origin'),
       ),
     );
     originFocus.requestFocus();
     await tester.pump();
 
-    await sendShortcut(tester, meta: false, control: true);
+    await sendShortcut(tester, meta: false);
 
     expect(find.text('Quick switcher'), findsOneWidget);
   });
 
   testWidgets('opens when no child currently has focus', (tester) async {
-    await pumpScope(
-      tester,
-      platform: TargetPlatform.macOS,
-      child: const SizedBox.shrink(),
-    );
+    await pumpScope(tester, platform: .macOS, child: const SizedBox.shrink());
 
-    await sendShortcut(tester, meta: true, control: false);
+    await sendShortcut(tester, meta: true);
 
     expect(find.text('Quick switcher'), findsOneWidget);
   });
@@ -119,24 +138,34 @@ void main() {
     final semantics = tester.ensureSemantics();
     const entries = [
       QuickSwitcherEntry(
-        type: QuickSwitcherEntryType.agent,
-        id: 'agent-1',
+        type: .agent,
         workspaceId: 'active',
         workspaceName: 'Workspace',
         title: 'First result',
+        id: 'agent-1',
       ),
       QuickSwitcherEntry(
-        type: QuickSwitcherEntryType.conversation,
-        id: 'conversation-2',
+        type: .conversation,
         workspaceId: 'active',
         workspaceName: 'Workspace',
         title: 'Second result',
+        id: 'conversation-2',
       ),
     ];
     QuickSwitcherEntry? selected;
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
+          child: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => unawaited(
+                _openSwitcher(context, (entry) {
+                  selected = entry;
+                }),
+              ),
+              child: const Text('Open launcher'),
+            ),
+          ),
           overrides: [
             quickSwitcherEntriesProvider('active').overrideWith(
               (_) async => const QuickSwitcherEntries(
@@ -145,24 +174,12 @@ void main() {
               ),
             ),
           ],
-          child: Builder(
-            builder: (context) => TextButton(
-              onPressed: () async {
-                selected = await showDialog<QuickSwitcherEntry>(
-                  context: context,
-                  builder: (_) =>
-                      const QuickSwitcherDialog(workspaceId: 'active'),
-                );
-              },
-              child: const Text('Open launcher'),
-            ),
-          ),
         ),
       );
     });
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
     await tester.tap(find.text('Open launcher'));
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
 
     final selectionAnnouncement = tester.getSemantics(
       find.byKey(
@@ -175,11 +192,11 @@ void main() {
     );
     expect(
       selectionAnnouncement.label,
-      'Selected: First result, Agent · Workspace',
+      'Selected: First result, Agent - Workspace',
     );
 
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+    await _sendKeyDown(tester, .arrowDown);
+    await _sendKeyUp(tester, .arrowDown);
     await tester.pump();
     expect(
       tester
@@ -189,11 +206,11 @@ void main() {
             ),
           )
           .label,
-      'Selected: Second result, Conversation · Workspace',
+      'Selected: Second result, Conversation - Workspace',
     );
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
-    await tester.pumpAndSettle();
+    await _sendKeyDown(tester, .enter);
+    await _sendKeyUp(tester, .enter);
+    await _pumpAndSettle(tester);
 
     expect(selected?.id, 'conversation-2');
     semantics.dispose();
@@ -205,17 +222,27 @@ void main() {
     var entries = [
       for (var index = 0; index < 3; index++)
         QuickSwitcherEntry(
-          type: QuickSwitcherEntryType.agent,
-          id: 'agent-$index',
+          type: .agent,
           workspaceId: 'active',
           workspaceName: 'Workspace',
           title: 'Result $index',
+          id: 'agent-$index',
         ),
     ];
     QuickSwitcherEntry? selected;
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
+          child: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => unawaited(
+                _openSwitcher(context, (entry) {
+                  selected = entry;
+                }),
+              ),
+              child: const Text('Open launcher'),
+            ),
+          ),
           overrides: [
             quickSwitcherEntriesProvider('active').overrideWith(
               (_) async => QuickSwitcherEntries(
@@ -224,37 +251,25 @@ void main() {
               ),
             ),
           ],
-          child: Builder(
-            builder: (context) => TextButton(
-              onPressed: () async {
-                selected = await showDialog<QuickSwitcherEntry>(
-                  context: context,
-                  builder: (_) =>
-                      const QuickSwitcherDialog(workspaceId: 'active'),
-                );
-              },
-              child: const Text('Open launcher'),
-            ),
-          ),
         ),
       );
     });
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
     await tester.tap(find.text('Open launcher'));
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
 
     for (var index = 0; index < 2; index++) {
-      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
-      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+      await _sendKeyDown(tester, .arrowDown);
+      await _sendKeyUp(tester, .arrowDown);
     }
     await tester.pump();
-    entries = [entries.first];
+    entries = entries.take(1).toList();
     ProviderScope.containerOf(tester.element(find.byType(QuickSwitcherDialog)))
         .invalidate(quickSwitcherEntriesProvider('active'));
-    await tester.pumpAndSettle();
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
+    await _sendKeyDown(tester, .enter);
+    await _sendKeyUp(tester, .enter);
+    await _pumpAndSettle(tester);
 
     expect(selected?.id, 'agent-0');
   });
@@ -265,24 +280,16 @@ void main() {
     final entries = [
       for (var index = 0; index < 12; index++)
         QuickSwitcherEntry(
-          type: QuickSwitcherEntryType.agent,
-          id: 'agent-$index',
+          type: .agent,
           workspaceId: 'active',
           workspaceName: 'Workspace',
           title: 'Result $index',
+          id: 'agent-$index',
         ),
     ];
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          overrides: [
-            quickSwitcherEntriesProvider('active').overrideWith(
-              (_) async => QuickSwitcherEntries(
-                entries: entries,
-                hasUnavailableResults: false,
-              ),
-            ),
-          ],
           child: Builder(
             builder: (context) => TextButton(
               onPressed: () => showDialog<QuickSwitcherEntry>(
@@ -293,18 +300,26 @@ void main() {
               child: const Text('Open launcher'),
             ),
           ),
+          overrides: [
+            quickSwitcherEntriesProvider('active').overrideWith(
+              (_) async => QuickSwitcherEntries(
+                entries: entries,
+                hasUnavailableResults: false,
+              ),
+            ),
+          ],
         ),
       );
     });
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
     await tester.tap(find.text('Open launcher'));
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
 
     for (var index = 0; index < 9; index++) {
-      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
-      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+      await _sendKeyDown(tester, .arrowDown);
+      await _sendKeyUp(tester, .arrowDown);
     }
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
 
     final listRect = tester.getRect(find.byType(ListView));
     final selectedRect = tester.getRect(
@@ -319,14 +334,6 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          overrides: [
-            allWorkspacesProvider.overrideWith((_) {
-              if (shouldFail) {
-                return Stream<List<WorkspaceEntity>>.error(StateError('fail'));
-              }
-              return Stream.value(<WorkspaceEntity>[]);
-            }),
-          ],
           child: Builder(
             builder: (context) => TextButton(
               onPressed: () => showDialog<QuickSwitcherEntry>(
@@ -337,17 +344,26 @@ void main() {
               child: const Text('Open launcher'),
             ),
           ),
+          overrides: [
+            allWorkspacesProvider.overrideWith((_) {
+              if (shouldFail) {
+                return Stream<List<WorkspaceEntity>>.error(StateError('fail'));
+              }
+
+              return Stream.value(<WorkspaceEntity>[]);
+            }),
+          ],
         ),
       );
     });
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
     await tester.tap(find.text('Open launcher'));
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
     expect(find.text('Retry'), findsOneWidget);
 
     shouldFail = false;
     await tester.tap(find.text('Retry'));
-    await tester.pumpAndSettle();
+    await _pumpAndSettle(tester);
 
     expect(find.text('Retry'), findsNothing);
     expect(find.byType(ListTile), findsNWidgets(2));
@@ -358,16 +374,16 @@ void main() {
     addTearDown(originFocus.dispose);
     await pumpScope(
       tester,
-      platform: TargetPlatform.macOS,
+      platform: .macOS,
       child: TextButton(
+        onPressed: originFocus.requestFocus,
         focusNode: originFocus,
-        onPressed: () {},
         child: const Text('Origin'),
       ),
     );
     originFocus.requestFocus();
     await tester.pump();
-    await sendShortcut(tester, meta: true, control: false);
+    await sendShortcut(tester, meta: true);
     await tester.enterText(find.byType(TextField), 'not found');
     await tester.pump();
 
@@ -379,13 +395,13 @@ void main() {
     addTearDown(focusNode.dispose);
     await pumpScope(
       tester,
-      platform: TargetPlatform.macOS,
+      platform: .macOS,
       child: TextField(focusNode: focusNode),
     );
     focusNode.requestFocus();
     await tester.pump();
 
-    await sendShortcut(tester, meta: true, control: false);
+    await sendShortcut(tester, meta: true);
 
     expect(find.text('Quick switcher'), findsNothing);
     expect(focusNode.hasFocus, isTrue);
@@ -402,7 +418,7 @@ void main() {
     controller.selection = const TextSelection(baseOffset: 0, extentOffset: 13);
     await pumpScope(
       tester,
-      platform: TargetPlatform.macOS,
+      platform: .macOS,
       child: MarkdownEditorShortcutScope(
         controller: shortcutController,
         focusNode: focusNode,
@@ -422,7 +438,7 @@ void main() {
     focusNode.requestFocus();
     await tester.pump();
 
-    await sendShortcut(tester, meta: true, control: false);
+    await sendShortcut(tester, meta: true);
 
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.text('Quick switcher'), findsNothing);

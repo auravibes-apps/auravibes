@@ -282,9 +282,8 @@ void _validateDestinationLocation(String workspaceId, String? location) {
   if (uri == null ||
       uri.hasScheme ||
       uri.hasAuthority ||
-      uri.pathSegments.length < 2 ||
-      uri.pathSegments[0] != 'workspaces' ||
-      uri.pathSegments[1] != workspaceId) {
+      uri.pathSegments.firstOrNull != 'workspaces' ||
+      uri.pathSegments.skip(1).firstOrNull != workspaceId) {
     throw ArgumentError.value(
       location,
       'destinationLocation',

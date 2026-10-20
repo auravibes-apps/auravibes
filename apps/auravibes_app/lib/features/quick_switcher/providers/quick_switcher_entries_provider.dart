@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/quick_switcher/models/quick_switcher_entry.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_availability.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -104,10 +103,10 @@ Future<QuickSwitcherEntries> quickSwitcherEntries(
 QuickSwitcherEntry _workspaceEntry(WorkspaceEntity workspace) =>
     QuickSwitcherEntry(
       type: .workspace,
-      id: workspace.id,
       workspaceId: workspace.id,
       workspaceName: workspace.name,
       title: workspace.name,
+      id: workspace.id,
     );
 
 QuickSwitcherEntry _conversationEntry(
@@ -115,19 +114,19 @@ QuickSwitcherEntry _conversationEntry(
   WorkspaceEntity workspace,
 ) => QuickSwitcherEntry(
   type: .conversation,
-  id: conversation.id,
   workspaceId: workspace.id,
   workspaceName: workspace.name,
   title: conversation.title,
+  id: conversation.id,
 );
 
 QuickSwitcherEntry _agentEntry(AgentEntity agent, WorkspaceEntity workspace) =>
     QuickSwitcherEntry(
       type: .agent,
-      id: agent.id,
       workspaceId: workspace.id,
       workspaceName: workspace.name,
       title: agent.name,
+      id: agent.id,
       searchTerms: agent.description,
     );
 
@@ -136,10 +135,10 @@ QuickSwitcherEntry _skillEntry(
   WorkspaceEntity workspace,
 ) => QuickSwitcherEntry(
   type: .skill,
-  id: skill.id,
   workspaceId: workspace.id,
   workspaceName: workspace.name,
   title: skill.title,
+  id: skill.id,
   titleKey: skill.titleKey,
   searchTerms: skill.description,
 );

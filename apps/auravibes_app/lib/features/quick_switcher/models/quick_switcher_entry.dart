@@ -1,34 +1,18 @@
-enum QuickSwitcherEntryType {
-  workspace,
-  conversation,
-  agent,
-  skill,
-  newConversation,
-  settings,
-}
+import 'package:auravibes_app/features/quick_switcher/models/quick_switcher_entry_type.dart';
+
+export 'package:auravibes_app/features/quick_switcher/models/quick_switcher_entry_type.dart';
 
 class const QuickSwitcherEntry({
-  required this.type,
-  required this.workspaceId,
-  required this.workspaceName,
-  required this.title,
-  this.id,
-  this.titleKey,
-  this.searchTerms = '',
-}) {
-  final QuickSwitcherEntryType type;
-  final String workspaceId;
-  final String workspaceName;
-  final String title;
-  final String? id;
-  final String? titleKey;
-  final String searchTerms;
-}
+  required final QuickSwitcherEntryType type,
+  required final String workspaceId,
+  required final String workspaceName,
+  required final String title,
+  final String? id,
+  final String? titleKey,
+  final String searchTerms = '',
+});
 
 class const QuickSwitcherEntries({
-  required this.entries,
-  required this.hasUnavailableResults,
-}) {
-  final List<QuickSwitcherEntry> entries;
-  final bool hasUnavailableResults;
-}
+  required final List<QuickSwitcherEntry> entries,
+  required final bool hasUnavailableResults,
+});

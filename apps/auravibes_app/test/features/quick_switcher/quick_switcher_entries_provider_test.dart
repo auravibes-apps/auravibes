@@ -1,15 +1,12 @@
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/quick_switcher/providers/quick_switcher_entries_provider.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_availability.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,11 +16,11 @@ void main() {
   test('includes entries only from verified workspaces', () async {
     final availableWorkspace = _workspace('available', 'Available');
     final lockedWorkspace = _workspace('locked', 'Locked');
-    final availableSession = WorkspaceSession(
-      const LocalWorkspaceRef(localWorkspaceId: 'available'),
+    const availableSession = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: 'available'),
     );
-    final lockedSession = WorkspaceSession(
-      const CloudWorkspaceRef(
+    const lockedSession = WorkspaceSession(
+      CloudWorkspaceRef(
         localWorkspaceId: 'locked',
         serverUrl: 'https://cloud.example',
         accountId: 'account',
@@ -36,10 +33,11 @@ void main() {
         allWorkspacesProvider.overrideWith(
           (_) => Stream.value([availableWorkspace, lockedWorkspace]),
         ),
-        workspaceAvailabilityProvider('available')
-            .overrideWith((_) async => WorkspaceAvailable(availableSession)),
+        workspaceAvailabilityProvider(
+          'available',
+        ).overrideWith((_) async => const WorkspaceAvailable(availableSession)),
         workspaceAvailabilityProvider('locked').overrideWith(
-          (_) async => WorkspaceAuthenticationRequired(lockedSession),
+          (_) async => const WorkspaceAuthenticationRequired(lockedSession),
         ),
         conversationsStreamProvider(
           workspaceId: 'available',
@@ -76,8 +74,8 @@ void main() {
               slug: 'available-skill',
               title: 'Available skill',
               description: 'A skill',
-              source: SkillSource.app,
-              kind: SkillKind.native,
+              source: .app,
+              kind: .native,
               isEnabled: true,
             ),
           ],
@@ -125,7 +123,7 @@ void main() {
 WorkspaceEntity _workspace(String id, String name) => WorkspaceEntity(
   id: id,
   name: name,
-  type: id == 'locked' ? WorkspaceType.remote : WorkspaceType.local,
-  createdAt: DateTime.utc(2026),
-  updatedAt: DateTime.utc(2026),
+  type: id == 'locked' ? .remote : .local,
+  createdAt: .utc(2026),
+  updatedAt: .utc(2026),
 );

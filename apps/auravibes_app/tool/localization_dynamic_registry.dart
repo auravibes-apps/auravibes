@@ -1023,6 +1023,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         method: 'TextLocale',
         keyExpression: 'titleKey',
       ),
+      DynamicTranslationSite(
+        file: 'features/quick_switcher/widgets/quick_switcher_dialog.dart',
+        method: 'tr',
+        keyExpression: 'key',
+      ),
     ],
     keys: {
       'app_skills.agents.title',
