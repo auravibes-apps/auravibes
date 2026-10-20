@@ -1309,6 +1309,8 @@ abstract class LocaleKeys {
       'skills_selector.semantics_refresh';
   static const skills_selector_semantics_credentials =
       'skills_selector.semantics_credentials';
+  static const chat_input_drop_files_to_attach =
+      'chat_input.drop_files_to_attach';
   static const chat_input_tool_access_label = 'chat_input.tool_access_label';
   static const chat_input_tool_access_default_label =
       'chat_input.tool_access_default_label';

@@ -170,6 +170,13 @@ class _MediaDraftAttachmentService(
   }
 
   @override
+  Future<MessageAttachmentToCreate> copyBytesIntoAppStorage(
+    Uint8List bytes, {
+    required String fileName,
+    required String displayName,
+  }) => throw UnimplementedError();
+
+  @override
   Future<void> deleteAttachment(String localPath) {
     final file = File(localPath);
     if (file.existsSync()) {
@@ -351,6 +358,8 @@ void main() {
       tickerEnabled: true,
     );
     var input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
+    expect(input.disabled, isTrue);
+    expect(input.acceptDroppedFilesWhenDisabled, isTrue);
     expect(input.toolAccessMode, ConversationToolAccessMode.defaultMode);
     expect(input.onToolAccessModeChanged, isNotNull);
     final container = ProviderScope.containerOf(

@@ -1,6 +1,7 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: UI callbacks stay local to their widgets.
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
@@ -26,8 +27,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
+import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 final _logger = Logger('chat_input_widget');
+
+final List<DataFormat<Object>> _chatInputDropFormats = [
+  Formats.fileUri,
+  ...Formats.standardFormats.whereType<FileFormat>(),
+];
 
 const double _chatInputHorizontalPadding = 16;
 const double _chatInputVerticalPadding = 8;
@@ -128,6 +135,7 @@ class const ChatInputWidget({
   final Widget? disabledHint,
   final String? compactDisabledHint,
   final bool disabled = false,
+  final bool acceptDroppedFilesWhenDisabled = false,
   final bool isBusy = false,
   final bool? showStopButton,
   final VoidCallback? onStop,
@@ -397,6 +405,7 @@ typedef _ChatInputAttachmentCapabilitiesRequest = ({
 
 class const _ChatInputCapabilities({
   required final _ChatInputAttachmentCapabilities attachments,
+  required final bool supportsDrop,
   required final bool isMacOS,
 });
 
@@ -409,8 +418,13 @@ abstract final class _ChatInputCapabilitiesFactory {
       workspaceCapabilities,
       modalitiesInput,
     ),
+    supportsDrop: _supportsDrop(workspaceCapabilities),
     isMacOS: defaultTargetPlatform == TargetPlatform.macOS,
   );
+
+  static bool _supportsDrop(WorkspaceCapabilities? capabilities) =>
+      (capabilities?.attachments ?? false) &&
+      (!kIsWeb || capabilities == WorkspaceCapabilities.cloud);
 
   static _ChatInputAttachmentCapabilities _createAttachmentCapabilities(
     WorkspaceCapabilities? workspaceCapabilities,
@@ -544,6 +558,174 @@ class const _ChatInputLayout({required final _ChatInputState state})
   }
 }
 
+class const _ChatInputDropOverlay({required final bool isHighlighted})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Positioned.fill(
+    child: IgnorePointer(
+      child: DecoratedBox(
+        decoration: isHighlighted
+            ? BoxDecoration(
+                color: context.auraColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(
+                  context.auraTheme.fromBorderRadius(.xl),
+                ),
+              )
+            : const BoxDecoration(),
+        child: CustomPaint(
+          key: isHighlighted
+              ? const ValueKey('chat_input_drop_highlight')
+              : null,
+          painter: isHighlighted
+              ? _ChatInputDropOutlinePainter(
+                  color: context.auraColors.primary,
+                  radius: context.auraTheme.fromBorderRadius(.xl),
+                )
+              : null,
+          child: Column(
+            mainAxisAlignment: .center,
+            mainAxisSize: .min,
+            children: [
+              Icon(
+                Icons.file_upload_outlined,
+                size: 36,
+                color: context.auraColors.primary,
+              ),
+              const SizedBox(height: 8),
+              const TextLocale(LocaleKeys.chat_input_drop_files_to_attach),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class const _ChatInputDropOutlinePainter({
+  required final Color color,
+  required final double radius,
+}) extends CustomPainter {
+  static const _dashLength = 5.0;
+  static const _dashGap = 4.0;
+  static const _strokeWidth = 1.5;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+
+    const inset = _strokeWidth / 2;
+    final rect = (Offset.zero & size).deflate(inset);
+    final path = Path()
+      ..addRRect(
+        .fromRectAndRadius(
+          rect,
+          .circular((radius - inset).clamp(0.0, double.infinity)),
+        ),
+      );
+    final paint = Paint()
+      ..color = color
+      ..style = .stroke
+      ..strokeWidth = _strokeWidth;
+
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final end = (distance + _dashLength).clamp(0.0, metric.length);
+        canvas.drawPath(metric.extractPath(distance, end), paint);
+        distance = end + _dashGap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ChatInputDropOutlinePainter oldDelegate) =>
+      color != oldDelegate.color || radius != oldDelegate.radius;
+}
+
+DropOperation _chatInputDropOperation(
+  _ChatInputState state,
+  DropOverEvent event,
+) => _canAcceptChatInputDrop(state, event.session)
+    ? DropOperation.copy
+    : DropOperation.none;
+
+bool _canAcceptChatInputDrop(_ChatInputState state, DropSession session) =>
+    (!state.input.disabled || state.input.acceptDroppedFilesWhenDisabled) &&
+    session.allowedOperations.contains(DropOperation.copy) &&
+    session.items.any((item) => _chatInputDropFormats.any(item.canProvide));
+
+Future<void> _handleChatInputDrop(
+  _ChatInputState state,
+  PerformDropEvent event,
+) async {
+  for (final item in event.session.items) {
+    if (!_chatInputDropFormats.any(item.canProvide)) continue;
+
+    try {
+      final file = await _readDroppedChatFile(item);
+      if (file == null) continue;
+      if (!state.actions.ref.context.mounted) return;
+
+      await state.actions.addDroppedFile(file.bytes, fileName: file.fileName);
+    } on ChatAttachmentTooLargeException catch (error) {
+      state.actions._showAttachmentError(error.localizationKey);
+    } on Object catch (error, stackTrace) {
+      _logger.warning('Failed to attach dropped file', error, stackTrace);
+    }
+  }
+}
+
+typedef _DroppedChatFile = ({String fileName, Uint8List bytes});
+
+Future<_DroppedChatFile?> _readDroppedChatFile(DropItem item) {
+  final reader = item.dataReader;
+  if (reader == null) return Future.value();
+
+  final completer = Completer<_DroppedChatFile?>();
+  final progress = reader.getFile(
+    null,
+    (file) async {
+      try {
+        final fileSize = file.fileSize;
+        if (fileSize != null &&
+            fileSize > ChatAttachmentModality.maxChatAttachmentBytes) {
+          file.close();
+          throw const ChatAttachmentTooLargeException();
+        }
+
+        final builder = BytesBuilder(copy: false);
+        var totalBytes = 0;
+        await for (final chunk in file.getStream()) {
+          totalBytes += chunk.length;
+          if (totalBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
+            file.close();
+            throw const ChatAttachmentTooLargeException();
+          }
+          builder.add(chunk);
+        }
+
+        final suggestedName =
+            file.fileName ?? await reader.getSuggestedName() ?? 'attachment';
+        final baseName = p.posix.basename(suggestedName.replaceAll(r'\', '/'));
+        final fileName = baseName.isEmpty || baseName == '.'
+            ? 'attachment'
+            : baseName;
+        completer.complete((fileName: fileName, bytes: builder.takeBytes()));
+      } on Object catch (error, stackTrace) {
+        if (!completer.isCompleted) {
+          completer.completeError(error, stackTrace);
+        }
+      }
+    },
+    onError: (error) {
+      if (!completer.isCompleted) completer.completeError(error);
+    },
+  );
+  if (progress == null) return Future.value();
+
+  return completer.future;
+}
+
 class const _ChatInputGestureDetector({required final _ChatInputState state})
     extends StatelessWidget {
   @override
@@ -574,7 +756,10 @@ class const _ChatInputPadding({required final _ChatInputState state})
       right: _chatInputHorizontalPadding,
       bottom: _chatInputVerticalPadding,
     ),
-    child: _ChatInputFieldComposition(state: state),
+    child: Align(
+      alignment: .topCenter,
+      child: _ChatInputFieldComposition(state: state),
+    ),
   );
 }
 
@@ -783,13 +968,52 @@ class const _ChatInputToolAccessModeMenuItemTitle({
 }
 
 class const _ChatInputFieldComposition({required final _ChatInputState state})
-    extends StatelessWidget {
+    extends HookWidget {
   @override
-  Widget build(BuildContext context) => _ChatInputField(
-    state: state,
-    footer: _ChatInputFooter(state: state),
-    header: _ChatInputAgentSelector(state: state),
-  );
+  Widget build(BuildContext context) {
+    final isDropActive = useState(false);
+    final isDropZoneHovered = useState(false);
+    final field = _ChatInputField(
+      state: state,
+      footer: _ChatInputFooter(state: state),
+      header: _ChatInputAgentSelector(state: state),
+    );
+    if (!state.capabilities.supportsDrop ||
+        (state.input.disabled && !state.input.acceptDroppedFilesWhenDisabled)) {
+      return field;
+    }
+
+    void handleDropOver(MonitorDropOverEvent event) {
+      final canAccept = _canAcceptChatInputDrop(state, event.session);
+      isDropActive.value = canAccept;
+      isDropZoneHovered.value = canAccept && event.isInside;
+    }
+
+    return DropMonitor(
+      child: DropRegion(
+        child: Stack(
+          children: [
+            field,
+            if (isDropActive.value)
+              _ChatInputDropOverlay(isHighlighted: isDropZoneHovered.value),
+          ],
+        ),
+        formats: _chatInputDropFormats,
+        onDropOver: (event) => _chatInputDropOperation(state, event),
+        onPerformDrop: (event) => _handleChatInputDrop(state, event),
+      ),
+      formats: _chatInputDropFormats,
+      onDropOver: handleDropOver,
+      onDropLeave: (_) {
+        isDropActive.value = false;
+        isDropZoneHovered.value = false;
+      },
+      onDropEnded: (_) {
+        isDropActive.value = false;
+        isDropZoneHovered.value = false;
+      },
+    );
+  }
 }
 
 class const _ChatInputField({
@@ -1011,6 +1235,12 @@ extension _ChatInputDraftActions on _ChatInputActions {
 
   Future<void> sendMessage() async {
     if (input.disabled || isEmpty || _draft.isSending.value) return;
+    for (final attachment in _draft.attachments.value) {
+      if (_supportsAttachment(attachment)) continue;
+      _showAttachmentError(_modelAttachmentReasonKey(attachment.modality));
+
+      return;
+    }
 
     _draft.isSending.value = true;
     try {
@@ -1037,17 +1267,49 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
   Future<void> addPath(String path, {required String displayName}) async {
     try {
       final attachment = await _copyAttachment(path, displayName);
-      if (!_supportsAttachment(attachment)) {
-        deleteUnsentAttachment(attachment);
-        _showAttachmentError(_modelAttachmentReasonKey(attachment.modality));
-        _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
-
-        return;
-      }
-      _draft.attachments.value = [..._draft.attachments.value, attachment];
+      await _addAttachment(attachment);
     } on ChatAttachmentTooLargeException catch (error) {
       _showAttachmentError(error.localizationKey);
     }
+  }
+
+  Future<void> addDroppedFile(
+    Uint8List bytes, {
+    required String fileName,
+  }) async {
+    try {
+      final displayName = AttachmentDisplayNames.unique(
+        fileName,
+        _draft.attachments.value.map((attachment) => attachment.displayName),
+      );
+      final attachment = await _attachmentUsecase.copyBytesIntoAppStorage(
+        bytes,
+        fileName: fileName,
+        displayName: displayName,
+      );
+      await _addAttachment(attachment);
+    } on ChatAttachmentTooLargeException catch (error) {
+      _showAttachmentError(error.localizationKey);
+    }
+  }
+
+  Future<void> _addAttachment(MessageAttachmentToCreate attachment) async {
+    if (!ref.context.mounted) {
+      await _attachmentUsecase.deleteAttachment(attachment.localPath);
+
+      return;
+    }
+
+    if (!input.acceptDroppedFilesWhenDisabled &&
+        !_supportsAttachment(attachment)) {
+      deleteUnsentAttachment(attachment);
+      _showAttachmentError(_modelAttachmentReasonKey(attachment.modality));
+      _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
+
+      return;
+    }
+
+    _draft.attachments.value = [..._draft.attachments.value, attachment];
   }
 
   void _showAttachmentError(String localizationKey) {
@@ -1313,6 +1575,11 @@ extension _ChatInputMessageActions on _ChatInputActions {
   ) async {
     try {
       await sendResult;
+      if (kIsWeb) {
+        for (final attachment in draft.attachments) {
+          await _attachmentUsecase.deleteAttachment(attachment.localPath);
+        }
+      }
 
       return true;
     } on Object catch (error, stackTrace) {

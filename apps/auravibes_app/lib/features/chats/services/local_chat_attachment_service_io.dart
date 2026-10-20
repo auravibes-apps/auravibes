@@ -46,6 +46,12 @@ class LocalChatAttachmentServiceIo({
     String? displayName,
   }) => _copyIntoAppStorage(this, sourcePath, displayName);
 
+  Future<MessageAttachmentToCreate> copyBytesIntoAppStorage(
+    Uint8List bytes, {
+    required String fileName,
+    required String displayName,
+  }) => _copyBytesIntoAppStorage(this, bytes, fileName, displayName);
+
   Future<Uint8List> readAttachmentBytes(String localPath) =>
       File(localPath).readAsBytes();
 
@@ -101,6 +107,45 @@ Future<MessageAttachmentToCreate> _copyIntoAppStorage(
   final copied = await source.file.copy(localPath);
 
   return _newAttachment(copied, source, displayName);
+}
+
+Future<MessageAttachmentToCreate> _copyBytesIntoAppStorage(
+  LocalChatAttachmentServiceIo service,
+  Uint8List bytes,
+  String fileName,
+  String displayName,
+) async {
+  _ensureAttachmentSize(bytes.length);
+  final safeFileName = _safeAttachmentFileName(fileName);
+  final localPath = await _newAttachmentPath(service, 'attachment');
+  final file = File(localPath);
+  await _writeArchiveAttachment(file, bytes);
+  final mimeType =
+      lookupMimeType(
+        safeFileName,
+        headerBytes: bytes.take(_mimeHeaderLength).toList(),
+      ) ??
+      'application/octet-stream';
+
+  final source = (
+    file: file,
+    fileName: safeFileName,
+    sizeBytes: bytes.length,
+    mimeType: mimeType,
+  );
+
+  return _newAttachment(file, source, displayName);
+}
+
+String _safeAttachmentFileName(String fileName) {
+  final safeFileName = p.posix
+      .basename(fileName.replaceAll(r'\', '/'))
+      .replaceAll(RegExp(r'[<>:"|?*\u0000-\u001F]'), '_')
+      .replaceFirst(RegExp(r'[ .]+$'), '');
+
+  return safeFileName.isEmpty || safeFileName == '.'
+      ? 'attachment'
+      : safeFileName;
 }
 
 Future<MessageAttachmentToCreate> _createArchiveAttachment(

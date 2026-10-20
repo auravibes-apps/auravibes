@@ -896,6 +896,7 @@
     "semantics_credentials": "Configurar las credenciales de {skill}"
   },
   "chat_input": {
+    "drop_files_to_attach": "Suelta archivos para adjuntarlos",
     "tool_access_label": "Acceso a herramientas",
     "tool_access_default_label": "Predeterminado",
     "tool_access_default_compact_label": "Normal",

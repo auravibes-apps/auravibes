@@ -215,6 +215,13 @@ class CriticalConversationAttachmentService
   }
 
   @override
+  Future<MessageAttachmentToCreate> copyBytesIntoAppStorage(
+    Uint8List bytes, {
+    required String fileName,
+    required String displayName,
+  }) => throw UnimplementedError();
+
+  @override
   Future<void> deleteAttachment(String localPath) => Future<void>.value();
 
   @override
