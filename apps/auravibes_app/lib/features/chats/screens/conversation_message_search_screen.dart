@@ -168,7 +168,8 @@ class const _ConversationSearchQueryField({
   );
 }
 
-const _conversationSearchScopeSegments = [
+const List<ButtonSegment<_ConversationSearchScope>>
+_conversationSearchScopeSegments = [
   ButtonSegment(
     value: _ConversationSearchScope.currentWorkspace,
     label: TextLocale(
