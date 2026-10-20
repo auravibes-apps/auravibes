@@ -219,6 +219,12 @@ melos:
         - melos run format:check
       description: Quick validation for development (analyze + format)
 
+    validate:app:
+      steps:
+        - dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine
+        - dart run dependency_validator -C apps/auravibes_app
+      description: Validate app analysis and declared dependencies
+
     # Development Scripts
     outdated:
       run: flutter pub outdated
@@ -228,6 +234,11 @@ melos:
       run: cd apps/auravibes_app && fvm flutter run --flavor dev --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/ "--dart-define=DB_HASH_SOURCE=$MELOS_ROOT_PATH"
       stdio: inherit
       description: Run AuraVibes app with workspace data
+
+    start:device-preview:
+      run: cd apps/auravibes_app && fvm flutter run -d macos --flavor dev --target tool/main_device_preview.dart --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/ "--dart-define=DB_HASH_SOURCE=$MELOS_ROOT_PATH"
+      stdio: inherit
+      description: Run AuraVibes app with device preview
 
     start:shared:
       run: cd apps/auravibes_app && fvm flutter run --flavor dev --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/

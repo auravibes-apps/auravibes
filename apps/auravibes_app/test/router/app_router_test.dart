@@ -98,7 +98,7 @@ void main() {
         chatId: 'c1',
         messageId: 'message-1',
       );
-      expect(route.location, '/workspaces/ws-1/chats/c1?messageId=message-1');
+      expect(route.location, '/workspaces/ws-1/chats/c1?message-id=message-1');
     });
 
     test('with special characters in chatId', () {

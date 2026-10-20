@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
 import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
@@ -49,6 +50,14 @@ class _FakeMessageRepository implements MessageRepository {
   void emit(List<MessageEntity> messages) => _controller.add(messages);
 
   Future<void> dispose() => _controller.close();
+
+  @override
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    int offset = 0,
+  }) async => const [];
 
   @override
   Stream<List<MessageEntity>> watchMessagesByConversation(

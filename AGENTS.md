@@ -51,6 +51,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - For Dart syntax checks, use `fvm dart analyze <path>` when generic syntax parsing reports unsupported language.
 - For generated source changes, run the relevant generator and inspect its output.
 - For scope-specific checks, read [validation policy](docs/agents/task-policies.md#validation).
+- For shared result or status contract changes, follow [behavior-path review](docs/agents/task-policies.md#behavior-path-review).
 - If a check cannot run, say why and name the next command.
 
 ## Analyzer-only migrations
@@ -72,6 +73,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 ## Skill routing
 - When verified feedback exposes a reusable guidance gap, use `.agents/skills/agent-instructions-maintenance/SKILL.md` before changing instructions, skills, or harness checks. Routine tasks need no guidance audit.
 - UX clarity: for new views, changed task flows, or visual regression work, load `.agents/skills/ux-view-clarity/SKILL.md`; for an existing-flow audit, load `.agents/skills/ux-task-audit/SKILL.md`. For local spacing or copy edits, check purpose, next action, recovery, and localization directly without loading a flow skill.
+- UI automation: use only browser/desktop controls the user named or approved. If unavailable or unclear, ask or give manual steps instead of substituting another tool.
 - Marionette app control: load `.agents/skills/marionette-mcp/SKILL.md` before Marionette launches, connections, interaction, logs, or multi-agent routing; MCP runs from the repository-root FVM command, CLI only when MCP is unavailable. Follow its [repeatable smoke runbook](./.agents/skills/marionette-mcp/SKILL.md#repeatable-agent-smoke-runbook) for isolated validation.
 - Riverpod work: prefer `.agents/skills/flutter-riverpod-expert/` over generic Flutter guidance.
 - Localization: for translation keys or localization behavior, load `.agents/skills/localization/SKILL.md`.

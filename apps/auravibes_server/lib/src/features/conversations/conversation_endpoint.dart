@@ -108,6 +108,18 @@ class ConversationEndpoint extends Endpoint {
     );
   }
 
+  Future<List<ConversationMessageSearchResult>> searchMessages(
+    Session session,
+    SearchConversationMessagesRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.searchMessages(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
   Future<ConversationSummary> update(
     Session session,
     UpdateConversationRequest request,

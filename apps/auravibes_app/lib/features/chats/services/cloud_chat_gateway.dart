@@ -438,7 +438,6 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
       ),
     ),
   );
-
   Future<void> bookmarkMessage({
     required String requestId,
     required String conversationId,
@@ -483,6 +482,21 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
         ),
       );
 
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required int limit,
+    required int offset,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.searchMessages(
+      .new(
+        workspaceId: _workspaceId,
+        query: query,
+        limit: limit,
+        offset: offset,
+      ),
+    ),
+  );
   Future<ConversationSummary> updateConversation(
     UpdateConversationRequest request,
   ) => CloudAppErrors.guardCall(

@@ -148,6 +148,16 @@ fvm flutter run --flavor prod
 fvm flutter run --flavor dev
 ```
 
+#### Device Preview
+
+Launch the development app with its existing local server settings:
+
+```bash
+fvm dart run melos run start:device-preview
+```
+
+Select simulated devices from Flutter DevTools’ **Device Preview** extension.
+
 #### Run on Specific Platform
 
 ```bash

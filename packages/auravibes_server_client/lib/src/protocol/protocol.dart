@@ -13,6 +13,8 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/background_work_view.dart'
     as _ii9na0oj;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_search_result.dart'
+    as _id2d4bnf;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_view.dart'
     as _isubclmd;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_summary.dart'
@@ -85,6 +87,8 @@ import 'features/conversations/models/conversation_execution_view.dart'
     as _ij9w9f8d;
 import 'features/conversations/models/conversation_job.dart' as _iq1eovrr;
 import 'features/conversations/models/conversation_message.dart' as _ibea51bx;
+import 'features/conversations/models/conversation_message_search_result.dart'
+    as _iz9vdf0f;
 import 'features/conversations/models/conversation_message_view.dart'
     as _iutotoh6;
 import 'features/conversations/models/conversation_mutation_result.dart'
@@ -140,6 +144,8 @@ import 'features/conversations/models/reorder_pending_conversation_message_reque
     as _infbxzxr;
 import 'features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _ia1pnkb0;
+import 'features/conversations/models/search_conversation_messages_request.dart'
+    as _iajm9iqs;
 import 'features/conversations/models/start_turn_request.dart' as _iocu6u94;
 import 'features/conversations/models/start_turn_result.dart' as _iw8le0j7;
 import 'features/conversations/models/stop_background_work_request.dart'
@@ -357,6 +363,7 @@ export 'features/conversations/models/conversation_execution.dart';
 export 'features/conversations/models/conversation_execution_view.dart';
 export 'features/conversations/models/conversation_job.dart';
 export 'features/conversations/models/conversation_message.dart';
+export 'features/conversations/models/conversation_message_search_result.dart';
 export 'features/conversations/models/conversation_message_view.dart';
 export 'features/conversations/models/conversation_mutation_result.dart';
 export 'features/conversations/models/conversation_page.dart';
@@ -390,6 +397,7 @@ export 'features/conversations/models/queue_conversation_message_request.dart';
 export 'features/conversations/models/remove_pending_conversation_message_request.dart';
 export 'features/conversations/models/reorder_pending_conversation_message_request.dart';
 export 'features/conversations/models/restore_conversation_checkpoint_request.dart';
+export 'features/conversations/models/search_conversation_messages_request.dart';
 export 'features/conversations/models/start_turn_request.dart';
 export 'features/conversations/models/start_turn_result.dart';
 export 'features/conversations/models/stop_background_work_request.dart';
@@ -629,6 +637,9 @@ class Protocol extends _isc.SerializationManager {
     if (t == _ibea51bx.ConversationMessage) {
       return _ibea51bx.ConversationMessage.fromJson(data) as T;
     }
+    if (t == _iz9vdf0f.ConversationMessageSearchResult) {
+      return _iz9vdf0f.ConversationMessageSearchResult.fromJson(data) as T;
+    }
     if (t == _iutotoh6.ConversationMessageView) {
       return _iutotoh6.ConversationMessageView.fromJson(data) as T;
     }
@@ -730,6 +741,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _ia1pnkb0.RestoreConversationCheckpointRequest) {
       return _ia1pnkb0.RestoreConversationCheckpointRequest.fromJson(data) as T;
+    }
+    if (t == _iajm9iqs.SearchConversationMessagesRequest) {
+      return _iajm9iqs.SearchConversationMessagesRequest.fromJson(data) as T;
     }
     if (t == _iocu6u94.StartTurnRequest) {
       return _iocu6u94.StartTurnRequest.fromJson(data) as T;
@@ -1233,6 +1247,12 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_iz9vdf0f.ConversationMessageSearchResult?>()) {
+      return (data != null
+              ? _iz9vdf0f.ConversationMessageSearchResult.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_iutotoh6.ConversationMessageView?>()) {
       return (data != null
               ? _iutotoh6.ConversationMessageView.fromJson(data)
@@ -1420,6 +1440,12 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_ia1pnkb0.RestoreConversationCheckpointRequest?>()) {
       return (data != null
               ? _ia1pnkb0.RestoreConversationCheckpointRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_iajm9iqs.SearchConversationMessagesRequest?>()) {
+      return (data != null
+              ? _iajm9iqs.SearchConversationMessagesRequest.fromJson(data)
               : null)
           as T;
     }
@@ -2182,6 +2208,15 @@ class Protocol extends _isc.SerializationManager {
               .toList()
           as T;
     }
+    if (t == List<_id2d4bnf.ConversationMessageSearchResult>) {
+      return (data as List)
+              .map(
+                (e) =>
+                    deserialize<_id2d4bnf.ConversationMessageSearchResult>(e),
+              )
+              .toList()
+          as T;
+    }
     if (t == List<_ii9na0oj.BackgroundWorkView>) {
       return (data as List)
               .map((e) => deserialize<_ii9na0oj.BackgroundWorkView>(e))
@@ -2293,6 +2328,8 @@ class Protocol extends _isc.SerializationManager {
       _ij9w9f8d.ConversationExecutionView => 'ConversationExecutionView',
       _iq1eovrr.ConversationJob => 'ConversationJob',
       _ibea51bx.ConversationMessage => 'ConversationMessage',
+      _iz9vdf0f.ConversationMessageSearchResult =>
+        'ConversationMessageSearchResult',
       _iutotoh6.ConversationMessageView => 'ConversationMessageView',
       _iz02ruas.ConversationMutationResult => 'ConversationMutationResult',
       _icl1rfiv.ConversationPage => 'ConversationPage',
@@ -2332,6 +2369,8 @@ class Protocol extends _isc.SerializationManager {
         'ReorderPendingConversationMessageRequest',
       _ia1pnkb0.RestoreConversationCheckpointRequest =>
         'RestoreConversationCheckpointRequest',
+      _iajm9iqs.SearchConversationMessagesRequest =>
+        'SearchConversationMessagesRequest',
       _iocu6u94.StartTurnRequest => 'StartTurnRequest',
       _iw8le0j7.StartTurnResult => 'StartTurnResult',
       _i4yes7gs.StopBackgroundWorkRequest => 'StopBackgroundWorkRequest',
@@ -2538,6 +2577,8 @@ class Protocol extends _isc.SerializationManager {
         return 'ConversationJob';
       case _ibea51bx.ConversationMessage():
         return 'ConversationMessage';
+      case _iz9vdf0f.ConversationMessageSearchResult():
+        return 'ConversationMessageSearchResult';
       case _iutotoh6.ConversationMessageView():
         return 'ConversationMessageView';
       case _iz02ruas.ConversationMutationResult():
@@ -2604,6 +2645,8 @@ class Protocol extends _isc.SerializationManager {
         return 'ReorderPendingConversationMessageRequest';
       case _ia1pnkb0.RestoreConversationCheckpointRequest():
         return 'RestoreConversationCheckpointRequest';
+      case _iajm9iqs.SearchConversationMessagesRequest():
+        return 'SearchConversationMessagesRequest';
       case _iocu6u94.StartTurnRequest():
         return 'StartTurnRequest';
       case _iw8le0j7.StartTurnResult():
@@ -2945,6 +2988,11 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName == 'ConversationMessage') {
       return deserialize<_ibea51bx.ConversationMessage>(data['data']);
     }
+    if (dataClassName == 'ConversationMessageSearchResult') {
+      return deserialize<_iz9vdf0f.ConversationMessageSearchResult>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'ConversationMessageView') {
       return deserialize<_iutotoh6.ConversationMessageView>(data['data']);
     }
@@ -3053,6 +3101,11 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'RestoreConversationCheckpointRequest') {
       return deserialize<_ia1pnkb0.RestoreConversationCheckpointRequest>(
+        data['data'],
+      );
+    }
+    if (dataClassName == 'SearchConversationMessagesRequest') {
+      return deserialize<_iajm9iqs.SearchConversationMessagesRequest>(
         data['data'],
       );
     }

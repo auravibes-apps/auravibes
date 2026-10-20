@@ -8,6 +8,7 @@ import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
 import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
@@ -543,6 +544,14 @@ class _FakeMessageRepository implements MessageRepository {
   Future<void> dispose() {
     return _controller.close();
   }
+
+  @override
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    int offset = 0,
+  }) async => const [];
 
   @override
   Future<MessageEntity> createMessage(MessageToCreate message) {

@@ -385,18 +385,12 @@ class ConversationUseCases {
       session,
       source: conversation,
     );
-    final messages = allMessages.length <= request.limit
-        ? allMessages
-        : allMessages.skip(allMessages.length - request.limit).toList();
-    final requestedMessage = request.messageId == null
-        ? null
-        : allMessages
-              .where((message) => message.stableId == request.messageId)
-              .firstOrNull;
-    if (requestedMessage != null &&
-        !messages.any((message) => message.id == requestedMessage.id)) {
-      messages.insert(0, requestedMessage);
-    }
+    final targetMessageId = request.messageId;
+    final messages = targetMessageId == null
+        ? allMessages.length <= request.limit
+              ? allMessages
+              : allMessages.skip(allMessages.length - request.limit).toList()
+        : _messagesThroughTarget(allMessages, targetMessageId, request.limit);
     final sourceConversationIds = messages
         .map((message) => message.conversationId)
         .toSet();
@@ -479,6 +473,48 @@ class ConversationUseCases {
         updatedAt: message.updatedAt,
       );
     }).toList();
+  }
+
+  List<ConversationMessage> _messagesThroughTarget(
+    List<ConversationMessage> messages,
+    String targetMessageId,
+    int limit,
+  ) {
+    final targetIndex = messages.indexWhere(
+      (message) => message.stableId == targetMessageId,
+    );
+    if (targetIndex < 0) _fail(ConversationErrorCode.notFound);
+    final start = targetIndex < limit ? 0 : targetIndex - limit + 1;
+
+    return messages.sublist(start, targetIndex + 1);
+  }
+
+  Future<List<ConversationMessageSearchResult>> searchMessages(
+    Session session, {
+    required String userId,
+    required SearchConversationMessagesRequest request,
+  }) async {
+    final query = request.query.trim();
+    if (query.isEmpty ||
+        query.length > 256 ||
+        request.limit < 1 ||
+        request.limit > 50 ||
+        request.offset < 0 ||
+        request.offset > 10000) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    await _requireMember(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+    );
+    return _repository.searchMessages(
+      session,
+      workspaceId: request.workspaceId,
+      query: query,
+      limit: request.limit,
+      offset: request.offset,
+    );
   }
 
   Future<ConversationSummary> update(

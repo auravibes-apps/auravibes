@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
+import 'package:auravibes_app/features/chats/screens/conversation_message_search_screen.dart';
 import 'package:auravibes_app/features/chats/screens/message_bookmarks_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_add_screen.dart';
@@ -120,6 +121,7 @@ abstract class const _AppGoRouteData() extends GoRouteData {
             ),
             TypedGoRoute<ChatsRoute>(path: 'chats'),
             TypedGoRoute<MessageBookmarksRoute>(path: 'bookmarks'),
+            TypedGoRoute<ConversationSearchRoute>(path: 'search'),
           ],
         ),
         TypedStatefulShellBranch<WorkspaceFeatureBranchData>(
@@ -484,6 +486,14 @@ class MessageBookmarksRoute({required final String workspaceId})
       MessageBookmarksScreen(workspaceId: workspaceId);
 }
 
+class ConversationSearchRoute({required final String workspaceId})
+    extends _AppGoRouteData
+    with $ConversationSearchRoute {
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      ConversationMessageSearchScreen(workspaceId: workspaceId);
+}
+
 class NewChatRoute({required final String workspaceId})
     extends _AppGoRouteData
     with $NewChatRoute {
@@ -499,7 +509,7 @@ class NewChatRoute({required final String workspaceId})
 class ConversationRoute({
   required final String workspaceId,
   required final String chatId,
-  @TypedQueryParameter(name: 'messageId') final String? messageId,
+  @TypedQueryParameter(name: 'message-id') final String? messageId,
 }) extends _AppGoRouteData with $ConversationRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {

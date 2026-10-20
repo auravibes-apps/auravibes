@@ -28,6 +28,7 @@ conversation:
   - bookmarkMessage:
   - unbookmarkMessage:
   - listMessageBookmarks:
+  - searchMessages:
   - update:
   - delete:
   - startTurn:
