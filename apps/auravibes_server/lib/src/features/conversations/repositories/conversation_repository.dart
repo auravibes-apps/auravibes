@@ -853,6 +853,28 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     limit: limit,
   );
 
+  Future<List<ConversationMessageSearchResult>> searchMessages(
+    Session session, {
+    required int workspaceId,
+    required String query,
+    required int limit,
+    required int offset,
+  }) async {
+    final rows = await session.db.unsafeQuery(
+      _searchMessagesSql,
+      parameters: QueryParameters.named({
+        'workspaceId': workspaceId,
+        'query': query.toLowerCase(),
+        'limit': limit,
+        'offset': offset,
+      }),
+    );
+    return [
+      for (final row in rows)
+        _conversationMessageSearchResult(row.toColumnMap(), query),
+    ];
+  }
+
   Future<List<ConversationMessage>> listEffectiveMessages(
     Session session, {
     required int workspaceId,
@@ -1030,3 +1052,51 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     lockMode: LockMode.forUpdate,
   );
 }
+
+ConversationMessageSearchResult _conversationMessageSearchResult(
+  Map<String, dynamic> columns,
+  String query,
+) {
+  final content = columns['content']! as String;
+  final matchIndex = content.toLowerCase().indexOf(query.toLowerCase());
+  final start = matchIndex > 50 ? matchIndex - 50 : 0;
+  final length = (query.length + 100).clamp(120, 356).toInt();
+  final end = content.length < start + length ? content.length : start + length;
+  final excerpt =
+      '${start > 0 ? '…' : ''}${content.substring(start, end)}'
+      '${end < content.length ? '…' : ''}';
+  return ConversationMessageSearchResult(
+    conversationId: columns['conversationId']! as String,
+    conversationTitle: columns['conversationTitle']! as String,
+    messageId: columns['messageId']! as String,
+    role: columns['role']! as String,
+    createdAt: columns['createdAt']! as DateTime,
+    excerpt: excerpt,
+  );
+}
+
+const _searchMessagesSql = r'''
+SELECT
+  conversation."stableId" AS "conversationId",
+  COALESCE(conversation."title", '') AS "conversationTitle",
+  message."stableId" AS "messageId",
+  message."role" AS role,
+  message."createdAt" AS "createdAt",
+  message."content" AS content
+FROM conversation_message AS message
+INNER JOIN conversation
+  ON conversation.id = message."conversationId"
+  AND conversation."workspaceId" = message."workspaceId"
+INNER JOIN cloud_workspace
+  ON cloud_workspace.id = message."workspaceId"
+WHERE message."workspaceId" = @workspaceId
+  AND conversation."deletedAt" IS NULL
+  AND cloud_workspace."deletedAt" IS NULL
+  AND message."role" IN ('user', 'assistant')
+  AND message."kind" = 'text'
+  AND message."pendingOrder" IS NULL
+  AND message."content" <> ''
+  AND strpos(lower(message."content"), @query) > 0
+ORDER BY message."createdAt" DESC, message."stableId" DESC
+LIMIT @limit OFFSET @offset
+''';

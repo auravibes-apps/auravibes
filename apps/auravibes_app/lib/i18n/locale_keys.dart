@@ -511,6 +511,40 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.bulk_pin_failures';
   static const chats_screens_chats_list_bulk_delete_failures =
       'chats_screens.chats_list.bulk_delete_failures';
+  static const chats_screens_conversation_search_title =
+      'chats_screens.conversation_search.title';
+  static const chats_screens_conversation_search_entry =
+      'chats_screens.conversation_search.entry';
+  static const chats_screens_conversation_search_query =
+      'chats_screens.conversation_search.query';
+  static const chats_screens_conversation_search_current_workspace =
+      'chats_screens.conversation_search.current_workspace';
+  static const chats_screens_conversation_search_all_workspaces =
+      'chats_screens.conversation_search.all_workspaces';
+  static const chats_screens_conversation_search_search =
+      'chats_screens.conversation_search.search';
+  static const chats_screens_conversation_search_loading =
+      'chats_screens.conversation_search.loading';
+  static const chats_screens_conversation_search_empty =
+      'chats_screens.conversation_search.empty';
+  static const chats_screens_conversation_search_error =
+      'chats_screens.conversation_search.error';
+  static const chats_screens_conversation_search_load_more =
+      'chats_screens.conversation_search.load_more';
+  static const chats_screens_conversation_search_user_role =
+      'chats_screens.conversation_search.user_role';
+  static const chats_screens_conversation_search_assistant_role =
+      'chats_screens.conversation_search.assistant_role';
+  static const chats_screens_conversation_search_untitled_conversation =
+      'chats_screens.conversation_search.untitled_conversation';
+  static const chats_screens_conversation_search_highlight =
+      'chats_screens.conversation_search.highlight';
+  static const chats_screens_conversation_search_target_not_found =
+      'chats_screens.conversation_search.target_not_found';
+  static const chats_screens_conversation_search_target_load_error =
+      'chats_screens.conversation_search.target_load_error';
+  static const chats_screens_conversation_search_target_retry =
+      'chats_screens.conversation_search.target_retry';
   static const chats_screens_new_chat_starting =
       'chats_screens.new_chat.starting';
   static const chats_screens_new_chat_start_error =

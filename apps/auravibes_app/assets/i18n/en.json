@@ -373,6 +373,25 @@
       "bulk_pin_failures": "Could not update pin for: {}",
       "bulk_delete_failures": "Could not delete: {}"
     },
+    "conversation_search": {
+      "title": "Search conversations",
+      "entry": "Search messages",
+      "query": "Search messages",
+      "current_workspace": "Current workspace",
+      "all_workspaces": "All workspaces",
+      "search": "Search",
+      "loading": "Searching messages…",
+      "empty": "No messages found",
+      "error": "Could not search messages. Try again.",
+      "load_more": "Load more",
+      "user_role": "You",
+      "assistant_role": "Assistant",
+      "untitled_conversation": "Untitled conversation",
+      "highlight": "Search match",
+      "target_not_found": "This message is no longer available.",
+      "target_load_error": "Could not load this message. Check your connection and try again.",
+      "target_retry": "Retry"
+    },
     "new_chat": {
       "starting": "Starting conversation...",
       "start_error": "Could not start the conversation. Please try again.",

@@ -423,15 +423,32 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
         ),
       );
   Future<List<ConversationMessageView>> listConversationMessages(
-    String conversationId,
-  ) => CloudAppErrors.guardCall(
+    String conversationId, {
+    String? messageId,
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.listMessages(
       .new(
         workspaceId: _workspaceId,
         conversationId: conversationId,
         limit: 500,
+        messageId: messageId,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+      ),
+    ),
+  );
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required int limit,
+    required int offset,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.searchMessages(
+      .new(
+        workspaceId: _workspaceId,
+        query: query,
+        limit: limit,
+        offset: offset,
       ),
     ),
   );

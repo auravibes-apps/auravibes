@@ -38,6 +38,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _iikp15t9;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/continue_turn_request.dart'
     as _ivlxpbcf;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_search_result.dart'
+    as _id2d4bnf;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_view.dart'
     as _isubclmd;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_mutation_result.dart'
@@ -80,6 +82,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _i28kt77m;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _id785g3f;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/search_conversation_messages_request.dart'
+    as _izqmo6ty;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_request.dart'
     as _iewqezs8;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_result.dart'
@@ -595,6 +599,15 @@ class EndpointConversation extends _isc.EndpointRef {
     'listMessages',
     {'request': request},
   );
+
+  _ida.Future<List<_id2d4bnf.ConversationMessageSearchResult>> searchMessages(
+    _izqmo6ty.SearchConversationMessagesRequest request,
+  ) => caller
+      .callServerEndpoint<List<_id2d4bnf.ConversationMessageSearchResult>>(
+        'conversation',
+        'searchMessages',
+        {'request': request},
+      );
 
   _ida.Future<_i54dvwkh.ConversationSummary> update(
     _irx2op5d.UpdateConversationRequest request,
