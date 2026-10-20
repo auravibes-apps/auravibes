@@ -5,6 +5,14 @@ typedef McpAppResource = ({String html, Map<String, Object?> csp});
 const int maxMcpAppResourceBytes = 2 * 1024 * 1024;
 const int _maxMcpAppResourceBase64Characters =
     ((maxMcpAppResourceBytes + 2) ~/ 3) * 4;
+const _cspDomainFields = [
+  'resourceDomains',
+  'connectDomains',
+  'frameDomains',
+  'baseUriDomains',
+];
+const _maxCspDomainsPerDirective = 32;
+const _maxCspDomainCharacters = 512;
 final _cspHostPattern = RegExp(r'^[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$');
 
 McpAppResource parseMcpAppResource(
@@ -89,7 +97,23 @@ Map<String, Object?> _resourceCsp(Object? metadata) {
   final csp = ui['csp'];
   if (csp is! Map) return const {};
 
-  return Map<String, Object?>.from(csp);
+  final domains = <String, Object?>{};
+  for (final field in _cspDomainFields) {
+    final values = _boundedCspDomains(csp[field]);
+    if (values.isNotEmpty) domains[field] = values;
+  }
+
+  return domains;
+}
+
+List<String> _boundedCspDomains(Object? value) {
+  if (value is! List) return const [];
+
+  return [
+    for (final domain
+        in value.take(_maxCspDomainsPerDirective).whereType<String>())
+      if (domain.length <= _maxCspDomainCharacters) domain,
+  ];
 }
 
 String buildMcpAppHostPage({
@@ -222,8 +246,7 @@ String? _allowedDomain(String value, Set<String> allowedSchemes) {
   return _formatCspOrigin(uri, host);
 }
 
-bool _isAllowedCspOrigin(Uri? uri, Set<String> allowedSchemes) =>
-    uri != null &&
+bool _isAllowedCspOrigin(Uri uri, Set<String> allowedSchemes) =>
     allowedSchemes.contains(uri.scheme) &&
     uri.host.isNotEmpty &&
     uri.userInfo.isEmpty &&

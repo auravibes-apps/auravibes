@@ -31,6 +31,42 @@ void main() {
     expect(resource.csp['connectDomains'], ['https://api.example.com']);
   });
 
+  test('bounds CSP domain counts and lengths', () {
+    final oversizedDomain = 'https://${'a' * 513}.example.com';
+    final result = <String, Object?>{
+      'contents': [
+        {
+          'uri': 'ui://weather/view',
+          'mimeType': 'text/html;profile=mcp-app',
+          'text': '<p>app</p>',
+          '_meta': {
+            'ui': {
+              'csp': {
+                'resourceDomains': [
+                  for (var index = 0; index < 40; index++)
+                    'https://cdn-$index.example.com',
+                ],
+                'connectDomains': [oversizedDomain, 'https://api.example.com'],
+                'ignored': 'x',
+              },
+            },
+          },
+        },
+      ],
+    };
+
+    final resource = parseMcpAppResource(
+      result,
+      resourceUri: 'ui://weather/view',
+    );
+    final domains = resource.csp['resourceDomains']! as List<String>;
+
+    expect(domains, hasLength(32));
+    expect(domains, isNot(contains(oversizedDomain)));
+    expect(resource.csp['connectDomains'], ['https://api.example.com']);
+    expect(resource.csp, isNot(contains('ignored')));
+  });
+
   test('decodes a base64 MCP App resource', () {
     final result = <String, Object?>{
       'contents': [

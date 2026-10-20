@@ -25,6 +25,8 @@ const _mcpAppLoadingStrokeWidth = 2.0;
 const _mcpAppLoadingSize = 14.0;
 const _mcpAppViewHeight = 320.0;
 const _mcpAppTeardownEvaluationTimeout = Duration(seconds: 1);
+const _maxMcpAppApprovalArgumentRunes = 2000;
+const JsonEncoder _mcpAppApprovalArgumentsEncoder = .withIndent('  ');
 
 typedef _McpAppToolViewData = ({
   String mcpServerId,
@@ -533,6 +535,7 @@ Future<void> _ensureMcpAppToolCallApproved(
   await _confirmMcpAppToolCallIfNeeded(
     request.call.getContext,
     request.call.toolName,
+    request.call.arguments,
     decision.needsConfirmation,
     isMounted,
   );
@@ -541,11 +544,12 @@ Future<void> _ensureMcpAppToolCallApproved(
 Future<void> _confirmMcpAppToolCallIfNeeded(
   BuildContext Function() getContext,
   String toolName,
+  Map<String, dynamic> arguments,
   bool needsConfirmation,
   bool Function() isMounted,
 ) async {
   if (!needsConfirmation ||
-      !await _confirmMcpAppToolCall(getContext(), toolName) ||
+      !await _confirmMcpAppToolCall(getContext(), toolName, arguments) ||
       !isMounted()) {
     throw StateError('MCP tool call was not approved.');
   }
@@ -583,19 +587,26 @@ ResolvedTool _mcpAppResolvedTool(_McpAppApprovalRequest request) =>
 Future<bool> _confirmMcpAppToolCall(
   BuildContext context,
   String toolName,
+  Map<String, dynamic> arguments,
 ) async =>
     await showDialog<bool>(
       context: context,
-      builder: (_) => _McpAppToolApprovalDialog(toolName: toolName),
+      builder: (_) =>
+          _McpAppToolApprovalDialog(toolName: toolName, arguments: arguments),
     ) ??
     false;
 
-class const _McpAppToolApprovalDialog({required final String toolName})
-    extends StatelessWidget {
+class const _McpAppToolApprovalDialog({
+  required final String toolName,
+  required final Map<String, dynamic> arguments,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: const TextLocale(LocaleKeys.mcp_apps_tool_approval_title),
-    content: _McpAppToolApprovalMessage(toolName: toolName),
+    content: _McpAppToolApprovalMessage(
+      toolName: toolName,
+      arguments: arguments,
+    ),
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context, false),
@@ -609,12 +620,51 @@ class const _McpAppToolApprovalDialog({required final String toolName})
   );
 }
 
-class const _McpAppToolApprovalMessage({required final String toolName})
-    extends StatelessWidget {
+class const _McpAppToolApprovalMessage({
+  required final String toolName,
+  required final Map<String, dynamic> arguments,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Text(
-    LocaleKeys.mcp_apps_tool_approval_message.tr(namedArgs: {'tool': toolName}),
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: [
+      Text(
+        LocaleKeys.mcp_apps_tool_approval_message.tr(
+          namedArgs: {'tool': toolName},
+        ),
+      ),
+      const SizedBox(height: 12),
+      const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_activity_arguments,
+      ),
+      const SizedBox(height: 4),
+      SizedBox(
+        height: 160,
+        child: SingleChildScrollView(
+          child: SelectableText(formatMcpAppApprovalArguments(arguments)),
+        ),
+      ),
+    ],
   );
+}
+
+/// Formats app-supplied arguments for the bounded approval preview.
+String formatMcpAppApprovalArguments(Map<String, dynamic> arguments) {
+  final runes = _mcpAppApprovalArgumentsEncoder
+      .convert(arguments)
+      .runes
+      .take(_maxMcpAppApprovalArgumentRunes + 1)
+      .toList(growable: false);
+  if (runes.length <= _maxMcpAppApprovalArgumentRunes) {
+    return String.fromCharCodes(runes);
+  }
+
+  final preview = String.fromCharCodes(
+    runes.take(_maxMcpAppApprovalArgumentRunes),
+  );
+
+  return '$preview${String.fromCharCode(0x2026)}';
 }
 
 Map<String, dynamic> _toolArguments(String raw) {

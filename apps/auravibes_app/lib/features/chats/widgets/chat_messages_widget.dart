@@ -1911,8 +1911,8 @@ class const _AssistantActivityRun({
     }
 
     Future<void> collapseAfterRun() => runAfterMcpAppToolResultsTeardown(
-      appControllersForToolIds(expansionState.expandedToolIds),
-      () {
+      controllers: appControllersForToolIds(expansionState.expandedToolIds),
+      action: () {
         if (!context.mounted) return;
         onDisclosureChanged(() {
           updateExpansionStateAfterBuild(
@@ -2060,7 +2060,10 @@ class const _AssistantActivityRun({
             ),
             onToggle: () async {
               final toolCallId = activityToolCall.toolCall.id;
-              if (renderedExpansionState.expandedToolIds.contains(toolCallId)) {
+              final shouldExpandToolCall = !renderedExpansionState
+                  .expandedToolIds
+                  .contains(toolCallId);
+              if (!shouldExpandToolCall) {
                 final controller = mcpAppControllers[toolCallId];
                 if (controller != null) await controller.prepareForTeardown();
               }
@@ -2074,9 +2077,10 @@ class const _AssistantActivityRun({
                       isLive: current.isLive,
                       traceExpanded: current.traceExpanded,
                       expandedToolGroupIds: current.expandedToolGroupIds,
-                      expandedToolIds: _toggledToolIds(
-                        current.expandedToolIds,
-                        toolCallId,
+                      expandedToolIds: updateActivityRunExpandedIds(
+                        expandedIds: current.expandedToolIds,
+                        id: toolCallId,
+                        isExpanded: shouldExpandToolCall,
                       ),
                     ),
                   );
@@ -2092,26 +2096,31 @@ class const _AssistantActivityRun({
       if (toolRows.length == 1) {
         toolContents[groupId] = toolRows.single;
       } else {
+        final shouldExpandToolGroup = !renderedExpansionState
+            .expandedToolGroupIds
+            .contains(groupId);
         Future<void> toggleToolGroup() => runAfterMcpAppToolResultsTeardown(
-          renderedExpansionState.expandedToolGroupIds.contains(groupId)
-              ? [
+          controllers: shouldExpandToolGroup
+              ? const <McpAppToolResultController?>[]
+              : [
                   for (final activityToolCall in activityToolCalls)
                     if (renderedExpansionState.expandedToolIds.contains(
                       activityToolCall.toolCall.id,
                     ))
                       mcpAppControllers[activityToolCall.toolCall.id],
-                ]
-              : const <McpAppToolResultController?>[],
-          () {
+                ],
+          action: () {
             if (!context.mounted) return;
             onDisclosureChanged(() {
               updateExpansionState((current) {
-                final next = {...current.expandedToolGroupIds};
-                if (!next.remove(groupId)) next.add(groupId);
                 return (
                   isLive: current.isLive,
                   traceExpanded: current.traceExpanded,
-                  expandedToolGroupIds: next,
+                  expandedToolGroupIds: updateActivityRunExpandedIds(
+                    expandedIds: current.expandedToolGroupIds,
+                    id: groupId,
+                    isExpanded: shouldExpandToolGroup,
+                  ),
                   expandedToolIds: current.expandedToolIds,
                 );
               });
@@ -2155,17 +2164,18 @@ class const _AssistantActivityRun({
         ? LocaleKeys.chats_screens_chat_conversation_activity_thinking.tr()
         : LocaleKeys.chats_screens_chat_conversation_activity_tools_count
               .plural(toolCalls.length, context: context);
+    final shouldExpandTrace = !renderedExpansionState.traceExpanded;
     Future<void> toggleTrace() => runAfterMcpAppToolResultsTeardown(
-      renderedExpansionState.traceExpanded
-          ? appControllersForToolIds(renderedExpansionState.expandedToolIds)
-          : const <McpAppToolResultController?>[],
-      () {
+      controllers: shouldExpandTrace
+          ? const <McpAppToolResultController?>[]
+          : appControllersForToolIds(renderedExpansionState.expandedToolIds),
+      action: () {
         if (!context.mounted) return;
         onDisclosureChanged(() {
           updateExpansionState(
             (current) => (
               isLive: current.isLive,
-              traceExpanded: !current.traceExpanded,
+              traceExpanded: shouldExpandTrace,
               expandedToolGroupIds: current.expandedToolGroupIds,
               expandedToolIds: current.expandedToolIds,
             ),
@@ -2451,13 +2461,6 @@ String? _latestPendingToolId(List<MessageToolCallEntity> toolCalls) {
   }
 
   return null;
-}
-
-Set<String> _toggledToolIds(Set<String> expandedToolIds, String toolCallId) {
-  final updated = {...expandedToolIds};
-  if (!updated.add(toolCallId)) updated.remove(toolCallId);
-
-  return updated;
 }
 
 VoidCallback? _openSubAgent({
