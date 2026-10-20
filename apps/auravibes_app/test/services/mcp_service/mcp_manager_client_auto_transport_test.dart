@@ -31,6 +31,11 @@ void main() {
           'form': <String, Object?>{},
           'url': <String, Object?>{},
         },
+        'extensions': {
+          'io.modelcontextprotocol/ui': {
+            'mimeTypes': ['text/html;profile=mcp-app'],
+          },
+        },
       });
       expect(server.streamablePostCount, greaterThanOrEqualTo(1));
       expect(server.sseGetCount, 0);
@@ -180,6 +185,47 @@ void main() {
       );
       expect(toolOutput.modelText, contains('x'));
     });
+
+    test(
+      'bounds oversized app results without serializing structured data',
+      () async {
+        final server = await _LocalMcpHttpServer.start(
+          toolResult: {
+            'content': [
+              {'type': 'text', 'text': 'small fallback'},
+            ],
+            'structuredContent': {'payload': 'x' * (300 * 1024)},
+            '_meta': {
+              'ui': {'resourceUri': 'ui://weather/forecast'},
+            },
+          },
+        );
+        final manager = McpManagerService();
+        McpManagerClient? client;
+        addTearDown(() async {
+          await manager.disconnect(client);
+          await server.close();
+        });
+
+        client = await manager.connectMcpWithAutoTransport(
+          _connectionRequest(server.endpoint),
+        );
+        final result = await manager.callToolResult(
+          client,
+          toolIdentifier: 'refresh',
+          arguments: const {},
+          elicitation: (serverName: 'Test MCP server', onElicitation: null),
+        );
+
+        expect(result['content'], [
+          {'type': 'text', 'text': 'small fallback'},
+        ]);
+        expect(result['_meta'], {
+          'ui': {'resourceUri': 'ui://weather/forecast'},
+        });
+        expect(result, isNot(contains('structuredContent')));
+      },
+    );
 
     test(
       'skips app result serialization when app data is not requested',

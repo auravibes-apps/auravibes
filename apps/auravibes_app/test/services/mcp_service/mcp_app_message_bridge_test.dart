@@ -272,4 +272,24 @@ void main() {
     expect(response.single['id'], isNull);
     expect((response.single['error']! as Map)['code'], -32600);
   });
+
+  test(
+    'rejects oversized UTF-8 app messages under the code-unit limit',
+    () async {
+      final bridge = McpAppMessageBridge(
+        initialArguments: const {},
+        initialResult: const {'content': []},
+        callTool: (_, _) async => const {},
+      );
+      final message = String.fromCharCodes(
+        List<int>.filled((1 << 18) + 1, 0x1f4a5),
+      );
+      expect(message.length, lessThan(1 << 20));
+
+      final response = await bridge.handleMessage(message);
+
+      expect(response.single['id'], isNull);
+      expect((response.single['error']! as Map)['code'], -32600);
+    },
+  );
 }

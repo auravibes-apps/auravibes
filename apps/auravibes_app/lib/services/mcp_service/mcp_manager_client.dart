@@ -32,10 +32,10 @@ const int _maxMcpAppResultBytes = maxPersistedToolOutputBytes - 1024;
 
 Map<String, Object?> _boundedMcpAppResult(
   Map<String, Object?> result,
-  String modelText,
+  String Function() fallbackText,
 ) {
   if (_isWithinMcpAppResultLimit(result)) return result;
-  final fallback = _mcpAppTextResult(modelText);
+  final fallback = _mcpAppTextResult(fallbackText());
   final metadata = result['_meta'];
   if (metadata == null) return fallback;
 
@@ -89,6 +89,14 @@ Map<String, Object?> _mcpAppTextResult(String modelText) => {
     {'type': 'text', 'text': projectToolOutput(modelText).text},
   ],
 };
+
+String _mcpAppFallbackText(mcp.CallToolResult result) {
+  for (final content in result.content) {
+    if (content case mcp.TextContent(:final text)) return text;
+  }
+
+  return 'MCP App result exceeded the size limit.';
+}
 
 typedef McpToolElicitationContext = ({
   String serverName,
@@ -289,7 +297,7 @@ class McpManagerService {
     return (
       modelText: modelText,
       appData: includeAppData
-          ? _boundedMcpAppResult(result.toJson(), modelText)
+          ? _boundedMcpAppResult(result.toJson(), () => modelText)
           : const <String, Object?>{},
     );
   }
@@ -308,9 +316,10 @@ class McpManagerService {
         context: elicitation,
       ),
     );
-    final modelText = McpSdkAdapter.toolResult(result).toModelText();
-
-    return _boundedMcpAppResult(result.toJson(), modelText);
+    return _boundedMcpAppResult(
+      result.toJson(),
+      () => _mcpAppFallbackText(result),
+    );
   }
 
   Future<Map<String, Object?>> readResource(

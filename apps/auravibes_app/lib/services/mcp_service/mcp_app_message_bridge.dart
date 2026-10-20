@@ -135,7 +135,8 @@ Future<List<Map<String, Object?>>> _handleMcpAppMessage(
   String message,
 ) async {
   // Shortcut: 1 MiB inbound cap. Raise after measured demand.
-  if (utf8.encode(message).length > _maxMcpAppMessageBytes) {
+  if (message.length > _maxMcpAppMessageBytes ||
+      utf8.encode(message).length > _maxMcpAppMessageBytes) {
     return [_error(null, _invalidRequestCode, 'MCP App request is too large.')];
   }
   final request = _decodeMcpAppMessage(message);
