@@ -49,7 +49,7 @@ final class CloudMessageBookmarksProvider
 }
 
 String _$cloudMessageBookmarksHash() =>
-    r'd574e3190c67d4a25b636586d417f55723ebb481';
+    r'2561b2faaaa6b8c3001429ebab0f15f40e457a19';
 
 @ProviderFor(messageBookmarks)
 final messageBookmarksProvider = MessageBookmarksFamily._();
@@ -108,7 +108,7 @@ final class MessageBookmarksProvider
   }
 }
 
-String _$messageBookmarksHash() => r'e23f7bee353a6a2574cd25f293998d5702d61205';
+String _$messageBookmarksHash() => r'cef43ef46ea703eb6b4e49617194394f2df67e5d';
 
 final class MessageBookmarksFamily extends $Family
     with
