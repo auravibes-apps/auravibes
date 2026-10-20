@@ -36,6 +36,24 @@
       "prompt": "Run the focused test for this file and help me fix a failing assertion.",
       "expected_output": "Runs the focused test with the documented project command and fixes the assertion. Does not load PR workflow guidance or run full CI only because the code is on a PR.",
       "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "The user says, \"Use the named DevTools tool or tell me the manual steps,\" but the agent switches to another UI automation. Fix this reusable guidance gap.",
+      "expected_output": "Adds one repo-scoped rule to AGENTS.md: use only user-named or approved browser/desktop controls; if unavailable or unclear, ask or provide manual steps. Does not change global files or ban tools the user approves. Runs harness verification; reports that model trials were not run.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "The DevTools extension isn't reachable. You can select the device for me or tell me how.",
+      "expected_output": "If no approved UI-control surface is available, asks one clarifying question or gives manual DevTools steps. Does not substitute another UI automation tool.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Add a test that verifies the device-preview Melos command targets macOS.",
+      "expected_output": "Adds the focused command test. Does not modify agent guidance, invoke instruction-maintenance workflow, or automate the UI.",
+      "files": []
     }
   ]
 }
