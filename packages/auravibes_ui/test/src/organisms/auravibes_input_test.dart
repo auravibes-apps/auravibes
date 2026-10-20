@@ -161,6 +161,72 @@ void main() {
       expect(footerTop, greaterThan(fieldTop));
     });
 
+    testWidgets(
+      'renders AuraInput normal, focused, error, disabled, and read-only '
+      'states',
+      (tester) async {
+        final focusedField = FocusNode();
+        addTearDown(focusedField.dispose);
+        await tester.binding.setSurfaceSize(const Size(720, 760));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  const AuraInput(
+                    placeholder: Text('Workspace token'),
+                    label: Text('Normal'),
+                    hint: Text('Required for this connector'),
+                    prefixIcon: Icon(Icons.key),
+                    suffixIcon: Icon(Icons.visibility),
+                  ),
+                  const SizedBox(height: 16),
+                  AuraInput(
+                    initialValue: 'Design workspace',
+                    label: const Text('Focused'),
+                    focusNode: focusedField,
+                  ),
+                  const SizedBox(height: 16),
+                  const AuraInput(
+                    placeholder: Text('Enter workspace ID'),
+                    label: Text('Error'),
+                    error: Text('Workspace ID required'),
+                    size: .small,
+                    state: .error,
+                  ),
+                  const SizedBox(height: 16),
+                  const AuraInput(
+                    placeholder: Text('Unavailable'),
+                    label: Text('Disabled'),
+                    size: .small,
+                    enabled: false,
+                  ),
+                  const SizedBox(height: 16),
+                  const AuraInput(
+                    initialValue: 'Saved workspace',
+                    label: Text('Read-only'),
+                    readOnly: true,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        focusedField.requestFocus();
+        await tester.pump();
+
+        expect(focusedField.hasFocus, isTrue);
+        expect(find.text('Workspace ID required'), findsOneWidget);
+        await expectLater(
+          find.byType(Scaffold),
+          matchesGoldenFile('goldens/aura_input.png'),
+        );
+      },
+      tags: ['golden'],
+    );
+
     test('has all expected size and state enum values', () {
       expect(AuraInputSize.values, hasLength(3));
       expect(AuraInputSize.values, contains(AuraInputSize.small));
