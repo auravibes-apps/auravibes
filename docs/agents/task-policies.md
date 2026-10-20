@@ -35,6 +35,10 @@ Read only section that matches current work. Root `AGENTS.md` lists each trigger
 | Documentation or skill-only | Run relevant documentation checks and `git diff --check`. Do not run Dart suites. |
 | Workflow or config-only | Run syntax or action checks for changed files. Do not run unrelated Dart suites. |
 
+## Behavior-path review
+
+- When changing a shared result or status contract, search all callers. Trace affected entry points through retries, resumes, async waits, and completion handling. Add focused tests where displayed or persisted behavior changes.
+
 ## Analyzer-only migrations
 
 - For provider scope or dependency cleanup, fix every machine diagnostic, including infos.

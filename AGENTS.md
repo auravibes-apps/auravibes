@@ -51,6 +51,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - For Dart syntax checks, use `fvm dart analyze <path>` when generic syntax parsing reports unsupported language.
 - For generated source changes, run the relevant generator and inspect its output.
 - For scope-specific checks, read [validation policy](docs/agents/task-policies.md#validation).
+- For shared result or status contract changes, follow [behavior-path review](docs/agents/task-policies.md#behavior-path-review).
 - If a check cannot run, say why and name the next command.
 
 ## Analyzer-only migrations
