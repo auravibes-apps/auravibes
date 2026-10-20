@@ -562,30 +562,40 @@ class const _ChatInputLayout({required final _ChatInputState state})
 class const _ChatInputDropOverlay({required final bool isHighlighted})
     extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => Positioned.fill(
+    child: IgnorePointer(
+      child: _ChatInputDropSurface(isHighlighted: isHighlighted),
+    ),
+  );
+}
+
+class const _ChatInputDropSurface({required final bool isHighlighted})
+    extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
     final color = context.auraColors.primary;
     final radius = context.auraTheme.fromBorderRadius(.xl);
 
-    return Positioned.fill(
-      child: IgnorePointer(
-        child: DecoratedBox(
-          key: isHighlighted
-              ? const ValueKey('chat_input_drop_highlight')
-              : null,
-          decoration: _chatInputDropDecoration(isHighlighted, color, radius),
-          child: Column(
-            mainAxisAlignment: .center,
-            mainAxisSize: .min,
-            children: [
-              Icon(Icons.file_upload_outlined, size: 36, color: color),
-              const SizedBox(height: 8),
-              const TextLocale(LocaleKeys.chat_input_drop_files_to_attach),
-            ],
-          ),
-        ),
-      ),
+    return DecoratedBox(
+      key: isHighlighted ? const ValueKey('chat_input_drop_highlight') : null,
+      decoration: _chatInputDropDecoration(isHighlighted, color, radius),
+      child: _ChatInputDropLabel(color: color),
     );
   }
+}
+
+class const _ChatInputDropLabel({required final Color color})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisAlignment: .center,
+    mainAxisSize: .min,
+    children: [
+      Icon(Icons.file_upload_outlined, size: 36, color: color),
+      const SizedBox(height: 8),
+      const TextLocale(LocaleKeys.chat_input_drop_files_to_attach),
+    ],
+  );
 }
 
 BoxDecoration _chatInputDropDecoration(
@@ -662,11 +672,23 @@ Future<void> _addDroppedChatFile(_ChatInputState state, DropItem item) async {
     if (file == null || !state.actions.ref.context.mounted) return;
 
     await state.actions.addDroppedFile(file.bytes, fileName: file.fileName);
-  } on ChatAttachmentTooLargeException catch (error) {
-    state.actions._showAttachmentError(error.localizationKey);
   } on Object catch (error, stackTrace) {
-    _logger.warning('Failed to attach dropped file', error, stackTrace);
+    _handleDroppedChatFileError(state, error, stackTrace);
   }
+}
+
+void _handleDroppedChatFileError(
+  _ChatInputState state,
+  Object error,
+  StackTrace stackTrace,
+) {
+  if (error case ChatAttachmentTooLargeException()) {
+    state.actions._showAttachmentError(error.localizationKey);
+
+    return;
+  }
+
+  _logger.warning('Failed to attach dropped file', error, stackTrace);
 }
 
 typedef _DroppedChatFile = ({String fileName, Uint8List bytes});
@@ -675,6 +697,10 @@ Future<_DroppedChatFile?> _readDroppedChatFile(DropItem item) {
   final reader = item.dataReader;
   if (reader == null) return Future.value();
 
+  return _readDroppedChatFileFromReader(reader);
+}
+
+Future<_DroppedChatFile?> _readDroppedChatFileFromReader(DataReader reader) {
   final completer = Completer<_DroppedChatFile?>();
   final progress = reader.getFile(
     null,
@@ -701,25 +727,39 @@ Future<void> _completeDroppedChatFile(
 }
 
 Future<Uint8List> _readDroppedChatFileBytes(DataReaderFile file) async {
+  _ensureDroppedChatFileFits(file);
+
+  final builder = BytesBuilder(copy: false);
+  await for (final chunk in file.getStream()) {
+    _addDroppedChatFileChunk(file, builder, chunk);
+  }
+
+  return builder.takeBytes();
+}
+
+void _ensureDroppedChatFileFits(DataReaderFile file) {
   final fileSize = file.fileSize;
-  if (fileSize != null &&
-      fileSize > ChatAttachmentModality.maxChatAttachmentBytes) {
+  if (fileSize == null ||
+      fileSize <= ChatAttachmentModality.maxChatAttachmentBytes) {
+    return;
+  }
+
+  final _ = file.close();
+  throw const ChatAttachmentTooLargeException();
+}
+
+void _addDroppedChatFileChunk(
+  DataReaderFile file,
+  BytesBuilder builder,
+  Uint8List chunk,
+) {
+  if (builder.length + chunk.length >
+      ChatAttachmentModality.maxChatAttachmentBytes) {
     final _ = file.close();
     throw const ChatAttachmentTooLargeException();
   }
 
-  final builder = BytesBuilder(copy: false);
-  var totalBytes = 0;
-  await for (final chunk in file.getStream()) {
-    totalBytes += chunk.length;
-    if (totalBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
-      final _ = file.close();
-      throw const ChatAttachmentTooLargeException();
-    }
-    builder.add(chunk);
-  }
-
-  return builder.takeBytes();
+  builder.add(chunk);
 }
 
 Future<String> _droppedChatFileName(
