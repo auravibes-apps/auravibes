@@ -7,6 +7,16 @@ typedef ActivityRunExpansionState = ({
   Set<String> expandedToolIds,
 });
 
+Set<String> updateActivityRunExpandedIds({
+  required Set<String> expandedIds,
+  required String id,
+  required bool isExpanded,
+}) => {
+  for (final expandedId in expandedIds)
+    if (isExpanded || expandedId != id) expandedId,
+  if (isExpanded) id,
+};
+
 class ActivityRunExpansionNotifier
     extends Notifier<Map<String, Map<String, ActivityRunExpansionState>>> {
   @override

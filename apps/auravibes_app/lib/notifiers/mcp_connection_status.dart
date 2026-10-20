@@ -20,6 +20,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_app_tool_metadata.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
@@ -136,6 +137,19 @@ typedef _CloudDiscoveryError = ({
   McpServerEntity server,
   Exception error,
   StackTrace stackTrace,
+});
+
+typedef _McpToolCallRequest = ({
+  String mcpServerId,
+  String toolIdentifier,
+  Map<String, dynamic> arguments,
+  McpElicitationHandler? onElicitation,
+});
+
+typedef _McpAppResourceRequest = ({
+  String mcpServerId,
+  String toolIdentifier,
+  String resourceUri,
 });
 
 // ============================================================.
@@ -502,6 +516,43 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     );
   }
 
+  Future<({String modelText, Map<String, Object?> appData})>
+  callToolWithAppData({
+    required String mcpServerId,
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+    McpElicitationHandler? onElicitation,
+  }) => _callToolWithAppData(this, (
+    mcpServerId: mcpServerId,
+    toolIdentifier: toolIdentifier,
+    arguments: arguments,
+    onElicitation: onElicitation,
+  ));
+
+  /// Read a UI resource declared by [toolIdentifier].
+  Future<Map<String, Object?>> readAppResource({
+    required String mcpServerId,
+    required String toolIdentifier,
+    required String resourceUri,
+  }) => _readAppResource(this, (
+    mcpServerId: mcpServerId,
+    toolIdentifier: toolIdentifier,
+    resourceUri: resourceUri,
+  ));
+
+  /// Call an MCP tool from its associated App view.
+  Future<Map<String, Object?>> callAppTool({
+    required String mcpServerId,
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+    required McpElicitationHandler onElicitation,
+  }) => _callAppTool(this, (
+    mcpServerId: mcpServerId,
+    toolIdentifier: toolIdentifier,
+    arguments: arguments,
+    onElicitation: onElicitation,
+  ));
+
   /// Get a connection state by server ID.
   McpConnectionState? getConnection(String serverId) => _currentState
       .where((connection) => connection.hasServerId(serverId))
@@ -537,6 +588,138 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
   }
 }
 
+Future<({String modelText, Map<String, Object?> appData})> _callToolWithAppData(
+  McpConnectionNotifier notifier,
+  _McpToolCallRequest request,
+) => notifier._requiredMcpManager.callToolOutput(
+  _mcpToolOutputRequest(notifier, request),
+);
+
+McpToolOutputRequest _mcpToolOutputRequest(
+  McpConnectionNotifier notifier,
+  _McpToolCallRequest request,
+) {
+  final connection = notifier._requiredConnection(request.mcpServerId);
+  final tool = notifier._requiredToolInfo(
+    connection,
+    request.mcpServerId,
+    request.toolIdentifier,
+  );
+
+  return (
+    client: _localToolClient(notifier, request),
+    toolIdentifier: request.toolIdentifier,
+    arguments: request.arguments,
+    includeAppData: _hasMcpAppResource(tool),
+    elicitation: _mcpToolElicitation(
+      connection.server.name,
+      request.onElicitation,
+    ),
+  );
+}
+
+McpToolElicitationContext _mcpToolElicitation(
+  String serverName,
+  McpElicitationHandler? onElicitation,
+) => (serverName: serverName, onElicitation: onElicitation);
+
+Future<Map<String, Object?>> _readAppResource(
+  McpConnectionNotifier notifier,
+  _McpAppResourceRequest request,
+) async {
+  _requireLocalMcp(notifier);
+  final connection = notifier._requiredConnection(request.mcpServerId);
+  final tool = notifier._requiredToolInfo(
+    connection,
+    request.mcpServerId,
+    request.toolIdentifier,
+  );
+  _requireDeclaredMcpAppResource(tool, request.resourceUri);
+  final client = _readyMcpClient(notifier, connection, request.mcpServerId);
+
+  return await notifier._requiredMcpManager.readResource(
+    client,
+    request.resourceUri,
+  );
+}
+
+Future<Map<String, Object?>> _callAppTool(
+  McpConnectionNotifier notifier,
+  _McpToolCallRequest request,
+) async {
+  final client = _appToolClient(notifier, request);
+  final connection = notifier._requiredConnection(request.mcpServerId);
+
+  return await notifier._requiredMcpManager.callToolResult(
+    client,
+    toolIdentifier: request.toolIdentifier,
+    arguments: request.arguments,
+    elicitation: (
+      serverName: connection.server.name,
+      onElicitation: request.onElicitation,
+    ),
+  );
+}
+
+McpManagerClient _appToolClient(
+  McpConnectionNotifier notifier,
+  _McpToolCallRequest request,
+) {
+  _requireLocalMcp(notifier);
+  final connection = notifier._requiredConnection(request.mcpServerId);
+  final tool = notifier._requiredToolInfo(
+    connection,
+    request.mcpServerId,
+    request.toolIdentifier,
+  );
+  _requireAppVisibleTool(tool, request.toolIdentifier);
+
+  return _readyMcpClient(notifier, connection, request.mcpServerId);
+}
+
+McpManagerClient _localToolClient(
+  McpConnectionNotifier notifier,
+  _McpToolCallRequest request,
+) {
+  _requireLocalMcp(notifier);
+
+  return notifier._requiredToolClient(
+    request.mcpServerId,
+    request.toolIdentifier,
+  );
+}
+
+void _requireLocalMcp(McpConnectionNotifier notifier) {
+  if (notifier._isCloud) throw const UnsupportedWorkspaceCapabilityException();
+}
+
+void _requireDeclaredMcpAppResource(McpToolInfo tool, String resourceUri) {
+  if (parseMcpAppToolMetadata(tool.metadata).resourceUri != resourceUri) {
+    throw ArgumentError.value(resourceUri, 'resourceUri');
+  }
+}
+
+void _requireAppVisibleTool(McpToolInfo tool, String toolIdentifier) {
+  if (!isMcpAppToolVisibleToApp(parseMcpAppToolMetadata(tool.metadata))) {
+    throw Exception('MCP tool is not visible to the app: $toolIdentifier');
+  }
+}
+
+McpManagerClient _readyMcpClient(
+  McpConnectionNotifier notifier,
+  McpConnectionState connection,
+  String mcpServerId,
+) {
+  if (!connection.isReady) {
+    throw Exception('MCP server not connected: $mcpServerId');
+  }
+
+  return notifier._requiredClient(connection, mcpServerId);
+}
+
+bool _hasMcpAppResource(McpToolInfo tool) =>
+    parseMcpAppToolMetadata(tool.metadata).resourceUri != null;
+
 extension _McpConnectionLookupOperations on McpConnectionNotifier {
   ToolSpec? _toolSpec(McpConnectionState? connection, String toolName) {
     if (connection case final current?
@@ -550,9 +733,16 @@ extension _McpConnectionLookupOperations on McpConnectionNotifier {
   }
 
   ToolSpec? _toolInfoSpec(McpConnectionState connection, String toolName) =>
-      connection.tools
-          .firstWhereOrNull((tool) => tool.toolName == toolName)
-          ?._spec(connection.server);
+      switch (connection.tools.firstWhereOrNull(
+        (tool) => tool.toolName == toolName,
+      )) {
+        final tool?
+            when isMcpAppToolVisibleToModel(
+              parseMcpAppToolMetadata(tool.metadata),
+            ) =>
+          tool._spec(connection.server),
+        _ => null,
+      };
 
   McpManagerClient _requiredToolClient(
     String mcpServerId,
@@ -562,7 +752,10 @@ extension _McpConnectionLookupOperations on McpConnectionNotifier {
     if (!connection.isReady) {
       throw Exception('MCP server not connected: $mcpServerId');
     }
-    _ensureToolExists(connection, mcpServerId, toolIdentifier);
+    final tool = _requiredToolInfo(connection, mcpServerId, toolIdentifier);
+    if (!isMcpAppToolVisibleToModel(parseMcpAppToolMetadata(tool.metadata))) {
+      throw Exception('MCP tool is not visible to the model: $toolIdentifier');
+    }
 
     return _requiredClient(connection, mcpServerId);
   }
@@ -574,19 +767,19 @@ extension _McpConnectionLookupOperations on McpConnectionNotifier {
     return connection;
   }
 
-  void _ensureToolExists(
+  McpToolInfo _requiredToolInfo(
     McpConnectionState connection,
     String serverId,
     String toolIdentifier,
-  ) {
-    if (connection.hasTool(toolIdentifier)) {
-      return;
-    }
+  ) =>
+      connection.tools.firstWhereOrNull(
+        (tool) => tool.toolName == toolIdentifier,
+      ) ??
+      _missingTool(serverId, toolIdentifier);
 
-    throw Exception(
-      'Tool "$toolIdentifier" not found on MCP server: $serverId',
-    );
-  }
+  Never _missingTool(String serverId, String toolIdentifier) => throw Exception(
+    'Tool "$toolIdentifier" not found on MCP server: $serverId',
+  );
 
   McpManagerClient _requiredClient(
     McpConnectionState connection,

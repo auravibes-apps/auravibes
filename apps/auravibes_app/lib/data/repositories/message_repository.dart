@@ -1327,25 +1327,35 @@ MessageToolCallEntity _mergeToolCallOutput(
   MessageToolCallEntity current,
   MessageToolCallEntity incoming,
 ) {
-  if (incoming.responseRaw == null) {
-    return merged.copyWith(
-      responseRaw: current.responseRaw,
-      responseContextRaw:
-          incoming.responseContextRaw ?? current.responseContextRaw,
-      outputTruncated: current.outputTruncated,
-      originalResponseBytes: current.originalResponseBytes,
-      fullOutputForContext: current.fullOutputForContext,
-    );
-  }
-
-  return merged.copyWith(
-    responseRaw: incoming.responseRaw,
-    responseContextRaw: incoming.responseContextRaw,
-    outputTruncated: incoming.outputTruncated,
-    originalResponseBytes: incoming.originalResponseBytes,
-    fullOutputForContext: incoming.fullOutputForContext,
-  );
+  return incoming.responseRaw == null
+      ? _mergeMissingToolCallOutput(merged, current, incoming)
+      : _replaceToolCallOutput(merged, incoming);
 }
+
+MessageToolCallEntity _mergeMissingToolCallOutput(
+  MessageToolCallEntity merged,
+  MessageToolCallEntity current,
+  MessageToolCallEntity incoming,
+) => merged.copyWith(
+  responseRaw: current.responseRaw,
+  appData: incoming.appData ?? current.appData,
+  responseContextRaw: incoming.responseContextRaw ?? current.responseContextRaw,
+  outputTruncated: current.outputTruncated,
+  originalResponseBytes: current.originalResponseBytes,
+  fullOutputForContext: current.fullOutputForContext,
+);
+
+MessageToolCallEntity _replaceToolCallOutput(
+  MessageToolCallEntity merged,
+  MessageToolCallEntity incoming,
+) => merged.copyWith(
+  responseRaw: incoming.responseRaw,
+  appData: incoming.appData,
+  responseContextRaw: incoming.responseContextRaw,
+  outputTruncated: incoming.outputTruncated,
+  originalResponseBytes: incoming.originalResponseBytes,
+  fullOutputForContext: incoming.fullOutputForContext,
+);
 
 ToolCallResultStatus? _mergeToolCallResultStatus(
   ToolCallResultStatus? current,

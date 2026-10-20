@@ -1340,6 +1340,13 @@
     "missing_fields": "Completa todos los campos obligatorios.",
     "unsupported_option": "Esta opción no está disponible en este espacio de trabajo."
   },
+  "mcp_apps": {
+    "loading": "Cargando resultado interactivo…",
+    "unavailable": "El resultado interactivo no está disponible. El resultado de texto sigue arriba.",
+    "retry": "Intentar de nuevo",
+    "tool_approval_title": "¿Permitir llamada de herramienta?",
+    "tool_approval_message": "El resultado interactivo quiere ejecutar \"{tool}\". ¿Permitir una vez?"
+  },
   "mcp_modal": {
     "title": "Agregar Servidor MCP",
     "add_mcp_tooltip": "Agregar Servidor MCP",

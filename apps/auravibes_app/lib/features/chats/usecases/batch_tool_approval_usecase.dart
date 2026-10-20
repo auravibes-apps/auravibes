@@ -32,6 +32,7 @@ typedef _LocalBatchRequest = ({
   String workspaceId,
   bool approve,
 });
+typedef _McpAppResultIdentity = ({String conversationId, String toolCallId});
 
 class const BatchToolApprovalUsecase({
   required final MessageRepository messageRepository,
@@ -133,9 +134,7 @@ extension on BatchToolApprovalUsecase {
       runResolvedTool: runResolvedTool.call,
       isCancellationRequested: cancellationRuntime.isCancellationRequested,
     );
-    final updates = [...plan.updates, ..._executionUpdates(executionResults)];
-
-    await messageRepository.persistToolCallBatchResults(updates);
+    await _persistBatchExecutionResults(this, plan, executionResults);
     onToolCallChanged();
   }
 
@@ -384,22 +383,33 @@ ToolCallExecutionBatchUpdate _executionUpdateForResolvedClaim(
     throw StateError('Resolved tool result is missing a status.');
   }
 
-  return ToolCallExecutionBatchUpdate.fromParts(
-    identity: (
+  return _executionUpdateFromParts(
+    (
       conversationId: item.conversationId,
       messageId: item.messageId,
       toolCallId: item.toolCallId,
     ),
-    resultStatus: resultStatus,
-    output: (
+    resultStatus,
+    (
       responseRaw: entry.responseRaw,
       responseContextRaw: null,
+      appData: null,
       outputTruncated: false,
       originalResponseBytes: null,
       fullOutputForContext: false,
     ),
   );
 }
+
+ToolCallExecutionBatchUpdate _executionUpdateFromParts(
+  ToolCallExecutionIdentity identity,
+  ToolCallResultStatus resultStatus,
+  ToolCallExecutionOutput output,
+) => ToolCallExecutionBatchUpdate.fromParts(
+  identity: identity,
+  resultStatus: resultStatus,
+  output: output,
+);
 
 agent.AgentToolBatchCall<ResolvedTool> _executionCallForResolvedClaim(
   _ResolvedBatchClaim entry,
@@ -432,35 +442,106 @@ _ResolvedBatchClaim _missingResolvedTool(
 
 List<ToolCallExecutionBatchUpdate> _executionUpdates(
   Iterable<agent.AgentToolBatchResult<ResolvedTool>> results,
-) => [for (final result in results) _executionUpdate(result)];
+  Map<_McpAppResultIdentity, Map<String, Object?>> appDataByIdentity,
+) => [
+  for (final result in results) _executionUpdate(result, appDataByIdentity),
+];
 
 ToolCallExecutionBatchUpdate _executionUpdate(
   agent.AgentToolBatchResult<ResolvedTool> result,
+  Map<_McpAppResultIdentity, Map<String, Object?>> appDataByIdentity,
 ) {
   final call = result.call;
   final execution = result.result;
-  final output = _batchToolOutput(execution);
 
-  return ToolCallExecutionBatchUpdate.fromParts(
-    identity: (
+  return _executionUpdateFromParts(
+    (
       conversationId: call.conversationId,
       messageId: call.messageId,
       toolCallId: call.toolCallId,
     ),
-    resultStatus: AgentToolStatusMapper.toResultStatus(execution.resultStatus),
-    output: output,
+    AgentToolStatusMapper.toResultStatus(execution.resultStatus),
+    _batchToolOutput(execution, appDataByIdentity, call),
   );
 }
 
 ToolCallExecutionOutput _batchToolOutput(
+  agent.AgentToolExecutionResult execution,
+  Map<_McpAppResultIdentity, Map<String, Object?>> appDataByIdentity,
+  agent.AgentToolBatchCall<ResolvedTool> call,
+) {
+  final output = _executionOutput(execution);
+
+  return (
+    responseRaw: output.responseRaw,
+    responseContextRaw: output.responseContextRaw,
+    appData:
+        appDataByIdentity[(
+          conversationId: call.conversationId,
+          toolCallId: call.toolCallId,
+        )],
+    outputTruncated: output.outputTruncated,
+    originalResponseBytes: output.originalResponseBytes,
+    fullOutputForContext: output.fullOutputForContext,
+  );
+}
+
+ToolCallExecutionOutput _executionOutput(
   agent.AgentToolExecutionResult result,
 ) => (
   responseRaw: result.responseRaw,
   responseContextRaw: result.responseContextRaw,
+  appData: null,
   outputTruncated: result.outputTruncated,
   originalResponseBytes: result.originalResponseBytes,
   fullOutputForContext: result.fullOutputForContext,
 );
+
+Future<void> _persistBatchExecutionResults(
+  BatchToolApprovalUsecase usecase,
+  _BatchExecutionPlan plan,
+  List<agent.AgentToolBatchResult<ResolvedTool>> results,
+) async {
+  final appData = _takeBatchAppData(usecase.runResolvedTool, results);
+  final updates = [...plan.updates, ..._executionUpdates(results, appData)];
+  await usecase.messageRepository.persistToolCallBatchResults(updates);
+}
+
+Map<_McpAppResultIdentity, Map<String, Object?>> _takeBatchAppData(
+  ResolvedToolService runResolvedTool,
+  List<agent.AgentToolBatchResult<ResolvedTool>> results,
+) {
+  final appDataByIdentity = <_McpAppResultIdentity, Map<String, Object?>>{};
+  for (final result in results) {
+    final appData = _takeBatchResultAppData(runResolvedTool, result);
+    if (appData == null) continue;
+    appDataByIdentity[_batchResultIdentity(
+          result.call.conversationId,
+          result.call.toolCallId,
+        )] =
+        appData;
+  }
+
+  return appDataByIdentity;
+}
+
+Map<String, Object?>? _takeBatchResultAppData(
+  ResolvedToolService runResolvedTool,
+  agent.AgentToolBatchResult<ResolvedTool> result,
+) {
+  final appData = runResolvedTool.takeMcpAppResultData(
+    conversationId: result.call.conversationId,
+    toolCallId: result.call.toolCallId,
+  );
+  if (result.result.resultStatus != .success) return null;
+
+  return appData;
+}
+
+_McpAppResultIdentity _batchResultIdentity(
+  String conversationId,
+  String toolCallId,
+) => (conversationId: conversationId, toolCallId: toolCallId);
 
 Map<String, List<ToolCallApprovalBatchClaim>> _groupClaimsByConversation(
   Iterable<ToolCallApprovalBatchClaim> claims,

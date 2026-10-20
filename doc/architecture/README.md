@@ -28,3 +28,8 @@ state, permission, revision, and schema before dispatch.
 
 See [Package Boundaries](./package-boundaries.md#auravibes_engine) for skill and
 agent ownership.
+
+## MCP Apps in Chat Results
+
+[MCP Apps Host](./mcp-apps-host.md) maps tool metadata, result data, approval,
+resource loading, and the isolated embedded view.

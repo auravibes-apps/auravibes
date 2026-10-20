@@ -1340,6 +1340,13 @@
     "missing_fields": "Complete all required fields.",
     "unsupported_option": "This option is unavailable in this workspace."
   },
+  "mcp_apps": {
+    "loading": "Loading interactive result…",
+    "unavailable": "Interactive result unavailable. The text result remains above.",
+    "retry": "Try again",
+    "tool_approval_title": "Allow app tool call?",
+    "tool_approval_message": "The interactive result wants to run \"{tool}\". Allow it once?"
+  },
   "mcp_modal": {
     "title": "Add MCP Server",
     "add_mcp_tooltip": "Add MCP Server",

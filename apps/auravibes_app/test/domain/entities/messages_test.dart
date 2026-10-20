@@ -57,6 +57,27 @@ void main() {
       expect(eligibleToolCall.toJson()['backgroundEligible'], isTrue);
     });
 
+    test('app result data round-trips outside model response', () {
+      const toolCall = MessageToolCallEntity(
+        id: 'call_app',
+        name: 'mcp_server_tool',
+        argumentsRaw: '{}',
+        responseRaw: 'model result',
+        appData: {
+          'content': [
+            {'type': 'text', 'text': 'tool result'},
+          ],
+          '_meta': {
+            'ui': {'resourceUri': 'ui://tool/view'},
+          },
+        },
+      );
+      final restored = MessageToolCallEntity.fromJson(toolCall.toJson());
+
+      expect(restored.appData, toolCall.appData);
+      expect(restored.getResponseForAI(), 'model result');
+    });
+
     test('isResolved true when resultStatus is non-null', () {
       const toolCall = MessageToolCallEntity(
         id: 'call_3',

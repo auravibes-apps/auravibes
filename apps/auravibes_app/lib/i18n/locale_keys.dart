@@ -1837,6 +1837,12 @@ abstract class LocaleKeys {
   static const mcp_catalog_missing_fields = 'mcp_catalog.missing_fields';
   static const mcp_catalog_unsupported_option =
       'mcp_catalog.unsupported_option';
+  static const mcp_apps_loading = 'mcp_apps.loading';
+  static const mcp_apps_unavailable = 'mcp_apps.unavailable';
+  static const mcp_apps_retry = 'mcp_apps.retry';
+  static const mcp_apps_tool_approval_title = 'mcp_apps.tool_approval_title';
+  static const mcp_apps_tool_approval_message =
+      'mcp_apps.tool_approval_message';
   static const mcp_modal_title = 'mcp_modal.title';
   static const mcp_modal_add_mcp_tooltip = 'mcp_modal.add_mcp_tooltip';
   static const mcp_modal_transport_sse = 'mcp_modal.transport.sse';

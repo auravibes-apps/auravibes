@@ -8,6 +8,7 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_execution_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
@@ -795,6 +796,101 @@ void main() {
             .resultStatus,
         ToolCallResultStatus.toolNotFound,
       );
+    });
+
+    test('persists MCP App data separately from model output', () async {
+      const appData = <String, Object?>{
+        'content': [
+          {'type': 'text', 'text': 'tool result'},
+        ],
+        '_meta': {
+          'ui': {'resourceUri': 'ui://tool/view'},
+        },
+      };
+      final tool = AgentToolToCall(
+        tool: ResolvedTool.mcp(
+          tableId: 'tool-1',
+          toolIdentifier: 'remote-tool',
+          mcp: (
+            mcpServerId: 'server-1',
+            mcpSlug: 'server-1',
+            outputSchemaJson: null,
+          ),
+        ),
+        id: 'tool-1',
+        argumentsRaw: '{}',
+      );
+      final service = AgentToolExecutionService(
+        loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
+        messageRepository: messageRepository,
+        runResolvedToolUsecase: .new(
+          agentCancellationRuntime: agentCancellationRuntime,
+          mcpToolCaller:
+              ({
+                required mcpServerId,
+                required toolIdentifier,
+                required arguments,
+                onElicitation,
+              }) async => const McpToolCallerResult(
+                modelText: 'model result',
+                appData: appData,
+              ),
+        ),
+        getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+        agentCancellationRuntime: agentCancellationRuntime,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [tool],
+          notFoundToolCallIds: const [],
+          previouslyFailedToolCallIds: const [],
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => toolMessage);
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-1',
+          resolvedTool: tool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-1',
+          permissionResult: .granted,
+        ),
+      );
+      when(
+        () => messageRepository.patchMessage(
+          'message-1',
+          any(),
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer((_) async => toolMessage);
+      when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
+          .thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+      final _ = await service.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      final updatedToolCalls = _capturedToolCalls(messageRepository);
+      if (updatedToolCalls == null) fail('Expected persisted tool calls.');
+      final updatedToolCall = updatedToolCalls.singleWhere(
+        (value) => value.id == 'tool-1',
+      );
+      expect(updatedToolCall.responseRaw, 'model result');
+      expect(updatedToolCall.appData, appData);
     });
 
     test('executes multiple granted tools and collects all results', () async {
