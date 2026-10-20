@@ -1132,6 +1132,7 @@ void main() {
         expect(ordinaryTool.appData, isEmpty);
         expect(appTool.modelText, 'tool result');
         expect(appTool.appData, contains('_meta'));
+        expect(fakeService.includeAppDataCalls, [false, true]);
       },
     );
 
@@ -1294,6 +1295,7 @@ class _SuccessfulMcpManagerService extends McpManagerService {
 
   final connectedServers = <McpServerToCreate>[];
   final calledToolIdentifiers = <String>[];
+  final includeAppDataCalls = <bool>[];
   int disconnectCount = 0;
   int getToolsCount = 0;
   List<McpToolInfo> discoveredTools = const [_toolInfo];
@@ -1355,17 +1357,24 @@ class _SuccessfulMcpManagerService extends McpManagerService {
     McpManagerClient client, {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
-  }) async => (
-    modelText: 'tool result',
-    appData: const {
-      'content': [
-        {'type': 'text', 'text': 'tool result'},
-      ],
-      '_meta': {
-        'ui': {'resourceUri': 'ui://weather/view'},
-      },
-    },
-  );
+    required bool includeAppData,
+  }) async {
+    includeAppDataCalls.add(includeAppData);
+
+    return (
+      modelText: 'tool result',
+      appData: includeAppData
+          ? const {
+              'content': [
+                {'type': 'text', 'text': 'tool result'},
+              ],
+              '_meta': {
+                'ui': {'resourceUri': 'ui://weather/view'},
+              },
+            }
+          : const <String, Object?>{},
+    );
+  }
 }
 
 class _FakeMcpManagerClient._(final Stream<OAuthTokenEntity>? _tokenUpdates)

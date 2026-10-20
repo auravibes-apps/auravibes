@@ -43,8 +43,45 @@ Map<String, Object?> _boundedMcpAppResult(
   return _isWithinMcpAppResultLimit(withMetadata) ? withMetadata : fallback;
 }
 
-bool _isWithinMcpAppResultLimit(Map<String, Object?> result) =>
-    utf8.encode(jsonEncode(result)).length <= _maxMcpAppResultBytes;
+bool _isWithinMcpAppResultLimit(Map<String, Object?> result) {
+  final sizeSink = _McpAppResultSizeSink();
+  try {
+    JsonUtf8Encoder().startChunkedConversion(sizeSink).add(result);
+  } on _McpAppResultTooLarge {
+    return false;
+  }
+
+  return true;
+}
+
+class _McpAppResultTooLarge implements Exception {
+  const _McpAppResultTooLarge();
+}
+
+class _McpAppResultSizeSink extends ByteConversionSink {
+  var _byteCount = 0;
+
+  @override
+  void add(List<int> chunk) {
+    _addBytes(chunk.length);
+  }
+
+  @override
+  void addSlice(List<int> chunk, int start, int end, bool isLast) {
+    _addBytes(end - start);
+    if (isLast) close();
+  }
+
+  void _addBytes(int count) {
+    _byteCount += count;
+    if (_byteCount > _maxMcpAppResultBytes) {
+      throw const _McpAppResultTooLarge();
+    }
+  }
+
+  @override
+  void close() {}
+}
 
 Map<String, Object?> _mcpAppTextResult(String modelText) => {
   'content': [
@@ -205,13 +242,16 @@ class McpManagerService {
     McpManagerClient client, {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    required bool includeAppData,
   }) async {
     final result = await client._client.callTool(toolIdentifier, arguments);
     final modelText = McpSdkAdapter.toolResult(result).toModelText();
 
     return (
       modelText: modelText,
-      appData: _boundedMcpAppResult(result.toJson(), modelText),
+      appData: includeAppData
+          ? _boundedMcpAppResult(result.toJson(), modelText)
+          : const <String, Object?>{},
     );
   }
 

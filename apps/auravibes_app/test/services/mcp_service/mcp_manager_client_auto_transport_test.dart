@@ -85,6 +85,7 @@ void main() {
         client,
         toolIdentifier: 'refresh',
         arguments: {'day': 'today'},
+        includeAppData: true,
       );
 
       final contentsValue = resource['contents'];
@@ -136,6 +137,7 @@ void main() {
         client,
         toolIdentifier: 'refresh',
         arguments: const {},
+        includeAppData: true,
       );
       final fallbackResult = await manager.callToolResult(
         client,
@@ -167,6 +169,41 @@ void main() {
       );
       expect(toolOutput.modelText, contains('x'));
     });
+
+    test(
+      'skips app result serialization when app data is not requested',
+      () async {
+        final server = await _LocalMcpHttpServer.start(
+          toolResult: {
+            'content': [
+              {'type': 'text', 'text': 'x' * (300 * 1024)},
+            ],
+            '_meta': {
+              'ui': {'resourceUri': 'ui://weather/forecast'},
+            },
+          },
+        );
+        final manager = McpManagerService();
+        McpManagerClient? client;
+        addTearDown(() async {
+          await manager.disconnect(client);
+          await server.close();
+        });
+
+        client = await manager.connectMcpWithAutoTransport(
+          _connectionRequest(server.endpoint),
+        );
+        final toolOutput = await manager.callToolOutput(
+          client,
+          toolIdentifier: 'refresh',
+          arguments: const {},
+          includeAppData: false,
+        );
+
+        expect(toolOutput.appData, isEmpty);
+        expect(toolOutput.modelText, contains('x'));
+      },
+    );
 
     test('uses app OAuth token provider for Streamable HTTP', () async {
       final server = await _LocalMcpHttpServer.start();

@@ -591,18 +591,11 @@ Future<({String modelText, Map<String, Object?> appData})> _callToolWithAppData(
     client,
     toolIdentifier: request.toolIdentifier,
     arguments: request.arguments,
+    includeAppData: _hasMcpAppResource(tool),
   );
 
-  return (
-    modelText: result.modelText,
-    appData: _appDataForMcpTool(tool, result.appData),
-  );
+  return (modelText: result.modelText, appData: result.appData);
 }
-
-Map<String, Object?> _appDataForMcpTool(
-  McpToolInfo tool,
-  Map<String, Object?> appData,
-) => _hasMcpAppResource(tool) ? appData : const <String, Object?>{};
 
 Future<Map<String, Object?>> _readAppResource(
   McpConnectionNotifier notifier,
