@@ -2091,14 +2091,12 @@ class const _AssistantActivityRun({
       } else {
         Future<void> toggleToolGroup() async {
           if (renderedExpansionState.expandedToolGroupIds.contains(groupId)) {
-            await Future.wait([
+            await prepareMcpAppToolResultsForTeardown([
               for (final activityToolCall in activityToolCalls)
                 if (renderedExpansionState.expandedToolIds.contains(
                   activityToolCall.toolCall.id,
                 ))
-                  mcpAppControllers[activityToolCall.toolCall.id]
-                          ?.prepareForTeardown() ??
-                      Future<void>.value(),
+                  mcpAppControllers[activityToolCall.toolCall.id],
             ]);
           }
           if (!context.mounted) return;
@@ -2153,6 +2151,35 @@ class const _AssistantActivityRun({
         ? LocaleKeys.chats_screens_chat_conversation_activity_thinking.tr()
         : LocaleKeys.chats_screens_chat_conversation_activity_tools_count
               .plural(toolCalls.length, context: context);
+    Future<void> toggleTrace() async {
+      if (renderedExpansionState.traceExpanded) {
+        final controllers = [
+          for (final toolCall in toolCalls)
+            if (renderedExpansionState.expandedToolIds.contains(
+              toolCall.toolCall.id,
+            ))
+              mcpAppControllers[toolCall.toolCall.id],
+        ];
+        if (controllers.any(
+          (controller) => controller?.teardownHandler != null,
+        )) {
+          await prepareMcpAppToolResultsForTeardown(controllers);
+        }
+      }
+      if (!context.mounted) return;
+
+      onDisclosureChanged(() {
+        updateExpansionState(
+          (current) => (
+            isLive: current.isLive,
+            traceExpanded: !current.traceExpanded,
+            expandedToolGroupIds: current.expandedToolGroupIds,
+            expandedToolIds: current.expandedToolIds,
+          ),
+        );
+      });
+    }
+
     Widget activityEntry(_ActivityRunEntry entry) {
       if (entry case _ActivityNarrativeEntry(
         :final messageId,
@@ -2224,16 +2251,7 @@ class const _AssistantActivityRun({
             color: context.auraColors.onSurfaceVariant,
             isActivity: true,
             isExpanded: renderedExpansionState.traceExpanded,
-            onPressed: () => onDisclosureChanged(() {
-              updateExpansionState(
-                (current) => (
-                  isLive: current.isLive,
-                  traceExpanded: !current.traceExpanded,
-                  expandedToolGroupIds: current.expandedToolGroupIds,
-                  expandedToolIds: current.expandedToolIds,
-                ),
-              );
-            }),
+            onPressed: () => unawaited(toggleTrace()),
           ),
         if (hasOuterDisclosure &&
             renderedExpansionState.traceExpanded &&
