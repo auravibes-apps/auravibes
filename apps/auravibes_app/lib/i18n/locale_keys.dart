@@ -21,6 +21,25 @@ abstract class LocaleKeys {
       'navigation_drawer.collapse_sidebar_tooltip';
   static const navigation_drawer_expand_sidebar_tooltip =
       'navigation_drawer.expand_sidebar_tooltip';
+  static const quick_switcher_title = 'quick_switcher.title';
+  static const quick_switcher_search = 'quick_switcher.search';
+  static const quick_switcher_keyboard_hint = 'quick_switcher.keyboard_hint';
+  static const quick_switcher_loading = 'quick_switcher.loading';
+  static const quick_switcher_no_results = 'quick_switcher.no_results';
+  static const quick_switcher_load_error = 'quick_switcher.load_error';
+  static const quick_switcher_partial_results =
+      'quick_switcher.partial_results';
+  static const quick_switcher_selection_announcement =
+      'quick_switcher.selection_announcement';
+  static const quick_switcher_retry = 'quick_switcher.retry';
+  static const quick_switcher_workspace = 'quick_switcher.workspace';
+  static const quick_switcher_conversation = 'quick_switcher.conversation';
+  static const quick_switcher_agent = 'quick_switcher.agent';
+  static const quick_switcher_skill = 'quick_switcher.skill';
+  static const quick_switcher_action = 'quick_switcher.action';
+  static const quick_switcher_new_conversation =
+      'quick_switcher.new_conversation';
+  static const quick_switcher_settings = 'quick_switcher.settings';
   static const intro_flow_welcome_title = 'intro_flow.welcome.title';
   static const intro_flow_welcome_body = 'intro_flow.welcome.body';
   static const intro_flow_choice_title = 'intro_flow.choice.title';

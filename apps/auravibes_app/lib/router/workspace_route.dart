@@ -17,6 +17,7 @@ import 'package:auravibes_app/features/cloud_accounts/screens/cloud_accounts_scr
 import 'package:auravibes_app/features/cloud_workspaces/screens/cloud_workspace_detail_screen.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
+import 'package:auravibes_app/features/quick_switcher/widgets/quick_switcher_shortcut_scope.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
@@ -461,9 +462,12 @@ class const _WorkspaceShell({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PopScope(
-    child: AuraSidebarWrapper(
-      navigationShell: navigationShell,
+    child: QuickSwitcherShortcutScope(
       workspaceId: workspaceId,
+      child: AuraSidebarWrapper(
+        navigationShell: navigationShell,
+        workspaceId: workspaceId,
+      ),
     ),
     canPop: false,
   );
