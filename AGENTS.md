@@ -84,6 +84,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 - PR titles use Conventional Commits. Keep each PR to one coherent change with its related tests; describe purpose, behavior, validation, and requested reviewer focus.
 - Use each contributor's configured tools and workflow for PR delivery and review. Do not install tools or prepare a full local environment solely for these tasks.
+- If a requested Codex review rejects its configured model as unsupported, retry once with a model supported by the current host. Report a blocker if none is available.
 - Before pushing code changes for review, run `validate:pr` through the validation lease. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
 
 ## Agent skills
