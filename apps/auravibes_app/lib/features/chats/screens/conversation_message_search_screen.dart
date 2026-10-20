@@ -311,6 +311,32 @@ class const _SearchResults({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          child: _SearchResultsContent(
+            query: query,
+            isLoading: isLoading,
+            page: page,
+          ),
+        ),
+        _SearchResultsFooter(
+          isLoading: isLoading,
+          hasMore: page.hasMore,
+          loadNextPage: loadNextPage,
+        ),
+      ],
+    );
+  }
+}
+
+class const _SearchResultsContent({
+  required final String query,
+  required final bool isLoading,
+  required final ConversationMessageSearchPage page,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final results = page.results;
     final hasError = page.hasError;
     final hasResults = results.isNotEmpty;
@@ -325,11 +351,6 @@ class const _SearchResults({
         ),
         _SearchResultsError(visible: hasError && hasResults),
         Expanded(child: _SearchResultList(results: results)),
-        _SearchResultsFooter(
-          isLoading: isLoading,
-          hasMore: page.hasMore,
-          loadNextPage: loadNextPage,
-        ),
       ],
     );
   }
