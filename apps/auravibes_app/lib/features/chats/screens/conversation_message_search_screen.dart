@@ -310,23 +310,29 @@ class const _SearchResults({
   required final Future<void> Function() loadNextPage,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      _SearchResultsStatus(
-        query: query,
-        isLoading: isLoading,
-        hasError: page.hasError,
-        hasResults: page.results.isNotEmpty,
-      ),
-      _SearchResultsError(visible: page.hasError && page.results.isNotEmpty),
-      Expanded(child: _SearchResultList(results: page.results)),
-      _SearchResultsFooter(
-        isLoading: isLoading,
-        hasMore: page.hasMore,
-        loadNextPage: loadNextPage,
-      ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final results = page.results;
+    final hasError = page.hasError;
+    final hasResults = results.isNotEmpty;
+
+    return Column(
+      children: [
+        _SearchResultsStatus(
+          query: query,
+          isLoading: isLoading,
+          hasError: hasError,
+          hasResults: hasResults,
+        ),
+        _SearchResultsError(visible: hasError && hasResults),
+        Expanded(child: _SearchResultList(results: results)),
+        _SearchResultsFooter(
+          isLoading: isLoading,
+          hasMore: page.hasMore,
+          loadNextPage: loadNextPage,
+        ),
+      ],
+    );
+  }
 }
 
 class const _SearchResultsStatus({
