@@ -1346,6 +1346,7 @@ class _SuccessfulMcpManagerService extends McpManagerService {
     McpManagerClient client, {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    required McpToolElicitationContext elicitation,
   }) async {
     calledToolIdentifiers.add(toolIdentifier);
 
@@ -1358,6 +1359,7 @@ class _SuccessfulMcpManagerService extends McpManagerService {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
     required bool includeAppData,
+    required McpToolElicitationContext elicitation,
   }) async {
     includeAppDataCalls.add(includeAppData);
 

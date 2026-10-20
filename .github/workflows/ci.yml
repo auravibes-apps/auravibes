@@ -58,12 +58,17 @@ jobs:
         run: melos run dcl:analyze
 
       - name: Test CI tools
-        run: dart test tool/changed_test_selector_test.dart tool/merge_lcov_test.dart
+        run: >-
+          dart test
+          tool/changed_test_selector_test.dart
+          tool/merge_lcov_test.dart
+          tool/marionette_run_test.dart
 
-      - name: Test CI change classifier
+      - name: Test Python tools
         run: |
           python3 tool/classify_ci_changes_test.py
           python3 tool/ci_summary_test.py
+          python3 tool/validation_lease_test.py
 
       - name: Audit first-party tool schemas
         working-directory: apps/auravibes_app

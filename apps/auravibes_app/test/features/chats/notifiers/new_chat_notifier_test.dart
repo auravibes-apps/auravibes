@@ -221,6 +221,9 @@ class _FakeSendNewMessageUsecase implements SendNewMessageUsecase {
   MonitoringService get monitoringService => throw UnimplementedError();
 
   @override
+  void Function(String conversationId)? get onIterationLimit => null;
+
+  @override
   Future<ConversationEntity> call(_NewMessageRequest request) async {
     return ConversationEntity(
       id: 'new-conv',
@@ -253,6 +256,9 @@ class _ErrorSendNewMessageUsecase implements SendNewMessageUsecase {
 
   @override
   MonitoringService get monitoringService => throw UnimplementedError();
+
+  @override
+  void Function(String conversationId)? get onIterationLimit => null;
 
   @override
   Future<ConversationEntity> call(_NewMessageRequest _) async {

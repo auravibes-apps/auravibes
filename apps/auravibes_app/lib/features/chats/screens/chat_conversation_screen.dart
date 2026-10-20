@@ -23,6 +23,7 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/notifiers/mcp_elicitation_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/background_work_continuation_provider.dart';
@@ -44,6 +45,7 @@ import 'package:auravibes_app/features/chats/widgets/background_work_continuatio
 import 'package:auravibes_app/features/chats/widgets/background_work_detach_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_mcp_elicitation_card.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
@@ -57,6 +59,7 @@ import 'package:auravibes_app/features/models/widgets/compact_workspace_model_se
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -68,6 +71,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentIterationContext,
+        AgentIterationDecision,
         ConversationToolAccessMode,
         ReasoningConfiguration,
         ReasoningOption,
@@ -488,19 +492,61 @@ class const _LoadedChatConversationRuntime({
   required final bool showInputComposer,
 }) extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) =>
-      _LoadedChatConversationRender(
-        workspaceId: workspaceId,
-        conversation: conversation,
-        runtimeState: _useLoadedChatConversationRuntimeState((
-          context: context,
-          ref: ref,
-          workspaceId: workspaceId,
-          conversation: conversation,
-        )),
-        showInputComposer: showInputComposer,
-        leading: showInputComposer ? null : const _ChatConversationBackButton(),
-      );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final request = (
+      context: context,
+      ref: ref,
+      workspaceId: workspaceId,
+      conversation: conversation,
+    );
+    _listenForPendingIterationLimitNotice(request);
+
+    final runtimeState = _useLoadedChatConversationRuntimeState(request);
+
+    return _LoadedChatConversationRender(
+      workspaceId: workspaceId,
+      conversation: conversation,
+      runtimeState: runtimeState,
+      showInputComposer: showInputComposer,
+      leading: showInputComposer ? null : const _ChatConversationBackButton(),
+    );
+  }
+}
+
+void _listenForPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
+  final iterationLimitProvider = conversationIterationLimitProvider(
+    request.conversation.id,
+  );
+  if (request.ref.read(iterationLimitProvider)) {
+    _schedulePendingIterationLimitNotice(request);
+  }
+  request.ref.listen(iterationLimitProvider, (_, pending) {
+    if (pending) _schedulePendingIterationLimitNotice(request);
+  });
+}
+
+void _schedulePendingIterationLimitNotice(_LoadedRuntimeRequest request) =>
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _showPendingIterationLimitNotice(request),
+    );
+
+void _showPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
+  if (!request.context.mounted) return;
+
+  final conversationId = request.conversation.id;
+  request.ref
+      .read(conversationIterationLimitProvider(conversationId).notifier)
+      .consume();
+  final conversationContextRequest = (
+    context: request.context,
+    ref: request.ref,
+    workspaceId: request.workspaceId,
+    conversationId: conversationId,
+  );
+  _showIterationLimitNoticeForConversation(
+    conversationContextRequest,
+    .iterationLimitReached,
+  );
 }
 
 class const _ChatConversationBackButton() extends StatelessWidget {
@@ -1643,11 +1689,12 @@ class const _ChatConversationBody({
   Widget build(BuildContext context, WidgetRef ref) {
     final backgroundWorkStatus = _backgroundWorkStatusPresence(ref, data);
     final hasOtherStatus = _hasChatConversationStatus(data);
-    final hasStatusArea =
-        backgroundWorkStatus.hasDetachableToolCalls ||
-        backgroundWorkStatus.hasBackgroundWorks ||
-        hasOtherStatus ||
-        data.showInputComposer;
+    final hasStatusArea = _hasChatConversationStatusArea(
+      ref,
+      data,
+      backgroundWorkStatus,
+      hasOtherStatus,
+    );
 
     return _ChatConversationBodyLayout(
       data: data,
@@ -1658,6 +1705,18 @@ class const _ChatConversationBody({
     );
   }
 }
+
+bool _hasChatConversationStatusArea(
+  WidgetRef ref,
+  _LoadedChatConversationData data,
+  _BackgroundWorkStatusPresence backgroundWorkStatus,
+  bool hasOtherStatus,
+) =>
+    backgroundWorkStatus.hasDetachableToolCalls ||
+    backgroundWorkStatus.hasBackgroundWorks ||
+    hasOtherStatus ||
+    ref.watch(mcpElicitationProvider(data.conversation.id)).isNotEmpty ||
+    data.showInputComposer;
 
 _BackgroundWorkStatusPresence _backgroundWorkStatusPresence(
   WidgetRef ref,
@@ -1685,14 +1744,16 @@ class const _ChatConversationBodyLayout({
   required final bool hasOtherStatus,
   required final bool hasStatusArea,
 }) extends StatelessWidget {
+  CloudConversationKey get _conversationKey =>
+      (workspaceId: data.workspaceId, conversationId: data.conversation.id);
+
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      if (!data.showInputComposer &&
-          data.conversation.parentConversationId != null)
-        _ConversationOrientation(data: data),
+      _ConversationOrientation(data: data),
       _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
+      _CloudConversationStreamRecovery(conversationKey: _conversationKey),
       _ChatConversationMessageList(
         data: data,
         onOpenToolResult: onOpenToolResult,
@@ -1708,6 +1769,69 @@ class const _ChatConversationBodyLayout({
   );
 }
 
+class const _CloudConversationStreamRecovery({
+  required final CloudConversationKey conversationKey,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!_isCloudWorkspace(ref, conversationKey.workspaceId)) {
+      return const SizedBox.shrink();
+    }
+
+    final provider = cloudConversationStateProvider(conversationKey);
+    final error = ref.watch(provider).error;
+    if (error == null) return const SizedBox.shrink();
+
+    return _CloudConversationStreamRecoveryContent(
+      error: error,
+      onRetry: () => ref.invalidate(provider),
+    );
+  }
+}
+
+class const _CloudConversationStreamRecoveryContent({
+  required final Object error,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPadding(
+    child: AuraColumn(
+      children: [
+        _CloudConversationStreamFailureCallout(error: error),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: AuraButton(
+            onPressed: onRetry,
+            child: const TextLocale(LocaleKeys.route_state_retry),
+          ),
+        ),
+      ],
+      spacing: .sm,
+      mainAxisSize: .min,
+    ),
+    padding: const .horizontal(.md),
+  );
+}
+
+class const _CloudConversationStreamFailureCallout({
+  required final Object error,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final errorMessageKey = switch (error) {
+      CloudConversationStreamFailure(:final localizationKey) => localizationKey,
+      _ => CloudAppErrors.localizationKey(error),
+    };
+
+    return AuraCallout(
+      title: LocaleKeys.common_error_title.tr(context: context),
+      description: errorMessageKey.tr(context: context),
+      icon: Icons.cloud_off_outlined,
+      tint: .error,
+    );
+  }
+}
+
 class const _ChatConversationStatusArea({
   required final _LoadedChatConversationData data,
   required final _BackgroundWorkStatusPresence backgroundWorkStatus,
@@ -1719,17 +1843,34 @@ class const _ChatConversationStatusArea({
       if (backgroundWorkStatus.hasDetachableToolCalls ||
           backgroundWorkStatus.hasBackgroundWorks)
         _BackgroundWorkStatus(data: data, presence: backgroundWorkStatus),
-      if (hasOtherStatus || data.showInputComposer)
-        _ChatConversationStatusAndComposer(
-          data: data,
-          key: ValueKey((
-            workspaceId: data.workspaceId,
-            conversationId: data.conversation.id,
-          )),
-        ),
+      ChatMcpElicitationCard(conversationId: data.conversation.id),
+      _ChatConversationComposerStatus(
+        data: data,
+        hasOtherStatus: hasOtherStatus,
+      ),
     ],
     mainAxisSize: .min,
   );
+}
+
+class const _ChatConversationComposerStatus({
+  required final _LoadedChatConversationData data,
+  required final bool hasOtherStatus,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!hasOtherStatus && !data.showInputComposer) {
+      return const SizedBox.shrink();
+    }
+
+    return _ChatConversationStatusAndComposer(
+      data: data,
+      key: ValueKey((
+        workspaceId: data.workspaceId,
+        conversationId: data.conversation.id,
+      )),
+    );
+  }
 }
 
 class const _IncompleteImportedAgentContextNotice({
@@ -2635,18 +2776,22 @@ class const _ModelSwitchConfirmButton() extends StatelessWidget {
 }
 
 Future<void> _continueAgent(_ConversationContextRequest request) async {
+  if (!request.context.mounted) return;
   if (!_canContinueConversation(request)) return;
 
-  await _continueAgentTurnWithErrorHandling(request);
+  final decision = await _continueAgentTurnWithErrorHandling(request);
+  _showIterationLimitNoticeForConversation(request, decision);
 }
 
-Future<void> _continueAgentTurnWithErrorHandling(
+Future<AgentIterationDecision?> _continueAgentTurnWithErrorHandling(
   _ConversationContextRequest request,
 ) async {
   try {
-    await _continueAgentTurn(request);
+    return await _continueAgentTurn(request);
   } on Exception catch (error, stackTrace) {
     _reportContinueAgentFailure(request, error, stackTrace);
+
+    return null;
   }
 }
 
@@ -2680,14 +2825,16 @@ bool _canContinueConversation(_ConversationContextRequest request) =>
       )[request.conversationId],
     );
 
-Future<void> _continueAgentTurn(_ConversationContextRequest request) async {
+Future<AgentIterationDecision?> _continueAgentTurn(
+  _ConversationContextRequest request,
+) async {
   final cloud = await request.ref.read(
     cloudTurnUsecaseProvider(request.workspaceId).future,
   );
-  if (cloud == null) {
-    await _continueLocalAgent(request.ref, request.conversationId);
+  if (!request.context.mounted) return null;
 
-    return;
+  if (cloud == null) {
+    return await _continueLocalAgent(request.ref, request.conversationId);
   }
 
   await _continueCloudAgent((
@@ -2696,10 +2843,15 @@ Future<void> _continueAgentTurn(_ConversationContextRequest request) async {
     workspaceId: request.workspaceId,
     conversationId: request.conversationId,
   ));
+
+  return null;
 }
 
-Future<void> _continueLocalAgent(WidgetRef ref, String conversationId) async {
-  final _ = await ref
+Future<AgentIterationDecision> _continueLocalAgent(
+  WidgetRef ref,
+  String conversationId,
+) async {
+  return await ref
       .read(auraAgentServiceProvider)
       .agent
       .continueTurn(
@@ -2712,7 +2864,11 @@ Future<void> _retryMessage(_RetryMessageRequest request) async {
   if (!_canRetryMessage(request)) return;
 
   try {
-    await _runRetryMessage(request);
+    final decision = await _runRetryMessage(request);
+    _showIterationLimitNoticeForConversation(
+      _conversationContextForRetry(request),
+      decision,
+    );
   } on Exception catch (error, stackTrace) {
     _reportRetryMessageError(request, error, stackTrace);
   }
@@ -2745,20 +2901,26 @@ bool _canRetryProviderMessage(MessageEntity message) =>
         (message.status == .error &&
             ProviderRecoveryMetadata.isRetryEligible(message)));
 
-Future<void> _runRetryMessage(_RetryMessageRequest request) async {
+Future<AgentIterationDecision?> _runRetryMessage(
+  _RetryMessageRequest request,
+) async {
   final cloud = await request.ref.read(
     cloudTurnUsecaseProvider(request.workspaceId).future,
   );
-  if (cloud == null) {
-    await _retryLocalMessage(request);
+  if (!request.context.mounted) return null;
 
-    return;
+  if (cloud == null) {
+    return await _retryLocalMessage(request);
   }
 
   await _retryCloudMessage(request, cloud);
+
+  return null;
 }
 
-Future<void> _retryLocalMessage(_RetryMessageRequest request) => request.ref
+Future<AgentIterationDecision> _retryLocalMessage(
+  _RetryMessageRequest request,
+) => request.ref
     .read(sendMessageUsecaseProvider(request.workspaceId))
     .retryUserMessage(
       conversationId: request.conversationId,
@@ -3109,7 +3271,11 @@ bool _canStopCloudState(CloudConversationState state) {
 
 Future<void> _sendMessage(_SendMessageRequest request) async {
   try {
-    await _sendMessageUsecase(request);
+    final decision = await _sendMessageUsecase(request);
+    _showIterationLimitNoticeForConversation(
+      _conversationContextForSend(request),
+      decision,
+    );
   } on MessagePersistedException catch (error) {
     _reportSendMessageFailure(request, error, error.stackTrace);
   } on Object catch (error, stackTrace) {
@@ -3118,9 +3284,64 @@ Future<void> _sendMessage(_SendMessageRequest request) async {
   }
 }
 
-Future<void> _sendMessageUsecase(_SendMessageRequest request) => request.ref
+Future<AgentIterationDecision?> _sendMessageUsecase(
+  _SendMessageRequest request,
+) => request.ref
     .read(sendMessageUsecaseProvider(request.workspaceId))
     .call(conversationId: request.conversationId, draft: request.draft);
+
+_ConversationContextRequest _conversationContextForRetry(
+  _RetryMessageRequest request,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  conversationId: request.conversationId,
+);
+
+_ConversationContextRequest _conversationContextForSend(
+  _SendMessageRequest request,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  conversationId: request.conversationId,
+);
+
+VoidCallback _conversationContextContinueCallback(
+  _ConversationContextRequest request,
+) =>
+    () => unawaited(_continueAgent(request));
+
+void _showIterationLimitNoticeForConversation(
+  _ConversationContextRequest request,
+  AgentIterationDecision? decision,
+) => _showIterationLimitNoticeIfNeeded(
+  context: request.context,
+  decision: decision,
+  onContinue: _conversationContextContinueCallback(request),
+);
+
+void _showIterationLimitNoticeIfNeeded({
+  required BuildContext context,
+  required AgentIterationDecision? decision,
+  required VoidCallback onContinue,
+}) {
+  if (decision != AgentIterationDecision.iterationLimitReached ||
+      !context.mounted) {
+    return;
+  }
+
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
+    ),
+    duration: const Duration(seconds: 10),
+    actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent.tr(),
+    onAction: onContinue,
+  );
+}
 
 void _reportSendMessageFailure(
   _SendMessageRequest request,

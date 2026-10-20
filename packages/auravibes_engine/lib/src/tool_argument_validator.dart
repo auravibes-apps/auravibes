@@ -130,12 +130,13 @@ void _validateSchemaValue(
     }
   }
   if (value is String) {
+    final length = value.runes.length;
     final minimum = keywords['minLength'];
-    if (minimum is int && value.length < minimum) {
+    if (minimum is int && length < minimum) {
       throw FormatException('Value at $path is shorter than minLength');
     }
     final maximum = keywords['maxLength'];
-    if (maximum is int && value.length > maximum) {
+    if (maximum is int && length > maximum) {
       throw FormatException('Value at $path is longer than maxLength');
     }
   }

@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_use_case.dart';
@@ -496,6 +497,7 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     required String mcpServerId,
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    McpElicitationHandler? onElicitation,
   }) async {
     if (_isCloud) {
       throw const UnsupportedWorkspaceCapabilityException();
@@ -506,6 +508,10 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
       client,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
+      elicitation: (
+        serverName: _requiredConnection(mcpServerId).server.name,
+        onElicitation: onElicitation,
+      ),
     );
   }
 
@@ -514,11 +520,12 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     required String mcpServerId,
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    McpElicitationHandler? onElicitation,
   }) => _callToolWithAppData(this, (
     mcpServerId: mcpServerId,
     toolIdentifier: toolIdentifier,
     arguments: arguments,
-  ));
+  ), onElicitation: onElicitation);
 
   /// Read a UI resource declared by [toolIdentifier].
   Future<Map<String, Object?>> readAppResource({
@@ -536,11 +543,12 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     required String mcpServerId,
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    McpElicitationHandler? onElicitation,
   }) => _callAppTool(this, (
     mcpServerId: mcpServerId,
     toolIdentifier: toolIdentifier,
     arguments: arguments,
-  ));
+  ), onElicitation: onElicitation);
 
   /// Get a connection state by server ID.
   McpConnectionState? getConnection(String serverId) => _currentState
@@ -579,9 +587,11 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
 
 Future<({String modelText, Map<String, Object?> appData})> _callToolWithAppData(
   McpConnectionNotifier notifier,
-  _McpToolCallRequest request,
-) async {
+  _McpToolCallRequest request, {
+  McpElicitationHandler? onElicitation,
+}) async {
   final client = _localToolClient(notifier, request);
+  final connection = notifier._requiredConnection(request.mcpServerId);
   final tool = _mcpToolInfo(
     notifier,
     request.mcpServerId,
@@ -592,6 +602,10 @@ Future<({String modelText, Map<String, Object?> appData})> _callToolWithAppData(
     toolIdentifier: request.toolIdentifier,
     arguments: request.arguments,
     includeAppData: _hasMcpAppResource(tool),
+    elicitation: (
+      serverName: connection.server.name,
+      onElicitation: onElicitation,
+    ),
   );
 
   return (modelText: result.modelText, appData: result.appData);
@@ -619,14 +633,20 @@ Future<Map<String, Object?>> _readAppResource(
 
 Future<Map<String, Object?>> _callAppTool(
   McpConnectionNotifier notifier,
-  _McpToolCallRequest request,
-) async {
+  _McpToolCallRequest request, {
+  McpElicitationHandler? onElicitation,
+}) async {
   final client = _appToolClient(notifier, request);
+  final connection = notifier._requiredConnection(request.mcpServerId);
 
   return await notifier._requiredMcpManager.callToolResult(
     client,
     toolIdentifier: request.toolIdentifier,
     arguments: request.arguments,
+    elicitation: (
+      serverName: connection.server.name,
+      onElicitation: onElicitation,
+    ),
   );
 }
 

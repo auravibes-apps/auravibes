@@ -72,6 +72,7 @@ void main() {
           '[Data](data:text/html,unsafe) '
           '[Mailto](mailto:docs@example.com) '
           '[File](file:///tmp/unsafe) '
+          '[Missing authority](https:/missing-authority) '
           '[Missing host](https:///missing-host) '
           '[Deceptive](https://accounts.example@attacker.example/sso)',
     );
@@ -99,6 +100,7 @@ void main() {
       'Data',
       'Mailto',
       'File',
+      'Missing authority',
       'Missing host',
       'Deceptive',
     ]) {
@@ -109,6 +111,58 @@ void main() {
     }
 
     expect(launchCount, 0);
+  });
+
+  testWidgets('cancels preview links and shows launch failure feedback', (
+    tester,
+  ) async {
+    const hapticsChannel = MethodChannel('haptic_feedback');
+    final setMockMethodCallHandler =
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler;
+    setMockMethodCallHandler(hapticsChannel, (_) async => null);
+    addTearDown(() => setMockMethodCallHandler(hapticsChannel, null));
+
+    var launchCount = 0;
+    _mockUrlLauncher(tester, (_) async {
+      launchCount++;
+
+      return false;
+    });
+    final controller = TextEditingController(
+      text: '[Open HTTPS](https://example.org/path)',
+    );
+    addTearDown(controller.dispose);
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: Scaffold(
+            body: MarkdownPreviewField(
+              controller: controller,
+              titleKey: LocaleKeys.markdown_editor_preview_label,
+              editKey: LocaleKeys.common_edit,
+              emptyKey: LocaleKeys.markdown_editor_empty,
+              onEdit: () => fail('Unexpected edit'),
+            ),
+          ),
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open HTTPS'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    final _ = await tester.pumpAndSettle();
+    expect(launchCount, 0);
+
+    await tester.tap(find.text('Open HTTPS'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Open link'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(launchCount, 1);
+    expect(find.text('Could not open link.'), findsOneWidget);
   });
 
   testWidgets('preview renders unchecked and checked task items', (

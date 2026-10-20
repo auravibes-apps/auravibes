@@ -15,6 +15,7 @@ import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
@@ -22,8 +23,10 @@ import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provide
 import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
@@ -39,12 +42,14 @@ import 'package:auravibes_app/features/skills/widgets/conversation_skill_selecto
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         A2uiChatAction,
+        AgentIterationDecision,
         AgentToolOutputPolicy,
         AppSkillDefinitionKind,
         ChatMessage,
@@ -75,6 +80,7 @@ Widget buildSubject({
   Map<String, MessageEntity>? messageEntitiesById,
   String conversationId = 'conv-1',
   List<PendingToolCall> pendingToolCalls = const [],
+  WorkspaceSession? workspaceSession,
   bool showThinking = false,
   bool isStopRequested = false,
   Future<void> Function(MessageEntity message)? onRetryMessage,
@@ -89,6 +95,7 @@ Widget buildSubject({
     messages: messages,
     overrides: overrides,
     pendingToolCalls: pendingToolCalls,
+    workspaceSession: workspaceSession,
     showThinking: showThinking,
     isStopRequested: isStopRequested,
     onRetryMessage: onRetryMessage,
@@ -1057,7 +1064,9 @@ void main() {
           overrides: _messageOverrides({
             'markdown-link': _createMessage(
               id: 'markdown-link',
-              content: '[Open docs](https://example.com)',
+              content:
+                  '[Open docs](https://example.com) '
+                  '[Open HTTP](http://example.org)',
               isUser: false,
             ),
             'autolink': _createMessage(
@@ -1074,13 +1083,22 @@ void main() {
       expect(find.textContaining('Host: example.com'), findsOneWidget);
       await tester.tap(find.text('Open link'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Open HTTP'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Host: example.org'), findsOneWidget);
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('https://example.org'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Host: example.org'), findsOneWidget);
       await tester.tap(find.text('Open link'));
       await tester.pumpAndSettle();
 
-      expect(launchedUrls, ['https://example.com', 'https://example.org']);
+      expect(launchedUrls, [
+        'https://example.com',
+        'http://example.org',
+        'https://example.org',
+      ]);
     });
 
     testWidgets('does not open Markdown link without confirmation', (
@@ -1137,6 +1155,7 @@ void main() {
               id: 'unsafe-links',
               content:
                   '[Unsafe](javascript:alert(1)) '
+                  '[Missing authority](https:/missing-authority) '
                   '[Missing host](https:///missing-host) '
                   '[Deceptive](https://accounts.example@attacker.example/sso)',
               isUser: false,
@@ -1146,6 +1165,8 @@ void main() {
       );
 
       await tester.tap(find.text('Unsafe'));
+      await tester.pump();
+      await tester.tap(find.text('Missing authority'));
       await tester.pump();
       await tester.tap(find.text('Missing host'));
       await tester.pump();
@@ -1528,7 +1549,7 @@ void main() {
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
     });
 
-    testWidgets('keeps unfinished A2UI controls without final actions', (
+    testWidgets('keeps unfinished A2UI controls and queues cap notice', (
       tester,
     ) async {
       final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
@@ -1580,6 +1601,8 @@ void main() {
           ),
           overrides: [
             chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            sendMessageUsecaseProvider('ws-1')
+                .overrideWithValue(_IterationLimitSendMessageUsecase()),
             ..._messageOverrides({message.id: message}),
           ],
         ),
@@ -1600,6 +1623,19 @@ void main() {
       expect(
         find.byKey(const ValueKey('message_footer_pending-form')),
         findsNothing,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('a2ui_submit_pending-form:main')),
+      );
+      await tester.pump();
+      await tester.pump();
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(ChatMessagesWidget)),
+        listen: false,
+      );
+      expect(
+        container.read(conversationIterationLimitProvider('conv-1')),
+        isTrue,
       );
       expect(tester.takeException(), isNull);
     });
@@ -6425,6 +6461,218 @@ void main() {
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 
+    testWidgets('shows and highlights the message from a search deep link', (
+      tester,
+    ) async {
+      final earlierMessage = _createMessage(
+        id: 'msg-1',
+        content: 'Earlier message',
+      );
+      final targetMessage = _createMessage(
+        id: 'msg-2',
+        content: 'Matched message',
+        isUser: false,
+      );
+      final laterMessage = _createMessage(
+        id: 'msg-3',
+        content: 'Later message',
+      );
+      final messages = {
+        earlierMessage.id: earlierMessage,
+        targetMessage.id: targetMessage,
+        laterMessage.id: laterMessage,
+      };
+      Widget? chat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/chats/conv-1?message-id=msg-2',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            pageBuilder: (context, state) => MaterialPage<void>(
+              child: chat ?? const SizedBox.shrink(),
+              arguments: state.uri.queryParameters,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: messages.keys.toList(),
+          messageEntitiesById: messages,
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messages[id.messageId]!,
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          appBuilder: (context, child) {
+            chat = ChatPrimaryScrollController(child: child);
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+      );
+
+      expect(find.text('Matched message'), findsOneWidget);
+      expect(find.text('Later message'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.label == 'Search match',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('offers retry when a cloud search target fails to load', (
+      tester,
+    ) async {
+      const request = (
+        workspaceId: 'ws-1',
+        conversationId: 'conv-1',
+        messageId: 'msg-2',
+      );
+      Widget? chat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/chats/conv-1?message-id=msg-2',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            pageBuilder: (context, state) => MaterialPage<void>(
+              child: chat ?? const SizedBox.shrink(),
+              arguments: state.uri.queryParameters,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: const [],
+          overrides: [
+            conversationMessageTargetMessagesProvider(request)
+                .overrideWithValue(
+                  AsyncError(StateError('offline'), StackTrace.current),
+                ),
+          ],
+          workspaceSession: const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'ws-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account-1',
+              cloudWorkspaceId: 1,
+            ),
+          ),
+          appBuilder: (context, child) {
+            chat = ChatPrimaryScrollController(child: child);
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+      );
+
+      expect(
+        find.text(
+          'Could not load this message. Check your connection and try again.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
+    testWidgets('shows unavailable state when cloud search target is missing', (
+      tester,
+    ) async {
+      const request = (
+        workspaceId: 'ws-1',
+        conversationId: 'conv-1',
+        messageId: 'msg-2',
+      );
+      Widget? chat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/chats/conv-1?message-id=msg-2',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            pageBuilder: (context, state) => MaterialPage<void>(
+              child: chat ?? const SizedBox.shrink(),
+              arguments: state.uri.queryParameters,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: const [],
+          overrides: [
+            conversationMessageTargetMessagesProvider(request)
+                .overrideWithValue(
+                  AsyncError(
+                    const CloudAppException(
+                      localizationKey: 'cloud_errors_not_found',
+                      context: CloudOperationContext.conversation,
+                      code: 'notFound',
+                    ),
+                    StackTrace.current,
+                  ),
+                ),
+          ],
+          workspaceSession: const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'ws-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account-1',
+              cloudWorkspaceId: 1,
+            ),
+          ),
+          appBuilder: (context, child) {
+            chat = ChatPrimaryScrollController(child: child);
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+      );
+
+      expect(find.text('This message is no longer available.'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
+    });
+
     testWidgets('renders provider error details without localization', (
       tester,
     ) async {
@@ -6515,11 +6763,21 @@ void main() {
 class _MockConversationRepository extends Mock
     implements ConversationRepository;
 
+class _IterationLimitSendMessageUsecase extends Fake
+    implements SendMessageUsecase {
+  @override
+  Future<AgentIterationDecision?> call({
+    required String conversationId,
+    required ChatDraft draft,
+  }) async => AgentIterationDecision.iterationLimitReached;
+}
+
 class const _ChatMessagesTestSubject({
   required final String conversationId,
   required final List<String> messages,
   required final List<Object> overrides,
   required final List<PendingToolCall> pendingToolCalls,
+  final WorkspaceSession? workspaceSession,
   final Map<String, MessageEntity>? messageEntitiesById,
   final bool showThinking = false,
   final bool isStopRequested = false,
@@ -6546,8 +6804,11 @@ class const _ChatMessagesTestSubject({
         ),
         pendingToolCallsProvider.overrideWith((ref, _) => pendingToolCalls),
         workspaceSessionForRouteProvider('ws-1').overrideWithValue(
-          const AsyncData(
-            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
+          AsyncData(
+            workspaceSession ??
+                const WorkspaceSession(
+                  LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+                ),
           ),
         ),
         conversationBackgroundWorksProvider(conversationId)

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_legacy_sse_unavailable_exception.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
@@ -25,6 +26,12 @@ void main() {
       );
 
       expect(client.resolvedTransport, isA<McpTransportTypeStreamableHttp>());
+      expect(server.clientCapabilities, {
+        'elicitation': {
+          'form': <String, Object?>{},
+          'url': <String, Object?>{},
+        },
+      });
       expect(server.streamablePostCount, greaterThanOrEqualTo(1));
       expect(server.sseGetCount, 0);
     });
@@ -80,12 +87,14 @@ void main() {
         client,
         toolIdentifier: 'refresh',
         arguments: {'day': 'today'},
+        elicitation: (serverName: 'Test MCP server', onElicitation: null),
       );
       final toolOutput = await manager.callToolOutput(
         client,
         toolIdentifier: 'refresh',
         arguments: {'day': 'today'},
         includeAppData: true,
+        elicitation: (serverName: 'Test MCP server', onElicitation: null),
       );
 
       final contentsValue = resource['contents'];
@@ -138,11 +147,13 @@ void main() {
         toolIdentifier: 'refresh',
         arguments: const {},
         includeAppData: true,
+        elicitation: (serverName: 'Test MCP server', onElicitation: null),
       );
       final fallbackResult = await manager.callToolResult(
         client,
         toolIdentifier: 'refresh',
         arguments: const {},
+        elicitation: (serverName: 'Test MCP server', onElicitation: null),
       );
       final fallbackContentValue = toolOutput.appData['content'];
       if (fallbackContentValue is! List<Object?>) {
@@ -198,6 +209,7 @@ void main() {
           toolIdentifier: 'refresh',
           arguments: const {},
           includeAppData: false,
+          elicitation: (serverName: 'Test MCP server', onElicitation: null),
         );
 
         expect(toolOutput.appData, isEmpty);
@@ -235,6 +247,55 @@ void main() {
       expect(server.streamablePostCount, greaterThanOrEqualTo(1));
       expect(server.sseGetCount, 0);
       expect(server.streamableAuthorization, 'Bearer configured-token');
+    });
+
+    test('waits for form elicitation before returning tool result', () async {
+      final server = await _LocalMcpHttpServer.start(streamableStatus: 405);
+      final transport = _ElicitationClientTransport();
+      final manager = McpManagerService(
+        legacySseTransportFactory: (_) async => transport,
+      );
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(server.endpoint),
+      );
+      final request = Completer<McpElicitationRequest>();
+      final response = Completer<McpElicitationResponse>();
+      final toolResult = manager.callToolString(
+        client,
+        toolIdentifier: 'request_name',
+        arguments: const {},
+        elicitation: (
+          serverName: 'Example server',
+          onElicitation: (elicitation) {
+            request.complete(elicitation);
+
+            return response.future;
+          },
+        ),
+      );
+
+      final elicitation = await request.future;
+      expect(elicitation, isA<McpElicitationRequest>());
+      expect(elicitation.serverName, 'Example server');
+      response.complete(
+        const McpElicitationResponse(action: .accept, content: {'name': 'Ada'}),
+      );
+
+      expect(await toolResult, 'done');
+      expect(await transport.elicitationResponse, {
+        'jsonrpc': '2.0',
+        'id': 900,
+        'result': {
+          'action': 'accept',
+          'content': {'name': 'Ada'},
+        },
+      });
     });
 
     test('uses refreshed OAuth token on later requests', () async {
@@ -415,6 +476,7 @@ final class _LocalMcpHttpServer {
   Map<String, Object?>? clientExtensions;
   int streamablePostCount = 0;
   int sseGetCount = 0;
+  Map<String, Object?>? clientCapabilities;
   String? streamableAuthorization;
   final streamableAuthorizationHeaders = <String?>[];
   String? sseAuthorization;
@@ -487,6 +549,11 @@ final class _LocalMcpHttpServer {
     );
     streamableAuthorizationHeaders.add(streamableAuthorization);
     final message = await _readMessage(request);
+    if (message['method'] == 'initialize') {
+      clientCapabilities = _objectMap(
+        _objectMap(message['params'])['capabilities'],
+      );
+    }
     final response = request.response..statusCode = streamableStatus;
     if (streamableStatus != HttpStatus.ok) {
       if (useJsonRpcError) {
@@ -637,6 +704,88 @@ final class _MissingSseEndpointTransport implements mcp.ClientTransport {
   @override
   void close() {
     if (!_closeCompleter.isCompleted) _closeCompleter.complete();
+    unawaited(_messages.close());
+  }
+}
+
+final class _ElicitationClientTransport implements mcp.ClientTransport {
+  final _messages = StreamController<Object?>.broadcast(sync: true);
+  final _closed = Completer<void>();
+  final _requestSent = Completer<McpElicitationRequest>();
+  final _responseReceived = Completer<Map<String, Object?>>();
+  int? _toolCallId;
+
+  Future<McpElicitationRequest> get elicitationRequest => _requestSent.future;
+  Future<Map<String, Object?>> get elicitationResponse =>
+      _responseReceived.future;
+
+  @override
+  Stream<Object?> get onMessage => _messages.stream;
+
+  @override
+  Future<void> get onClose => _closed.future;
+
+  @override
+  void send(Object? message) {
+    if (message is! Map) throw ArgumentError.value(message, 'message');
+    final request = Map<String, dynamic>.from(message);
+    switch (request['method']) {
+      case 'server/discover':
+        _messages.add({
+          'jsonrpc': '2.0',
+          'id': request['id'],
+          'error': {'code': -32601, 'message': 'Legacy MCP server.'},
+        });
+      case 'initialize':
+        final params = Map<String, dynamic>.from(request['params'] as Map);
+        _messages.add({
+          'jsonrpc': '2.0',
+          'id': request['id'],
+          'result': {
+            'protocolVersion': params['protocolVersion'],
+            'capabilities': {'tools': <String, Object?>{}},
+            'serverInfo': {'name': 'elicitation-test', 'version': '1.0'},
+          },
+        });
+      case 'notifications/initialized':
+        break;
+      case 'tools/call':
+        final toolCallId = request['id'];
+        _toolCallId = toolCallId is int ? toolCallId : null;
+        _messages.add({
+          'jsonrpc': '2.0',
+          'id': 900,
+          'method': 'elicitation/create',
+          'params': {
+            'mode': 'form',
+            'message': 'Please provide your name.',
+            'requestedSchema': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+              'required': ['name'],
+            },
+          },
+        });
+      default:
+        if (request['id'] != 900 || _toolCallId == null) return;
+        _responseReceived.complete(request);
+        _messages.add({
+          'jsonrpc': '2.0',
+          'id': _toolCallId,
+          'result': {
+            'content': [
+              {'type': 'text', 'text': 'done'},
+            ],
+          },
+        });
+    }
+  }
+
+  @override
+  void close() {
+    if (!_closed.isCompleted) _closed.complete();
     unawaited(_messages.close());
   }
 }

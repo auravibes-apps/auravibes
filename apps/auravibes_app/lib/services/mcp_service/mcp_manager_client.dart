@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_legacy_sse_unavailable_exception.dart';
@@ -89,6 +90,11 @@ Map<String, Object?> _mcpAppTextResult(String modelText) => {
   ],
 };
 
+typedef McpToolElicitationContext = ({
+  String serverName,
+  McpElicitationHandler? onElicitation,
+});
+
 class McpManagerClient._(
   final mcp.Client _client,
   final mcp.ClientTransport _transport,
@@ -96,6 +102,8 @@ class McpManagerClient._(
   final mcp.OAuthTokenManager? _tokenManager,
 ) {
   var _requestId = 0;
+  // Elicitation/create has no parent tool call ID, so serialize calls per client.
+  Future<void> _toolCallQueue = Future<void>.value();
 
   Stream<OAuthTokenEntity>? get onTokenUpdate =>
       _tokenManager?.onTokenUpdate.map(_oauthTokenEntity);
@@ -125,6 +133,21 @@ class McpManagerClient._(
         requestId: ++_requestId,
         cursor: cursor,
       );
+
+  Future<T> _serializeToolCall<T>(Future<T> Function() call) {
+    final previousCall = _toolCallQueue;
+    final currentCall = Completer<void>();
+    _toolCallQueue = currentCall.future;
+
+    return () async {
+      await previousCall;
+      try {
+        return await call();
+      } finally {
+        currentCall.complete();
+      }
+    }();
+  }
 }
 
 StreamSubscription<Object?> _listenForToolsResponse(
@@ -232,8 +255,16 @@ class McpManagerService {
     McpManagerClient client, {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    required McpToolElicitationContext elicitation,
   }) async {
-    final result = await client._client.callTool(toolIdentifier, arguments);
+    final result = await client._serializeToolCall(
+      () => _callToolWithElicitation(
+        client: client,
+        toolIdentifier: toolIdentifier,
+        arguments: arguments,
+        context: elicitation,
+      ),
+    );
 
     return McpSdkAdapter.toolResult(result).toModelText();
   }
@@ -243,8 +274,16 @@ class McpManagerService {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
     required bool includeAppData,
+    required McpToolElicitationContext elicitation,
   }) async {
-    final result = await client._client.callTool(toolIdentifier, arguments);
+    final result = await client._serializeToolCall(
+      () => _callToolWithElicitation(
+        client: client,
+        toolIdentifier: toolIdentifier,
+        arguments: arguments,
+        context: elicitation,
+      ),
+    );
     final modelText = McpSdkAdapter.toolResult(result).toModelText();
 
     return (
@@ -259,8 +298,16 @@ class McpManagerService {
     McpManagerClient client, {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    required McpToolElicitationContext elicitation,
   }) async {
-    final result = await client._client.callTool(toolIdentifier, arguments);
+    final result = await client._serializeToolCall(
+      () => _callToolWithElicitation(
+        client: client,
+        toolIdentifier: toolIdentifier,
+        arguments: arguments,
+        context: elicitation,
+      ),
+    );
     final modelText = McpSdkAdapter.toolResult(result).toModelText();
 
     return _boundedMcpAppResult(result.toJson(), modelText);
@@ -361,7 +408,9 @@ mcp.Client _createMcpClient() => mcp.McpClient.createClient(
     name: 'AuraVibes MCP Client',
     version: '1.0.0',
   ).copyWith(
-    capabilities: const .new(
+    capabilities: const mcp.ClientCapabilities(
+      elicitationForm: true,
+      elicitationUrl: true,
       extensions: {
         'io.modelcontextprotocol/ui': {
           'mimeTypes': ['text/html;profile=mcp-app'],
@@ -411,6 +460,42 @@ Future<McpManagerClient> _connectLegacySse(
   ));
 }
 
+Future<mcp.CallToolResult> _callToolWithElicitation({
+  required McpManagerClient client,
+  required String toolIdentifier,
+  required Map<String, dynamic> arguments,
+  required McpToolElicitationContext context,
+}) async {
+  final handler = _McpToolElicitationHandler(context);
+  client._client.onElicitationRequestTyped(handler.respond);
+  try {
+    return await client._client.callTool(toolIdentifier, arguments);
+  } finally {
+    handler.stopAccepting();
+  }
+}
+
+final class _McpToolElicitationHandler(
+  final McpToolElicitationContext _context,
+) {
+  var _accepting = true;
+
+  Future<mcp.ElicitResult> respond(mcp.ElicitRequestParams request) async {
+    if (!_accepting) return _cancelledElicitationResult;
+    final elicitation = _elicitationRequest(_context.serverName, request);
+    final response =
+        await _context.onElicitation?.call(elicitation) ??
+        const McpElicitationResponse(action: .cancel);
+
+    return _sdkElicitationResponse(response);
+  }
+
+  void stopAccepting() => _accepting = false;
+}
+
+final _cancelledElicitationResult = mcp.ElicitResult(
+  action: mcp.ElicitResultAction.cancel,
+);
 McpServerToCreate _serverForTransport(
   McpConnectionRequest request,
   McpTransportType transport,
@@ -431,6 +516,41 @@ OAuthTokenEntity _oauthTokenEntity(mcp.OAuthToken mcpToken) => .new(
   tokenType: mcpToken.tokenType,
   scopes: mcpToken.scopes,
 );
+
+McpElicitationRequest _elicitationRequest(
+  String serverName,
+  mcp.ElicitRequestParams request,
+) => switch (request) {
+  mcp.ElicitRequestFormParams(:final message, :final requestedSchema) =>
+    McpElicitationRequest(
+      serverName: serverName,
+      message: message,
+      mode: .form,
+      requestedSchema: requestedSchema,
+    ),
+  mcp.ElicitRequestURLParams(:final message, :final url) =>
+    McpElicitationRequest(
+      serverName: serverName,
+      message: message,
+      mode: .url,
+      url: url,
+    ),
+  mcp.UnknownElicitRequestParams() => McpElicitationRequest(
+    serverName: serverName,
+    message: '',
+    mode: .unsupported,
+  ),
+};
+
+mcp.ElicitResult _sdkElicitationResponse(McpElicitationResponse response) =>
+    mcp.ElicitResult(
+      action: switch (response.action) {
+        .accept => .accept,
+        .decline => .decline,
+        .cancel => .cancel,
+      },
+      content: response.content,
+    );
 
 Future<mcp.ClientTransport> _createTransportConfig(
   McpServerToCreate server, {

@@ -6,6 +6,7 @@ import 'package:async/async.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
@@ -207,6 +208,7 @@ void main() {
           required mcpServerId,
           required toolIdentifier,
           required arguments,
+          onElicitation,
         }) async {
           mcpCalls.add((serverId: mcpServerId, toolIdentifier: toolIdentifier));
 
@@ -224,6 +226,7 @@ void main() {
             required mcpServerId,
             required toolIdentifier,
             required arguments,
+            onElicitation,
           }) async {
             mcpCalls.add((
               serverId: mcpServerId,
@@ -343,6 +346,7 @@ void main() {
             required mcpServerId,
             required toolIdentifier,
             required arguments,
+            onElicitation,
           }) async => McpToolCallerResult(
             modelText: 'model result',
             appData: appData(arguments['text'] as String),
@@ -404,6 +408,7 @@ void main() {
             required mcpServerId,
             required toolIdentifier,
             required arguments,
+            onElicitation,
           }) async => const McpToolCallerResult(
             modelText: 'ordinary result',
             appData: {},
@@ -433,6 +438,70 @@ void main() {
       ),
       isNull,
     );
+  });
+
+  test('routes MCP elicitation to the requesting conversation', () async {
+    String? requestedConversationId;
+    McpElicitationRequest? requestedElicitation;
+    final service = ResolvedToolService(
+      agentCancellationRuntime: cancellationRuntime,
+      mcpToolCaller:
+          ({
+            required mcpServerId,
+            required toolIdentifier,
+            required arguments,
+            onElicitation,
+          }) async {
+            final handler = onElicitation;
+            if (handler == null) {
+              throw StateError('Elicitation handler missing.');
+            }
+            final response = await handler(
+              const McpElicitationRequest(
+                serverName: 'Example server',
+                message: 'Please provide a name.',
+                mode: .form,
+                requestedSchema: {
+                  'type': 'object',
+                  'properties': {
+                    'name': {'type': 'string'},
+                  },
+                  'required': ['name'],
+                },
+              ),
+            );
+            expect(response.action, McpElicitationAction.accept);
+
+            return 'done';
+          },
+      mcpElicitationRequester: (conversationId, request) async {
+        requestedConversationId = conversationId;
+        requestedElicitation = request;
+
+        return const McpElicitationResponse(
+          action: .accept,
+          content: {'name': 'Ada'},
+        );
+      },
+    );
+
+    final result = await service.call(
+      conversationId: 'conversation-elicitation',
+      tool: ResolvedTool.mcp(
+        tableId: 'tool-1',
+        toolIdentifier: 'remote-tool',
+        mcp: (
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+          outputSchemaJson: null,
+        ),
+      ),
+      arguments: const {},
+    );
+
+    expect(result, 'done');
+    expect(requestedConversationId, 'conversation-elicitation');
+    expect(requestedElicitation?.serverName, 'Example server');
   });
 
   test('rejects cloud tool execution on the client', () {
@@ -500,6 +569,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       conversationRepository: conversationRepository,
       runAppSkillToolUsecase: appSkillTool,
@@ -542,6 +612,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
     );
 
@@ -618,6 +689,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       conversationRepository: conversationRepository,
     );
@@ -640,6 +712,7 @@ void main() {
           required mcpServerId,
           required toolIdentifier,
           required arguments,
+          onElicitation,
         }) => Future.value('mcp result'),
       ).getConversationWorkspaceId('conversation-1'),
       throwsA(isA<StateError>()),
@@ -651,6 +724,7 @@ void main() {
           required mcpServerId,
           required toolIdentifier,
           required arguments,
+          onElicitation,
         }) => Future.value('mcp result'),
         conversationRepository: missingRepository,
       ).getConversationWorkspaceId('conversation-1'),
@@ -705,6 +779,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       loadConversationSkillUsecase: (_) => loadSkill,
       runSkillTemplateToolUsecase: _MockRunSkillTemplateToolUsecase(),
@@ -759,6 +834,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       listAvailableSkillsUsecase: (_) => listSkills,
       listAppSkillCredentialCandidatesUsecase: appCandidates,
@@ -827,6 +903,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       listAvailableSkillsUsecase: (_) => listSkills,
       skillCredentialsRepository: credentialsRepository,
@@ -884,6 +961,7 @@ void main() {
           required mcpServerId,
           required toolIdentifier,
           required arguments,
+          onElicitation,
         }) async => 'mcp result',
         loadConversationSkillUsecase: (_) =>
             _MockLoadConversationSkillUsecase(),
@@ -993,6 +1071,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       loadConversationSkillUsecase: (_) => _MockLoadConversationSkillUsecase(),
       runSkillTemplateToolUsecase: _MockRunSkillTemplateToolUsecase(),
@@ -1109,6 +1188,7 @@ void main() {
           required mcpServerId,
           required toolIdentifier,
           required arguments,
+          onElicitation,
         }) async => 'mcp result',
         loadConversationSkillUsecase: (_) =>
             _MockLoadConversationSkillUsecase(),
@@ -1211,6 +1291,7 @@ void main() {
           required mcpServerId,
           required toolIdentifier,
           required arguments,
+          onElicitation,
         }) async => 'mcp result',
         conversationRepository: conversationRepository,
         runAppSkillToolUsecase: appSkillTool,
@@ -1260,6 +1341,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       subAgentRunner: _subAgentRunner(),
     );
@@ -1336,6 +1418,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       runSkillTemplateToolUsecase: templateTool,
       runAppSkillToolUsecase: appSkillTool,
@@ -1411,6 +1494,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       runAppSkillToolUsecase: appSkillTool,
       buildAppSkillNativeToolSpecsUsecase: specs,
@@ -1460,6 +1544,7 @@ void main() {
           required mcpServerId,
           required toolIdentifier,
           required arguments,
+          onElicitation,
         }) async => 'mcp result',
         runAppSkillToolUsecase: appSkillTool,
         buildAppSkillNativeToolSpecsUsecase: specs,
@@ -1502,6 +1587,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       runAppSkillToolUsecase: appSkillTool,
       buildAppSkillNativeToolSpecsUsecase: specs,
@@ -1535,6 +1621,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
     );
 
@@ -1569,6 +1656,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
     );
 
@@ -1620,6 +1708,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       listAvailableSkillsUsecase: (_) => listSkills,
       appSkillRegistry: const AppSkillRegistry(),
@@ -1660,6 +1749,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) async => 'mcp result',
       listAvailableSkillsUsecase: (_) => listSkills,
       listAppSkillCredentialCandidatesUsecase: configuredCandidates,
@@ -1685,6 +1775,7 @@ void main() {
         required mcpServerId,
         required toolIdentifier,
         required arguments,
+        onElicitation,
       }) => Future.value('mcp result'),
     );
 

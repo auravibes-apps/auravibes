@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../tool/testing/ci_widget_test_timeout.dart';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
+  WidgetController.hitTestWarningShouldBeFatal = true;
   configureCiWidgetTestTimeout();
   setUpAll(() async {
     // Pure Dart tests need real HTTP, not the widget binding's HTTP 400.

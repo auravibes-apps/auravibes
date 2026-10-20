@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
+import 'package:auravibes_app/features/chats/notifiers/mcp_elicitation_notifier.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result_controller.dart';
 import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -484,13 +485,23 @@ Future<void> _approveMcpAppToolCall(
 Future<Map<String, Object?>> _runApprovedMcpAppTool(
   WidgetRef ref,
   _McpAppCallRequest request,
-) => ref
-    .read(mcpConnectionProvider.notifier)
-    .callAppTool(
-      mcpServerId: request.view.loader.viewData.mcpServerId,
-      toolIdentifier: request.toolName,
-      arguments: request.arguments,
-    );
+) {
+  final elicit = ref
+      .read(
+        mcpElicitationProvider(request.view.loader.result.conversationId)
+            .notifier,
+      )
+      .request;
+
+  return ref
+      .read(mcpConnectionProvider.notifier)
+      .callAppTool(
+        mcpServerId: request.view.loader.viewData.mcpServerId,
+        toolIdentifier: request.toolName,
+        arguments: request.arguments,
+        onElicitation: elicit,
+      );
+}
 
 McpToolInfo _visibleMcpAppTool(
   WidgetRef ref,

@@ -615,9 +615,6 @@ class _ChatInputToolAccessModeState extends State<_ChatInputToolAccessMode> {
 
   void _selectMode(ConversationToolAccessMode mode) {
     widget.onChanged(mode);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _focusNode.requestFocus();
-    });
   }
 }
 

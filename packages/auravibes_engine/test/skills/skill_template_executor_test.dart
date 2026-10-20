@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:async/async.dart';
@@ -9,6 +10,8 @@ void main() {
     String body, {
     Map<String, String> credentials = const {},
     bool sse = true,
+    Map<String, SkillCredentialAttributeDefinition> credentialDefinitions =
+        const {},
   }) =>
       SkillTemplateExecutor(
             const ResolveSkillUrlTemplate(),
@@ -30,9 +33,10 @@ void main() {
           .call(
             inputs: const {},
             credentials: credentials,
-            definition: const SkillTemplateDefinition(
-              request: SkillUrlTemplate(url: 'https://example.com'),
-              inputs: {},
+            definition: SkillTemplateDefinition(
+              request: const SkillUrlTemplate(url: 'https://example.com'),
+              inputs: const {},
+              credentialDefinitions: credentialDefinitions,
             ),
           )
           .value;
@@ -56,6 +60,72 @@ void main() {
   test('non-SSE response stays unchanged', () async {
     const body = '{"type":"error","message":"not an SSE response"}';
     expect((await execute(body, sse: false)).body, body);
+  });
+
+  test('redacts credentials from non-SSE response', () async {
+    final response = await execute(
+      'echoed secret-value',
+      credentials: const {'apiKey': 'secret-value'},
+      sse: false,
+    );
+    expect(response.body, 'echoed [REDACTED]');
+  });
+
+  test('redacts credentials from successful SSE response', () async {
+    final response = await execute(
+      event('response.output_text.delta', {'delta': 'echoed secret-value'}) +
+          event('response.completed', {
+            'response': {'output_text': 'echoed secret-value'},
+          }),
+      credentials: const {'apiKey': 'secret-value'},
+    );
+    expect(response.body, 'echoed [REDACTED]');
+  });
+
+  test('keeps explicitly non-secret credentials visible', () async {
+    final response = await execute(
+      'account account-id',
+      credentials: const {'account': 'account-id'},
+      credentialDefinitions: const {
+        'account': SkillCredentialAttributeDefinition(
+          description: 'Account identifier',
+          secret: false,
+        ),
+      },
+      sse: false,
+    );
+    expect(response.body, 'account account-id');
+  });
+
+  test('snapshots secret values before async response handling', () async {
+    final response = Completer<UrlResponse>();
+    final credentials = {'apiKey': 'old-secret'};
+    final operation =
+        SkillTemplateExecutor(
+          const ResolveSkillUrlTemplate(),
+          (_) => CancelableOperation.fromFuture(response.future),
+        ).call(
+          inputs: const {},
+          credentials: credentials,
+          definition: const SkillTemplateDefinition(
+            request: SkillUrlTemplate(url: 'https://example.com'),
+            inputs: {},
+          ),
+        );
+
+    credentials['apiKey'] = 'rotated-secret';
+    response.complete(
+      const UrlResponse(
+        statusCode: 200,
+        body: 'echoed old-secret',
+        headers: {
+          'content-type': ['text/plain'],
+        },
+        elapsed: Duration(milliseconds: 3),
+      ),
+    );
+
+    expect((await operation.value).body, 'echoed [REDACTED]');
   });
 
   for (final body in [

@@ -14,7 +14,7 @@ void main() {
         return Future<void>.value();
       });
 
-      await usecase.call(
+      final _ = await usecase.call(
         conversationId: 'conversation-1',
         draft: const ChatDraft(text: 'hello'),
       );

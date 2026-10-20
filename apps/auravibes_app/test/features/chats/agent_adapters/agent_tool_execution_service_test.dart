@@ -49,6 +49,7 @@ void main() {
               required mcpServerId,
               required toolIdentifier,
               required arguments,
+              onElicitation,
             }) async {
               calledMcpServerId = mcpServerId;
               calledMcpToolIdentifier = toolIdentifier;
@@ -94,6 +95,7 @@ void main() {
                 required mcpServerId,
                 required toolIdentifier,
                 required arguments,
+                onElicitation,
               }) async {
                 calledMcpServerId = mcpServerId;
                 calledMcpToolIdentifier = toolIdentifier;
@@ -119,6 +121,7 @@ void main() {
             required mcpServerId,
             required toolIdentifier,
             required arguments,
+            onElicitation,
           }) async => 'unused',
         ),
         toolDecisionService: getAgentIterationDecisionUsecase,
@@ -172,6 +175,7 @@ void main() {
               required mcpServerId,
               required toolIdentifier,
               required arguments,
+              onElicitation,
             }) async => 'unused',
           ),
           toolDecisionService: getAgentIterationDecisionUsecase,
@@ -243,6 +247,7 @@ void main() {
               required mcpServerId,
               required toolIdentifier,
               required arguments,
+              onElicitation,
             }) async => 'unused',
           ),
           toolDecisionService: getAgentIterationDecisionUsecase,
@@ -262,6 +267,7 @@ void main() {
               required mcpServerId,
               required toolIdentifier,
               required arguments,
+              onElicitation,
             }) async => 'unused',
           ),
           toolDecisionService: getAgentIterationDecisionUsecase,
@@ -824,6 +830,7 @@ void main() {
                 required mcpServerId,
                 required toolIdentifier,
                 required arguments,
+                onElicitation,
               }) async => const McpToolCallerResult(
                 modelText: 'model result',
                 appData: appData,
@@ -1377,6 +1384,7 @@ void main() {
               required mcpServerId,
               required toolIdentifier,
               required arguments,
+              onElicitation,
             }) async {
               return 'mcp result';
             },
@@ -1404,6 +1412,7 @@ void main() {
                 required mcpServerId,
                 required toolIdentifier,
                 required arguments,
+                onElicitation,
               }) async {
                 return 'mcp result';
               },
@@ -1870,6 +1879,7 @@ void main() {
               required mcpServerId,
               required toolIdentifier,
               required arguments,
+              onElicitation,
             }) async {
               return 'mcp result';
             },
@@ -1897,6 +1907,7 @@ void main() {
                 required mcpServerId,
                 required toolIdentifier,
                 required arguments,
+                onElicitation,
               }) async {
                 return 'mcp result';
               },
