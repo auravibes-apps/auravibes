@@ -529,27 +529,24 @@ Future<void> _ensureMcpAppToolCallApproved(
   _McpAppApprovalRequest request,
   bool Function() isMounted,
 ) async {
+  final call = request.call;
   final decision = await _mcpAppToolApprovalDecision(ref, request);
   if (!isMounted()) throw StateError('MCP tool call was not approved.');
   if (decision.isGranted()) return;
-  await _confirmMcpAppToolCallIfNeeded(
-    request.call.getContext,
-    request.call.toolName,
-    request.call.arguments,
-    decision.needsConfirmation,
-    isMounted,
-  );
+  await _confirmMcpAppToolCallIfNeeded(call, decision, isMounted);
 }
 
 Future<void> _confirmMcpAppToolCallIfNeeded(
-  BuildContext Function() getContext,
-  String toolName,
-  Map<String, dynamic> arguments,
-  bool needsConfirmation,
+  _McpAppCallRequest call,
+  ToolApprovalDecision decision,
   bool Function() isMounted,
 ) async {
-  if (!needsConfirmation ||
-      !await _confirmMcpAppToolCall(getContext(), toolName, arguments) ||
+  if (!decision.needsConfirmation ||
+      !await _confirmMcpAppToolCall(
+        call.getContext(),
+        call.toolName,
+        call.arguments,
+      ) ||
       !isMounted()) {
     throw StateError('MCP tool call was not approved.');
   }
@@ -607,17 +604,19 @@ class const _McpAppToolApprovalDialog({
       toolName: toolName,
       arguments: arguments,
     ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context, false),
-        child: const TextLocale(LocaleKeys.common_cancel),
-      ),
-      FilledButton(
-        onPressed: () => Navigator.pop(context, true),
-        child: const TextLocale(LocaleKeys.tool_confirmation_allow_once),
-      ),
-    ],
+    actions: _actions(context),
   );
+
+  List<Widget> _actions(BuildContext context) => [
+    TextButton(
+      onPressed: () => Navigator.pop(context, false),
+      child: const TextLocale(LocaleKeys.common_cancel),
+    ),
+    FilledButton(
+      onPressed: () => Navigator.pop(context, true),
+      child: const TextLocale(LocaleKeys.tool_confirmation_allow_once),
+    ),
+  ];
 }
 
 class const _McpAppToolApprovalMessage({
