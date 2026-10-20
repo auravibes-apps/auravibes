@@ -13,6 +13,7 @@ Read only section that matches current work. Root `AGENTS.md` lists each trigger
 ## Validation
 
 - Use `fvm dart run melos run analyze` for root Dart analysis. Use `analyze:workspace` for Melos workspace analysis. Use `validate:quick` for analysis and format.
+- In a fresh worktree, if analysis fails because package resolution is missing, run the workspace bootstrap through the [validation lease](../../AGENTS.md#commands), then rerun focused analysis or `validate:quick`. If bootstrap cannot complete, report analysis as blocked.
 - Format Dart changes with the pinned FVM toolchain. Host `dart format` does not verify pinned-toolchain output.
 - Run full `validate` only by request or when a multi-package behavior change needs full-workspace coverage. Do not run it only because a PR opens or updates.
 - Use `validate:ci` for full CI validation. `test:ci` runs package tests. Use the requested CI command for reproduction.
@@ -34,6 +35,10 @@ Read only section that matches current work. Root `AGENTS.md` lists each trigger
 | CI reproduction or explicit request | Run the requested CI command. |
 | Documentation or skill-only | Run relevant documentation checks and `git diff --check`. Do not run Dart suites. |
 | Workflow or config-only | Run syntax or action checks for changed files. Do not run unrelated Dart suites. |
+
+## Behavior-path review
+
+- When changing a shared result or status contract, search all callers. Trace affected entry points through retries, resumes, async waits, and completion handling. Add focused tests where displayed or persisted behavior changes.
 
 ## Analyzer-only migrations
 

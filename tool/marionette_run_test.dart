@@ -6,6 +6,31 @@ import 'package:test/test.dart';
 import 'marionette_run.dart';
 
 void main() {
+  test('detects known Marionette launch phases', () {
+    expect(
+      detectMarionetteLaunchPhase('Fetching from https://example.invalid/pkg'),
+      'resolving dependencies',
+    );
+    expect(
+      detectMarionetteLaunchPhase('Running Xcode build...'),
+      'building app',
+    );
+    expect(detectMarionetteLaunchPhase('Xcode build done.'), 'starting app');
+    expect(detectMarionetteLaunchPhase('unrecognized output'), isNull);
+  });
+
+  test('formats Marionette launch elapsed time', () {
+    expect(formatMarionetteElapsed(const .new(seconds: 8)), '8s');
+    expect(
+      formatMarionetteElapsed(const .new(minutes: 2, seconds: 8)),
+      '2m 8s',
+    );
+    expect(
+      formatMarionetteElapsed(const .new(hours: 1, seconds: 8)),
+      '1h 0m 8s',
+    );
+  });
+
   test('extracts the VM service URI from Flutter output', () {
     expect(
       extractVmServiceUri(

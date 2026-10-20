@@ -7,13 +7,14 @@ Read only the section relevant to PR check monitoring, CI failure diagnosis, dat
 ### PR check monitoring
 
 - Before polling, compare `gh pr view <number> --json headRefOid` with local `git rev-parse HEAD` to avoid watching stale runs.
-- Monitor required checks with `gh pr checks <number> --required --watch --interval 60`.
-- If no required checks exist but the user requests a green CI matrix, inspect all current-head checks; an empty required-check result is not green.
-- With `pr` set to the PR number, take bounded snapshots of unresolved checks:
-  ```sh
-  gh pr checks "$pr" --json name,workflow,state,bucket,link --jq \
-    'map(select(.bucket != "pass" and .bucket != "skipping"))'
-  ```
+- For a compact check snapshot, show only pending, failed, or cancelled checks:
+
+```sh
+gh pr checks <number> --json name,bucket \
+  --jq '.[] | select(.bucket == "pending" or .bucket == "fail" or .bucket == "cancel") | "\(.bucket): \(.name)"'
+```
+
+- Repeat every 60 seconds while rows remain. Exit code 8 means checks are pending; empty output means no checks need attention. Use `--watch` only when full live output is useful.
 - After a watch interruption, query current status before restarting; follow [validation policy](task-policies.md#validation).
 - For job-level diagnosis, with `run_id` set to the relevant run, project unfinished jobs instead of printing full job objects:
   ```sh
