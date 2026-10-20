@@ -604,19 +604,27 @@ class const _McpAppToolApprovalDialog({
       toolName: toolName,
       arguments: arguments,
     ),
-    actions: _actions(context),
+    actions: const [
+      _McpAppToolApprovalCancelButton(),
+      _McpAppToolApprovalAllowOnceButton(),
+    ],
   );
+}
 
-  List<Widget> _actions(BuildContext context) => [
-    TextButton(
-      onPressed: () => Navigator.pop(context, false),
-      child: const TextLocale(LocaleKeys.common_cancel),
-    ),
-    FilledButton(
-      onPressed: () => Navigator.pop(context, true),
-      child: const TextLocale(LocaleKeys.tool_confirmation_allow_once),
-    ),
-  ];
+class const _McpAppToolApprovalCancelButton() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: () => Navigator.pop(context, false),
+    child: const TextLocale(LocaleKeys.common_cancel),
+  );
+}
+
+class const _McpAppToolApprovalAllowOnceButton() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FilledButton(
+    onPressed: () => Navigator.pop(context, true),
+    child: const TextLocale(LocaleKeys.tool_confirmation_allow_once),
+  );
 }
 
 class const _McpAppToolApprovalMessage({
