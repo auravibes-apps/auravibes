@@ -1272,6 +1272,7 @@ class _SuccessfulMcpManagerService extends McpManagerService {
     McpManagerClient client, {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    required McpToolElicitationContext elicitation,
   }) async {
     calledToolIdentifiers.add(toolIdentifier);
 

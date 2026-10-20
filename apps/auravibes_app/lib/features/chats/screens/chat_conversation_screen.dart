@@ -23,6 +23,7 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/notifiers/mcp_elicitation_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/background_work_continuation_provider.dart';
@@ -44,6 +45,7 @@ import 'package:auravibes_app/features/chats/widgets/background_work_continuatio
 import 'package:auravibes_app/features/chats/widgets/background_work_detach_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_mcp_elicitation_card.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
@@ -1687,11 +1689,12 @@ class const _ChatConversationBody({
   Widget build(BuildContext context, WidgetRef ref) {
     final backgroundWorkStatus = _backgroundWorkStatusPresence(ref, data);
     final hasOtherStatus = _hasChatConversationStatus(data);
-    final hasStatusArea =
-        backgroundWorkStatus.hasDetachableToolCalls ||
-        backgroundWorkStatus.hasBackgroundWorks ||
-        hasOtherStatus ||
-        data.showInputComposer;
+    final hasStatusArea = _hasChatConversationStatusArea(
+      ref,
+      data,
+      backgroundWorkStatus,
+      hasOtherStatus,
+    );
 
     return _ChatConversationBodyLayout(
       data: data,
@@ -1702,6 +1705,18 @@ class const _ChatConversationBody({
     );
   }
 }
+
+bool _hasChatConversationStatusArea(
+  WidgetRef ref,
+  _LoadedChatConversationData data,
+  _BackgroundWorkStatusPresence backgroundWorkStatus,
+  bool hasOtherStatus,
+) =>
+    backgroundWorkStatus.hasDetachableToolCalls ||
+    backgroundWorkStatus.hasBackgroundWorks ||
+    hasOtherStatus ||
+    ref.watch(mcpElicitationProvider(data.conversation.id)).isNotEmpty ||
+    data.showInputComposer;
 
 _BackgroundWorkStatusPresence _backgroundWorkStatusPresence(
   WidgetRef ref,
@@ -1828,17 +1843,34 @@ class const _ChatConversationStatusArea({
       if (backgroundWorkStatus.hasDetachableToolCalls ||
           backgroundWorkStatus.hasBackgroundWorks)
         _BackgroundWorkStatus(data: data, presence: backgroundWorkStatus),
-      if (hasOtherStatus || data.showInputComposer)
-        _ChatConversationStatusAndComposer(
-          data: data,
-          key: ValueKey((
-            workspaceId: data.workspaceId,
-            conversationId: data.conversation.id,
-          )),
-        ),
+      ChatMcpElicitationCard(conversationId: data.conversation.id),
+      _ChatConversationComposerStatus(
+        data: data,
+        hasOtherStatus: hasOtherStatus,
+      ),
     ],
     mainAxisSize: .min,
   );
+}
+
+class const _ChatConversationComposerStatus({
+  required final _LoadedChatConversationData data,
+  required final bool hasOtherStatus,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!hasOtherStatus && !data.showInputComposer) {
+      return const SizedBox.shrink();
+    }
+
+    return _ChatConversationStatusAndComposer(
+      data: data,
+      key: ValueKey((
+        workspaceId: data.workspaceId,
+        conversationId: data.conversation.id,
+      )),
+    );
+  }
 }
 
 class const _IncompleteImportedAgentContextNotice({

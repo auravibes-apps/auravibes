@@ -5,12 +5,14 @@ import 'dart:async';
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
+import 'package:auravibes_app/features/chats/notifiers/mcp_elicitation_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
@@ -86,6 +88,7 @@ class ResolvedToolService {
   new({
     required AgentCancellationRuntime agentCancellationRuntime,
     required McpToolCaller mcpToolCaller,
+    McpElicitationRequester? mcpElicitationRequester,
     ConversationRepository? conversationRepository,
     LoadConversationSkillUsecase Function(String workspaceId)?
     loadConversationSkillUsecase,
@@ -110,6 +113,7 @@ class ResolvedToolService {
          provider: AppResolvedToolProvider(
            agentCancellationRuntime: agentCancellationRuntime,
            mcpToolCaller: mcpToolCaller,
+           mcpElicitationRequester: mcpElicitationRequester,
            conversationRepository: conversationRepository,
            loadConversationSkillUsecase: loadConversationSkillUsecase,
            runSkillTemplateToolUsecase: runSkillTemplateToolUsecase,
@@ -173,6 +177,7 @@ Map<String, dynamic> _executionArguments(
 class const AppResolvedToolProvider({
   required final AgentCancellationRuntime agentCancellationRuntime,
   required final McpToolCaller mcpToolCaller,
+  final McpElicitationRequester? mcpElicitationRequester,
   final ConversationRepository? conversationRepository,
   final LoadConversationSkillUsecase Function(String workspaceId)?
   loadConversationSkillUsecase,
@@ -431,13 +436,20 @@ _CancelableOperationRequest _mcpToolOperationRequest(
 CancelableOperation<Object?> _mcpToolOperation(
   AppResolvedToolProvider provider,
   agent.McpToolCallRequest input,
-) => CancelableOperation<Object?>.fromFuture(
-  provider.mcpToolCaller(
-    mcpServerId: input.mcpServerId,
-    toolIdentifier: input.toolIdentifier,
-    arguments: input.arguments,
-  ),
-);
+) {
+  final requester = provider.mcpElicitationRequester;
+
+  return CancelableOperation<Object?>.fromFuture(
+    provider.mcpToolCaller(
+      mcpServerId: input.mcpServerId,
+      toolIdentifier: input.toolIdentifier,
+      arguments: input.arguments,
+      onElicitation: requester == null
+          ? null
+          : (request) => requester(input.conversationId, request),
+    ),
+  );
+}
 
 agent.AgentResolvedToolName _toAgentDescriptor(ResolvedTool tool) {
   return switch (tool.type) {
@@ -1640,6 +1652,9 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
   return ResolvedToolService(
     agentCancellationRuntime: agentCancellationRuntime,
     mcpToolCaller: ref.watch(mcpToolCallerProvider),
+    mcpElicitationRequester: (conversationId, request) => container
+        .read(mcpElicitationProvider(conversationId).notifier)
+        .request(request),
     conversationRepository: ref.watch(conversationRepositoryProvider),
     loadConversationSkillUsecase: (workspaceId) =>
         container.read(loadConversationSkillUsecaseProvider(workspaceId)),

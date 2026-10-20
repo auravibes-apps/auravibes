@@ -116,6 +116,30 @@ void main() {
     );
   });
 
+  test('measures string bounds in Unicode code points', () {
+    const maximumLengthSchema = <String, Object?>{
+      'type': 'object',
+      'properties': {
+        'value': {'type': 'string', 'maxLength': 1},
+      },
+    };
+    const minimumLengthSchema = <String, Object?>{
+      'type': 'object',
+      'properties': {
+        'value': {'type': 'string', 'minLength': 2},
+      },
+    };
+
+    expect(
+      () => validateToolArguments(maximumLengthSchema, {'value': '😀'}),
+      returnsNormally,
+    );
+    expect(
+      () => validateToolArguments(minimumLengthSchema, {'value': '😀'}),
+      throwsFormatException,
+    );
+  });
+
   test('validates nested schemas with narrower runtime map types', () {
     final nestedProperties = <String, Object>{
       'count': <String, Object>{'type': 'integer'},

@@ -2560,4 +2560,28 @@ abstract class LocaleKeys {
   static const credential_usage_skill = 'credential_usage.skill';
   static const credential_usage_tool = 'credential_usage.tool';
   static const credential_usage_disabled = 'credential_usage.disabled';
+  static const mcp_elicitation_form_title = 'mcp.elicitation.form_title';
+  static const mcp_elicitation_url_title = 'mcp.elicitation.url_title';
+  static const mcp_elicitation_unsupported_title =
+      'mcp.elicitation.unsupported_title';
+  static const mcp_elicitation_unsupported_mode =
+      'mcp.elicitation.unsupported_mode';
+  static const mcp_elicitation_unsupported_fields =
+      'mcp.elicitation.unsupported_fields';
+  static const mcp_elicitation_url_host = 'mcp.elicitation.url_host';
+  static const mcp_elicitation_url_punycode_warning =
+      'mcp.elicitation.url_punycode_warning';
+  static const mcp_elicitation_url_ascii_host =
+      'mcp.elicitation.url_ascii_host';
+  static const mcp_elicitation_url_ascii_host_error =
+      'mcp.elicitation.url_ascii_host_error';
+  static const mcp_elicitation_url_review = 'mcp.elicitation.url_review';
+  static const mcp_elicitation_invalid_url = 'mcp.elicitation.invalid_url';
+  static const mcp_elicitation_select_option = 'mcp.elicitation.select_option';
+  static const mcp_elicitation_submit = 'mcp.elicitation.submit';
+  static const mcp_elicitation_open_url = 'mcp.elicitation.open_url';
+  static const mcp_elicitation_decline = 'mcp.elicitation.decline';
+  static const mcp_elicitation_cancel = 'mcp.elicitation.cancel';
+  static const mcp_elicitation_invalid = 'mcp.elicitation.invalid';
+  static const mcp_elicitation_open_error = 'mcp.elicitation.open_error';
 }

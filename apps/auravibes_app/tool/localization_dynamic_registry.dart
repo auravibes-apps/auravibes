@@ -2279,4 +2279,22 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       'chat_input.tool_access_allow_all_description',
     },
   ),
+
+  LocalizationDynamicRegistry(
+    family: 'mcp-elicitation-error-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/chat_mcp_elicitation_card.dart',
+        method: 'TextLocale',
+        keyExpression: 'value.localizationKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/chat_mcp_elicitation_card.dart',
+        method: 'TextLocale',
+        keyExpression: 'value.localizationKey',
+        occurrence: 1,
+      ),
+    ],
+    keys: {'mcp.elicitation.invalid', 'mcp.elicitation.open_error'},
+  ),
 ];
