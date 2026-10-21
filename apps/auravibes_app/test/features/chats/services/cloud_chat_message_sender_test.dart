@@ -9,6 +9,17 @@ import 'package:mocktail/mocktail.dart';
 class _Gateway extends Mock implements CloudChatGateway;
 class _Attachments extends Mock implements CloudChatAttachmentUsecase;
 
+typedef _QueueConversationMessageCall = ({
+  String requestId,
+  String conversationId,
+  int expectedProjectionRevision,
+  String clientMessageId,
+  String content,
+  List<String> attachmentIds,
+  String? metadataJson,
+  String? languageCode,
+});
+
 void main() {
   setUpAll(() {
     registerFallbackValue((
@@ -19,6 +30,7 @@ void main() {
       content: '',
       attachmentIds: <String>[],
       metadataJson: null,
+      languageCode: null,
     ));
   });
 
@@ -27,6 +39,7 @@ void main() {
     () async {
       final gateway = _Gateway();
       final events = <String>[];
+      String? queuedLanguageCode;
       final snapshot = ConversationSnapshot(
         conversation: .new(
           id: 'conversation-1',
@@ -44,7 +57,13 @@ void main() {
       when(() => gateway.getConversationSnapshot('conversation-1'))
           .thenAnswer((_) async => snapshot);
       when(() => gateway.queueConversationMessage(any()))
-          .thenAnswer((_) async => snapshot);
+          .thenAnswer((invocation) async {
+            queuedLanguageCode =
+                (invocation.positionalArguments.single
+                        as _QueueConversationMessageCall)
+                    .languageCode;
+            return snapshot;
+          });
       when(
         () => gateway.continueConversation(
           requestId: any(named: 'requestId'),
@@ -76,6 +95,7 @@ void main() {
           languageCode: 'es',
         ),
       ]);
+      expect(queuedLanguageCode, 'es');
       expect(events, ['conversation-1']);
     },
   );

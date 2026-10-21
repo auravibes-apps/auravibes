@@ -1608,6 +1608,18 @@ class ServerToolRuntime({
         if (turn == null) {
           throw StateError('Background work source turn is missing.');
         }
+        final parentJob = await ConversationJob.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(current.workspaceId) &
+              table.turnId.equals(current.turnId) &
+              table.kind.equals(ConversationJobKinds.turn),
+          orderBy: (table) => table.id.desc(),
+          transaction: transaction,
+        );
+        final languageCode = conversation_repo.conversationLanguageCodeForJob(
+          parentJob?.payloadJson,
+        );
         final activeMember = await WorkspaceMember.db.findFirstRow(
           session,
           where: (table) =>
@@ -1719,6 +1731,7 @@ class ServerToolRuntime({
               'statusPreview': workPreview,
               'resultByteLength': projection?.originalBytes ?? 0,
               'errorCode': errorCode,
+              'languageCode': ?languageCode,
             }),
             createdAt: now,
           ),
@@ -1812,15 +1825,6 @@ class ServerToolRuntime({
       final turn = await ConversationTurn.db.findById(session, call.turnId);
       if (turn != null) {
         if (conversation != null && turn.cancellationRequestedAt == null) {
-          final parentJobs = await ConversationJob.db.find(
-            session,
-            where: (table) =>
-                table.workspaceId.equals(call.workspaceId) &
-                table.turnId.equals(call.turnId) &
-                table.kind.equals(ConversationJobKinds.turn),
-            orderBy: (table) => table.id.desc(),
-            limit: 1,
-          );
           await ConversationUseCases(
             conversation_repo.ConversationRepository(),
           ).continueOldestQueuedMessage(
@@ -1828,9 +1832,6 @@ class ServerToolRuntime({
             userId: turn.initiatorUserId,
             workspaceId: call.workspaceId,
             conversationId: conversation.stableId,
-            languageCode: conversation_repo.conversationLanguageCodeForJob(
-              parentJobs.firstOrNull?.payloadJson,
-            ),
           );
         }
       }

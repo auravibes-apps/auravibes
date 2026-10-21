@@ -1129,7 +1129,6 @@ class ConversationUseCases {
     required String userId,
     required int workspaceId,
     required String conversationId,
-    String? languageCode,
   }) async {
     while (true) {
       final queued = await session.db.transaction((transaction) async {
@@ -1182,7 +1181,47 @@ class ConversationUseCases {
                 ConversationStatuses.awaitingUserAction) {
           return null;
         }
-        return (conversation: conversation, message: pending.first);
+        final message = pending.first;
+        var queuedEvent = await ConversationEvent.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(workspaceId) &
+              table.conversationId.equals(conversation.id!) &
+              table.eventId.equals('user-message:${message.stableId}') &
+              table.kind.equals(ConversationEventType.messageQueued),
+          transaction: transaction,
+        );
+        const backgroundWorkMessagePrefix = 'background_work:';
+        if (queuedEvent == null &&
+            message.stableId.startsWith(backgroundWorkMessagePrefix)) {
+          final workId = message.stableId.substring(
+            backgroundWorkMessagePrefix.length,
+          );
+          if (workId.isNotEmpty) {
+            queuedEvent = await ConversationEvent.db.findFirstRow(
+              session,
+              where: (table) =>
+                  table.workspaceId.equals(workspaceId) &
+                  table.conversationId.equals(conversation.id!) &
+                  table.eventId.equals('background-work-completion:$workId') &
+                  table.kind.equals(
+                    ConversationEventType.backgroundWorkCompleted,
+                  ),
+              transaction: transaction,
+            );
+          }
+        }
+        final queuedLanguageCode = _tryJsonMap(
+          queuedEvent?.payloadJson ?? '',
+        )['languageCode'];
+        final languageCode = queuedLanguageCode is String
+            ? queuedLanguageCode.trim()
+            : '';
+        return (
+          conversation: conversation,
+          message: message,
+          languageCode: languageCode.isEmpty ? 'en' : languageCode,
+        );
       });
       if (queued == null) return false;
 
@@ -1196,7 +1235,7 @@ class ConversationUseCases {
             conversationId: conversationId,
             expectedProjectionRevision: queued.conversation.projectionRevision,
             a2uiSupportedComponents: const [],
-            languageCode: languageCode,
+            languageCode: queued.languageCode,
           ),
         );
         return true;
@@ -2054,6 +2093,7 @@ class ConversationUseCases {
         'contentDigest': contentDigest,
         'attachmentIds': sortedAttachmentIds,
         'metadataDigest': ?metadataDigest,
+        if (request.languageCode != null) 'languageCode': request.languageCode,
       }),
       persist: (transaction, conversation, now) async {
         await _requireMember(

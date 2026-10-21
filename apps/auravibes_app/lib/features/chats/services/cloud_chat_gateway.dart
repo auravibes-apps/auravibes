@@ -24,6 +24,7 @@ typedef _QueueConversationMessageRequest = ({
   String content,
   List<String> attachmentIds,
   String? metadataJson,
+  String? languageCode,
 });
 
 typedef _StartTurnRequest = ({
@@ -310,6 +311,7 @@ QueueConversationMessageRequest _queueConversationMessageRequest(
   content: request.content,
   attachmentIds: request.attachmentIds,
   metadataJson: request.metadataJson,
+  languageCode: request.languageCode,
   a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
 );
 

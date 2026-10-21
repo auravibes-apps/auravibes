@@ -299,6 +299,57 @@ void main() {
       },
     );
 
+    test('queued message idempotency includes its language code', () async {
+      final userId = const Uuid().v4().toString();
+      final session = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final database = session.build();
+      await _insertUser(database, userId);
+      final workspace = await _workspace(database, userId);
+      final conversation = await _conversation(database, workspace.id!);
+
+      await endpoints.conversation.queueConversationMessage(
+        session,
+        QueueConversationMessageRequest(
+          workspaceId: workspace.id!,
+          requestId: 'queue-spanish-idempotency',
+          conversationId: conversation.stableId,
+          expectedProjectionRevision: 1,
+          clientMessageId: 'message-idempotency',
+          content: 'Same message',
+          attachmentIds: const [],
+          languageCode: 'es',
+        ),
+      );
+
+      await expectLater(
+        endpoints.conversation.queueConversationMessage(
+          session,
+          QueueConversationMessageRequest(
+            workspaceId: workspace.id!,
+            requestId: 'queue-english-idempotency-replay',
+            conversationId: conversation.stableId,
+            expectedProjectionRevision: 1,
+            clientMessageId: 'message-idempotency',
+            content: 'Same message',
+            attachmentIds: const [],
+            languageCode: 'en',
+          ),
+        ),
+        throwsA(
+          isA<ConversationException>().having(
+            (error) => error.code,
+            'code',
+            ConversationErrorCode.idempotencyConflict,
+          ),
+        ),
+      );
+    });
+
     test('reorders and removes only unclaimed pending messages', () async {
       final userId = const Uuid().v4().toString();
       final session = sessionBuilder.copyWith(

@@ -169,6 +169,7 @@ extension on CloudChatMessageSender {
     content: input._content,
     attachmentIds: input._attachmentIds,
     metadataJson: input._metadataJson,
+    languageCode: input.payload.draft.languageCode,
   ));
 
   String _newRequestId() => const UuidV7().generate();

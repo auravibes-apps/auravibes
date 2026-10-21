@@ -26,8 +26,9 @@ import '../../test_tools/serverpod_test_tools.dart';
 
 Future<_Fixture> _prepareConversationFixture(
   TestSessionBuilder sessionBuilder,
-  TestEndpoints endpoints,
-) async {
+  TestEndpoints endpoints, {
+  String? languageCode,
+}) async {
   final userId = const Uuid().v4().toString();
   final session = sessionBuilder.copyWith(
     authentication: AuthenticationOverride.authenticationInfo(
@@ -81,6 +82,7 @@ Future<_Fixture> _prepareConversationFixture(
       clientMessageId: 'message-1',
       content: 'Continue.',
       attachmentIds: const [],
+      languageCode: languageCode,
     ),
   );
   await endpoints.conversation.continueConversation(
@@ -90,6 +92,7 @@ Future<_Fixture> _prepareConversationFixture(
       requestId: 'continue-1',
       conversationId: conversation.stableId,
       expectedProjectionRevision: 2,
+      languageCode: languageCode,
     ),
   );
   final turn = (await ConversationTurn.db.findFirstRow(
@@ -2624,13 +2627,17 @@ void main() {
   withServerpod(
     'ConversationBackgroundWork',
     (sessionBuilder, endpoints) {
-      Future<_Fixture> prepare() =>
-          _prepareConversationFixture(sessionBuilder, endpoints);
+      Future<_Fixture> prepare({String? languageCode}) =>
+          _prepareConversationFixture(
+            sessionBuilder,
+            endpoints,
+            languageCode: languageCode,
+          );
 
       test(
         'cloud detach preserves its acknowledgement and runs past turn stop',
         () async {
-          final fixture = await prepare();
+          final fixture = await prepare(languageCode: 'es');
           final now = DateTime.now().toUtc();
           const skill = {
             'id': 'research',
@@ -2849,6 +2856,10 @@ void main() {
                 table.stableId.equals('background_work:${work.id}'),
           );
           expect(completionEvents, hasLength(1));
+          expect(
+            jsonDecode(completionEvents.single.payloadJson)['languageCode'],
+            'es',
+          );
           expect(completionMessages, hasLength(1));
           expect(completionMessages.single.status, ConversationStatuses.queued);
           expect(completed?.resultContent, contains('"ok":true'));

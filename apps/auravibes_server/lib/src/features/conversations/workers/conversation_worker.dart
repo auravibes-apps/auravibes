@@ -314,9 +314,6 @@ class const ConversationWorker({
       userId: turn.initiatorUserId,
       workspaceId: job.workspaceId,
       conversationId: conversation.stableId,
-      languageCode: conversation_repo.conversationLanguageCodeForJob(
-        job.payloadJson,
-      ),
     );
   }
 
@@ -506,9 +503,6 @@ class const ConversationWorker({
       userId: turn.initiatorUserId,
       workspaceId: job.workspaceId,
       conversationId: conversation.stableId,
-      languageCode: conversation_repo.conversationLanguageCodeForJob(
-        job.payloadJson,
-      ),
     );
 
     await SyncWakeups.publishWorkspace(session, job.workspaceId);
@@ -2143,9 +2137,6 @@ class const ConversationWorker({
       userId: actorUserId,
       workspaceId: job.workspaceId,
       conversationId: conversation.stableId,
-      languageCode: conversation_repo.conversationLanguageCodeForJob(
-        job.payloadJson,
-      ),
     );
   }
 

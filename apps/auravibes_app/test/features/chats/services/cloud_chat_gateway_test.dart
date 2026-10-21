@@ -81,6 +81,7 @@ void main() {
         content: 'Hello',
         attachmentIds: const [],
         metadataJson: '{"action":"unchanged"}',
+        languageCode: 'es',
       )),
       'stopConversation': () => gateway.stopConversation(
         requestId: 'stop',
@@ -138,6 +139,7 @@ void main() {
       requests['queueConversationMessage']!['metadataJson'],
       '{"action":"unchanged"}',
     );
+    expect(requests['queueConversationMessage']!['languageCode'], 'es');
     expect(requests['startTurn']!['languageCode'], 'es');
     expect(requests['continueTurn']!['languageCode'], 'es');
     expect(requests['continueConversation']!['languageCode'], 'es');

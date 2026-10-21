@@ -46,6 +46,25 @@ void main() {
       runSubAgentToolSpec.inputJsonSchema,
     );
   });
+
+  test('unsupported language codes fall back to English guidance', () {
+    expect(
+      serverAgentsSkillContentForLanguageCode('fr-CA'),
+      serverAgentsSkillContentForLanguageCode('en'),
+    );
+    expect(
+      serverGeneralSubAgentHintForLanguageCode('fr-CA'),
+      serverGeneralSubAgentHintForLanguageCode('en'),
+    );
+    expect(
+      serverListAgentsToolSpecForLanguageCode('fr-CA').description,
+      serverListAgentsToolSpecForLanguageCode('en').description,
+    );
+    expect(
+      serverRunSubAgentToolSpecForLanguageCode('fr-CA').description,
+      serverRunSubAgentToolSpecForLanguageCode('en').description,
+    );
+  });
 }
 
 String _catalogValue(Map<String, dynamic> catalog, String key) {
