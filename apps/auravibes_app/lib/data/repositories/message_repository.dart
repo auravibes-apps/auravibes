@@ -222,20 +222,28 @@ List<MessageBookmarkEntity> _messageBookmarksFromRows(List<QueryRow> rows) =>
 
 MessageBookmarkEntity _messageBookmarkFromRow(QueryRow row) =>
     MessageBookmarkEntity(
-      details: _messageBookmarkDetailsFromRow(row),
+      details: _messageBookmarkDetailsFromRow(
+        row,
+        isUser: row.read<bool>('is_user'),
+      ),
       workspace: _messageBookmarkWorkspaceFromRow(row),
     );
 
-MessageBookmarkDetails _messageBookmarkDetailsFromRow(QueryRow row) =>
-    MessageBookmarkDetails(
-      messageId: row.read<String>('message_id'),
-      conversationId: row.read<String>('conversation_id'),
-      excerpt: _messageBookmarkExcerpt(row.read<String>('content')),
-      workspaceName: row.read<String>('workspace_name'),
-      createdAt: row.read<DateTime>('created_at'),
-      conversationTitle: row.read<String>('conversation_title'),
-      isUser: row.read<bool>('is_user'),
-    );
+MessageBookmarkDetails _messageBookmarkDetailsFromRow(
+  QueryRow row, {
+  required bool isUser,
+}) => MessageBookmarkDetails(
+  messageId: row.read<String>('message_id'),
+  conversationId: row.read<String>('conversation_id'),
+  excerpt: _messageBookmarkExcerptFromRow(row),
+  workspaceName: row.read<String>('workspace_name'),
+  createdAt: row.read<DateTime>('created_at'),
+  conversationTitle: row.read<String>('conversation_title'),
+  isUser: isUser,
+);
+
+String _messageBookmarkExcerptFromRow(QueryRow row) =>
+    _messageBookmarkExcerpt(row.read<String>('content'));
 
 MessageBookmarkWorkspace _messageBookmarkWorkspaceFromRow(QueryRow row) =>
     MessageBookmarkWorkspace(workspaceId: row.read<String>('workspace_id'));
