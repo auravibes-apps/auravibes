@@ -286,7 +286,7 @@ void main() {
               description: 'Trusted research description',
               content: 'Private content is not rendered.',
               kind: .template,
-              credentialReadiness: .ready,
+              connectorReadiness: .ready,
             ),
           })
           ..bindMessage('assistant-1');

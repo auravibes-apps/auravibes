@@ -70,7 +70,7 @@ void main() {
         content: skillEntity.content,
         source: skillEntity.source,
         kind: skillEntity.kind,
-        credentialReadiness: .ready,
+        connectorReadiness: .ready,
       );
       final _ = await conversationSkills.setWorkspaceSkillLoaded(
         'source',
@@ -337,7 +337,6 @@ class _ManifestBuilder(final String Function() _revision)
       title: 'Research',
       description: 'Find sources',
       revision: _revision(),
-      tools: const [],
     ),
   ];
 }

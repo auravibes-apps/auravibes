@@ -404,8 +404,8 @@ void main() {
     expect(find.text('Delete skill'), findsOneWidget);
     expect(
       find.text(
-        'Delete this skill? This also removes its conversation load state and '
-        'template tools.',
+        'Delete this Skill? This also removes its conversation load state and '
+        'linked Connector tool references.',
       ),
       findsOneWidget,
     );

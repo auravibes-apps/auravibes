@@ -74,8 +74,8 @@ class PrepareConversationSkillContextUsecase({
     List<AvailableSkill> selectedSkills,
     Map<String, String> selectedRevisions,
   ) {
-    if (_hasMissingCredentials(selectedSkills)) return .missingCredentials;
-    if (_hasUnknownCredentials(selectedSkills)) return .preparationFailed;
+    if (_hasMissingConnections(selectedSkills)) return .missingConnection;
+    if (_hasUnknownConnections(selectedSkills)) return .preparationFailed;
     if (_hasUnresolvedSkill(selectedSkills, selectedRevisions)) {
       return .unavailableMetadata;
     }
@@ -115,11 +115,11 @@ Map<String, String> _stringEntries(Map<Object?, Object?> raw) {
   return entries;
 }
 
-bool _hasMissingCredentials(List<AvailableSkill> skills) =>
-    skills.any((skill) => skill.credentialReadiness == .missing);
+bool _hasMissingConnections(List<AvailableSkill> skills) =>
+    skills.any((skill) => skill.connectorReadiness == .missing);
 
-bool _hasUnknownCredentials(List<AvailableSkill> skills) =>
-    skills.any((skill) => skill.credentialReadiness == .unknown);
+bool _hasUnknownConnections(List<AvailableSkill> skills) =>
+    skills.any((skill) => skill.connectorReadiness == .unknown);
 
 bool _hasUnresolvedSkill(
   List<AvailableSkill> skills,

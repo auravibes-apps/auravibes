@@ -10,7 +10,7 @@ import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
 import 'package:easy_localization/easy_localization.dart';
 
-typedef AppSkillCredentialUpdateRequest = ({
+typedef ConnectorConnectionUpdateRequest = ({
   String id,
   String workspaceId,
   String name,
@@ -18,16 +18,16 @@ typedef AppSkillCredentialUpdateRequest = ({
   String? secret,
 });
 
-typedef AppSkillCredentialCreateRequest = ({
+typedef ConnectorConnectionCreateRequest = ({
   String workspaceId,
-  String appSkillServiceId,
+  String connectorId,
   String name,
   String apiKey,
 });
 
-typedef AppSkillCredentialCandidatesRequest = ({
+typedef ConnectorConnectionCandidatesRequest = ({
   String workspaceId,
-  String appSkillServiceId,
+  String connectorId,
   List<String> compatibleModelProviderIds,
 });
 
@@ -87,27 +87,27 @@ class ServiceConnectionRepository(
   final LegacyApiKeyStorage _legacyApiKeyStorage =
       legacyApiKeyStorage ?? LegacyApiKeyStorage();
 
-  Future<GenericServiceConnectionRecord?> getAppSkillCredentialForEdit(
+  Future<GenericServiceConnectionRecord?> getConnectorConnectionForEdit(
     String id, {
     required String workspaceId,
-  }) => _getAppSkillCredentialForEdit(this, id, workspaceId: workspaceId);
+  }) => _getConnectorConnectionForEdit(this, id, workspaceId: workspaceId);
 
-  Future<void> updateAppSkillCredential(
-    AppSkillCredentialUpdateRequest request,
-  ) => _updateAppSkillCredential(this, request);
+  Future<void> updateConnectorConnection(
+    ConnectorConnectionUpdateRequest request,
+  ) => _updateConnectorConnection(this, request);
 
-  Future<List<ServiceConnectionCandidate>> listAppSkillCredentialCandidates(
-    AppSkillCredentialCandidatesRequest request,
-  ) => _listAppSkillCredentialCandidates(this, request);
+  Future<List<ServiceConnectionCandidate>> listConnectorConnectionCandidates(
+    ConnectorConnectionCandidatesRequest request,
+  ) => _listConnectorConnectionCandidates(this, request);
 
-  Future<ServiceConnectionEntity> createAppSkillCredential(
-    AppSkillCredentialCreateRequest request,
-  ) => _createAppSkillCredential(this, request);
+  Future<ServiceConnectionEntity> createConnectorConnection(
+    ConnectorConnectionCreateRequest request,
+  ) => _createConnectorConnection(this, request);
 
-  Future<void> deleteAppSkillCredential(
+  Future<void> deleteConnectorConnection(
     String id, {
     required String workspaceId,
-  }) => _deleteAppSkillCredential(this, id, workspaceId: workspaceId);
+  }) => _deleteConnectorConnection(this, id, workspaceId: workspaceId);
 
   Future<ServiceConnectionSecret> readSecret(String id) =>
       _readSecret(this, id);
@@ -189,13 +189,13 @@ Future<ServiceConnectionEntity?> _getById(
   return row == null ? null : _toEntity(row);
 }
 
-Future<GenericServiceConnectionRecord?> _getAppSkillCredentialForEdit(
+Future<GenericServiceConnectionRecord?> _getConnectorConnectionForEdit(
   ServiceConnectionRepository repository,
   String id, {
   required String workspaceId,
 }) async {
   final row = await _getRowById(repository, id);
-  if (row == null || !_isAppSkillCredential(row, workspaceId)) return null;
+  if (row == null || !_isConnectorConnection(row, workspaceId)) return null;
 
   return _genericServiceConnectionRecord(row);
 }
@@ -210,15 +210,15 @@ GenericServiceConnectionRecord _genericServiceConnectionRecord(
   keySuffix: row.keySuffix,
 );
 
-bool _isAppSkillCredential(ServiceConnectionTable row, String workspaceId) =>
+bool _isConnectorConnection(ServiceConnectionTable row, String workspaceId) =>
     row.workspaceId == workspaceId &&
-    row.kind == ServiceConnectionKindTable.appSkillCredential;
+    row.kind == ServiceConnectionKindTable.customHttp;
 
-Future<void> _updateAppSkillCredential(
+Future<void> _updateConnectorConnection(
   ServiceConnectionRepository repository,
-  AppSkillCredentialUpdateRequest request,
+  ConnectorConnectionUpdateRequest request,
 ) async {
-  final companion = await _appSkillCredentialUpdateCompanion(
+  final companion = await _connectorConnectionUpdateCompanion(
     repository,
     request,
   );
@@ -226,32 +226,32 @@ Future<void> _updateAppSkillCredential(
     repository._database.serviceConnections,
   );
   final _ = update.where(
-    (table) => _appSkillCredentialUpdateFilter(table, request),
+    (table) => _connectorConnectionUpdateFilter(table, request),
   );
   final _ = await update.write(companion);
 }
 
-Expression<bool> _appSkillCredentialUpdateFilter(
+Expression<bool> _connectorConnectionUpdateFilter(
   ServiceConnections table,
-  AppSkillCredentialUpdateRequest request,
-) => _appSkillCredentialFilter(
+  ConnectorConnectionUpdateRequest request,
+) => _connectorConnectionFilter(
   table,
   id: request.id,
   workspaceId: request.workspaceId,
 );
 
-Expression<bool> _appSkillCredentialFilter(
+Expression<bool> _connectorConnectionFilter(
   ServiceConnections table, {
   required String id,
   required String workspaceId,
 }) =>
     table.id.equals(id) &
     table.workspaceId.equals(workspaceId) &
-    table.kind.equals(ServiceConnectionKindTable.appSkillCredential.name);
+    table.kind.equals(ServiceConnectionKindTable.customHttp.name);
 
-Future<ServiceConnectionsCompanion> _appSkillCredentialUpdateCompanion(
+Future<ServiceConnectionsCompanion> _connectorConnectionUpdateCompanion(
   ServiceConnectionRepository repository,
-  AppSkillCredentialUpdateRequest request,
+  ConnectorConnectionUpdateRequest request,
 ) async {
   if (request.clearSecret) return _clearedSecretCompanion(request.name);
 
@@ -286,9 +286,9 @@ ServiceConnectionsCompanion _clearedSecretCompanion(String name) => .new(
   keySuffix: const Value(null),
 );
 
-Future<List<ServiceConnectionCandidate>> _listAppSkillCredentialCandidates(
+Future<List<ServiceConnectionCandidate>> _listConnectorConnectionCandidates(
   ServiceConnectionRepository repository,
-  AppSkillCredentialCandidatesRequest request,
+  ConnectorConnectionCandidatesRequest request,
 ) async {
   final rows = await _candidateRows(repository, request);
 
@@ -297,7 +297,7 @@ Future<List<ServiceConnectionCandidate>> _listAppSkillCredentialCandidates(
 
 Future<List<ServiceConnectionTable>> _candidateRows(
   ServiceConnectionRepository repository,
-  AppSkillCredentialCandidatesRequest request,
+  ConnectorConnectionCandidatesRequest request,
 ) {
   final query = repository._database.select(
     repository._database.serviceConnections,
@@ -309,23 +309,23 @@ Future<List<ServiceConnectionTable>> _candidateRows(
 
 Expression<bool> _candidateFilter(
   ServiceConnections table,
-  AppSkillCredentialCandidatesRequest request,
+  ConnectorConnectionCandidatesRequest request,
 ) {
   final compatibleProviders = request.compatibleModelProviderIds.toSet();
 
   return table.workspaceId.equals(request.workspaceId) &
       table.isEnabled.equals(true) &
       table.encryptedAuthValue.isNotNull() &
-      (_appSkillCandidateFilter(table, request) |
+      (_connectorCandidateFilter(table, request) |
           _modelProviderCandidateFilter(table, compatibleProviders));
 }
 
-Expression<bool> _appSkillCandidateFilter(
+Expression<bool> _connectorCandidateFilter(
   ServiceConnections table,
-  AppSkillCredentialCandidatesRequest request,
+  ConnectorConnectionCandidatesRequest request,
 ) =>
-    table.kind.equals(ServiceConnectionKindTable.appSkillCredential.name) &
-    table.serviceId.equals(request.appSkillServiceId);
+    table.kind.equals(ServiceConnectionKindTable.customHttp.name) &
+    table.serviceId.equals(request.connectorId);
 
 Expression<bool> _modelProviderCandidateFilter(
   ServiceConnections table,
@@ -343,25 +343,25 @@ ServiceConnectionCandidate _candidate(ServiceConnectionTable row) =>
       kind: row.kind,
     );
 
-Future<ServiceConnectionEntity> _createAppSkillCredential(
+Future<ServiceConnectionEntity> _createConnectorConnection(
   ServiceConnectionRepository repository,
-  AppSkillCredentialCreateRequest request,
+  ConnectorConnectionCreateRequest request,
 ) async {
   final encrypted = await _encryptedApiKey(repository, request.apiKey);
-  final companion = _appSkillCredentialCompanion(request, encrypted);
+  final companion = _connectorConnectionCompanion(request, encrypted);
   final row = await _insertConnection(repository, companion);
 
   return _toEntity(row);
 }
 
-ServiceConnectionsCompanion _appSkillCredentialCompanion(
-  AppSkillCredentialCreateRequest request,
+ServiceConnectionsCompanion _connectorConnectionCompanion(
+  ConnectorConnectionCreateRequest request,
   String encrypted,
 ) =>
     _baseConnectionCompanion((
       name: request.name,
-      serviceId: request.appSkillServiceId,
-      kind: .appSkillCredential,
+      serviceId: request.connectorId,
+      kind: .customHttp,
       authenticationType: .apiKey,
       workspaceId: request.workspaceId,
     )).copyWith(
@@ -884,7 +884,7 @@ _McpCredentialUpdate _mcpCredentialUpdate(
     throw StateError('Unsupported MCP authentication update.'),
 };
 
-Future<void> _deleteAppSkillCredential(
+Future<void> _deleteConnectorConnection(
   ServiceConnectionRepository repository,
   String id, {
   required String workspaceId,
@@ -894,7 +894,7 @@ Future<void> _deleteAppSkillCredential(
   );
   final _ = delete.where(
     (table) =>
-        _appSkillCredentialFilter(table, id: id, workspaceId: workspaceId),
+        _connectorConnectionFilter(table, id: id, workspaceId: workspaceId),
   );
   final _ = await delete.go();
 }
@@ -1030,9 +1030,9 @@ String _candidatePrefixForKind(
     'Model provider {serviceId}',
     serviceId,
   ),
-  .appSkillCredential => _candidatePrefix(
-    LocaleKeys.service_connections_candidate_app_skill,
-    'Service skill {serviceId}',
+  .customHttp => _candidatePrefix(
+    LocaleKeys.service_connections_candidate_connector,
+    'Connector {serviceId}',
     serviceId,
   ),
   _ => serviceId,
@@ -1044,8 +1044,8 @@ String _candidatePrefix(String key, String fallback, String serviceId) {
       LocaleKeys.service_connections_candidate_model_provider.tr(
         namedArgs: {'serviceId': serviceId},
       ),
-    LocaleKeys.service_connections_candidate_app_skill =>
-      LocaleKeys.service_connections_candidate_app_skill.tr(
+    LocaleKeys.service_connections_candidate_connector =>
+      LocaleKeys.service_connections_candidate_connector.tr(
         namedArgs: {'serviceId': serviceId},
       ),
     _ => key,

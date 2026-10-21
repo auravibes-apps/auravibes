@@ -1,9 +1,6 @@
-import 'dart:convert';
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/agents_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -29,12 +26,7 @@ void main() {
   setUp(() => clearAppDatabase(database));
   tearDownAll(database.close);
 
-  for (final action in [
-    'agent-save',
-    'type-save',
-    'type-delete',
-    'connection-save',
-  ]) {
+  for (final action in ['agent-save', 'connection-save']) {
     testWidgets('$action from a direct editor persists and safely returns', (
       tester,
     ) async {
@@ -51,50 +43,28 @@ void main() {
           content: 'Saved instructions',
         ),
       );
-      final definitions = SkillCredentialDefinitionsRepository(database);
-      final definition = await definitions.createDefinition(
-        workspace.id,
-        const .new(
-          title: 'Saved type',
-          attributesJson: '{"key":{"description":"Key"}}',
-        ),
-      );
       final connection = await database
           .into(database.serviceConnections)
           .insertReturning(
             ServiceConnectionsCompanion(
               name: const .new('Saved connection'),
               serviceId: const .new('custom'),
-              kind: const .new(ServiceConnectionKindTable.appSkillCredential),
+              kind: const .new(ServiceConnectionKindTable.customHttp),
               authenticationType: const .new(
                 ServiceAuthenticationTypeTable.none,
               ),
               workspaceId: .new(workspace.id),
             ),
           );
-      final route = switch (action) {
-        'agent-save' => AgentDetailRoute(
-          workspaceId: workspace.id,
-          agentId: agent.id,
-        ),
-        'connection-save' => ServiceConnectionEditRoute(
-          workspaceId: workspace.id,
-          connectionId: connection.id,
-        ),
-        _ => SkillCredentialDefinitionEditRoute(
-          workspaceId: workspace.id,
-          definitionId: definition.id,
-        ),
-      };
-      final destination = switch (action) {
-        'agent-save' => AgentsRoute(workspaceId: workspace.id).location,
-        'connection-save' => ServiceConnectionsRoute(
-          workspaceId: workspace.id,
-        ).location,
-        _ => SkillCredentialDefinitionsRoute(
-          workspaceId: workspace.id,
-        ).location,
-      };
+      final route = action == 'agent-save'
+          ? AgentDetailRoute(workspaceId: workspace.id, agentId: agent.id)
+          : ServiceConnectionEditRoute(
+              workspaceId: workspace.id,
+              connectionId: connection.id,
+            );
+      final destination = action == 'agent-save'
+          ? AgentsRoute(workspaceId: workspace.id).location
+          : ServiceConnectionsRoute(workspaceId: workspace.id).location;
       final router = GoRouter(
         routes: [
           GoRoute(path: '/direct', builder: route.build, onExit: route.onExit),
@@ -161,16 +131,8 @@ void main() {
         ),
         'Saved revision',
       );
-      if (action == 'type-delete') {
-        await tester.tap(find.byTooltip('Delete credential type'));
-        final _ = await tester.pumpAndSettle();
-        await tester.tap(find.text('Delete').last);
-      } else if (action == 'type-save') {
-        await tester.tap(find.byIcon(Icons.save_outlined));
-      } else {
-        await tester.ensureVisible(find.text('Save'));
-        await tester.tap(find.text('Save'));
-      }
+      await tester.ensureVisible(find.text('Save'));
+      await tester.tap(find.text('Save'));
       final _ = await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.text('Saved destination'), findsOneWidget);
@@ -187,15 +149,6 @@ void main() {
           final saved = await query.getSingle();
           expect(saved.name, 'Saved revision');
           expect(saved.encryptedAuthValue, connection.encryptedAuthValue);
-        case 'type-save':
-          final saved = await definitions.getDefinitionById(definition.id);
-          expect(saved?.title, 'Saved revision');
-          expect(
-            (jsonDecode(saved?.attributesJson ?? '{}') as Map)['key'],
-            containsPair('description', 'Key'),
-          );
-        case 'type-delete':
-          expect(await definitions.getDefinitionById(definition.id), isNull);
       }
     });
   }

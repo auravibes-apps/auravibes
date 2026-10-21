@@ -8,30 +8,22 @@ class ToolSpec {
     required this.name,
     required this.description,
     required Map<String, Object?> inputJsonSchema,
-    this.requiresCredential = false,
   }) : inputJsonSchema = _freezeMap(inputJsonSchema);
 
   final String name;
   final String description;
   final Map<String, Object?> inputJsonSchema;
-  final bool requiresCredential;
-
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ToolSpec &&
           name == other.name &&
           description == other.description &&
-          requiresCredential == other.requiresCredential &&
           _jsonEquals(inputJsonSchema, other.inputJsonSchema);
 
   @override
-  int get hashCode => Object.hash(
-    name,
-    description,
-    requiresCredential,
-    _jsonHash(inputJsonSchema),
-  );
+  int get hashCode =>
+      Object.hash(name, description, _jsonHash(inputJsonSchema));
 }
 
 Map<String, Object?> _freezeMap(Map<String, Object?> value) {

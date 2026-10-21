@@ -1,309 +1,61 @@
-import 'dart:ui' as ui;
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/skills.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_app/services/encryption_service.dart';
-import 'package:auravibes_app/services/secret_key_manager.dart';
-import 'package:auravibes_ui/ui.dart';
-import 'package:cryptography/cryptography.dart';
-import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:material_ui/material_ui.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../helpers/test_app.dart';
 
 void main() {
-  final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets('renders Skill instructions and connector references', (
+    tester,
+  ) async {
+    final database = AppDatabase(connection: NativeDatabase.memory());
+    addTearDown(database.close);
+    final workspace = await WorkspaceRepository(database).createWorkspace(
+      const WorkspaceToCreate(name: 'Research workspace', type: .local),
+    );
+    final skill = await SkillsRepository(database).createSkill(
+      workspace.id,
+      const SkillToCreate(
+        kind: .template,
+        title: 'Research notes',
+        description: 'Collect evidence.',
+        content: 'Keep primary sources.',
+        connectorToolIds: ['connector/openai/web_search'],
+      ),
+    );
 
-  setUpAll(() async {
-    SharedPreferences.setMockInitialValues({});
-    await EasyLocalization.ensureInitialized();
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: SkillDetailScreen(
+            workspaceId: workspace.id,
+            skillId: skill.id,
+          ),
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            cloudWorkspaceStateGatewayProvider.overrideWith(
+              (_, _) async => null,
+            ),
+            cloudSkillStoreProvider(workspace.id).overrideWithValue(null),
+          ],
+          workspaceId: workspace.id,
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byType(SkillDetailScreen), findsOneWidget);
+    expect(find.text('Research notes'), findsOneWidget);
+    expect(find.text('Keep primary sources.'), findsOneWidget);
+    expect(find.text('connector/openai/web_search'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
-
-  Widget buildScreen(ValueNotifier<_SkillDetailScreenFixture> fixture) {
-    return EasyLocalization(
-      key: UniqueKey(),
-      child: Builder(
-        builder: (context) {
-          return ValueListenableBuilder<_SkillDetailScreenFixture>(
-            valueListenable: fixture,
-            builder: (context, value, _) {
-              return UncontrolledProviderScope(
-                key: ValueKey(value.container),
-                container: value.container,
-                child: MaterialApp(
-                  home: SkillDetailScreen(
-                    workspaceId: value.workspaceId,
-                    skillId: value.skillId,
-                    key: ValueKey('${value.workspaceId}:${value.skillId}'),
-                  ),
-                  builder: (context, child) =>
-                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
-                  locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
-                  supportedLocales: context.supportedLocales,
-                ),
-              );
-            },
-          );
-        },
-      ),
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useOnlyLangCode: true,
-      useFallbackTranslations: true,
-    );
-  }
-
-  Future<void> pumpUntilFound(WidgetTester tester, Finder finder) async {
-    for (var attempt = 0; attempt < 40; attempt++) {
-      await tester.pump(const Duration(milliseconds: 200));
-      if (finder.evaluate().isNotEmpty) return;
-    }
-    fail('Expected finder to appear: $finder');
-  }
-
-  Future<void> renderSkillCredentialStates(WidgetTester tester) async {
-    await tester.binding.setSurfaceSize(const ui.Size(960, 900));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final appSkillDatabase = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(appSkillDatabase.close);
-    final appSkillWorkspace = await WorkspaceRepository(appSkillDatabase)
-        .createWorkspace(
-          const WorkspaceToCreate(name: 'Test Workspace', type: .local),
-        );
-    final appSkillSession = WorkspaceSession(
-      LocalWorkspaceRef(localWorkspaceId: appSkillWorkspace.id),
-    );
-    final appSkillContainer = ProviderContainer(
-      overrides: [
-        appDatabaseProvider.overrideWithValue(appSkillDatabase),
-        workspaceSessionProvider(appSkillSession)
-            .overrideWithValue(appSkillSession),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider(appSkillWorkspace.id).overrideWithValue(null),
-      ],
-    );
-    addTearDown(appSkillContainer.dispose);
-    final selectedCredentialDatabase = appSkillDatabase;
-    final selectedEncryptionService = EncryptionService(
-      _FakeSecretKeyManager(),
-    );
-    final selectedCredentialWorkspace =
-        await WorkspaceRepository(selectedCredentialDatabase).createWorkspace(
-          const WorkspaceToCreate(name: 'Test Workspace', type: .local),
-        );
-    final selectedCredentialSession = WorkspaceSession(
-      LocalWorkspaceRef(localWorkspaceId: selectedCredentialWorkspace.id),
-    );
-    final selectedCredentialContainer = ProviderContainer(
-      overrides: [
-        appDatabaseProvider.overrideWithValue(selectedCredentialDatabase),
-        encryptionServiceProvider.overrideWithValue(selectedEncryptionService),
-        workspaceSessionProvider(selectedCredentialSession)
-            .overrideWithValue(selectedCredentialSession),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider(selectedCredentialWorkspace.id)
-            .overrideWithValue(null),
-      ],
-    );
-    addTearDown(selectedCredentialContainer.dispose);
-    final definition =
-        await SkillCredentialDefinitionsRepository(selectedCredentialDatabase)
-            .createDefinition(
-              selectedCredentialWorkspace.id,
-              const SkillCredentialDefinitionToCreate(
-                title: 'TheCatAPI Key',
-                attributesJson: '{"apiKey":{"description":"API key"}}',
-              ),
-            );
-    final skillWithDefinition =
-        await SkillsRepository(selectedCredentialDatabase).createSkill(
-          selectedCredentialWorkspace.id,
-          .new(
-            kind: SkillKind.template,
-            title: 'TheCatAPI',
-            description: 'Fetch cat images.',
-            content:
-                '# Cat images\n\nUse **TheCatAPI** to fetch sample images.',
-            credentialDefinitionId: definition.id,
-          ),
-        );
-    final _ =
-        await SkillCredentialsRepository(
-          database: selectedCredentialDatabase,
-          encryptionService: selectedEncryptionService,
-        ).createCredential(
-          selectedCredentialWorkspace.id,
-          .new(
-            credentialDefinitionId: definition.id,
-            name: 'TheCatAPI Key',
-            attributes: const {'apiKey': 'fixture-token'},
-          ),
-        );
-    final optionalDefinition =
-        await SkillCredentialDefinitionsRepository(selectedCredentialDatabase)
-            .createDefinition(
-              selectedCredentialWorkspace.id,
-              const SkillCredentialDefinitionToCreate(
-                title: 'Optional API Key',
-                attributesJson: '{"apiKey":{"description":"API key"}}',
-              ),
-            );
-    final optionalSkill = await SkillsRepository(selectedCredentialDatabase)
-        .createSkill(
-          selectedCredentialWorkspace.id,
-          .new(
-            kind: SkillKind.template,
-            title: 'Optional API Skill',
-            description: 'Can run without credentials.',
-            content: 'Use public endpoints when no credential exists.',
-            credentialDefinitionId: optionalDefinition.id,
-            isCredentialOptional: true,
-          ),
-        );
-    final staleCredentialDatabase = appSkillDatabase;
-    final staleCredentialWorkspace =
-        await WorkspaceRepository(staleCredentialDatabase).createWorkspace(
-          const WorkspaceToCreate(name: 'Test Workspace', type: .local),
-        );
-    final staleCredentialSession = WorkspaceSession(
-      LocalWorkspaceRef(localWorkspaceId: staleCredentialWorkspace.id),
-    );
-    final staleCredentialContainer = ProviderContainer(
-      overrides: [
-        appDatabaseProvider.overrideWithValue(staleCredentialDatabase),
-        workspaceSessionProvider(staleCredentialSession)
-            .overrideWithValue(staleCredentialSession),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider(staleCredentialWorkspace.id)
-            .overrideWithValue(null),
-      ],
-    );
-    addTearDown(staleCredentialContainer.dispose);
-    // Reproduce a legacy dangling reference from before FK enforcement.
-    await staleCredentialDatabase.customStatement('PRAGMA foreign_keys = OFF');
-    final skillWithStaleDefinition = await staleCredentialDatabase
-        .into(staleCredentialDatabase.skills)
-        .insertReturning(
-          SkillsCompanion.custom(
-            workspaceId: Variable<String>(staleCredentialWorkspace.id),
-            source: Variable<String>(SkillSourceTable.user.value),
-            kind: Variable<String>(SkillKindTable.template.value),
-            title: const Variable<String>('Broken Skill'),
-            slug: const Variable<String>('broken-skill'),
-            description: const Variable<String>(
-              'Has a stale credential definition id.',
-            ),
-            content: const Variable<String>('Use credentials.'),
-            credentialDefinitionId: const Variable<String>(
-              'missing-definition-id',
-            ),
-          ),
-        );
-    await staleCredentialDatabase.customStatement('PRAGMA foreign_keys = ON');
-
-    final fixture = ValueNotifier(
-      _SkillDetailScreenFixture(
-        container: selectedCredentialContainer,
-        workspaceId: selectedCredentialWorkspace.id,
-        skillId: skillWithDefinition.id,
-      ),
-    );
-    addTearDown(fixture.dispose);
-
-    final _ = await tester.runAsync(
-      () => tester.pumpWidget(buildScreen(fixture)),
-    );
-    final _ = await tester.pumpAndSettle();
-    final _ = await tester.pump();
-    final _ = await tester.pumpAndSettle();
-    await expectLater(
-      find.byType(SkillDetailScreen),
-      matchesGoldenFile('goldens/skill_detail_user_markdown.png'),
-    );
-
-    await pumpUntilFound(tester, find.byType(Scrollable));
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
-    final _ = await tester.pumpAndSettle();
-    await expectLater(
-      find.byType(SkillDetailScreen),
-      matchesGoldenFile('goldens/skill_detail_user_configured_credential.png'),
-    );
-
-    expect(find.text('TheCatAPI Key'), findsOneWidget);
-    expect(find.text('Credential type not found'), findsNothing);
-
-    fixture.value = _SkillDetailScreenFixture(
-      container: selectedCredentialContainer,
-      workspaceId: selectedCredentialWorkspace.id,
-      skillId: optionalSkill.id,
-    );
-    final _ = await tester.pumpAndSettle();
-    final _ = await tester.pump();
-    final _ = await tester.pumpAndSettle();
-    await pumpUntilFound(tester, find.byType(Scrollable));
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('Optional API Key'), findsOneWidget);
-
-    fixture.value = _SkillDetailScreenFixture(
-      container: staleCredentialContainer,
-      workspaceId: staleCredentialWorkspace.id,
-      skillId: skillWithStaleDefinition.id,
-    );
-    final _ = await tester.pumpAndSettle();
-    final _ = await tester.pump();
-    final _ = await tester.pumpAndSettle();
-    await pumpUntilFound(tester, find.byType(Scrollable));
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('Credential type not found'), findsOneWidget);
-    expect(
-      find.text('This skill needs a credential before it can be loaded.'),
-      findsNothing,
-    );
-    await tester.pumpWidget(const SizedBox.shrink());
-    final _ = await tester.pumpAndSettle();
-  }
-
-  testWidgets(
-    'renders skill markdown and credential states',
-    renderSkillCredentialStates,
-    tags: ['golden'],
-  );
 }
-
-class _FakeSecretKeyManager extends SecretKeyManager {
-  final SecretKey _key = .new(List<int>.filled(32, 7));
-
-  @override
-  Future<SecretKey> getOrCreateSecretKey() async => _key;
-}
-
-class const _SkillDetailScreenFixture({
-  required final ProviderContainer container,
-  required final String workspaceId,
-  required final String skillId,
-});

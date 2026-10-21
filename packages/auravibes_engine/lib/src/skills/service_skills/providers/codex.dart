@@ -1,9 +1,9 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_credential_attribute_definition.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_credential_attribute_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 
-final codexSkill = AppSkillDefinition(
+final codexSkill = ServiceSkillPreset(
   identifier: 'codex',
   slug: 'codex',
   title: 'OpenAI Codex',
@@ -12,16 +12,14 @@ final codexSkill = AppSkillDefinition(
 Use Codex when the user wants current web information through their Codex or
 ChatGPT account. Return the answer and cite sources when available.
 ''',
-  requiresCredential: true,
   compatibleModelProviderIds: ['openai-codex'],
-  kind: .template,
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'web_search',
       title: 'Web search',
       description: 'Answer a question using Codex subscription web search.',
       inputJsonSchema: _codexWebSearchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://chatgpt.com/backend-api/codex/responses',
         inputSchema: _codexWebSearchInputSchema,
@@ -93,8 +91,8 @@ const Map<String, Object> _codexWebSearchInputSchema = {
 };
 
 const _credentialDefinitions = {
-  'apiKey': SkillCredentialAttributeDefinition(description: 'API key.'),
-  'accountId': SkillCredentialAttributeDefinition(
+  'apiKey': ConnectorCredentialAttributeDefinition(description: 'API key.'),
+  'accountId': ConnectorCredentialAttributeDefinition(
     description: 'Optional ChatGPT account id.',
     optional: true,
     secret: false,

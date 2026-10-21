@@ -24,10 +24,10 @@ void main() {
       expect(provider.didResume, isTrue);
     });
 
-    test('marks unresolved nested skill command as not configured', () async {
+    test('marks unresolved shared Connector command as not found', () async {
       final provider = _FakeApproveToolCallProvider(
         resolvedTool: null,
-        toolName: callSkillToolName,
+        toolName: executeConnectorToolName,
       );
       final usecase = ApproveToolCallService<String>(provider: provider);
 
@@ -38,12 +38,12 @@ void main() {
         level: .once,
         approvalDigest: toolCallApprovalDigest(
           messageId: 'message-1',
-          toolName: callSkillToolName,
+          toolName: executeConnectorToolName,
           argumentsRaw: '{"input": "1+1"}',
         ),
       );
 
-      expect(provider.updates, [AgentToolResultStatus.notConfigured]);
+      expect(provider.updates, [AgentToolResultStatus.toolNotFound]);
       expect(provider.didResume, isTrue);
     });
 

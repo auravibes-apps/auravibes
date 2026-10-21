@@ -82,10 +82,10 @@ bool _isAlreadyAdded(
     request.action == .add &&
     loadedSkills.any((item) => item.slug == request.slug);
 
-ConversationSkillActionResult? _credentialFailure(AvailableSkill skill) =>
-    switch (skill.credentialReadiness) {
-      .missing => .credentialsMissing,
-      .unknown => .credentialsUnknown,
+ConversationSkillActionResult? _connectionFailure(AvailableSkill skill) =>
+    switch (skill.connectorReadiness) {
+      .missing => .connectionMissing,
+      .unknown => .connectionUnknown,
       .ready => null,
     };
 
@@ -97,8 +97,8 @@ ConversationSkillActionResult _loadFailure(
   LoadConversationSkillException error,
 ) {
   if (error.localizationKey ==
-      LocaleKeys.skills_screen_error_requires_credential) {
-    return .credentialsMissing;
+      LocaleKeys.skills_screen_error_requires_connection) {
+    return .connectionMissing;
   }
   if (error.localizationKey ==
       LocaleKeys.skills_screen_error_app_skill_disabled) {
@@ -130,7 +130,7 @@ extension on ApplyConversationSkillActionUsecase {
     if (skill == null) return .unavailable;
     if (_isAlreadyAdded(request, resolved.loadedSkills)) return .alreadyAdded;
 
-    final credentialFailure = _credentialFailure(skill);
+    final credentialFailure = _connectionFailure(skill);
     if (credentialFailure != null) return credentialFailure;
 
     return await _loadAndFinishAction(request, skill);

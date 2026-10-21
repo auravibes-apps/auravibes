@@ -487,8 +487,6 @@ abstract final class RouteTitles {
       'models' => LocaleKeys.models_screens_title,
       'service-connections' => LocaleKeys.service_connections_title,
       'skills' => LocaleKeys.skills_screen_title,
-      'skill-credential-definitions' =>
-        LocaleKeys.skill_credentials_definitions_title,
       'agents' => LocaleKeys.agents_title,
       _ => null,
     };

@@ -1,8 +1,8 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 
-final zaiSkill = AppSkillDefinition(
+final zaiSkill = ServiceSkillPreset(
   identifier: 'zai',
   slug: 'zai',
   title: 'Z.ai',
@@ -11,21 +11,19 @@ final zaiSkill = AppSkillDefinition(
 Use Z.ai for direct web result lookup or model-assisted web answers. Prefer it
 when the workspace already has Z.ai model credentials.
 ''',
-  requiresCredential: true,
   compatibleModelProviderIds: [
     'zai',
     'zai-coding-plan',
     'zhipuai',
     'zhipuai-coding-plan',
   ],
-  kind: .template,
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'web_search',
       title: 'Web search',
       description: 'Search the web for structured results.',
       inputJsonSchema: _webSearchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.z.ai/api/paas/v4/web_search',
         inputSchema: _webSearchInputSchema,
@@ -46,12 +44,12 @@ when the workspace already has Z.ai model credentials.
         bodyFormat: .json,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'chat_web_search',
       title: 'Chat web search',
       description: 'Answer a question with Z.ai web-enabled chat.',
       inputJsonSchema: _chatWebSearchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.z.ai/api/paas/v4/chat/completions',
         inputSchema: _chatWebSearchInputSchema,

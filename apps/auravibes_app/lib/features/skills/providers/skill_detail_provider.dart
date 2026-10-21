@@ -201,23 +201,17 @@ SkillDetailNativeValues _nativeSkillValues(
   final text = _nativeSkillText(appSkill, sourceSkill);
   final keys = _nativeSkillKeys(appSkill, sourceSkill);
 
-  return _nativeSkillValuesFrom(
-    text,
-    keys,
-    _nativeSkillCredentialOptional(sourceSkill),
-  );
+  return _nativeSkillValuesFrom(text, keys);
 }
 
 SkillDetailNativeValues _nativeSkillValuesFrom(
   _NativeSkillText text,
   _NativeSkillKeys keys,
-  bool isCredentialOptional,
 ) => (
   title: text.title,
   slug: text.slug,
   description: text.description,
   content: text.content,
-  isCredentialOptional: isCredentialOptional,
   titleKey: keys.titleKey,
   descriptionKey: keys.descriptionKey,
   contentKey: keys.contentKey,
@@ -245,9 +239,6 @@ _NativeSkillText _appSkillText(AppSkillDefinition skill) => (
   description: skill.description,
   content: skill.content,
 );
-
-bool _nativeSkillCredentialOptional(SkillEntity? sourceSkill) =>
-    sourceSkill?.isCredentialOptional ?? false;
 
 _NativeSkillKeys _nativeSkillKeys(
   AppSkillDefinition appSkill,

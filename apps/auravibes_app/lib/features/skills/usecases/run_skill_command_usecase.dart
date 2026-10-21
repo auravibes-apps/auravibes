@@ -1,18 +1,8 @@
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
-import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-
-typedef ListSkillCredentials = Future<Map<String, Object?>> Function({
-  required String conversationId,
-  required String workspaceId,
-  required Map<String, dynamic> arguments,
-});
 
 typedef ListSkillResourceSummaries =
     Future<List<SkillResourceSummary>> Function({
@@ -29,71 +19,18 @@ typedef LoadSkillResourceContent =
       required String resourceSlug,
     });
 
-typedef RunSkillNativeToolRequest = ({
-  String conversationId,
-  String toolCallId,
-  String workspaceId,
-  AgentResolvedToolName target,
-  Map<String, dynamic> arguments,
-});
-
-typedef RunSkillNativeTool = Future<Object?> Function(
-  RunSkillNativeToolRequest request,
-);
-
-typedef RunSkillCommandCoreDependencies = ({
-  ListAvailableSkillsUsecase Function(String workspaceId)
-  listAvailableSkillsUsecase,
-  LoadConversationSkillUsecase Function(String workspaceId)
-  loadConversationSkillUsecase,
-  BuildLoadedSkillManifestsUsecase buildLoadedSkillManifestsUsecase,
-  BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecsUsecase,
-  BuildAppSkillNativeToolSpecsUsecase buildAppSkillNativeToolSpecsUsecase,
-  RunSkillTemplateToolUsecase runSkillTemplateToolUsecase,
-  RunAppSkillToolUsecase runAppSkillToolUsecase,
-});
-
-typedef RunSkillCommandOptionalDependencies = ({
-  ListSkillCredentials listSkillCredentials,
-  ListSkillCredentials? listCatalogSkillCredentials,
-  ListSkillResourceSummaries? listSkillResourceSummaries,
-  LoadSkillResourceContent? loadSkillResourceContent,
-  RunSkillNativeTool? runSkillNativeTool,
-});
-
-typedef RunSkillCommandDependencies = ({
-  RunSkillCommandCoreDependencies core,
-  RunSkillCommandOptionalDependencies optional,
-});
-
 typedef RunSkillCommandRequest = ({
   String conversationId,
-  String toolCallId,
   String workspaceId,
   String commandName,
   Map<String, dynamic> arguments,
 });
 
-typedef _SkillToolExecutionRequest = ({
-  String conversationId,
-  String toolCallId,
-  String workspaceId,
-  AgentResolvedToolName target,
-  SkillCommandTarget command,
-});
-
-typedef _SkillActivation = ({
-  AvailableSkill skill,
-  _SkillManifestRequest manifestRequest,
-  SkillManifest manifest,
-  List<SkillCredentialOption> credentials,
-});
-
-class const _SkillManifestRequest({
+class const _SkillActivationRequest({
   required final String conversationId,
   required final String workspaceId,
   required final String slug,
-  required final String? revision,
+  required final String revision,
 });
 
 class const RunSkillCommandUsecase({
@@ -103,619 +40,198 @@ class const RunSkillCommandUsecase({
   loadConversationSkillUsecase,
   required final BuildLoadedSkillManifestsUsecase
   buildLoadedSkillManifestsUsecase,
-  required final BuildSkillTemplateToolSpecsUsecase
-  buildSkillTemplateToolSpecsUsecase,
-  required final BuildAppSkillNativeToolSpecsUsecase
-  buildAppSkillNativeToolSpecsUsecase,
-  required final RunSkillTemplateToolUsecase runSkillTemplateToolUsecase,
-  required final RunAppSkillToolUsecase runAppSkillToolUsecase,
-  required final ListSkillCredentials listSkillCredentials,
-  final ListSkillCredentials? listCatalogSkillCredentials,
   final ListSkillResourceSummaries? listSkillResourceSummaries,
   final LoadSkillResourceContent? loadSkillResourceContent,
-  final RunSkillNativeTool? runSkillNativeTool,
 }) {
-  // ignore: unnecessary_type_name_in_constructor - Required by Dart primary constructor syntax.
-  RunSkillCommandUsecase.fromDependencies(
-    RunSkillCommandDependencies dependencies,
-  ) : this(
-        listAvailableSkillsUsecase:
-            dependencies.core.listAvailableSkillsUsecase,
-        loadConversationSkillUsecase:
-            dependencies.core.loadConversationSkillUsecase,
-        buildLoadedSkillManifestsUsecase:
-            dependencies.core.buildLoadedSkillManifestsUsecase,
-        buildSkillTemplateToolSpecsUsecase:
-            dependencies.core.buildSkillTemplateToolSpecsUsecase,
-        buildAppSkillNativeToolSpecsUsecase:
-            dependencies.core.buildAppSkillNativeToolSpecsUsecase,
-        runSkillTemplateToolUsecase:
-            dependencies.core.runSkillTemplateToolUsecase,
-        runAppSkillToolUsecase: dependencies.core.runAppSkillToolUsecase,
-        listSkillCredentials: dependencies.optional.listSkillCredentials,
-        listCatalogSkillCredentials:
-            dependencies.optional.listCatalogSkillCredentials,
-        listSkillResourceSummaries:
-            dependencies.optional.listSkillResourceSummaries,
-        loadSkillResourceContent:
-            dependencies.optional.loadSkillResourceContent,
-        runSkillNativeTool: dependencies.optional.runSkillNativeTool,
-      );
-
   Future<Object?> call(RunSkillCommandRequest request) =>
-      _runSkillCommand(this, request);
+      switch (request.commandName) {
+        activateSkillToolName => _activate(request),
+        loadSkillResourceToolName => _loadResource(request),
+        _ => throw FormatException(
+          'Unknown skill command: ${request.commandName}',
+        ),
+      };
 }
 
-Future<Object?> _runSkillCommand(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) => switch (request.commandName) {
-  activateSkillToolName => _activateSkillCommand(usecase, request),
-  listSkillCredentialsToolName => _listSkillCredentialsCommand(
-    usecase,
-    request,
-  ),
-  loadSkillResourceToolName => _loadSkillResourceCommand(usecase, request),
-  callSkillToolName => _callSkillCommand(usecase, request),
-  _ => throw FormatException('Unknown skill command: ${request.commandName}'),
-};
-
-Future<Map<String, Object?>> _listSkillCredentialsCommand(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) => usecase.listSkillCredentials(
-  conversationId: request.conversationId,
-  workspaceId: request.workspaceId,
-  arguments: request.arguments,
-);
-
-Future<Object?> _activateSkillCommand(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) => _activate(usecase, request);
-
-Future<Object?> _activate(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest commandRequest,
-) async {
-  final activation = await _prepareActivation(usecase, commandRequest);
-
-  await _loadConversationSkill(usecase, activation.manifestRequest);
-  final resources = await _activationResources(
-    usecase,
-    commandRequest,
-    activation.skill.slug,
-  );
-
-  return buildSkillActivationResult(
-    manifest: activation.manifest,
-    content: activation.skill.content,
-    credentials: activation.credentials,
-    resources: resources,
-  );
-}
-
-Future<List<SkillResourceSummary>> _activationResources(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-  String skillSlug,
-) async =>
-    await usecase.listSkillResourceSummaries?.call(
-      conversationId: request.conversationId,
-      workspaceId: request.workspaceId,
-      skillSlug: skillSlug,
-    ) ??
-    const [];
-
-Future<Object?> _loadSkillResourceCommand(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) async {
-  final target = SkillResourceTarget.fromArguments(
-    Map<String, Object?>.from(request.arguments),
-  );
-  await _ensureSkillLoaded(usecase, request, target);
-  final resource = await _loadSkillResource(usecase, request, target);
-
-  return _buildSkillResourceResult(target, resource);
-}
-
-Object _buildSkillResourceResult(
-  SkillResourceTarget target,
-  ({String title, String content}) resource,
-) => buildSkillResourceResult(
-  skillSlug: target.skill,
-  resourceSlug: target.resource,
-  title: resource.title,
-  content: resource.content,
-);
-
-Future<void> _ensureSkillLoaded(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-  SkillResourceTarget target,
-) async {
-  final manifest = await _findSkillManifest(
-    usecase,
-    .new(
-      conversationId: request.conversationId,
-      workspaceId: request.workspaceId,
-      slug: target.skill,
-      revision: null,
-    ),
-  );
-  if (manifest == null) {
-    throw StateError('Skill is not loaded: ${target.skill}');
-  }
-}
-
-Future<({String title, String content})> _loadSkillResource(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-  SkillResourceTarget target,
-) async {
-  final resource = await usecase.loadSkillResourceContent?.call(
-    conversationId: request.conversationId,
-    workspaceId: request.workspaceId,
-    skillSlug: target.skill,
-    resourceSlug: target.resource,
-  );
-  if (resource == null) {
-    throw StateError(
-      'Skill resource is unavailable: ${target.skill}/${target.resource}',
-    );
-  }
-
-  return resource;
-}
-
-Future<_SkillActivation> _prepareActivation(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) async {
-  final target = _activationTarget(request);
-  final skill = await _availableSkill(usecase, request, target);
-  final manifestRequest = _activationManifestRequest(request, target);
-  final manifest = await _manifestForAvailableSkill(
-    usecase,
-    manifestRequest,
-    skill,
-  );
-  _validateActivationRevision(manifest, target);
-
-  return (
-    skill: skill,
-    manifestRequest: manifestRequest,
-    manifest: manifest,
-    credentials: await _activationCredentials(
-      usecase,
-      manifestRequest,
-      manifest,
-    ),
-  );
-}
-
-SkillActivationTarget _activationTarget(RunSkillCommandRequest request) =>
-    SkillActivationTarget.fromArguments(
+extension on RunSkillCommandUsecase {
+  Future<Object?> _activate(RunSkillCommandRequest request) {
+    final target = SkillActivationTarget.fromArguments(
       Map<String, Object?>.from(request.arguments),
     );
 
-Future<AvailableSkill> _availableSkill(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-  SkillActivationTarget target,
-) async {
-  final available = await _availableSkills(usecase, request);
-  final skill = available
-      .where((candidate) => candidate.slug == target.slug)
-      .firstOrNull;
-  if (skill == null) throw StateError('Skill is unavailable: ${target.slug}');
-
-  return skill;
-}
-
-Future<List<AvailableSkill>> _availableSkills(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) {
-  final listAvailableSkills = usecase.listAvailableSkillsUsecase(
-    request.workspaceId,
-  );
-
-  return listAvailableSkills(
-    conversationId: request.conversationId,
-    workspaceId: request.workspaceId,
-    filter: .catalog,
-  );
-}
-
-_SkillManifestRequest _activationManifestRequest(
-  RunSkillCommandRequest request,
-  SkillActivationTarget target,
-) => _SkillManifestRequest(
-  conversationId: request.conversationId,
-  workspaceId: request.workspaceId,
-  slug: target.slug,
-  revision: target.revision,
-);
-
-void _validateActivationRevision(
-  SkillManifest manifest,
-  SkillActivationTarget target,
-) {
-  if (manifest.revision == target.revision) return;
-
-  throw FormatException(
-    'Skill revision changed; use the current skill catalog to refresh: '
-    '${target.slug}',
-  );
-}
-
-Future<List<SkillCredentialOption>> _activationCredentials(
-  RunSkillCommandUsecase usecase,
-  _SkillManifestRequest request,
-  SkillManifest manifest,
-) {
-  if (!manifest.tools.any((tool) => tool.credentialRequired)) {
-    return Future.value(const <SkillCredentialOption>[]);
+    return _activateTarget(this, request, target);
   }
 
-  return _loadActivationCredentials(usecase, request);
-}
+  Future<Object?> _activateSkill(
+    _SkillActivationRequest request,
+    AvailableSkill skill,
+  ) async {
+    final manifest = await _manifestForSkill(request, skill);
+    _requireCurrentRevision(manifest, request);
+    await _loadSkill(request);
+    final resources = await _resourcesForSkill(request);
 
-Future<List<SkillCredentialOption>> _loadActivationCredentials(
-  RunSkillCommandUsecase usecase,
-  _SkillManifestRequest request,
-) async {
-  final listSkillCredentials =
-      usecase.listCatalogSkillCredentials ?? usecase.listSkillCredentials;
-  final result = await listSkillCredentials(
-    conversationId: request.conversationId,
-    workspaceId: request.workspaceId,
-    arguments: {'slug': request.slug},
-  );
+    return buildSkillActivationResult(
+      manifest: manifest,
+      content: skill.content,
+      resources: resources,
+    );
+  }
 
-  return _credentialOptions(result);
-}
+  void _requireCurrentRevision(
+    SkillManifest manifest,
+    _SkillActivationRequest request,
+  ) {
+    if (manifest.revision == request.revision) return;
 
-List<SkillCredentialOption> _credentialOptions(Map<String, Object?> result) {
-  final values = result['credentials'];
-  if (values is! Iterable) return const [];
+    throw FormatException(
+      'Skill revision changed; use the current skill catalog to refresh: '
+      '${request.slug}',
+    );
+  }
 
-  return [
-    for (final value in values)
-      if (value is Map && value['id'] is String && value['name'] is String)
-        SkillCredentialOption(
-          credentialId: value['id']! as String,
-          displayName: value['name']! as String,
-        ),
-  ];
-}
+  Future<void> _loadSkill(_SkillActivationRequest request) =>
+      loadConversationSkillUsecase(request.workspaceId).call(
+        conversationId: request.conversationId,
+        workspaceId: request.workspaceId,
+        slug: request.slug,
+      );
 
-Future<void> _loadConversationSkill(
-  RunSkillCommandUsecase usecase,
-  _SkillManifestRequest request,
-) => usecase
-    .loadConversationSkillUsecase(request.workspaceId)
-    .call(
+  Future<List<SkillResourceSummary>> _resourcesForSkill(
+    _SkillActivationRequest request,
+  ) async {
+    final listResources = listSkillResourceSummaries;
+    if (listResources == null) return const [];
+
+    return await listResources(
       conversationId: request.conversationId,
       workspaceId: request.workspaceId,
-      slug: request.slug,
-    );
-
-Future<Map<String, Object?>> _callSkillCommand(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) => _callTool(usecase, request);
-
-Future<Map<String, Object?>> _callTool(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) async {
-  final command = await _validatedCallTool(usecase, request);
-  final result = await _executeCallTool(usecase, request, command);
-
-  return {'result': result};
-}
-
-typedef _SkillCallExecutionRequest = ({
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-  SkillCommandTarget command,
-  AgentResolvedToolName target,
-});
-
-Future<SkillCommandTarget> _validatedCallTool(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) => _RunSkillCommandValidation(usecase)._validatedCommand(
-  request.conversationId,
-  request.workspaceId,
-  request.arguments,
-);
-
-Future<Object?> _executeCallTool(
-  RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-  SkillCommandTarget command,
-) async {
-  final validation = _RunSkillCommandValidation(usecase);
-  final target = await validation._resolveSkillToolTarget(
-    request.conversationId,
-    request.workspaceId,
-    command,
-  );
-
-  return await _executeResolvedSkillTool((
-    usecase: usecase,
-    request: request,
-    command: command,
-    target: target,
-  ));
-}
-
-Future<Object?> _executeResolvedSkillTool(_SkillCallExecutionRequest request) =>
-    _handleResolvedSkillToolFailure(
-      request,
-      () => _runResolvedSkillTool(request),
-    );
-
-Future<Object?> _runResolvedSkillTool(_SkillCallExecutionRequest request) {
-  final call = request.request;
-  final target = request.target;
-  final command = request.command;
-
-  return _RunSkillCommandExecution(request.usecase)._runSkillTool((
-    conversationId: call.conversationId,
-    toolCallId: call.toolCallId,
-    workspaceId: call.workspaceId,
-    target: target,
-    command: command,
-  ));
-}
-
-Future<Object?> _handleResolvedSkillToolFailure(
-  _SkillCallExecutionRequest request,
-  Future<Object?> Function() run,
-) async {
-  try {
-    return await run();
-  } on AgentToolExecutionFailure {
-    rethrow;
-  } on Object catch (error, stackTrace) {
-    _throwSkillToolExecutionFailure(request.target, error, stackTrace);
-  }
-}
-
-Never _throwSkillToolExecutionFailure(
-  AgentResolvedToolName target,
-  Object error,
-  StackTrace stackTrace,
-) => Error.throwWithStackTrace(
-  AgentToolExecutionFailure(
-    responseRaw: 'Tool execution failed.',
-    error: error,
-    stackTrace: stackTrace,
-    failurePhase: 'callSkillTool.${target.kind.name}',
-  ),
-  stackTrace,
-);
-
-class const _RunSkillCommandValidation(final RunSkillCommandUsecase _usecase) {
-  Future<SkillCommandTarget> _validatedCommand(
-    String conversationId,
-    String workspaceId,
-    Map<String, dynamic> arguments,
-  ) {
-    final command = SkillCommandTarget.fromArguments(arguments);
-
-    return _validateCommandManifest(
-      .new(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-        slug: command.skill,
-        revision: command.revision,
-      ),
-      command,
+      skillSlug: request.slug,
     );
   }
 
-  Future<SkillCommandTarget> _validateCommandManifest(
-    _SkillManifestRequest request,
-    SkillCommandTarget command,
+  Future<Object?> _loadResource(RunSkillCommandRequest request) {
+    final target = SkillResourceTarget.fromArguments(
+      Map<String, Object?>.from(request.arguments),
+    );
+
+    return _loadResourceTarget(request, target);
+  }
+
+  Future<Object?> _loadResourceTarget(
+    RunSkillCommandRequest request,
+    SkillResourceTarget target,
   ) async {
-    final manifest = await _requiredManifest(request);
-    final tool = _requiredManifestTool(manifest, command);
-    final schema = tool.inputJsonSchema;
-    final normalized = command.copyWithArguments(
-      normalizeSkillToolArguments(
-        schema,
-        command.args,
-        optionalNullMeansOmission: tool.optionalNullMeansOmission,
-      ),
+    final resource = await _loadedResource(
+      request,
+      target.skill,
+      target.resource,
     );
-    validateToolArguments(schema, normalized.args);
 
-    return normalized;
+    return buildSkillResourceResult(
+      skillSlug: target.skill,
+      resourceSlug: target.resource,
+      title: resource.title,
+      content: resource.content,
+    );
   }
 
-  SkillManifestTool _requiredManifestTool(
-    SkillManifest manifest,
-    SkillCommandTarget command,
-  ) {
-    final manifestTool = manifest.tools
-        .where((candidate) => candidate.name == command.tool)
+  Future<({String title, String content})> _loadedResource(
+    RunSkillCommandRequest request,
+    String skillSlug,
+    String resourceSlug,
+  ) async {
+    await _requireLoadedSkill(this, request, skillSlug);
+
+    return await _skillResourceContent(this, request, skillSlug, resourceSlug);
+  }
+
+  Future<AvailableSkill> _availableSkill(
+    RunSkillCommandRequest request,
+    String slug,
+  ) async {
+    final skills = await this.listAvailableSkillsUsecase(request.workspaceId)(
+      conversationId: request.conversationId,
+      workspaceId: request.workspaceId,
+      filter: .catalog,
+    );
+    final skill = skills
+        .where((candidate) => candidate.slug == slug)
         .firstOrNull;
-    if (manifestTool == null) {
-      throw StateError(
-        'Skill tool is not configured: ${command.skill}/${command.tool}',
-      );
-    }
+    if (skill == null) throw StateError('Skill is unavailable: $slug');
 
-    return manifestTool;
+    return skill;
   }
 
-  Future<SkillManifest> _requiredManifest(_SkillManifestRequest request) async {
-    final manifest = await _findSkillManifest(_usecase, request);
+  Future<SkillManifest> _manifestForSkill(
+    _SkillActivationRequest request,
+    AvailableSkill skill,
+  ) async {
+    final manifests = await buildLoadedSkillManifestsUsecase.call(
+      conversationId: request.conversationId,
+      workspaceId: request.workspaceId,
+      extraSkills: [skill],
+    );
+    final manifest = manifests
+        .where((candidate) => candidate.slug == request.slug)
+        .firstOrNull;
     if (manifest == null) {
-      throw StateError('Skill is not loaded: ${request.slug}');
-    }
-    if (request.revision != null && manifest.revision != request.revision) {
-      throw FormatException(
-        'Skill manifest changed; use the current skill catalog to refresh: '
-        '${request.slug}',
-      );
+      throw StateError('Skill manifest unavailable: ${request.slug}');
     }
 
     return manifest;
   }
-
-  Future<AgentResolvedToolName> _resolveSkillToolTarget(
-    String conversationId,
-    String workspaceId,
-    SkillCommandTarget command,
-  ) async {
-    final targets = _matchingSkillToolTargets(
-      await _skillToolSpecs(conversationId, workspaceId),
-      command,
-    );
-    if (targets.length != 1) {
-      throw StateError(
-        'Skill tool target is ambiguous or missing: '
-        '${command.skill}/${command.tool}',
-      );
-    }
-
-    return targets.single;
-  }
-
-  List<AgentResolvedToolName> _matchingSkillToolTargets(
-    List<ToolSpec> specs,
-    SkillCommandTarget command,
-  ) =>
-      _resolvedSkillTools(specs)
-          .where((candidate) => _matchesSkillTool(candidate, command))
-          .toList();
-
-  Future<List<ToolSpec>> _skillToolSpecs(
-    String conversationId,
-    String workspaceId,
-  ) async {
-    return [
-      ...await _usecase.buildSkillTemplateToolSpecsUsecase.call(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-      ),
-      ...await _usecase.buildAppSkillNativeToolSpecsUsecase.call(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-      ),
-    ];
-  }
 }
 
-bool _matchesSkillTool(
-  AgentResolvedToolName candidate,
-  SkillCommandTarget command,
-) =>
-    candidate.skillSlug == command.skill &&
-    candidate.toolIdentifier == command.tool;
+Future<Object?> _activateTarget(
+  RunSkillCommandUsecase usecase,
+  RunSkillCommandRequest request,
+  SkillActivationTarget target,
+) async {
+  final skill = await usecase._availableSkill(request, target.slug);
+  final manifestRequest = _SkillActivationRequest(
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    slug: target.slug,
+    revision: target.revision,
+  );
 
-List<AgentResolvedToolName> _resolvedSkillTools(List<ToolSpec> specs) {
-  const resolver = AgentToolNameResolver();
-
-  return specs
-      .map((spec) => resolver.resolve(spec.name))
-      .whereType<AgentResolvedToolName>()
-      .toList();
+  return await usecase._activateSkill(manifestRequest, skill);
 }
 
-Future<SkillManifest?> _findSkillManifest(
+Future<void> _requireLoadedSkill(
   RunSkillCommandUsecase usecase,
-  _SkillManifestRequest request,
-) async => (await usecase.buildLoadedSkillManifestsUsecase.call(
-  conversationId: request.conversationId,
-  workspaceId: request.workspaceId,
-)).where((candidate) => candidate.slug == request.slug).firstOrNull;
-
-Future<SkillManifest> _manifestForAvailableSkill(
-  RunSkillCommandUsecase usecase,
-  _SkillManifestRequest request,
-  AvailableSkill skill,
+  RunSkillCommandRequest request,
+  String skillSlug,
 ) async {
   final manifests = await usecase.buildLoadedSkillManifestsUsecase.call(
     conversationId: request.conversationId,
     workspaceId: request.workspaceId,
-    extraSkills: [skill],
   );
+  if (manifests.any((candidate) => candidate.slug == skillSlug)) return;
 
-  return _requiredSkillManifest(manifests, skill.slug);
+  throw StateError('Skill is not loaded: $skillSlug');
 }
 
-SkillManifest _requiredSkillManifest(
-  List<SkillManifest> manifests,
-  String slug,
-) {
-  final manifest = manifests
-      .where((candidate) => candidate.slug == slug)
-      .firstOrNull;
-  if (manifest == null) {
-    throw StateError('Skill manifest unavailable: $slug');
+Future<({String title, String content})> _skillResourceContent(
+  RunSkillCommandUsecase usecase,
+  RunSkillCommandRequest request,
+  String skillSlug,
+  String resourceSlug,
+) async {
+  final loadResource = usecase.loadSkillResourceContent;
+  if (loadResource == null) {
+    throw StateError('Skill resource is unavailable: $skillSlug/$resourceSlug');
   }
-
-  return manifest;
-}
-
-class const _RunSkillCommandExecution(final RunSkillCommandUsecase _usecase) {
-  Future<Object?> _runSkillTool(_SkillToolExecutionRequest request) =>
-      switch (request.target.kind) {
-        .skillTemplate => _runSkillTemplateTool(
-          request.workspaceId,
-          request.command,
-        ),
-        .skillAppTemplate => _runAppSkillTool(request),
-        .skillNative => _runSkillNativeTool(request),
-        _ => throw StateError(
-          'Unsupported skill tool target: ${request.target.fullName}',
-        ),
-      };
-
-  Future<Object?> _runSkillTemplateTool(
-    String workspaceId,
-    SkillCommandTarget command,
-  ) => _usecase.runSkillTemplateToolUsecase.call(
-    workspaceId: workspaceId,
-    skillSlug: command.skill,
-    toolSlug: command.tool,
-    arguments: Map<String, dynamic>.from(command.args),
-  );
-
-  Future<Object?> _runSkillNativeTool(_SkillToolExecutionRequest request) {
-    final nativeRunner = _usecase.runSkillNativeTool;
-    if (nativeRunner == null) return _runAppSkillTool(request);
-
-    return nativeRunner((
-      conversationId: request.conversationId,
-      toolCallId: request.toolCallId,
-      workspaceId: request.workspaceId,
-      target: request.target,
-      arguments: Map<String, dynamic>.from(request.command.args),
-    ));
-  }
-
-  Future<Object?> _runAppSkillTool(_SkillToolExecutionRequest request) =>
-      _runAppSkillToolWithArguments(
-        request,
-        Map<String, dynamic>.from(request.command.args),
-      );
-
-  Future<Object?> _runAppSkillToolWithArguments(
-    _SkillToolExecutionRequest request,
-    Map<String, dynamic> arguments,
-  ) => _usecase.runAppSkillToolUsecase.call(
+  final resource = await loadResource(
+    conversationId: request.conversationId,
     workspaceId: request.workspaceId,
-    skillSlug: request.command.skill,
-    toolSlug: request.command.tool,
-    arguments: arguments,
+    skillSlug: skillSlug,
+    resourceSlug: resourceSlug,
   );
+  if (resource == null) {
+    throw StateError('Skill resource is unavailable: $skillSlug/$resourceSlug');
+  }
+
+  return resource;
 }
