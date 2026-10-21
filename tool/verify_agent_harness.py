@@ -12,6 +12,8 @@ from urllib.parse import unquote, urlsplit
 HTML_TAG_START = re.compile(
     r"</?[A-Za-z][A-Za-z0-9:-]*(?:[ \t\r\n]|/?>|$)"
 )
+ACTION_USES = re.compile(r"^\s*(?:-\s*)?uses:\s*(\S+)")
+FULL_COMMIT_SHA = re.compile(r"[0-9a-fA-F]{40}")
 
 
 class _HtmlImageSourceParser(HTMLParser):
@@ -261,6 +263,27 @@ def verify(root):
     def fail(path, message):
         errors.append(f"{path.relative_to(root)}: {message}")
 
+    for directory in (root / ".github/workflows", root / ".github/actions"):
+        if not directory.is_dir():
+            continue
+        for path in sorted(directory.rglob("*")):
+            if not path.is_file() or path.suffix.lower() not in {".yml", ".yaml"}:
+                continue
+            for line_number, line in enumerate(path.read_text().splitlines(), start=1):
+                match = ACTION_USES.match(line)
+                if not match:
+                    continue
+                reference = match.group(1).strip("\"'")
+                if reference.startswith("./"):
+                    continue
+                _, separator, revision = reference.rpartition("@")
+                if not separator or not FULL_COMMIT_SHA.fullmatch(revision):
+                    fail(
+                        path,
+                        f"Mutable or incomplete external action reference '{reference}' "
+                        f"on line {line_number}. Pin it to a full 40-character commit SHA.",
+                    )
+
     main = root / "AGENTS.md"
     instructions = [main]
     if main.is_file():
@@ -392,7 +415,8 @@ def main():
         print("Repair affected guidance, then rerun python3 tool/verify_agent_harness.py.", file=sys.stderr)
         return 1
     print(
-        "Harness verification passed (documentation links and image references, "
+        "Harness verification passed (immutable GitHub action references, "
+        "documentation links and image references, "
         "context documents, aliases, metadata, evaluation schema)."
     )
     print("Behavioral model trials are separate; this check does not run them.")

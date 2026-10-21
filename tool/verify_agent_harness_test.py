@@ -78,6 +78,58 @@ class HarnessVerificationTest(unittest.TestCase):
         self.assertEqual(verify(self.root), [])
         self.assertEqual((self.skill / "SKILL.md").read_bytes(), before)
 
+    def test_mutable_action_references_report_path_and_reference(self):
+        workflow = self.root / ".github/workflows/actions.yml"
+        workflow.parent.mkdir(parents=True)
+        workflow.write_text(
+            "jobs:\n"
+            "  check:\n"
+            "    steps:\n"
+            "      - uses: example-org/workflow-action@v4\n"
+            "      - uses: ./.github/actions/local-action\n"
+        )
+        action = self.root / ".github/actions/example/action.yml"
+        action.parent.mkdir(parents=True)
+        action.write_text(
+            "runs:\n"
+            "  using: composite\n"
+            "  steps:\n"
+            "    - uses: example-org/composite-action@main\n"
+        )
+
+        errors = verify(self.root)
+
+        self.assertEqual(len(errors), 2, errors)
+        self.assertTrue(
+            any(
+                ".github/workflows/actions.yml" in error
+                and "example-org/workflow-action@v4" in error
+                for error in errors
+            ),
+            errors,
+        )
+        self.assertTrue(
+            any(
+                ".github/actions/example/action.yml" in error
+                and "example-org/composite-action@main" in error
+                for error in errors
+            ),
+            errors,
+        )
+
+    def test_full_sha_and_local_action_references_are_accepted(self):
+        workflow = self.root / ".github/workflows/actions.yml"
+        workflow.parent.mkdir(parents=True)
+        workflow.write_text(
+            "jobs:\n"
+            "  check:\n"
+            "    steps:\n"
+            "      - uses: example-org/action@0123456789abcdef0123456789abcdef01234567 # v1\n"
+            "      - uses: ./.github/actions/local-action\n"
+        )
+
+        self.assertEqual(verify(self.root), [])
+
     def test_all_current_mapped_contexts_are_checked(self):
         self.assertEqual(len(self.contexts), 6)
         self.assertIn(self.root / "apps/auravibes_server/CONTEXT.md", self.contexts)
