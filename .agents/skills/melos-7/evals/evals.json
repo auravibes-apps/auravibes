@@ -18,7 +18,7 @@
     {
       "id": 3,
       "prompt": "The root `pubspec.yaml` declares a Dart Pub workspace. Can I skip Melos bootstrap on a fresh checkout, or does CI still use it? Explain which setup commands reproduce the repository's CI path.",
-      "expected_output": "The agent distinguishes Pub workspace membership and SDK/Pub setup from the repository's Melos bootstrap. It checks the root Melos dependency and CI setup, recommends `fvm use` followed by `fvm dart run melos bootstrap`, and does not claim bootstrap is redundant.",
+      "expected_output": "The agent explains that Pub workspace membership does not replace Melos bootstrap, which CI also runs, and recommends `fvm use` followed by `fvm dart run melos bootstrap`.",
       "files": [],
       "checks": ["melos_bootstrap"]
     },

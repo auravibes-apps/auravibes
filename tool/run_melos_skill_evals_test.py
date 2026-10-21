@@ -15,11 +15,22 @@ class MelosSkillEvalTest(unittest.TestCase):
         self.root = Path(self.temp.name)
         self._write_repository_facts()
 
-    def test_reports_pass_per_behavior_scenario_without_matching_prose(self):
+    def test_reports_pass_per_behavior_scenario_with_equivalent_expected_output(self):
         cases_path = self.root / ".agents/skills/melos-7/evals/evals.json"
         cases = json.loads(cases_path.read_text())
-        for case in cases["evals"][:3]:
-            case["expected_output"] = "A different explanation with the same intent."
+        cases["evals"][0]["expected_output"] = (
+            "Formatting is permitted. Apply it with `fvm dart format`; the pinned "
+            "check is `fvm dart run melos run format:check`."
+        )
+        cases["evals"][1]["expected_output"] = (
+            "This repo's `.fvmrc` makes Pub resolution run when FVM switches SDKs. "
+            "`--skip-pub-get` bypasses that resolution."
+        )
+        cases["evals"][2]["expected_output"] = (
+            "CI still uses bootstrap. A Pub workspace alone cannot replace Melos "
+            "bootstrap. Run `fvm use`, then "
+            "`fvm dart run melos bootstrap`."
+        )
         cases_path.write_text(json.dumps(cases))
 
         results = evaluate_skill_evals(self.root)
@@ -28,6 +39,42 @@ class MelosSkillEvalTest(unittest.TestCase):
             [(result.case_id, result.passed) for result in results],
             [(1, True), (2, True), (3, True)],
         )
+
+    def test_rejects_expected_output_that_contradicts_repository_behavior(self):
+        cases_path = self.root / ".agents/skills/melos-7/evals/evals.json"
+        cases = json.loads(cases_path.read_text())
+        cases["evals"][0]["expected_output"] = (
+            "Never format source files; run the format check only."
+        )
+        cases["evals"][1]["expected_output"] = (
+            "The `.fvmrc` disables Pub resolution, and `--skip-pub-get` enables it."
+        )
+        cases["evals"][2]["expected_output"] = (
+            "CI still runs Melos bootstrap. Pub workspace membership does not "
+            "replace Melos bootstrap, but bootstrap is redundant. Run `fvm use`, "
+            "then `fvm dart run melos bootstrap`."
+        )
+        cases_path.write_text(json.dumps(cases))
+
+        results = evaluate_skill_evals(self.root)
+
+        self.assertEqual(
+            [(result.case_id, result.passed) for result in results],
+            [(1, False), (2, False), (3, False)],
+        )
+
+    def test_requires_expected_output_for_behavior_scenarios(self):
+        cases_path = self.root / ".agents/skills/melos-7/evals/evals.json"
+        cases = json.loads(cases_path.read_text())
+        del cases["evals"][1]["expected_output"]
+        cases_path.write_text(json.dumps(cases))
+
+        results = evaluate_skill_evals(self.root)
+
+        self.assertTrue(results[0].passed)
+        self.assertFalse(results[1].passed)
+        self.assertIn("expected_output", " ".join(results[1].failures))
+        self.assertTrue(results[2].passed)
 
     def test_reports_each_scenario_failure_with_its_missing_behavior(self):
         config_path = self.root / ".fvmrc"
@@ -117,21 +164,32 @@ class MelosSkillEvalTest(unittest.TestCase):
                         {
                             "id": 1,
                             "prompt": "How do I check formatting?",
-                            "expected_output": "A behavior-based format outcome.",
+                            "expected_output": (
+                                "Formatting changes are allowed. Use `fvm dart run "
+                                "melos run format:check`."
+                            ),
                             "files": [],
                             "checks": ["formatting"],
                         },
                         {
                             "id": 2,
                             "prompt": "What does FVM do with Pub?",
-                            "expected_output": "A behavior-based FVM outcome.",
+                            "expected_output": (
+                                "FVM runs Pub resolution by default when switching "
+                                "SDKs; this repo's `.fvmrc` enables it. "
+                                "`--skip-pub-get` skips that resolution."
+                            ),
                             "files": [],
                             "checks": ["fvm_pub_resolution"],
                         },
                         {
                             "id": 3,
                             "prompt": "Is Melos bootstrap still needed?",
-                            "expected_output": "A behavior-based bootstrap outcome.",
+                            "expected_output": (
+                                "CI still runs Melos bootstrap. Pub workspace "
+                                "membership does not replace Melos bootstrap. Run `fvm "
+                                "use`, then `fvm dart run melos bootstrap`."
+                            ),
                             "files": [],
                             "checks": ["melos_bootstrap"],
                         },

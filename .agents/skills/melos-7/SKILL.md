@@ -34,7 +34,7 @@ Run the three Melos setup scenarios from the repository root:
 python3 tool/run_melos_skill_evals.py
 ```
 
-The offline checks validate repository-backed setup behavior against the current FVM configuration, workspace scripts, setup guidance, and CI bootstrap path. They report each scenario separately and check required facts and commands, not model-generated replies or exact wording.
+The offline checks validate each scenario's `expected_output` against repository-backed FVM configuration, workspace scripts, setup guidance, and the CI bootstrap path. They report each scenario separately, accept equivalent wording, and do not call a model.
 
 ## Task steps
 

@@ -16,7 +16,7 @@ class ScenarioResult:
     failures: tuple[str, ...]
 
 
-BehaviorCheck = Callable[[Path], list[str]]
+BehaviorCheck = Callable[[Path, str], list[str]]
 
 
 def _read_text(root: Path, relative_path: str) -> str | None:
@@ -43,7 +43,7 @@ def _matches_any(content: str, patterns: tuple[str, ...]) -> bool:
     )
 
 
-def _formatting_check(root: Path) -> list[str]:
+def _formatting_check(root: Path, expected_output: str) -> list[str]:
     failures = []
     pubspec = _read_text(root, "pubspec.yaml")
     workflow = _read_text(root, ".github/workflows/ci.yml")
@@ -99,10 +99,32 @@ def _formatting_check(root: Path) -> list[str]:
         failures.append("Melos guidance must allow contributors to format source files.")
     if workflow is None or "melos run format:check" not in workflow:
         failures.append("CI does not run the Melos format:check script.")
+    if (
+        not _matches_any(
+            expected_output,
+            (
+                r"\bformatting (?:changes )?(?:are|is) (?:allowed|permitted)\b",
+                r"\b(?:may|can) format (?:source )?files\b",
+                r"\bformat (?:source )?files (?:is|are) (?:allowed|permitted)\b",
+            ),
+        )
+        or "fvm dart run melos run format:check" not in expected_output
+        or _matches_any(
+            expected_output,
+            (
+                r"\b(?:do not|don't|must not|never|should not|avoid)\s+(?:run|use|apply)\s+(?:the )?(?:dart )?formatter\b",
+                r"\bformatting (?:changes )?are not allowed\b",
+                r"\bdo not run formatting commands\b",
+            ),
+        )
+    ):
+        failures.append(
+            "The expected output must allow formatting and recommend the pinned format:check command."
+        )
     return failures
 
 
-def _fvm_pub_resolution(root: Path) -> list[str]:
+def _fvm_pub_resolution(root: Path, expected_output: str) -> list[str]:
     failures = []
     config_path = root / ".fvmrc"
     try:
@@ -135,10 +157,39 @@ def _fvm_pub_resolution(root: Path) -> list[str]:
         failures.append(
             "Melos setup guidance does not explain default Pub resolution and the skip flag."
         )
+    if (
+        ".fvmrc" not in expected_output
+        or not _matches_any(
+            expected_output,
+            (
+                r"\bfvm.{0,100}runs? pub (?:get|resolution) by default.{0,100}(?:switch|change).{0,40}sdk",
+                r"\bwhen fvm (?:switches|changes).{0,100}sdk.{0,100}pub (?:get|resolution).{0,40}by default",
+                r"\bpub (?:get|resolution).{0,80}by default.{0,100}fvm.{0,60}(?:switch|change).{0,40}sdk",
+                r"\.fvmrc.{0,80}(?:makes|enables?|sets?).{0,60}pub (?:get|resolution).{0,60}run(?:s|ning)? when fvm (?:switches|changes).{0,40}sdk",
+            ),
+        )
+        or not _matches_any(
+            expected_output,
+            (
+                r"--skip-pub-get.{0,80}\b(?:skip(?:s)?|bypass(?:es)?|disable(?:s|d)?|avoid(?:s)?)\b.{0,40}(?:pub (?:get|resolution)|that resolution)",
+                r"\b(?:skip(?:s)?|bypass(?:es)?|disable(?:s|d)?|avoid(?:s)?).{0,60}pub (?:get|resolution).{0,60}--skip-pub-get",
+            ),
+        )
+        or _matches_any(
+            expected_output,
+            (
+                r"\.fvmrc.{0,80}(?:disables?|turns off) pub (?:get|resolution)",
+                r"fvm.{0,80}(?:does not|doesn't|never|will not|won't) run pub (?:get|resolution) by default",
+            ),
+        )
+    ):
+        failures.append(
+            "The expected output must explain .fvmrc default Pub resolution and how --skip-pub-get skips it."
+        )
     return failures
 
 
-def _melos_bootstrap(root: Path) -> list[str]:
+def _melos_bootstrap(root: Path, expected_output: str) -> list[str]:
     failures = []
     pubspec = _read_text(root, "pubspec.yaml")
     skill = _read_text(root, ".agents/skills/melos-7/SKILL.md")
@@ -174,6 +225,36 @@ def _melos_bootstrap(root: Path) -> list[str]:
         ),
     ):
         failures.append("Melos guidance must keep bootstrap distinct from Pub workspace setup.")
+    use_index = expected_output.find("fvm use")
+    bootstrap_index = expected_output.find("fvm dart run melos bootstrap")
+    if (
+        not _matches_any(
+            expected_output,
+            (
+                r"pub workspace.{0,100}(?:does not|doesn't|cannot|can't|is not|isn't).{0,80}(?:replace|substitute for).{0,40}(?:melos )?bootstrap",
+                r"(?:melos )?bootstrap.{0,80}(?:is |remains )?(?:still )?(?:required|needed)",
+            ),
+        )
+        or not _matches_any(
+            expected_output,
+            (
+                r"\bci.{0,80}(?:runs?|uses?).{0,60}(?:melos )?bootstrap",
+                r"(?:melos )?bootstrap.{0,80}(?:runs?|is used).{0,60}\bci\b",
+            ),
+        )
+        or _matches_any(
+            expected_output,
+            (
+                r"pub workspace membership makes (?:melos )?bootstrap redundant",
+                r"(?:melos )?bootstrap (?:is )?(?:redundant|unnecessary|not needed|can be skipped)",
+            ),
+        )
+        or use_index == -1
+        or bootstrap_index <= use_index
+    ):
+        failures.append(
+            "The expected output must distinguish Pub workspace from CI bootstrap and recommend fvm use before Melos bootstrap."
+        )
     return failures
 
 
@@ -214,13 +295,17 @@ def evaluate_skill_evals(root: Path) -> list[ScenarioResult]:
             )
 
         failures = []
+        expected_output = case.get("expected_output")
+        if not isinstance(expected_output, str) or not expected_output.strip():
+            failures.append("The behavior eval must define expected_output.")
+            expected_output = ""
         for check_name in checks:
             check = _CHECKS.get(check_name) if isinstance(check_name, str) else None
             if check is None:
                 failures.append(f"Unknown behavior check: {check_name!r}.")
                 continue
             check_counts[check_name] += 1
-            failures.extend(check(root))
+            failures.extend(check(root, expected_output))
         results.append(
             ScenarioResult(
                 case_id=case_id,
