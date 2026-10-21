@@ -22,6 +22,8 @@ abstract class ConversationMessageView
   ConversationMessageView._({
     required this.id,
     required this.conversationId,
+    this.sourceConversationId,
+    this.sourceMessageId,
     this.turnId,
     this.turnRevision,
     required this.role,
@@ -39,6 +41,8 @@ abstract class ConversationMessageView
   factory ConversationMessageView({
     required String id,
     required String conversationId,
+    String? sourceConversationId,
+    String? sourceMessageId,
     String? turnId,
     int? turnRevision,
     required String role,
@@ -59,6 +63,9 @@ abstract class ConversationMessageView
     return ConversationMessageView(
       id: jsonSerialization['id'] as String,
       conversationId: jsonSerialization['conversationId'] as String,
+      sourceConversationId:
+          jsonSerialization['sourceConversationId'] as String?,
+      sourceMessageId: jsonSerialization['sourceMessageId'] as String?,
       turnId: jsonSerialization['turnId'] as String?,
       turnRevision: jsonSerialization['turnRevision'] as int?,
       role: jsonSerialization['role'] as String,
@@ -88,6 +95,10 @@ abstract class ConversationMessageView
   String id;
 
   String conversationId;
+
+  String? sourceConversationId;
+
+  String? sourceMessageId;
 
   String? turnId;
 
@@ -119,6 +130,8 @@ abstract class ConversationMessageView
   ConversationMessageView copyWith({
     String? id,
     String? conversationId,
+    String? sourceConversationId,
+    String? sourceMessageId,
     String? turnId,
     int? turnRevision,
     String? role,
@@ -138,6 +151,9 @@ abstract class ConversationMessageView
       '__className__': 'ConversationMessageView',
       'id': id,
       'conversationId': conversationId,
+      if (sourceConversationId != null)
+        'sourceConversationId': sourceConversationId,
+      if (sourceMessageId != null) 'sourceMessageId': sourceMessageId,
       if (turnId != null) 'turnId': turnId,
       if (turnRevision != null) 'turnRevision': turnRevision,
       'role': role,
@@ -159,6 +175,9 @@ abstract class ConversationMessageView
       '__className__': 'ConversationMessageView',
       'id': id,
       'conversationId': conversationId,
+      if (sourceConversationId != null)
+        'sourceConversationId': sourceConversationId,
+      if (sourceMessageId != null) 'sourceMessageId': sourceMessageId,
       if (turnId != null) 'turnId': turnId,
       if (turnRevision != null) 'turnRevision': turnRevision,
       'role': role,
@@ -186,6 +205,8 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
   _ConversationMessageViewImpl({
     required String id,
     required String conversationId,
+    String? sourceConversationId,
+    String? sourceMessageId,
     String? turnId,
     int? turnRevision,
     required String role,
@@ -201,6 +222,8 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
   }) : super._(
          id: id,
          conversationId: conversationId,
+         sourceConversationId: sourceConversationId,
+         sourceMessageId: sourceMessageId,
          turnId: turnId,
          turnRevision: turnRevision,
          role: role,
@@ -222,6 +245,8 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
   ConversationMessageView copyWith({
     String? id,
     String? conversationId,
+    Object? sourceConversationId = _Undefined,
+    Object? sourceMessageId = _Undefined,
     Object? turnId = _Undefined,
     Object? turnRevision = _Undefined,
     String? role,
@@ -238,6 +263,12 @@ class _ConversationMessageViewImpl extends ConversationMessageView {
     return ConversationMessageView(
       id: id ?? this.id,
       conversationId: conversationId ?? this.conversationId,
+      sourceConversationId: sourceConversationId is String?
+          ? sourceConversationId
+          : this.sourceConversationId,
+      sourceMessageId: sourceMessageId is String?
+          ? sourceMessageId
+          : this.sourceMessageId,
       turnId: turnId is String? ? turnId : this.turnId,
       turnRevision: turnRevision is int? ? turnRevision : this.turnRevision,
       role: role ?? this.role,

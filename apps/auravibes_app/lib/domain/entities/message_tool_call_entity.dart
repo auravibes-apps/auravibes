@@ -253,6 +253,10 @@ abstract class const MessageEntity._() with _$MessageEntity {
     /// Timestamp when the message was last updated.
     required DateTime updatedAt,
 
+    /// Canonical source IDs for cloud messages materialized into a fork.
+    String? sourceConversationId,
+    String? sourceMessageId,
+
     /// Additional metadata for the message (JSON).
     MessageMetadataEntity? metadata,
 
@@ -280,6 +284,10 @@ abstract class const MessageEntity._() with _$MessageEntity {
       metadata?.modelMetadata[MessageMetadataEntity
               .agentTranscriptContextMetadataKey] ==
           true;
+
+  bool get isBookmarkEligible =>
+      status == MessageStatus.sent &&
+      (messageType == MessageType.text || messageType == MessageType.image);
 
   bool isForConversation(String conversationId) =>
       this.conversationId == conversationId;

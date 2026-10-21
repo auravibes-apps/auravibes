@@ -72,6 +72,42 @@ class ConversationEndpoint extends Endpoint {
     );
   }
 
+  Future<void> bookmarkMessage(
+    Session session,
+    BookmarkMessageRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.bookmarkMessage(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<void> unbookmarkMessage(
+    Session session,
+    UnbookmarkMessageRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.unbookmarkMessage(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<List<MessageBookmarkView>> listMessageBookmarks(
+    Session session,
+    ListMessageBookmarksRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.listMessageBookmarks(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
   Future<List<ConversationMessageSearchResult>> searchMessages(
     Session session,
     SearchConversationMessagesRequest request,

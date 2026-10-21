@@ -114,7 +114,7 @@ class _ConversationMessageSearchScreenState
     conversationMessageSearchPageProvider((
       query: query,
       workspaceId: _scope == .currentWorkspace ? widget.workspaceId : null,
-      offset: pageIndex * conversationMessageSearchPageSize,
+      offset: pageIndex * ConversationMessageSearchProvider.pageSize,
     )).future,
   );
 
@@ -432,7 +432,9 @@ class const _SearchResultsFooter({
 List<ConversationMessageSearchResult> _mergeSearchResults(
   List<ConversationMessageSearchResult> current,
   List<ConversationMessageSearchResult> next,
-) => [...current, ...next]..sort(compareConversationMessageSearchResults);
+) =>
+    [...current, ...next]
+      ..sort(ConversationMessageSearchProvider.compareResults);
 
 ConversationMessageSearchPage _mergeSearchPage(
   ConversationMessageSearchPage current,

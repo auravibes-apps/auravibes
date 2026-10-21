@@ -9698,6 +9698,21 @@ class $MessagesTable extends Messages
       'CHECK ("is_user" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _isBookmarkedMeta = const VerificationMeta(
+    'isBookmarked',
+  );
+  @override
+  late final GeneratedColumn<bool> isBookmarked = GeneratedColumn<bool>(
+    'is_bookmarked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_bookmarked" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   late final GeneratedColumnWithTypeConverter<MessageTableStatus, String>
   status = GeneratedColumn<String>(
@@ -9727,6 +9742,7 @@ class $MessagesTable extends Messages
     content,
     messageType,
     isUser,
+    isBookmarked,
     status,
     metadata,
   ];
@@ -9784,6 +9800,15 @@ class $MessagesTable extends Messages
     } else if (isInserting) {
       context.missing(_isUserMeta);
     }
+    if (data.containsKey('is_bookmarked')) {
+      context.handle(
+        _isBookmarkedMeta,
+        isBookmarked.isAcceptableOrUnknown(
+          data['is_bookmarked']!,
+          _isBookmarkedMeta,
+        ),
+      );
+    }
     if (data.containsKey('metadata')) {
       context.handle(
         _metadataMeta,
@@ -9829,6 +9854,10 @@ class $MessagesTable extends Messages
         DriftSqlType.bool,
         data['${effectivePrefix}is_user'],
       )!,
+      isBookmarked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_bookmarked'],
+      )!,
       status: $MessagesTable.$converterstatus.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -9870,6 +9899,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
   final String content;
   final MessagesTableType messageType;
   final bool isUser;
+  final bool isBookmarked;
   final MessageTableStatus status;
   final String? metadata;
   const MessagesTable({
@@ -9880,6 +9910,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     required this.content,
     required this.messageType,
     required this.isUser,
+    required this.isBookmarked,
     required this.status,
     this.metadata,
   });
@@ -9897,6 +9928,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
       );
     }
     map['is_user'] = Variable<bool>(isUser);
+    map['is_bookmarked'] = Variable<bool>(isBookmarked);
     {
       map['status'] = Variable<String>(
         $MessagesTable.$converterstatus.toSql(status),
@@ -9917,6 +9949,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
       content: Value(content),
       messageType: Value(messageType),
       isUser: Value(isUser),
+      isBookmarked: Value(isBookmarked),
       status: Value(status),
       metadata: metadata == null && nullToAbsent
           ? const Value.absent()
@@ -9939,6 +9972,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
         serializer.fromJson<String>(json['messageType']),
       ),
       isUser: serializer.fromJson<bool>(json['isUser']),
+      isBookmarked: serializer.fromJson<bool>(json['isBookmarked']),
       status: $MessagesTable.$converterstatus.fromJson(
         serializer.fromJson<String>(json['status']),
       ),
@@ -9958,6 +9992,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
         $MessagesTable.$convertermessageType.toJson(messageType),
       ),
       'isUser': serializer.toJson<bool>(isUser),
+      'isBookmarked': serializer.toJson<bool>(isBookmarked),
       'status': serializer.toJson<String>(
         $MessagesTable.$converterstatus.toJson(status),
       ),
@@ -9973,6 +10008,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     String? content,
     MessagesTableType? messageType,
     bool? isUser,
+    bool? isBookmarked,
     MessageTableStatus? status,
     Value<String?> metadata = const Value.absent(),
   }) => MessagesTable(
@@ -9983,6 +10019,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     content: content ?? this.content,
     messageType: messageType ?? this.messageType,
     isUser: isUser ?? this.isUser,
+    isBookmarked: isBookmarked ?? this.isBookmarked,
     status: status ?? this.status,
     metadata: metadata.present ? metadata.value : this.metadata,
   );
@@ -9999,6 +10036,9 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
           ? data.messageType.value
           : this.messageType,
       isUser: data.isUser.present ? data.isUser.value : this.isUser,
+      isBookmarked: data.isBookmarked.present
+          ? data.isBookmarked.value
+          : this.isBookmarked,
       status: data.status.present ? data.status.value : this.status,
       metadata: data.metadata.present ? data.metadata.value : this.metadata,
     );
@@ -10014,6 +10054,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
           ..write('content: $content, ')
           ..write('messageType: $messageType, ')
           ..write('isUser: $isUser, ')
+          ..write('isBookmarked: $isBookmarked, ')
           ..write('status: $status, ')
           ..write('metadata: $metadata')
           ..write(')'))
@@ -10029,6 +10070,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     content,
     messageType,
     isUser,
+    isBookmarked,
     status,
     metadata,
   );
@@ -10043,6 +10085,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
           other.content == this.content &&
           other.messageType == this.messageType &&
           other.isUser == this.isUser &&
+          other.isBookmarked == this.isBookmarked &&
           other.status == this.status &&
           other.metadata == this.metadata);
 }
@@ -10055,6 +10098,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
   final Value<String> content;
   final Value<MessagesTableType> messageType;
   final Value<bool> isUser;
+  final Value<bool> isBookmarked;
   final Value<MessageTableStatus> status;
   final Value<String?> metadata;
   final Value<int> rowid;
@@ -10066,6 +10110,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     this.content = const Value.absent(),
     this.messageType = const Value.absent(),
     this.isUser = const Value.absent(),
+    this.isBookmarked = const Value.absent(),
     this.status = const Value.absent(),
     this.metadata = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -10078,6 +10123,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     required String content,
     required MessagesTableType messageType,
     required bool isUser,
+    this.isBookmarked = const Value.absent(),
     required MessageTableStatus status,
     this.metadata = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -10094,6 +10140,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     Expression<String>? content,
     Expression<String>? messageType,
     Expression<bool>? isUser,
+    Expression<bool>? isBookmarked,
     Expression<String>? status,
     Expression<String>? metadata,
     Expression<int>? rowid,
@@ -10106,6 +10153,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
       if (content != null) 'content': content,
       if (messageType != null) 'message_type': messageType,
       if (isUser != null) 'is_user': isUser,
+      if (isBookmarked != null) 'is_bookmarked': isBookmarked,
       if (status != null) 'status': status,
       if (metadata != null) 'metadata': metadata,
       if (rowid != null) 'rowid': rowid,
@@ -10120,6 +10168,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     Value<String>? content,
     Value<MessagesTableType>? messageType,
     Value<bool>? isUser,
+    Value<bool>? isBookmarked,
     Value<MessageTableStatus>? status,
     Value<String?>? metadata,
     Value<int>? rowid,
@@ -10132,6 +10181,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
       content: content ?? this.content,
       messageType: messageType ?? this.messageType,
       isUser: isUser ?? this.isUser,
+      isBookmarked: isBookmarked ?? this.isBookmarked,
       status: status ?? this.status,
       metadata: metadata ?? this.metadata,
       rowid: rowid ?? this.rowid,
@@ -10164,6 +10214,9 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     if (isUser.present) {
       map['is_user'] = Variable<bool>(isUser.value);
     }
+    if (isBookmarked.present) {
+      map['is_bookmarked'] = Variable<bool>(isBookmarked.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(
         $MessagesTable.$converterstatus.toSql(status.value),
@@ -10188,6 +10241,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
           ..write('content: $content, ')
           ..write('messageType: $messageType, ')
           ..write('isUser: $isUser, ')
+          ..write('isBookmarked: $isBookmarked, ')
           ..write('status: $status, ')
           ..write('metadata: $metadata, ')
           ..write('rowid: $rowid')
@@ -26969,6 +27023,7 @@ typedef $$MessagesTableCreateCompanionBuilder = MessagesCompanion Function({
   required String content,
   required MessagesTableType messageType,
   required bool isUser,
+  Value<bool> isBookmarked,
   required MessageTableStatus status,
   Value<String?> metadata,
   Value<int> rowid,
@@ -26981,6 +27036,7 @@ typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
   Value<String> content,
   Value<MessagesTableType> messageType,
   Value<bool> isUser,
+  Value<bool> isBookmarked,
   Value<MessageTableStatus> status,
   Value<String?> metadata,
   Value<int> rowid,
@@ -27091,6 +27147,11 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<bool> get isUser => $composableBuilder(
     column: $table.isUser,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -27218,6 +27279,11 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -27281,6 +27347,11 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<bool> get isUser =>
       $composableBuilder(column: $table.isUser, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
+    builder: (column) => column,
+  );
 
   GeneratedColumnWithTypeConverter<MessageTableStatus, String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
@@ -27402,6 +27473,7 @@ class $$MessagesTableTableManager
                 Value<String> content = const Value.absent(),
                 Value<MessagesTableType> messageType = const Value.absent(),
                 Value<bool> isUser = const Value.absent(),
+                Value<bool> isBookmarked = const Value.absent(),
                 Value<MessageTableStatus> status = const Value.absent(),
                 Value<String?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -27413,6 +27485,7 @@ class $$MessagesTableTableManager
                 content: content,
                 messageType: messageType,
                 isUser: isUser,
+                isBookmarked: isBookmarked,
                 status: status,
                 metadata: metadata,
                 rowid: rowid,
@@ -27426,6 +27499,7 @@ class $$MessagesTableTableManager
                 required String content,
                 required MessagesTableType messageType,
                 required bool isUser,
+                Value<bool> isBookmarked = const Value.absent(),
                 required MessageTableStatus status,
                 Value<String?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -27437,6 +27511,7 @@ class $$MessagesTableTableManager
                 content: content,
                 messageType: messageType,
                 isUser: isUser,
+                isBookmarked: isBookmarked,
                 status: status,
                 metadata: metadata,
                 rowid: rowid,

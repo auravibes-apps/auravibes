@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -493,6 +494,7 @@ class const _MessageSubject({
       conversationSelectedProvider.overrideWithValue(criticalConversationId),
       conversationBackgroundWorksProvider(criticalConversationId)
           .overrideWith((ref) => const Stream.empty()),
+      messageBookmarksProvider.overrideWith((ref, _) => Stream.value(const [])),
       workspaceSessionForRouteProvider(criticalConversationWorkspaceId)
           .overrideWithValue(
             const AsyncData(

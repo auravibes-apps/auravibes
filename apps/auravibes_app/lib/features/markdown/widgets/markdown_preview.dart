@@ -10,15 +10,15 @@ import 'package:material_ui/material_ui.dart';
 class const MarkdownPreview({required final String text, super.key})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => GptMarkdown(
-    text,
-    onLinkTap: (url, _) => unawaited(
-      openConfirmedExternalLink(
-        context: context,
-        url: url,
-        confirm: (uri) => _confirmExternalLink(context, uri),
-        onLaunchFailure: () => _showExternalLinkError(context),
-      ),
+  Widget build(BuildContext context) =>
+      GptMarkdown(text, onLinkTap: (url, _) => _onLinkTap(context, url));
+
+  static void _onLinkTap(BuildContext context, String url) => unawaited(
+    ConfirmedExternalLink.open(
+      context: context,
+      url: url,
+      confirm: (uri) => _confirmExternalLink(context, uri),
+      onLaunchFailure: () => _showExternalLinkError(context),
     ),
   );
 }

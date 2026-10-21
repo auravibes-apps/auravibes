@@ -17,6 +17,7 @@ class Messages extends Table with TableMixin {
   TextColumn get content => text()();
   TextColumn get messageType => textEnum<MessagesTableType>()();
   BoolColumn get isUser => boolean()();
+  BoolColumn get isBookmarked => boolean().withDefault(const Constant(false))();
   TextColumn get status => textEnum<MessageTableStatus>()();
   TextColumn get metadata => text().nullable()();
 }

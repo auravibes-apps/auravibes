@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'dart:ui' show Offset, PointerDeviceKind, Tristate;
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -23,6 +25,8 @@ import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provide
 import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -73,6 +77,9 @@ import 'package:mocktail/mocktail.dart';
 import 'package:rxdart/rxdart.dart' show CompositeSubscription;
 
 import '../../../helpers/test_provider_scope.dart';
+
+Finder _auraButtonFor(Finder child) =>
+    find.ancestor(of: child, matching: find.byType(AuraIconButton));
 
 Widget buildSubject({
   required List<String> messages,
@@ -428,7 +435,7 @@ void main() {
         await tester.pump();
         expect(find.byTooltip('Copy message'), findsOneWidget);
         final button = tester.widget<AuraIconButton>(
-          find.byType(AuraIconButton),
+          _auraButtonFor(find.byIcon(Icons.copy_outlined)),
         );
 
         model.update(DataPath('/answer'), 'Latest answer');
@@ -438,7 +445,7 @@ void main() {
 
         model.update(DataPath('/answer'), '');
         await tester.pump();
-        expect(find.byType(AuraIconButton), findsNothing);
+        expect(find.byTooltip('Copy message'), findsNothing);
       },
     );
 
@@ -517,7 +524,7 @@ void main() {
                   .contextFor('msg-1:main')
                   .dataModel;
               final button = tester.widget<AuraIconButton>(
-                find.byType(AuraIconButton),
+                _auraButtonFor(find.byIcon(Icons.check)),
               );
               model.update(DataPath('/active'), 30);
               button.onPressed!();
@@ -608,6 +615,206 @@ void main() {
         closeTo(scrollable.position.minScrollExtent, .5),
       );
       expect(find.byKey(const ValueKey('chat_jump_to_latest')), findsNothing);
+    });
+
+    testWidgets('opens and highlights the requested message', (tester) async {
+      final messages = [
+        for (var index = 0; index < 40; index++)
+          _createMessage(
+            id: 'message-$index',
+            content: List.filled(8, 'Message $index').join('\n'),
+          ),
+      ];
+      final messageEntitiesById = {
+        for (final message in messages) message.id: message,
+      };
+      final router = GoRouter(
+        initialLocation: '/chat?messageId=message-0',
+        routes: [
+          GoRoute(
+            path: '/chat',
+            builder: (_, _) => Scaffold(
+              body: ChatPrimaryScrollController(
+                child: buildSubject(
+                  messages: [for (final message in messages) message.id],
+                  messageEntitiesById: messageEntitiesById,
+                  overrides: [..._messageOverrides(messageEntitiesById)],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(tester, MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('focused_message_message-0')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('loads requested message outside the current cloud snapshot', (
+      tester,
+    ) async {
+      final recent = _createMessage(id: 'recent', content: 'Recent message');
+      final bookmarked = _createMessage(
+        id: 'bookmarked',
+        content: 'Older bookmarked message',
+      );
+      final messages = {'recent': recent};
+      final router = GoRouter(
+        initialLocation: '/chat?messageId=bookmarked',
+        routes: [
+          GoRoute(
+            path: '/chat',
+            builder: (_, _) => Scaffold(
+              body: ChatPrimaryScrollController(
+                child: buildSubject(
+                  messages: ['recent'],
+                  messageEntitiesById: messages,
+                  overrides: [
+                    ..._messageOverrides(messages),
+                    fetchConversationMessageByIdProvider.overrideWith(
+                      (ref, request) async => bookmarked,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(tester, MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Older bookmarked message'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('focused_message_bookmarked')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('shows an error when requested message cannot load', (
+      tester,
+    ) async {
+      final recent = _createMessage(id: 'recent', content: 'Recent message');
+      final messages = {'recent': recent};
+      final router = GoRouter(
+        initialLocation: '/chat?messageId=bookmarked',
+        routes: [
+          GoRoute(
+            path: '/chat',
+            builder: (_, _) => Scaffold(
+              body: ChatPrimaryScrollController(
+                child: buildSubject(
+                  messages: ['recent'],
+                  messageEntitiesById: messages,
+                  overrides: [
+                    ..._messageOverrides(messages),
+                    fetchConversationMessageByIdProvider.overrideWith(
+                      (ref, request) async =>
+                          throw StateError('Message fetch failed.'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(tester, MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('The cloud service is unavailable. Try again.'),
+        findsOneWidget,
+      );
+      expect(find.text('Recent message'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('shows bookmark actions for sent text and image messages', (
+      tester,
+    ) async {
+      final messages = [
+        _createMessage(id: 'text'),
+        _createMessage(id: 'image', messageType: .image),
+        _createMessage(id: 'pending', status: .unfinished),
+      ];
+      final entities = {for (final message in messages) message.id: message};
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [for (final message in messages) message.id],
+          messageEntitiesById: entities,
+          overrides: _messageOverrides(entities),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('bookmark_message_text')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('bookmark_message_image')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('bookmark_message_pending')),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('bookmark action persists sent message', (tester) async {
+      final message = _createMessage(id: 'text');
+      final messages = {'text': message};
+      final messageRepository = _MockMessageRepository();
+      when(
+        () => messageRepository.bookmarkMessage(
+          workspaceId: 'ws-1',
+          conversationId: 'conv-1',
+          messageId: 'text',
+        ),
+      ).thenAnswer((_) async => true);
+      final usecase = MessageBookmarkUseCase(
+        workspaceRepository: _MockWorkspaceRepository(),
+        messageRepository: messageRepository,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['text'],
+          messageEntitiesById: messages,
+          overrides: [
+            ..._messageOverrides(messages),
+            messageBookmarkUseCaseProvider.overrideWith((ref) => usecase),
+          ],
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('bookmark_message_text')));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => messageRepository.bookmarkMessage(
+          workspaceId: 'ws-1',
+          conversationId: 'conv-1',
+          messageId: 'text',
+        ),
+      ).called(1);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('dragging chat history retains composer focus', (tester) async {
@@ -813,7 +1020,11 @@ void main() {
       expect(find.byType(SelectionArea), findsOneWidget);
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
       expect(
-        tester.widget<AuraIconButton>(find.byType(AuraIconButton)).tooltip,
+        tester
+            .widget<AuraIconButton>(
+              _auraButtonFor(find.byIcon(Icons.copy_outlined)),
+            )
+            .tooltip,
         'Copy message',
       );
       expect(
@@ -845,12 +1056,15 @@ void main() {
       );
 
       final bubbleRight = tester.getTopRight(find.byType(AuraMessageBubble)).dx;
+      final bookmarkAction = find.byKey(
+        const ValueKey('bookmark_message_msg-1'),
+      );
       final copyAction = find.byTooltip('Copy message');
       final timestamp = find.text(
         RelativeTimeFormatter.format(message.createdAt),
       );
 
-      expect(tester.getTopRight(copyAction).dx, closeTo(bubbleRight, 1));
+      expect(tester.getTopRight(bookmarkAction).dx, closeTo(bubbleRight, 1));
       expect(timestamp, findsOneWidget);
       expect(
         tester.getTopRight(timestamp).dx,
@@ -946,7 +1160,11 @@ void main() {
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
       expect(find.byType(SelectionArea), findsOneWidget);
       expect(
-        tester.widget<AuraIconButton>(find.byType(AuraIconButton)).tooltip,
+        tester
+            .widget<AuraIconButton>(
+              _auraButtonFor(find.byIcon(Icons.copy_outlined)),
+            )
+            .tooltip,
         'Copy message',
       );
       await tester.tap(find.byIcon(Icons.copy_outlined));
@@ -955,7 +1173,9 @@ void main() {
       expect(copiedText, 'Hello AI');
       expect(find.byIcon(Icons.check), findsOneWidget);
       expect(
-        tester.widget<AuraIconButton>(find.byType(AuraIconButton)).tooltip,
+        tester
+            .widget<AuraIconButton>(_auraButtonFor(find.byIcon(Icons.check)))
+            .tooltip,
         'Message copied',
       );
     });
@@ -5312,6 +5532,9 @@ void main() {
                   hasPendingTools: false,
                 ),
               ),
+              messageBookmarksProvider.overrideWith(
+                (ref, _) => Stream.value(const []),
+              ),
               workspaceSessionForRouteProvider('ws-1').overrideWithValue(
                 const AsyncData(
                   WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
@@ -6461,9 +6684,12 @@ void main() {
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 
-    testWidgets('shows and highlights the message from a search deep link', (
-      tester,
-    ) async {
+    testWidgets('shows loaded cloud target offline', (tester) async {
+      const targetRequest = (
+        workspaceId: 'ws-1',
+        conversationId: 'conv-1',
+        messageId: 'msg-2',
+      );
       final earlierMessage = _createMessage(
         id: 'msg-1',
         content: 'Earlier message',
@@ -6502,6 +6728,10 @@ void main() {
           messages: messages.keys.toList(),
           messageEntitiesById: messages,
           overrides: [
+            conversationMessageTargetMessagesProvider(targetRequest)
+                .overrideWithValue(
+                  AsyncError(StateError('offline'), StackTrace.current),
+                ),
             messageConversationByIdProvider.overrideWith(
               (ref, id) => messages[id.messageId]!,
             ),
@@ -6513,6 +6743,14 @@ void main() {
               ),
             ),
           ],
+          workspaceSession: const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'ws-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account-1',
+              cloudWorkspaceId: 1,
+            ),
+          ),
           conversation: ConversationEntity(
             id: 'conv-1',
             title: 'Chat',
@@ -6762,6 +7000,8 @@ void main() {
 
 class _MockConversationRepository extends Mock
     implements ConversationRepository;
+class _MockMessageRepository extends Mock implements MessageRepository;
+class _MockWorkspaceRepository extends Mock implements WorkspaceRepository;
 
 class _IterationLimitSendMessageUsecase extends Fake
     implements SendMessageUsecase {
@@ -6813,6 +7053,9 @@ class const _ChatMessagesTestSubject({
         ),
         conversationBackgroundWorksProvider(conversationId)
             .overrideWith((ref) => Stream.value(const [])),
+        messageBookmarksProvider.overrideWith(
+          (ref, _) => Stream.value(const []),
+        ),
         ...overrides.cast(),
       ],
       child: EasyLocalization(
