@@ -23,7 +23,7 @@ gh pr checks <number> --json name,bucket \
   ```
 
 - `ci success` only summarizes fan-out; inspect first failed job. A cancelled PR run may be superseded by newer push.
-- `integrity` generated drift: run `generate` and `generate:serverpod`; review and commit generated diff. Never hand-edit output.
+- `integrity` generated drift: run `python3 tool/validation_lease.py -- fvm dart run melos run validate:generated` from a clean worktree; inspect and commit generated diff. Never hand-edit output.
 - `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; it selects the SDK and runs `flutter pub get` by default when switching SDKs (`--skip-pub-get` skips it). CI's setup action runs Melos bootstrap before checking dependency artifact drift; do not infer bootstrap is redundant from the Pub workspace declaration. Commit `.vscode/settings.json` sync.
 - Workspace setup failures are dependency/version issues; inspect pub solver output before changing Dart code.
 - DCL unused-code scans production `lib`, not tests. Remove true dead code; test-only contracts or generated/route reachability need narrow, reasoned excludes only after reference review.
