@@ -574,6 +574,7 @@ class _FakeAgentConversationDataProvider
   Future<AgentIterationDecision> runAllowedTools({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     allowedToolRuns.add('$conversationId:$workspaceId');
     final wait = onRunAllowedTools;

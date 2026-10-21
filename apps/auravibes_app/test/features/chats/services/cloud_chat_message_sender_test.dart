@@ -50,6 +50,7 @@ void main() {
           requestId: any(named: 'requestId'),
           conversationId: 'conversation-1',
           expectedProjectionRevision: 3,
+          languageCode: 'es',
         ),
       ).thenAnswer((_) async => snapshot);
 
@@ -60,7 +61,10 @@ void main() {
         invalidateMessages: events.add,
       );
 
-      await sender.call('conversation-1', const ChatDraft(text: 'hello'));
+      await sender.call(
+        'conversation-1',
+        const ChatDraft(text: 'hello', languageCode: 'es'),
+      );
 
       final _ = verifyInOrder([
         () => gateway.getConversationSnapshot('conversation-1'),
@@ -69,6 +73,7 @@ void main() {
           requestId: any(named: 'requestId'),
           conversationId: 'conversation-1',
           expectedProjectionRevision: 3,
+          languageCode: 'es',
         ),
       ]);
       expect(events, ['conversation-1']);

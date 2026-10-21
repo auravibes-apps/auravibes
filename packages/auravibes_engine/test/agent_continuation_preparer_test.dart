@@ -100,6 +100,7 @@ class const _FakeAgentContinuationProvider(
   Future<List<_Chat>> buildSkillContextMessages({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     return [const _Chat('skill context', isSkillContext: true)];
   }
@@ -108,6 +109,7 @@ class const _FakeAgentContinuationProvider(
   Future<List<String>> loadTools({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     return ['calculator'];
   }

@@ -53,6 +53,7 @@ class _FakeResumeProvider({
   Future<AgentIterationDecision> runAllowedTools({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     calls.add('tools:$conversationId:$workspaceId');
 

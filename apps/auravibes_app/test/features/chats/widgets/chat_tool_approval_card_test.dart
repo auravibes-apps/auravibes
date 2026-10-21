@@ -946,15 +946,12 @@ class _DecisionEffects
   }
 
   @override
-  Future<Object?> runResolvedTool({
-    required String conversationId,
-    required String toolCallId,
-    required ResolvedTool tool,
-    required Map<String, dynamic> arguments,
-  }) async {
-    sources.add(conversationId);
+  Future<Object?> runResolvedTool(
+    agent.AgentResolvedToolCallRequest<ResolvedTool> request,
+  ) async {
+    sources.add(request.conversationId);
     executions++;
-    expect(arguments, {'input': 'test.txt'});
+    expect(request.arguments, {'input': 'test.txt'});
 
     return {'fixtureResult': 'Complete'};
   }
@@ -979,6 +976,7 @@ class _DecisionEffects
   Future<void> resumeConversationIfReady({
     required String messageId,
     required String conversationId,
+    String? languageCode,
   }) async {
     sources.add(conversationId);
     resumeCount++;
@@ -1009,6 +1007,7 @@ class _DecisionEffects
   Future<void> stopPendingToolCalls({
     required String messageId,
     required String conversationId,
+    String? languageCode,
   }) async {
     sources.add(conversationId);
     stopCount++;

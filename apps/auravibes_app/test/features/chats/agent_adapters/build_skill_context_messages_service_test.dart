@@ -71,6 +71,7 @@ void main() {
           conversationId: 'conversation',
           workspaceId: 'workspace',
           extraSkills: any(named: 'extraSkills'),
+          languageCode: any(named: 'languageCode'),
         ),
       ).thenAnswer(
         (_) async => [
@@ -156,6 +157,7 @@ void main() {
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           extraSkills: any(named: 'extraSkills'),
+          languageCode: any(named: 'languageCode'),
         ),
       ).thenAnswer(
         (_) async => [
@@ -241,6 +243,7 @@ void main() {
           conversationId: 'c',
           workspaceId: 'w',
           extraSkills: any(named: 'extraSkills'),
+          languageCode: any(named: 'languageCode'),
         ),
       ).thenAnswer(
         (_) async => [
@@ -346,6 +349,7 @@ void main() {
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             extraSkills: any(named: 'extraSkills'),
+            languageCode: any(named: 'languageCode'),
           ),
         ).thenAnswer(
           (_) async => [
@@ -379,6 +383,78 @@ void main() {
         expect(messages[3].content, contains('App content'));
       },
     );
+
+    test('localizes built-in agent guidance and its manifest tools', () async {
+      final listSkills = _MockListAvailableSkillsUsecase();
+      final listAgentSkills = _MockListConversationAgentSkillsUsecase();
+      final buildManifests = _MockBuildLoadedSkillManifestsUsecase();
+      final service = BuildSkillContextMessagesService(
+        listSkills.call,
+        listAgentSkills,
+        buildManifests,
+      );
+      const agentsSkill = AvailableSkill(
+        id: agentsSkillSlug,
+        slug: agentsSkillSlug,
+        title: agentsSkillTitle,
+        description: '',
+        content: agentsSkillContent,
+        source: .app,
+        kind: .native,
+      );
+      when(
+        () => listSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .catalog,
+        ),
+      ).thenAnswer((_) async => const []);
+      when(
+        () => listSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .loaded,
+        ),
+      ).thenAnswer((_) async => const []);
+      when(
+        () => listAgentSkills.loadSelectedAgent(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => null);
+      when(
+        () => listAgentSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => [agentsSkill]);
+      when(
+        () => buildManifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          extraSkills: any(named: 'extraSkills'),
+          languageCode: 'es',
+        ),
+      ).thenAnswer((_) async => const []);
+
+      final messages = await service.call(
+        conversationId: 'conversation',
+        workspaceId: 'workspace',
+        languageCode: 'es',
+      );
+      final content = messages.map((message) => message.content).join('\n');
+
+      expect(content, contains('Usa list_agents'));
+      expect(content, isNot(contains('Use list_agents to find configured')));
+      verify(
+        () => buildManifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          extraSkills: any(named: 'extraSkills'),
+          languageCode: 'es',
+        ),
+      ).called(1);
+    });
 
     test('skips selected agent from another workspace', () async {
       final listUseCase = _MockListAvailableSkillsUsecase();

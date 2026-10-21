@@ -34,6 +34,7 @@ typedef RunSkillNativeToolRequest = ({
   String toolCallId,
   String workspaceId,
   AgentResolvedToolName target,
+  String? languageCode,
   Map<String, dynamic> arguments,
 });
 
@@ -80,6 +81,7 @@ typedef _SkillToolExecutionRequest = ({
   String workspaceId,
   AgentResolvedToolName target,
   SkillCommandTarget command,
+  String? languageCode,
 });
 
 typedef _SkillActivation = ({
@@ -142,21 +144,28 @@ class const RunSkillCommandUsecase({
         runSkillNativeTool: dependencies.optional.runSkillNativeTool,
       );
 
-  Future<Object?> call(RunSkillCommandRequest request) =>
-      _runSkillCommand(this, request);
+  Future<Object?> call(
+    RunSkillCommandRequest request, {
+    String? languageCode,
+  }) => _runSkillCommand(this, request, languageCode: languageCode);
 }
 
 Future<Object?> _runSkillCommand(
   RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) => switch (request.commandName) {
+  RunSkillCommandRequest request, {
+  String? languageCode,
+}) => switch (request.commandName) {
   activateSkillToolName => _activateSkillCommand(usecase, request),
   listSkillCredentialsToolName => _listSkillCredentialsCommand(
     usecase,
     request,
   ),
   loadSkillResourceToolName => _loadSkillResourceCommand(usecase, request),
-  callSkillToolName => _callSkillCommand(usecase, request),
+  callSkillToolName => _callSkillCommand(
+    usecase,
+    request,
+    languageCode: languageCode,
+  ),
   _ => throw FormatException('Unknown skill command: ${request.commandName}'),
 };
 
@@ -405,15 +414,22 @@ Future<void> _loadConversationSkill(
 
 Future<Map<String, Object?>> _callSkillCommand(
   RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) => _callTool(usecase, request);
+  RunSkillCommandRequest request, {
+  String? languageCode,
+}) => _callTool(usecase, request, languageCode: languageCode);
 
 Future<Map<String, Object?>> _callTool(
   RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) async {
+  RunSkillCommandRequest request, {
+  String? languageCode,
+}) async {
   final command = await _validatedCallTool(usecase, request);
-  final result = await _executeCallTool(usecase, request, command);
+  final result = await _executeCallTool(
+    usecase,
+    request,
+    command,
+    languageCode: languageCode,
+  );
 
   return {'result': result};
 }
@@ -423,6 +439,7 @@ typedef _SkillCallExecutionRequest = ({
   RunSkillCommandRequest request,
   SkillCommandTarget command,
   AgentResolvedToolName target,
+  String? languageCode,
 });
 
 Future<SkillCommandTarget> _validatedCallTool(
@@ -437,8 +454,9 @@ Future<SkillCommandTarget> _validatedCallTool(
 Future<Object?> _executeCallTool(
   RunSkillCommandUsecase usecase,
   RunSkillCommandRequest request,
-  SkillCommandTarget command,
-) async {
+  SkillCommandTarget command, {
+  String? languageCode,
+}) async {
   final validation = _RunSkillCommandValidation(usecase);
   final target = await validation._resolveSkillToolTarget(
     request.conversationId,
@@ -451,6 +469,7 @@ Future<Object?> _executeCallTool(
     request: request,
     command: command,
     target: target,
+    languageCode: languageCode,
   ));
 }
 
@@ -471,6 +490,7 @@ Future<Object?> _runResolvedSkillTool(_SkillCallExecutionRequest request) {
     workspaceId: call.workspaceId,
     target: target,
     command: command,
+    languageCode: request.languageCode,
   ));
 }
 
@@ -699,6 +719,7 @@ class const _RunSkillCommandExecution(final RunSkillCommandUsecase _usecase) {
       toolCallId: request.toolCallId,
       workspaceId: request.workspaceId,
       target: request.target,
+      languageCode: request.languageCode,
       arguments: Map<String, dynamic>.from(request.command.args),
     ));
   }

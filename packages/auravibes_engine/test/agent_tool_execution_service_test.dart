@@ -412,17 +412,14 @@ class _FakeExecutionProvider({
   }
 
   @override
-  Future<Object?> runResolvedTool({
-    required String conversationId,
-    required String toolCallId,
-    required String tool,
-    required Map<String, dynamic> arguments,
-  }) async {
-    executedTools.add(tool);
-    final future = resultFutures[tool];
+  Future<Object?> runResolvedTool(
+    AgentResolvedToolCallRequest<String> request,
+  ) async {
+    executedTools.add(request.tool);
+    final future = resultFutures[request.tool];
     if (future != null) return await future;
 
-    final result = results[tool];
+    final result = results[request.tool];
     if (result is Object) {
       if (result is Exception) throw result;
 

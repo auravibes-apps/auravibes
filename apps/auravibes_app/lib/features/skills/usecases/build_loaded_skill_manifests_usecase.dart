@@ -16,6 +16,7 @@ class const BuildLoadedSkillManifestsUsecase(
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async {
     final skills = await _loadedSkills(
       conversationId: conversationId,
@@ -26,6 +27,7 @@ class const BuildLoadedSkillManifestsUsecase(
       conversationId: conversationId,
       workspaceId: workspaceId,
       extraSkills: extraSkills,
+      languageCode: languageCode,
     );
 
     return _manifests(skills, _toolsBySlug(specs));
@@ -89,6 +91,7 @@ extension on BuildLoadedSkillManifestsUsecase {
     required String conversationId,
     required String workspaceId,
     required List<AvailableSkill> extraSkills,
+    String? languageCode,
   }) async {
     final templateSpecs = await _templateToolSpecs(
       conversationId: conversationId,
@@ -99,6 +102,7 @@ extension on BuildLoadedSkillManifestsUsecase {
       conversationId: conversationId,
       workspaceId: workspaceId,
       extraSkills: extraSkills,
+      languageCode: languageCode,
     );
 
     return [...templateSpecs, ...nativeSpecs];
@@ -118,10 +122,12 @@ extension on BuildLoadedSkillManifestsUsecase {
     required String conversationId,
     required String workspaceId,
     required List<AvailableSkill> extraSkills,
+    String? languageCode,
   }) => _buildAppSkillNativeToolSpecsUsecase.call(
     conversationId: conversationId,
     workspaceId: workspaceId,
     extraSkills: extraSkills,
+    languageCode: languageCode,
   );
 
   Map<String, List<SkillManifestTool>> _toolsBySlug(List<ToolSpec> specs) {

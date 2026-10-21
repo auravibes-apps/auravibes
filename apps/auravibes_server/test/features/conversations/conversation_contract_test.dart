@@ -65,6 +65,19 @@ void main() {
     );
   });
 
+  test('turn job payload optionally retains conversation language', () {
+    expect(
+      jsonDecode(
+        conversationTurnJobPayload('user-1', languageCode: 'es'),
+      ),
+      {'actorUserId': 'user-1', 'languageCode': 'es'},
+    );
+    expect(
+      jsonDecode(conversationTurnJobPayload('user-1')),
+      {'actorUserId': 'user-1'},
+    );
+  });
+
   test('turn job payload snapshots provider default explicitly', () {
     expect(
       jsonDecode(

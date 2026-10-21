@@ -1693,7 +1693,7 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
     return _runAction((
       context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_once,
-      action: () => _approve(ref, agent.AgentToolGrantLevel.once),
+      action: () => _approve(ref, context, agent.AgentToolGrantLevel.once),
       onStarted: onDecisionStarted,
       onFailed: onDecisionFailed,
     ));
@@ -1703,7 +1703,8 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
     return _runAction((
       context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_conversation,
-      action: () => _approve(ref, agent.AgentToolGrantLevel.conversation),
+      action: () =>
+          _approve(ref, context, agent.AgentToolGrantLevel.conversation),
       onStarted: onDecisionStarted,
       onFailed: onDecisionFailed,
     ));
@@ -1713,7 +1714,7 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
     return _runAction((
       context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_skip,
-      action: () => _skip(ref),
+      action: () => _skip(ref, context),
       onStarted: onDecisionStarted,
       onFailed: onDecisionFailed,
     ));
@@ -1723,7 +1724,7 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
     return _runAction((
       context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_stop_all,
-      action: () => _stopAll(ref),
+      action: () => _stopAll(ref, context),
       onStarted: onStopAllStarted,
       onFailed: onDecisionFailed,
     ));
@@ -1731,9 +1732,22 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
 }
 
 extension _ConfirmationToolActions on _ConfirmationActionHandler {
-  Future<void> _approve(WidgetRef ref, agent.AgentToolGrantLevel level) async {
+  Future<void> _approve(
+    WidgetRef ref,
+    BuildContext context,
+    agent.AgentToolGrantLevel level,
+  ) async {
+    final languageCode = context.locale.languageCode;
     if (await _decideCloud(ref, approved: true)) return;
 
+    await _approveLocal(ref, level, languageCode);
+  }
+
+  Future<void> _approveLocal(
+    WidgetRef ref,
+    agent.AgentToolGrantLevel level,
+    String languageCode,
+  ) async {
     await ref
         .read(auraAgentServiceProvider)
         .tools
@@ -1747,10 +1761,12 @@ extension _ConfirmationToolActions on _ConfirmationActionHandler {
             toolName: toolCall.name,
             argumentsRaw: toolCall.argumentsRaw,
           ),
+          languageCode: languageCode,
         );
   }
 
-  Future<void> _skip(WidgetRef ref) async {
+  Future<void> _skip(WidgetRef ref, BuildContext context) async {
+    final languageCode = context.locale.languageCode;
     if (await _decideCloud(ref, approved: false)) return;
 
     await ref
@@ -1760,16 +1776,22 @@ extension _ConfirmationToolActions on _ConfirmationActionHandler {
           toolCallId: toolCall.id,
           messageId: messageId,
           conversationId: conversationId,
+          languageCode: languageCode,
         );
   }
 
-  Future<void> _stopAll(WidgetRef ref) async {
+  Future<void> _stopAll(WidgetRef ref, BuildContext context) async {
+    final languageCode = context.locale.languageCode;
     if (await _decideCloud(ref, approved: false, stopAll: true)) return;
 
     await ref
         .read(auraAgentServiceProvider)
         .tools
-        .stopPending(messageId: messageId, conversationId: conversationId);
+        .stopPending(
+          messageId: messageId,
+          conversationId: conversationId,
+          languageCode: languageCode,
+        );
   }
 }
 

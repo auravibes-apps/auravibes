@@ -233,13 +233,10 @@ class _FakeToolProvider
   }
 
   @override
-  Future<Object?> runResolvedTool({
-    required String conversationId,
-    required String toolCallId,
-    required String tool,
-    required Map<String, dynamic> arguments,
-  }) async {
-    calls.add('run:$conversationId:$tool');
+  Future<Object?> runResolvedTool(
+    AgentResolvedToolCallRequest<String> request,
+  ) async {
+    calls.add('run:${request.conversationId}:${request.tool}');
     await onRunResolvedTool?.call();
 
     return 'ok';
@@ -272,6 +269,7 @@ class _FakeToolProvider
   Future<AgentIterationDecision> runAllowedTools({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     return AgentIterationDecision.done;
   }
@@ -286,6 +284,7 @@ class _FakeToolProvider
   Future<void> stopPendingToolCalls({
     required String messageId,
     required String conversationId,
+    String? languageCode,
   }) async {
     calls.add('stop-pending-calls:$messageId');
   }
@@ -341,6 +340,7 @@ class _FakeToolProvider
   Future<void> resumeConversationIfReady({
     required String messageId,
     required String conversationId,
+    String? languageCode,
   }) async {
     calls.add('resume:$messageId');
   }

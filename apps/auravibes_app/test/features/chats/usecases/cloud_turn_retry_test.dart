@@ -71,11 +71,12 @@ void main() {
         requestId: any(named: 'requestId'),
         conversationId: 'conversation-1',
         expectedConversationRevision: 3,
+        languageCode: 'es',
       ),
     ).thenAnswer((_) async => result);
 
     final actual = await CloudTurnUsecase(gateway)
-        .continueConversation('conversation-1');
+        .continueConversation('conversation-1', languageCode: 'es');
 
     expect(actual, same(result));
     verify(
@@ -83,6 +84,7 @@ void main() {
         requestId: any(named: 'requestId'),
         conversationId: 'conversation-1',
         expectedConversationRevision: 3,
+        languageCode: 'es',
       ),
     ).called(1);
   });

@@ -191,10 +191,12 @@ class const AppAgentLoopToolProvider(
   Future<AgentIterationDecision> runAllowedTools({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) {
     return _toolExecutionService.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     );
   }
 }

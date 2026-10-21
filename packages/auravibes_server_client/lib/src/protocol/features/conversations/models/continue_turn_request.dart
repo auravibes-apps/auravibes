@@ -22,6 +22,7 @@ abstract class ContinueTurnRequest
     required this.conversationId,
     required this.expectedConversationRevision,
     this.a2uiSupportedComponents,
+    this.languageCode,
   });
 
   factory ContinueTurnRequest({
@@ -30,6 +31,7 @@ abstract class ContinueTurnRequest
     required String conversationId,
     required int expectedConversationRevision,
     List<String>? a2uiSupportedComponents,
+    String? languageCode,
   }) = _ContinueTurnRequestImpl;
 
   factory ContinueTurnRequest.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -45,6 +47,7 @@ abstract class ContinueTurnRequest
           : _isctvzjc.Protocol().deserialize<List<String>>(
               jsonSerialization['a2uiSupportedComponents'],
             ),
+      languageCode: jsonSerialization['languageCode'] as String?,
     );
   }
 
@@ -58,6 +61,8 @@ abstract class ContinueTurnRequest
 
   List<String>? a2uiSupportedComponents;
 
+  String? languageCode;
+
   /// Returns a shallow copy of this [ContinueTurnRequest]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -67,6 +72,7 @@ abstract class ContinueTurnRequest
     String? conversationId,
     int? expectedConversationRevision,
     List<String>? a2uiSupportedComponents,
+    String? languageCode,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -78,6 +84,7 @@ abstract class ContinueTurnRequest
       'expectedConversationRevision': expectedConversationRevision,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+      if (languageCode != null) 'languageCode': languageCode,
     };
   }
 
@@ -91,6 +98,7 @@ abstract class ContinueTurnRequest
       'expectedConversationRevision': expectedConversationRevision,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+      if (languageCode != null) 'languageCode': languageCode,
     };
   }
 
@@ -109,12 +117,14 @@ class _ContinueTurnRequestImpl extends ContinueTurnRequest {
     required String conversationId,
     required int expectedConversationRevision,
     List<String>? a2uiSupportedComponents,
+    String? languageCode,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
          conversationId: conversationId,
          expectedConversationRevision: expectedConversationRevision,
          a2uiSupportedComponents: a2uiSupportedComponents,
+         languageCode: languageCode,
        );
 
   /// Returns a shallow copy of this [ContinueTurnRequest]
@@ -127,6 +137,7 @@ class _ContinueTurnRequestImpl extends ContinueTurnRequest {
     String? conversationId,
     int? expectedConversationRevision,
     Object? a2uiSupportedComponents = _Undefined,
+    Object? languageCode = _Undefined,
   }) {
     return ContinueTurnRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -137,6 +148,7 @@ class _ContinueTurnRequestImpl extends ContinueTurnRequest {
       a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
           ? a2uiSupportedComponents
           : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
+      languageCode: languageCode is String? ? languageCode : this.languageCode,
     );
   }
 }

@@ -1118,11 +1118,13 @@ void main() {
         skillCredentialsRepository: skillCredentialsRepository,
       );
 
-      final output = await runUsecase.call(
+      final output = await runUsecase.call((
         conversationId: conversation.id,
+        toolCallId: '',
         tool: .skillControl(toolIdentifier: SkillToolNames.listCredentials),
         arguments: {'skillSlug': skill.slug},
-      );
+        languageCode: null,
+      ));
       final result =
           (output ?? fail('skill control result missing'))
               as Map<String, Object?>;

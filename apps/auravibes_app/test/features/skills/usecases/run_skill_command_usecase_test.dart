@@ -544,6 +544,7 @@ void main() {
   test('dispatches agents native tools through the injected runner', () async {
     final nativeRunner = _NativeRunner();
     final nativeTarget = <AgentResolvedToolName>[];
+    final nativeLanguageCode = <String?>[];
     final nativeSpecs = _SkillSpecs([
       ToolSpec(
         name: 'skill__app_native__agents__list_agents',
@@ -570,23 +571,25 @@ void main() {
       }) async => const {},
       runSkillNativeTool: (request) async {
         nativeTarget.add(request.target);
+        nativeLanguageCode.add(request.languageCode);
 
         return {'count': 1};
       },
     );
 
-    final result = await usecase.call((
+    const command = (
       conversationId: 'conversation-1',
       toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       commandName: callSkillToolName,
-      arguments: const <String, Object?>{
+      arguments: <String, Object?>{
         'skill': agentsSkillSlug,
         'tool': listAgentsToolName,
         'args': {},
         'revision': 'agents-r1',
       },
-    ));
+    );
+    final result = await usecase.call(command, languageCode: 'es-MX');
 
     expect(result, {
       'result': {'count': 1},
@@ -595,6 +598,7 @@ void main() {
       nativeTarget.single.fullName,
       'skill__app_native__agents__list_agents',
     );
+    expect(nativeLanguageCode, ['es-MX']);
     expect(nativeRunner.calls, 0);
     expect(manifests.calls, 1);
   });
@@ -607,6 +611,7 @@ class _Manifests({final bool credentialRequired = false})
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async => [
     SkillManifest(
       slug: 'research',
@@ -638,6 +643,7 @@ class _A2uiManifests implements BuildLoadedSkillManifestsUsecase {
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async => [
     SkillManifest(
       slug: 'a2ui',
@@ -655,6 +661,7 @@ class _EmptyManifests implements BuildLoadedSkillManifestsUsecase {
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async => const [];
 }
 
@@ -666,6 +673,7 @@ class _AgentsManifests implements BuildLoadedSkillManifestsUsecase {
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async {
     calls++;
 
@@ -824,6 +832,7 @@ class const _SkillSpecs(final List<ToolSpec> specs)
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async => specs;
 }
 

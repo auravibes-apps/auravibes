@@ -47,10 +47,12 @@ class const SyncSkillToolPermissionsUsecase({
   Future<void> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     final _ = await _syncTools(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     );
   }
 
@@ -74,10 +76,12 @@ extension _SyncSkillToolPermissionsUsecaseSync
   Future<List<ToolsTable>> _syncTools({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     final specs = await _loadToolSpecs(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     );
 
     return _filterCurrentTools(
@@ -102,6 +106,7 @@ extension _SyncSkillToolPermissionsUsecaseSync
   Future<List<ToolSpec>> _loadToolSpecs({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     final agentSkills = await _loadAgentSkills(
       conversationId: conversationId,
@@ -109,23 +114,28 @@ extension _SyncSkillToolPermissionsUsecaseSync
     );
 
     final specs = [
-      ...await _dynamicSpecs(conversationId, workspaceId),
+      ...await _dynamicSpecs(conversationId, workspaceId, languageCode),
       ...await _templateSpecs(conversationId, workspaceId, agentSkills),
-      ...await _nativeSpecs(conversationId, workspaceId, agentSkills),
+      ...await _nativeSpecs(
+        conversationId,
+        workspaceId,
+        agentSkills,
+        languageCode: languageCode,
+      ),
     ];
-    _addRunSubAgentSpec(specs);
+    _addRunSubAgentSpec(specs, languageCode);
 
     return specs;
   }
 
-  void _addRunSubAgentSpec(List<ToolSpec> specs) {
-    final runSubAgentSpec = _runSubAgentPermissionSpec();
+  void _addRunSubAgentSpec(List<ToolSpec> specs, String? languageCode) {
+    final runSubAgentSpec = _runSubAgentPermissionSpec(languageCode);
     if (specs.any((spec) => spec.name == runSubAgentSpec.name)) return;
 
     specs.add(runSubAgentSpec);
   }
 
-  ToolSpec _runSubAgentPermissionSpec() {
+  ToolSpec _runSubAgentPermissionSpec(String? languageCode) {
     final descriptor = AgentResolvedToolName.skillNative(
       tableId: runSubAgentToolName,
       skillSlug: agentsSkillSlug,
@@ -134,9 +144,9 @@ extension _SyncSkillToolPermissionsUsecaseSync
 
     return ToolSpec(
       name: descriptor.fullName,
-      description: runSubAgentToolSpec.description,
+      description: runSubAgentToolSpecForLanguageCode(languageCode).description,
       inputJsonSchema: Map<String, Object?>.from(
-        runSubAgentToolSpec.inputJsonSchema,
+        runSubAgentToolSpecForLanguageCode(languageCode).inputJsonSchema,
       ),
     );
   }
@@ -144,9 +154,11 @@ extension _SyncSkillToolPermissionsUsecaseSync
   Future<List<ToolSpec>> _dynamicSpecs(
     String conversationId,
     String workspaceId,
+    String? languageCode,
   ) => buildDynamicSkillToolSpecs.call(
     conversationId: conversationId,
     workspaceId: workspaceId,
+    languageCode: languageCode,
   );
 
   Future<List<ToolSpec>> _templateSpecs(
@@ -162,11 +174,13 @@ extension _SyncSkillToolPermissionsUsecaseSync
   Future<List<ToolSpec>> _nativeSpecs(
     String conversationId,
     String workspaceId,
-    List<AvailableSkill> extraSkills,
-  ) => buildAppSkillNativeToolSpecs.call(
+    List<AvailableSkill> extraSkills, {
+    String? languageCode,
+  }) => buildAppSkillNativeToolSpecs.call(
     conversationId: conversationId,
     workspaceId: workspaceId,
     extraSkills: extraSkills,
+    languageCode: languageCode,
   );
 
   Future<List<AvailableSkill>> _loadAgentSkills({

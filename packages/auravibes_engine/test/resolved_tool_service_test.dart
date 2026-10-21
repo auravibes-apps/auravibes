@@ -183,7 +183,10 @@ class const _FakeResolvedToolProvider()
   }
 
   @override
-  Future<Object?> runSkillControlTool(SkillControlToolRequest request) async {
+  Future<Object?> runSkillControlTool(
+    SkillControlToolRequest request, {
+    String? languageCode,
+  }) async {
     return 'control:${request.workspaceId}:${request.toolIdentifier}';
   }
 

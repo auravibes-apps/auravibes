@@ -45,11 +45,13 @@ abstract interface class AgentContinuationProvider<
   Future<List<TChatMessage>> buildSkillContextMessages({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   });
 
   Future<List<TTool>> loadTools({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   });
 
   Future<PreparedAgentTranscriptContext<TChatMessage, TTool>>
@@ -86,6 +88,7 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
 }) {
   Future<PreparedContinueAgentInput<TModel, TChatMessage, TTool>> call({
     required String conversationId,
+    String? languageCode,
   }) async {
     final conversation = await provider.loadConversation(conversationId);
     if (conversation == null) {
@@ -105,10 +108,12 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
     final skillContextMessages = await provider.buildSkillContextMessages(
       conversationId: conversationId,
       workspaceId: conversation.workspaceId,
+      languageCode: languageCode,
     );
     final tools = await provider.loadTools(
       conversationId: conversationId,
       workspaceId: conversation.workspaceId,
+      languageCode: languageCode,
     );
     final transcriptContext = await provider.reconcileTranscriptContext(
       conversationId: conversationId,

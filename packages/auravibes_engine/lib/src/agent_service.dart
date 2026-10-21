@@ -13,6 +13,7 @@ abstract interface class AgentLoopToolProvider {
   Future<AgentIterationDecision> runAllowedTools({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   });
 }
 
@@ -151,6 +152,7 @@ class const AgentService({
 
     currentContext = AgentIterationContext(
       origin: currentContext?.origin ?? AgentIterationOrigin.userMessage,
+      languageCode: currentContext?.languageCode,
     );
     if (!continueResult.hasToolCalls) {
       return await _continueAfterNoToolCalls(
@@ -163,6 +165,7 @@ class const AgentService({
     final decision = await tools.runAllowedTools(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: currentContext.languageCode,
     );
     final postToolCancel = await _cancelIfRequested(
       conversationId,
@@ -225,6 +228,7 @@ class const AgentService({
 
     return AgentIterationContext(
       origin: context?.origin ?? AgentIterationOrigin.userMessage,
+      languageCode: context?.languageCode,
       ackMessageIds: [
         ...context?.ackMessageIds ?? const [],
         ...createdMessages.map((message) => message.id),

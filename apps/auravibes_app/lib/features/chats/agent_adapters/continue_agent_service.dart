@@ -332,7 +332,10 @@ mixin _ContinueAgentCall on _ContinueAgentServiceDependencies {
     required AgentIterationContext? context,
     required List<String> retryUserMessageIds,
   }) async {
-    final preparedInput = await _prepareInput(conversationId);
+    final preparedInput = await _prepareInput(
+      conversationId,
+      context?.languageCode,
+    );
     final a2uiRuntime = await _resolveA2uiRuntime(conversationId);
     _beginA2uiGeneration(a2uiRuntime);
     await _markRetryUsersSending(retryUserMessageIds);
@@ -670,6 +673,7 @@ AgentIterationContext? _contextWithRetryUsers(
       for (final messageId in retryUserMessageIds)
         if (!existingIds.contains(messageId)) messageId,
     ],
+    languageCode: context?.languageCode,
   );
 }
 
@@ -1032,11 +1036,12 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
 
   Future<_ContinueAgentPreparedInput> _prepareInput(
     String conversationId,
+    String? languageCode,
   ) async {
     final runtime = skillContextRuntime;
     final generation = runtime?.begin(conversationId);
     try {
-      final prepared = await _prepareContinuation(conversationId);
+      final prepared = await _prepareContinuation(conversationId, languageCode);
       _recordPreparedSkillContext(
         runtime,
         conversationId,
@@ -1053,6 +1058,7 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
 
   Future<_ContinueAgentPreparedInput> _prepareContinuation(
     String conversationId,
+    String? languageCode,
   ) =>
       AgentContinuationPreparer<
             WorkspaceModelSelectionWithConnectionEntity,
@@ -1060,7 +1066,7 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
             ChatMessage,
             ToolSpec
           >(provider: agentContinuationProvider)
-          .call(conversationId: conversationId);
+          .call(conversationId: conversationId, languageCode: languageCode);
 }
 
 typedef _ContinueAgentPreparedInput =

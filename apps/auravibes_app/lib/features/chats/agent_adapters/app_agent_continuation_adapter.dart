@@ -111,10 +111,12 @@ class AppAgentContinuationAdapter({
   Future<List<ChatMessage>> buildSkillContextMessages({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) {
     return buildSkillContextMessagesUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     );
   }
 
@@ -122,6 +124,7 @@ class AppAgentContinuationAdapter({
   Future<List<ToolSpec>> loadTools({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) {
     final usecase =
         loadConversationToolSpecsUsecaseForWorkspace?.call(workspaceId) ??
@@ -131,6 +134,7 @@ class AppAgentContinuationAdapter({
     return usecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     );
   }
 

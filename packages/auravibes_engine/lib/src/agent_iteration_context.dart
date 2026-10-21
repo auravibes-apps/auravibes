@@ -4,17 +4,20 @@ import 'package:meta/meta.dart';
 class const AgentIterationContext({
   required final AgentIterationOrigin origin,
   final List<String> ackMessageIds = const [],
+  final String? languageCode,
 }) {
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         other is AgentIterationContext &&
             other.origin == origin &&
+            other.languageCode == languageCode &&
             _listEquals(other.ackMessageIds, ackMessageIds);
   }
 
   @override
-  int get hashCode => Object.hash(origin, .hashAll(ackMessageIds));
+  int get hashCode =>
+      Object.hash(origin, languageCode, .hashAll(ackMessageIds));
 }
 
 enum AgentIterationOrigin { userMessage, toolResume, manualContinue }

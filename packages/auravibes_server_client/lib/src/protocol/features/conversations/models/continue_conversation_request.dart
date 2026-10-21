@@ -22,6 +22,7 @@ abstract class ContinueConversationRequest
     required this.conversationId,
     required this.expectedProjectionRevision,
     this.a2uiSupportedComponents,
+    this.languageCode,
   });
 
   factory ContinueConversationRequest({
@@ -30,6 +31,7 @@ abstract class ContinueConversationRequest
     required String conversationId,
     required int expectedProjectionRevision,
     List<String>? a2uiSupportedComponents,
+    String? languageCode,
   }) = _ContinueConversationRequestImpl;
 
   factory ContinueConversationRequest.fromJson(
@@ -47,6 +49,7 @@ abstract class ContinueConversationRequest
           : _isctvzjc.Protocol().deserialize<List<String>>(
               jsonSerialization['a2uiSupportedComponents'],
             ),
+      languageCode: jsonSerialization['languageCode'] as String?,
     );
   }
 
@@ -60,6 +63,8 @@ abstract class ContinueConversationRequest
 
   List<String>? a2uiSupportedComponents;
 
+  String? languageCode;
+
   /// Returns a shallow copy of this [ContinueConversationRequest]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -69,6 +74,7 @@ abstract class ContinueConversationRequest
     String? conversationId,
     int? expectedProjectionRevision,
     List<String>? a2uiSupportedComponents,
+    String? languageCode,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -80,6 +86,7 @@ abstract class ContinueConversationRequest
       'expectedProjectionRevision': expectedProjectionRevision,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+      if (languageCode != null) 'languageCode': languageCode,
     };
   }
 
@@ -93,6 +100,7 @@ abstract class ContinueConversationRequest
       'expectedProjectionRevision': expectedProjectionRevision,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+      if (languageCode != null) 'languageCode': languageCode,
     };
   }
 
@@ -111,12 +119,14 @@ class _ContinueConversationRequestImpl extends ContinueConversationRequest {
     required String conversationId,
     required int expectedProjectionRevision,
     List<String>? a2uiSupportedComponents,
+    String? languageCode,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
          conversationId: conversationId,
          expectedProjectionRevision: expectedProjectionRevision,
          a2uiSupportedComponents: a2uiSupportedComponents,
+         languageCode: languageCode,
        );
 
   /// Returns a shallow copy of this [ContinueConversationRequest]
@@ -129,6 +139,7 @@ class _ContinueConversationRequestImpl extends ContinueConversationRequest {
     String? conversationId,
     int? expectedProjectionRevision,
     Object? a2uiSupportedComponents = _Undefined,
+    Object? languageCode = _Undefined,
   }) {
     return ContinueConversationRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -139,6 +150,7 @@ class _ContinueConversationRequestImpl extends ContinueConversationRequest {
       a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
           ? a2uiSupportedComponents
           : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
+      languageCode: languageCode is String? ? languageCode : this.languageCode,
     );
   }
 }

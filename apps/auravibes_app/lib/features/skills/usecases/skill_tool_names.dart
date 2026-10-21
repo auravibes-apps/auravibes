@@ -13,6 +13,7 @@ class const BuildDynamicSkillToolSpecsUsecase(
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     assert(conversationId.isNotEmpty, 'conversationId must not be empty');
     assert(workspaceId.isNotEmpty, 'workspaceId must not be empty');
@@ -20,6 +21,7 @@ class const BuildDynamicSkillToolSpecsUsecase(
     final manifests = await _buildLoadedSkillManifestsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     );
 
     return buildSkillCommandToolSpecs(manifests: manifests);

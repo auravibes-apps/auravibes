@@ -27,6 +27,17 @@ void main() {
     registerFallbackValue(<ToolCallApprovalBatchItem>[]);
     registerFallbackValue(<ToolCallExecutionBatchUpdate>[]);
     registerFallbackValue(<CloudToolDecisionItem>[]);
+    registerFallbackValue((
+      conversationId: '',
+      toolCallId: '',
+      tool: ResolvedTool.builtIn(
+        tableId: 'fallback',
+        toolIdentifier: 'calculator',
+        tooltype: .calculator,
+      ),
+      arguments: <String, dynamic>{},
+      languageCode: null,
+    ));
   });
 
   var messageRepository = MockMessageRepository();
@@ -244,14 +255,8 @@ void main() {
           workspaceId: any(named: 'workspaceId'),
         ),
       ).thenAnswer((_) async => catalog);
-      when(
-        () => resolvedToolService.call(
-          conversationId: any(named: 'conversationId'),
-          toolCallId: 'success-call',
-          tool: resolved,
-          arguments: {'input': 'value'},
-        ),
-      ).thenAnswer((_) async => 'done');
+      when(() => resolvedToolService.call(any()))
+          .thenAnswer((_) async => 'done');
       when(
         () => resolvedToolService.takeMcpAppResultData(
           conversationId: 'child',

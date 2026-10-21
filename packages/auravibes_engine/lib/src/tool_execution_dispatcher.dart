@@ -77,6 +77,7 @@ typedef AgentResolvedToolRunner<TTool extends Object> =
       required String toolCallId,
       required TTool tool,
       required Map<String, dynamic> arguments,
+      String? languageCode,
     });
 
 typedef AgentToolCancellationChecker = bool Function(String conversationId);
@@ -99,6 +100,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
     required String toolCallId,
     required TTool tool,
     required String argumentsRaw,
+    String? languageCode,
   }) async {
     try {
       if (isCancellationRequested(conversationId)) {
@@ -111,6 +113,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         toolCallId: toolCallId,
         tool: tool,
         arguments: arguments,
+        languageCode: languageCode,
       );
       if (result == null) {
         if (isCancellationRequested(conversationId)) {

@@ -68,7 +68,7 @@ extension on CloudChatMessageSender {
   ) async {
     final input = await _prepareQueueInput(chat, conversationId, draft);
     final snapshot = await _queueMessage(input);
-    await _continueIfReady(chat, conversationId, snapshot);
+    await _continueIfReady(chat, conversationId, snapshot, draft.languageCode);
   }
 
   Future<_QueueMessageInput> _prepareQueueInput(
@@ -191,6 +191,7 @@ extension on CloudChatMessageSender {
     CloudChatGateway chat,
     String conversationId,
     ConversationSnapshot snapshot,
+    String? languageCode,
   ) async {
     if (!_shouldContinue(snapshot)) return;
 
@@ -199,6 +200,7 @@ extension on CloudChatMessageSender {
       chat,
       conversationId,
       snapshot,
+      languageCode,
     );
     _logExecutionAcknowledged(conversationId, execution);
   }
@@ -224,10 +226,12 @@ extension on CloudChatMessageSender {
     CloudChatGateway chat,
     String conversationId,
     ConversationSnapshot snapshot,
+    String? languageCode,
   ) => chat.continueConversation(
     requestId: const UuidV7().generate(),
     conversationId: conversationId,
     expectedProjectionRevision: snapshot.conversation.projectionRevision,
+    languageCode: languageCode,
   );
 
   void _logExecutionAcknowledged(

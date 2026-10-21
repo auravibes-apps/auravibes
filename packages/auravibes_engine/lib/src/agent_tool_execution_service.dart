@@ -1,5 +1,6 @@
 import 'package:auravibes_engine/src/agent_iteration_decision.dart';
 import 'package:auravibes_engine/src/agent_tool_batch_executor.dart';
+import 'package:auravibes_engine/src/resolved_tool_service.dart';
 import 'package:auravibes_engine/src/tool_calls.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 
@@ -45,12 +46,7 @@ abstract interface class AgentToolExecutionProvider<TTool extends Object> {
     AgentToolApprovalRequest<TTool> request,
   );
 
-  Future<Object?> runResolvedTool({
-    required String conversationId,
-    required String toolCallId,
-    required TTool tool,
-    required Map<String, dynamic> arguments,
-  });
+  Future<Object?> runResolvedTool(AgentResolvedToolCallRequest<TTool> request);
 
   Future<AgentIterationDecision> getAgentIterationDecision({
     required String messageId,
@@ -81,6 +77,7 @@ class const AgentToolExecutionService<TTool extends Object>({
   Future<AgentIterationDecision> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     final latestToolCalls = await provider.loadLatestToolCalls(
       conversationId: conversationId,
@@ -216,7 +213,20 @@ class const AgentToolExecutionService<TTool extends Object>({
       }
 
       await AgentToolBatchExecutor<TTool>(
-        runResolvedTool: provider.runResolvedTool,
+        runResolvedTool:
+            ({
+              required conversationId,
+              required toolCallId,
+              required tool,
+              required arguments,
+              languageCode,
+            }) => provider.runResolvedTool((
+              conversationId: conversationId,
+              toolCallId: toolCallId,
+              tool: tool,
+              arguments: arguments,
+              languageCode: languageCode,
+            )),
         isCancellationRequested: provider.isCancellationRequested,
         logToolExecutionError: provider.logToolExecutionError,
         outputPolicyForTool: outputPolicyForTool,
@@ -230,6 +240,7 @@ class const AgentToolExecutionService<TTool extends Object>({
             argumentsRaw: tool.argumentsRaw,
           ),
         ),
+        languageCode: languageCode,
         onResult: (batchResult) => persistResult(
           AgentToolResultUpdate(
             toolCallId: batchResult.call.toolCallId,

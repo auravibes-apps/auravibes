@@ -131,7 +131,7 @@ extension on BatchToolApprovalUsecase {
     final plan = _prepareBatchExecution(resolved);
     final executionResults = await _executeResolvedTools(
       plan.executable,
-      runResolvedTool: runResolvedTool.call,
+      runResolvedTool: runResolvedTool,
       isCancellationRequested: cancellationRuntime.isCancellationRequested,
     );
     await _persistBatchExecutionResults(this, plan, executionResults);
@@ -581,13 +581,30 @@ Map<String, String> _sourceMessagesByConversation(
 
 Future<List<agent.AgentToolBatchResult<ResolvedTool>>> _executeResolvedTools(
   Iterable<agent.AgentToolBatchCall<ResolvedTool>> calls, {
-  required agent.AgentResolvedToolRunner<ResolvedTool> runResolvedTool,
+  required ResolvedToolService runResolvedTool,
   required agent.AgentToolCancellationChecker isCancellationRequested,
 }) => agent.AgentToolBatchExecutor<ResolvedTool>(
-  runResolvedTool: runResolvedTool,
+  runResolvedTool: _resolvedToolBatchRunner(runResolvedTool),
   isCancellationRequested: isCancellationRequested,
   logToolExecutionError: _logToolExecutionError,
 ).call(calls);
+
+agent.AgentResolvedToolRunner<ResolvedTool> _resolvedToolBatchRunner(
+  ResolvedToolService runResolvedTool,
+) =>
+    ({
+      required conversationId,
+      required toolCallId,
+      required tool,
+      required arguments,
+      languageCode,
+    }) => runResolvedTool((
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      tool: tool,
+      arguments: arguments,
+      languageCode: languageCode,
+    ));
 
 void _logToolExecutionError(
   agent.AgentToolExecutionErrorRequest<ResolvedTool> request,

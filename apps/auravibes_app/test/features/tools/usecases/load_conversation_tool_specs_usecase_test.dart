@@ -59,6 +59,7 @@ class _FakeBuildDynamicSkillToolSpecsUsecase(final List<ToolSpec> _result)
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async => _result;
 }
 
@@ -75,6 +76,7 @@ class _FakeBuildSkillTemplateToolSpecsUsecase
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async => result;
 }
 
@@ -87,6 +89,7 @@ class _FakeBuildAppSkillNativeToolSpecsUsecase
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async => result;
 }
 

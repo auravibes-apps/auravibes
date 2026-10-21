@@ -272,48 +272,55 @@ void main() {
   });
 
   test('runs built-in calculator tools', () async {
-    final result = await usecase(
+    final result = await usecase((
       conversationId: 'conversation-1',
+      toolCallId: '',
       tool: ResolvedTool.builtIn(
         tableId: 'tool-1',
         toolIdentifier: 'calculator',
         tooltype: .calculator,
       ),
       arguments: {'input': '2 + 3'},
-    );
+      languageCode: null,
+    ));
 
     expect(result, '5.0');
   });
 
   test('rejects built-in tools without input', () {
     expect(
-      () => usecase(
+      () => usecase((
         conversationId: 'conversation-1',
+        toolCallId: '',
         tool: ResolvedTool.builtIn(
           tableId: 'tool-1',
           toolIdentifier: 'calculator',
           tooltype: .calculator,
         ),
         arguments: {},
-      ),
+        languageCode: null,
+      )),
       throwsA(isA<FormatException>()),
     );
   });
 
   test('rejects native tools without input', () {
     expect(
-      () => usecase(
+      () => usecase((
         conversationId: 'conversation-1',
+        toolCallId: '',
         tool: ResolvedTool.native(tableId: 'tool-1', nativeToolType: .url),
         arguments: {},
-      ),
+        languageCode: null,
+      )),
       throwsA(isA<FormatException>()),
     );
   });
 
   test('runs MCP tools through the injected caller', () async {
-    final result = await usecase(
+    final result = await usecase((
       conversationId: 'conversation-1',
+      toolCallId: '',
       tool: ResolvedTool.mcp(
         tableId: 'tool-1',
         toolIdentifier: 'remote-tool',
@@ -324,7 +331,8 @@ void main() {
         ),
       ),
       arguments: {'value': 1},
-    );
+      languageCode: null,
+    ));
 
     expect(result, 'mcp result');
     expect(mcpCalls, [(serverId: 'server-1', toolIdentifier: 'remote-tool')]);
@@ -353,7 +361,7 @@ void main() {
           ),
     );
 
-    final firstResult = await service(
+    final firstResult = await service((
       conversationId: 'conversation-1',
       tool: ResolvedTool.mcp(
         tableId: 'tool-1',
@@ -366,8 +374,9 @@ void main() {
       ),
       arguments: const {'text': 'first conversation'},
       toolCallId: 'tool-call-1',
-    );
-    final secondResult = await service(
+      languageCode: null,
+    ));
+    final secondResult = await service((
       conversationId: 'conversation-2',
       tool: ResolvedTool.mcp(
         tableId: 'tool-1',
@@ -380,7 +389,8 @@ void main() {
       ),
       arguments: const {'text': 'second conversation'},
       toolCallId: 'tool-call-1',
-    );
+      languageCode: null,
+    ));
 
     expect(firstResult, 'model result');
     expect(secondResult, 'model result');
@@ -415,7 +425,7 @@ void main() {
           ),
     );
 
-    final result = await service(
+    final result = await service((
       conversationId: 'conversation-1',
       tool: ResolvedTool.mcp(
         tableId: 'tool-1',
@@ -428,7 +438,8 @@ void main() {
       ),
       arguments: const {},
       toolCallId: 'tool-call-1',
-    );
+      languageCode: null,
+    ));
 
     expect(result, 'ordinary result');
     expect(
@@ -485,8 +496,9 @@ void main() {
       },
     );
 
-    final result = await service.call(
+    final result = await service.call((
       conversationId: 'conversation-elicitation',
+      toolCallId: '',
       tool: ResolvedTool.mcp(
         tableId: 'tool-1',
         toolIdentifier: 'remote-tool',
@@ -497,7 +509,8 @@ void main() {
         ),
       ),
       arguments: const {},
-    );
+      languageCode: null,
+    ));
 
     expect(result, 'done');
     expect(requestedConversationId, 'conversation-elicitation');
@@ -506,8 +519,9 @@ void main() {
 
   test('rejects cloud tool execution on the client', () {
     expect(
-      () => ResolvedToolService.cloud()(
+      () => ResolvedToolService.cloud()((
         conversationId: 'conversation-1',
+        toolCallId: '',
         tool: .mcp(
           tableId: 'tool-1',
           toolIdentifier: 'remote-tool',
@@ -518,22 +532,25 @@ void main() {
           ),
         ),
         arguments: const {},
-      ),
+        languageCode: null,
+      )),
       throwsA(isA<StateError>()),
     );
   });
 
   test('rejects MCP tools without a server binding', () {
     expect(
-      () => usecase(
+      () => usecase((
         conversationId: 'conversation-1',
+        toolCallId: '',
         tool: ResolvedTool.mcp(
           tableId: 'tool-1',
           toolIdentifier: 'remote-tool',
           mcp: (mcpServerId: '', mcpSlug: 'server-1', outputSchemaJson: null),
         ),
         arguments: {'value': 1},
-      ),
+        languageCode: null,
+      )),
       throwsA(isA<StateError>()),
     );
   });
@@ -576,8 +593,9 @@ void main() {
       buildAppSkillNativeToolSpecsUsecase: specs,
     );
 
-    final result = await service.call(
+    final result = await service.call((
       conversationId: 'conversation-1',
+      toolCallId: '',
       tool: ResolvedTool.skillCommand(
         commandName: callSkillToolName,
         target: AgentResolvedToolName.skillAppTemplate(
@@ -592,7 +610,8 @@ void main() {
         'revision': 'rev-1',
         'args': {'question': 'What is TCGplayer?'},
       },
-    );
+      languageCode: null,
+    ));
 
     expect(result, 'codex result');
     verify(
@@ -1298,7 +1317,7 @@ void main() {
         buildAppSkillNativeToolSpecsUsecase: specs,
       );
 
-      final result = await service(
+      final result = await service((
         conversationId: 'conversation-1',
         tool: ResolvedTool.skillCommand(
           commandName: callSkillToolName,
@@ -1317,7 +1336,9 @@ void main() {
             'credentialId': 'model:codex-1',
           },
         },
-      );
+        toolCallId: '',
+        languageCode: null,
+      ));
 
       expect(result, 'native result');
       verify(
@@ -1353,6 +1374,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: listAgentsToolName,
+        languageCode: null,
         arguments: const {},
       )),
       contains('agent-1'),
@@ -1364,6 +1386,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: runSubAgentToolName,
+        languageCode: null,
         arguments: const {'title': 'Child', 'prompt': 'Run task'},
       )),
       contains('child-1'),
@@ -1375,6 +1398,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: 'unknown',
+        languageCode: null,
         arguments: const {},
       )),
       throwsA(isA<StateError>()),
@@ -1453,6 +1477,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'skills_manager',
         toolSlug: 'native-tool',
+        languageCode: null,
         arguments: {'value': 2},
       )),
       {'ok': true},
@@ -1464,6 +1489,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'duckduckgo',
         toolSlug: 'search',
+        languageCode: null,
         arguments: {'query': 'dart'},
       )),
       'service result',
@@ -1506,6 +1532,7 @@ void main() {
       workspaceId: 'workspace-1',
       skillSlug: 'duckduckgo',
       toolSlug: 'search',
+      languageCode: null,
       arguments: {'query': 'dart'},
     ));
     cancellationRuntime.requestStop('conversation-1');
@@ -1556,6 +1583,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'duckduckgo',
         toolSlug: 'search',
+        languageCode: null,
         arguments: {'query': 'dart'},
       ));
       await Future<void>.delayed(.zero);
@@ -1600,6 +1628,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'duckduckgo',
         toolSlug: 'search',
+        languageCode: null,
         arguments: const {'query': 'dart'},
       )),
       throwsA(isA<StateError>()),
@@ -1643,6 +1672,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'skill-1',
         toolSlug: 'native-tool',
+        languageCode: null,
         arguments: const {},
       )),
       throwsA(isA<StateError>()),
@@ -1667,6 +1697,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: listAgentsToolName,
+        languageCode: null,
         arguments: const {},
       )),
       throwsA(isA<StateError>()),
@@ -1678,6 +1709,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: SkillToolSlugs.skillsManager,
         toolSlug: 'list',
+        languageCode: null,
         arguments: const {},
       )),
       throwsA(isA<StateError>()),
@@ -1893,15 +1925,17 @@ void main() {
         approvalWait.complete();
       }
     });
-    final resultFuture = service.call(
+    final resultFuture = service.call((
       conversationId: 'parent-1',
+      toolCallId: '',
       tool: ResolvedTool.skillNative(
         tableId: runSubAgentToolName,
         skillSlug: agentsSkillSlug,
         toolIdentifier: runSubAgentToolName,
       ),
       arguments: const {'title': 'Child', 'prompt': 'Run task'},
-    );
+      languageCode: null,
+    ));
     await approvalWait.future;
     expect(
       activeSubAgents.statusOf('child-1'),
@@ -2010,15 +2044,17 @@ void main() {
       });
 
       final service = container.read(resolvedToolServiceProvider);
-      final result = await service.call(
+      final result = await service.call((
         conversationId: 'parent-1',
+        toolCallId: '',
         tool: ResolvedTool.skillNative(
           tableId: runSubAgentToolName,
           skillSlug: agentsSkillSlug,
           toolIdentifier: runSubAgentToolName,
         ),
         arguments: const {'title': 'Child', 'prompt': 'Run task'},
-      );
+        languageCode: null,
+      ));
 
       expect(result, contains('"conversationId":"child-1"'));
       expect(result, contains('"status":"stopped"'));

@@ -11,6 +11,7 @@ class _LoadedManifests(final List<SkillManifest> _manifests)
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async => _manifests;
 }
 

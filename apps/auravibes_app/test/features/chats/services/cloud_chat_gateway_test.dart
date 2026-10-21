@@ -48,16 +48,19 @@ void main() {
         attachmentIds: const [],
         modelSelectionId: null,
         agentId: null,
+        languageCode: 'es',
       )),
       'continueTurn': () => gateway.continueTurn(
         requestId: 'continue',
         conversationId: 'conversation',
         expectedConversationRevision: 1,
+        languageCode: 'es',
       ),
       'continueConversation': () => gateway.continueConversation(
         requestId: 'execute',
         conversationId: 'conversation',
         expectedProjectionRevision: 1,
+        languageCode: 'es',
       ),
       'submitToolDecision': () => gateway.submitToolDecision((
         requestId: 'decision',
@@ -135,6 +138,9 @@ void main() {
       requests['queueConversationMessage']!['metadataJson'],
       '{"action":"unchanged"}',
     );
+    expect(requests['startTurn']!['languageCode'], 'es');
+    expect(requests['continueTurn']!['languageCode'], 'es');
+    expect(requests['continueConversation']!['languageCode'], 'es');
     expect(
       requests['restoreCompactionCheckpoint'],
       containsPair('expectedConversationRevision', 7),

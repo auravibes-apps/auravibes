@@ -39,14 +39,19 @@ class const AppToolCallActionsDataProvider({
   Future<void> resumeConversationIfReady({
     required String messageId,
     required String conversationId,
+    String? languageCode,
   }) {
-    return agentToolResumeService.call(messageId: messageId);
+    return agentToolResumeService.call(
+      messageId: messageId,
+      languageCode: languageCode,
+    );
   }
 
   @override
   Future<void> stopPendingToolCalls({
     required String messageId,
     required String conversationId,
+    String? languageCode,
   }) async {
     final message = await _loadMessage(messageId);
     if (message == null) return;

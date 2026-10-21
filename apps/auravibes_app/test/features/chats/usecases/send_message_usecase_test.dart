@@ -64,7 +64,7 @@ void main() {
     test('forwards the created user message id as the ack target', () async {
       final _ = await fixture.usecase.call(
         conversationId: 'conversation-1',
-        draft: const ChatDraft(text: 'Hello'),
+        draft: const ChatDraft(text: 'Hello', languageCode: 'es'),
       );
 
       expect(
@@ -74,6 +74,7 @@ void main() {
             context: const AgentIterationContext(
               origin: .userMessage,
               ackMessageIds: ['user-1'],
+              languageCode: 'es',
             ),
           ),
         ).called(1),
@@ -316,7 +317,7 @@ void main() {
 
       await fixture.usecase.sendFirstMessage(
         conversationId: 'conversation-1',
-        draft: const ChatDraft(text: 'Hello'),
+        draft: const ChatDraft(text: 'Hello', languageCode: 'es'),
         onContinueError: (error, stackTrace) => errors.add(error),
       );
 
@@ -327,6 +328,7 @@ void main() {
           context: const AgentIterationContext(
             origin: .userMessage,
             ackMessageIds: ['user-1'],
+            languageCode: 'es',
           ),
         ),
       ).called(1);

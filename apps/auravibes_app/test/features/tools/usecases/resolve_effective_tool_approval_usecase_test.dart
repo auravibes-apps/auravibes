@@ -132,6 +132,7 @@ class _Manifests(final List<SkillManifest> value)
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async => value;
 }
 
@@ -148,5 +149,6 @@ class _Specs(final List<ToolSpec> value)
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async => value;
 }

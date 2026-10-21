@@ -604,6 +604,69 @@ void main() {
     expect(childTools, isEmpty);
   });
 
+  test('materializes localized sub-agent guidance with stable schemas', () {
+    final tools = materializeCloudSkillTools(
+      selectedSkillIds: const {agentsSkillSlug},
+      userSkills: const [],
+      templateTools: const [],
+      appSkillSettings: const [],
+      isChildConversation: false,
+      languageCode: 'es-MX',
+    );
+    final englishTools = materializeCloudSkillTools(
+      selectedSkillIds: const {agentsSkillSlug},
+      userSkills: const [],
+      templateTools: const [],
+      appSkillSettings: const [],
+      isChildConversation: false,
+      languageCode: 'en',
+    );
+    final listAgents = tools.singleWhere(
+      (tool) => tool.descriptor.toolIdentifier == listAgentsToolName,
+    );
+    final englishListAgents = englishTools.singleWhere(
+      (tool) => tool.descriptor.toolIdentifier == listAgentsToolName,
+    );
+    final runSubAgent = tools.singleWhere(
+      (tool) => tool.descriptor.toolIdentifier == runSubAgentToolName,
+    );
+    final englishRunSubAgent = englishTools.singleWhere(
+      (tool) => tool.descriptor.toolIdentifier == runSubAgentToolName,
+    );
+
+    expect(listAgents.spec.name, englishListAgents.spec.name);
+    expect(listAgents.spec.description, contains('agentes configurados'));
+    expect(
+      listAgents.spec.inputJsonSchema,
+      englishListAgents.spec.inputJsonSchema,
+    );
+    expect(runSubAgent.spec.name, englishRunSubAgent.spec.name);
+    expect(runSubAgent.spec.description, contains('subagente'));
+    expect(
+      runSubAgent.spec.inputJsonSchema,
+      englishRunSubAgent.spec.inputJsonSchema,
+    );
+  });
+
+  test('localizes the agents skill manifest instructions', () async {
+    final english = await buildCloudSkillManifest(
+      slug: agentsSkillSlug,
+      userSkills: const [],
+      tools: const [],
+      languageCode: 'en',
+    );
+    final spanish = await buildCloudSkillManifest(
+      slug: agentsSkillSlug,
+      userSkills: const [],
+      tools: const [],
+      languageCode: 'es-MX',
+    );
+
+    expect(english, isNotNull);
+    expect(spanish, isNotNull);
+    expect(spanish!.revision, isNot(english!.revision));
+  });
+
   test('lists only ready user skills in cloud load controls', () {
     final controls = materializeCloudSkillControlTools(
       selectedSkillIds: const {},

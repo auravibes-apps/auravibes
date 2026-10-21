@@ -1,5 +1,13 @@
 import 'package:auravibes_engine/src/tool_name_resolver.dart';
 
+typedef AgentResolvedToolCallRequest<TTool extends Object> = ({
+  String conversationId,
+  String toolCallId,
+  TTool tool,
+  Map<String, dynamic> arguments,
+  String? languageCode,
+});
+
 typedef SkillControlToolRequest = ({
   String conversationId,
   String toolCallId,
@@ -24,6 +32,7 @@ typedef SkillNativeToolRequest = ({
   String skillSlug,
   String toolSlug,
   Map<String, dynamic> arguments,
+  String? languageCode,
 });
 
 typedef SkillAppTemplateToolRequest = ({
@@ -64,7 +73,10 @@ abstract interface class ResolvedToolProvider<TTool> {
 
   Future<String> getConversationWorkspaceId(String conversationId);
 
-  Future<Object?> runSkillControlTool(SkillControlToolRequest request);
+  Future<Object?> runSkillControlTool(
+    SkillControlToolRequest request, {
+    String? languageCode,
+  });
 
   Future<Object?> runSkillTemplateTool(SkillTemplateToolRequest request);
 
@@ -90,6 +102,7 @@ class const ResolvedToolService<TTool>({
     required TTool tool,
     required Map<String, dynamic> arguments,
     String toolCallId = '',
+    String? languageCode,
   }) async {
     final execution = provider.toExecution(tool);
     final descriptor = execution.descriptor;
@@ -117,6 +130,7 @@ class const ResolvedToolService<TTool>({
         toolCallId,
         descriptor,
         arguments,
+        languageCode,
       ),
       .skillTemplate => _runSkillTemplateTool(
         conversationId,
@@ -129,6 +143,7 @@ class const ResolvedToolService<TTool>({
         toolCallId,
         descriptor,
         arguments,
+        languageCode,
       ),
       .skillAppTemplate => _runSkillAppTemplateTool(
         conversationId,
@@ -193,6 +208,7 @@ class const ResolvedToolService<TTool>({
     String toolCallId,
     AgentResolvedToolName descriptor,
     Map<String, dynamic> arguments,
+    String? languageCode,
   ) async {
     final workspaceId = await provider.getConversationWorkspaceId(
       conversationId,
@@ -204,7 +220,7 @@ class const ResolvedToolService<TTool>({
       workspaceId: workspaceId,
       toolIdentifier: descriptor.toolIdentifier,
       arguments: arguments,
-    ));
+    ), languageCode: languageCode);
   }
 
   Future<Object?> _runSkillTemplateTool(
@@ -236,6 +252,7 @@ class const ResolvedToolService<TTool>({
     String toolCallId,
     AgentResolvedToolName descriptor,
     Map<String, dynamic> arguments,
+    String? languageCode,
   ) async {
     final skillSlug = descriptor.skillSlug;
     final toolSlug = descriptor.skillToolSlug;
@@ -256,6 +273,7 @@ class const ResolvedToolService<TTool>({
       skillSlug: skillSlug,
       toolSlug: toolSlug,
       arguments: arguments,
+      languageCode: languageCode,
     ));
   }
 

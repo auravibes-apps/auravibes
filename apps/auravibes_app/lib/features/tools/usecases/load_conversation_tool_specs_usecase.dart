@@ -35,27 +35,39 @@ class const LoadConversationToolSpecsUsecase({
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async => (await buildCatalog(
     conversationId: conversationId,
     workspaceId: workspaceId,
+    languageCode: languageCode,
   )).specs;
 
   Future<List<ToolSpec>> preview({
     required String conversationId,
     required String workspaceId,
-  }) async =>
-      (await _buildCatalogForConversation(conversationId, workspaceId)).specs;
+    String? languageCode,
+  }) async => (await _buildCatalogForConversation(
+    conversationId,
+    workspaceId,
+    languageCode,
+  )).specs;
 
   Future<agent.ToolCatalog<ResolvedTool>> buildCatalog({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     await _syncSkillToolPermissionsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     );
 
-    return await _buildCatalogForConversation(conversationId, workspaceId);
+    return await _buildCatalogForConversation(
+      conversationId,
+      workspaceId,
+      languageCode,
+    );
   }
 
   Future<List<agent.ToolCatalogCandidate<ResolvedTool>>> _loadToolCandidates(
@@ -71,13 +83,19 @@ class const LoadConversationToolSpecsUsecase({
   Future<agent.ToolCatalog<ResolvedTool>> _buildCatalogForConversation(
     String conversationId,
     String workspaceId,
+    String? languageCode,
   ) async {
-    final input = await _loadCatalogInput(conversationId, workspaceId);
+    final input = await _loadCatalogInput(
+      conversationId,
+      workspaceId,
+      languageCode,
+    );
 
     return _buildCatalog(
       toolCandidates: input.toolCandidates,
       skillCommandSpecs: input.skillCommandSpecs,
       includeRunSubAgent: await _includeRunSubAgent(conversationId),
+      languageCode: languageCode,
     );
   }
 
@@ -87,11 +105,16 @@ class const LoadConversationToolSpecsUsecase({
       List<ToolSpec> skillCommandSpecs,
     })
   >
-  _loadCatalogInput(String conversationId, String workspaceId) async => (
+  _loadCatalogInput(
+    String conversationId,
+    String workspaceId,
+    String? languageCode,
+  ) async => (
     toolCandidates: await _loadToolCandidates(conversationId, workspaceId),
     skillCommandSpecs: await _buildDynamicSkillToolSpecsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     ),
   );
 
@@ -109,10 +132,11 @@ agent.ToolCatalog<ResolvedTool> _buildCatalog({
   required List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
   required List<ToolSpec> skillCommandSpecs,
   required bool includeRunSubAgent,
+  String? languageCode,
 }) => agent.buildToolCatalog([
   ...toolCandidates,
   ...skillCommandSpecs.map(_skillCommandCandidate),
-  if (includeRunSubAgent) _runSubAgentCandidate(),
+  if (includeRunSubAgent) _runSubAgentCandidate(languageCode),
 ]);
 
 agent.ToolCatalogCandidate<ResolvedTool> _skillCommandCandidate(
@@ -122,15 +146,16 @@ agent.ToolCatalogCandidate<ResolvedTool> _skillCommandCandidate(
   target: ResolvedTool.skillCommand(commandName: spec.name),
 );
 
-agent.ToolCatalogCandidate<ResolvedTool> _runSubAgentCandidate() =>
-    agent.ToolCatalogCandidate.reserved(
-      spec: agent.runSubAgentToolSpec,
-      target: ResolvedTool.skillNative(
-        tableId: agent.runSubAgentToolName,
-        skillSlug: agent.agentsSkillSlug,
-        toolIdentifier: agent.runSubAgentToolName,
-      ),
-    );
+agent.ToolCatalogCandidate<ResolvedTool> _runSubAgentCandidate(
+  String? languageCode,
+) => agent.ToolCatalogCandidate.reserved(
+  spec: agent.runSubAgentToolSpecForLanguageCode(languageCode),
+  target: ResolvedTool.skillNative(
+    tableId: agent.runSubAgentToolName,
+    skillSlug: agent.agentsSkillSlug,
+    toolIdentifier: agent.runSubAgentToolName,
+  ),
+);
 
 final ProviderFamily<LoadConversationToolSpecsUsecase, String>
 loadConversationToolSpecsUsecaseProvider =

@@ -29,6 +29,7 @@ class const SubAgentRunner({
   Future<String> listAgents(
     String workspaceId, {
     Map<String, dynamic> arguments = const {},
+    String? languageCode,
   }) async {
     try {
       final query = SubAgentCatalogQuery.fromArguments(workspaceId, arguments);
@@ -45,7 +46,7 @@ class const SubAgentRunner({
             },
         ],
         'nextCursor': page.nextCursor,
-        'hint': generalSubAgentHint,
+        'hint': generalSubAgentHintForLanguageCode(languageCode),
       });
     } on AgentToolExecutionFailure {
       rethrow;
@@ -70,6 +71,7 @@ class const SubAgentRunner({
     required String parentConversationId,
     required String workspaceId,
     required Map<String, dynamic> arguments,
+    String? languageCode,
     SubAgentChildStarted? onChildStarted,
   }) async {
     final request = _SubAgentRunRequest.from(arguments);
@@ -144,6 +146,7 @@ class const SubAgentRunner({
         context: AgentIterationContext(
           origin: .userMessage,
           ackMessageIds: [message.id],
+          languageCode: languageCode,
         ),
       );
       if (requestHandle.isStopped) {

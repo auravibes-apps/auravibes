@@ -153,28 +153,26 @@ class ResolvedToolService {
   bool supportsCancellation(ResolvedTool tool) =>
       _delegate?.supportsCancellation(tool) ?? false;
 
-  Future<Object?> call({
-    required String conversationId,
-    required ResolvedTool tool,
-    required Map<String, dynamic> arguments,
-    String toolCallId = '',
-  }) async {
+  Future<Object?> call(
+    agent.AgentResolvedToolCallRequest<ResolvedTool> request,
+  ) async {
     final delegate = _delegate;
     if (delegate == null) {
       throw StateError('Cloud tools execute on the server.');
     }
 
     final result = await delegate.call(
-      conversationId: conversationId,
-      toolCallId: toolCallId,
-      tool: tool,
-      arguments: _executionArguments(tool, arguments),
+      conversationId: request.conversationId,
+      toolCallId: request.toolCallId,
+      tool: request.tool,
+      arguments: _executionArguments(request.tool, request.arguments),
+      languageCode: request.languageCode,
     );
 
     return _modelToolResult(
       result,
-      conversationId,
-      toolCallId,
+      request.conversationId,
+      request.toolCallId,
       _mcpAppResultData,
     );
   }
@@ -298,8 +296,10 @@ class const AppResolvedToolProvider({
   }
 
   @override
-  Future<Object?> runSkillControlTool(agent.SkillControlToolRequest input) =>
-      _runSkillControlRequest(this, input);
+  Future<Object?> runSkillControlTool(
+    agent.SkillControlToolRequest input, {
+    String? languageCode,
+  }) => _runSkillControlRequest(this, input, languageCode: languageCode);
 
   @override
   Future<Object?> runSkillTemplateTool(agent.SkillTemplateToolRequest input) =>
@@ -314,6 +314,7 @@ class const AppResolvedToolProvider({
         workspaceId: input.workspaceId,
         skillSlug: input.skillSlug,
         toolSlug: input.toolSlug,
+        languageCode: input.languageCode,
         arguments: _unwrapSkillCommandArguments(
           skillSlug: input.skillSlug,
           toolSlug: input.toolSlug,
@@ -358,10 +359,15 @@ Map<String, dynamic> _unwrapSkillCommandArguments({
 
 Future<Object?> _runSkillControlRequest(
   AppResolvedToolProvider provider,
-  _SkillControlToolRequest request,
-) {
+  _SkillControlToolRequest request, {
+  String? languageCode,
+}) {
   if (_hasCombinedSkillCommandDependencies(provider)) {
-    return _runConfiguredSkillCommand(provider, request);
+    return _runConfiguredSkillCommand(
+      provider,
+      request,
+      languageCode: languageCode,
+    );
   }
 
   return _runSkillControlTool(
@@ -735,6 +741,7 @@ class const _SkillNativeToolRequest({
   required final String toolSlug,
   required final Map<String, dynamic> arguments,
   required final AppResolvedToolProvider provider,
+  final String? languageCode,
 });
 
 class const _SkillCredentialRequest({
@@ -764,7 +771,11 @@ Future<Object?> _runSubAgentToolWithRunner(
   agent.SubAgentRunner runner,
 ) {
   if (request.toolSlug == agent.listAgentsToolName) {
-    return runner.listAgents(request.workspaceId, arguments: request.arguments);
+    return runner.listAgents(
+      request.workspaceId,
+      arguments: request.arguments,
+      languageCode: request.languageCode,
+    );
   }
   if (request.toolSlug != agent.runSubAgentToolName) {
     throw StateError('Unknown sub-agent tool: ${request.toolSlug}');
@@ -796,6 +807,7 @@ Future<Object?> _startSubAgentOperation(
   parentConversationId: request.conversationId,
   workspaceId: request.workspaceId,
   arguments: request.arguments,
+  languageCode: request.languageCode,
   onChildStarted: ({required childId, required parentId}) =>
       _recordStartedSubAgent(childStartedId, childId),
 );
@@ -1263,9 +1275,11 @@ bool _hasCombinedSkillCommandDependencies(AppResolvedToolProvider provider) {
 
 Future<Object?> _runConfiguredSkillCommand(
   AppResolvedToolProvider provider,
-  _SkillControlToolRequest request,
-) {
-  return _ConfiguredSkillCommandRunner(provider).run(request);
+  _SkillControlToolRequest request, {
+  String? languageCode,
+}) {
+  return _ConfiguredSkillCommandRunner(provider)
+      .run(request, languageCode: languageCode);
 }
 
 class _ConfiguredSkillCommandRunner {
@@ -1283,19 +1297,24 @@ class _ConfiguredSkillCommandRunner {
   final AppResolvedToolProvider _provider;
   RunSkillCommandUsecase? _usecase;
 
-  Future<Object?> run(_SkillControlToolRequest request) {
+  Future<Object?> run(
+    _SkillControlToolRequest request, {
+    String? languageCode,
+  }) {
     final usecase = _usecase;
     if (usecase == null) {
       throw StateError('Combined skill command is not configured.');
     }
 
-    return usecase.call((
+    final input = (
       conversationId: request.conversationId,
       toolCallId: request.toolCallId,
       workspaceId: request.workspaceId,
       commandName: request.toolIdentifier,
       arguments: request.arguments,
-    ));
+    );
+
+    return usecase.call(input, languageCode: languageCode);
   }
 
   Future<Map<String, Object?>> _listSkillCredentialsForCommand({
@@ -1498,6 +1517,7 @@ _SkillNativeToolRequest _subAgentSkillNativeToolRequest(
     toolSlug: target.toolIdentifier,
     arguments: request.arguments,
     provider: provider,
+    languageCode: request.languageCode,
   );
 }
 

@@ -854,6 +854,7 @@ class ConversationUseCases {
       'attachmentIds': request.attachmentIds,
       'modelSelectionId': request.modelSelectionId,
       'agentId': request.agentId,
+      if (request.languageCode != null) 'languageCode': request.languageCode,
     });
     final attachmentIds = request.attachmentIds.map(_parseObjectId).toSet();
     final contentDigest = base64UrlEncode(
@@ -1044,6 +1045,7 @@ class ConversationUseCases {
     final requestHash = jsonEncode({
       'conversationId': request.conversationId,
       'expectedRevision': request.expectedConversationRevision,
+      if (request.languageCode != null) 'languageCode': request.languageCode,
     });
     final result = await _mutate(
       session,
@@ -1127,6 +1129,7 @@ class ConversationUseCases {
     required String userId,
     required int workspaceId,
     required String conversationId,
+    String? languageCode,
   }) async {
     while (true) {
       final queued = await session.db.transaction((transaction) async {
@@ -1193,6 +1196,7 @@ class ConversationUseCases {
             conversationId: conversationId,
             expectedProjectionRevision: queued.conversation.projectionRevision,
             a2uiSupportedComponents: const [],
+            languageCode: languageCode,
           ),
         );
         return true;
@@ -1202,6 +1206,27 @@ class ConversationUseCases {
         rethrow;
       }
     }
+  }
+
+  Future<String?> _languageCodeForTurn(
+    Session session, {
+    required int workspaceId,
+    required int turnId,
+    required Transaction transaction,
+  }) async {
+    final jobs = await ConversationJob.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.turnId.equals(turnId) &
+          table.kind.equals(ConversationJobKinds.turn),
+      orderBy: (table) => table.id.desc(),
+      limit: 1,
+      transaction: transaction,
+    );
+    return conversation_repo.conversationLanguageCodeForJob(
+      jobs.firstOrNull?.payloadJson,
+    );
   }
 
   Future<TurnSnapshot> getTurn(
@@ -2493,6 +2518,7 @@ class ConversationUseCases {
                 parentTurnId: parentTurnId,
                 parentToolCallId: parentToolCallId,
                 a2uiSupportedComponents: request.a2uiSupportedComponents,
+                languageCode: request.languageCode,
                 reasoningConfigJson: conversation.reasoningConfigJson,
                 includeReasoningConfigSnapshot: true,
               ),
@@ -3013,6 +3039,12 @@ class ConversationUseCases {
           transaction: transaction,
         );
         if (shouldResume) {
+          final languageCode = await _languageCodeForTurn(
+            session,
+            workspaceId: request.workspaceId,
+            turnId: turn.id!,
+            transaction: transaction,
+          );
           job = await _insertJob(
             session,
             workspaceId: turn.workspaceId,
@@ -3024,6 +3056,7 @@ class ConversationUseCases {
               turn.initiatorUserId,
               executionId: execution?.stableId,
               a2uiSupportedComponents: request.a2uiSupportedComponents,
+              languageCode: languageCode,
               parentTurnId: execution == null
                   ? null
                   : conversation_repo
@@ -3411,6 +3444,13 @@ class ConversationUseCases {
     );
     if (!shouldResume || execution == null) return;
 
+    final languageCode = await _languageCodeForTurn(
+      session,
+      workspaceId: turn.workspaceId,
+      turnId: turn.id!,
+      transaction: transaction,
+    );
+
     await ConversationExecution.db.updateRow(
       session,
       execution.copyWith(
@@ -3432,6 +3472,7 @@ class ConversationUseCases {
           turn.initiatorUserId,
           executionId: execution.stableId,
           a2uiSupportedComponents: request.a2uiSupportedComponents,
+          languageCode: languageCode,
           parentTurnId: conversation_repo
               .conversationParentTurnIdForExecutionSettings(
                 execution.settingsJson,

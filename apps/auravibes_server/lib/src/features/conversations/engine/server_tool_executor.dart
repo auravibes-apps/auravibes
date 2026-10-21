@@ -866,7 +866,12 @@ class const ServerToolExecutorService({
     ServerToolRequest request,
   ) async {
     if (tool.descriptor.toolIdentifier == listAgentsToolName) {
-      return _listAgents(session, turn, request.arguments);
+      return _listAgents(
+        session,
+        turn,
+        request.arguments,
+        request.languageCode,
+      );
     }
     if (tool.descriptor.toolIdentifier != runSubAgentToolName) {
       throw const ServerToolNotConfiguredException();
@@ -966,6 +971,7 @@ class const ServerToolExecutorService({
           requestId: '$id:continue',
           conversationId: child.id,
           expectedProjectionRevision: queued.conversation.projectionRevision,
+          languageCode: request.languageCode,
         ),
         parentTurnId: turn.id,
         parentToolCallId: request.id,
@@ -1408,6 +1414,7 @@ class const ServerToolExecutorService({
     Session session,
     ConversationTurn turn,
     Map<String, dynamic> arguments,
+    String? languageCode,
   ) async {
     final query = SubAgentCatalogQuery.fromArguments(
       turn.workspaceId.toString(),
@@ -1444,7 +1451,7 @@ class const ServerToolExecutorService({
           },
       ],
       'nextCursor': page.nextCursor,
-      'hint': generalSubAgentHint,
+      'hint': generalSubAgentHintForLanguageCode(languageCode),
     };
   }
 
