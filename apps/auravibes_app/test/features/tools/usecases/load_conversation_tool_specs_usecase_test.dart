@@ -4,6 +4,7 @@ import 'package:auravibes_app/data/repositories/conversation_tools_repository.da
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
@@ -121,7 +122,12 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result.map((spec) => spec.name), [runSubAgentToolName]);
+      expect(result.map((spec) => spec.name), [
+        listConnectorConnectionsToolName,
+        listConnectorToolsToolName,
+        executeConnectorToolName,
+        runSubAgentToolName,
+      ]);
     });
 
     test('hides agent tools from child conversations', () async {
@@ -178,10 +184,49 @@ void main() {
           workspaceId: 'ws-1',
         );
 
-        expect(result.map((spec) => spec.name), [runSubAgentToolName]);
+        expect(result.map((spec) => spec.name), [
+          listConnectorConnectionsToolName,
+          listConnectorToolsToolName,
+          executeConnectorToolName,
+          runSubAgentToolName,
+        ]);
         verify(
           () => syncUsecase.call(conversationId: 'conv-1', workspaceId: 'ws-1'),
         ).called(1);
+      },
+    );
+
+    test(
+      'syncs Connector command permissions before loading the catalog',
+      () async {
+        final syncConnectorUsecase = _MockSyncConnectorToolPermissionsUsecase();
+        final events = <String>[];
+        when(() => syncConnectorUsecase.call(workspaceId: 'ws-1'))
+            .thenAnswer((_) {
+              events.add('sync');
+
+              return Future<void>.value();
+            });
+        final usecase = LoadConversationToolSpecsUsecase(
+          conversationToolsRepository: _CapturingRepo(
+            onGetTools: (_, _) async {
+              events.add('load');
+
+              return [];
+            },
+          ),
+          buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+          buildDynamicSkillToolSpecsUsecase:
+              _FakeBuildDynamicSkillToolSpecsUsecase([]),
+          syncSkillToolPermissionsUsecase:
+              NoopSyncSkillToolPermissionsUsecase(),
+          syncConnectorToolPermissionsUsecase: syncConnectorUsecase,
+        );
+
+        final _ = await usecase(conversationId: 'conv-1', workspaceId: 'ws-1');
+
+        expect(events, ['sync', 'load']);
+        verify(() => syncConnectorUsecase.call(workspaceId: 'ws-1')).called(1);
       },
     );
 
@@ -200,7 +245,12 @@ void main() {
         workspaceId: 'ws-1',
       );
 
-      expect(result.map((spec) => spec.name), [runSubAgentToolName]);
+      expect(result.map((spec) => spec.name), [
+        listConnectorConnectionsToolName,
+        listConnectorToolsToolName,
+        executeConnectorToolName,
+        runSubAgentToolName,
+      ]);
       final _ = verifyNever(
         () => syncUsecase.call(conversationId: 'conv-1', workspaceId: 'ws-1'),
       );
@@ -225,7 +275,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result, hasLength(2));
+      expect(result, hasLength(5));
       expect(result.firstOrNull?.name, 'tool-1');
     });
 
@@ -325,7 +375,15 @@ void main() {
 
         expect(
           names,
-          containsAll({...skillCommandToolNames, runSubAgentToolName}),
+          containsAll({
+            ...skillCommandToolNames,
+            ...connectorToolCommandNames,
+            runSubAgentToolName,
+          }),
+        );
+        expect(
+          catalog.resolve(executeConnectorToolName)?.isConnectorCommand,
+          isTrue,
         );
         expect(names, containsAll(externalTargets.keys));
         expect(names.toSet(), hasLength(catalog.specs.length));
@@ -406,7 +464,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result, hasLength(4));
+      expect(result, hasLength(7));
     });
 
     test('constructor stores dependencies', () {
@@ -501,6 +559,9 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
+        listConnectorConnectionsToolName,
+        listConnectorToolsToolName,
+        executeConnectorToolName,
         activateSkillToolName,
         runSubAgentToolName,
       ]);
@@ -599,13 +660,40 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
+        listConnectorConnectionsToolName,
+        listConnectorToolsToolName,
+        executeConnectorToolName,
         activateSkillToolName,
         SkillToolNames.listCredentials,
         runSubAgentToolName,
       ]);
     });
+
+    test('loads connector execution without loading a skill', () async {
+      final usecase = LoadConversationToolSpecsUsecase(
+        conversationToolsRepository: _FakeConversationToolsRepository([]),
+        buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase(const []),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
+      );
+
+      final result = await usecase(
+        conversationId: 'conv-1',
+        workspaceId: 'ws-1',
+      );
+
+      expect(
+        result.map((spec) => spec.name),
+        contains(executeConnectorToolName),
+      );
+      expect(result.any((spec) => spec.name.startsWith('skill__')), isFalse);
+    });
   });
 }
+
+class _MockSyncConnectorToolPermissionsUsecase extends Mock
+    implements SyncConnectorToolPermissionsUsecase;
 
 class _CapturingBuildCombined({
   required final Future<List<ToolCatalogCandidate<ResolvedTool>>> Function(

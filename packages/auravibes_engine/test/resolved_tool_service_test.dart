@@ -67,6 +67,26 @@ void main() {
       expect(result, 'mcp:server-1:sum:1');
     });
 
+    test(
+      'runs connector commands with current conversation workspace',
+      () async {
+        final usecase = _usecase();
+
+        final result = await usecase.call(
+          conversationId: 'c1',
+          tool: AgentResolvedToolName.connectorCommand(
+            toolIdentifier: executeConnectorToolName,
+          ),
+          arguments: const {
+            'toolId': 'openai/search',
+            'args': {'query': 'x'},
+          },
+        );
+
+        expect(result, 'connector-command:w1:$executeConnectorToolName');
+      },
+    );
+
     test('rejects MCP tools without server binding', () async {
       final usecase = _usecase();
 
@@ -176,6 +196,12 @@ class const _FakeResolvedToolProvider()
     return 'mcp:${request.mcpServerId}:'
         '${request.toolIdentifier}:${request.arguments.length}';
   }
+
+  @override
+  Future<Object?> runConnectorCommandTool(
+    ConnectorCommandToolRequest request,
+  ) async =>
+      'connector-command:${request.workspaceId}:${request.toolIdentifier}';
 
   @override
   Future<String> getConversationWorkspaceId(String conversationId) async {

@@ -8,6 +8,7 @@ enum ResolvedToolType {
   native,
   skillControl,
   skillCommand,
+  connectorCommand,
   skillNative,
   skillTemplate,
   skillAppTemplate,
@@ -63,6 +64,9 @@ class ResolvedTool._({
   })
   skillCommand = _skillCommand;
 
+  static const ResolvedTool Function({required String commandName})
+  connectorCommand = _connectorCommand;
+
   static const ResolvedTool Function({
     required String tableId,
     required String skillSlug,
@@ -89,6 +93,7 @@ class ResolvedTool._({
   final bool isNative = type == .native;
   final bool isSkillControl = type == .skillControl;
   final bool isSkillCommand = type == .skillCommand;
+  final bool isConnectorCommand = type == .connectorCommand;
   final bool isSkillNative = type == .skillNative;
   final bool isSkillTemplate = type == .skillTemplate;
   final bool isSkillAppTemplate = type == .skillAppTemplate;
@@ -147,6 +152,13 @@ ResolvedTool _skillCommand({
   toolIdentifier: commandName,
   fullName: target?.fullName ?? commandName,
   target: target,
+);
+
+ResolvedTool _connectorCommand({required String commandName}) => ResolvedTool._(
+  type: .connectorCommand,
+  tableId: commandName,
+  toolIdentifier: commandName,
+  fullName: commandName,
 );
 
 ResolvedTool _skillTemplate({

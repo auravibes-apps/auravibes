@@ -1,9 +1,11 @@
+import 'package:auravibes_engine/src/connector_command.dart';
 import 'package:auravibes_engine/src/skills/skill_command.dart';
 
 enum AgentResolvedToolKind {
   builtIn,
   mcp,
   native,
+  connectorCommand,
   skillControl,
   skillNative,
   skillTemplate,
@@ -58,6 +60,14 @@ class const AgentResolvedToolName._({
     );
   }
 
+  factory connectorCommand({required String toolIdentifier}) {
+    return AgentResolvedToolName._(
+      kind: .connectorCommand,
+      tableId: toolIdentifier,
+      toolIdentifier: toolIdentifier,
+    );
+  }
+
   factory skillTemplate({
     required String tableId,
     required String skillSlug,
@@ -104,6 +114,7 @@ class const AgentResolvedToolName._({
       .builtIn => 'built_in_${tableId}_$toolIdentifier',
       .mcp => 'mcp_${mcpServerId}_${mcpSlug}_$toolIdentifier',
       .native => 'native_${tableId}_$toolIdentifier',
+      .connectorCommand => toolIdentifier,
       .skillControl => toolIdentifier,
       .skillTemplate => 'skill__user__${skillSlug}__$toolIdentifier',
       .skillNative => 'skill__app_native__${skillSlug}__$toolIdentifier',
@@ -119,8 +130,15 @@ class const AgentResolvedToolName._({
 
 class const AgentToolNameResolver({
   final Set<String> skillControlToolNames = skillCommandToolNames,
+  final Set<String> connectorCommandToolNames = connectorToolCommandNames,
 }) {
   AgentResolvedToolName? resolve(String compositeToolName) {
+    if (connectorCommandToolNames.contains(compositeToolName)) {
+      return AgentResolvedToolName.connectorCommand(
+        toolIdentifier: compositeToolName,
+      );
+    }
+
     if (skillControlToolNames.contains(compositeToolName)) {
       return AgentResolvedToolName.skillControl(
         toolIdentifier: compositeToolName,

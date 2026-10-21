@@ -4,6 +4,7 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
@@ -24,6 +25,8 @@ class const LoadConversationToolSpecsUsecase({
   _buildDynamicSkillToolSpecsUsecase,
   required final SyncSkillToolPermissionsUsecase
   _syncSkillToolPermissionsUsecase,
+  final SyncConnectorToolPermissionsUsecase?
+  syncConnectorToolPermissionsUsecase,
   final ConversationRepository? conversationRepository,
   // Ponytail: Compatibility only; manifests now own materialization.
   // ignore: avoid_unused_constructor_parameters
@@ -54,6 +57,7 @@ class const LoadConversationToolSpecsUsecase({
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
+    await syncConnectorToolPermissionsUsecase?.call(workspaceId: workspaceId);
 
     return await _buildCatalogForConversation(conversationId, workspaceId);
   }
@@ -111,9 +115,17 @@ agent.ToolCatalog<ResolvedTool> _buildCatalog({
   required bool includeRunSubAgent,
 }) => agent.buildToolCatalog([
   ...toolCandidates,
+  ...agent.buildConnectorCommandToolSpecs().map(_connectorCommandCandidate),
   ...skillCommandSpecs.map(_skillCommandCandidate),
   if (includeRunSubAgent) _runSubAgentCandidate(),
 ]);
+
+agent.ToolCatalogCandidate<ResolvedTool> _connectorCommandCandidate(
+  ToolSpec spec,
+) => agent.ToolCatalogCandidate.reserved(
+  spec: spec,
+  target: ResolvedTool.connectorCommand(commandName: spec.name),
+);
 
 agent.ToolCatalogCandidate<ResolvedTool> _skillCommandCandidate(
   ToolSpec spec,
@@ -157,6 +169,9 @@ loadConversationToolSpecsUsecaseProvider =
         ),
         syncSkillToolPermissionsUsecase: ref.watch(
           syncSkillToolPermissionsUsecaseProvider,
+        ),
+        syncConnectorToolPermissionsUsecase: ref.watch(
+          syncConnectorToolPermissionsUsecaseProvider,
         ),
         conversationRepository: ref.watch(conversationRepositoryProvider),
       );

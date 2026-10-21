@@ -25,6 +25,7 @@ export 'src/agent_transcript_context.dart';
 export 'src/attachment_modality.dart';
 export 'src/aura_agent_service.dart';
 export 'src/chat_result.dart';
+export 'src/connector_command.dart';
 export 'src/context_window.dart';
 export 'src/continue_agent_result.dart';
 export 'src/conversation_compaction.dart';

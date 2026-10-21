@@ -14,6 +14,17 @@ void main() {
       expect(tool?.toolIdentifier, activateSkillToolName);
     });
 
+    test('resolves connector command names independently of skills', () {
+      const connectorOnlyResolver = AgentToolNameResolver(
+        skillControlToolNames: {},
+      );
+      final tool = connectorOnlyResolver.resolve(executeConnectorToolName);
+
+      expect(tool?.kind, AgentResolvedToolKind.connectorCommand);
+      expect(tool?.toolIdentifier, executeConnectorToolName);
+      expect(tool?.fullName, executeConnectorToolName);
+    });
+
     test('resolves user skill tool names', () {
       final tool = resolver.resolve('skill__user__writer__draft');
 

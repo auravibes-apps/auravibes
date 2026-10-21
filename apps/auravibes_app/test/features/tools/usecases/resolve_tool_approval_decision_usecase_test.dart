@@ -1,6 +1,7 @@
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -79,6 +80,59 @@ void main() {
         ),
       );
     });
+
+    test(
+      'uses the current Connector command workspace permission row',
+      () async {
+        final syncPermissions = _MockSyncConnectorToolPermissionsUsecase();
+        when(
+          () => syncPermissions.permissionTableIdFor(
+            workspaceId: 'ws-1',
+            toolName: agent.executeConnectorToolName,
+          ),
+        ).thenAnswer((_) async => 'connector-execute-row');
+        when(
+          () => fixture.conversationToolsRepository.checkToolPermission(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolId: 'connector-execute-row',
+          ),
+        ).thenAnswer((_) async => ToolPermissionResult.disabledInWorkspace);
+        final usecase = ResolveToolApprovalDecisionUsecase(
+          conversationToolsRepository: fixture.conversationToolsRepository,
+          toolsGroupsRepository: fixture.toolsGroupsRepository,
+          workspaceToolsRepository: fixture.workspaceToolsRepository,
+          syncConnectorToolPermissionsUsecase: syncPermissions,
+        );
+
+        final decision = await usecase(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'tc-connector',
+          resolvedTool: ResolvedTool.connectorCommand(
+            commandName: agent.executeConnectorToolName,
+          ),
+        );
+
+        expect(
+          decision.permissionResult,
+          ToolPermissionResult.disabledInWorkspace,
+        );
+        verify(
+          () => syncPermissions.permissionTableIdFor(
+            workspaceId: 'ws-1',
+            toolName: agent.executeConnectorToolName,
+          ),
+        ).called(1);
+        verify(
+          () => fixture.conversationToolsRepository.checkToolPermission(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolId: 'connector-execute-row',
+          ),
+        ).called(1);
+      },
+    );
 
     group('built-in tools', () {
       test('returns granted for always-approved built-in tool', () async {
@@ -616,6 +670,9 @@ void main() {
     });
   });
 }
+
+class _MockSyncConnectorToolPermissionsUsecase extends Mock
+    implements SyncConnectorToolPermissionsUsecase;
 
 class _ResolveToolApprovalDecisionFixture {
   MockConversationToolsRepository? _conversationToolsRepository;

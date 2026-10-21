@@ -43,6 +43,14 @@ typedef McpToolCallRequest = ({
   Map<String, dynamic> arguments,
 });
 
+typedef ConnectorCommandToolRequest = ({
+  String conversationId,
+  String toolCallId,
+  String workspaceId,
+  String toolIdentifier,
+  Map<String, dynamic> arguments,
+});
+
 abstract interface class ResolvedToolProvider<TTool> {
   AgentResolvedToolExecution<TTool> toExecution(TTool tool);
 
@@ -61,6 +69,8 @@ abstract interface class ResolvedToolProvider<TTool> {
   });
 
   Future<Object?> runMcpTool(McpToolCallRequest request);
+
+  Future<Object?> runConnectorCommandTool(ConnectorCommandToolRequest request);
 
   Future<String> getConversationWorkspaceId(String conversationId);
 
@@ -112,6 +122,12 @@ class const ResolvedToolService<TTool>({
         missingInputMessage: 'Native tools require an input argument.',
       ),
       .mcp => _runMcpTool(conversationId, toolCallId, descriptor, arguments),
+      .connectorCommand => _runConnectorCommandTool(
+        conversationId,
+        toolCallId,
+        descriptor,
+        arguments,
+      ),
       .skillControl => _runSkillControlTool(
         conversationId,
         toolCallId,
@@ -199,6 +215,25 @@ class const ResolvedToolService<TTool>({
     );
 
     return await provider.runSkillControlTool((
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      workspaceId: workspaceId,
+      toolIdentifier: descriptor.toolIdentifier,
+      arguments: arguments,
+    ));
+  }
+
+  Future<Object?> _runConnectorCommandTool(
+    String conversationId,
+    String toolCallId,
+    AgentResolvedToolName descriptor,
+    Map<String, dynamic> arguments,
+  ) async {
+    final workspaceId = await provider.getConversationWorkspaceId(
+      conversationId,
+    );
+
+    return await provider.runConnectorCommandTool((
       conversationId: conversationId,
       toolCallId: toolCallId,
       workspaceId: workspaceId,

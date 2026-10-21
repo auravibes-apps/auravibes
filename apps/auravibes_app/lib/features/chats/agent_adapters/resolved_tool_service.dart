@@ -17,6 +17,7 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
+import 'package:auravibes_app/features/service_connections/usecases/connector_command_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
@@ -110,6 +111,7 @@ class ResolvedToolService {
     agent.SubAgentRunner? subAgentRunner,
     SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
     BrowserSkillToolRunner? browserSkillToolRunner,
+    ConnectorCommandUsecase? connectorCommandUsecase,
   }) : _delegate = agent.ResolvedToolRunner<ResolvedTool>(
          provider: AppResolvedToolProvider(
            agentCancellationRuntime: agentCancellationRuntime,
@@ -134,6 +136,7 @@ class ResolvedToolService {
            subAgentRunner: subAgentRunner,
            onSkillsManagerToolSuccess: onSkillsManagerToolSuccess,
            browserSkillToolRunner: browserSkillToolRunner,
+           connectorCommandUsecase: connectorCommandUsecase,
          ),
        );
   new _cloud() : _delegate = null;
@@ -237,6 +240,7 @@ class const AppResolvedToolProvider({
   final agent.SubAgentRunner? subAgentRunner,
   final SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
   final BrowserSkillToolRunner? browserSkillToolRunner,
+  final ConnectorCommandUsecase? connectorCommandUsecase,
 }) implements agent.ResolvedToolProvider<ResolvedTool> {
   @override
   agent.AgentResolvedToolExecution<ResolvedTool> toExecution(
@@ -288,6 +292,22 @@ class const AppResolvedToolProvider({
   @override
   Future<Object?> runMcpTool(agent.McpToolCallRequest request) =>
       _runMcpToolCall(this, request);
+
+  @override
+  Future<Object?> runConnectorCommandTool(
+    agent.ConnectorCommandToolRequest request,
+  ) {
+    final usecase = connectorCommandUsecase;
+    if (usecase == null) {
+      throw StateError('Connector commands are not configured.');
+    }
+
+    return usecase.call(
+      workspaceId: request.workspaceId,
+      commandName: request.toolIdentifier,
+      arguments: request.arguments,
+    );
+  }
 
   @override
   Future<String> getConversationWorkspaceId(String conversationId) {
@@ -379,7 +399,7 @@ agent.AgentResolvedToolExecution<ResolvedTool> _toExecution(ResolvedTool tool) {
 }
 
 bool _supportsCancellation(ResolvedTool tool) => switch (tool.type) {
-  .builtIn || .mcp || .skillControl => false,
+  .builtIn || .mcp || .skillControl || .connectorCommand => false,
   .native || .skillTemplate || .skillAppTemplate => true,
   .skillNative => _supportsSkillNativeCancellation(
     tool.skillSlug,
@@ -493,6 +513,9 @@ agent.AgentResolvedToolName _toAgentDescriptor(ResolvedTool tool) {
     .builtIn => _builtInDescriptor(tool),
     .mcp => _mcpDescriptor(tool),
     .native => _nativeDescriptor(tool),
+    .connectorCommand => agent.AgentResolvedToolName.connectorCommand(
+      toolIdentifier: tool.toolIdentifier,
+    ),
     .skillControl => _skillControlDescriptor(tool),
     .skillCommand => _skillCommandDescriptor(tool),
     .skillNative => _skillNativeDescriptor(tool),
@@ -1774,6 +1797,7 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
         }) => container
             .read(browserSessionProvider(workspaceId, conversationId).notifier)
             .runSkillTool(toolSlug, arguments),
+    connectorCommandUsecase: ref.watch(connectorCommandUsecaseProvider),
   );
 });
 

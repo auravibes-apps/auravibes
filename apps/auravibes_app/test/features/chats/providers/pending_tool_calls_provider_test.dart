@@ -16,6 +16,7 @@ import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
@@ -68,6 +69,10 @@ class const _FakeLoadConversationToolSpecsUsecase({
 }) implements LoadConversationToolSpecsUsecase {
   @override
   ConversationRepository? get conversationRepository => null;
+
+  @override
+  SyncConnectorToolPermissionsUsecase?
+  get syncConnectorToolPermissionsUsecase => null;
 
   @override
   Future<List<ToolSpec>> call({
