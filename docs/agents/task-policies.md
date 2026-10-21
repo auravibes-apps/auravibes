@@ -14,6 +14,8 @@ Read only section that matches current work. Root `AGENTS.md` lists each trigger
 
 - Use `fvm dart run melos run analyze` for root Dart analysis. Use `analyze:workspace` for Melos workspace analysis. Use `validate:quick` for analysis and format.
 - Use `fvm dart run melos run validate:pr` through the validation lease before pushing code changes for review. It runs CI formatting, import sorting, benchmark-import checks, workspace analysis, DCL, and localization audit; it skips tests, platform builds, and code-health scans. GitHub CI remains required.
+- Run focused file analyzers directly. Use the lease for workspace bootstrap and Flutter commands that share native-asset builds across worktrees. Add a short, non-sensitive label before `--` so wait messages identify the command:
+  `python3 tool/validation_lease.py --label validate:pr -- fvm dart run melos run validate:pr`.
 - In a fresh worktree, if analysis fails because package resolution is missing, run the workspace bootstrap through the [validation lease](../../AGENTS.md#commands), then rerun focused analysis or `validate:quick`. If bootstrap cannot complete, report analysis as blocked.
 - Format Dart changes with the pinned FVM toolchain. Host `dart format` does not verify pinned-toolchain output.
 - Run full `validate` only by request or when a multi-package behavior change needs full-workspace coverage. Do not run it only because a PR opens or updates.
