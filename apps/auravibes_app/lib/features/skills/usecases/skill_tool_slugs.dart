@@ -154,7 +154,8 @@ class const BuildAppSkillNativeToolSpecsUsecase(
 
     return [
       for (final spec in toolSpecs)
-        if (spec.name == listAgentsToolName)
+        if (spec.name == listAgentsToolName ||
+            spec.name.endsWith('__$listAgentsToolName'))
           ToolSpec(
             name: spec.name,
             description: localized.description,

@@ -521,11 +521,15 @@ class const ServerToolExecutorService({
   ) async {
     final target = SkillCommandTarget.fromArguments(request.arguments);
     final state = await _skillCommandState(session, turn);
-    final tools = _materializeStateTools(state);
+    final tools = _materializeStateTools(
+      state,
+      languageCode: request.languageCode,
+    );
     final resolved = await resolveCloudSkillCommandTarget(
       command: target,
       userSkills: state.userSkills,
       tools: tools,
+      languageCode: request.languageCode,
     );
     final normalized = Map<String, dynamic>.from(target.args);
     final result = await switch (resolved.descriptor.kind) {
@@ -551,6 +555,7 @@ class const ServerToolExecutorService({
             id: request.id,
             name: resolved.spec.name,
             arguments: normalized,
+            languageCode: request.languageCode,
           ),
         ),
       AgentResolvedToolKind.skillNative => _runNativeSkill(
@@ -696,14 +701,16 @@ class const ServerToolExecutorService({
       List<Map<String, dynamic>> appSkillSettings,
       List<Map<String, dynamic>> serviceConnections,
     })
-    state,
-  ) => materializeCloudSkillTools(
+    state, {
+    String? languageCode,
+  }) => materializeCloudSkillTools(
     selectedSkillIds: state.authorizedSkillIds,
     userSkills: state.userSkills,
     templateTools: state.templateTools,
     appSkillSettings: state.appSkillSettings,
     serviceConnections: state.serviceConnections,
     isChildConversation: state.conversation.parentConversationStableId != null,
+    languageCode: languageCode,
   );
 
   String? _availableSkillId(

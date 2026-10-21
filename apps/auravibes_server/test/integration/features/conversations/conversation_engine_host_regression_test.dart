@@ -978,6 +978,34 @@ void main() {
         runSubAgentAfter.spec.inputJsonSchema,
         runSubAgentBefore.spec.inputJsonSchema,
       );
+
+      final callSkill = selectedTools.singleWhere(
+        (tool) => tool.spec.name == callSkillToolName,
+      );
+      final dispatchedListAgents = await const ServerToolExecutorService().call(
+        fixture.database,
+        fixture.turn,
+        callSkill,
+        ServerToolRequest(
+          id: 'list-agents-through-call-skill',
+          name: callSkillToolName,
+          arguments: {
+            'skill': agentsSkillSlug,
+            'tool': listAgentsToolName,
+            'args': const <String, Object?>{},
+            'revision': spanishManifest.revision,
+          },
+          languageCode: languageCode,
+        ),
+      );
+      final dispatchedResult = Map<String, Object?>.from(
+        dispatchedListAgents! as Map,
+      );
+      final listAgentsResult = Map<String, Object?>.from(
+        dispatchedResult['result']! as Map,
+      );
+      expect(listAgentsResult['hint'], contains('agentes configurados'));
+      expect(listAgentsResult['hint'], isNot(contains('Configured agents')));
     });
 
     test(

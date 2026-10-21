@@ -271,6 +271,7 @@ Future<ServerResolvedTool> resolveCloudSkillCommandTarget({
   required SkillCommandTarget command,
   required Iterable<Map<String, dynamic>> userSkills,
   required Iterable<ServerResolvedTool> tools,
+  String? languageCode,
 }) async {
   final target = tools
       .where(
@@ -287,6 +288,7 @@ Future<ServerResolvedTool> resolveCloudSkillCommandTarget({
     slug: command.skill,
     userSkills: userSkills,
     tools: tools,
+    languageCode: languageCode,
   );
   if (manifest == null ||
       manifest.revision != command.revision ||

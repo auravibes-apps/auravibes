@@ -70,6 +70,40 @@ void main() {
     );
   });
 
+  test('resolves localized agents tools against localized revisions', () async {
+    const languageCode = 'es-MX';
+    final localizedTools = materializeCloudSkillTools(
+      selectedSkillIds: const {agentsSkillSlug},
+      userSkills: const [],
+      templateTools: const [],
+      appSkillSettings: const [],
+      isChildConversation: false,
+      languageCode: languageCode,
+    );
+    final manifest = await buildCloudSkillManifest(
+      slug: agentsSkillSlug,
+      userSkills: const [],
+      tools: localizedTools,
+      languageCode: languageCode,
+    );
+    expect(manifest, isNotNull);
+
+    final resolved = await resolveCloudSkillCommandTarget(
+      command: SkillCommandTarget.fromArguments({
+        'skill': agentsSkillSlug,
+        'tool': listAgentsToolName,
+        'args': const <String, Object?>{},
+        'revision': manifest!.revision,
+      }),
+      userSkills: const [],
+      tools: localizedTools,
+      languageCode: languageCode,
+    );
+
+    expect(resolved.descriptor.toolIdentifier, listAgentsToolName);
+    expect(resolved.spec.description, contains('agentes configurados'));
+  });
+
   test('rejects unloaded target', () async {
     await expectLater(
       resolveCloudSkillCommandTarget(

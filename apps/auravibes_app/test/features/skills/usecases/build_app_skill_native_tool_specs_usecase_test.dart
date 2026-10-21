@@ -1,10 +1,16 @@
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/widgets.dart' show SizedBox;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/test_app.dart';
 
 void main() {
   group('BuildAppSkillNativeToolSpecsUsecase', () {
@@ -139,6 +145,59 @@ void main() {
       expect(specs.map((spec) => spec.name), [
         'skill__app_native__agents__list_agents',
       ]);
+    });
+
+    testWidgets('localizes the namespaced catalog list_agents tool', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const TestableApp(child: SizedBox.shrink(), startLocale: .new('es')),
+      );
+      final _ = await tester.pumpAndSettle();
+      await _waitForSpanishTranslations(tester);
+
+      final listUsecase = _MockListAvailableSkillsUsecase();
+      final usecase = BuildAppSkillNativeToolSpecsUsecase(
+        (_) => listUsecase,
+        const _FakeAppSkillCandidates({}),
+      );
+      when(
+        () => listUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
+          filter: .loaded,
+        ),
+      ).thenAnswer((_) async => [_appSkill(agentsSkillSlug)]);
+
+      final englishSpecs = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        languageCode: 'en',
+      );
+      final spanishSpecs = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        languageCode: 'es-MX',
+      );
+      final englishListAgents = englishSpecs.single;
+      final spanishListAgents = spanishSpecs.single;
+
+      expect(spanishListAgents.name, 'skill__app_native__agents__list_agents');
+      expect(spanishListAgents.name, englishListAgents.name);
+      expect(spanishListAgents.description, contains('agentes configurados'));
+      expect(
+        spanishListAgents.description,
+        isNot(englishListAgents.description),
+      );
+      expect(
+        spanishListAgents.inputJsonSchema,
+        englishListAgents.inputJsonSchema,
+      );
+      expect(
+        spanishListAgents.inputJsonSchema,
+        AgentGuidance.listAgentsToolSpecForLanguageCode('es-MX')
+            .inputJsonSchema,
+      );
     });
 
     test(
@@ -283,6 +342,22 @@ void main() {
       },
     );
   });
+}
+
+Future<void> _waitForSpanishTranslations(WidgetTester tester) async {
+  final _ = await tester.runAsync(() async {
+    for (var attempt = 0; attempt < 50; attempt++) {
+      if (LocaleKeys.agents_model_guidance_list_agents_description.trExists()) {
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  });
+
+  expect(
+    LocaleKeys.agents_model_guidance_list_agents_description.trExists(),
+    isTrue,
+  );
 }
 
 void _expectStrictProviderSchema(ToolSpec spec) {
