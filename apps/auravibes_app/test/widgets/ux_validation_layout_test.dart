@@ -840,8 +840,7 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
       expected: null,
     ),
     'ServiceConnectionCreateRoute' => (
-      location:
-          '$base/service-connections/new?type=connector&connectorId=jina',
+      location: '$base/service-connections/new?type=connector&connectorId=jina',
       screen: ServiceConnectionCreateScreen,
       selection: 2,
       expected: null,

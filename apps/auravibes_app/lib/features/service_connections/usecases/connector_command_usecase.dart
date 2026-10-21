@@ -518,8 +518,10 @@ String _selectRequiredConnection(
   );
 }
 
-bool _hasConnection(List<ConnectorConnectionCandidate> connections, String id) =>
-    connections.any((connection) => connection.id == id);
+bool _hasConnection(
+  List<ConnectorConnectionCandidate> connections,
+  String id,
+) => connections.any((connection) => connection.id == id);
 
 class const _ConnectorCommandException({
   required final String code,
@@ -548,8 +550,10 @@ final connectorCommandUsecaseProvider = Provider<ConnectorCommandUsecase>((
   final runConnectorTool = ref.watch(runConnectorToolUsecaseProvider);
 
   return ConnectorCommandUsecase(
-    loadConnections: (workspaceId, connector) =>
-        listConnections.forConnector(workspaceId: workspaceId, connector: connector),
+    loadConnections: (workspaceId, connector) => listConnections.forConnector(
+      workspaceId: workspaceId,
+      connector: connector,
+    ),
     runTool:
         ({
           required workspaceId,

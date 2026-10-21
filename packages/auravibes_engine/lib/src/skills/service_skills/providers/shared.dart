@@ -1,7 +1,7 @@
-import 'package:auravibes_engine/src/connectors/models/connector_tool_request_template.dart';
 import 'package:auravibes_engine/src/connectors/models/connector_credential_attribute_definition.dart';
-import 'package:auravibes_engine/src/connectors/models/connector_tool_input_definition.dart';
 import 'package:auravibes_engine/src/connectors/models/connector_request_template.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_input_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_request_template.dart';
 import 'package:auravibes_engine/src/connectors/models/url_request_method.dart';
 
 const Map<String, Object> searchInputSchema = {

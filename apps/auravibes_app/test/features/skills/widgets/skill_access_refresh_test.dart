@@ -88,15 +88,15 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(reads, 1);
     expect(find.text('Needs access'), findsOneWidget);
     await tester.tap(find.text('Manage Connections'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(router.state.uri.path, Uri.parse(destination).path);
 
     await tester.tap(find.text('Save Connection'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(returns, 1);
     expect(reads, 2);
     expect(find.text('Saved access available'), findsOneWidget);

@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:auravibes_engine/src/tool_spec.dart';
 
 const activateSkillToolName = 'activate_skill';
@@ -107,18 +105,3 @@ class SkillManifest {
     if (connectorToolIds.isNotEmpty) 'connectorToolIds': connectorToolIds,
   };
 }
-
-Map<String, Object?> _freezeMap(Map<String, Object?> value) =>
-    UnmodifiableMapView({
-      for (final entry in value.entries) entry.key: _freezeJson(entry.value),
-    });
-
-Object? _freezeJson(Object? value) => switch (value) {
-  final Map<Object?, Object?> value => UnmodifiableMapView({
-    for (final entry in value.entries) entry.key: _freezeJson(entry.value),
-  }),
-  final List<Object?> value => List<Object?>.unmodifiable(
-    value.map(_freezeJson),
-  ),
-  _ => value,
-};

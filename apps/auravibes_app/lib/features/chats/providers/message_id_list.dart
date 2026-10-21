@@ -1373,9 +1373,7 @@ _PendingEntriesRequest _pendingEntriesRequest(_PendingCatalogRequest input) {
 _PendingApprovalServices _pendingApprovalServices(
   Ref ref,
   String workspaceId,
-) => (
-  decisionUsecase: _decisionUsecase(ref, workspaceId),
-);
+) => (decisionUsecase: _decisionUsecase(ref, workspaceId));
 
 ResolveToolApprovalDecisionUsecase _decisionUsecase(
   Ref ref,

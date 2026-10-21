@@ -287,7 +287,7 @@ extension _CloudSkillStoreSkillMapping on CloudSkillStore {
 
   SkillEntity _skillCreateState(
     SkillEntity skill,
-    SkillToCreate value,
+    SkillToCreate _,
     DateTime now,
   ) => skill.copyWith(createdAt: now, updatedAt: now);
 }

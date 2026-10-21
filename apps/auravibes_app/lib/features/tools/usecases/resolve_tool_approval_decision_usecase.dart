@@ -125,8 +125,7 @@ class ResolveToolApprovalDecisionUsecase({
   }
 
   bool _isSkillTool(ResolvedTool resolvedTool) =>
-      resolvedTool.isSkillControl ||
-      resolvedTool.isSkillNative;
+      resolvedTool.isSkillControl || resolvedTool.isSkillNative;
 }
 
 Future<ToolApprovalDecision> _applyToolAccessMode({

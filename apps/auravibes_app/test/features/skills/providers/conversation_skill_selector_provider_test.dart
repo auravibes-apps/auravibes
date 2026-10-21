@@ -96,7 +96,6 @@ void main() {
           title: 'Research',
           description: 'Find sources',
           revision: revision,
-          connectorToolIds: const [],
         ),
       ],
     );
@@ -266,7 +265,6 @@ void main() {
               title: item.title,
               description: item.description,
               revision: 'r1',
-              connectorToolIds: const [],
             ),
         ],
       );

@@ -8,15 +8,13 @@ import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show ConnectorDefinition, connectorDefinitions;
+    show connectorDefinitions;
 import 'package:auravibes_ui/ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 typedef _SkillAccessRecoveryResult = ({bool? result});
-typedef _SkillAccessRoute = ({
-  SkillToolAccess? missingTool,
-});
+typedef _SkillAccessRoute = ({SkillToolAccess? missingTool});
 typedef _SkillAccessSetupRequest = ({
   SkillAccessStatusView view,
   BuildContext context,
@@ -58,7 +56,7 @@ class const SkillAccessStatusView({
     WidgetRef ref,
     SkillAccessSummary summary,
   ) async {
-    final recovery = await _openAccessRoute(context, ref, summary);
+    final recovery = await _openAccessRoute(context, summary);
     if (recovery == null || !context.mounted) return;
 
     _refreshAfterAccessRoute(context, ref, recovery);
@@ -67,36 +65,39 @@ class const SkillAccessStatusView({
 
   Future<_SkillAccessRecoveryResult?> _openAccessRoute(
     BuildContext context,
-    WidgetRef ref,
     SkillAccessSummary summary,
   ) async {
-    final route = _skillAccessRoute(summary, isAppSkill);
+    final route = _skillAccessRoute(summary);
     final tool = route.missingTool;
     if (tool == null) return null;
 
     return _skillAccessRecoveryResult(
       await _openConnectorAccess(context, tool.id),
-      route,
     );
   }
 
   Future<bool?> _openConnectorAccess(BuildContext context, String toolId) {
-    final target = _connectorTarget(toolId);
-    final location = target == null
-        ? ServiceConnectionsRoute(
-            workspaceId: workspaceId,
-            view: 'connectors',
-          ).location
-        : ServiceConnectionCreateRoute(
-            workspaceId: workspaceId,
-            type: target.modelProviderId == null
-                ? 'connector'
-                : 'modelProvider',
-            connectorId: target.connectorId,
-            modelProviderId: target.modelProviderId,
-          ).location;
+    return FeatureDestinations.push<bool>(
+      context,
+      _connectorAccessLocation(toolId),
+    );
+  }
 
-    return FeatureDestinations.push<bool>(context, location);
+  String _connectorAccessLocation(String toolId) {
+    final target = _connectorTarget(toolId);
+    if (target == null) {
+      return ServiceConnectionsRoute(
+        workspaceId: workspaceId,
+        view: 'connectors',
+      ).location;
+    }
+
+    return ServiceConnectionCreateRoute(
+      workspaceId: workspaceId,
+      type: target.modelProviderId == null ? 'connector' : 'modelProvider',
+      connectorId: target.connectorId,
+      modelProviderId: target.modelProviderId,
+    ).location;
   }
 
   void _refreshAfterAccessRoute(
@@ -107,7 +108,7 @@ class const SkillAccessStatusView({
     if (recovery.result == true) {
       RefreshSkillAccess.refresh(
         ProviderScope.containerOf(context, listen: false),
-          (workspaceId: workspaceId, skillId: skillId),
+        (workspaceId: workspaceId, skillId: skillId),
       );
 
       return;
@@ -122,17 +123,10 @@ VoidCallback _setupAccess(_SkillAccessSetupRequest request) =>
       request.view._openAccess(request.context, request.ref, request.summary),
     );
 
-_SkillAccessRecoveryResult _skillAccessRecoveryResult(
-  bool? result,
-  _SkillAccessRoute route,
-) => (
-  result: result,
-);
+_SkillAccessRecoveryResult _skillAccessRecoveryResult(bool? result) =>
+    (result: result);
 
-_SkillAccessRoute _skillAccessRoute(
-  SkillAccessSummary summary,
-  bool _,
-) {
+_SkillAccessRoute _skillAccessRoute(SkillAccessSummary summary) {
   final missingTool = summary.tools
       .where((tool) => tool.status == .missing)
       .firstOrNull;
@@ -144,8 +138,8 @@ _SkillAccessRoute _skillAccessRoute(
   String toolId,
 ) {
   final parts = toolId.split('/');
-  if (parts.length != 3 || parts.first != 'connector') return null;
-  for (final ConnectorDefinition connector in connectorDefinitions) {
+  if (parts.length != 3 || parts.firstOrNull != 'connector') return null;
+  for (final connector in connectorDefinitions) {
     if (connector.identifier != parts[1]) continue;
     if (connector.compatibleModelProviderIds.isEmpty) {
       return (connectorId: connector.identifier, modelProviderId: null);

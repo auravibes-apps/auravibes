@@ -5,20 +5,15 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'connector_tool_catalog_provider.g.dart';
 
 @riverpod
-List<ConnectorToolCatalogItem> connectorToolCatalog(Ref ref) {
+List<ConnectorToolCatalogItem> connectorToolCatalog(Ref _) {
   return _connectorToolCatalog(connectorDefinitions);
 }
 
 List<ConnectorToolCatalogItem> _connectorToolCatalog(
   Iterable<ConnectorDefinition> connectors,
-) {
-  final items = [
-    for (final connector in connectors) ..._connectorTools(connector),
-  ];
-  items.sort(_compareConnectorTools);
-
-  return items;
-}
+) =>
+    [for (final connector in connectors) ..._connectorTools(connector)]
+      ..sort(_compareConnectorTools);
 
 List<ConnectorToolCatalogItem> _connectorTools(ConnectorDefinition connector) =>
     [

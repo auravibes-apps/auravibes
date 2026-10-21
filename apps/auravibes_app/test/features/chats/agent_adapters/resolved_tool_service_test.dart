@@ -18,8 +18,6 @@ import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_to
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/skill_tool_slugs.dart'
-    show buildAppSkillNativeToolSpecsUsecaseProvider;
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -934,8 +932,8 @@ void main() {
         required arguments,
         onElicitation,
       }) async => 'mcp result',
-      subAgentRunner: _subAgentRunner(),
       buildAppSkillNativeToolSpecsUsecase: specs,
+      subAgentRunner: _subAgentRunner(),
     );
 
     expect(

@@ -22,7 +22,7 @@ void main() {
             .thenAnswer((_) => Future<void>.value());
         final usecase = DeleteServiceConnectionUsecase(
           modelConnectionRepository: modelRepository,
-          deleteConnectorConnection: (_) async {},
+          deleteConnectorConnection: (_) => Future<void>.value(),
         );
 
         await expectLater(
@@ -85,7 +85,7 @@ void main() {
       final modelRepository = _MockModelConnectionRepository();
       final usecase = DeleteServiceConnectionUsecase(
         modelConnectionRepository: modelRepository,
-        deleteConnectorConnection: (_) async {},
+        deleteConnectorConnection: (_) => Future<void>.value(),
       );
 
       expect(

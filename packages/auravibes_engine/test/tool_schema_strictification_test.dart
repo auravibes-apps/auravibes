@@ -9,34 +9,31 @@ void main() {
   });
 
   test('normalizes declared tool schemas for strict providers', () {
-    final schema = strictProviderToolSchema(
-      {
-        'type': 'object',
-        'properties': {
-          'query': {'type': 'string'},
-          'options': {
-            'type': 'object',
-            'properties': {
-              'mode': {
-                'type': 'string',
-                'enum': ['fast', 'deep'],
-              },
-              'enabled': {'type': 'boolean'},
+    final schema = strictProviderToolSchema({
+      'type': 'object',
+      'properties': {
+        'query': {'type': 'string'},
+        'options': {
+          'type': 'object',
+          'properties': {
+            'mode': {
+              'type': 'string',
+              'enum': ['fast', 'deep'],
             },
-            'required': ['mode'],
-            'additionalProperties': false,
+            'enabled': {'type': 'boolean'},
           },
-          'format': {
-            'type': 'string',
-            'enum': ['short', 'long'],
-            'default': 'short',
-          },
+          'required': ['mode'],
+          'additionalProperties': false,
         },
-        'required': ['query', 'options'],
-        'additionalProperties': false,
+        'format': {
+          'type': 'string',
+          'enum': ['short', 'long'],
+          'default': 'short',
+        },
       },
-      optionalNullMeansOmission: true,
-    );
+      'required': ['query', 'options'],
+      'additionalProperties': false,
+    }, optionalNullMeansOmission: true);
     final properties = schema['properties']! as Map<String, Object?>;
     final options = properties['options']! as Map<String, Object?>;
     final optionProperties = options['properties']! as Map<String, Object?>;
@@ -70,18 +67,15 @@ void main() {
   });
 
   test('preserves unsupported contracts for strict preflight', () {
-    final schema = strictProviderToolSchema(
-      {
-        'type': 'object',
-        'properties': {
-          'query': {'type': 'string'},
-          'schema': {'type': 'object'},
-        },
-        'required': ['query'],
-        'additionalProperties': false,
+    final schema = strictProviderToolSchema({
+      'type': 'object',
+      'properties': {
+        'query': {'type': 'string'},
+        'schema': {'type': 'object'},
       },
-      optionalNullMeansOmission: true,
-    );
+      'required': ['query'],
+      'additionalProperties': false,
+    }, optionalNullMeansOmission: true);
 
     expect(schema['required'], ['query']);
     expect(

@@ -115,7 +115,6 @@ extension SkillsRepositoryCompanionMappings on SkillsRepository {
   Value<String>? _skillTitleValue(String? title) {
     return title == null ? const Value.absent() : .new(title.trim());
   }
-
 }
 
 extension SkillsRepositoryEntityMappings on SkillsRepository {

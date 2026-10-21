@@ -3,15 +3,14 @@ import 'package:auravibes_app/data/repositories/conversation_skills_repository.d
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/connector_tool_reference_readiness.dart';
-import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' show AppSkillDefinition;
-
 import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -133,11 +132,7 @@ extension on LoadConversationSkillUsecase {
       .firstOrNull;
 
   Future<void> _loadUserSkill(_UserSkillLoadRequest request) async {
-    await _ensureUserSkillReady(
-      request.workspaceId,
-      request.skill,
-      request.cloud,
-    );
+    await _ensureUserSkillReady(request.workspaceId, request.skill);
     await _persistUserSkill(
       request.conversationId,
       request.skill.id,
@@ -148,9 +143,8 @@ extension on LoadConversationSkillUsecase {
   Future<void> _ensureUserSkillReady(
     String workspaceId,
     SkillEntity skill,
-    CloudSkillStore? cloud,
   ) async {
-    if (await _isUserSkillReady(workspaceId, skill, cloud)) return;
+    if (await _isUserSkillReady(workspaceId, skill)) return;
 
     throw const LoadConversationSkillException(
       LocaleKeys.skills_screen_error_requires_connection,
@@ -200,11 +194,7 @@ extension on LoadConversationSkillUsecase {
 }
 
 extension on LoadConversationSkillUsecase {
-  Future<bool> _isUserSkillReady(
-    String workspaceId,
-    SkillEntity skill,
-    CloudSkillStore? cloud,
-  ) async {
+  Future<bool> _isUserSkillReady(String workspaceId, SkillEntity skill) async {
     if (skill.connectorToolIds.isNotEmpty) {
       return await _connectorToolsReady(workspaceId, skill.connectorToolIds);
     }

@@ -1,6 +1,6 @@
-import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 
 final xAiSkill = ServiceSkillPreset(
   identifier: 'xai',

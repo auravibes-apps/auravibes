@@ -317,10 +317,8 @@ Future<ResolvedTool?> _resolveToolInConversation(
   ConversationEntity conversation,
 ) async {
   final catalog = await _loadConversationToolCatalog(request, conversation);
-  return request.toolResolverService.resolveTool(
-    request.toolName,
-    catalog,
-  );
+
+  return request.toolResolverService.resolveTool(request.toolName, catalog);
 }
 
 Future<ResolvedTool?> _resolveWithoutConversation(

@@ -137,17 +137,17 @@ List<ServerResolvedTool> materializeCloudSkillControlTools({
   a2uiSupportedComponents: a2uiSupportedComponents,
 );
 
-List<ServerResolvedTool> fixedCloudSkillCommandTools({
-}) => buildSkillCommandToolSpecs()
-    .map(
-      (spec) => ServerResolvedTool(
-        descriptor: AgentResolvedToolName.skillControl(
-          toolIdentifier: spec.name,
-        ),
-        spec: spec,
-      ),
-    )
-    .toList(growable: false);
+List<ServerResolvedTool> fixedCloudSkillCommandTools() =>
+    buildSkillCommandToolSpecs()
+        .map(
+          (spec) => ServerResolvedTool(
+            descriptor: AgentResolvedToolName.skillControl(
+              toolIdentifier: spec.name,
+            ),
+            spec: spec,
+          ),
+        )
+        .toList(growable: false);
 
 List<ServerResolvedTool> fixedCloudConnectorCommandTools() =>
     buildConnectorCommandToolSpecs()
@@ -215,7 +215,9 @@ List<String> _cloudSkillConnectorToolIds(
     );
   }
 
-  return _normalizedCloudSkillConnectorToolIds(appSkill?.connectorToolIds ?? const []);
+  return _normalizedCloudSkillConnectorToolIds(
+    appSkill?.connectorToolIds ?? const [],
+  );
 }
 
 List<String> _normalizedCloudSkillConnectorToolIds(Iterable<String> values) =>
@@ -647,8 +649,7 @@ class ServerToolRuntime({
     ];
   }
 
-  Future<List<ServerResolvedTool>>
-  _skillTargets(
+  Future<List<ServerResolvedTool>> _skillTargets(
     Session session, {
     required int workspaceId,
     required String conversationStableId,
@@ -666,9 +667,15 @@ class ServerToolRuntime({
     );
     final selectedSkillIds = conversation == null
         ? <String>{}
-        : cloudAuthorizedSkillIds(conversation: conversation, resources: resources);
+        : cloudAuthorizedSkillIds(
+            conversation: conversation,
+            resources: resources,
+          );
     final appSkillSettings = resources
-        .where((resource) => resource.resourceKind == WorkspaceResourceKind.skillSetting)
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.skillSetting,
+        )
         .map(_data);
     return materializeCloudSkillTools(
       selectedSkillIds: selectedSkillIds,

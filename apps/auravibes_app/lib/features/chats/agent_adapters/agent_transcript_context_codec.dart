@@ -71,7 +71,8 @@ List<Map<String, Object?>> _encodeTools(List<ToolSpec> tools) => [
       'name': tool.name,
       'description': tool.description,
       'inputJsonSchema': tool.inputJsonSchema,
-      // Retain the archive field for older readers; tools no longer own credentials.
+      // Retain the archive field for older readers.
+      // Tools no longer own credentials.
       'requiresCredential': false,
     },
 ];

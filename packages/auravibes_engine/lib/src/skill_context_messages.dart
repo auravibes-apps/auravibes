@@ -223,9 +223,7 @@ class const BuildSkillContextMessages() {
 
   String _skillXml(AgentSkill skill) {
     final manifest = skill.manifest;
-    final manifestXml = manifest == null
-        ? ''
-        : _skillManifestXml(manifest);
+    final manifestXml = manifest == null ? '' : _skillManifestXml(manifest);
 
     return '<skill><name>${_xmlTextEscape.convert(skill.title)}</name>'
         '<content>${_xmlTextEscape.convert(skill.content)}</content>'

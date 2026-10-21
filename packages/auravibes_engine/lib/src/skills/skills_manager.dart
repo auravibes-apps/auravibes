@@ -93,9 +93,7 @@ final List<ToolSpec> skillsManagerToolSpecs = _strictSkillsManagerToolSpecs([
     'Create a user-owned Skill.',
     _schema(
       ['title', 'description', 'content'],
-      extra: const {
-        'isEnabled': 'boolean',
-      },
+      extra: const {'isEnabled': 'boolean'},
       extraJson: const {
         'connectorToolIds': {
           'type': 'array',

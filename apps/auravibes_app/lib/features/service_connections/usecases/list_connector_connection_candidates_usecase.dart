@@ -27,9 +27,7 @@ class const ListConnectorConnectionCandidatesUsecase(
     required String workspaceId,
     required ConnectorDefinition connector,
   }) async {
-    final connections = await _cloudServiceConnectionsReader?.call(
-      workspaceId,
-    );
+    final connections = await _cloudServiceConnectionsReader?.call(workspaceId);
     if (connections != null) {
       return _cloudConnectorCandidates(
         connections,
@@ -73,7 +71,9 @@ class const ListConnectorConnectionCandidatesUsecase(
           name: connection.name,
         ),
     for (final connection in modelConnections)
-      if (connector.compatibleModelProviderIds.contains(connection.providerId) &&
+      if (connector.compatibleModelProviderIds.contains(
+            connection.providerId,
+          ) &&
           connection.hasSecret)
         ConnectorConnectionCandidate(
           id: 'model:${connection.id}',

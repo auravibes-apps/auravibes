@@ -1,5 +1,4 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
@@ -26,26 +25,28 @@ void main() {
 
     test('returns model and MCP rows together', () async {
       final fixture = await _createFixture(database);
-      final _ = await fixture.database.modelConnectionsDao.insertModelConnection(
-        .insert(
-          name: 'OpenAI Main',
-          serviceId: 'openai',
-          kind: .modelProvider,
-          authenticationType: .apiKey,
-          encryptedAuthValue: const Value('encrypted-key'),
-          keySuffix: const Value('et-key'),
-          workspaceId: fixture.workspace.id,
-        ),
-      );
-      final _ = await fixture.database.modelConnectionsDao.insertModelConnection(
-        .insert(
-          name: 'OpenAI OAuth',
-          serviceId: 'openai',
-          kind: .modelProvider,
-          authenticationType: .oauth2,
-          workspaceId: fixture.workspace.id,
-        ),
-      );
+      final _ = await fixture.database.modelConnectionsDao
+          .insertModelConnection(
+            .insert(
+              name: 'OpenAI Main',
+              serviceId: 'openai',
+              kind: .modelProvider,
+              authenticationType: .apiKey,
+              encryptedAuthValue: const Value('encrypted-key'),
+              keySuffix: const Value('et-key'),
+              workspaceId: fixture.workspace.id,
+            ),
+          );
+      final _ = await fixture.database.modelConnectionsDao
+          .insertModelConnection(
+            .insert(
+              name: 'OpenAI OAuth',
+              serviceId: 'openai',
+              kind: .modelProvider,
+              authenticationType: .oauth2,
+              workspaceId: fixture.workspace.id,
+            ),
+          );
       await _insertMcpCredential(
         fixture,
         metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
@@ -361,7 +362,7 @@ WatchServiceConnectionListItemsUsecase _createUsecase(
 }) {
   return WatchServiceConnectionListItemsUsecase(
     fixture.database,
-    ModelConnectionRepository(
+    .new(
       database: fixture.database,
       encryptionService: fixture.encryptionService,
     ),

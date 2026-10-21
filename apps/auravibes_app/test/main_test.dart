@@ -130,9 +130,7 @@ void main() {
         LocaleKeys.service_connections_title,
       );
       expect(
-        app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/skills/skill-1',
-        ),
+        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/skills/skill-1'),
         LocaleKeys.skills_screen_title,
       );
       expect(

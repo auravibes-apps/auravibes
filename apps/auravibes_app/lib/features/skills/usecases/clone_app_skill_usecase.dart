@@ -14,8 +14,7 @@ import 'package:riverpod/riverpod.dart';
 class const CloneAppSkillUsecase(
   final AppSkillRegistry _appSkillRegistry,
   final SkillsRepository? _skillsRepository,
-  final CreateSkillUsecase _createSkillUsecase,
-  {
+  final CreateSkillUsecase _createSkillUsecase, {
   final CloudSkillStore? cloudStore,
   final SkillResourcesRepository? resourceRepository,
 }) {

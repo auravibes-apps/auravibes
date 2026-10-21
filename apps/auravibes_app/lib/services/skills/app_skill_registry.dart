@@ -652,16 +652,19 @@ String? _toolDescriptionKey(String slug) => switch (slug) {
     LocaleKeys.app_skills_skills_manager_tools_update_user_skill_description,
   'delete_user_skill' =>
     LocaleKeys.app_skills_skills_manager_tools_delete_user_skill_description,
-  'list_skill_resources' => LocaleKeys
-      .app_skills_skills_manager_tools_list_skill_resources_description,
+  'list_skill_resources' =>
+    LocaleKeys.app_skills_skills_manager_tools_list_skill_resources_description,
   'get_skill_resource' =>
     LocaleKeys.app_skills_skills_manager_tools_get_skill_resource_description,
-  'create_skill_resource' => LocaleKeys
-      .app_skills_skills_manager_tools_create_skill_resource_description,
-  'update_skill_resource' => LocaleKeys
-      .app_skills_skills_manager_tools_update_skill_resource_description,
-  'delete_skill_resource' => LocaleKeys
-      .app_skills_skills_manager_tools_delete_skill_resource_description,
+  'create_skill_resource' =>
+    LocaleKeys
+        .app_skills_skills_manager_tools_create_skill_resource_description,
+  'update_skill_resource' =>
+    LocaleKeys
+        .app_skills_skills_manager_tools_update_skill_resource_description,
+  'delete_skill_resource' =>
+    LocaleKeys
+        .app_skills_skills_manager_tools_delete_skill_resource_description,
   'clone_app_skill' =>
     LocaleKeys.app_skills_skills_manager_tools_clone_app_skill_description,
   _ => null,

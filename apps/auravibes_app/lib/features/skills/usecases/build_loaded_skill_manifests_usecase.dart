@@ -34,11 +34,8 @@ extension on BuildLoadedSkillManifestsUsecase {
       workspaceId: workspaceId,
       filter: .loaded,
     );
-    final identities = <String>{};
 
-    return [...loadedSkills, ...extraSkills]
-        .where((skill) => identities.add('${skill.source.name}:${skill.id}'))
-        .toList();
+    return _uniqueSkills([...loadedSkills, ...extraSkills]);
   }
 
   SkillManifest _manifest(AvailableSkill skill) {
@@ -48,16 +45,27 @@ extension on BuildLoadedSkillManifestsUsecase {
       slug: skill.slug,
       title: skill.title,
       description: skill.description,
-      revision: buildSkillRevision(
-        identity: '${skill.source.name}:${skill.id}',
+      revision: _revision(skill, connectorToolIds),
+      connectorToolIds: connectorToolIds,
+    );
+  }
+
+  String _revision(AvailableSkill skill, List<String> connectorToolIds) =>
+      buildSkillRevision(
+        identity: _identity(skill),
         slug: skill.slug,
         title: skill.title,
         description: skill.description,
         instructions: skill.content,
         connectorToolIds: connectorToolIds,
-      ),
-      connectorToolIds: connectorToolIds,
-    );
+      );
+
+  String _identity(AvailableSkill skill) => '${skill.source.name}:${skill.id}';
+
+  List<AvailableSkill> _uniqueSkills(List<AvailableSkill> skills) {
+    final identities = <String>{};
+
+    return skills.where((skill) => identities.add(_identity(skill))).toList();
   }
 
   List<String> _sortedConnectorToolIds(Iterable<String> toolIds) =>

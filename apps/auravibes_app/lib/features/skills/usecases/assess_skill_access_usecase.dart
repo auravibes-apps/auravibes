@@ -28,23 +28,26 @@ class const AssessSkillAccessUsecase({
   SkillAccessSummary _summary(List<SkillToolAccess> tools) {
     if (tools.isEmpty) {
       return const SkillAccessSummary(
-        status: SkillAccessStatus.notRequired,
+        status: .notRequired,
         instructionsAvailable: true,
       );
     }
-    final statuses = tools.map((tool) => tool.status);
-    final status = statuses.contains(SkillToolAccessStatus.unknown)
-        ? SkillAccessStatus.unknown
-        : statuses.contains(SkillToolAccessStatus.missing)
-        ? statuses.contains(SkillToolAccessStatus.available)
-              ? SkillAccessStatus.partial
-              : SkillAccessStatus.missing
-        : SkillAccessStatus.saved;
+    final statuses = tools.map((tool) => tool.status).toSet();
+    final status = _summaryStatus(statuses);
 
     return SkillAccessSummary(
       status: status,
       instructionsAvailable: status == SkillAccessStatus.saved,
       tools: tools,
     );
+  }
+
+  SkillAccessStatus _summaryStatus(Set<SkillToolAccessStatus> statuses) {
+    if (statuses.contains(SkillToolAccessStatus.unknown)) return .unknown;
+    if (!statuses.contains(SkillToolAccessStatus.missing)) return .saved;
+
+    return statuses.contains(SkillToolAccessStatus.available)
+        ? .partial
+        : .missing;
   }
 }

@@ -1,5 +1,5 @@
-import 'package:auravibes_app/features/service_connections/usecases/connector_command_usecase.dart';
 import 'package:auravibes_app/features/service_connections/models/connector_connection_candidate.dart';
+import 'package:auravibes_app/features/service_connections/usecases/connector_command_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -262,38 +262,41 @@ void main() {
       expect(tools.toString(), isNot(contains('secret-value')));
     });
 
-    test('omits connection-requiring tools without a usable Connection', () async {
-      final publicConnector = connectorDefinitions.singleWhere(
-        (connector) => connector.identifier == 'duckduckgo',
-      );
-      final credentialedConnector = connectorDefinitions.singleWhere(
-        (connector) => connector.identifier == 'openai',
-      );
-      final usecase = _usecase(
-        connections: const [],
-        connectors: [credentialedConnector, publicConnector],
-      );
+    test(
+      'omits connection-requiring tools without a usable Connection',
+      () async {
+        final publicConnector = connectorDefinitions.singleWhere(
+          (connector) => connector.identifier == 'duckduckgo',
+        );
+        final credentialedConnector = connectorDefinitions.singleWhere(
+          (connector) => connector.identifier == 'openai',
+        );
+        final usecase = _usecase(
+          connections: const [],
+          connectors: [credentialedConnector, publicConnector],
+        );
 
-      final result = _objectMap(
-        await usecase.call(
-          workspaceId: 'workspace-current',
-          commandName: listConnectorToolsToolName,
-          arguments: const {},
-        ),
-      );
-      final tools = _objectList(result['tools'])
-          .map(_objectMap)
-          .toList(growable: false);
+        final result = _objectMap(
+          await usecase.call(
+            workspaceId: 'workspace-current',
+            commandName: listConnectorToolsToolName,
+            arguments: const {},
+          ),
+        );
+        final tools = _objectList(result['tools'])
+            .map(_objectMap)
+            .toList(growable: false);
 
-      expect(
-        tools.map((tool) => tool['toolId']),
-        contains('connector/duckduckgo/search'),
-      );
-      expect(
-        tools.map((tool) => tool['connectorId']),
-        isNot(contains('openai')),
-      );
-    });
+        expect(
+          tools.map((tool) => tool['toolId']),
+          contains('connector/duckduckgo/search'),
+        );
+        expect(
+          tools.map((tool) => tool['connectorId']),
+          isNot(contains('openai')),
+        );
+      },
+    );
 
     test(
       'lists current Connections without exposing credential data',

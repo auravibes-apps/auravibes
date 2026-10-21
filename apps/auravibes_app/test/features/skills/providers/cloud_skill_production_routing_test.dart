@@ -4,14 +4,12 @@ import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provid
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_settings_adapter.dart';
-import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill_usecases.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -97,8 +95,8 @@ void main() {
                 resourceId: operation.resourceId,
                 data: operation.data ?? '{}',
                 revision: (operation.expectedRevision ?? 0) + 1,
-                createdAt: DateTime.utc(2026),
-                updatedAt: DateTime.utc(2026),
+                createdAt: .utc(2026),
+                updatedAt: .utc(2026),
               ),
             );
         }
@@ -112,9 +110,8 @@ void main() {
           workspaceSessionProvider(workspace).overrideWithValue(workspace),
           workspaceSessionForRouteProvider(workspaceId)
               .overrideWith((_) async => workspace),
-          cloudSkillStoreProvider(workspaceId).overrideWithValue(
-            CloudSkillStore(CloudWorkspaceResourceStore(gateway), workspaceId),
-          ),
+          cloudSkillStoreProvider(workspaceId)
+              .overrideWithValue(.new(.new(gateway), workspaceId)),
           workspaceSkillsProvider(workspaceId).overrideWith(
             (_) => CloudSkillSettingsAdapter(gateway).watchSkills().first,
           ),

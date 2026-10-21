@@ -5,12 +5,12 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/connector_tool_reference_readiness.dart';
-import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -317,7 +317,7 @@ extension ListAvailableSkillsUsecaseUserSkills on ListAvailableSkillsUsecase {
   }
 }
 
-extension ListAvailableSkillsUsecaseConnectionReadiness on ListAvailableSkillsUsecase {
+extension ListAvailableSkillsConnectionReadiness on ListAvailableSkillsUsecase {
   Future<ConnectorConnectionReadiness> _connectorToolConnectionReadiness(
     _UserSkillAvailabilityRequest request,
   ) async {
@@ -333,7 +333,6 @@ extension ListAvailableSkillsUsecaseConnectionReadiness on ListAvailableSkillsUs
         ? .ready
         : .missing;
   }
-
 }
 
 extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
@@ -540,6 +539,7 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
             credentialCandidates: usecase,
           );
     }
+
     return skill.tools.isNotEmpty;
   }
 
@@ -558,6 +558,7 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
               credentialCandidates: usecase,
             );
     }
+
     return Future.value(skill.tools.isNotEmpty);
   }
 }
@@ -584,7 +585,7 @@ _ListAvailableSkillsProviderRequest _listAvailableSkillsProviderRequest(
   return (
     cloud: cloud,
     local: cloud == null ? _localSkillDependencies(ref) : null,
-    shared: _sharedSkillDependencies(ref, workspaceId),
+    shared: _sharedSkillDependencies(ref),
   );
 }
 
@@ -613,7 +614,7 @@ _LocalSkillDependencies _localSkillDependencies(Ref ref) => (
   ),
 );
 
-_SharedSkillDependencies _sharedSkillDependencies(Ref ref, String workspaceId) {
+_SharedSkillDependencies _sharedSkillDependencies(Ref ref) {
   final conversationRepository = ref.watch(conversationRepositoryProvider);
 
   return (

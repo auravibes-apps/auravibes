@@ -1,15 +1,16 @@
 import 'dart:convert';
 
 import 'package:auravibes_engine/src/connectors/models/connector_credential_attribute_definition.dart';
-import 'package:auravibes_engine/src/connectors/models/connector_tool_input_definition.dart';
 import 'package:auravibes_engine/src/connectors/models/connector_request_template.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_input_definition.dart';
 
 /// Versioned, app-neutral representation of a declarative Connector tool.
 class const ConnectorToolRequestDefinition({
   required final ConnectorRequestTemplate request,
   required final Map<String, ConnectorToolInputDefinition> inputs,
   final int version = 1,
-  final Map<String, ConnectorCredentialAttributeDefinition> credentialDefinitions =
+  final Map<String, ConnectorCredentialAttributeDefinition>
+      credentialDefinitions =
       const {},
   final Map<String, Object?>? inputSchemaOverride,
 }) {
@@ -210,7 +211,9 @@ void _validateManifestSchemaRoot(Map<Object?, Object?> schema, bool root) {
   if (!root) return;
 
   if (root && schema['type'] != 'object') {
-    throw const FormatException('Connector tool input schema must be an object schema.');
+    throw const FormatException(
+      'Connector tool input schema must be an object schema.',
+    );
   }
   if (root && schema['additionalProperties'] != false) {
     throw const FormatException(

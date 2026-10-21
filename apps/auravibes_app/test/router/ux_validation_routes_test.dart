@@ -26,11 +26,11 @@ import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspac
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_tool_catalog_item.dart';
+import 'package:auravibes_app/features/service_connections/providers/connector_tool_catalog_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
-import 'package:auravibes_app/features/service_connections/models/connector_tool_catalog_item.dart';
-import 'package:auravibes_app/features/service_connections/providers/connector_tool_catalog_provider.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
@@ -953,7 +953,7 @@ void main() {
       isFalse,
     );
     await tester.tap(connectorToolOption);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(
       tester.widget<AuraCheckboxListTile>(connectorToolOption).value,
       isTrue,

@@ -65,7 +65,7 @@ class UxValidationFixture {
     final skills = SkillsRepository(database);
     final skill = await skills.createSkill(
       workspace.id,
-      .new(
+      const .new(
         kind: .template,
         title: 'Research notes',
         description: 'Collect cited findings for a project.',

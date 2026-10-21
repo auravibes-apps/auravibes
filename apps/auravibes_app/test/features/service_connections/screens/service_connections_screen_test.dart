@@ -20,8 +20,8 @@ import 'package:auravibes_app/features/service_connections/notifiers/connections
 import 'package:auravibes_app/features/service_connections/providers/connector_catalog_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
-import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/delete_service_connection_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -1049,10 +1049,7 @@ void main() {
     final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );
-    final repository = ServiceConnectionRepository(
-      database,
-      encryptionService,
-    );
+    final repository = ServiceConnectionRepository(database, encryptionService);
     final connection = await repository.createConnectorConnection((
       workspaceId: workspace.id,
       connectorId: 'notion',
@@ -1067,13 +1064,11 @@ void main() {
         database: database,
         encryptionService: encryptionService,
       ),
-      deleteConnectorConnection: (id) => repository.deleteConnectorConnection(
-        id,
-        workspaceId: workspace.id,
-      ),
+      deleteConnectorConnection: (id) =>
+          repository.deleteConnectorConnection(id, workspaceId: workspace.id),
     );
     final actions = ServiceConnectionsActionUsecase(
-      (_) async {},
+      (_) => Future<void>.value(),
       (_) async => throw UnimplementedError(),
       delete,
     );

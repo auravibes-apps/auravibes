@@ -1,8 +1,8 @@
+import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/models/skill_access_summary.dart';
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/assess_skill_access_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/connector_tool_reference_readiness.dart';
-import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_access_summary_provider.g.dart';

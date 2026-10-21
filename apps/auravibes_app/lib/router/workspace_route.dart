@@ -861,23 +861,45 @@ class ServiceConnectionCreateRoute({
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    final crossShellPush = _crossShellCreateReturn(state.extra);
+    final routeState = _serviceConnectionCreateRouteState(state);
 
     return ServiceConnectionCreateScreen(
       workspaceId: workspaceId,
+      initialType: routeState.initialType,
+      initialConnectorId: routeState.initialConnectorId,
+      initialModelProviderId: modelProviderId,
+      returnPath: routeState.returnPath,
+      returnNavigatorKey: routeState.navigatorKey,
+      key: routeState.key,
+    );
+  }
+
+  _ServiceConnectionCreateRouteState _serviceConnectionCreateRouteState(
+    GoRouterState state,
+  ) {
+    final crossShellPush = _crossShellCreateReturn(state.extra);
+
+    return (
       initialType: _serviceConnectionCreateType(type),
       initialConnectorId:
           connectorId ?? _serviceConnectionCreateConnectorId(state),
-      initialModelProviderId: modelProviderId,
       returnPath: _serviceConnectionCreateReturnPath(
         returnPath,
         crossShellPush?.returnLocation,
       ),
-      returnNavigatorKey: crossShellPush?.navigatorKey,
+      navigatorKey: crossShellPush?.navigatorKey,
       key: _serviceConnectionCreateScreenKey(workspaceId, state.uri.query),
     );
   }
 }
+
+typedef _ServiceConnectionCreateRouteState = ({
+  ServiceConnectionCreateType? initialType,
+  String? initialConnectorId,
+  String? returnPath,
+  GlobalKey<NavigatorState>? navigatorKey,
+  Key key,
+});
 
 Key _serviceConnectionCreateScreenKey(String workspaceId, String query) =>
     ValueKey(_serviceConnectionCreateScreenIdentity(workspaceId, query));

@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:auravibes_engine/src/connectors/models/connector_credential_attribute_definition.dart';
-import 'package:auravibes_engine/src/connectors/models/connector_tool_request_definition.dart';
-import 'package:auravibes_engine/src/connectors/models/connector_tool_input_definition.dart';
 import 'package:auravibes_engine/src/connectors/models/connector_request_template.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_input_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_request_definition.dart';
 import 'package:auravibes_engine/src/connectors/models/url_request.dart';
 import 'package:liquify/liquify.dart';
 
@@ -60,7 +60,10 @@ class const ResolveConnectorRequestTemplate() {
     return result;
   }
 
-  String? _resolveBody(ConnectorRequestTemplate template, _TemplateContext context) {
+  String? _resolveBody(
+    ConnectorRequestTemplate template,
+    _TemplateContext context,
+  ) {
     final body = template.body;
     if (body == null) return null;
     final bodyTemplate = _canonicalizeBody(body);
@@ -269,7 +272,9 @@ void _validateInputProperty(
   _validateInputValue('$name.${entry.key}', nestedValue, entry.value);
 }
 
-void validateConnectorToolRequestDefinition(ConnectorToolRequestDefinition definition) {
+void validateConnectorToolRequestDefinition(
+  ConnectorToolRequestDefinition definition,
+) {
   if (definition.version != 1) {
     throw FormatException(
       'Unsupported connector tool template version: ${definition.version}.',
@@ -281,10 +286,14 @@ void validateConnectorToolRequestDefinition(ConnectorToolRequestDefinition defin
   final template = definition.request;
   final uri = Uri.tryParse(_templateUrlForValidation(template.url));
   if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) {
-    throw const FormatException('Connector tool template URL must use HTTP or HTTPS.');
+    throw const FormatException(
+      'Connector tool template URL must use HTTP or HTTPS.',
+    );
   }
   if (template.timeout <= Duration.zero) {
-    throw const FormatException('Connector tool template timeout must be positive.');
+    throw const FormatException(
+      'Connector tool template timeout must be positive.',
+    );
   }
 
   final inputDefinitions = definition.inputs;
@@ -338,7 +347,9 @@ String _templateUrlForValidation(String value) => value.replaceAllMapped(
 
 void _validateInputSchema(Map<String, Object?> schema) {
   if (schema['type'] != null && schema['type'] != 'object') {
-    throw const FormatException('Connector tool input schema must be an object schema.');
+    throw const FormatException(
+      'Connector tool input schema must be an object schema.',
+    );
   }
   if (schema['additionalProperties'] != false) {
     throw const FormatException(
@@ -347,7 +358,9 @@ void _validateInputSchema(Map<String, Object?> schema) {
   }
   final properties = schema['properties'];
   if (properties is! Map) {
-    throw const FormatException('Connector tool input schema requires properties.');
+    throw const FormatException(
+      'Connector tool input schema requires properties.',
+    );
   }
   if (properties.keys.any((key) => key is! String) ||
       properties.values.any((value) => value is! Map)) {
@@ -358,7 +371,9 @@ void _validateInputSchema(Map<String, Object?> schema) {
   final required = schema['required'];
   if (required != null &&
       (required is! List || !required.every((value) => value is String))) {
-    throw const FormatException('Connector tool input schema required must be strings.');
+    throw const FormatException(
+      'Connector tool input schema required must be strings.',
+    );
   }
   final propertyNames = properties.keys.map((key) => '$key').toSet();
   final requiredNames = required is List
@@ -366,7 +381,8 @@ void _validateInputSchema(Map<String, Object?> schema) {
       : const <String>{};
   if (!requiredNames.every(propertyNames.contains)) {
     throw const FormatException(
-      'Connector tool input schema required fields must be declared properties.',
+      'Connector tool input schema required fields must be declared '
+      'properties.',
     );
   }
 }

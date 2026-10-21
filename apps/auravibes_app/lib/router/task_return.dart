@@ -88,12 +88,7 @@ abstract final class _TaskReturnValidation {
   };
 
   static bool _recognizedFeatureChild(List<String> path) => switch (path) {
-    [
-      'agents' ||
-          'skills' ||
-          'service-connections',
-      _,
-    ] ||
+    ['agents' || 'skills' || 'service-connections', _] ||
     ['skills', _, 'tools' || 'resources', _] ||
     ['manage-workspaces', 'create'] => true,
     ['manage-workspaces', 'cloud', _, final id] => int.tryParse(id) != null,

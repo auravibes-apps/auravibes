@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:auravibes_engine/src/skills/skill_command.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 import 'package:crypto/crypto.dart';
 

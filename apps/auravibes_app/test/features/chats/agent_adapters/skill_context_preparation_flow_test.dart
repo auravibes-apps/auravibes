@@ -337,7 +337,6 @@ class _ManifestBuilder(final String Function() _revision)
       title: 'Research',
       description: 'Find sources',
       revision: _revision(),
-      connectorToolIds: const [],
     ),
   ];
 }

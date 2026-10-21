@@ -327,7 +327,7 @@ Future<Object?> runCompiledConnectorTool({
   required String toolSlug,
   required Map<String, dynamic> input,
   Map<String, String> credentials = const {},
-  required SkillHttpClient httpClient,
+  required ConnectorHttpClient httpClient,
 }) {
   final connector = connectorDefinitions
       .where((candidate) => candidate.identifier == connectorId)
@@ -340,9 +340,9 @@ Future<Object?> runCompiledConnectorTool({
     throw const ServerToolNotConfiguredException();
   }
   return ConnectorToolTemplateExecutor(
-    const ResolveConnectorRequestTemplate(),
-    httpClient,
-  )
+        const ResolveConnectorRequestTemplate(),
+        httpClient,
+      )
       .call(
         definition: definition,
         inputs: input,
@@ -760,7 +760,7 @@ class const ServerToolExecutorService({
       toolSlug: resolved.tool.slug,
       input: executionArguments,
       credentials: credentials,
-      httpClient: _skillHttpClient(
+      httpClient: _connectorHttpClient(
         session,
         turn,
         requireHttps: credentials.isNotEmpty,
@@ -824,7 +824,6 @@ class const ServerToolExecutorService({
     final manifest = await buildCloudSkillManifest(
       slug: target.slug,
       userSkills: state.userSkills,
-      tools: const [],
     );
     if (manifest == null || manifest.revision != target.revision) {
       throw FormatException(
@@ -1907,7 +1906,7 @@ class const ServerToolExecutorService({
     }
   }
 
-  SkillHttpClient _skillHttpClient(
+  ConnectorHttpClient _connectorHttpClient(
     Session session,
     ConversationTurn turn, {
     required bool requireHttps,

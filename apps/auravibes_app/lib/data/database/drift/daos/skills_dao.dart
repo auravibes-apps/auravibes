@@ -31,6 +31,7 @@ class SkillsDao(super.attachedDatabase)
       transaction(() async {
         final current = await getSkillById(skillId);
         if (current == null) throw StateError('Skill was not found');
+
         return await _writeSkill(skillId, skill);
       });
 

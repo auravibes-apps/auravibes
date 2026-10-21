@@ -15,9 +15,7 @@ abstract final class WorkspaceNavigation {
   static WorkspaceDestination? classify(Uri uri) => switch (path(uri)) {
     ['chat', 'new'] || ['chats', ...] => .chats,
     ['agents', ...] || ['skills', ...] => .agentsAndSkills,
-    ['service-connections', ...] ||
-    ['tools'] ||
-    ['models'] => .connections,
+    ['service-connections', ...] || ['tools'] || ['models'] => .connections,
     ['settings'] => .appSettings,
     ['cloud-accounts', ...] => .cloudAccounts,
     _ => null,

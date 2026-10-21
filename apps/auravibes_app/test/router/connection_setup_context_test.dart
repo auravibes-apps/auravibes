@@ -30,10 +30,11 @@ void main() {
             type: 'connector',
             connectorId: state.uri.queryParameters['connectorId'],
           );
-      final firstLocation = '/draft-first?connectorId=${connectorIds.first}';
+      final firstConnectorId =
+          connectorIds.firstOrNull ?? (throw StateError('No connectors found'));
+      final firstLocation = '/draft-first?connectorId=$firstConnectorId';
       final secondLocation = '/draft-second?connectorId=${connectorIds.last}';
       final router = GoRouter(
-        initialLocation: firstLocation,
         routes: [
           GoRoute(
             path: '/draft-first',
@@ -45,6 +46,7 @@ void main() {
             builder: (context, state) => routeFor(state).build(context, state),
           ),
         ],
+        initialLocation: firstLocation,
       );
       addTearDown(router.dispose);
 
@@ -66,7 +68,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       await tester.enterText(find.byType(EditableText).first, 'Retained name');
       await tester.enterText(
         find.byType(EditableText).last,
@@ -74,18 +76,18 @@ void main() {
       );
 
       router.go(secondLocation);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.text('Keep editing'), findsOneWidget);
       await tester.tap(find.text('Keep editing'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(router.state.uri.toString(), firstLocation);
       expect(find.text('Retained name'), findsOneWidget);
       expect(find.text('private-original'), findsOneWidget);
 
       router.go(secondLocation);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       await tester.tap(find.text('Discard changes'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(router.state.uri.toString(), secondLocation);
       expect(
         tester

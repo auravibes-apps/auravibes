@@ -7,9 +7,8 @@ class const ConnectorCredentialAttributeDefinition({
   final bool optional = false,
   final bool secret = true,
 }) {
-  static Map<String, ConnectorCredentialAttributeDefinition> validateDefinitionMap(
-    String value,
-  ) {
+  static Map<String, ConnectorCredentialAttributeDefinition>
+  validateDefinitionMap(String value) {
     final attributes = parseMap(value);
     if (!attributes.values.any((attribute) => attribute.secret)) {
       throw const FormatException(

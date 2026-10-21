@@ -31,7 +31,7 @@ void main() {
       'content',
     ]);
     final createSkillProperties =
-        skillsManagerToolSpecs[2].inputJsonSchema['properties'] as Map;
+        skillsManagerToolSpecs[2].inputJsonSchema['properties']! as Map;
     final connectorToolIds = createSkillProperties['connectorToolIds'] as Map;
     expect(connectorToolIds['type'], 'array');
     expect((connectorToolIds['items'] as Map)['type'], 'string');
@@ -57,7 +57,8 @@ void main() {
       skillsManagerToolSpecs.map((spec) => spec.name),
       isNot(
         contains(
-          'skill__app_native__skills_manager__create_skill_credential_definition',
+          'skill__app_native__skills_manager__'
+          'create_skill_credential_definition',
         ),
       ),
     );

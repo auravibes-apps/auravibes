@@ -17,13 +17,13 @@ void main() {
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
 
-  setUp(() async => clearAppDatabase(database));
+  setUp(() => clearAppDatabase(database));
   tearDownAll(database.close);
 
   test('persists normalized Connector tool references', () async {
-    final workspace = await WorkspaceRepository(database).createWorkspace(
-      const WorkspaceToCreate(name: 'Workspace', type: .local),
-    );
+    final workspace = await WorkspaceRepository(
+      database,
+    ).createWorkspace(const WorkspaceToCreate(name: 'Workspace', type: .local));
     final repository = SkillsRepository(database);
     final created = await CreateSkillUsecase(repository).call(
       workspace.id,
@@ -51,18 +51,16 @@ void main() {
 
     final updated = await UpdateSkillUsecase(repository).call(
       created.id,
-      const SkillToUpdate(
-        connectorToolIds: ['connector/notion/search'],
-      ),
+      const SkillToUpdate(connectorToolIds: ['connector/notion/search']),
     );
 
     expect(updated.connectorToolIds, ['connector/notion/search']);
   });
 
   test('partial Skill updates keep Connector references', () async {
-    final workspace = await WorkspaceRepository(database).createWorkspace(
-      const WorkspaceToCreate(name: 'Workspace', type: .local),
-    );
+    final workspace = await WorkspaceRepository(
+      database,
+    ).createWorkspace(const WorkspaceToCreate(name: 'Workspace', type: .local));
     final repository = SkillsRepository(database);
     final created = await repository.createSkill(
       workspace.id,
@@ -85,17 +83,17 @@ void main() {
   });
 
   test('rejects invalid and duplicate Skill titles', () async {
-    final workspace = await WorkspaceRepository(database).createWorkspace(
-      const WorkspaceToCreate(name: 'Workspace', type: .local),
-    );
-    final create = CreateSkillUsecase(SkillsRepository(database));
+    final workspace = await WorkspaceRepository(
+      database,
+    ).createWorkspace(const WorkspaceToCreate(name: 'Workspace', type: .local));
+    final create = CreateSkillUsecase(.new(database));
     const skill = SkillToCreate(
       kind: .template,
       title: 'CRM workflow',
       description: 'Use Notion for CRM.',
       content: 'Search before creating records.',
     );
-    await create.call(workspace.id, skill);
+    final _ = await create.call(workspace.id, skill);
 
     await expectLater(
       create.call(

@@ -56,30 +56,33 @@ void main() {
       }
     }
 
-    test('Skill control command without a permission row is unconfigured', () async {
-      final usecase = ResolveToolApprovalDecisionUsecase(
-        conversationToolsRepository: fixture.conversationToolsRepository,
-        toolsGroupsRepository: fixture.toolsGroupsRepository,
-        workspaceToolsRepository: fixture.workspaceToolsRepository,
-        getToolAccessMode: (_) async => .allowAll,
-      );
-      final decision = await usecase(
-        conversationId: 'conv-1',
-        workspaceId: 'ws-1',
-        toolCallId: 'tc-1',
-        resolvedTool: ResolvedTool.skillControl(
-          toolIdentifier: agent.activateSkillToolName,
-        ),
-      );
-      expect(decision.permissionResult, ToolPermissionResult.notConfigured);
-      final _ = verifyNever(
-        () => fixture.conversationToolsRepository.checkToolPermission(
-          conversationId: any(named: 'conversationId'),
-          workspaceId: any(named: 'workspaceId'),
-          toolId: any(named: 'toolId'),
-        ),
-      );
-    });
+    test(
+      'Skill control command without a permission row is unconfigured',
+      () async {
+        final usecase = ResolveToolApprovalDecisionUsecase(
+          conversationToolsRepository: fixture.conversationToolsRepository,
+          toolsGroupsRepository: fixture.toolsGroupsRepository,
+          workspaceToolsRepository: fixture.workspaceToolsRepository,
+          getToolAccessMode: (_) async => .allowAll,
+        );
+        final decision = await usecase(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'tc-1',
+          resolvedTool: ResolvedTool.skillControl(
+            toolIdentifier: agent.activateSkillToolName,
+          ),
+        );
+        expect(decision.permissionResult, ToolPermissionResult.notConfigured);
+        final _ = verifyNever(
+          () => fixture.conversationToolsRepository.checkToolPermission(
+            conversationId: any(named: 'conversationId'),
+            workspaceId: any(named: 'workspaceId'),
+            toolId: any(named: 'toolId'),
+          ),
+        );
+      },
+    );
 
     test(
       'uses the current Connector command workspace permission row',

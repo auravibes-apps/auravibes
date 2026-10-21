@@ -1,7 +1,7 @@
-import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/connectors/models/connector_credential_attribute_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 
 final codexSkill = ServiceSkillPreset(
   identifier: 'codex',

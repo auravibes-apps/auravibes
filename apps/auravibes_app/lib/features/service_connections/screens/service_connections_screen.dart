@@ -633,7 +633,6 @@ List<ServiceConnectionListItem> _connectionsForList(
     )
     .toList();
 
-
 class const _ConnectionListFilters({
   required final ConnectionDestination view,
   required final ConnectionFilter kind,
@@ -1832,7 +1831,7 @@ String _serviceConnectionSubtitle(
 }
 
 String _connectionServiceName(
-  BuildContext context,
+  BuildContext _,
   ServiceConnectionListItem connection,
 ) {
   final serviceName = connection.serviceName;

@@ -153,7 +153,7 @@ class _ConversationSkillSelectorModalState
 
   Future<void> _openConnectorSetup(AvailableSkill skill) async {
     if (skill.connectorToolIds.isEmpty) return;
-    await FeatureDestinations.push<bool>(
+    final _ = await FeatureDestinations.push<bool>(
       context,
       ServiceConnectionsRoute(
         workspaceId: widget.workspaceId,

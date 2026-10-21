@@ -226,7 +226,6 @@ void main() {
     expect(savedUpdate?.secretEdit, ServiceConnectionSecretEdit.replace);
     expect(savedUpdate?.secret, secret);
   });
-
 }
 
 Future<void> _pumpEditor(

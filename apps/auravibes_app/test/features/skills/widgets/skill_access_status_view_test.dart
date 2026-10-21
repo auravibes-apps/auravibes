@@ -81,14 +81,14 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.text('Manage Connections'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(router.state.uri.path, Uri.parse(expected).path);
     expect(find.text('Connection form'), findsOneWidget);
     router.pop(true);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(returned, isTrue);
   });
 }

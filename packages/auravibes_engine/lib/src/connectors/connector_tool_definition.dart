@@ -1,5 +1,5 @@
-import 'package:auravibes_engine/src/connectors/models/connector_tool_request_template.dart';
 import 'package:auravibes_engine/src/connectors/models/connector_tool_request_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_request_template.dart';
 
 const Map<String, dynamic> defaultConnectorToolInputJsonSchema = {
   'type': 'object',

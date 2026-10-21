@@ -207,11 +207,9 @@ class const _CreateScreenHandoff({
 }
 
 void _initializeCreateState(_ServiceConnectionCreateScreenState state) {
-  if (state.widget.initialConnectorId != null) {
-    state._type = .connector;
-  } else {
-    state._type = state.widget.initialType ?? .modelProvider;
-  }
+  state._type = state.widget.initialConnectorId != null
+      ? .connector
+      : state.widget.initialType ?? .modelProvider;
   state._connectorId = state.widget.initialConnectorId;
 }
 

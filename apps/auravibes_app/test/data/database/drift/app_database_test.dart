@@ -91,18 +91,21 @@ void main() {
           'CREATE TABLE service_connections '
           '(id TEXT PRIMARY KEY, kind TEXT, encrypted_auth_value TEXT)',
         )
-        ..execute(
-          'INSERT INTO service_connections VALUES (?, ?, ?)',
-          ['skill', 'skillCredential', 'encrypted'],
-        )
-        ..execute(
-          'INSERT INTO service_connections VALUES (?, ?, ?)',
-          ['app-skill', 'appSkillCredential', 'encrypted'],
-        )
-        ..execute(
-          'INSERT INTO service_connections VALUES (?, ?, ?)',
-          ['notion', 'customHttp', 'encrypted'],
-        )
+        ..execute('INSERT INTO service_connections VALUES (?, ?, ?)', [
+          'skill',
+          'skillCredential',
+          'encrypted',
+        ])
+        ..execute('INSERT INTO service_connections VALUES (?, ?, ?)', [
+          'app-skill',
+          'appSkillCredential',
+          'encrypted',
+        ])
+        ..execute('INSERT INTO service_connections VALUES (?, ?, ?)', [
+          'notion',
+          'customHttp',
+          'encrypted',
+        ])
         ..execute('CREATE TABLE skill_template_tools (id TEXT PRIMARY KEY)')
         ..execute(
           'CREATE TABLE skill_credential_definitions (id TEXT PRIMARY KEY)',
@@ -115,13 +118,10 @@ void main() {
       final connections = await database
           .customSelect('SELECT id, kind FROM service_connections')
           .get();
-      final retiredTables = await database
-          .customSelect(
-            "SELECT name FROM sqlite_master WHERE type = 'table' "
-            "AND name IN ('skill_template_tools', "
-            "'skill_credential_definitions')",
-          )
-          .get();
+      final retiredTables = await database.customSelect('''
+SELECT name FROM sqlite_master WHERE type = 'table'
+AND name IN ('skill_template_tools', 'skill_credential_definitions')
+''').get();
 
       expect(connections.map((row) => row.read<String>('id')), ['notion']);
       expect(connections.single.read<String>('kind'), 'customHttp');

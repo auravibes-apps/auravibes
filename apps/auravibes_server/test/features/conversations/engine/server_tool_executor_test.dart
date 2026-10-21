@@ -9,112 +9,11 @@ import 'package:auravibes_server/src/features/conversations/engine/server_tool_r
 import 'package:test/test.dart';
 
 void main() {
-  const skills = [
-    {
-      'id': 'skill-1',
-      'slug': 'research',
-      'title': 'Research',
-      'content': 'Use primary sources.',
-      'isEnabled': true,
-    },
-  ];
-  final descriptor = AgentResolvedToolName.skillTemplate(
-    tableId: 'tool-1',
-    skillSlug: 'research',
-    toolIdentifier: 'search',
-  );
-  final tools = [
-    ServerResolvedTool(
-      descriptor: descriptor,
-      spec: ToolSpec(
-        name: descriptor.fullName,
-        description: 'Search sources.',
-        inputJsonSchema: const {
-          'type': 'object',
-          'properties': {
-            'limit': {'type': 'integer'},
-          },
-          'required': ['limit'],
-          'additionalProperties': false,
-        },
-      ),
-    ),
-  ];
-
-  Future<SkillCommandTarget> command({
-    String skill = 'research',
-    String tool = 'search',
-    Object? limit = 1,
-    String? revision,
-  }) async {
-    final manifest = await buildCloudSkillManifest(
-      slug: 'research',
-      userSkills: skills,
-      tools: tools,
-    );
-    return SkillCommandTarget.fromArguments({
-      'skill': skill,
-      'tool': tool,
-      'args': {'limit': limit},
-      'revision': revision ?? manifest!.revision,
-    });
-  }
-
-  test('resolves current target and validates its schema', () async {
-    expect(
-      await resolveCloudSkillCommandTarget(
-        command: await command(),
-        userSkills: skills,
-        tools: tools,
-      ),
-      same(tools.single),
-    );
-  });
-
-  test('rejects unloaded target', () async {
-    await expectLater(
-      resolveCloudSkillCommandTarget(
-        command: await command(),
-        userSkills: skills,
-        tools: const [],
-      ),
-      throwsStateError,
-    );
-  });
-
-  test('rejects stale manifest revision', () async {
-    await expectLater(
-      resolveCloudSkillCommandTarget(
-        command: await command(revision: 'stale'),
-        userSkills: skills,
-        tools: tools,
-      ),
-      throwsA(
-        isA<FormatException>().having(
-          (error) => error.message,
-          'message',
-          contains('current skill catalog to refresh'),
-        ),
-      ),
-    );
-  });
-
-  test('rejects invalid target arguments', () async {
-    await expectLater(
-      resolveCloudSkillCommandTarget(
-        command: await command(limit: 'wrong'),
-        userSkills: skills,
-        tools: tools,
-      ),
-      throwsFormatException,
-    );
-  });
-
   test('cloud skill controls require confirmation', () {
     expect(
       defaultCloudToolPermission(
         AgentResolvedToolName.skillControl(
-          toolIdentifier: listSkillCredentialsToolName,
+          toolIdentifier: loadSkillResourceToolName,
         ),
       ),
       AgentToolPermissionResult.needsConfirmation,
@@ -130,7 +29,7 @@ void main() {
   });
 
   test('cloud resolves known Connector contract without discovery', () {
-    final connector = serviceSkillDefinitions.singleWhere(
+    final connector = connectorDefinitions.singleWhere(
       (candidate) => candidate.identifier == 'duckduckgo',
     );
     final tool = connector.tools.single;
@@ -187,14 +86,14 @@ void main() {
   });
 
   test('cloud Connector discovery lists current tools without secrets', () {
-    final connector = serviceSkillDefinitions.singleWhere(
+    final connector = connectorDefinitions.singleWhere(
       (candidate) => candidate.identifier == 'anthropic',
     );
     final connections = [
       {
         'id': 'anthropic-connection',
         'name': 'Work account',
-        'kind': 'appSkillCredential',
+        'kind': 'customHttp',
         'serviceId': connector.identifier,
         'isEnabled': true,
         'hasSecret': true,
@@ -203,7 +102,7 @@ void main() {
       {
         'id': 'disabled-connection',
         'name': 'Disabled account',
-        'kind': 'appSkillCredential',
+        'kind': 'customHttp',
         'serviceId': connector.identifier,
         'isEnabled': false,
         'hasSecret': true,
@@ -211,7 +110,7 @@ void main() {
       {
         'id': 'missing-secret',
         'name': 'Incomplete account',
-        'kind': 'appSkillCredential',
+        'kind': 'customHttp',
         'serviceId': connector.identifier,
         'isEnabled': true,
         'hasSecret': false,
@@ -263,7 +162,7 @@ void main() {
   });
 
   test('cloud Connector discovery includes compatible model Connections', () {
-    final connector = serviceSkillDefinitions.singleWhere(
+    final connector = connectorDefinitions.singleWhere(
       (candidate) => candidate.identifier == 'openai',
     );
     final modelConnections = [
@@ -349,10 +248,10 @@ void main() {
 
   test('cloud discovery hides credentialed tools without a Connection', () {
     final connectors = [
-      serviceSkillDefinitions.singleWhere(
+      connectorDefinitions.singleWhere(
         (candidate) => candidate.identifier == 'openai',
       ),
-      serviceSkillDefinitions.singleWhere(
+      connectorDefinitions.singleWhere(
         (candidate) => candidate.identifier == 'duckduckgo',
       ),
     ];
@@ -433,10 +332,10 @@ void main() {
     },
   );
 
-  test('compiled DuckDuckGo template uses injected HTTP client', () async {
+  test('compiled Connector tool uses injected HTTP client', () async {
     UrlRequest? captured;
-    final result = await runCompiledServiceSkillTool(
-      skillSlug: 'duckduckgo',
+    final result = await runCompiledConnectorTool(
+      connectorId: 'duckduckgo',
       toolSlug: 'search',
       input: const {'query': 'aura vibes'},
       httpClient: (request) {
@@ -457,10 +356,10 @@ void main() {
     expect(result, '<html></html>');
   });
 
-  test('dynamic skill cannot supply a compiled callback', () async {
+  test('dynamic Connector cannot supply a compiled callback', () async {
     expect(
-      () => runCompiledServiceSkillTool(
-        skillSlug: 'user-skill',
+      () => runCompiledConnectorTool(
+        connectorId: 'user-skill',
         toolSlug: 'search',
         input: const {},
         httpClient: (_) => throw StateError('must not run'),

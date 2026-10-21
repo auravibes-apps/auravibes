@@ -1,8 +1,9 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart' show AppSkillResourceDefinition;
-import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/connectors/models/connector_tool_request_template.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart'
+    show AppSkillResourceDefinition;
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 
 const _authorizationHeader = 'Bearer {{ credential.apiKey }}';
 const _contentTypeHeader = 'content-type';
@@ -134,7 +135,7 @@ ConnectorToolDefinition _tool(
     title: title,
     description: description,
     inputJsonSchema: schema,
-      urlTemplate: template,
+    urlTemplate: template,
   );
 }
 

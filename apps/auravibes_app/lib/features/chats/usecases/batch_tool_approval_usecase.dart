@@ -176,9 +176,7 @@ extension on BatchToolApprovalUsecase {
         .buildCatalog(conversationId: entry.key, workspaceId: workspaceId);
 
     return await Future.wait(
-      entry.value.map(
-        (claim) => _resolveClaim(claim, catalog: catalog),
-      ),
+      entry.value.map((claim) => _resolveClaim(claim, catalog: catalog)),
     );
   }
 
@@ -400,9 +398,8 @@ agent.AgentToolBatchCall<ResolvedTool> _executionCallForResolvedClaim(
   );
 }
 
-_ResolvedBatchClaim _missingResolvedTool(
-  ToolCallApprovalBatchClaim claim,
-) => .new(claim: claim, resultStatus: .toolNotFound);
+_ResolvedBatchClaim _missingResolvedTool(ToolCallApprovalBatchClaim claim) =>
+    .new(claim: claim, resultStatus: .toolNotFound);
 
 List<ToolCallExecutionBatchUpdate> _executionUpdates(
   Iterable<agent.AgentToolBatchResult<ResolvedTool>> results,

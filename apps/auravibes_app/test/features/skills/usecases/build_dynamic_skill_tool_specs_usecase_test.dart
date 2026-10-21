@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('exposes only stable Skill activation and resource commands', () async {
-    final specs = await BuildDynamicSkillToolSpecsUsecase().call(
+    final specs = await const BuildDynamicSkillToolSpecsUsecase().call(
       conversationId: 'conversation-1',
       workspaceId: 'workspace-1',
     );

@@ -34,7 +34,9 @@ void main() {
             inputs: const {},
             credentials: credentials,
             definition: ConnectorToolRequestDefinition(
-              request: const ConnectorRequestTemplate(url: 'https://example.com'),
+              request: const ConnectorRequestTemplate(
+                url: 'https://example.com',
+              ),
               inputs: const {},
               credentialDefinitions: credentialDefinitions,
             ),

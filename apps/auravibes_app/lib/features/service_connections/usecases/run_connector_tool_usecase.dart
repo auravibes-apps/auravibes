@@ -1,9 +1,10 @@
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
+import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
-import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/connector_http_client_adapter.dart';
+import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -21,6 +22,11 @@ typedef _ConnectorToolCredential = ({
   ConnectorDefinition connector,
   ConnectorToolDefinition tool,
   Map<String, String> attributes,
+});
+
+typedef _ConnectorToolTarget = ({
+  ConnectorDefinition connector,
+  ConnectorToolDefinition tool,
 });
 
 class const RunConnectorToolUsecase(
@@ -52,17 +58,12 @@ class const RunConnectorToolUsecase(
     toolSlug: toolSlug,
     arguments: arguments,
   )).start();
+}
 
-  ({ConnectorDefinition connector, ConnectorToolDefinition tool}) _resolve(
-    String connectorId,
-    String toolSlug,
-  ) {
-    final connector = connectorDefinitions
-        .where((item) => item.identifier == connectorId)
-        .firstOrNull;
-    final tool = connector?.tools
-        .where((item) => item.slug == toolSlug && item.urlTemplate != null)
-        .firstOrNull;
+extension on RunConnectorToolUsecase {
+  _ConnectorToolTarget _resolve(String connectorId, String toolSlug) {
+    final connector = _connector(connectorId);
+    final tool = connector == null ? null : _connectorTool(connector, toolSlug);
     if (connector == null || tool == null) {
       throw UnsupportedError('Unknown Connector tool: $connectorId/$toolSlug');
     }
@@ -70,63 +71,98 @@ class const RunConnectorToolUsecase(
     return (connector: connector, tool: tool);
   }
 
+  ConnectorDefinition? _connector(String connectorId) => connectorDefinitions
+      .where((item) => item.identifier == connectorId)
+      .firstOrNull;
+
+  ConnectorToolDefinition? _connectorTool(
+    ConnectorDefinition connector,
+    String toolSlug,
+  ) => connector.tools
+      .where((item) => item.slug == toolSlug && item.urlTemplate != null)
+      .firstOrNull;
+
   Future<_ConnectorToolCredential> _resolveCredential(
     _ConnectorToolRequest request,
   ) async {
     final target = _resolve(request.connectorId, request.toolSlug);
+    final connector = target.connector;
     final tool = target.tool;
     if (!tool.requiresConnection) {
       return (
-        connector: target.connector,
+        connector: connector,
         tool: tool,
         attributes: const <String, String>{},
       );
     }
+
+    return await _resolveConnectedCredential(request, connector, tool);
+  }
+
+  Future<_ConnectorToolCredential> _resolveConnectedCredential(
+    _ConnectorToolRequest request,
+    ConnectorDefinition connector,
+    ConnectorToolDefinition tool,
+  ) async {
     final candidates = await _connectionCandidates.forConnector(
       workspaceId: request.workspaceId,
-      connector: target.connector,
+      connector: connector,
     );
-    final selectedId = _selectConnectionId(
+    final connectionId = _selectedConnectionId(
       request.arguments['connectionId'],
       candidates,
     );
-    if (!candidates.any((candidate) => candidate.id == selectedId)) {
-      throw StateError('Connection is not available for this Connector tool.');
-    }
 
-    final connectionId = selectedId.replaceFirst(
-      RegExp('^(service|model):'),
-      '',
+    return await _resolveEnabledConnectionCredential(
+      connector: connector,
+      tool: tool,
+      connectionId: connectionId,
     );
+  }
+
+  Future<_ConnectorToolCredential> _resolveEnabledConnectionCredential({
+    required ConnectorDefinition connector,
+    required ConnectorToolDefinition tool,
+    required String connectionId,
+  }) async {
+    final connection = await _enabledConnection(connectionId);
+    final attributes = await _connectionAttributes(
+      connector: connector,
+      connectionId: connectionId,
+      connection: connection,
+    );
+
+    return (connector: connector, tool: tool, attributes: attributes);
+  }
+
+  Future<ServiceConnectionEntity> _enabledConnection(
+    String connectionId,
+  ) async {
     final connection = await _connectionRepository.getById(connectionId);
     if (connection == null || !connection.isEnabled) {
       throw StateError('Connection is not available for this Connector tool.');
     }
+
+    return connection;
+  }
+
+  Future<Map<String, String>> _connectionAttributes({
+    required ConnectorDefinition connector,
+    required String connectionId,
+    required ServiceConnectionEntity connection,
+  }) async {
     final secret = await _connectionRepository.readSecret(connectionId);
     final metadata = ServiceConnectionAuthCodec.decodeMetadata(
       connection.metadataJson,
     );
 
-    return (
-      connector: target.connector,
-      tool: tool,
-      attributes: await _secretAttributes(
-        connector: target.connector,
-        connectionId: connectionId,
-        secret: secret,
-        metadata: metadata,
-      ),
+    return await _secretAttributes(
+      connector: connector,
+      connectionId: connectionId,
+      secret: secret,
+      metadata: metadata,
     );
   }
-
-  String _selectConnectionId(
-    Object? requestedId,
-    List<ConnectorConnectionCandidate> candidates,
-  ) => switch (requestedId) {
-    final String id when id.trim().isNotEmpty => id.trim(),
-    _ when candidates.length == 1 => candidates.single.id,
-    _ => throw StateError('Connector tool requires a connectionId.'),
-  };
 
   Future<Map<String, String>> _secretAttributes({
     required ConnectorDefinition connector,
@@ -172,6 +208,27 @@ class const RunConnectorToolUsecase(
   }
 }
 
+String _selectedConnectionId(
+  Object? requestedId,
+  List<ConnectorConnectionCandidate> candidates,
+) {
+  final selectedId = _selectConnectionId(requestedId, candidates);
+  if (!candidates.any((candidate) => candidate.id == selectedId)) {
+    throw StateError('Connection is not available for this Connector tool.');
+  }
+
+  return selectedId.replaceFirst(RegExp('^(service|model):'), '');
+}
+
+String _selectConnectionId(
+  Object? requestedId,
+  List<ConnectorConnectionCandidate> candidates,
+) => switch (requestedId) {
+  final String id when id.trim().isNotEmpty => id.trim(),
+  _ when candidates.length == 1 => candidates.single.id,
+  _ => throw StateError('Connector tool requires a connectionId.'),
+};
+
 class _ConnectorToolCall(
   final RunConnectorToolUsecase _usecase,
   final _ConnectorToolRequest _request,
@@ -191,18 +248,23 @@ class _ConnectorToolCall(
     try {
       final resolved = await _usecase._resolveCredential(_request);
       if (completer.isCanceled) return;
-      final operation = _usecase._templateExecutor.call(
-        definition: resolved.tool.definition,
-        inputs: _toolInputs(_request.arguments),
-        credentials: resolved.attributes,
-        schema: resolved.tool.inputJsonSchema,
-      );
-      _httpOperation = operation;
-      final response = await operation.valueOrCancellation();
-      if (!completer.isCanceled) completer.complete(response?.body);
+      final result = await _execute(resolved);
+      if (!completer.isCanceled) completer.complete(result);
     } on Object catch (error, stackTrace) {
       if (!completer.isCanceled) completer.completeError(error, stackTrace);
     }
+  }
+
+  Future<Object?> _execute(_ConnectorToolCredential resolved) async {
+    final operation = _usecase._templateExecutor.call(
+      definition: resolved.tool.definition,
+      inputs: _toolInputs(_request.arguments),
+      credentials: resolved.attributes,
+      schema: resolved.tool.inputJsonSchema,
+    );
+    _httpOperation = operation;
+
+    return (await operation.valueOrCancellation())?.body;
   }
 
   Map<String, dynamic> _toolInputs(Map<String, dynamic> arguments) => {
@@ -220,10 +282,7 @@ final runConnectorToolUsecaseProvider = Provider<RunConnectorToolUsecase>((
   return RunConnectorToolUsecase(
     ref.watch(serviceConnectionRepositoryProvider),
     ref.watch(listConnectorConnectionCandidatesUsecaseProvider),
-    ConnectorToolTemplateExecutor(
-      const ResolveConnectorRequestTemplate(),
-      httpClient.execute,
-    ),
+    .new(const ResolveConnectorRequestTemplate(), httpClient.execute),
     ref.watch(oauthCredentialServiceProvider),
   );
 });

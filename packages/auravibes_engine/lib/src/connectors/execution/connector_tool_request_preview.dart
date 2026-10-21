@@ -20,7 +20,9 @@ ConnectorToolRequestPreview renderConnectorToolRequestPreview({
     for (final name in _credentialNames(definition))
       name:
           definition.credentialDefinitions[name] ??
-          const ConnectorCredentialAttributeDefinition(description: 'Credential'),
+          const ConnectorCredentialAttributeDefinition(
+            description: 'Credential',
+          ),
   };
   final request = const ResolveConnectorRequestTemplate()(
     template: definition.request,

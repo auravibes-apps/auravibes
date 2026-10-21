@@ -35,7 +35,10 @@ void main() {
     await tester.runAsync(
       () => tester.pumpWidget(
         TestableApp(
-          workspaceId: workspace.id,
+          child: SkillDetailScreen(
+            workspaceId: workspace.id,
+            skillId: skill.id,
+          ),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
             cloudWorkspaceStateGatewayProvider.overrideWith(
@@ -43,14 +46,11 @@ void main() {
             ),
             cloudSkillStoreProvider(workspace.id).overrideWithValue(null),
           ],
-          child: SkillDetailScreen(
-            workspaceId: workspace.id,
-            skillId: skill.id,
-          ),
+          workspaceId: workspace.id,
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(SkillDetailScreen), findsOneWidget);
     expect(find.text('Research notes'), findsOneWidget);

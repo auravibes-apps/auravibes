@@ -1609,9 +1609,7 @@ class const _GenericSecretClearButton({required final VoidCallback onPressed})
     return AuraIconButton(
       icon: Icons.clear,
       onPressed: onPressed,
-      tooltip: LocaleKeys.service_connections_clear_secret.tr(
-        context: context,
-      ),
+      tooltip: LocaleKeys.service_connections_clear_secret.tr(context: context),
     );
   }
 }

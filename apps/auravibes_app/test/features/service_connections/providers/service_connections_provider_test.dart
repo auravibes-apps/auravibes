@@ -27,7 +27,7 @@ void main() {
     final workspace = await WorkspaceRepository(
       database,
     ).createWorkspace(const WorkspaceToCreate(name: 'Workspace', type: .local));
-    await database
+    final _ = await database
         .into(database.serviceConnections)
         .insert(
           ServiceConnectionsCompanion.insert(
@@ -78,7 +78,9 @@ void main() {
       'Notion CRM',
       'OpenAI Main',
     ]);
-    final connector = connectedItems.first;
+    final connector = connectedItems.singleWhere(
+      (item) => item.kind == ServiceConnectionListItemKind.connector,
+    );
     expect(connector.kind, ServiceConnectionListItemKind.connector);
     expect(connector.displayStatus, ServiceConnectionDisplayStatus.connected);
     expect(connector.toString(), isNot(contains('encrypted-secret')));

@@ -3,7 +3,9 @@ import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-typedef ConnectorRequestUrlGuard = Future<PublicUrlResolution> Function(String url);
+typedef ConnectorRequestUrlGuard = Future<PublicUrlResolution> Function(
+  String url,
+);
 
 class ConnectorHttpClientAdapter {
   new(this._urlService, {ConnectorRequestUrlGuard? requirePublicUri})

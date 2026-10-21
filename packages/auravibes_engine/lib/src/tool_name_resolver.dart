@@ -191,8 +191,7 @@ class const AgentToolNameResolver({
   ) {
     return switch (compositeId.split('__')) {
       ['skill', final source, final skillSlug, final toolSlug]
-          when (source == 'app_native' ||
-                  source == 'app') &&
+          when (source == 'app_native' || source == 'app') &&
               skillSlug.isNotEmpty &&
               toolSlug.isNotEmpty =>
         (source: source, skillSlug: skillSlug, toolSlug: toolSlug),

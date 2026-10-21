@@ -107,7 +107,7 @@ void main() {
         conversationToolsRepository: conversationToolsRepository,
         resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
         loadConversationToolSpecsUsecase: loadToolSpecs,
-        );
+      );
     });
 
     test('loads approvable tool call from message metadata', () async {
@@ -253,78 +253,81 @@ void main() {
       );
     });
 
-    test('persists conversation approval for a direct native Skill tool', () async {
-      final expected = ResolvedTool.skillNative(
-        tableId: agent.listAgentsToolName,
-        skillSlug: agent.agentsSkillSlug,
-        toolIdentifier: agent.listAgentsToolName,
-      );
-      final catalog = agent.buildToolCatalog<ResolvedTool>([
-        agent.ToolCatalogCandidate.reserved(
-          spec: .new(
-            name: expected.fullName,
-            description: 'List agents.',
-            inputJsonSchema: const {'type': 'object'},
-          ),
-          target: expected,
-        ),
-      ]);
-      final directMessage = message.copyWith(
-        metadata: MessageMetadataEntity(
-          toolCalls: [
-            MessageToolCallEntity(
-              id: 'tool-1',
+    test(
+      'persists conversation approval for a direct native Skill tool',
+      () async {
+        final expected = ResolvedTool.skillNative(
+          tableId: agent.listAgentsToolName,
+          skillSlug: agent.agentsSkillSlug,
+          toolIdentifier: agent.listAgentsToolName,
+        );
+        final catalog = agent.buildToolCatalog<ResolvedTool>([
+          agent.ToolCatalogCandidate.reserved(
+            spec: .new(
               name: expected.fullName,
-              argumentsRaw: '{}',
+              description: 'List agents.',
+              inputJsonSchema: const {'type': 'object'},
             ),
-          ],
-        ),
-      );
-      when(() => messageRepository.getMessageById(messageId))
-          .thenAnswer((_) async => directMessage);
-      when(() => conversationRepository.getConversationById(conversationId))
-          .thenAnswer((_) async => conversation);
-      when(
-        () => loadToolSpecs.buildCatalog(
+            target: expected,
+          ),
+        ]);
+        final directMessage = message.copyWith(
+          metadata: MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tool-1',
+                name: expected.fullName,
+                argumentsRaw: '{}',
+              ),
+            ],
+          ),
+        );
+        when(() => messageRepository.getMessageById(messageId))
+            .thenAnswer((_) async => directMessage);
+        when(() => conversationRepository.getConversationById(conversationId))
+            .thenAnswer((_) async => conversation);
+        when(
+          () => loadToolSpecs.buildCatalog(
+            conversationId: conversationId,
+            workspaceId: workspaceId,
+          ),
+        ).thenAnswer((_) async => catalog);
+        when(
+          () => resolveToolApprovalDecision.resolvePermissionTableId(
+            conversationId: conversationId,
+            workspaceId: workspaceId,
+            resolvedTool: expected,
+          ),
+        ).thenAnswer((_) async => 'agents-list-permission');
+        when(
+          () => conversationToolsRepository.setConversationToolPermission(
+            conversationId,
+            'agents-list-permission',
+            permissionMode: .alwaysAllow,
+          ),
+        ).thenAnswer((_) async => true);
+
+        final resolved = await provider.resolveTool(
           conversationId: conversationId,
-          workspaceId: workspaceId,
-        ),
-      ).thenAnswer((_) async => catalog);
-      when(
-        () => resolveToolApprovalDecision.resolvePermissionTableId(
+          toolName: expected.fullName,
+          argumentsRaw: '{}',
+        );
+
+        expect(resolved, same(expected));
+        await provider.grantToolForConversation(
           conversationId: conversationId,
-          workspaceId: workspaceId,
-          resolvedTool: expected,
-        ),
-      ).thenAnswer((_) async => 'agents-list-permission');
-      when(
-        () => conversationToolsRepository.setConversationToolPermission(
-          conversationId,
-          'agents-list-permission',
-          permissionMode: .alwaysAllow,
-        ),
-      ).thenAnswer((_) async => true);
+          tool: expected,
+        );
 
-      final resolved = await provider.resolveTool(
-        conversationId: conversationId,
-        toolName: expected.fullName,
-        argumentsRaw: '{}',
-      );
-
-      expect(resolved, same(expected));
-      await provider.grantToolForConversation(
-        conversationId: conversationId,
-        tool: expected,
-      );
-
-      verify(
-        () => conversationToolsRepository.setConversationToolPermission(
-          conversationId,
-          'agents-list-permission',
-          permissionMode: .alwaysAllow,
-        ),
-      ).called(1);
-    });
+        verify(
+          () => conversationToolsRepository.setConversationToolPermission(
+            conversationId,
+            'agents-list-permission',
+            permissionMode: .alwaysAllow,
+          ),
+        ).called(1);
+      },
+    );
 
     test('grants resolved tool permission for the conversation', () async {
       when(() => conversationRepository.getConversationById(conversationId))

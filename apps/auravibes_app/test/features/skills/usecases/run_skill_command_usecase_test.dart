@@ -1,9 +1,9 @@
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
-import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -33,26 +33,27 @@ void main() {
       skill: skill,
       manifest: manifest,
       loader: loader,
-      listSkillResourceSummaries: ({
-        required conversationId,
-        required workspaceId,
-        required skillSlug,
-      }) async {
-        resourceSummaryReads++;
-        return const [
-          SkillResourceSummary(
-            slug: 'crm-policy',
-            title: 'CRM policy',
-            description: 'Account rules.',
-          ),
-        ];
-      },
+      listSkillResourceSummaries:
+          ({
+            required conversationId,
+            required workspaceId,
+            required skillSlug,
+          }) async {
+            resourceSummaryReads++;
+
+            return const [
+              SkillResourceSummary(
+                slug: 'crm-policy',
+                title: 'CRM policy',
+                description: 'Account rules.',
+              ),
+            ];
+          },
     );
 
-    final result = await usecase.call(_request(
-      activateSkillToolName,
-      const {'slug': 'crm', 'revision': 'r1'},
-    ));
+    final result = await usecase.call(
+      _request(activateSkillToolName, const {'slug': 'crm', 'revision': 'r1'}),
+    );
 
     expect(result, isA<SkillActivationResult>());
     if (result is! SkillActivationResult) fail('Expected activation result.');
@@ -66,23 +67,28 @@ void main() {
     expect(resourceSummaryReads, 1);
   });
 
-  test('stale Skill revision fails before changing conversation selection', () async {
-    final loader = _SkillLoader();
-    final usecase = _usecase(
-      skill: skill,
-      manifest: manifest,
-      loader: loader,
-    );
+  test(
+    'stale Skill revision fails before changing conversation selection',
+    () async {
+      final loader = _SkillLoader();
+      final usecase = _usecase(
+        skill: skill,
+        manifest: manifest,
+        loader: loader,
+      );
 
-    await expectLater(
-      usecase.call(_request(
-        activateSkillToolName,
-        const {'slug': 'crm', 'revision': 'stale'},
-      )),
-      throwsFormatException,
-    );
-    expect(loader.calls, 0);
-  });
+      await expectLater(
+        usecase.call(
+          _request(activateSkillToolName, const {
+            'slug': 'crm',
+            'revision': 'stale',
+          }),
+        ),
+        throwsFormatException,
+      );
+      expect(loader.calls, 0);
+    },
+  );
 
   test('resource load requires an activated Skill', () async {
     var contentReads = 0;
@@ -90,22 +96,26 @@ void main() {
       skill: skill,
       manifest: manifest,
       loadedManifests: const [],
-      loadSkillResourceContent: ({
-        required conversationId,
-        required workspaceId,
-        required skillSlug,
-        required resourceSlug,
-      }) async {
-        contentReads++;
-        return (title: 'CRM policy', content: 'Account rules.');
-      },
+      loadSkillResourceContent:
+          ({
+            required conversationId,
+            required workspaceId,
+            required skillSlug,
+            required resourceSlug,
+          }) async {
+            contentReads++;
+
+            return (title: 'CRM policy', content: 'Account rules.');
+          },
     );
 
     await expectLater(
-      usecase.call(_request(
-        loadSkillResourceToolName,
-        const {'skill': 'crm', 'resource': 'crm-policy'},
-      )),
+      usecase.call(
+        _request(loadSkillResourceToolName, const {
+          'skill': 'crm',
+          'resource': 'crm-policy',
+        }),
+      ),
       throwsStateError,
     );
     expect(contentReads, 0);
@@ -123,10 +133,12 @@ void main() {
       }) async => (title: 'CRM policy', content: 'Before ]]> after.'),
     );
 
-    final result = await usecase.call(_request(
-      loadSkillResourceToolName,
-      const {'skill': 'crm', 'resource': 'crm-policy'},
-    ));
+    final result = await usecase.call(
+      _request(loadSkillResourceToolName, const {
+        'skill': 'crm',
+        'resource': 'crm-policy',
+      }),
+    );
 
     expect(result, isA<SkillResourceResult>());
     if (result is! SkillResourceResult) fail('Expected resource result.');
@@ -135,13 +147,15 @@ void main() {
   });
 }
 
-RunSkillCommandRequest _request(String commandName, Map<String, dynamic> args) =>
-    (
-      conversationId: 'conversation-1',
-      workspaceId: 'workspace-1',
-      commandName: commandName,
-      arguments: args,
-    );
+RunSkillCommandRequest _request(
+  String commandName,
+  Map<String, dynamic> args,
+) => (
+  conversationId: 'conversation-1',
+  workspaceId: 'workspace-1',
+  commandName: commandName,
+  arguments: args,
+);
 
 RunSkillCommandUsecase _usecase({
   required AvailableSkill skill,
@@ -152,6 +166,7 @@ RunSkillCommandUsecase _usecase({
   LoadSkillResourceContent? loadSkillResourceContent,
 }) {
   final skillLoader = loader ?? _SkillLoader();
+
   return RunSkillCommandUsecase(
     listAvailableSkillsUsecase: (_) => _SkillCatalog([skill]),
     loadConversationSkillUsecase: (_) => skillLoader,

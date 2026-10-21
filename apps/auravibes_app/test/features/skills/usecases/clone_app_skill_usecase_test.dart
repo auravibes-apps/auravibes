@@ -5,7 +5,6 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/skills/usecases/clone_app_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -26,13 +25,13 @@ void main() {
     );
     final skillsRepository = SkillsRepository(database);
     final resourcesRepository = SkillResourcesRepository(database);
-    final registry = const AppSkillRegistry();
+    const registry = AppSkillRegistry();
     final appSkill = registry.getBySlug('brave');
     if (appSkill == null) fail('Brave Skill fixture is missing.');
     final usecase = CloneAppSkillUsecase(
       registry,
       skillsRepository,
-      CreateSkillUsecase(skillsRepository),
+      .new(skillsRepository),
       resourceRepository: resourcesRepository,
     );
 
@@ -41,7 +40,10 @@ void main() {
     expect(cloned.kind, SkillKind.template);
     expect(cloned.title, 'Brave Search Copy');
     expect(cloned.connectorToolIds, appSkill.connectorToolIds);
-    expect(await resourcesRepository.getSkillResources(cloned.id), hasLength(1));
+    expect(
+      await resourcesRepository.getSkillResources(cloned.id),
+      hasLength(1),
+    );
   });
 
   test('does not clone native app controls', () async {
@@ -52,8 +54,8 @@ void main() {
     final usecase = CloneAppSkillUsecase(
       const AppSkillRegistry(),
       skillsRepository,
-      CreateSkillUsecase(skillsRepository),
-      resourceRepository: SkillResourcesRepository(database),
+      .new(skillsRepository),
+      resourceRepository: .new(database),
     );
 
     expect(

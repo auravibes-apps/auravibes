@@ -1,4 +1,3 @@
-import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/features/models/models/cloud_model_connection.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
@@ -69,7 +68,7 @@ void main() {
     'filters cloud Connector Connections by identity and readiness',
     () async {
       final usecase = ListConnectorConnectionCandidatesUsecase(
-        () => _ServiceConnectionRepository(),
+        _ServiceConnectionRepository.new,
         cloudServiceConnectionsReader: (_) async => const [
           CloudServiceConnection(
             id: 'matching',
@@ -190,7 +189,7 @@ void main() {
                 id: 'connection-1',
                 name: 'Work',
                 serviceId: 'example',
-                kind: ServiceConnectionKindTable.customHttp,
+                kind: .customHttp,
               ),
             ],
           );

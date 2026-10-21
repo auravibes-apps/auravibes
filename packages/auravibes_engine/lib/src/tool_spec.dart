@@ -22,11 +22,8 @@ class ToolSpec {
           _jsonEquals(inputJsonSchema, other.inputJsonSchema);
 
   @override
-  int get hashCode => Object.hash(
-    name,
-    description,
-    _jsonHash(inputJsonSchema),
-  );
+  int get hashCode =>
+      Object.hash(name, description, _jsonHash(inputJsonSchema));
 }
 
 Map<String, Object?> _freezeMap(Map<String, Object?> value) {

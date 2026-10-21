@@ -461,18 +461,25 @@ extension _RunSkillsManagerInputValidation on RunSkillsManagerToolUsecase {
   ) {
     final value = arguments[key];
     if (value == null) return null;
+
+    return _sortUniqueStrings(_requireStringList(value, key));
+  }
+
+  List<String> _requireStringList(Object? value, String key) {
     if (value is! List || value.any((item) => item is! String)) {
       throw FormatException('$key must be an array of strings.');
     }
 
-    return value
-        .cast<String>()
-        .map((id) => id.trim())
-        .where((id) => id.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
+    return value.cast<String>();
   }
+
+  List<String> _sortUniqueStrings(Iterable<String> values) =>
+      values
+          .map((id) => id.trim())
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
 
   bool? _optionalBool(Map<String, dynamic> arguments, String key) {
     final value = arguments[key];

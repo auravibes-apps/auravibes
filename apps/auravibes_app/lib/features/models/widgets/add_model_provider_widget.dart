@@ -96,17 +96,30 @@ class const AddModelProviderWidget({
     );
     if (routeExitGuard != null) return content;
 
-    return PopScope(
+    return _StandaloneAddModelProvider(
+      workspaceId: workspaceId,
       child: content,
-      canPop: !_watchHasUnsavedModelProviderChanges(ref, workspaceId),
-      onPopInvokedWithResult: _modelProviderPopCallback((
-        context: context,
-        ref: ref,
-        workspaceId: workspaceId,
-        onCancel: onCancel,
-      )),
+      onCancel: onCancel,
     );
   }
+}
+
+class const _StandaloneAddModelProvider({
+  required final String workspaceId,
+  required final Widget child,
+  final VoidCallback? onCancel,
+}) extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => PopScope(
+    child: child,
+    canPop: !_watchHasUnsavedModelProviderChanges(ref, workspaceId),
+    onPopInvokedWithResult: _modelProviderPopCallback((
+      context: context,
+      ref: ref,
+      workspaceId: workspaceId,
+      onCancel: onCancel,
+    )),
+  );
 }
 
 PopInvokedWithResultCallback<Object?> _modelProviderPopCallback(

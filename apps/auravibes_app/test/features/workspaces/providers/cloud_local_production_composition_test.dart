@@ -27,10 +27,10 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
-import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
+import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';

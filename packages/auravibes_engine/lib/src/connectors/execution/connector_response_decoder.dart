@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:auravibes_engine/src/provider_error_sanitizer.dart';
 import 'package:auravibes_engine/src/connectors/models/url_response.dart';
+import 'package:auravibes_engine/src/provider_error_sanitizer.dart';
 
 /// A terminal stream failure with safe, bounded diagnostic text.
 final class ConnectorStreamFailure implements Exception {

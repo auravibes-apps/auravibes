@@ -129,10 +129,7 @@ List<String> _messageIdsWithTargetContext({
   ];
 }
 
-typedef _ActivityToolDisplay = ({
-  String displayName,
-  String? description,
-});
+typedef _ActivityToolDisplay = ({String displayName, String? description});
 
 class const ChatPrimaryScrollController({
   required final Widget child,

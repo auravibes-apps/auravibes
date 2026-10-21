@@ -95,7 +95,7 @@ void main() {
         final skill = _skill(
           id: 'unknown',
           slug: 'unknown',
-          now: DateTime.utc(2026),
+          now: .utc(2026),
           connectorToolIds: const ['connector/openai/web_search'],
         );
         final usecase = _usecase(
@@ -240,7 +240,7 @@ void main() {
       () async {
         final cloud = _cloudStore([
           _cloudResource(
-            kind: WorkspaceResourceKind.skill,
+            kind: .skill,
             id: 'crm',
             data: {
               'id': 'crm',
@@ -264,8 +264,8 @@ void main() {
         );
         final loadable =
             await _usecase(
-              cloud: cloud,
               connectedConnectors: const {'openai'},
+              cloud: cloud,
             ).call(
               conversationId: 'conversation-1',
               workspaceId: 'workspace-1',
@@ -285,7 +285,7 @@ void main() {
     test('cloud app Skill comes from registry once', () async {
       final cloud = _cloudStore([
         _cloudResource(
-          kind: WorkspaceResourceKind.skill,
+          kind: .skill,
           id: 'jina',
           data: {
             'id': 'jina',
@@ -299,14 +299,14 @@ void main() {
           },
         ),
         _cloudResource(
-          kind: WorkspaceResourceKind.skillSetting,
+          kind: .skillSetting,
           id: 'jina',
           data: {'id': 'jina', 'skillId': 'jina', 'isEnabled': true},
         ),
       ]);
       final usecase = _usecase(
-        cloud: cloud,
         connectedConnectors: const {'jina'},
+        cloud: cloud,
       );
 
       final skills = await usecase.call(
@@ -353,7 +353,7 @@ SkillEntity _skill({
 }) => SkillEntity(
   id: id,
   workspaceId: 'workspace-1',
-  source: SkillSource.user,
+  source: .user,
   kind: .template,
   title: slug,
   slug: slug,

@@ -3,7 +3,7 @@ import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 
 class ServiceSkillPreset {
-  const ServiceSkillPreset({
+  const new({
     required this.identifier,
     required this.slug,
     required this.title,

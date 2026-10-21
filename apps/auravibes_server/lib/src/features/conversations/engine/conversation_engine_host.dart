@@ -1252,7 +1252,6 @@ final class const ServerConversationEngineHost({
           : await buildCloudSkillManifest(
               slug: slug,
               userSkills: userSkills,
-              tools: const [],
             );
       withManifests.add(
         AgentSkill(

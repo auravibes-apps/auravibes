@@ -59,6 +59,17 @@ typedef BrowserSkillToolRunner = Future<Object?> Function({
   required Map<String, dynamic> arguments,
 });
 
+typedef _SkillCommandDependencies = ({
+  ListAvailableSkillsUsecase Function(String workspaceId) listSkills,
+  LoadConversationSkillUsecase Function(String workspaceId) loadSkill,
+  BuildLoadedSkillManifestsUsecase buildManifests,
+});
+
+typedef _SkillCommandResources = ({
+  ListSkillResourceSummaries? list,
+  LoadSkillResourceContent? load,
+});
+
 class ResolvedToolService {
   static const ResolvedToolService Function() cloud =
       ResolvedToolService._cloud;
@@ -285,6 +296,22 @@ Future<Object?> _runSkillControlRequest(
   AppResolvedToolProvider provider,
   _SkillControlToolRequest request,
 ) {
+  final usecase = _skillCommandUsecase(
+    _skillCommandDependencies(provider),
+    _skillCommandResources(provider),
+  );
+
+  return usecase.call((
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    commandName: request.toolIdentifier,
+    arguments: request.arguments,
+  ));
+}
+
+_SkillCommandDependencies _skillCommandDependencies(
+  AppResolvedToolProvider provider,
+) {
   final listSkills = provider.listAvailableSkillsUsecase;
   final loadSkill = provider.loadConversationSkillUsecase;
   final buildManifests = provider.buildLoadedSkillManifestsUsecase;
@@ -292,23 +319,34 @@ Future<Object?> _runSkillControlRequest(
     throw StateError('Skill commands are not configured.');
   }
 
-  return RunSkillCommandUsecase(
-    listAvailableSkillsUsecase: listSkills,
-    loadConversationSkillUsecase: loadSkill,
-    buildLoadedSkillManifestsUsecase: buildManifests,
-    listSkillResourceSummaries: _listSkillResourceSummaries(
-      provider.skillResourceResolver,
-    ),
-    loadSkillResourceContent: _loadSkillResourceContent(
-      provider.skillResourceResolver,
-    ),
-  ).call((
-    conversationId: request.conversationId,
-    workspaceId: request.workspaceId,
-    commandName: request.toolIdentifier,
-    arguments: request.arguments,
-  ));
+  return (
+    listSkills: listSkills,
+    loadSkill: loadSkill,
+    buildManifests: buildManifests,
+  );
 }
+
+_SkillCommandResources _skillCommandResources(
+  AppResolvedToolProvider provider,
+) {
+  final resolver = provider.skillResourceResolver;
+
+  return (
+    list: _listSkillResourceSummaries(resolver),
+    load: _loadSkillResourceContent(resolver),
+  );
+}
+
+RunSkillCommandUsecase _skillCommandUsecase(
+  _SkillCommandDependencies dependencies,
+  _SkillCommandResources resources,
+) => RunSkillCommandUsecase(
+  listAvailableSkillsUsecase: dependencies.listSkills,
+  loadConversationSkillUsecase: dependencies.loadSkill,
+  buildLoadedSkillManifestsUsecase: dependencies.buildManifests,
+  listSkillResourceSummaries: resources.list,
+  loadSkillResourceContent: resources.load,
+);
 
 agent.AgentResolvedToolExecution<ResolvedTool> _toExecution(ResolvedTool tool) {
   return agent.AgentResolvedToolExecution(
@@ -765,35 +803,52 @@ Future<T?> _futureValueOrNull<T>(Future<T> future) async {
 }
 
 Future<Object?> _runSkillNativeTool(_SkillNativeToolRequest request) async {
+  final toolName = await _validateSkillNativeTool(request);
+
+  return await _dispatchSkillNativeTool(request, toolName);
+}
+
+Future<String> _validateSkillNativeTool(_SkillNativeToolRequest request) async {
   final buildSpecs = request.provider.buildAppSkillNativeToolSpecsUsecase;
   if (buildSpecs == null) {
     throw StateError('App skill tool specifications are not configured.');
   }
-  final target = agent.AgentResolvedToolName.skillNative(
-    tableId: request.toolSlug,
-    skillSlug: request.skillSlug,
-    toolIdentifier: request.toolSlug,
-  );
+  final toolName = _skillNativeToolName(request);
+  await _requireSkillNativeTool(buildSpecs, request, toolName);
+
+  return toolName;
+}
+
+String _skillNativeToolName(_SkillNativeToolRequest request) =>
+    agent.AgentResolvedToolName.skillNative(
+      tableId: request.toolSlug,
+      skillSlug: request.skillSlug,
+      toolIdentifier: request.toolSlug,
+    ).fullName;
+
+Future<void> _requireSkillNativeTool(
+  BuildAppSkillNativeToolSpecsUsecase buildSpecs,
+  _SkillNativeToolRequest request,
+  String toolName,
+) async {
   final specs = await buildSpecs.call(
     conversationId: request.conversationId,
     workspaceId: request.workspaceId,
   );
-  if (!specs.any((spec) => spec.name == target.fullName)) {
-    throw StateError('App skill tool is not currently available: ${target.fullName}');
+  if (!specs.any((spec) => spec.name == toolName)) {
+    throw StateError('App skill tool is not currently available: $toolName');
   }
-
-  if (request.skillSlug == AppSkillRegistry.browserSkillSlug) {
-    return _runBrowserSkillTool(request);
-  }
-  if (request.skillSlug == agent.agentsSkillSlug) {
-    return _runSubAgentNativeTool(request);
-  }
-  if (request.skillSlug == SkillToolSlugs.skillsManager) {
-    return _runSkillsManagerNativeTool(request);
-  }
-
-  throw StateError('Unknown app skill tool: ${target.fullName}');
 }
+
+Future<Object?> _dispatchSkillNativeTool(
+  _SkillNativeToolRequest request,
+  String toolName,
+) => switch (request.skillSlug) {
+  AppSkillRegistry.browserSkillSlug => _runBrowserSkillTool(request),
+  agent.agentsSkillSlug => _runSubAgentNativeTool(request),
+  SkillToolSlugs.skillsManager => _runSkillsManagerNativeTool(request),
+  _ => throw StateError('Unknown app skill tool: $toolName'),
+};
 
 Future<Object?> _runBrowserSkillTool(_SkillNativeToolRequest request) {
   final runner = request.provider.browserSkillToolRunner;

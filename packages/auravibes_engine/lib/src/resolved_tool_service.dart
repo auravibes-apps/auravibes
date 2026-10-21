@@ -235,5 +235,4 @@ class const ResolvedToolService<TTool>({
       arguments: arguments,
     ));
   }
-
 }

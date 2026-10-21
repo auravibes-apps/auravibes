@@ -953,20 +953,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     return changed;
   }
 
-  String _credentialKind(WorkspacePatchOperation operation) {
-    final data = operation.data;
-    if (data == null) _validationFailed();
-    try {
-      final decoded = jsonDecode(data);
-      if (decoded is Map<String, dynamic> && decoded['kind'] is String) {
-        return decoded['kind'] as String;
-      }
-    } on FormatException {
-      _validationFailed();
-    }
-    _validationFailed();
-  }
-
   bool _containsSecretData(Object? value) {
     if (value is List) return value.any(_containsSecretData);
     if (value is! Map) return false;

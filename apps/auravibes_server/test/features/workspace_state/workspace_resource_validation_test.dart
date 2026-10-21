@@ -81,7 +81,9 @@ void main() {
     expect(
       WorkspaceResourceValidation.references(
         WorkspaceResourceKind.skill,
-        {'connectorToolIds': ['connector/notion/search']},
+        {
+          'connectorToolIds': ['connector/notion/search'],
+        },
       ),
       isEmpty,
     );

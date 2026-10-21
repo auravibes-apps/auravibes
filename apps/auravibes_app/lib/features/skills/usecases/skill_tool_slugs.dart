@@ -127,9 +127,9 @@ bool _hasAppSkill(Iterable<AvailableSkill> skills, String slug) => skills.any(
   (skill) => skill.source == SkillSource.app && skill.slug == slug,
 );
 
-List<ToolSpec> _appSkillToolSpecs(
-  AppSkillDefinition skill,
-) => [for (final tool in skill.tools) ?_appSkillToolSpec(skill, tool)];
+List<ToolSpec> _appSkillToolSpecs(AppSkillDefinition skill) => [
+  for (final tool in skill.tools) ?_appSkillToolSpec(skill, tool),
+];
 
 ToolSpec? _appSkillToolSpec(
   AppSkillDefinition skill,

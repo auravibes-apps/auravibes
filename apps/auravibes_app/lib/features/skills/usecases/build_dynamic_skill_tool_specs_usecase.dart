@@ -16,5 +16,5 @@ class const BuildDynamicSkillToolSpecsUsecase() {
 
 final buildDynamicSkillToolSpecsUsecaseProvider =
     Provider<BuildDynamicSkillToolSpecsUsecase>((ref) {
-      return BuildDynamicSkillToolSpecsUsecase();
+      return const BuildDynamicSkillToolSpecsUsecase();
     });
