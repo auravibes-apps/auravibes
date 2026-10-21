@@ -48,7 +48,7 @@ extension on AppOpenAICodexPlugin {
   ) async {
     final body = _requestBody(modelName, request, context.streamingRequested);
     if (!context.streamingRequested) {
-      return await codec.complete(_transport, body);
+      return await codec.complete((body) => _transport(body, context), body);
     }
 
     return await _streamWithRetry(body, context);
@@ -77,20 +77,30 @@ extension on AppOpenAICodexPlugin {
   ) async {
     var sentChunks = false;
     try {
-      return await codec.stream(_transport, body, (chunk) {
+      void sendChunk(ModelResponseChunk chunk) {
         sentChunks = true;
         context.sendChunk(chunk);
-      });
+      }
+
+      return await codec.stream(
+        (body) => _transport(body, context),
+        body,
+        sendChunk,
+      );
     } on GenkitException catch (error) {
+      context.cancel?.throwIfCancelled();
       if (!_shouldRetryStream(error, attempt, sentChunks)) rethrow;
 
       return await _streamAttempt(body, context, attempt + 1);
     }
   }
 
-  Future<ProviderTransportResponse> _transport(Map<String, dynamic> body) {
+  Future<ProviderTransportResponse> _transport(
+    Map<String, dynamic> body,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  ) {
     _ensureAccessToken();
-    final request = _request(body);
+    final request = _request(body, context);
     final client = httpClient ?? http.Client();
 
     return _sendRequest(client, request);
@@ -105,8 +115,15 @@ extension on AppOpenAICodexPlugin {
     );
   }
 
-  http.Request _request(Map<String, dynamic> body) =>
-      http.Request('POST', .parse(baseUrl))
+  http.Request _request(
+    Map<String, dynamic> body,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  ) =>
+      http.AbortableRequest(
+          'POST',
+          .parse(baseUrl),
+          abortTrigger: context.cancel?.whenCancelled,
+        )
         ..headers.addAll({
           'authorization': 'Bearer ${accessToken.trim()}',
           'content-type': 'application/json',
@@ -157,6 +174,7 @@ void _closeProviderClient(http.Client client, bool closeClient) {
 }
 
 Object _classifyProviderTransportError(Object error) => switch (error) {
+  http.RequestAbortedException() => error,
   http.ClientException() => ProviderTransientFailureException(error),
   _ => error,
 };
@@ -183,6 +201,8 @@ Stream<List<int>> _classifyProviderTransportStream(
 ) async* {
   try {
     yield* stream;
+  } on http.RequestAbortedException {
+    rethrow;
   } on http.ClientException catch (error, stackTrace) {
     Error.throwWithStackTrace(
       ProviderTransientFailureException(error),
