@@ -399,6 +399,26 @@ void main() {
   });
 
   group('render', () {
+    testWidgets('workspace options expose stable workspace identifiers', (
+      tester,
+    ) async {
+      await _pumpNewChatWithinPausedBranch(
+        tester,
+        overrides: _newChatOverrides(
+          state: const NewChatState(modelId: 'model'),
+          workspaces: [_workspace('test-ws'), _workspace('target-ws')],
+        ),
+      );
+
+      final selector = tester.widget<AuraDropdownSelector<String>>(
+        find.byKey(const Key('workspace_choice')),
+      );
+      expect(selector.options.map((option) => option.identifier), [
+        'workspace_option_test-ws',
+        'workspace_option_target-ws',
+      ]);
+    });
+
     testWidgets('canceling workspace switch preserves unsent text', (
       tester,
     ) async {

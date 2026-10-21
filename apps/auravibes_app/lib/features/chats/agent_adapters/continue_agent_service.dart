@@ -247,7 +247,7 @@ mixin _ContinueAgentStreamState on _ContinueAgentServiceDependencies {
 
   @override
   Future<void> markPendingUsersErrored(List<String> messageIds) {
-    return _markPendingUsersErrored(messageIds);
+    return _deferPendingUsersErrored(messageIds);
   }
 
   @override
@@ -492,6 +492,7 @@ extension _ContinueAgentFailurePersistence
         error: persistError,
         stackTrace: persistStackTrace,
       );
+      await _markPendingUsersErroredAfterRecoveryFailure(userMessageIds);
     }
   }
 
@@ -702,7 +703,12 @@ extension _ContinueAgentCleanup on _ContinueAgentServiceDependencies {
     return metadata.copyWith(toolCalls: toolCalls);
   }
 
-  Future<void> _markPendingUsersErrored(
+  // Keep user rows mutable until the outer error handler attaches recovery
+  // metadata.
+  Future<void> _deferPendingUsersErrored(List<String> _) =>
+      Future<void>.value();
+
+  Future<void> _markPendingUsersErroredAfterRecoveryFailure(
     List<String> pendingUserMessageIds,
   ) async {
     if (pendingUserMessageIds.isEmpty) return;

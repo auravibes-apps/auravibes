@@ -45,6 +45,14 @@ void main() {
     expect(extractVmServiceUri('Building macOS application...'), isNull);
   });
 
+  test('keeps recent VM output when Unicode exceeds the UTF-16 limit', () {
+    final output = String.fromCharCodes(List.filled(4100, 0x1f30e));
+
+    expect(output.length, greaterThan(8192));
+    expect(output.runes.length, lessThan(8192));
+    expect(retainVmServiceOutputTail(output), output);
+  });
+
   test('writes the VM service URI atomically with owner-only permissions', () {
     final root = Directory.systemTemp.createTempSync(
       'auravibes-marionette-manifest-',

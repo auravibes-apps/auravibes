@@ -11,6 +11,8 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/main/main_locale.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
+import 'package:auravibes_app/services/marionette/marionette_chat_smoke_fixture.dart';
+import 'package:auravibes_app/services/marionette/marionette_chat_smoke_provider_overrides.dart';
 import 'package:auravibes_app/services/marionette/marionette_extensions.dart';
 import 'package:auravibes_app/widgets/android_desktop_caption_backdrop.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
@@ -44,16 +46,40 @@ Future<void> main() async {
   await MainLocale.ensureInitialized();
 
   _configureSystemUi();
-  final container = ProviderContainer();
+  final container = await _prepareMarionetteContainer(marionetteInstanceId);
+  _runApp(container);
+  _scheduleModelSync(container);
+}
+
+Future<ProviderContainer> _prepareMarionetteContainer(
+  String? instanceId,
+) async {
+  final smokeSetup = _createMarionetteChatSmokeContainer(instanceId);
+  final container = smokeSetup.container;
   await _recoverInterruptedBackgroundWork(container);
-  if (marionetteInstanceId != null) {
+  final chatSmokeFixture = smokeSetup.fixture;
+  if (chatSmokeFixture != null) {
     MarionetteExtensionRegistration.register(
       MarionetteExtensionBootstrap.createState(container),
+      chatSmokeFixture: chatSmokeFixture,
     );
   }
 
-  _runApp(container);
-  _scheduleModelSync(container);
+  return container;
+}
+
+({ProviderContainer container, MarionetteChatSmokeFixture? fixture})
+_createMarionetteChatSmokeContainer(String? instanceId) {
+  final fixture = instanceId == null ? null : MarionetteChatSmokeFixture();
+
+  return (
+    container: ProviderContainer(
+      overrides: fixture == null
+          ? const []
+          : MarionetteChatSmokeProviderOverrides.create(fixture),
+    ),
+    fixture: fixture,
+  );
 }
 
 Future<void> _recoverInterruptedBackgroundWork(ProviderContainer container) =>
