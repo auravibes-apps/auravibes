@@ -1720,7 +1720,7 @@ void main() {
               resourceKind: WorkspaceResourceKind.toolPermission,
               resourceId: 'run-sub-agent-permission',
               data: jsonEncode({
-                'toolId': runSubAgentToolName,
+                'toolId': 'skill__app_native__agents__$runSubAgentToolName',
                 'permissionMode': 'alwaysAllow',
                 'isEnabled': true,
               }),
@@ -2316,7 +2316,7 @@ void main() {
               resourceKind: WorkspaceResourceKind.toolPermission,
               resourceId: 'run-sub-agent-permission',
               data: jsonEncode({
-                'toolId': runSubAgentToolName,
+                'toolId': 'skill__app_native__agents__$runSubAgentToolName',
                 'permissionMode': 'alwaysAllow',
                 'isEnabled': true,
               }),
