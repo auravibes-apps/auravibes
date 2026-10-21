@@ -1,3 +1,4 @@
+import 'package:auravibes_engine/src/connectors/execution/resolve_connector_request_template.dart';
 import 'package:auravibes_engine/src/connectors/models/connector_tool_request_definition.dart';
 import 'package:auravibes_engine/src/connectors/models/connector_tool_request_template.dart';
 
@@ -19,13 +20,16 @@ class const ConnectorToolDefinition({
 }) {
   ConnectorToolRequestDefinition? get definition {
     final template = urlTemplate;
-    return template == null
-        ? null
-        : ConnectorToolRequestDefinition(
-            request: template.template,
-            inputs: template.inputs,
-            credentialDefinitions: template.credentialDefinitions,
-            inputSchemaOverride: Map<String, Object?>.from(inputJsonSchema),
-          );
+    if (template == null) return null;
+
+    final definition = ConnectorToolRequestDefinition(
+      request: template.template,
+      inputs: template.inputs,
+      credentialDefinitions: template.credentialDefinitions,
+      inputSchemaOverride: Map<String, Object?>.from(inputJsonSchema),
+    );
+    validateConnectorToolRequestDefinition(definition);
+
+    return definition;
   }
 }
