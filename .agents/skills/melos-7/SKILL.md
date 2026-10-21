@@ -21,9 +21,20 @@ Use this skill for Melos configuration, workspace membership, bootstrap, or vers
 - The current lockfile selects Melos 8.7.0. Check `pubspec.lock` before each version change.
 - Keep Melos configuration in root `pubspec.yaml`. This repository has no `melos.yaml`.
 - For a fresh checkout or worktree, run `fvm use "$(python3 -c 'import json; print(json.load(open(".fvmrc"))["flutter"])')" --skip-pub-get`, then run `python3 tool/validation_lease.py -- fvm dart run melos bootstrap` from the repository root.
-- FVM runs `flutter pub get` by default when it changes SDK. Use `--skip-pub-get` to skip resolution.
+- The repository's `.fvmrc` enables `flutter pub get` by default when FVM changes SDKs. Use `--skip-pub-get` to skip that resolution.
 - CI runs Melos bootstrap. Pub workspace membership does not replace that step.
+- For formatting, use `fvm dart run melos run format:check` as the pinned, non-mutating check. Formatting changes are allowed; apply them with `fvm dart format <paths>`.
 - Use `python3 tool/validation_lease.py -- fvm dart run melos run analyze:workspace` for workspace analysis in this repository.
+
+## Behavior smoke evaluations
+
+Run the three Melos setup scenarios from the repository root:
+
+```sh
+python3 tool/run_melos_skill_evals.py
+```
+
+The offline checks validate repository-backed setup behavior against the current FVM configuration, workspace scripts, setup guidance, and CI bootstrap path. They report each scenario separately and check required facts and commands, not model-generated replies or exact wording.
 
 ## Task steps
 
