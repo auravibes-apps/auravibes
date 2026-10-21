@@ -223,6 +223,10 @@ melos:
         - melos run format:check
       description: Quick validation for development (analyze + format)
 
+    validate:changed:
+      run: dart run tool/validate_changed_dart.dart
+      description: Format and analyze changed Dart files
+
     validate:generated:
       run: |
         set -e
