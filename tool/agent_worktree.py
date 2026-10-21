@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from validation_lease import _validation_lock_paths, read_active_owner
+from validation_lease import _validation_lock_path, read_active_owner
 
 
 def _run(command, cwd, *, check=True):
@@ -84,15 +84,10 @@ def _worktree_status(repo_root):
 
 
 def _status(repo_root):
-    owners = [
-        read_active_owner(path)
-        for path in _validation_lock_paths(create_directories=False)
-    ]
-    lease_owner = next((owner for owner in owners if owner is not None), None)
     return {
         "repository": str(repo_root),
         "worktrees": _worktree_status(repo_root),
-        "validation_lease": lease_owner,
+        "validation_lease": read_active_owner(_validation_lock_path()),
     }
 
 
@@ -295,13 +290,13 @@ def _print_status(result):
         )
     owner = result["validation_lease"]
     if owner is None:
-        print("Validation lease: free")
+        print("Current worktree validation lease: free")
     elif owner.get("metadata_unavailable"):
-        print("Validation lease: active; owner metadata unavailable")
+        print("Current worktree validation lease: active; owner metadata unavailable")
     else:
         label = f" label={owner.get('label')}" if owner.get("label") else ""
         print(
-            "Validation lease: held by"
+            "Current worktree validation lease: held by"
             f"{label} pid={owner.get('pid')} host={owner.get('host')}"
             f" cwd={owner.get('cwd')} started={owner.get('started_at')}"
         )
@@ -350,7 +345,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     status_parser = subparsers.add_parser(
-        "status", help="summarize linked worktrees and validation lease"
+        "status", help="summarize linked worktrees and current validation lease"
     )
     status_parser.add_argument("--json", action="store_true", help="print JSON")
     preflight_parser = subparsers.add_parser(
