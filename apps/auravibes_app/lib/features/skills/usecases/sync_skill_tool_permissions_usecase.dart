@@ -324,9 +324,7 @@ final syncSkillToolPermissionsUsecaseProvider =
 
 abstract final class SkillPermissionTools {
   static bool isSkillPermissionToolName(String toolName) {
-    final resolved = const AgentToolNameResolver(
-      skillControlToolNames: {activateSkillToolName},
-    ).resolve(toolName);
+    final resolved = const AgentToolNameResolver().resolve(toolName);
 
     return resolved?.isSkill == true ||
         resolved?.kind == AgentResolvedToolKind.skillControl;

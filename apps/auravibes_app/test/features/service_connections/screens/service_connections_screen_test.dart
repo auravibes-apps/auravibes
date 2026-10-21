@@ -1095,7 +1095,7 @@ void main() {
     expect(find.text('Connection health'), findsOneWidget);
     await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).last);
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('Connectors'));
+    await tester.tap(find.text('Connectors').last);
     final _ = await tester.pumpAndSettle();
     expect(find.text('Notion work'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.more_vert).first);

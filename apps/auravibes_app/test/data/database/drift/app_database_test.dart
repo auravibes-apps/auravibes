@@ -594,10 +594,7 @@ AND name IN ('skill_template_tools', 'skill_credential_definitions')
       expect(messages, isEmpty);
     });
 
-    const migrationDefinitionTestName =
-        'migration converts legacy skill tool fragments '
-        'to a definition';
-    test(migrationDefinitionTestName, () async {
+    test('migration retires skill-owned tool and credential storage', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 11
         ..execute('''
@@ -632,23 +629,47 @@ AND name IN ('skill_template_tools', 'skill_credential_definitions')
             '{"url":"https://example.com","method":"GET"}',
             '{"query":{"type":"string","description":"Query"}}'
           );
+        ''')
+        ..execute('''
+          CREATE TABLE service_connections (
+            id TEXT NOT NULL PRIMARY KEY,
+            kind TEXT NOT NULL
+          );
+        ''')
+        ..execute('''
+          INSERT INTO service_connections (id, kind) VALUES
+            ('skill-credential', 'skillCredential'),
+            ('app-skill-credential', 'appSkillCredential'),
+            ('connector', 'connector');
+        ''')
+        ..execute('''
+          CREATE TABLE skill_credential_definitions (
+            id TEXT NOT NULL PRIMARY KEY
+          );
         ''');
       final database = _MigrationAppDatabase<_MigrationCase8>(
         connection: NativeDatabase.opened(sqliteDb),
       );
       addTearDown(database.close);
 
-      final row = await database
+      final legacyTables = await database
           .customSelect(
-            'SELECT definition_json FROM skill_template_tools WHERE id = ?',
-            variables: [const Variable<String>('tool-1')],
+            'SELECT name FROM sqlite_master WHERE type = ? AND name IN (?, ?)',
+            variables: [
+              const Variable<String>('table'),
+              const Variable<String>('skill_template_tools'),
+              const Variable<String>('skill_credential_definitions'),
+            ],
           )
-          .getSingle();
-      final definition = row.read<String>('definition_json');
+          .get();
+      final connectionKinds = await database
+          .customSelect('SELECT kind FROM service_connections')
+          .get();
 
-      expect(definition, contains('"version":1'));
-      expect(definition, contains('"inputSchema"'));
-      expect(definition, contains('"request"'));
+      expect(legacyTables, isEmpty);
+      expect(connectionKinds.map((row) => row.read<String>('kind')), [
+        'connector',
+      ]);
     });
 
     test('migration strategy has onCreate callback', () {

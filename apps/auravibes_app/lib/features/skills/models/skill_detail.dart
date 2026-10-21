@@ -62,6 +62,7 @@ class _NativeSkillDetail extends SkillDetail {
         description: values.description,
         content: values.content,
         isEnabled: request.isEnabled,
+        connectorToolIds: request.appSkill.connectorToolIds,
         appTools: request.appSkill.tools,
         appResources: request.appSkill.resources,
         titleKey: values.titleKey,

@@ -39,7 +39,7 @@ void main() {
 
     expect(cloned.kind, SkillKind.template);
     expect(cloned.title, 'Brave Search Copy');
-    expect(cloned.connectorToolIds, appSkill.connectorToolIds);
+    expect(cloned.connectorToolIds, unorderedEquals(appSkill.connectorToolIds));
     expect(
       await resourcesRepository.getSkillResources(cloned.id),
       hasLength(1),

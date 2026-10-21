@@ -79,7 +79,7 @@ void main() {
     );
 
     expect(specs.map((spec) => spec.name), [
-      'skill__app_native__agents__run_sub_agent',
+      'skill__app_native__agents__list_agents',
     ]);
   });
 }

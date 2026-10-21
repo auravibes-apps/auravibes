@@ -149,7 +149,10 @@ void main() {
     a.remember(.parse('/workspaces/A/tools'));
     expect(a.connectionsLocation(), ToolsRoute(workspaceId: 'A').location);
     a.remember(.parse('/workspaces/A/service-connections?view=connectors'));
-    expect(a.connectionsLocation(), ToolsRoute(workspaceId: 'A').location);
+    expect(
+      a.connectionsLocation(),
+      ServiceConnectionsRoute(workspaceId: 'A', view: 'connectors').location,
+    );
     a.remember(.parse('/workspaces/A/service-connections?view=unsafe'));
     expect(
       a.connectionsLocation(),
