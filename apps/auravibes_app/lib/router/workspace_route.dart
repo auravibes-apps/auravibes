@@ -950,6 +950,8 @@ class ServiceConnectionCreateRoute({
   final String? type,
   @TypedQueryParameter(name: 'credentialDefinitionId')
   final String? credentialDefinitionId,
+  @TypedQueryParameter(name: 'appSkillId') final String? appSkillId,
+  @TypedQueryParameter(name: 'modelProviderId') final String? modelProviderId,
 }) extends _AppGoRouteData with $ServiceConnectionCreateRoute {
   @override
   FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
@@ -967,7 +969,9 @@ class ServiceConnectionCreateRoute({
       workspaceId: workspaceId,
       initialType: _serviceConnectionCreateType(type),
       initialCredentialDefinitionId: credentialDefinitionId,
-      initialAppSkillId: _serviceConnectionCreateAppSkillId(state),
+      initialAppSkillId:
+          appSkillId ?? _serviceConnectionCreateAppSkillId(state),
+      initialModelProviderId: modelProviderId,
       returnPath: _serviceConnectionCreateReturnPath(
         returnPath,
         crossShellPush?.returnLocation,

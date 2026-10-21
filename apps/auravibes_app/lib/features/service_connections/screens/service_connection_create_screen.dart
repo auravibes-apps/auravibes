@@ -66,6 +66,7 @@ class const ServiceConnectionCreateScreen({
   final ServiceConnectionCreateType? initialType,
   final String? initialCredentialDefinitionId,
   final String? initialAppSkillId,
+  final String? initialModelProviderId,
   final String? returnPath,
   final GlobalKey<NavigatorState>? returnNavigatorKey,
   super.key,
@@ -692,6 +693,7 @@ class const _ServiceConnectionCreateForm({
   required final ServiceConnectionCreateType type,
   required final String? selectedDefinitionId,
   required final String? selectedAppSkillId,
+  required final String? initialModelProviderId,
   required final TextEditingController nameController,
   required final Map<String, TextEditingController> attributeControllers,
   required final TextEditingController apiKeyController,
@@ -719,6 +721,7 @@ class const _ServiceConnectionCreateForm({
         type: state._type,
         selectedDefinitionId: state._definitionId,
         selectedAppSkillId: state._appSkillId,
+        initialModelProviderId: state.widget.initialModelProviderId,
         nameController: state._nameController,
         attributeControllers: state._attributeControllers,
         apiKeyController: state._apiKeyController,
@@ -828,6 +831,7 @@ class const _ModelProviderCreateContent({
         routeExitGuard: form.routeExitGuard,
         onCreated: form.onModelProviderCreated,
         showHeader: false,
+        initialModelProviderId: form.initialModelProviderId,
       ),
     );
   }

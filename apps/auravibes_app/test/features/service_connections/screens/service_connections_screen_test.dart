@@ -8,6 +8,7 @@ import 'package:auravibes_app/data/repositories/skill_credentials_repository.dar
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
@@ -15,9 +16,11 @@ import 'package:auravibes_app/features/models/providers/api_model_repository_pro
 import 'package:auravibes_app/features/models/services/model_sync_service.dart';
 import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.dart';
 import 'package:auravibes_app/features/service_connections/models/connection_filter.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_capability_filter.dart';
 import 'package:auravibes_app/features/service_connections/models/mcp_connection_test_result.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/notifiers/connections_list_view_notifier.dart';
+import 'package:auravibes_app/features/service_connections/providers/connector_catalog_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
@@ -491,6 +494,75 @@ void main() {
       );
     });
   }
+
+  testWidgets('shows catalog connectors and filters by offered tools', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _kindConnection(
+          .modelProvider,
+          'OpenAI account',
+          serviceName: 'openai',
+          displayStatus: .connected,
+        ),
+      ],
+      modelProviders: [
+        const ApiModelProviderEntity(
+          id: 'openai',
+          name: 'OpenAI',
+          type: .openai,
+        ),
+        const ApiModelProviderEntity(
+          id: 'custom-models',
+          name: 'Custom Models',
+          type: .openai,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId, view: .connectors);
+    final catalog = await container.read(
+      connectorCatalogProvider(_syncWorkspaceId).future,
+    );
+    expect(
+      catalog.map((connector) => connector.id),
+      containsAll(['custom-models', 'openai']),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Custom Models'), findsOneWidget);
+    expect(find.text('Connect'), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.text('OpenAI'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('OpenAI'), findsOneWidget);
+    expect(find.text('Connected'), findsOneWidget);
+    expect(find.text('Manage connections'), findsOneWidget);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AuraChoicePicker<ConnectorCapabilityFilter>),
+        matching: find.text('Tools'),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListView).first, const Offset(0, 2000));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Custom Models'), findsNothing);
+    await tester.scrollUntilVisible(
+      find.text('OpenAI'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('OpenAI'), findsOneWidget);
+  });
 
   testWidgets('restores connection search after replacing the list', (
     tester,
@@ -1266,6 +1338,7 @@ ProviderContainer _syncTestContainer(
   ModelSyncService service, {
   WorkspaceSession? session,
   List<ServiceConnectionListItem> connections = const [],
+  List<ApiModelProviderEntity>? modelProviders,
   TestMcpConnectionUsecase? testUsecase,
   Stream<List<ServiceConnectionListItem>> Function()? loadConnections,
 }) {
@@ -1282,6 +1355,9 @@ ProviderContainer _syncTestContainer(
       serviceConnectionsProvider(_syncWorkspaceId).overrideWith(
         (_) => loadConnections?.call() ?? Stream.value(connections),
       ),
+      if (modelProviders != null)
+        apiModelProvidersProvider(workspaceId: _syncWorkspaceId)
+            .overrideWith((_) async => modelProviders),
       modelSyncServiceProvider.overrideWithValue(service),
       if (testUsecase != null)
         testMcpConnectionUsecaseProvider(_syncWorkspaceId)
@@ -1417,18 +1493,20 @@ class _MockTestMcpConnectionUsecase extends Mock
 
 ServiceConnectionListItem _kindConnection(
   ServiceConnectionListItemKind kind,
-  String name,
-) => ServiceConnectionListItem(
+  String name, {
+  String? serviceName,
+  ServiceConnectionDisplayStatus displayStatus = .unknown,
+}) => ServiceConnectionListItem(
   id: name,
   workspaceId: _syncWorkspaceId,
   name: name,
-  serviceName: null,
+  serviceName: serviceName,
   kind: kind,
   keySuffix: null,
   credentialDefinitionId: null,
   mcpServerId: null,
   authenticationType: null,
-  displayStatus: .unknown,
+  displayStatus: displayStatus,
   expiresAt: null,
   lastRefreshedAt: null,
   lastAuthError: null,

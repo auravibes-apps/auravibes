@@ -41,6 +41,7 @@ abstract final class WorkspaceNavigation {
   };
 
   static ConnectionDestination connectionView(String? view) => switch (view) {
+    'connectors' => .connectors,
     'providers' => .providers,
     'services' => .services,
     'credentials' => .credentials,
@@ -59,4 +60,11 @@ enum WorkspaceDestination {
 
 enum AgentDestination { agents, skills }
 
-enum ConnectionDestination { overview, providers, services, credentials, tools }
+enum ConnectionDestination {
+  overview,
+  connectors,
+  providers,
+  services,
+  credentials,
+  tools,
+}

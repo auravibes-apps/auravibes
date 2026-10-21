@@ -8,6 +8,8 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_capability_filter.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_catalog_item.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:drift/drift.dart';
 import 'package:logging/logging.dart';
@@ -59,6 +61,18 @@ class const WatchServiceConnectionListItemsUsecase(
       _combineConnectionItems,
     );
   }
+
+  Stream<List<ConnectorCatalogItem>> watchConnectorCatalog(
+    String workspaceId, {
+    required List<ConnectorCatalogOffering> offerings,
+    ConnectorCapabilityFilter filter = .all,
+  }) => call(workspaceId).map(
+    (connections) => ConnectorCatalogItem.fromOfferings(
+      offerings,
+      connections: connections,
+      filter: filter,
+    ),
+  );
 
   Stream<List<ServiceConnectionListItem>> _watchMcpCredentialItems(
     String workspaceId,

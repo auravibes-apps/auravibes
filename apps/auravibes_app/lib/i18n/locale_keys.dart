@@ -361,6 +361,22 @@ abstract class LocaleKeys {
       'service_connections.create.api_key_label';
   static const service_connections_create_base_url_label =
       'service_connections.create.base_url_label';
+  static const connector_catalog_filter_label =
+      'connector_catalog.filter_label';
+  static const connector_catalog_filter_all = 'connector_catalog.filter_all';
+  static const connector_catalog_filter_models =
+      'connector_catalog.filter_models';
+  static const connector_catalog_filter_tools =
+      'connector_catalog.filter_tools';
+  static const connector_catalog_offers_models =
+      'connector_catalog.offers_models';
+  static const connector_catalog_offers_tools =
+      'connector_catalog.offers_tools';
+  static const connector_catalog_connect = 'connector_catalog.connect';
+  static const connector_catalog_manage = 'connector_catalog.manage';
+  static const connector_catalog_not_connected =
+      'connector_catalog.not_connected';
+  static const connector_catalog_empty = 'connector_catalog.empty';
   static const agents_title = 'agents.title';
   static const agents_create = 'agents.create';
   static const agents_edit_title = 'agents.edit_title';
@@ -2472,6 +2488,7 @@ abstract class LocaleKeys {
   static const related_lists_agents = 'related_lists.agents';
   static const related_lists_skills = 'related_lists.skills';
   static const related_lists_overview = 'related_lists.overview';
+  static const related_lists_connectors = 'related_lists.connectors';
   static const related_lists_providers = 'related_lists.providers';
   static const related_lists_services = 'related_lists.services';
   static const related_lists_tools = 'related_lists.tools';

@@ -74,7 +74,9 @@ class const ServiceConnectionListItem({
         credentialDefinitionId: null,
         mcpServerId: null,
         authenticationType: null,
-        displayStatus: .unknown,
+        displayStatus: connection.authMode == .oauth2 || connection.hasKey
+            ? .connected
+            : .unknown,
         expiresAt: null,
         lastRefreshedAt: null,
         lastAuthError: null,
