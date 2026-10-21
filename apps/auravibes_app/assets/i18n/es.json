@@ -358,7 +358,12 @@
     "available_chat": "Disponible en chats",
     "available_delegation": "Disponible para delegación",
     "manage_skills_for": "Habilidades para {}",
-    "skill_assignment_hint": "Las asignaciones se aplican al guardar el agente. Habilitar una habilidad se aplica de inmediato a este espacio."
+    "skill_assignment_hint": "Las asignaciones se aplican al guardar el agente. Habilitar una habilidad se aplica de inmediato a este espacio.",
+    "model_guidance": {
+      "general_sub_agent_hint": "Los agentes configurados son opcionales. Llama a run_sub_agent con title y prompt, y establece agentId en null para ejecutar un subagente general, incluso si agents está vacío. Las llamadas anteriores pueden omitir agentId.",
+      "list_agents_description": "Lista los agentes configurados y habilitados. Los subagentes generales no aparecen; una lista vacía permite usar run_sub_agent sin agentId. Devuelve id, name, description, tipos disponibles, nextCursor y una indicación de uso. Reutiliza la misma búsqueda y tipo con nextCursor.",
+      "run_sub_agent_description": "Ejecuta un subagente en una conversación secundaria aislada. Establece agentId en null para usar un subagente general; las llamadas anteriores pueden omitir agentId. Funciona aunque list_agents no devuelva agentes. Usa list_agents con type=sub_agent para elegir un especialista configurado."
+    }
   },
   "chats_screens": {
     "chats_list": {
@@ -1065,7 +1070,7 @@
     "agents": {
       "title": "Agentes",
       "description": "Inspecciona los agentes activos del espacio de trabajo.",
-      "content": "Usa list_agents para buscar agentes configurados; filtra por type=sub_agent al elegir un especialista. Un subagente general no requiere un agente configurado: llama a run_sub_agent con title y prompt y omite agentId. Cargar esta habilidad solo agrega list_agents; run_sub_agent sigue disponible sin cargarla."
+      "content": "Usa list_agents para buscar agentes configurados; filtra por type=sub_agent al elegir un especialista. No necesitas un agente configurado para usar un subagente general: llama a run_sub_agent con title y prompt, y establece agentId en null (las llamadas anteriores pueden omitir agentId). run_sub_agent está disponible aunque no cargues esta habilidad."
     },
     "browser": {
       "title": "Navegador",

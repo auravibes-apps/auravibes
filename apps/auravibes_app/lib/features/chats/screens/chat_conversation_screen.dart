@@ -2838,6 +2838,7 @@ Future<AgentIterationDecision?> _continueAgentTurn(
   );
   final context = request.context;
   if (!context.mounted) return null;
+
   return await _continueAgentTurnWithLanguage(
     request,
     cloud,

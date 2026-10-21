@@ -358,7 +358,12 @@
     "available_chat": "Available in chats",
     "available_delegation": "Available for delegation",
     "manage_skills_for": "Skills for {}",
-    "skill_assignment_hint": "Assignments apply when you save the agent. Enabling a skill applies immediately to this workspace."
+    "skill_assignment_hint": "Assignments apply when you save the agent. Enabling a skill applies immediately to this workspace.",
+    "model_guidance": {
+      "general_sub_agent_hint": "Configured agents are optional. Call run_sub_agent with title and prompt and set agentId to null to run a general sub-agent, even when agents is empty. Older calls may omit agentId.",
+      "list_agents_description": "List enabled configured agents. General sub-agents are not listed; an empty list still allows run_sub_agent without agentId. Returns id, name, description, supported types, nextCursor, and a usage hint. Reuse the same query and type with nextCursor.",
+      "run_sub_agent_description": "Run a sub-agent in an isolated child conversation. Set agentId to null to run a general sub-agent; older calls may omit agentId. This works when list_agents returns no agents. Use list_agents with type=sub_agent to choose a configured specialist."
+    }
   },
   "chats_screens": {
     "chats_list": {
@@ -1065,7 +1070,7 @@
     "agents": {
       "title": "Agents",
       "description": "Inspect enabled workspace agents.",
-      "content": "Use list_agents to find configured agents; filter by type=sub_agent when selecting a specialist. A general sub-agent needs no configured agent: call run_sub_agent with title and prompt and omit agentId. Loading this skill adds only list_agents; run_sub_agent remains available without loading it."
+      "content": "Use list_agents to find configured agents; filter by type=sub_agent when selecting a specialist. A general sub-agent needs no configured agent: call run_sub_agent with title and prompt and set agentId to null (older calls may omit agentId). run_sub_agent is available without loading this skill."
     },
     "browser": {
       "title": "Browser",

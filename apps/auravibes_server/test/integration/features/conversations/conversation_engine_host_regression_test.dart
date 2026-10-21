@@ -916,6 +916,70 @@ void main() {
       },
     );
 
+    test('agents activation preserves the conversation language', () async {
+      final fixture = await prepare();
+      const languageCode = 'es-MX';
+      final spanishTools = materializeCloudSkillTools(
+        selectedSkillIds: const {agentsSkillSlug},
+        userSkills: const [],
+        templateTools: const [],
+        appSkillSettings: const [],
+        isChildConversation: false,
+        languageCode: languageCode,
+      );
+      final spanishManifest = await buildCloudSkillManifest(
+        slug: agentsSkillSlug,
+        userSkills: const [],
+        tools: spanishTools,
+        languageCode: languageCode,
+      );
+      expect(spanishManifest, isNotNull);
+      final runtime = ServerToolRuntime();
+      final controls = await runtime.loadTools(
+        fixture.database,
+        workspaceId: fixture.workspaceId,
+        conversationStableId: 'conversation-1',
+      );
+      final activate = controls.singleWhere(
+        (tool) => tool.spec.name == activateSkillToolName,
+      );
+      final runSubAgentBefore = controls.singleWhere(
+        (tool) => tool.descriptor.toolIdentifier == runSubAgentToolName,
+      );
+
+      final activated = await const ServerToolExecutorService().call(
+        fixture.database,
+        fixture.turn,
+        activate,
+        ServerToolRequest(
+          id: 'activate-agents-spanish',
+          name: activateSkillToolName,
+          arguments: {
+            'slug': agentsSkillSlug,
+            'revision': spanishManifest!.revision,
+          },
+          languageCode: languageCode,
+        ),
+      );
+
+      expect(activated, isA<SkillActivationResult>());
+      expect(activated.toString(), contains('Usa list_agents'));
+      expect(activated.toString(), isNot(contains('Use list_agents')));
+      final selectedTools = await runtime.loadTools(
+        fixture.database,
+        workspaceId: fixture.workspaceId,
+        conversationStableId: 'conversation-1',
+      );
+      final runSubAgentAfter = selectedTools.singleWhere(
+        (tool) => tool.descriptor.toolIdentifier == runSubAgentToolName,
+      );
+      expect(runSubAgentAfter.spec.name, runSubAgentBefore.spec.name);
+      expect(
+        runSubAgentAfter.spec.inputJsonSchema,
+        runSubAgentBefore.spec.inputJsonSchema,
+      );
+    });
+
     test(
       'activates content-only A2UI and loads static resources after selection',
       () async {

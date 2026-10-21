@@ -11,6 +11,7 @@ import 'background_work_result_reader.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
 import '../../sync/stream/sync_wakeups.dart';
+import 'server_agent_guidance.dart';
 
 enum ServerToolDisposition {
   completed,
@@ -193,7 +194,7 @@ Future<SkillManifest?> buildCloudSkillManifest({
     _ => null,
   };
   final instructions = slug == agentsSkillSlug
-      ? agentsSkillContentForLanguageCode(languageCode)
+      ? serverAgentsSkillContentForLanguageCode(languageCode)
       : switch ((userSkill?['content'], appSkill)) {
           (final String value, _) => value,
           (_, final AppSkillDefinition value) => value.content,
@@ -492,9 +493,9 @@ List<ServerResolvedTool> materializeCloudSkillTools({
       cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)) {
     tools.addAll(
       [
-        runSubAgentToolSpecForLanguageCode(languageCode),
+        serverRunSubAgentToolSpecForLanguageCode(languageCode),
         if (selectedSkillIds.contains(agentsSkillSlug))
-          listAgentsToolSpecForLanguageCode(languageCode),
+          serverListAgentsToolSpecForLanguageCode(languageCode),
       ].map(
         (spec) => _nativeTool(
           skillSlug: agentsSkillSlug,
@@ -974,7 +975,7 @@ class ServerToolRuntime({
             _nativeTool(
               skillSlug: agentsSkillSlug,
               toolIdentifier: runSubAgentToolName,
-              description: runSubAgentToolSpecForLanguageCode(
+              description: serverRunSubAgentToolSpecForLanguageCode(
                 languageCode,
               ).description,
               inputJsonSchema: runSubAgentToolSpec.inputJsonSchema,

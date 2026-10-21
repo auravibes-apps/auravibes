@@ -29,7 +29,7 @@ class const SubAgentRunner({
   Future<String> listAgents(
     String workspaceId, {
     Map<String, dynamic> arguments = const {},
-    String? languageCode,
+    String? hint,
   }) async {
     try {
       final query = SubAgentCatalogQuery.fromArguments(workspaceId, arguments);
@@ -46,7 +46,7 @@ class const SubAgentRunner({
             },
         ],
         'nextCursor': page.nextCursor,
-        'hint': generalSubAgentHintForLanguageCode(languageCode),
+        'hint': hint ?? generalSubAgentHint,
       });
     } on AgentToolExecutionFailure {
       rethrow;

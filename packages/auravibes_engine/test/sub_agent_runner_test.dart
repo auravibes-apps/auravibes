@@ -6,34 +6,6 @@ import 'package:test/test.dart';
 
 void main() {
   group('SubAgentRunner', () {
-    test(
-      'selects agent guidance by language without changing tool schemas',
-      () {
-        final english = subAgentToolSpecsForLanguageCode('en');
-        final spanish = subAgentToolSpecsForLanguageCode('es');
-        final fallback = subAgentToolSpecsForLanguageCode('fr');
-
-        expect(
-          agentsSkillContentForLanguageCode('es'),
-          contains('agentes configurados'),
-        );
-        expect(generalSubAgentHintForLanguageCode('es'), contains('agentes'));
-        expect(spanish.map((spec) => spec.name), [
-          listAgentsToolName,
-          runSubAgentToolName,
-        ]);
-        expect(
-          spanish.map((spec) => spec.inputJsonSchema),
-          english.map((spec) => spec.inputJsonSchema),
-        );
-        expect(
-          fallback.map((spec) => spec.description),
-          english.map((spec) => spec.description),
-        );
-        expect(agentsSkillContentForLanguageCode(null), agentsSkillContent);
-      },
-    );
-
     test('lists enabled agent catalog entries', () async {
       final runner = _runner(
         catalog: const _Catalog(
@@ -97,15 +69,15 @@ void main() {
       );
     });
 
-    test('list hint follows the requested language', () async {
+    test('list result uses the supplied hint', () async {
       final runner = _runner();
+      const hint = 'Configured agents are optional.';
 
       final result = jsonDecode(
-        await runner.listAgents('w1', languageCode: 'es'),
+        await runner.listAgents('w1', hint: hint),
       ) as Map<String, Object?>;
 
-      expect(result['hint'], generalSubAgentHintForLanguageCode('es'));
-      expect(result['hint'], contains('agentes'));
+      expect(result['hint'], hint);
     });
 
     test('filters listed agents by type', () async {

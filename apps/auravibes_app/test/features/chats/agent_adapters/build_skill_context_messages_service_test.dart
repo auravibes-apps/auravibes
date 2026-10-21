@@ -4,9 +4,14 @@ import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/widgets.dart' show SizedBox;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/test_app.dart';
 
 void main() {
   group('BuildSkillContextMessagesService', () {
@@ -384,7 +389,15 @@ void main() {
       },
     );
 
-    test('localizes built-in agent guidance and its manifest tools', () async {
+    testWidgets('localizes built-in agent guidance and its manifest tools', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const TestableApp(child: SizedBox.shrink(), startLocale: .new('es')),
+      );
+      final _ = await tester.pumpAndSettle();
+      await _waitForSpanishTranslations(tester);
+
       final listSkills = _MockListAvailableSkillsUsecase();
       final listAgentSkills = _MockListConversationAgentSkillsUsecase();
       final buildManifests = _MockBuildLoadedSkillManifestsUsecase();
@@ -498,6 +511,17 @@ void main() {
       expect(messages, isEmpty);
     });
   });
+}
+
+Future<void> _waitForSpanishTranslations(WidgetTester tester) async {
+  final _ = await tester.runAsync(() async {
+    for (var attempt = 0; attempt < 50; attempt++) {
+      if (LocaleKeys.app_skills_agents_content.trExists()) return;
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  });
+
+  expect(LocaleKeys.app_skills_agents_content.trExists(), isTrue);
 }
 
 class _MockListAvailableSkillsUsecase extends Mock

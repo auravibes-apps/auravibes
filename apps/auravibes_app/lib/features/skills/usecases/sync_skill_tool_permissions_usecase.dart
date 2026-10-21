@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
@@ -141,13 +142,12 @@ extension _SyncSkillToolPermissionsUsecaseSync
       skillSlug: agentsSkillSlug,
       toolIdentifier: runSubAgentToolName,
     );
+    final spec = AgentGuidance.runSubAgentToolSpecForLanguageCode(languageCode);
 
     return ToolSpec(
       name: descriptor.fullName,
-      description: runSubAgentToolSpecForLanguageCode(languageCode).description,
-      inputJsonSchema: Map<String, Object?>.from(
-        runSubAgentToolSpecForLanguageCode(languageCode).inputJsonSchema,
-      ),
+      description: spec.description,
+      inputJsonSchema: Map<String, Object?>.from(spec.inputJsonSchema),
     );
   }
 

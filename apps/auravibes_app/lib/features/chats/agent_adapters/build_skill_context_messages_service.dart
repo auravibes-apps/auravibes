@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
@@ -224,7 +225,7 @@ List<agent.AgentSkill> _toAgentSkills(
     agent.AgentSkill(
       title: skill.title,
       content: skill.slug == agent.agentsSkillSlug
-          ? agent.agentsSkillContentForLanguageCode(languageCode)
+          ? AgentGuidance.agentsSkillContentForLanguageCode(languageCode)
           : skill.content,
       identity: '${skill.source.name}:${skill.id}',
       manifest: manifestsBySlug[skill.slug],

@@ -17,6 +17,7 @@ import 'conversation_host_effects.dart';
 import 'a2ui_protocol.dart';
 import 'server_tool_executor.dart';
 import 'server_tool_runtime.dart';
+import 'server_agent_guidance.dart';
 
 class const ConversationEngineResult({
   required final String content,
@@ -429,7 +430,7 @@ List<AgentSkill> cloudAppSkillsForIds(
       appSkills.add(
         AgentSkill(
           title: agentsSkillTitle,
-          content: agentsSkillContentForLanguageCode(languageCode),
+          content: serverAgentsSkillContentForLanguageCode(languageCode),
           identity: agentsSkillSlug,
         ),
       );

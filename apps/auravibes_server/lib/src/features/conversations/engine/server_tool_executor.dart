@@ -26,6 +26,7 @@ import '../usecases/conversation_usecases.dart';
 import 'conversation_host_effects.dart';
 import 'server_tool_runtime.dart';
 import 'background_work_result_reader.dart';
+import 'server_agent_guidance.dart';
 
 String cloudServiceConnectionId(String credentialId) =>
     credentialId.startsWith('service:')
@@ -385,11 +386,13 @@ class const ServerToolExecutorService({
       serviceConnections: state.serviceConnections,
       isChildConversation:
           state.conversation.parentConversationStableId != null,
+      languageCode: request.languageCode,
     );
     final manifest = await buildCloudSkillManifest(
       slug: target.slug,
       userSkills: state.userSkills,
       tools: tools,
+      languageCode: request.languageCode,
     );
     if (manifest == null || manifest.revision != target.revision) {
       throw FormatException(
@@ -434,7 +437,7 @@ class const ServerToolExecutorService({
     }
     return buildSkillActivationResult(
       manifest: manifest,
-      content: _skillContent(target.slug, state),
+      content: _skillContent(target.slug, state, request.languageCode),
       credentials: credentials,
       resources: resources,
     );
@@ -781,12 +784,15 @@ class const ServerToolExecutorService({
       List<Map<String, dynamic>> serviceConnections,
     })
     state,
+    String? languageCode,
   ) {
     final user = state.userSkills
         .where((skill) => skill['slug'] == slug)
         .firstOrNull;
     if (user?['content'] case final String content) return content;
-    if (slug == agentsSkillSlug) return agentsSkillContent;
+    if (slug == agentsSkillSlug) {
+      return serverAgentsSkillContentForLanguageCode(languageCode);
+    }
     final app = cloudAppSkillDefinitions
         .where((skill) => skill.slug == slug || skill.identifier == slug)
         .firstOrNull;
@@ -1451,7 +1457,7 @@ class const ServerToolExecutorService({
           },
       ],
       'nextCursor': page.nextCursor,
-      'hint': generalSubAgentHintForLanguageCode(languageCode),
+      'hint': serverGeneralSubAgentHintForLanguageCode(languageCode),
     };
   }
 

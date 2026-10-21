@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
@@ -96,6 +97,7 @@ class const _SkillManifestRequest({
   required final String workspaceId,
   required final String slug,
   required final String? revision,
+  final String? languageCode,
 });
 
 class const RunSkillCommandUsecase({
@@ -155,7 +157,11 @@ Future<Object?> _runSkillCommand(
   RunSkillCommandRequest request, {
   String? languageCode,
 }) => switch (request.commandName) {
-  activateSkillToolName => _activateSkillCommand(usecase, request),
+  activateSkillToolName => _activateSkillCommand(
+    usecase,
+    request,
+    languageCode: languageCode,
+  ),
   listSkillCredentialsToolName => _listSkillCredentialsCommand(
     usecase,
     request,
@@ -180,28 +186,56 @@ Future<Map<String, Object?>> _listSkillCredentialsCommand(
 
 Future<Object?> _activateSkillCommand(
   RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) => _activate(usecase, request);
+  RunSkillCommandRequest request, {
+  required String? languageCode,
+}) => _activate(usecase, request, languageCode: languageCode);
 
 Future<Object?> _activate(
   RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest commandRequest,
-) async {
-  final activation = await _prepareActivation(usecase, commandRequest);
+  RunSkillCommandRequest commandRequest, {
+  required String? languageCode,
+}) async {
+  final activation = await _prepareActivation(
+    usecase,
+    commandRequest,
+    languageCode: languageCode,
+  );
 
   await _loadConversationSkill(usecase, activation.manifestRequest);
+
+  return await _buildActivationResult(
+    usecase,
+    commandRequest,
+    activation,
+    languageCode,
+  );
+}
+
+Future<Object?> _buildActivationResult(
+  RunSkillCommandUsecase usecase,
+  RunSkillCommandRequest commandRequest,
+  _SkillActivation activation,
+  String? languageCode,
+) async {
+  final skill = activation.skill;
   final resources = await _activationResources(
     usecase,
     commandRequest,
-    activation.skill.slug,
+    skill.slug,
   );
 
   return buildSkillActivationResult(
     manifest: activation.manifest,
-    content: activation.skill.content,
+    content: _activationContent(skill, languageCode),
     credentials: activation.credentials,
     resources: resources,
   );
+}
+
+String _activationContent(AvailableSkill skill, String? languageCode) {
+  if (skill.slug != agentsSkillSlug) return skill.content;
+
+  return AgentGuidance.agentsSkillContentForLanguageCode(languageCode);
 }
 
 Future<List<SkillResourceSummary>> _activationResources(
@@ -280,11 +314,31 @@ Future<({String title, String content})> _loadSkillResource(
 
 Future<_SkillActivation> _prepareActivation(
   RunSkillCommandUsecase usecase,
-  RunSkillCommandRequest request,
-) async {
+  RunSkillCommandRequest request, {
+  required String? languageCode,
+}) async {
   final target = _activationTarget(request);
   final skill = await _availableSkill(usecase, request, target);
-  final manifestRequest = _activationManifestRequest(request, target);
+  final manifestRequest = _activationManifestRequest(
+    request,
+    target,
+    languageCode: languageCode,
+  );
+
+  return await _completePreparedActivation(
+    usecase,
+    target,
+    skill,
+    manifestRequest,
+  );
+}
+
+Future<_SkillActivation> _completePreparedActivation(
+  RunSkillCommandUsecase usecase,
+  SkillActivationTarget target,
+  AvailableSkill skill,
+  _SkillManifestRequest manifestRequest,
+) async {
   final manifest = await _manifestForAvailableSkill(
     usecase,
     manifestRequest,
@@ -340,12 +394,14 @@ Future<List<AvailableSkill>> _availableSkills(
 
 _SkillManifestRequest _activationManifestRequest(
   RunSkillCommandRequest request,
-  SkillActivationTarget target,
-) => _SkillManifestRequest(
+  SkillActivationTarget target, {
+  required String? languageCode,
+}) => _SkillManifestRequest(
   conversationId: request.conversationId,
   workspaceId: request.workspaceId,
   slug: target.slug,
   revision: target.revision,
+  languageCode: languageCode,
 );
 
 void _validateActivationRevision(
@@ -667,6 +723,7 @@ Future<SkillManifest> _manifestForAvailableSkill(
     conversationId: request.conversationId,
     workspaceId: request.workspaceId,
     extraSkills: [skill],
+    languageCode: request.languageCode,
   );
 
   return _requiredSkillManifest(manifests, skill.slug);

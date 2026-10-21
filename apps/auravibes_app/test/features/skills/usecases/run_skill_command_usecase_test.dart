@@ -9,8 +9,13 @@ import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecas
 import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/widgets.dart' show SizedBox;
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../helpers/test_app.dart';
 
 void main() {
   test('activates A2UI without tools or credential lookup', () async {
@@ -602,6 +607,73 @@ void main() {
     expect(nativeRunner.calls, 0);
     expect(manifests.calls, 1);
   });
+
+  testWidgets('activates the agents skill using the conversation language', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const TestableApp(child: SizedBox.shrink(), startLocale: .new('es')),
+    );
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.runAsync(() async {
+      for (var attempt = 0; attempt < 50; attempt++) {
+        if (LocaleKeys.agents_model_guidance_list_agents_description
+            .trExists()) {
+          return;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    });
+    expect(
+      LocaleKeys.agents_model_guidance_list_agents_description.trExists(),
+      isTrue,
+    );
+
+    final manifests = _AgentsManifests();
+    final usecase = RunSkillCommandUsecase(
+      listAvailableSkillsUsecase: (_) => _LoadedSkills(
+        skills: const [
+          AvailableSkill(
+            id: agentsSkillSlug,
+            slug: agentsSkillSlug,
+            title: agentsSkillTitle,
+            description: 'Run sub-agents.',
+            content: 'Use list_agents to choose a specialist.',
+            source: .app,
+            kind: .native,
+          ),
+        ],
+      ),
+      loadConversationSkillUsecase: (_) => _LoadRecorder(),
+      buildLoadedSkillManifestsUsecase: manifests,
+      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
+      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
+      runSkillTemplateToolUsecase: _TemplateRunner(),
+      runAppSkillToolUsecase: _NativeRunner(),
+      listSkillCredentials: ({
+        required conversationId,
+        required workspaceId,
+        required arguments,
+      }) async => const {},
+    );
+
+    const command = (
+      conversationId: 'conversation-1',
+      toolCallId: 'call-activate-agents',
+      workspaceId: 'workspace-1',
+      commandName: activateSkillToolName,
+      arguments: {'slug': agentsSkillSlug, 'revision': 'agents-es-r1'},
+    );
+    final result = await usecase.call(command, languageCode: 'es-MX');
+
+    expect(result, isA<SkillActivationResult>());
+    if (result is! SkillActivationResult) {
+      fail('Expected a skill activation result.');
+    }
+    expect(manifests.languageCodes, ['es-MX']);
+    expect(result.value, contains('Usa list_agents'));
+    expect(result.value, isNot(contains('Use list_agents')));
+  });
 }
 
 class _Manifests({final bool credentialRequired = false})
@@ -667,6 +739,7 @@ class _EmptyManifests implements BuildLoadedSkillManifestsUsecase {
 
 class _AgentsManifests implements BuildLoadedSkillManifestsUsecase {
   int calls = 0;
+  final languageCodes = <String?>[];
 
   @override
   Future<List<SkillManifest>> call({
@@ -676,13 +749,16 @@ class _AgentsManifests implements BuildLoadedSkillManifestsUsecase {
     String? languageCode,
   }) async {
     calls++;
+    languageCodes.add(languageCode);
 
     return [
       SkillManifest(
         slug: agentsSkillSlug,
         title: agentsSkillTitle,
         description: 'Run sub-agents.',
-        revision: 'agents-r1',
+        revision: languageCode?.startsWith('es') == true
+            ? 'agents-es-r1'
+            : 'agents-r1',
         tools: [
           SkillManifestTool(
             name: listAgentsToolName,

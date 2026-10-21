@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
@@ -147,7 +148,9 @@ class const BuildAppSkillNativeToolSpecsUsecase(
     List<ToolSpec> toolSpecs,
     String? languageCode,
   ) {
-    final localized = listAgentsToolSpecForLanguageCode(languageCode);
+    final localized = AgentGuidance.listAgentsToolSpecForLanguageCode(
+      languageCode,
+    );
 
     return [
       for (final spec in toolSpecs)

@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
@@ -774,7 +775,9 @@ Future<Object?> _runSubAgentToolWithRunner(
     return runner.listAgents(
       request.workspaceId,
       arguments: request.arguments,
-      languageCode: request.languageCode,
+      hint: AgentGuidance.generalSubAgentHintForLanguageCode(
+        request.languageCode,
+      ),
     );
   }
   if (request.toolSlug != agent.runSubAgentToolName) {

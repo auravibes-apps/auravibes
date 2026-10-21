@@ -3,6 +3,7 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
@@ -149,7 +150,7 @@ agent.ToolCatalogCandidate<ResolvedTool> _skillCommandCandidate(
 agent.ToolCatalogCandidate<ResolvedTool> _runSubAgentCandidate(
   String? languageCode,
 ) => agent.ToolCatalogCandidate.reserved(
-  spec: agent.runSubAgentToolSpecForLanguageCode(languageCode),
+  spec: AgentGuidance.runSubAgentToolSpecForLanguageCode(languageCode),
   target: ResolvedTool.skillNative(
     tableId: agent.runSubAgentToolName,
     skillSlug: agent.agentsSkillSlug,
