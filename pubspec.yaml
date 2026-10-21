@@ -92,7 +92,7 @@ melos:
       description: Fix code formatting
 
     analyze:workspace:
-      run: dart run tool/run_quiet.dart -- dart run melos analyze
+      run: dart run tool/run_quiet.dart --stream -- dart run melos analyze
       description: Run built-in Melos workspace analysis
 
     # Testing Scripts
