@@ -33,7 +33,6 @@ import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_logi
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_register_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_accounts_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/usecases/cloud_account_usecases.dart';
-import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_detail_state.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/screens/cloud_workspace_detail_screen.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
