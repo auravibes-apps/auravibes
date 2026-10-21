@@ -25,84 +25,83 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets(
-    'keeps credential setup separate from app-skill details',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const ui.Size(960, 1200));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
-      final container = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(database),
-          workspaceSessionForRouteProvider('workspace-1').overrideWith(
-            (_) async => const WorkspaceSession(
-              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
-            ),
-          ),
-          cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-          cloudSkillStoreProvider('workspace-1').overrideWithValue(null),
-        ],
-      );
-      addTearDown(container.dispose);
-      final searxng = container
-          .read(appSkillRegistryProvider)
-          .getByIdentifier('searxng');
-      if (searxng == null) fail('SearXNG must be registered for this test.');
-
-      final router = GoRouter(
-        routes: [
-          GoRoute(path: '/home', builder: (_, _) => const SizedBox.shrink()),
-          GoRoute(
-            path: '/skills/:id',
-            pageBuilder: (_, state) => NoTransitionPage(
-              child: SkillDetailScreen(
-                workspaceId: 'workspace-1',
-                skillId: searxng.identifier,
-              ),
-              key: state.pageKey,
-            ),
-          ),
-        ],
-        initialLocation: '/home',
-      );
-      addTearDown(router.dispose);
-
-      final _ = await tester.runAsync(
-        () => tester.pumpWidget(
-          EasyLocalization(
-            key: UniqueKey(),
-            child: Builder(
-              builder: (context) => UncontrolledProviderScope(
-                container: container,
-                child: MaterialApp.router(
-                  routerConfig: router,
-                  locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
-                  supportedLocales: context.supportedLocales,
-                ),
-              ),
-            ),
-            supportedLocales: const [Locale('en')],
-            path: 'assets/i18n',
-            fallbackLocale: const Locale('en'),
-            startLocale: const Locale('en'),
-            useOnlyLangCode: true,
-            useFallbackTranslations: true,
+  testWidgets('keeps credential setup separate from app-skill details', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const ui.Size(960, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    addTearDown(database.close);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        workspaceSessionForRouteProvider('workspace-1').overrideWith(
+          (_) async => const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
           ),
         ),
-      );
+        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
+        cloudSkillStoreProvider('workspace-1').overrideWithValue(null),
+      ],
+    );
+    addTearDown(container.dispose);
+    final searxng = container
+        .read(appSkillRegistryProvider)
+        .getByIdentifier('searxng');
+    if (searxng == null) fail('SearXNG must be registered for this test.');
 
-      final _ = await tester.pumpAndSettle();
-      final _ = await tester.pump();
-      final _ = await tester.pumpAndSettle();
-      final _ = router.push('/skills/searxng');
-      final _ = await tester.pumpAndSettle();
-      expect(find.byType(SkillDetailScreen), findsOneWidget);
-      expect(find.text('Add Credential'), findsNothing);
-      expect(tester.takeException(), isNull);
-    },
-  );
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/home', builder: (_, _) => const SizedBox.shrink()),
+        GoRoute(
+          path: '/skills/:id',
+          pageBuilder: (_, state) => NoTransitionPage(
+            child: SkillDetailScreen(
+              workspaceId: 'workspace-1',
+              skillId: searxng.identifier,
+            ),
+            key: state.pageKey,
+          ),
+        ),
+      ],
+      initialLocation: '/home',
+    );
+    addTearDown(router.dispose);
+
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(
+        EasyLocalization(
+          key: UniqueKey(),
+          child: Builder(
+            builder: (context) => UncontrolledProviderScope(
+              container: container,
+              child: MaterialApp.router(
+                routerConfig: router,
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+              ),
+            ),
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
+        ),
+      ),
+    );
+
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
+    final _ = await tester.pumpAndSettle();
+    final _ = router.push('/skills/searxng');
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(SkillDetailScreen), findsOneWidget);
+    expect(find.text('Add Credential'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
