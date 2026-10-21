@@ -1647,26 +1647,30 @@ class const _ChatConversationAppBar({
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) => AuraAppBarWithDrawer(
-    title: Text(data.conversation.title),
-    actions: [
-      ModelUsageHeaderButton(conversationId: data.conversation.id),
-      BackgroundWorkHeaderButton(
-        workspaceId: data.workspaceId,
-        conversationId: data.conversation.id,
-      ),
-      _ConversationBookmarksButton(
-        workspaceId: data.workspaceId,
-        conversationId: data.conversation.id,
-      ),
-      ConversationSidebarToggleButton(
-        isPanelVisible: sidePanelVisible,
-        tabCount: tabCount,
-        onPressed: onSidebarToggle,
-      ),
-    ],
-    leading: data.leading,
-  );
+  Widget build(BuildContext context) {
+    final conversationId = data.conversation.id;
+
+    return AuraAppBarWithDrawer(
+      title: Text(data.conversation.title),
+      actions: [
+        ModelUsageHeaderButton(conversationId: conversationId),
+        BackgroundWorkHeaderButton(
+          workspaceId: data.workspaceId,
+          conversationId: conversationId,
+        ),
+        _ConversationBookmarksButton(
+          workspaceId: data.workspaceId,
+          conversationId: conversationId,
+        ),
+        ConversationSidebarToggleButton(
+          isPanelVisible: sidePanelVisible,
+          tabCount: tabCount,
+          onPressed: onSidebarToggle,
+        ),
+      ],
+      leading: data.leading,
+    );
+  }
 }
 
 class const _ConversationBookmarksButton({
