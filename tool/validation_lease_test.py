@@ -12,9 +12,10 @@ from types import SimpleNamespace
 from unittest.mock import patch
 import unittest
 
-from validation_lease import MINIMUM_AVAILABLE_BYTES, _owner_summary
-from validation_lease import _parse_arguments, _temp_directory_usage
-from validation_lease import _validation_preflight, try_acquire
+from validation_lease import LOCK_NAME, MINIMUM_AVAILABLE_BYTES, _lock_path_for_remote
+from validation_lease import _owner_summary, _parse_arguments, _temp_directory_usage
+from validation_lease import _validation_lock_paths, _validation_preflight, _write_owner
+from validation_lease import read_active_owner, try_acquire
 
 
 class ValidationLeaseTest(unittest.TestCase):
@@ -128,6 +129,72 @@ class ValidationLeaseTest(unittest.TestCase):
             finally:
                 fcntl.flock(first_fd, fcntl.LOCK_UN)
                 os.close(first_fd)
+
+    def test_remote_lock_path_is_shared_across_clones_and_url_styles(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            shared_dir = Path(temp_dir) / "leases"
+            first_path = _lock_path_for_remote(
+                "git@github.com:auravibes-apps/auravibes.git",
+                Path(temp_dir) / "clone-one" / ".git",
+                shared_dir,
+            )
+            second_path = _lock_path_for_remote(
+                "https://github.com/auravibes-apps/auravibes.git",
+                Path(temp_dir) / "clone-two" / ".git",
+                shared_dir,
+            )
+            other_path = _lock_path_for_remote(
+                "https://github.com/auravibes-apps/other.git",
+                Path(temp_dir) / "clone-three" / ".git",
+                shared_dir,
+            )
+
+            self.assertEqual(first_path, second_path)
+            self.assertNotEqual(first_path, other_path)
+            first_path.parent.mkdir(mode=0o700)
+            first_fd = os.open(first_path, os.O_CREAT | os.O_RDWR, 0o600)
+            try:
+                self.assertTrue(try_acquire(first_fd))
+                self.assertFalse(_try_acquire_in_child(second_path))
+            finally:
+                fcntl.flock(first_fd, fcntl.LOCK_UN)
+                os.close(first_fd)
+
+    def test_lock_paths_preserve_linked_worktrees_and_coordinate_clones(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            common_git_dir = Path(temp_dir) / "common"
+            common_git_dir.mkdir()
+            shared_dir = Path(temp_dir) / "shared"
+            remote_url = "git@github.com:auravibes-apps/auravibes.git"
+            with (
+                patch("validation_lease._common_git_dir", return_value=common_git_dir),
+                patch("validation_lease._origin_remote_url", return_value=remote_url),
+                patch("validation_lease._shared_lock_directory", return_value=shared_dir),
+            ):
+                paths = _validation_lock_paths()
+
+            remote_path = _lock_path_for_remote(
+                remote_url, common_git_dir, shared_dir
+            )
+            self.assertEqual(
+                paths,
+                sorted({common_git_dir / LOCK_NAME, remote_path}, key=str),
+            )
+
+    def test_read_active_owner_ignores_stale_metadata(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            lock_path = Path(temp_dir) / "lease"
+            fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+            owner = {"pid": 1, "host": "host", "cwd": "/repo", "started_at": "now"}
+            try:
+                self.assertTrue(try_acquire(fd))
+                _write_owner(fd, owner)
+                self.assertEqual(read_active_owner(lock_path), owner)
+                fcntl.flock(fd, fcntl.LOCK_UN)
+                self.assertIsNone(read_active_owner(lock_path))
+            finally:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+                os.close(fd)
 
 
 def _volume_usage(path, available_bytes):

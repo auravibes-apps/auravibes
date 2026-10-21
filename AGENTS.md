@@ -48,12 +48,13 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - Script definitions and package filters live in root `pubspec.yaml`.
 - For a new checkout or worktree, use the `fvm use` command above, then bootstrap before running `--no-pub` checks.
 - Run local test, analyzer, code generation, bootstrap, and workspace validation commands through `tool/validation_lease.py`. From a package directory, use its absolute path via `$(git rev-parse --show-toplevel)`.
-- The lease coordinates linked worktrees that share this repository's Git common directory. Commands started outside the wrapper bypass it; CI runners remain independent.
+- The lease keeps common-dir locking and adds a host-local per-user lock keyed by normalized origin; same-user clones sharing that cache coordinate. Other users, hosts, and origin mirrors do not. `python3 tool/agent_worktree.py status` reports worktrees and active lease owner.
 - Temp-volume stats are advisory; quotas and container limits may still reject writes.
 
 ## Git context
 
 - For routine context, use `git status --short --branch` and `git log -1 --oneline --decorate`; inspect named refs only when the task needs them.
+- Before claiming a ticket or creating a worktree, run `python3 tool/agent_worktree.py preflight --issue <number>`; stop on reported conflicts until ownership is clear.
 - Avoid `git branch -avv` for routine context; linked worktrees and remote refs can produce large output.
 
 ## DCL and lint compliance
