@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -108,6 +109,7 @@ Future<void> _pumpSubject(
     conversationSelectedProvider('conv-1').overrideWithValue('conv-1'),
     conversationRepositoryProvider.overrideWithValue(conversationRepository),
     _messageSnapshotsProvider.overrideWith((ref) => feed.stream),
+    messageBookmarksProvider.overrideWith((ref, _) => Stream.value(const [])),
     messageConversationByIdProvider.overrideWith(
       (ref, id) => ref.watch(_messageSnapshotsProvider).value?[id.messageId],
     ),

@@ -3,8 +3,10 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
 import 'package:auravibes_app/features/cloud_workspaces/data/cloud_workspace_repository.dart';
 import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_state.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:collection/collection.dart';
 
 export '../models/cloud_workspace_state.dart';
 
@@ -40,8 +42,14 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
     return _viewState(results);
   }
 
-  Future<WorkspaceEntity> attach(CloudWorkspaceSummary workspace) async {
-    final existing = await _existingMirror(workspace);
+  Future<WorkspaceEntity> attach(CloudWorkspaceSummary workspace) =>
+      _attach(workspace);
+
+  Future<WorkspaceEntity> _attach(
+    CloudWorkspaceSummary workspace, {
+    bool accountOnly = false,
+  }) async {
+    final existing = await _existingMirror(workspace, accountOnly: accountOnly);
     if (existing != null) return existing;
 
     return await _workspaceRepository.upsertCloudWorkspaceMirror(
@@ -52,9 +60,27 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
     );
   }
 
+  Future<WorkspaceEntity> attachAuthorizedWorkspace(int workspaceId) async {
+    final workspaces = await CloudAppErrors.guardCall(
+      .workspace,
+      _cloudRepository.listWorkspaces,
+    );
+    final workspace = workspaces
+        .where((item) => item.id == workspaceId)
+        .firstOrNull;
+    if (workspace == null) {
+      throw const AppCloudWorkspaceException(
+        LocaleKeys.cloud_errors_permission_denied,
+      );
+    }
+
+    return await _attach(workspace, accountOnly: true);
+  }
+
   Future<WorkspaceEntity?> _existingMirror(
-    CloudWorkspaceSummary workspace,
-  ) async {
+    CloudWorkspaceSummary workspace, {
+    bool accountOnly = false,
+  }) async {
     final account = CloudAccountKeyFactory.fromIdentity(
       _serverUrl,
       _cloudAccountId,
@@ -64,7 +90,7 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
       (item) => _isMirrorForWorkspace(item, workspace, account),
     );
 
-    return _preferredMirror(mirrors, account);
+    return _findExistingMirrorForAccount(mirrors, account, accountOnly);
   }
 
   bool _isMirrorForWorkspace(
@@ -74,13 +100,6 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
   ) =>
       item.cloudWorkspaceId == workspace.id.toString() &&
       item.cloudAccount?.serverUrl == account.serverUrl;
-
-  WorkspaceEntity? _preferredMirror(
-    Iterable<WorkspaceEntity> mirrors,
-    CloudAccountKey account,
-  ) =>
-      mirrors.where((item) => item.cloudAccount == account).firstOrNull ??
-      mirrors.firstOrNull;
 
   Future<void> detach(CloudWorkspaceSummary workspace) async {
     final deleted = await _workspaceRepository.deleteCloudWorkspaceMirror(
@@ -114,6 +133,21 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
     return await _attachCreatedMirror(workspace);
   }
 }
+
+WorkspaceEntity? _findExistingMirrorForAccount(
+  Iterable<WorkspaceEntity> mirrors,
+  CloudAccountKey account,
+  bool accountOnly,
+) => accountOnly
+    ? mirrors.firstWhereOrNull((item) => item.cloudAccount == account)
+    : _preferredMirror(mirrors, account);
+
+WorkspaceEntity? _preferredMirror(
+  Iterable<WorkspaceEntity> mirrors,
+  CloudAccountKey account,
+) =>
+    mirrors.where((item) => item.cloudAccount == account).firstOrNull ??
+    mirrors.firstOrNull;
 
 extension CloudWorkspaceUseCasesMembers on CloudWorkspaceUseCases {
   Future<List<CloudWorkspaceMemberSummary>> listMembers(int workspaceId) {

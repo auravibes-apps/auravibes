@@ -424,6 +424,7 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
       );
   Future<List<ConversationMessageView>> listConversationMessages(
     String conversationId, {
+    int limit = 500,
     String? messageId,
   }) => CloudAppErrors.guardCall(
     .conversation,
@@ -431,7 +432,7 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
       .new(
         workspaceId: _workspaceId,
         conversationId: conversationId,
-        limit: 500,
+        limit: limit,
         messageId: messageId,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
       ),
@@ -460,6 +461,52 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
       request.copyWith(workspaceId: _workspaceId),
     ),
   );
+}
+
+extension CloudChatGatewayMessageBookmarkOps on CloudChatGateway {
+  Future<void> bookmarkMessage({
+    required String requestId,
+    required String conversationId,
+    required String sourceConversationId,
+    required String messageId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.bookmarkMessage(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        sourceConversationId: sourceConversationId,
+        messageId: messageId,
+      ),
+    ),
+  );
+
+  Future<void> unbookmarkMessage({
+    required String requestId,
+    required String conversationId,
+    required String sourceConversationId,
+    required String messageId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.unbookmarkMessage(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        sourceConversationId: sourceConversationId,
+        messageId: messageId,
+      ),
+    ),
+  );
+
+  Future<List<MessageBookmarkView>> listMessageBookmarks() =>
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.listMessageBookmarks(
+          .new(workspaceId: _workspaceId),
+        ),
+      );
 }
 
 extension CloudChatGatewayBackgroundWorkOps on CloudChatGateway {

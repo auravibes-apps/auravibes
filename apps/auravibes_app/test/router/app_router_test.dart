@@ -92,6 +92,15 @@ void main() {
       expect(route.location, '/workspaces/ws-1/chats/c1');
     });
 
+    test('location includes message query for bookmarks', () {
+      final route = ConversationRoute(
+        workspaceId: 'ws-1',
+        chatId: 'c1',
+        messageId: 'message-1',
+      );
+      expect(route.location, '/workspaces/ws-1/chats/c1?message-id=message-1');
+    });
+
     test('with special characters in chatId', () {
       final route = ConversationRoute(
         workspaceId: 'ws-1',
