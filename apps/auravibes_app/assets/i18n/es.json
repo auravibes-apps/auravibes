@@ -258,6 +258,18 @@
       "base_url_label": "URL base de la instancia"
     }
   },
+  "connector_catalog": {
+    "filter_label": "Capacidad",
+    "filter_all": "Todas",
+    "filter_models": "Modelos",
+    "filter_tools": "Herramientas",
+    "offers_models": "Modelos",
+    "offers_tools": "Herramientas",
+    "connect": "Conectar",
+    "manage": "Administrar conexiones",
+    "not_connected": "No conectado",
+    "empty": "No hay conectores disponibles."
+  },
   "agents": {
     "title": "Agentes",
     "create": "Crear agente",
@@ -1800,6 +1812,7 @@
     "agents": "Agentes",
     "skills": "Habilidades",
     "overview": "Resumen",
+    "connectors": "Conectores",
     "providers": "Proveedores de IA",
     "services": "Servicios",
     "tools": "Herramientas",

@@ -258,6 +258,18 @@
       "base_url_label": "Instance base URL"
     }
   },
+  "connector_catalog": {
+    "filter_label": "Capability",
+    "filter_all": "All",
+    "filter_models": "Models",
+    "filter_tools": "Tools",
+    "offers_models": "Models",
+    "offers_tools": "Tools",
+    "connect": "Connect",
+    "manage": "Manage connections",
+    "not_connected": "Not connected",
+    "empty": "No Connectors available."
+  },
   "agents": {
     "title": "Agents",
     "create": "Create agent",
@@ -1800,6 +1812,7 @@
     "agents": "Agents",
     "skills": "Skills",
     "overview": "Overview",
+    "connectors": "Connectors",
     "providers": "AI providers",
     "services": "Services",
     "tools": "Tools",

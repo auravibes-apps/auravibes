@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/service_connections/models/mcp_connection
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/notifiers/connections_list_view_notifier.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
+import 'package:auravibes_app/features/service_connections/screens/connector_catalog_screen.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
 import 'package:auravibes_app/features/service_connections/widgets/mcp_catalog_browser.dart';
@@ -295,6 +296,7 @@ class const _ServiceConnectionsView({
       appBar: _ServiceConnectionsAppBar(
         onAddConnection: onAddConnection,
         workspaceId: workspaceId,
+        view: view,
         destinations: _destinations,
         selectedLocation: _selectedLocation,
       ),
@@ -334,6 +336,10 @@ class const _ServiceConnectionsContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    if (view == .connectors) {
+      return ConnectorCatalogScreen(workspaceId: workspaceId);
+    }
+
     final connections = _connectionsValue(connectionsAsync);
     if (connections == null) {
       return _ConnectionsLoadState(
@@ -484,6 +490,7 @@ class const _ConnectionsLoadError() extends StatelessWidget {
 class const _ServiceConnectionsAppBar({
   required final VoidCallback onAddConnection,
   required final String workspaceId,
+  required final ConnectionDestination view,
   required final List<FeatureNavigationDestination> destinations,
   required final String selectedLocation,
 }) extends StatelessWidget implements PreferredSizeWidget {
@@ -497,9 +504,11 @@ class const _ServiceConnectionsAppBar({
       selectedLocation: selectedLocation,
       masterTitleKey: LocaleKeys.navigation_connections,
       actions: [
-        _SyncModelCatalogButton(workspaceId: workspaceId),
-        _BrowseMcpCatalogButton(workspaceId: workspaceId),
-        _ConnectionsAddButton(onPressed: onAddConnection),
+        if (view != .connectors) ...[
+          _SyncModelCatalogButton(workspaceId: workspaceId),
+          _BrowseMcpCatalogButton(workspaceId: workspaceId),
+          _ConnectionsAddButton(onPressed: onAddConnection),
+        ],
       ],
     );
   }
@@ -751,6 +760,7 @@ bool _matchesView(
   ConnectionDestination view,
 ) => switch (view) {
   .overview => true,
+  .connectors => false,
   .providers => connection.kind == .modelProvider,
   .services => connection.kind == .mcpServer,
   .credentials => connection.kind == .skillCredential,

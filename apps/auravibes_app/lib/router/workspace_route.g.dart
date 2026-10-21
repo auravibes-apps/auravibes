@@ -750,6 +750,8 @@ mixin $ServiceConnectionCreateRoute on GoRouteData {
         type: state.uri.queryParameters['type'],
         credentialDefinitionId:
             state.uri.queryParameters['credentialDefinitionId'],
+        appSkillId: state.uri.queryParameters['appSkillId'],
+        modelProviderId: state.uri.queryParameters['modelProviderId'],
       );
 
   ServiceConnectionCreateRoute get _self =>
@@ -763,6 +765,9 @@ mixin $ServiceConnectionCreateRoute on GoRouteData {
       if (_self.type != null) 'type': _self.type,
       if (_self.credentialDefinitionId != null)
         'credentialDefinitionId': _self.credentialDefinitionId,
+      if (_self.appSkillId != null) 'appSkillId': _self.appSkillId,
+      if (_self.modelProviderId != null)
+        'modelProviderId': _self.modelProviderId,
     },
   );
 
