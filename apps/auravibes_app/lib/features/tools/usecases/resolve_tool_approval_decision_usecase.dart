@@ -99,11 +99,6 @@ class ResolveToolApprovalDecisionUsecase({
     required String workspaceId,
     required ResolvedTool resolvedTool,
   }) {
-    if (resolvedTool.toolIdentifier == agent.callSkillToolName &&
-        resolvedTool.target == null) {
-      return Future.value();
-    }
-
     return syncSkillToolPermissionsUsecase?.permissionTableIdFor(
           conversationId: conversationId,
           workspaceId: workspaceId,
@@ -130,9 +125,7 @@ class ResolveToolApprovalDecisionUsecase({
   }
 
   bool _isSkillTool(ResolvedTool resolvedTool) =>
-      resolvedTool.isSkillCommand ||
       resolvedTool.isSkillControl ||
-      resolvedTool.isSkillTemplate ||
       resolvedTool.isSkillNative;
 }
 

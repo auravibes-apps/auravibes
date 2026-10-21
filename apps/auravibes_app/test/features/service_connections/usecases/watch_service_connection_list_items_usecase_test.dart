@@ -1,10 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/service_connections/models/connector_catalog_item.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
@@ -26,53 +24,28 @@ void main() {
     setUp(() => clearAppDatabase(database));
     tearDownAll(database.close);
 
-    test('returns model, skill, and MCP rows together', () async {
+    test('returns model and MCP rows together', () async {
       final fixture = await _createFixture(database);
-      final definition =
-          await SkillCredentialDefinitionsRepository(fixture.database)
-              .createDefinition(
-                fixture.workspace.id,
-                const SkillCredentialDefinitionToCreate(
-                  title: 'GitHub Token',
-                  attributesJson: '{"token":{"description":"API token"}}',
-                ),
-              );
-      final _ =
-          await SkillCredentialsRepository(
-            database: fixture.database,
-            encryptionService: fixture.encryptionService,
-          ).createCredential(
-            fixture.workspace.id,
-            .new(
-              credentialDefinitionId: definition.id,
-              name: 'Main Token',
-              attributes: const {'token': 'secret-value'},
-            ),
-          );
-      final _ = await fixture.database
-          .into(fixture.database.serviceConnections)
-          .insertReturning(
-            ServiceConnectionsCompanion.insert(
-              name: 'OpenAI Main',
-              serviceId: 'openai',
-              kind: .modelProvider,
-              authenticationType: .apiKey,
-              encryptedAuthValue: const Value('encrypted-key'),
-              keySuffix: const Value('et-key'),
-              workspaceId: fixture.workspace.id,
-            ),
-          );
-      final _ = await fixture.database
-          .into(fixture.database.serviceConnections)
-          .insertReturning(
-            ServiceConnectionsCompanion.insert(
-              name: 'OpenAI OAuth',
-              serviceId: 'openai',
-              kind: .modelProvider,
-              authenticationType: .oauth2,
-              workspaceId: fixture.workspace.id,
-            ),
-          );
+      final _ = await fixture.database.modelConnectionsDao.insertModelConnection(
+        .insert(
+          name: 'OpenAI Main',
+          serviceId: 'openai',
+          kind: .modelProvider,
+          authenticationType: .apiKey,
+          encryptedAuthValue: const Value('encrypted-key'),
+          keySuffix: const Value('et-key'),
+          workspaceId: fixture.workspace.id,
+        ),
+      );
+      final _ = await fixture.database.modelConnectionsDao.insertModelConnection(
+        .insert(
+          name: 'OpenAI OAuth',
+          serviceId: 'openai',
+          kind: .modelProvider,
+          authenticationType: .oauth2,
+          workspaceId: fixture.workspace.id,
+        ),
+      );
       await _insertMcpCredential(
         fixture,
         metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
@@ -88,7 +61,6 @@ void main() {
       final items = await usecase(fixture.workspace.id).first;
 
       expect(items.map((item) => item.name), [
-        'Main Token',
         'Notion',
         'OpenAI Main',
         'OpenAI OAuth',
@@ -219,32 +191,6 @@ void main() {
       );
     });
 
-    test('includes local app-skill credentials', () async {
-      final fixture = await _createFixture(database);
-      final _ = await fixture.database
-          .into(fixture.database.serviceConnections)
-          .insert(
-            ServiceConnectionsCompanion.insert(
-              name: 'SearXNG instance',
-              serviceId: 'searxng',
-              kind: .appSkillCredential,
-              authenticationType: .apiKey,
-              encryptedAuthValue: const Value('ciphertext'),
-              keySuffix: const Value('ample.com'),
-              workspaceId: fixture.workspace.id,
-            ),
-          );
-
-      final items = await _createUsecase(fixture)(fixture.workspace.id).first;
-
-      final item = items.single;
-      expect(item.name, 'SearXNG instance');
-      expect(item.serviceName, 'searxng');
-      expect(item.kind, ServiceConnectionListItemKind.skillCredential);
-      expect(item.keySuffix, 'ample.com');
-      expect(item.displayStatus, ServiceConnectionDisplayStatus.connected);
-    });
-
     test(
       'shows each Connector once with offering-based filters and safe status',
       () async {
@@ -255,7 +201,7 @@ void main() {
               ServiceConnectionsCompanion.insert(
                 name: 'OpenAI tools',
                 serviceId: 'openai',
-                kind: .appSkillCredential,
+                kind: .customHttp,
                 authenticationType: .apiKey,
                 encryptedAuthValue: const Value('do-not-expose-this-secret'),
                 workspaceId: fixture.workspace.id,
@@ -415,12 +361,7 @@ WatchServiceConnectionListItemsUsecase _createUsecase(
 }) {
   return WatchServiceConnectionListItemsUsecase(
     fixture.database,
-    .new(
-      database: fixture.database,
-      encryptionService: fixture.encryptionService,
-    ),
-    .new(fixture.database),
-    .new(
+    ModelConnectionRepository(
       database: fixture.database,
       encryptionService: fixture.encryptionService,
     ),

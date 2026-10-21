@@ -1,33 +1,17 @@
-import 'dart:async';
-import 'dart:convert';
-
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_settings_adapter.dart';
-import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill_usecases.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_definition_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/disable_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/duplicate_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,25 +19,11 @@ import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
 class _Gateway extends Mock implements CloudWorkspaceStateGateway;
-
 class _Client extends Mock implements Client;
-
 class _SkillResourceEndpoint extends Mock implements EndpointSkillResource;
 
 void main() {
-  final _ = TestWidgetsFlutterBinding.ensureInitialized();
-
   setUpAll(() {
-    registerFallbackValue(WorkspaceSecretKind.skillCredential);
-    registerFallbackValue(WorkspaceSecretScope.workspace);
-    registerFallbackValue((
-      requestId: '',
-      secretKind: WorkspaceSecretKind.skillCredential,
-      scope: WorkspaceSecretScope.workspace,
-      resourceId: '',
-      secret: null,
-      expectedRevision: null,
-    ));
     registerFallbackValue(
       WorkspacePatchOperation(
         operation: .create,
@@ -63,40 +33,26 @@ void main() {
       ),
     );
     registerFallbackValue(
-      ListSkillResourcesRequest(workspaceId: 0, skillId: ''),
+      ListSkillResourcesRequest(workspaceId: 7, skillId: 'fallback'),
     );
-    registerFallbackValue((
-      requestId: '',
-      resourceOperation: WorkspacePatchOperation(
-        operation: .create,
-        resourceKind: .skill,
-        resourceId: 'fallback',
-        fieldMask: const [],
-      ),
-      secretKind: WorkspaceSecretKind.skillCredential,
-      scope: WorkspaceSecretScope.workspace,
-      secret: null,
-      clearSecret: false,
-      expectedSecretRevision: null,
-    ));
   });
 
-  const workspaceId = 'local-cloud';
-  const cloudWorkspace = CloudWorkspaceRef(
-    localWorkspaceId: workspaceId,
-    serverUrl: 'https://example.com',
-    accountId: 'account',
-    cloudWorkspaceId: 7,
-  );
-  const workspace = WorkspaceSession(cloudWorkspace);
-
   test(
-    'cloud production providers never construct local skill storage',
+    'cloud skill providers use cloud storage without local skill tables',
     () async {
+      const workspaceId = 'local-cloud';
+      const cloudWorkspace = CloudWorkspaceRef(
+        localWorkspaceId: workspaceId,
+        serverUrl: 'https://example.com',
+        accountId: 'account',
+        cloudWorkspaceId: 7,
+      );
+      const workspace = WorkspaceSession(cloudWorkspace);
       final gateway = _Gateway();
       final client = _Client();
       final skillResource = _SkillResourceEndpoint();
       final resources = <WorkspaceResource>[];
+
       when(() => gateway.client).thenReturn(client);
       when(() => gateway.workspace).thenReturn(cloudWorkspace);
       when(() => client.skillResource).thenReturn(skillResource);
@@ -126,88 +82,53 @@ void main() {
                   item.resourceKind == operation.resourceKind &&
                   item.resourceId == operation.resourceId,
             );
-          } else {
-            resources
-              ..removeWhere(
-                (item) =>
-                    item.resourceKind == operation.resourceKind &&
-                    item.resourceId == operation.resourceId,
-              )
-              ..add(
-                _resource(
-                  kind: operation.resourceKind,
-                  id: operation.resourceId,
-                  data: operation.data ?? '{}',
-                  revision: (operation.expectedRevision ?? 0) + 1,
-                ),
-              );
+            continue;
           }
+          resources
+            ..removeWhere(
+              (item) =>
+                  item.resourceKind == operation.resourceKind &&
+                  item.resourceId == operation.resourceId,
+            )
+            ..add(
+              WorkspaceResource(
+                workspaceId: 7,
+                resourceKind: operation.resourceKind,
+                resourceId: operation.resourceId,
+                data: operation.data ?? '{}',
+                revision: (operation.expectedRevision ?? 0) + 1,
+                createdAt: DateTime.utc(2026),
+                updatedAt: DateTime.utc(2026),
+              ),
+            );
         }
 
         return PatchWorkspaceStateResponse(resources: const [], sequence: 1);
       });
-      when(() => gateway.putSecret(any())).thenAnswer(
-        (_) async => PutWorkspaceSecretResponse(
-          configured: true,
-          revision: 1,
-          sequence: 1,
-        ),
-      );
-      when(() => gateway.mutateCredential(any())).thenAnswer((
-        invocation,
-      ) async {
-        final operation =
-            (invocation.positionalArguments.single as WorkspaceCredentialInput)
-                .resourceOperation;
-        final data = jsonDecode(operation.data ?? '{}') as Map<String, dynamic>;
-        final resource = _resource(
-          kind: operation.resourceKind,
-          id: operation.resourceId,
-          data: jsonEncode({...data, 'hasSecret': true}),
-          revision: (operation.expectedRevision ?? 0) + 1,
-        );
-        resources
-          ..removeWhere(
-            (item) =>
-                item.resourceKind == operation.resourceKind &&
-                item.resourceId == operation.resourceId,
-          )
-          ..add(resource);
 
-        return MutateWorkspaceCredentialResponse(
-          resource: resource,
-          configured: true,
-          displaySuffix: 'secret',
-          secretRevision: 1,
-          sequence: 1,
-        );
-      });
-
-      Never local() => throw StateError('local storage touched');
+      Never localStorage() => throw StateError('local skill storage touched');
       final container = ProviderContainer(
         overrides: [
           workspaceSessionProvider(workspace).overrideWithValue(workspace),
           workspaceSessionForRouteProvider(workspaceId)
-              .overrideWithValue(const AsyncData(workspace)),
-          cloudWorkspaceStateGatewayProvider.overrideWith(
-            (_, _) async => gateway,
+              .overrideWith((_) async => workspace),
+          cloudSkillStoreProvider(workspaceId).overrideWithValue(
+            CloudSkillStore(CloudWorkspaceResourceStore(gateway), workspaceId),
           ),
-          cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId)
-              .overrideWith((_) async => gateway),
           workspaceSkillsProvider(workspaceId).overrideWith(
             (_) => CloudSkillSettingsAdapter(gateway).watchSkills().first,
           ),
-          serviceConnectionRepositoryProvider.overrideWith((_) => local()),
-          skillsRepositoryProvider.overrideWith((_) => local()),
-          skillTemplateToolsRepositoryProvider.overrideWith((_) => local()),
-          skillCredentialDefinitionsRepositoryProvider.overrideWith(
-            (_) => local(),
+          serviceConnectionRepositoryProvider.overrideWith(
+            (_) => localStorage(),
           ),
-          skillCredentialsRepositoryProvider.overrideWith((_) => local()),
-          conversationSkillsRepositoryProvider.overrideWith((_) => local()),
+          skillsRepositoryProvider.overrideWith((_) => localStorage()),
+          conversationSkillsRepositoryProvider.overrideWith(
+            (_) => localStorage(),
+          ),
           appSkillWorkspaceSettingsRepositoryProvider.overrideWith(
-            (_) => local(),
+            (_) => localStorage(),
           ),
+          skillResourcesRepositoryProvider.overrideWith((_) => localStorage()),
         ],
       );
       addTearDown(container.dispose);
@@ -226,228 +147,25 @@ void main() {
               content: 'Use weather',
             ),
           );
-      await container.read(disableSkillUsecaseProvider(workspaceId))((
-        workspaceId: workspaceId,
-        source: SkillSource.user,
-        kind: SkillKind.template,
-        skillId: skill.id,
-        isEnabled: false,
-        slug: null,
-        title: null,
-        description: null,
-        content: null,
-      ));
-      await container.read(disableSkillUsecaseProvider(workspaceId))((
-        workspaceId: workspaceId,
-        source: SkillSource.app,
-        kind: SkillKind.native,
-        skillId: 'agents',
-        isEnabled: true,
-        slug: 'agents',
-        title: 'Agents',
-        description: 'Run agents',
-        content: 'Run workspace agents',
-      ));
-      await container.read(loadConversationSkillUsecaseProvider(workspaceId))(
-        conversationId: 'conversation-1',
-        workspaceId: workspaceId,
-        slug: 'agents',
-      );
-      await container.read(loadConversationSkillUsecaseProvider(workspaceId))(
-        conversationId: 'conversation-1',
-        workspaceId: workspaceId,
-        slug: 'agents',
-      );
-      expect(
-        resources
-            .where(
-              (item) =>
-                  item.resourceKind ==
-                      WorkspaceResourceKind.conversationSkillSelection &&
-                  item.resourceId == 'conversation-1:agents',
-            )
-            .length,
-        1,
-      );
-      final updatedSkill = await container.read(
+      final updated = await container.read(
         updateSkillUsecaseProvider(workspaceId),
       )(skill.id, const SkillToUpdate(description: 'Updated forecast'));
-      final duplicatedSkill = await container.read(
+      final duplicate = await container.read(
         duplicateSkillUsecaseProvider(workspaceId),
       )(skill.id);
 
-      final definition =
-          await container.read(
-            createSkillCredentialDefinitionUsecaseProvider(workspaceId),
-          )(
-            workspaceId,
-            const SkillCredentialDefinitionToCreate(
-              title: 'API',
-              attributesJson: '{"token":{"description":"Token","secret":true}}',
-            ),
-          );
-      final updatedDefinition =
-          await container.read(
-            updateSkillCredentialDefinitionUsecaseProvider(workspaceId),
-          )(
-            definition.id,
-            const SkillCredentialDefinitionToUpdate(title: 'API Key'),
-          );
-      final credentialSkill =
-          await container.read(createSkillUsecaseProvider(workspaceId))(
-            workspaceId,
-            .new(
-              kind: SkillKind.template,
-              title: 'Protected Weather',
-              description: 'Forecast',
-              content: 'Use weather',
-              credentialDefinitionId: definition.id,
-            ),
-          );
-      final tool =
-          await container.read(
-            createSkillTemplateToolUsecaseProvider(workspaceId),
-          )(
-            credentialSkill.id,
-            const SkillTemplateToolToCreate(
-              templateType: .url,
-              title: 'Forecast',
-              description: 'Get forecast',
-              templateJson:
-                  '{"url":"https://example.com/{{credential.token}}"}',
-              inputsJson: '{}',
-              requiresCredential: true,
-            ),
-          );
-      final updatedTool = await container.read(
-        updateSkillTemplateToolUsecaseProvider(workspaceId),
-      )(tool.id, const SkillTemplateToolToUpdate(description: 'Updated tool'));
-      final duplicatedTool = await container.read(
-        duplicateSkillTemplateToolUsecaseProvider(workspaceId),
-      )(tool.id);
-
-      final credential = await container
-          .read(skillCredentialOperationsProvider(workspaceId))
-          .create(
-            workspaceId,
-            .new(
-              credentialDefinitionId: definition.id,
-              name: 'Primary',
-              attributes: const {'token': 'secret'},
-            ),
-          );
-      final edited = await container
-          .read(skillCredentialOperationsProvider(workspaceId))
-          .getForEdit(credential.id);
-      final updatedCredential = await container
-          .read(skillCredentialOperationsProvider(workspaceId))
-          .update(
-            credential.id,
-            const SkillCredentialToUpdate(
-              name: 'Updated credential',
-              secretAttributes: {'token': 'replacement'},
-            ),
-          );
+      expect(updated.description, 'Updated forecast');
+      expect(duplicate.title, 'Weather Copy');
+      container.invalidate(workspaceSkillsProvider(workspaceId));
       expect(
-        await container.read(
-          checkSkillCredentialReadinessUsecaseProvider(workspaceId),
-        )(workspaceId: workspaceId, skill: credentialSkill),
-        isTrue,
-      );
-      await container.read(loadConversationSkillUsecaseProvider(workspaceId))(
-        conversationId: 'conversation-1',
-        workspaceId: workspaceId,
-        slug: credentialSkill.slug,
-      );
-      await container.read(loadConversationSkillUsecaseProvider(workspaceId))(
-        conversationId: 'conversation-1',
-        workspaceId: workspaceId,
-        slug: credentialSkill.slug,
-      );
-      expect(
-        resources
-            .where(
-              (item) =>
-                  item.resourceKind ==
-                      WorkspaceResourceKind.conversationSkillSelection &&
-                  item.resourceId == 'conversation-1:${credentialSkill.id}',
-            )
-            .length,
-        1,
+        (await container.read(workspaceSkillsProvider(workspaceId).future))
+            .map((item) => item.title),
+        containsAll(['Weather', 'Weather Copy']),
       );
 
-      expect(
-        await container.read(
-          skillTemplateToolsProvider(workspaceId, credentialSkill.id).future,
-        ),
-        isNotEmpty,
-      );
-      expect(
-        await container.read(
-          skillCredentialDefinitionsProvider(workspaceId).future,
-        ),
-        isNotEmpty,
-      );
-      expect(updatedSkill.description, 'Updated forecast');
-      expect(duplicatedSkill.title, 'Weather Copy');
-      expect(updatedDefinition.title, 'API Key');
-      expect(updatedTool.description, 'Updated tool');
-      expect(duplicatedTool.title, 'Forecast Copy');
-      expect(edited?.id, credential.id);
-      expect(updatedCredential.name, 'Updated credential');
-      final managed =
-          await container.read(
-            runSkillsManagerToolUsecaseProvider(workspaceId),
-          )(
-            workspaceId: workspaceId,
-            toolSlug: 'list_user_skills',
-            arguments: const {},
-          );
-      expect((managed as Map)['skills'], isNotEmpty);
-
-      expect(credential.attributes, isEmpty);
-      verify(() => gateway.mutateCredential(any())).called(2);
-
-      await container
-          .read(skillCredentialOperationsProvider(workspaceId))
-          .delete(credential.id);
-      await container.read(deleteSkillTemplateToolProvider(workspaceId))(
-        duplicatedTool.id,
-      );
-      await container.read(deleteSkillTemplateToolProvider(workspaceId))(
-        tool.id,
-      );
-      await container.read(deleteSkillProvider(workspaceId))(
-        credentialSkill.id,
-      );
-      expect(
-        await container.read(
-          deleteSkillCredentialDefinitionUsecaseProvider(workspaceId),
-        )(updatedDefinition.id),
-        isTrue,
-      );
-      await container.read(deleteSkillProvider(workspaceId))(
-        duplicatedSkill.id,
-      );
+      await container.read(deleteSkillProvider(workspaceId))(duplicate.id);
+      await container.read(deleteSkillProvider(workspaceId))(skill.id);
+      expect(resources, isEmpty);
     },
-  );
-}
-
-WorkspaceResource _resource({
-  required WorkspaceResourceKind kind,
-  required String id,
-  required String data,
-  int revision = 1,
-}) {
-  final now = DateTime.utc(2026);
-
-  return WorkspaceResource(
-    workspaceId: 7,
-    resourceKind: kind,
-    resourceId: id,
-    data: data,
-    revision: revision,
-    createdAt: now,
-    updatedAt: now,
   );
 }

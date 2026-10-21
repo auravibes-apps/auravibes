@@ -79,7 +79,7 @@ void main() {
             title: title,
             description: '',
             revision: revision,
-            tools: const [],
+            connectorToolIds: const [],
           ),
         ],
       );
@@ -164,7 +164,7 @@ void main() {
             title: 'Research',
             description: 'Use primary sources.',
             revision: 'r1',
-            tools: const [],
+            connectorToolIds: const [],
           ),
         ],
       );
@@ -249,7 +249,7 @@ void main() {
             title: '<a&b"c\'d>',
             description: '',
             revision: 'r1',
-            tools: [],
+            connectorToolIds: [],
           ),
         ],
       );
@@ -354,14 +354,14 @@ void main() {
               title: 'Skill One',
               description: '',
               revision: 'r1',
-              tools: [],
+              connectorToolIds: const [],
             ),
             SkillManifest(
               slug: 'app_skill',
               title: 'App Skill',
               description: '',
               revision: 'r2',
-              tools: [],
+              connectorToolIds: const [],
             ),
           ],
         );

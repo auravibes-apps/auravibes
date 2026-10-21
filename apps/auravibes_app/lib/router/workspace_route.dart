@@ -23,11 +23,8 @@ import 'package:auravibes_app/features/service_connections/screens/service_conne
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
-import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
-import 'package:auravibes_app/features/skills/screens/skill_credential_definitions_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen.dart';
-import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -160,17 +157,6 @@ abstract class const _AppGoRouteData() extends GoRouteData {
                     ),
                   ],
                 ),
-                TypedGoRoute<SkillCredentialDefinitionsRoute>(
-                  path: 'skill-credential-definitions',
-                  routes: [
-                    TypedGoRoute<SkillCredentialDefinitionCreateRoute>(
-                      path: 'new',
-                    ),
-                    TypedGoRoute<SkillCredentialDefinitionEditRoute>(
-                      path: ':definitionId',
-                    ),
-                  ],
-                ),
               ],
             ),
             TypedShellRoute<AgentsSkillsFeatureShellRouteData>(
@@ -179,12 +165,6 @@ abstract class const _AppGoRouteData() extends GoRouteData {
                   path: 'skills',
                   routes: [
                     TypedGoRoute<SkillCreateRoute>(path: 'new'),
-                    TypedGoRoute<SkillToolCreateRoute>(
-                      path: ':skillId/tools/new',
-                    ),
-                    TypedGoRoute<SkillToolEditRoute>(
-                      path: ':skillId/tools/:toolId',
-                    ),
                     TypedGoRoute<SkillResourceCreateRoute>(
                       path: ':skillId/resources/new',
                     ),
@@ -807,51 +787,6 @@ class SkillDetailRoute({
   }
 }
 
-class SkillToolCreateRoute({
-  required final String workspaceId,
-  required final String skillId,
-}) extends _AppGoRouteData with $SkillToolCreateRoute {
-  final SkillToolEditRouteGuard _exitGuard = .new();
-
-  @override
-  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
-      _canExitDraft(context, state);
-  @override
-  Widget build(BuildContext context, GoRouterState state) =>
-      SkillToolEditScreen(
-        workspaceId: workspaceId,
-        skillId: skillId,
-        routeExitGuard: _exitGuard,
-        key: ValueKey((workspaceId: workspaceId, skillId: skillId)),
-      );
-}
-
-class SkillToolEditRoute({
-  required final String workspaceId,
-  required final String skillId,
-  required final String toolId,
-}) extends _AppGoRouteData with $SkillToolEditRoute {
-  final SkillToolEditRouteGuard _exitGuard = .new();
-
-  @override
-  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
-      _canExitDraft(context, state);
-  @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return SkillToolEditScreen(
-      workspaceId: workspaceId,
-      skillId: skillId,
-      toolId: toolId,
-      routeExitGuard: _exitGuard,
-      key: ValueKey((
-        workspaceId: workspaceId,
-        skillId: skillId,
-        toolId: toolId,
-      )),
-    );
-  }
-}
-
 class SkillResourceCreateRoute({
   required final String workspaceId,
   required final String skillId,
@@ -894,51 +829,6 @@ class SkillResourceEditRoute({
   }
 }
 
-class SkillCredentialDefinitionsRoute({required final String workspaceId})
-    extends _AppGoRouteData
-    with $SkillCredentialDefinitionsRoute {
-  @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return SkillCredentialDefinitionsScreen(workspaceId: workspaceId);
-  }
-}
-
-class SkillCredentialDefinitionCreateRoute({
-  required final String workspaceId,
-  final bool returnCreated = false,
-}) extends _AppGoRouteData with $SkillCredentialDefinitionCreateRoute {
-  @override
-  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
-      _canExitDraft(context, state);
-
-  @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return SkillCredentialDefinitionEditScreen(
-      workspaceId: workspaceId,
-      returnCreated: returnCreated,
-      key: ValueKey(workspaceId),
-    );
-  }
-}
-
-class SkillCredentialDefinitionEditRoute({
-  required final String workspaceId,
-  required final String definitionId,
-}) extends _AppGoRouteData with $SkillCredentialDefinitionEditRoute {
-  @override
-  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
-      _canExitDraft(context, state);
-
-  @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return SkillCredentialDefinitionEditScreen(
-      workspaceId: workspaceId,
-      definitionId: definitionId,
-      key: ValueKey((workspaceId: workspaceId, definitionId: definitionId)),
-    );
-  }
-}
-
 class ServiceConnectionsRoute({
   required final String workspaceId,
   final String? view,
@@ -958,9 +848,7 @@ class ServiceConnectionCreateRoute({
   required final String workspaceId,
   final String? returnPath,
   final String? type,
-  @TypedQueryParameter(name: 'credentialDefinitionId')
-  final String? credentialDefinitionId,
-  @TypedQueryParameter(name: 'appSkillId') final String? appSkillId,
+  @TypedQueryParameter(name: 'connectorId') final String? connectorId,
   @TypedQueryParameter(name: 'modelProviderId') final String? modelProviderId,
 }) extends _AppGoRouteData with $ServiceConnectionCreateRoute {
   @override
@@ -978,9 +866,8 @@ class ServiceConnectionCreateRoute({
     return ServiceConnectionCreateScreen(
       workspaceId: workspaceId,
       initialType: _serviceConnectionCreateType(type),
-      initialCredentialDefinitionId: credentialDefinitionId,
-      initialAppSkillId:
-          appSkillId ?? _serviceConnectionCreateAppSkillId(state),
+      initialConnectorId:
+          connectorId ?? _serviceConnectionCreateConnectorId(state),
       initialModelProviderId: modelProviderId,
       returnPath: _serviceConnectionCreateReturnPath(
         returnPath,
@@ -1000,8 +887,8 @@ Object _serviceConnectionCreateScreenIdentity(
   String query,
 ) => (workspaceId: workspaceId, context: query);
 
-String? _serviceConnectionCreateAppSkillId(GoRouterState state) =>
-    state.uri.queryParameters['appSkillId'];
+String? _serviceConnectionCreateConnectorId(GoRouterState state) =>
+    state.uri.queryParameters['connectorId'];
 
 ServiceConnectionCreateType? _serviceConnectionCreateType(String? type) =>
     ServiceConnectionCreateTypeQuery.fromQueryValue(type);

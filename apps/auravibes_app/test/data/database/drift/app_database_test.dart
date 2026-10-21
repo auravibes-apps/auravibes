@@ -41,7 +41,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 31);
+      expect(fixture.database.schemaVersion, 32);
     });
 
     test('migration from schema 29 adds unbookmarked messages', () async {
@@ -82,6 +82,50 @@ void main() {
           .getSingle();
 
       expect(row.read<String>('connector_tool_ids_json'), '[]');
+    });
+
+    test('migration from schema 31 retires Skill-owned storage', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 31
+        ..execute(
+          'CREATE TABLE service_connections '
+          '(id TEXT PRIMARY KEY, kind TEXT, encrypted_auth_value TEXT)',
+        )
+        ..execute(
+          'INSERT INTO service_connections VALUES (?, ?, ?)',
+          ['skill', 'skillCredential', 'encrypted'],
+        )
+        ..execute(
+          'INSERT INTO service_connections VALUES (?, ?, ?)',
+          ['app-skill', 'appSkillCredential', 'encrypted'],
+        )
+        ..execute(
+          'INSERT INTO service_connections VALUES (?, ?, ?)',
+          ['notion', 'customHttp', 'encrypted'],
+        )
+        ..execute('CREATE TABLE skill_template_tools (id TEXT PRIMARY KEY)')
+        ..execute(
+          'CREATE TABLE skill_credential_definitions (id TEXT PRIMARY KEY)',
+        );
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final connections = await database
+          .customSelect('SELECT id, kind FROM service_connections')
+          .get();
+      final retiredTables = await database
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'table' "
+            "AND name IN ('skill_template_tools', "
+            "'skill_credential_definitions')",
+          )
+          .get();
+
+      expect(connections.map((row) => row.read<String>('id')), ['notion']);
+      expect(connections.single.read<String>('kind'), 'customHttp');
+      expect(retiredTables, isEmpty);
     });
 
     test(
@@ -358,8 +402,6 @@ void main() {
       expect(fixture.database.modelUsageRecordsDao, isNotNull);
       expect(fixture.database.conversationToolsDao, isNotNull);
       expect(fixture.database.skillsDao, isNotNull);
-      expect(fixture.database.skillCredentialDefinitionsDao, isNotNull);
-      expect(fixture.database.skillTemplateToolsDao, isNotNull);
       expect(fixture.database.conversationSkillsDao, isNotNull);
       expect(fixture.database.appSkillWorkspaceSettingsDao, isNotNull);
       expect(fixture.database.recentModelSelectionsDao, isNotNull);

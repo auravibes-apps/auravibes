@@ -47,7 +47,7 @@ void main() {
         'connector/notion/create',
         'connector/notion/search',
       ]);
-      expect(manifests.single.tools, isEmpty);
+      expect(manifests.single.toJson(), isNot(contains('tools')));
       expect(manifests.single.revision, isNotEmpty);
     },
   );

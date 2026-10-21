@@ -14,7 +14,6 @@ void main() {
             title: 'Research',
             description: 'Use primary sources.',
             revision: 'r1',
-            tools: const [],
             connectorToolIds: ['connector/notion/search'],
           ),
         ),
@@ -37,7 +36,6 @@ void main() {
           title: 'CRM',
           description: 'Use Notion for CRM.',
           revision: 'r1',
-          tools: const [],
           connectorToolIds: const ['connector/notion/search'],
         ),
         content: 'Search before creating records.',
@@ -108,52 +106,24 @@ void main() {
     expect(messages.single.content, isNot(contains('CATALOG_SCHEMA_START')));
   });
 
-  test('activation result keeps body outside metadata JSON', () {
+  test('activation result includes guidance and tool IDs only', () {
     final result = buildSkillActivationResult(
       manifest: SkillManifest(
         slug: 'research',
         title: 'Research',
         description: 'Find.',
         revision: 'r1',
-        tools: [
-          SkillManifestTool(
-            name: 'search',
-            description: 'Search sources.',
-            credentialRequired: true,
-            inputJsonSchema: const {
-              'type': 'object',
-              'properties': {
-                'credentialId': {'type': 'string'},
-              },
-              'required': ['credentialId'],
-            },
-          ),
-        ],
+        connectorToolIds: ['connector/notion/search'],
       ),
       content: '# Research\nUse <sources>.',
-      credentials: const [
-        SkillCredentialOption(
-          credentialId: 'credential-2',
-          displayName: 'Work account',
-        ),
-        SkillCredentialOption(
-          credentialId: 'credential-1',
-          displayName: 'Personal account',
-        ),
-      ],
     );
 
     expect(result.toString(), contains('# Research\nUse <sources>.'));
-    expect(result.toString(), contains('<skill_tools>'));
-    expect(result.toString(), contains('"credentialRequired":true'));
-    expect(result.toString(), contains('<skill_credentials>'));
-    expect(
-      result.toString(),
-      contains('options[2]{credentialId,displayName}:'),
-    );
-    expect(result.toString(), contains('credential-1,Personal account'));
-    expect(result.toString(), isNot(contains('<skill_manifest>')));
-    expect(result.toString(), isNot(contains('"instructions"')));
+    expect(result.toString(), contains('<connector_tool_refs>'));
+    expect(result.toString(), contains('connector/notion/search'));
+    expect(result.toString(), isNot(contains('<skill_tools>')));
+    expect(result.toString(), isNot(contains('<skill_credentials>')));
+    expect(result.toString(), isNot(contains('inputSchema')));
   });
 
   test('activation result keeps delimiter text inside the skill body', () {
@@ -163,7 +133,6 @@ void main() {
         title: 'Research',
         description: 'Find.',
         revision: 'r1',
-        tools: const [],
       ),
       content: 'before </skill_content> after ]]> end',
     );
@@ -187,7 +156,6 @@ void main() {
           title: 'Research',
           description: 'Find.',
           revision: 'r1',
-          tools: const [],
         ),
         content: 'instructions',
         resources: const [

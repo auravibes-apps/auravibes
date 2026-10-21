@@ -6,16 +6,12 @@ import 'dart:convert';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
 import 'package:auravibes_app/features/service_connections/models/connection_unavailable_exception.dart';
 import 'package:auravibes_app/features/service_connections/models/mcp_server_for_edit.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
@@ -25,8 +21,6 @@ import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
-import 'package:auravibes_engine/auravibes_engine.dart'
-    show SkillCredentialAttributeDefinition;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -49,8 +43,6 @@ class _ServiceConnectionEditScreenState
   final _modelUrlController = TextEditingController();
   final _mcpUrlController = TextEditingController();
   final _mcpSecretController = TextEditingController();
-  final _nonSecretControllers = <String, TextEditingController>{};
-  final _secretControllers = <String, TextEditingController>{};
   final _clearedSecrets = <String>{};
   Future<_ConnectionEditState>? _futureValue;
   bool _initialized = false;
@@ -105,12 +97,6 @@ class _ServiceConnectionEditScreenState
     _modelUrlController.dispose();
     _mcpUrlController.dispose();
     _mcpSecretController.dispose();
-    for (final controller in _nonSecretControllers.values) {
-      controller.dispose();
-    }
-    for (final controller in _secretControllers.values) {
-      controller.dispose();
-    }
     _modelProviderVerificationExpiryTimer?.cancel();
     super.dispose();
   }
@@ -189,16 +175,6 @@ class _ServiceConnectionEditScreenState
 }
 
 extension _ConnectionEditSaveActions on _ServiceConnectionEditScreenState {
-  Future<void> _saveSkillCredential(BuildContext context) => _saveWithError(
-    context,
-    LocaleKeys.skill_credentials_save_error,
-    () => _updateSkillCredential(
-      ref,
-      widget.workspaceId,
-      _skillCredentialUpdateData(this, widget.connectionId),
-    ),
-  );
-
   Future<void> _saveGenericConnection(
     BuildContext context,
     _GenericServiceConnectionEditState state,
@@ -239,8 +215,6 @@ void _initializeConnectionEditControllers(
     .new(
       nameController: owner._nameController,
       modelUrlController: owner._modelUrlController,
-      nonSecretControllers: owner._nonSecretControllers,
-      secretControllers: owner._secretControllers,
     ),
   );
   if (state case final _McpServerEditState mcpState) {
@@ -279,10 +253,6 @@ extension ServiceConnectionEditUnsavedChanges
     final name = _nameController.text.trim();
 
     return switch (state) {
-      final _SkillCredentialEditState skillState => _skillCredentialSnapshot(
-        skillState,
-        name,
-      ),
       final _ModelProviderEditState modelState => _modelProviderSnapshot(
         modelState,
         name,
@@ -292,37 +262,6 @@ extension ServiceConnectionEditUnsavedChanges
       final _McpServerEditState mcpState => _mcpServerSnapshot(mcpState, name),
     };
   }
-
-  String _skillCredentialSnapshot(
-    _SkillCredentialEditState state,
-    String name,
-  ) {
-    final nonSecretNames = _nonSecretControllers.keys.toList()..sort();
-    final secretNames = _secretControllers.keys.toList()..sort();
-
-    return jsonEncode({
-      'type': 'skillCredential',
-      'connectionId': state.credential.id,
-      'name': name,
-      'nonSecretAttributes': _nonSecretAttributeSnapshots(nonSecretNames),
-      'secretIntents': _secretIntentSnapshots(secretNames),
-    });
-  }
-
-  List<List<String>> _nonSecretAttributeSnapshots(List<String> names) => [
-    for (final name in names) [name, _nonSecretControllers[name]!.text],
-  ];
-
-  List<List<String>> _secretIntentSnapshots(List<String> names) => [
-    for (final name in names)
-      [
-        name,
-        _secretEditFor(
-          _secretControllers[name]!.text,
-          _clearedSecrets.contains(name),
-        ).name,
-      ],
-  ];
 
   String _modelProviderSnapshot(_ModelProviderEditState state, String name) =>
       jsonEncode({
@@ -585,7 +524,7 @@ Future<_ConnectionEditState> _loadConnectionEditState(
   final connection = await _loadMcpOrGenericEditState(operations, connectionId);
   if (connection != null) return connection;
 
-  return await _loadCredentialOrModel(ref, workspaceId, connectionId);
+  return await _loadModelOrThrow(ref, workspaceId, connectionId);
 }
 
 Future<_ConnectionEditState?> _loadMcpOrGenericEditState(
@@ -600,21 +539,6 @@ Future<_ConnectionEditState?> _loadMcpOrGenericEditState(
   return _GenericServiceConnectionEditState(connection: generic);
 }
 
-Future<_ConnectionEditState> _loadCredentialOrModel(
-  WidgetRef ref,
-  String workspaceId,
-  String connectionId,
-) async {
-  final credential = await _loadSkillCredentialForEdit(
-    ref,
-    workspaceId,
-    connectionId,
-  );
-  if (credential != null) return credential;
-
-  return await _loadModelOrThrow(ref, workspaceId, connectionId);
-}
-
 Future<_ConnectionEditState> _loadModelOrThrow(
   WidgetRef ref,
   String workspaceId,
@@ -623,43 +547,6 @@ Future<_ConnectionEditState> _loadModelOrThrow(
   final model = await _loadModelProviderForEdit(ref, workspaceId, connectionId);
   if (model != null) return model;
   throw const ConnectionUnavailableException();
-}
-
-Future<_SkillCredentialEditState?> _loadSkillCredentialForEdit(
-  WidgetRef ref,
-  String workspaceId,
-  String connectionId,
-) async {
-  final credential = await ref
-      .read(skillCredentialOperationsProvider(workspaceId))
-      .getForEdit(connectionId);
-  if (credential == null) return null;
-
-  final definition = await _loadSkillCredentialDefinition(
-    ref,
-    workspaceId,
-    credential.credentialDefinitionId,
-  );
-
-  return _SkillCredentialEditState(
-    credential: credential,
-    definition: definition,
-  );
-}
-
-Future<SkillCredentialDefinitionEntity> _loadSkillCredentialDefinition(
-  WidgetRef ref,
-  String workspaceId,
-  String definitionId,
-) async {
-  final definition = await ref.refresh(
-    skillCredentialDefinitionProvider(workspaceId, definitionId).future,
-  );
-  if (definition == null) {
-    throw const ConnectionUnavailableException();
-  }
-
-  return definition;
 }
 
 Future<_ModelProviderEditState?> _loadModelProviderForEdit(
@@ -679,8 +566,6 @@ Future<_ModelProviderEditState?> _loadModelProviderForEdit(
 class const _ConnectionEditControllers({
   required final TextEditingController nameController,
   required final TextEditingController modelUrlController,
-  required final Map<String, TextEditingController> nonSecretControllers,
-  required final Map<String, TextEditingController> secretControllers,
 });
 
 void _initializeEditControllers(
@@ -688,8 +573,6 @@ void _initializeEditControllers(
   _ConnectionEditControllers controllers,
 ) {
   switch (state) {
-    case final _SkillCredentialEditState skillState:
-      _initializeSkillCredentialControllers(skillState, controllers);
     case final _ModelProviderEditState modelState:
       _initializeModelProviderControllers(modelState, controllers);
     case final _GenericServiceConnectionEditState genericState:
@@ -713,104 +596,6 @@ void _initializeNameController(
 ) {
   controllers.nameController.text = name;
 }
-
-void _initializeSkillCredentialControllers(
-  _SkillCredentialEditState state,
-  _ConnectionEditControllers controllers,
-) {
-  controllers.nameController.text = state.credential.name;
-  final attributes = SkillCredentialAttributeDefinition.parseMap(
-    state.definition.attributesJson,
-  );
-  for (final entry in attributes.entries) {
-    _initializeCredentialAttribute(entry, state.credential, controllers);
-  }
-}
-
-void _initializeCredentialAttribute(
-  MapEntry<String, SkillCredentialAttributeDefinition> entry,
-  SkillCredentialForEdit credential,
-  _ConnectionEditControllers controllers,
-) {
-  if (entry.value.secret) {
-    _initializeSecretController(entry.key, controllers.secretControllers);
-
-    return;
-  }
-
-  _initializeNonSecretController(
-    entry,
-    credential.nonSecretAttributes,
-    controllers.nonSecretControllers,
-  );
-}
-
-void _initializeSecretController(
-  String name,
-  Map<String, TextEditingController> controllers,
-) {
-  final _ = controllers.putIfAbsent(name, TextEditingController.new);
-}
-
-void _initializeNonSecretController(
-  MapEntry<String, SkillCredentialAttributeDefinition> entry,
-  Map<String, String> values,
-  Map<String, TextEditingController> controllers,
-) {
-  final _ = controllers.putIfAbsent(
-    entry.key,
-    () => TextEditingController(text: values[entry.key] ?? ''),
-  );
-}
-
-class const _SkillCredentialUpdateData({
-  required final String connectionId,
-  required final String name,
-  required final Map<String, String> nonSecretAttributes,
-  required final Map<String, String> secretAttributes,
-  required final Set<String> clearSecretAttributeNames,
-});
-
-_SkillCredentialUpdateData _skillCredentialUpdateData(
-  _ServiceConnectionEditScreenState state,
-  String connectionId,
-) => _SkillCredentialUpdateData(
-  connectionId: connectionId,
-  name: state._nameController.text.trim(),
-  nonSecretAttributes: _controllerValues(state._nonSecretControllers),
-  secretAttributes: _nonEmptyControllerValues(state._secretControllers),
-  clearSecretAttributeNames: state._clearedSecrets,
-);
-
-Future<void> _updateSkillCredential(
-  WidgetRef ref,
-  String workspaceId,
-  _SkillCredentialUpdateData data,
-) async {
-  final _ = await ref
-      .read(skillCredentialOperationsProvider(workspaceId))
-      .update(
-        data.connectionId,
-        .new(
-          name: data.name,
-          nonSecretAttributes: data.nonSecretAttributes,
-          secretAttributes: data.secretAttributes,
-          clearSecretAttributeNames: data.clearSecretAttributeNames,
-        ),
-      );
-}
-
-Map<String, String> _controllerValues(
-  Map<String, TextEditingController> controllers,
-) => controllers.map((key, controller) => MapEntry(key, controller.text));
-
-Map<String, String> _nonEmptyControllerValues(
-  Map<String, TextEditingController> controllers,
-) => Map.fromEntries(
-  controllers.entries
-      .map((entry) => MapEntry(entry.key, entry.value.text))
-      .where((entry) => entry.value.isNotEmpty),
-);
 
 class const _ModelProviderUpdateData({
   required final String connectionId,
@@ -995,7 +780,6 @@ class const _ConnectionEditAppBar({
 }
 
 String _connectionEditName(_ConnectionEditState state) => switch (state) {
-  _SkillCredentialEditState(:final credential) => credential.name,
   _ModelProviderEditState(:final connection) => connection.name,
   _GenericServiceConnectionEditState(:final connection) => connection.name,
   _McpServerEditState(:final server) => server.name,
@@ -1110,10 +894,8 @@ String _connectionEditWorkspaceName(WidgetRef ref, String workspaceId) =>
 String _connectionEditTypeLabel(_ConnectionEditState state) => switch (state) {
   _ModelProviderEditState() =>
     LocaleKeys.service_connections_type_model_provider,
-  _SkillCredentialEditState() =>
-    LocaleKeys.service_connections_type_skill_credential,
   _GenericServiceConnectionEditState() =>
-    LocaleKeys.service_connections_type_app_skill_credential,
+    LocaleKeys.service_connections_type_connector,
   _McpServerEditState() => LocaleKeys.service_connections_filter_mcp_servers,
 };
 
@@ -1124,10 +906,6 @@ class const _ConnectionEditFormSelector({
   @override
   Widget build(BuildContext context) {
     return switch (state) {
-      final _SkillCredentialEditState skillState => _SkillCredentialEditForm(
-        state: skillState,
-        owner: owner,
-      ),
       final _ModelProviderEditState modelState => _ModelProviderEditForm(
         state: modelState,
         owner: owner,
@@ -1143,11 +921,6 @@ class const _ConnectionEditFormSelector({
 }
 
 sealed class _ConnectionEditState;
-
-class _SkillCredentialEditState({
-  required final SkillCredentialForEdit credential,
-  required final SkillCredentialDefinitionEntity definition,
-}) extends _ConnectionEditState;
 
 class _ModelProviderEditState({
   required final ModelConnectionForEdit connection,
@@ -1502,22 +1275,6 @@ class const _McpServerEditSecretInput({
   }
 }
 
-class const _SkillCredentialEditForm({
-  required final _SkillCredentialEditState state,
-  required final _ServiceConnectionEditScreenState owner,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return _ConnectionEditFormShell(
-      children: [
-        _ConnectionEditHeader(text: state.definition.title),
-        _SkillCredentialEditFields(state: state, owner: owner),
-        _SkillCredentialEditSaveButton(owner: owner),
-      ],
-    );
-  }
-}
-
 class const _ConnectionEditFormShell({required final List<Widget> children})
     extends StatelessWidget {
   static const _contentPadding = 12.0;
@@ -1567,307 +1324,6 @@ class const _ConnectionEditHeader({required final String text})
   @override
   Widget build(BuildContext context) {
     return AuraText(child: Text(text), style: .heading6);
-  }
-}
-
-class const _SkillCredentialEditSaveButton({
-  required final _ServiceConnectionEditScreenState owner,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return _ConnectionEditSaveButton(
-      onPressed: () => owner._saveSkillCredential(context),
-      isSaving: owner._isSaving,
-      canSave: owner._nameController.text.trim().isNotEmpty,
-    );
-  }
-}
-
-class const _SkillCredentialEditFields({
-  required final _SkillCredentialEditState state,
-  required final _ServiceConnectionEditScreenState owner,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final attributes = SkillCredentialAttributeDefinition.parseMap(
-      state.definition.attributesJson,
-    );
-
-    return AuraColumn(
-      children: [
-        _SkillCredentialNameInput(
-          owner: owner,
-          hasAttributes: attributes.isNotEmpty,
-        ),
-        _SkillCredentialEditAttributes(
-          state: state,
-          owner: owner,
-          attributes: attributes,
-        ),
-      ],
-      spacing: .md,
-      crossAxisAlignment: .start,
-    );
-  }
-}
-
-class const _SkillCredentialNameInput({
-  required final _ServiceConnectionEditScreenState owner,
-  required final bool hasAttributes,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraInput(
-      controller: owner._nameController,
-      label: Text(LocaleKeys.skill_credentials_name_label.tr(context: context)),
-      textInputAction: hasAttributes ? .next : .done,
-      onChanged: (_) => owner._refreshForm(),
-      onSubmitted: _onSubmitted(context),
-    );
-  }
-
-  ValueChanged<String>? _onSubmitted(BuildContext context) =>
-      hasAttributes ||
-          owner._isSaving ||
-          owner._nameController.text.trim().isEmpty
-      ? null
-      : (_) => owner._saveSkillCredential(context);
-}
-
-class const _SkillCredentialEditAttributes({
-  required final _SkillCredentialEditState state,
-  required final _ServiceConnectionEditScreenState owner,
-  required final Map<String, SkillCredentialAttributeDefinition> attributes,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => _SkillCredentialEditAttributeColumn(
-    state: state,
-    owner: owner,
-    attributes: attributes,
-  );
-}
-
-class const _SkillCredentialEditAttributeColumn({
-  required final _SkillCredentialEditState state,
-  required final _ServiceConnectionEditScreenState owner,
-  required final Map<String, SkillCredentialAttributeDefinition> attributes,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final lastKey = attributes.keys.lastOrNull;
-
-    return AuraColumn(
-      children: [
-        for (final entry in attributes.entries)
-          _SkillCredentialEditAttributeInputRow(
-            entry: entry,
-            state: state,
-            owner: owner,
-            isLast: entry.key == lastKey,
-          ),
-      ],
-      spacing: .md,
-      crossAxisAlignment: .start,
-    );
-  }
-}
-
-class const _SkillCredentialEditAttributeInputRow({
-  required final MapEntry<String, SkillCredentialAttributeDefinition> entry,
-  required final _SkillCredentialEditState state,
-  required final _ServiceConnectionEditScreenState owner,
-  required final bool isLast,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => _SkillCredentialAttributeInput(
-    entry,
-    editState: state,
-    owner: owner,
-    textInputAction: isLast ? .done : .next,
-    onSubmitted: _onSubmitted(context),
-  );
-
-  ValueChanged<String>? _onSubmitted(BuildContext context) =>
-      isLast && !owner._isSaving && owner._nameController.text.trim().isNotEmpty
-      ? (_) => owner._saveSkillCredential(context)
-      : null;
-}
-
-abstract class _SkillCredentialAttributeInput extends StatelessWidget {
-  factory(
-    MapEntry<String, SkillCredentialAttributeDefinition> entry, {
-    required _SkillCredentialEditState editState,
-    required _ServiceConnectionEditScreenState owner,
-    required TextInputAction textInputAction,
-    required ValueChanged<String>? onSubmitted,
-  }) {
-    if (entry.value.secret) {
-      return _SecretAttributeInput.fromEntry(
-        entry,
-        editState,
-        owner,
-        textInputAction: textInputAction,
-        onSubmitted: onSubmitted,
-      );
-    }
-
-    return _NonSecretAttributeInput.fromEntry(
-      entry,
-      owner,
-      textInputAction: textInputAction,
-      onSubmitted: onSubmitted,
-    );
-  }
-  const new _();
-}
-
-class _NonSecretAttributeInput extends _SkillCredentialAttributeInput {
-  const new({
-    required this.name,
-    required this.definition,
-    required this.controller,
-    required this.onChanged,
-    required this.textInputAction,
-    required this.onSubmitted,
-  }) : super._();
-
-  new fromEntry(
-    MapEntry<String, SkillCredentialAttributeDefinition> entry,
-    _ServiceConnectionEditScreenState owner, {
-    required TextInputAction textInputAction,
-    required ValueChanged<String>? onSubmitted,
-  }) : this(
-         name: entry.key,
-         definition: entry.value,
-         controller: owner._nonSecretControllers[entry.key],
-         onChanged: owner._refreshForm,
-         textInputAction: textInputAction,
-         onSubmitted: onSubmitted,
-       );
-
-  final String name;
-  final SkillCredentialAttributeDefinition definition;
-  final TextEditingController? controller;
-  final VoidCallback onChanged;
-  final TextInputAction textInputAction;
-  final ValueChanged<String>? onSubmitted;
-
-  @override
-  Widget build(BuildContext context) {
-    final description = definition.description;
-
-    return AuraInput(
-      controller: controller,
-      label: Text(name),
-      hint: description.isEmpty ? null : Text(description),
-      isRequired: !definition.optional,
-      textInputAction: textInputAction,
-      onChanged: (_) => onChanged(),
-      onSubmitted: onSubmitted,
-    );
-  }
-}
-
-class _SecretAttributeInput extends _SkillCredentialAttributeInput {
-  const new({
-    required this.name,
-    required this.definition,
-    required this.state,
-    required this.controller,
-    required this.clearedSecrets,
-    required this.onChanged,
-    required this.textInputAction,
-    required this.onSubmitted,
-  }) : super._();
-
-  new fromEntry(
-    MapEntry<String, SkillCredentialAttributeDefinition> entry,
-    _SkillCredentialEditState editState,
-    _ServiceConnectionEditScreenState owner, {
-    required TextInputAction textInputAction,
-    required ValueChanged<String>? onSubmitted,
-  }) : this(
-         name: entry.key,
-         definition: entry.value,
-         state: editState.credential.secretAttributes[entry.key],
-         controller: owner._secretControllers[entry.key]!,
-         clearedSecrets: owner._clearedSecrets,
-         onChanged: owner._refreshForm,
-         textInputAction: textInputAction,
-         onSubmitted: onSubmitted,
-       );
-
-  final String name;
-  final SkillCredentialAttributeDefinition definition;
-  final SkillCredentialSecretState? state;
-  final TextEditingController controller;
-  final Set<String> clearedSecrets;
-  final VoidCallback onChanged;
-  final TextInputAction textInputAction;
-  final ValueChanged<String>? onSubmitted;
-
-  @override
-  Widget build(BuildContext context) =>
-      _SecretAttributeAuraInput(this, context);
-
-  void _onChanged(String _) {
-    final _ = clearedSecrets.remove(name);
-    onChanged();
-  }
-
-  void _clearSecret() {
-    controller.clear();
-    final _ = clearedSecrets.add(name);
-    onChanged();
-  }
-}
-
-class _SecretAttributeAuraInput extends AuraInput {
-  new(_SecretAttributeInput input, BuildContext context)
-    : super(
-        controller: input.controller,
-        placeholder: switch (_secretPlaceholder(context, input.state)) {
-          final value? => Text(value),
-          _ => null,
-        },
-        label: Text(input.name),
-        hint: _descriptionHint(input.definition.description),
-        isRequired: !input.definition.optional,
-        suffixIcon: input.definition.optional
-            ? _SecretAttributeClearButton(onPressed: input._clearSecret)
-            : null,
-        keyboardType: .visiblePassword,
-        obscureText: true,
-        textInputAction: input.textInputAction,
-        onChanged: input._onChanged,
-        onSubmitted: input.onSubmitted,
-      );
-}
-
-String? _secretPlaceholder(
-  BuildContext context,
-  SkillCredentialSecretState? state,
-) {
-  if (state?.hasValue != true) return null;
-  final suffix = state?.keySuffix == null ? '' : ' ****${state?.keySuffix}';
-
-  return '${LocaleKeys.skill_credentials_secret_saved.tr(context: context)}'
-      '$suffix';
-}
-
-Text? _descriptionHint(String description) {
-  return description.isEmpty ? null : Text(description);
-}
-
-class const _SecretAttributeClearButton({required final VoidCallback onPressed})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraIconButton(
-      icon: Icons.clear,
-      onPressed: onPressed,
-      tooltip: LocaleKeys.skill_credentials_clear_secret.tr(context: context),
-    );
   }
 }
 
@@ -2077,7 +1533,9 @@ class const _GenericServiceConnectionNameInput({
   Widget build(BuildContext context) {
     return AuraInput(
       controller: owner._nameController,
-      label: Text(LocaleKeys.skill_credentials_name_label.tr(context: context)),
+      label: Text(
+        LocaleKeys.service_connections_create_name_label.tr(context: context),
+      ),
       textInputAction: .next,
       onChanged: (_) => owner._refreshForm(),
     );
@@ -2137,7 +1595,9 @@ class _GenericServiceConnectionSecretAuraInput extends AuraInput {
 }
 
 String _modelProviderKeyPlaceholder(BuildContext context, String? suffix) {
-  final label = LocaleKeys.skill_credentials_secret_saved.tr(context: context);
+  final label = LocaleKeys.service_connections_secret_saved.tr(
+    context: context,
+  );
 
   return suffix == null ? label : '$label ****$suffix';
 }
@@ -2149,7 +1609,9 @@ class const _GenericSecretClearButton({required final VoidCallback onPressed})
     return AuraIconButton(
       icon: Icons.clear,
       onPressed: onPressed,
-      tooltip: LocaleKeys.skill_credentials_clear_secret.tr(context: context),
+      tooltip: LocaleKeys.service_connections_clear_secret.tr(
+        context: context,
+      ),
     );
   }
 }
@@ -2160,7 +1622,9 @@ String? _genericSecretPlaceholder(
   String? suffix,
 ) {
   if (!hasSavedSecret) return null;
-  final label = LocaleKeys.skill_credentials_secret_saved.tr(context: context);
+  final label = LocaleKeys.service_connections_secret_saved.tr(
+    context: context,
+  );
   final suffixText = suffix == null ? '' : ' ****$suffix';
 
   return '$label$suffixText';

@@ -8,25 +8,7 @@ typedef SkillControlToolRequest = ({
   Map<String, dynamic> arguments,
 });
 
-typedef SkillTemplateToolRequest = ({
-  String conversationId,
-  String toolCallId,
-  String workspaceId,
-  String skillSlug,
-  String toolSlug,
-  Map<String, dynamic> arguments,
-});
-
 typedef SkillNativeToolRequest = ({
-  String conversationId,
-  String toolCallId,
-  String workspaceId,
-  String skillSlug,
-  String toolSlug,
-  Map<String, dynamic> arguments,
-});
-
-typedef SkillAppTemplateToolRequest = ({
   String conversationId,
   String toolCallId,
   String workspaceId,
@@ -76,11 +58,7 @@ abstract interface class ResolvedToolProvider<TTool> {
 
   Future<Object?> runSkillControlTool(SkillControlToolRequest request);
 
-  Future<Object?> runSkillTemplateTool(SkillTemplateToolRequest request);
-
   Future<Object?> runSkillNativeTool(SkillNativeToolRequest request);
-
-  Future<Object?> runSkillAppTemplateTool(SkillAppTemplateToolRequest request);
 }
 
 class const AgentResolvedToolExecution<TTool>({
@@ -134,19 +112,7 @@ class const ResolvedToolService<TTool>({
         descriptor,
         arguments,
       ),
-      .skillTemplate => _runSkillTemplateTool(
-        conversationId,
-        toolCallId,
-        descriptor,
-        arguments,
-      ),
       .skillNative => _runSkillNativeTool(
-        conversationId,
-        toolCallId,
-        descriptor,
-        arguments,
-      ),
-      .skillAppTemplate => _runSkillAppTemplateTool(
         conversationId,
         toolCallId,
         descriptor,
@@ -242,30 +208,6 @@ class const ResolvedToolService<TTool>({
     ));
   }
 
-  Future<Object?> _runSkillTemplateTool(
-    String conversationId,
-    String toolCallId,
-    AgentResolvedToolName descriptor,
-    Map<String, dynamic> arguments,
-  ) async {
-    final skillSlug = descriptor.skillSlug;
-    if (skillSlug == null || skillSlug.isEmpty) {
-      throw StateError('Skill template tool is missing skill slug.');
-    }
-    final workspaceId = await provider.getConversationWorkspaceId(
-      conversationId,
-    );
-
-    return await provider.runSkillTemplateTool((
-      conversationId: conversationId,
-      toolCallId: toolCallId,
-      workspaceId: workspaceId,
-      skillSlug: skillSlug,
-      toolSlug: descriptor.toolIdentifier,
-      arguments: arguments,
-    ));
-  }
-
   Future<Object?> _runSkillNativeTool(
     String conversationId,
     String toolCallId,
@@ -294,27 +236,4 @@ class const ResolvedToolService<TTool>({
     ));
   }
 
-  Future<Object?> _runSkillAppTemplateTool(
-    String conversationId,
-    String toolCallId,
-    AgentResolvedToolName descriptor,
-    Map<String, dynamic> arguments,
-  ) async {
-    final skillSlug = descriptor.skillSlug;
-    if (skillSlug == null || skillSlug.isEmpty) {
-      throw StateError('App skill template tool is missing skill slug.');
-    }
-    final workspaceId = await provider.getConversationWorkspaceId(
-      conversationId,
-    );
-
-    return await provider.runSkillAppTemplateTool((
-      conversationId: conversationId,
-      toolCallId: toolCallId,
-      workspaceId: workspaceId,
-      skillSlug: skillSlug,
-      toolSlug: descriptor.toolIdentifier,
-      arguments: arguments,
-    ));
-  }
 }

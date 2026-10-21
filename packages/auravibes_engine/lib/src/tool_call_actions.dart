@@ -159,9 +159,7 @@ class const ApproveToolCallService<TTool extends Object>({
       await provider.updateToolCallResult((
         messageId: messageId,
         toolCallId: toolCallId,
-        resultStatus: toolCall.name == callSkillToolName
-            ? .notConfigured
-            : .toolNotFound,
+        resultStatus: .toolNotFound,
         conversationId: conversationId,
         responseRaw: null,
         responseContextRaw: null,

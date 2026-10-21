@@ -1,20 +1,6 @@
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-const String _createTemplateTitleKey =
-    LocaleKeys.app_skills_skills_manager_tools_create_skill_template_tool_title;
-const String _createTemplateDescriptionKey = LocaleKeys
-    .app_skills_skills_manager_tools_create_skill_template_tool_description;
-const String _updateTemplateTitleKey =
-    LocaleKeys.app_skills_skills_manager_tools_update_skill_template_tool_title;
-const String _updateTemplateDescriptionKey = LocaleKeys
-    .app_skills_skills_manager_tools_update_skill_template_tool_description;
-const String _createCredentialDefinitionTitleKey = LocaleKeys
-    .app_skills_skills_manager_tools_create_skill_credential_definition_title;
-const String _createCredentialDescriptionKey =
-    'app_skills.skills_manager.tools.'
-    'create_skill_credential_definition.description';
-
 class const AppSkillRegistry() {
   static const browserSkillSlug = 'browser';
   List<AppSkillDefinition> getAll() => [
@@ -630,23 +616,53 @@ AppSkillToolDefinition _localizedTool(AppSkillToolDefinition tool) =>
     );
 
 String? _toolTitleKey(String slug) => switch (slug) {
+  'list_user_skills' =>
+    LocaleKeys.app_skills_skills_manager_tools_list_user_skills_title,
+  'get_user_skill' =>
+    LocaleKeys.app_skills_skills_manager_tools_get_user_skill_title,
   'create_user_skill' =>
     LocaleKeys.app_skills_skills_manager_tools_create_user_skill_title,
   'update_user_skill' =>
     LocaleKeys.app_skills_skills_manager_tools_update_user_skill_title,
-  'create_skill_template_tool' => _createTemplateTitleKey,
-  'update_skill_template_tool' => _updateTemplateTitleKey,
-  'create_skill_credential_definition' => _createCredentialDefinitionTitleKey,
+  'delete_user_skill' =>
+    LocaleKeys.app_skills_skills_manager_tools_delete_user_skill_title,
+  'list_skill_resources' =>
+    LocaleKeys.app_skills_skills_manager_tools_list_skill_resources_title,
+  'get_skill_resource' =>
+    LocaleKeys.app_skills_skills_manager_tools_get_skill_resource_title,
+  'create_skill_resource' =>
+    LocaleKeys.app_skills_skills_manager_tools_create_skill_resource_title,
+  'update_skill_resource' =>
+    LocaleKeys.app_skills_skills_manager_tools_update_skill_resource_title,
+  'delete_skill_resource' =>
+    LocaleKeys.app_skills_skills_manager_tools_delete_skill_resource_title,
+  'clone_app_skill' =>
+    LocaleKeys.app_skills_skills_manager_tools_clone_app_skill_title,
   _ => null,
 };
 
 String? _toolDescriptionKey(String slug) => switch (slug) {
+  'list_user_skills' =>
+    LocaleKeys.app_skills_skills_manager_tools_list_user_skills_description,
+  'get_user_skill' =>
+    LocaleKeys.app_skills_skills_manager_tools_get_user_skill_description,
   'create_user_skill' =>
     LocaleKeys.app_skills_skills_manager_tools_create_user_skill_description,
   'update_user_skill' =>
     LocaleKeys.app_skills_skills_manager_tools_update_user_skill_description,
-  'create_skill_template_tool' => _createTemplateDescriptionKey,
-  'update_skill_template_tool' => _updateTemplateDescriptionKey,
-  'create_skill_credential_definition' => _createCredentialDescriptionKey,
+  'delete_user_skill' =>
+    LocaleKeys.app_skills_skills_manager_tools_delete_user_skill_description,
+  'list_skill_resources' => LocaleKeys
+      .app_skills_skills_manager_tools_list_skill_resources_description,
+  'get_skill_resource' =>
+    LocaleKeys.app_skills_skills_manager_tools_get_skill_resource_description,
+  'create_skill_resource' => LocaleKeys
+      .app_skills_skills_manager_tools_create_skill_resource_description,
+  'update_skill_resource' => LocaleKeys
+      .app_skills_skills_manager_tools_update_skill_resource_description,
+  'delete_skill_resource' => LocaleKeys
+      .app_skills_skills_manager_tools_delete_skill_resource_description,
+  'clone_app_skill' =>
+    LocaleKeys.app_skills_skills_manager_tools_clone_app_skill_description,
   _ => null,
 };

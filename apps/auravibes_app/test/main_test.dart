@@ -131,15 +131,15 @@ void main() {
       );
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/skills/skill-1/tools/1',
+          '/workspaces/ws-1/skills/skill-1',
         ),
         LocaleKeys.skills_screen_title,
       );
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/skill-credential-definitions/1',
+          '/workspaces/ws-1/service-connections/new?type=connector&connectorId=jina',
         ),
-        LocaleKeys.skill_credentials_definitions_title,
+        LocaleKeys.service_connections_title,
       );
       expect(
         app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/agents/agent-1'),

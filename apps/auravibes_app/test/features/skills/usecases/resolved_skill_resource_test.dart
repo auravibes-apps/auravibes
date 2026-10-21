@@ -363,7 +363,6 @@ SkillEntity _skill({required String slug, String id = 'skill-1'}) =>
       description: 'Custom description',
       content: 'Custom content',
       isEnabled: true,
-      isCredentialOptional: false,
       createdAt: .utc(2026),
       updatedAt: .utc(2026),
     );

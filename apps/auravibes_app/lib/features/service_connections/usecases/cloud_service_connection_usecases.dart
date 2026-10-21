@@ -77,7 +77,7 @@ class const CloudServiceConnectionUsecases(
         kind: .serviceConnection,
         id: connection.id,
         resourceRevision: connection.revision,
-        secretKind: .skillCredential,
+        secretKind: .provider,
         scope: connection.scope,
         secret: null,
         clearSecret: true,
@@ -117,7 +117,7 @@ Map<String, String> _createData(_CreateRequest request) => {
   'name': request.name,
   'serviceId': request.serviceId,
   'scope': request.scope.name,
-  'kind': 'appSkillCredential',
+  'kind': 'customHttp',
 };
 
 Future<void> _updateGeneric(
@@ -187,7 +187,7 @@ Future<void> _mutateSecret(
     id: connection.id,
     data: request.data,
     resourceRevision: connection.revision,
-    secretKind: .skillCredential,
+    secretKind: .provider,
     scope: connection.scope,
     secret: request.secret,
     clearSecret: request.clearSecret,

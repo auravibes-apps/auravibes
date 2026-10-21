@@ -1,9 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/agents_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
@@ -28,15 +26,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/database/drift/database_test_utils.dart';
 
-/// Local persisted objects and production routes; no remote credential calls.
+/// Local persisted objects and production routes; no remote writes.
 class UxValidationFixture {
   new _(
     this.database,
     this.workspaceId,
     this.skillId,
     this.resourceId,
-    this.toolId,
-    this.definitionId,
     this.agentId,
     this.chatId,
     this.childId,
@@ -46,8 +42,6 @@ class UxValidationFixture {
   final String workspaceId;
   final String skillId;
   final String resourceId;
-  final String toolId;
-  final String definitionId;
   final String agentId;
   final String chatId;
   final String childId;
@@ -64,18 +58,10 @@ class UxValidationFixture {
     final database = _database ??= .new(connection: NativeDatabase.memory());
     if (!isNewDatabase) await clearAppDatabase(database);
     if (empty) {
-      return UxValidationFixture._(database, '', '', '', '', '', '', '', '');
+      return UxValidationFixture._(database, '', '', '', '', '', '');
     }
     final workspace = await WorkspaceRepository(database)
         .createWorkspace(const .new(name: 'Design studio', type: .local));
-    final definition = await SkillCredentialDefinitionsRepository(database)
-        .createDefinition(
-          workspace.id,
-          const .new(
-            title: 'Research access',
-            attributesJson: '{"api_key":{"description":"API key"}}',
-          ),
-        );
     final skills = SkillsRepository(database);
     final skill = await skills.createSkill(
       workspace.id,
@@ -84,7 +70,6 @@ class UxValidationFixture {
         title: 'Research notes',
         description: 'Collect cited findings for a project.',
         content: '# Research\n\nKeep sources alongside every finding.',
-        credentialDefinitionId: definition.id,
       ),
     );
     final _ = await skills.createSkill(
@@ -103,16 +88,6 @@ class UxValidationFixture {
         title: 'Writing guide',
         description: 'A short guide to clear evidence.',
         content: '# Evidence\n\nKeep findings concise and cite sources.',
-      ),
-    );
-    final tool = await SkillTemplateToolsRepository(database).createTool(
-      skill.id,
-      const .new(
-        templateType: .url,
-        title: 'Search references',
-        description: 'Search a public reference index.',
-        templateJson: '{"url":"https://example.test/search","method":"GET"}',
-        inputsJson: '{}',
       ),
     );
     final agent = await AgentsRepository(database).createAgent(
@@ -159,8 +134,6 @@ class UxValidationFixture {
       workspace.id,
       skill.id,
       resource.id,
-      tool.id,
-      definition.id,
       agent.id,
       chat.id,
       child.id,

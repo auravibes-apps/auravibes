@@ -1,8 +1,8 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_credential_attribute_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_credential_attribute_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_input_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_request_template.dart';
 
 const Map<String, Object> _inputSchema = {
   'type': 'object',
@@ -22,12 +22,12 @@ const Map<String, Object> _inputSchema = {
 };
 
 const _credentialDefinitions = {
-  'baseUrl': SkillCredentialAttributeDefinition(
+  'baseUrl': ConnectorCredentialAttributeDefinition(
     description: 'SearXNG instance base URL.',
   ),
 };
 
-const searXngSkill = AppSkillDefinition(
+final searXngSkill = ServiceSkillPreset(
   identifier: 'searxng',
   slug: 'searxng',
   title: 'SearXNG',
@@ -37,17 +37,15 @@ Use SearXNG when the user has a trusted metasearch instance and wants results
 aggregated from that instance. The instance is selected from configured
 workspace credentials.
   ''',
-  requiresCredential: true,
-  kind: .template,
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search a configured SearXNG instance.',
       inputJsonSchema: _inputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: .new(
-        template: SkillUrlTemplate(
+        template: ConnectorRequestTemplate(
           url: '{{ credential.baseUrl }}/search',
           query: {
             'q': '{{ input.query }}',
@@ -63,38 +61,38 @@ workspace credentials.
           },
         ),
         inputs: {
-          'query': SkillTemplateInputDefinition(description: 'Search query.'),
-          'categories': SkillTemplateInputDefinition(
+          'query': ConnectorToolInputDefinition(description: 'Search query.'),
+          'categories': ConnectorToolInputDefinition(
             description: 'Optional SearXNG categories.',
             optional: true,
           ),
-          'engines': SkillTemplateInputDefinition(
+          'engines': ConnectorToolInputDefinition(
             description: 'Optional SearXNG engines.',
             optional: true,
           ),
-          'language': SkillTemplateInputDefinition(
+          'language': ConnectorToolInputDefinition(
             description: 'Optional result language.',
             optional: true,
           ),
-          'pageno': SkillTemplateInputDefinition(
+          'pageno': ConnectorToolInputDefinition(
             description: 'Optional page number.',
             type: 'integer',
             optional: true,
           ),
-          'timeRange': SkillTemplateInputDefinition(
+          'timeRange': ConnectorToolInputDefinition(
             description: 'Optional time range.',
             optional: true,
           ),
-          'safesearch': SkillTemplateInputDefinition(
+          'safesearch': ConnectorToolInputDefinition(
             description: 'Optional safesearch level.',
             type: 'integer',
             optional: true,
           ),
-          'autocomplete': SkillTemplateInputDefinition(
+          'autocomplete': ConnectorToolInputDefinition(
             description: 'Optional autocomplete backend.',
             optional: true,
           ),
-          'imageProxy': SkillTemplateInputDefinition(
+          'imageProxy': ConnectorToolInputDefinition(
             description: 'Whether to proxy image URLs.',
             type: 'boolean',
             optional: true,

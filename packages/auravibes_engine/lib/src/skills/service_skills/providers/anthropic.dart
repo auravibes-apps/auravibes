@@ -1,8 +1,8 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-final anthropicSkill = AppSkillDefinition(
+final anthropicSkill = ServiceSkillPreset(
   identifier: 'anthropic',
   slug: 'anthropic',
   title: 'Anthropic',
@@ -11,16 +11,14 @@ final anthropicSkill = AppSkillDefinition(
 Use Anthropic when Claude should answer with current web information or inspect
 a public URL. Prefer it when the conversation already uses Anthropic models.
 ''',
-  requiresCredential: true,
   compatibleModelProviderIds: ['anthropic'],
-  kind: .template,
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'web_search',
       title: 'Web search',
       description: 'Answer a question using Claude web search.',
       inputJsonSchema: _webSearchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.anthropic.com/v1/messages',
         inputSchema: _webSearchInputSchema,
@@ -33,12 +31,12 @@ a public URL. Prefer it when the conversation already uses Anthropic models.
         bodyFormat: .json,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'web_fetch',
       title: 'Web fetch',
       description: 'Ask Claude to inspect and summarize a public URL.',
       inputJsonSchema: _webFetchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.anthropic.com/v1/messages',
         inputSchema: _webFetchInputSchema,

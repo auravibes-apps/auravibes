@@ -6,8 +6,8 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
-import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/connector_tool_reference_readiness.dart';
+import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' show AppSkillDefinition;
@@ -47,10 +47,8 @@ class const LoadConversationSkillUsecase(
   final ConversationSkillsRepository? _conversationSkillsRepository,
   final AppSkillWorkspaceSettingsRepository? _appSkillSettingsRepository,
   final AppSkillRegistry _appSkillRegistry, [
-  final CheckSkillCredentialReadinessUsecase?
-  _checkSkillCredentialReadinessUsecase,
-  final ListAppSkillCredentialCandidatesUsecase?
-  _listAppSkillCredentialCandidatesUsecase,
+  final ListConnectorConnectionCandidatesUsecase?
+  _listConnectorConnectionCandidatesUsecase,
   final CloudSkillStore? cloudStore,
   final Future<bool> Function(String conversationId)? _isTopLevelConversation,
 ]) {
@@ -155,7 +153,7 @@ extension on LoadConversationSkillUsecase {
     if (await _isUserSkillReady(workspaceId, skill, cloud)) return;
 
     throw const LoadConversationSkillException(
-      LocaleKeys.skills_screen_error_requires_credential,
+      LocaleKeys.skills_screen_error_requires_connection,
     );
   }
 
@@ -207,18 +205,33 @@ extension on LoadConversationSkillUsecase {
     SkillEntity skill,
     CloudSkillStore? cloud,
   ) async {
-    if (cloud != null) return await cloud.userSkillReady(skill);
+    if (skill.connectorToolIds.isNotEmpty) {
+      return await _connectorToolsReady(workspaceId, skill.connectorToolIds);
+    }
 
-    final readinessUsecase = _checkSkillCredentialReadinessUsecase;
-
-    return readinessUsecase == null ||
-        await readinessUsecase.call(workspaceId: workspaceId, skill: skill);
+    return true;
   }
 
+  Future<bool> _connectorToolsReady(
+    String workspaceId,
+    List<String> connectorToolIds,
+  ) async {
+    final credentialCandidates = _listConnectorConnectionCandidatesUsecase;
+
+    return credentialCandidates != null &&
+        await ConnectorToolReferenceReadiness.areReady(
+          connectorToolIds: connectorToolIds,
+          workspaceId: workspaceId,
+          credentialCandidates: credentialCandidates,
+        );
+  }
+}
+
+extension on LoadConversationSkillUsecase {
   Future<void> _loadAppSkill(_AppSkillLoadRequest request) async {
     final skill = request.skill;
     await _ensureAppSkillEnabled(request.workspaceId, skill, request.cloud);
-    await _ensureAppSkillCredentials(request.workspaceId, skill);
+    await _ensureAppSkillConnectors(request.workspaceId, skill);
     await _persistAppSkill(
       request.conversationId,
       skill.identifier,
@@ -269,38 +282,60 @@ extension on LoadConversationSkillUsecase {
     CloudSkillStore? cloud,
   ) async {
     if (skill.contentOnly) return;
-    final repository = _appSkillSettingsRepository;
-    final isEnabled = cloud == null
-        ? await (repository ??
-                  (throw StateError('App skill settings store is unavailable')))
-              .isAppSkillEnabled(workspaceId, skill.identifier)
-        : await cloud.isAppSkillEnabled(skill.identifier);
-    if (!isEnabled) {
-      throw const LoadConversationSkillException(
-        LocaleKeys.skills_screen_error_app_skill_disabled,
-      );
-    }
-  }
-
-  Future<void> _ensureAppSkillCredentials(
-    String workspaceId,
-    AppSkillDefinition skill,
-  ) async {
-    if (skill.contentOnly) return;
-    final usecase = _listAppSkillCredentialCandidatesUsecase;
-    if (usecase == null) return;
-    if (await usecase.hasUsableNativeTool(
-      workspaceId: workspaceId,
-      skill: skill,
-    )) {
+    final isEnabled = await _isAppSkillEnabled(workspaceId, skill, cloud);
+    if (isEnabled ||
+        await _hasCredentialConnectorConnection(workspaceId, skill)) {
       return;
     }
 
     throw const LoadConversationSkillException(
-      LocaleKeys.skills_screen_error_requires_credential,
+      LocaleKeys.skills_screen_error_app_skill_disabled,
     );
   }
 
+  Future<bool> _isAppSkillEnabled(
+    String workspaceId,
+    AppSkillDefinition skill,
+    CloudSkillStore? cloud,
+  ) async {
+    if (cloud != null) return await cloud.isAppSkillEnabled(skill.identifier);
+
+    final repository = _appSkillSettingsRepository;
+    if (repository == null) {
+      throw StateError('App skill settings store is unavailable');
+    }
+
+    return await repository.isAppSkillEnabled(workspaceId, skill.identifier);
+  }
+
+  Future<bool> _hasCredentialConnectorConnection(
+    String workspaceId,
+    AppSkillDefinition skill,
+  ) async {
+    final candidates = _listConnectorConnectionCandidatesUsecase;
+    if (candidates == null || skill.connectorToolIds.isEmpty) return false;
+
+    return await ConnectorToolReferenceReadiness.areReady(
+      connectorToolIds: skill.connectorToolIds,
+      workspaceId: workspaceId,
+      credentialCandidates: candidates,
+    );
+  }
+
+  Future<void> _ensureAppSkillConnectors(
+    String workspaceId,
+    AppSkillDefinition skill,
+  ) async {
+    if (skill.contentOnly || skill.connectorToolIds.isEmpty) return;
+    if (await _connectorToolsReady(workspaceId, skill.connectorToolIds)) return;
+
+    throw const LoadConversationSkillException(
+      LocaleKeys.skills_screen_error_requires_connection,
+    );
+  }
+}
+
+extension on LoadConversationSkillUsecase {
   Future<bool> _isTopLevel(String conversationId) async {
     final checker = _isTopLevelConversation;
     if (checker == null) return false;
@@ -322,8 +357,7 @@ loadConversationSkillUsecaseProvider =
             ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
             : null,
         ref.watch(appSkillRegistryProvider),
-        ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
-        ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
+        ref.watch(listConnectorConnectionCandidatesUsecaseProvider),
         cloud,
         (conversationId) async {
           final conversation = await conversationRepository.getConversationById(

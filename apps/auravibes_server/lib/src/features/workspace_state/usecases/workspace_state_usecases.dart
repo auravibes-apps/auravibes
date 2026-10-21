@@ -11,8 +11,6 @@ import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
-import 'credential_definition_safety.dart';
-import 'credential_write_safety.dart';
 
 typedef _OperationCommitMetadata = ({
   String userId,
@@ -356,17 +354,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (request.expectedRevision != existing?.revision) _staleRevision();
       final now = DateTime.now().toUtc();
-      final secret = await _mergedSecret(
-        session,
-        request: request,
-        existing: existing,
-      );
-      await CredentialWriteSafety.validateSecret(
-        session,
-        request: request,
-        secret: secret,
-        transaction: transaction,
-      );
+      final secret = request.secret;
       final revision = (existing?.revision ?? 0) + 1;
       final box = secret == null
           ? null
@@ -450,17 +438,17 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     if (request.requestId.isEmpty || operation.resourceId.isEmpty) {
       _validationFailed();
     }
-    final isServiceCredential =
+    final isServiceConnection =
         operation.resourceKind == WorkspaceResourceKind.serviceConnection &&
-        request.secretKind == WorkspaceSecretKind.skillCredential;
-    final deletesServiceCredential =
-        isServiceCredential &&
+        request.secretKind == WorkspaceSecretKind.provider;
+    final deletesServiceConnection =
+        isServiceConnection &&
         operation.operation == WorkspacePatchOperationKind.delete;
     final isMcpCredential =
         operation.resourceKind == WorkspaceResourceKind.mcpServer &&
         request.secretKind == WorkspaceSecretKind.mcp &&
         request.scope == WorkspaceSecretScope.workspace;
-    if (!isServiceCredential && !isMcpCredential) {
+    if (!isServiceConnection && !isMcpCredential) {
       _validationFailed();
     }
     if (isMcpCredential &&
@@ -524,7 +512,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         resourceId: operation.resourceId,
         transaction: transaction,
       );
-      final writesSecret = deletesServiceCredential
+      final writesSecret = deletesServiceConnection
           ? existing != null && existing.deletedAt == null
           : request.secret != null ||
                 (request.clearSecret && existing?.deletedAt == null);
@@ -542,26 +530,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         }
         expectedSecretRevision = existing?.revision;
       }
-      final isSkillCredential =
-          operation.operation != WorkspacePatchOperationKind.delete &&
-          operation.resourceKind == WorkspaceResourceKind.serviceConnection &&
-          _credentialKind(operation) == 'skillCredential';
       final secret = writesSecret
-          ? isSkillCredential
-                ? await _mergedSecret(
-                    session,
-                    request: PutWorkspaceSecretRequest(
-                      workspaceId: request.workspaceId,
-                      requestId: request.requestId,
-                      secretKind: request.secretKind,
-                      scope: request.scope,
-                      resourceId: operation.resourceId,
-                      secret: request.clearSecret ? null : request.secret,
-                      expectedRevision: expectedSecretRevision,
-                    ),
-                    existing: existing,
-                  )
-                : request.clearSecret || deletesServiceCredential
+          ? request.clearSecret || deletesServiceConnection
                 ? null
                 : request.secret
           : existing != null && existing.deletedAt == null
@@ -1239,20 +1209,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
     }
-    await CredentialWriteSafety.validate(
-      session,
-      operation: operation,
-      workspaceId: workspaceId,
-      transaction: transaction,
-      preparedSecret: credentialSecret,
-    );
-    await CredentialDefinitionSafety.validate(
-      session,
-      operation: operation,
-      existing: existing,
-      workspaceId: workspaceId,
-      transaction: transaction,
-    );
     if (operation.operation == WorkspacePatchOperationKind.create) {
       if (existing != null ||
           operation.data == null ||
@@ -1407,60 +1363,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
 
   String _suffix(String secret) =>
       secret.length <= 4 ? '••••' : secret.substring(secret.length - 4);
-
-  Future<String?> _mergedSecret(
-    Session session, {
-    required PutWorkspaceSecretRequest request,
-    required WorkspaceSecret? existing,
-  }) async {
-    final value = request.secret;
-    if (value == null ||
-        request.secretKind != WorkspaceSecretKind.skillCredential) {
-      return value;
-    }
-    final decoded = _credentialPatch(value);
-    final merged = existing == null || existing.deletedAt != null
-        ? <String, String>{}
-        : Map<String, String>.from(
-            jsonDecode(
-              await const WorkspaceSecretCipher().decrypt(
-                session,
-                existing,
-              ),
-            ) as Map,
-          );
-    merged.addAll(decoded.set);
-    for (final key in decoded.clear) {
-      merged.remove(key);
-    }
-    return merged.isEmpty ? null : jsonEncode(merged);
-  }
-
-  ({Map<String, String> set, List<String> clear}) _credentialPatch(
-    String value,
-  ) {
-    try {
-      final decoded = jsonDecode(value);
-      if (decoded is! Map ||
-          decoded['set'] is! Map ||
-          decoded['clear'] is! List) {
-        _validationFailed();
-      }
-      final set = <String, String>{};
-      for (final entry in (decoded['set'] as Map).entries) {
-        if (entry.key is! String || entry.value is! String) _validationFailed();
-        set[entry.key as String] = entry.value as String;
-      }
-      final clear = <String>[];
-      for (final key in decoded['clear'] as List) {
-        if (key is! String) _validationFailed();
-        clear.add(key);
-      }
-      return (set: set, clear: clear);
-    } on FormatException {
-      _validationFailed();
-    }
-  }
 
   Never _validationFailed() => throw CloudWorkspaceException(
     code: CloudWorkspaceErrorCode.validationFailed,

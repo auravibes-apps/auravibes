@@ -1,6 +1,6 @@
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/skill_tool_materialization.dart';
+import 'package:auravibes_engine/src/tool_schema_strictification.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
 
 const skillsManagerSkillSlug = 'skills_manager';
@@ -32,7 +32,7 @@ Only create user skills from explicit user intent.
     AppSkillToolDefinition(
       slug: 'create_user_skill',
       title: 'Create user skill',
-      description: 'Create a user-owned template skill.',
+      description: 'Create a user-owned Skill.',
     ),
     AppSkillToolDefinition(
       slug: 'update_user_skill',
@@ -75,56 +75,6 @@ Only create user skills from explicit user intent.
       description:
           'Clone a declarative built-in service skill as a user skill.',
     ),
-    AppSkillToolDefinition(
-      slug: 'list_skill_template_tools',
-      title: 'List skill template tools',
-      description: 'List URL template tools for a user skill.',
-    ),
-    AppSkillToolDefinition(
-      slug: 'get_skill_template_tool',
-      title: 'Get skill template tool',
-      description: 'Get a URL template tool for a user skill.',
-    ),
-    AppSkillToolDefinition(
-      slug: 'create_skill_template_tool',
-      title: 'Create skill template tool',
-      description: 'Create a URL template tool for a user skill.',
-    ),
-    AppSkillToolDefinition(
-      slug: 'update_skill_template_tool',
-      title: 'Update skill template tool',
-      description: 'Update a URL template tool by slug.',
-    ),
-    AppSkillToolDefinition(
-      slug: 'delete_skill_template_tool',
-      title: 'Delete skill template tool',
-      description: 'Delete a URL template tool by slug.',
-    ),
-    AppSkillToolDefinition(
-      slug: 'list_skill_credential_definitions',
-      title: 'List skill credential definitions',
-      description: 'List reusable user credential definitions.',
-    ),
-    AppSkillToolDefinition(
-      slug: 'get_skill_credential_definition',
-      title: 'Get skill credential definition',
-      description: 'Get a reusable user credential definition by slug.',
-    ),
-    AppSkillToolDefinition(
-      slug: 'create_skill_credential_definition',
-      title: 'Create skill credential definition',
-      description: 'Create a reusable user credential definition.',
-    ),
-    AppSkillToolDefinition(
-      slug: 'update_skill_credential_definition',
-      title: 'Update skill credential definition',
-      description: 'Update a reusable user credential definition by slug.',
-    ),
-    AppSkillToolDefinition(
-      slug: 'delete_skill_credential_definition',
-      title: 'Delete skill credential definition',
-      description: 'Delete a reusable user credential definition by slug.',
-    ),
   ],
 );
 
@@ -140,12 +90,10 @@ final List<ToolSpec> skillsManagerToolSpecs = _strictSkillsManagerToolSpecs([
   ),
   _spec(
     'create_user_skill',
-    'Create a user-owned template skill.',
+    'Create a user-owned Skill.',
     _schema(
       ['title', 'description', 'content'],
       extra: const {
-        'credentialDefinitionId': 'string',
-        'isCredentialOptional': 'boolean',
         'isEnabled': 'boolean',
       },
       extraJson: const {
@@ -165,8 +113,6 @@ final List<ToolSpec> skillsManagerToolSpecs = _strictSkillsManagerToolSpecs([
         'title': 'string',
         'description': 'string',
         'content': 'string',
-        'credentialDefinitionId': 'string',
-        'isCredentialOptional': 'boolean',
         'isEnabled': 'boolean',
       },
       extraJson: const {
@@ -219,80 +165,6 @@ final List<ToolSpec> skillsManagerToolSpecs = _strictSkillsManagerToolSpecs([
     'Clone a declarative built-in service skill as a user skill.',
     _schema(['appSkillSlug']),
   ),
-  _spec(
-    'list_skill_template_tools',
-    'List URL template tools for a user skill.',
-    _schema(['skillSlug']),
-  ),
-  _spec(
-    'get_skill_template_tool',
-    'Get a URL template tool for a user skill.',
-    _schema(['skillSlug', 'toolSlug']),
-  ),
-  _spec(
-    'create_skill_template_tool',
-    'Create a URL template tool for a user skill.',
-    _schema(
-      ['skillSlug', 'title', 'description', 'definition'],
-      extra: const {
-        'template': 'object',
-        'inputs': 'object',
-        'credentialDefinitionId': 'string',
-        'requiresCredential': 'boolean',
-        'isEnabled': 'boolean',
-      },
-      objectFields: const {'definition', 'template', 'inputs'},
-    ),
-  ),
-  _spec(
-    'update_skill_template_tool',
-    'Update a URL template tool by slug.',
-    _schema(
-      ['skillSlug', 'toolSlug'],
-      extra: const {
-        'title': 'string',
-        'description': 'string',
-        'definition': 'object',
-        'template': 'object',
-        'inputs': 'object',
-        'credentialDefinitionId': 'string',
-        'requiresCredential': 'boolean',
-        'isEnabled': 'boolean',
-      },
-    ),
-  ),
-  _spec(
-    'delete_skill_template_tool',
-    'Delete a URL template tool from a user skill.',
-    _schema(['skillSlug', 'toolSlug']),
-  ),
-  _spec(
-    'list_skill_credential_definitions',
-    'List reusable user credential definitions.',
-  ),
-  _spec(
-    'get_skill_credential_definition',
-    'Get a reusable user credential definition by slug.',
-    _schema(['definitionSlug']),
-  ),
-  _spec(
-    'create_skill_credential_definition',
-    'Create a reusable user credential definition.',
-    _schema(['title', 'attributes'], objectFields: const {'attributes'}),
-  ),
-  _spec(
-    'update_skill_credential_definition',
-    'Update a reusable user credential definition by slug.',
-    _schema(
-      ['definitionSlug'],
-      extra: const {'title': 'string', 'attributes': 'object'},
-    ),
-  ),
-  _spec(
-    'delete_skill_credential_definition',
-    'Delete a reusable user credential definition by slug.',
-    _schema(['definitionSlug']),
-  ),
 ]);
 
 List<ToolSpec> _strictSkillsManagerToolSpecs(List<ToolSpec> specs) => [
@@ -303,21 +175,14 @@ List<ToolSpec> _strictSkillsManagerToolSpecs(List<ToolSpec> specs) => [
       ToolSpec(
         name: spec.name,
         description: spec.description,
-        requiresCredential: spec.requiresCredential,
-        inputJsonSchema: materializeSkillToolSchema(
-          spec.inputJsonSchema,
-          requiresCredential: false,
-          strictProviderSchema: true,
-        ),
+        inputJsonSchema: strictProviderToolSchema(spec.inputJsonSchema),
       ),
 ];
 
 const _strictSchemaExceptions = {
+  'skill__app_native__skills_manager__create_user_skill',
+  'skill__app_native__skills_manager__update_skill_resource',
   'skill__app_native__skills_manager__update_user_skill',
-  'skill__app_native__skills_manager__create_skill_template_tool',
-  'skill__app_native__skills_manager__update_skill_template_tool',
-  'skill__app_native__skills_manager__create_skill_credential_definition',
-  'skill__app_native__skills_manager__update_skill_credential_definition',
 };
 
 ToolSpec _spec(

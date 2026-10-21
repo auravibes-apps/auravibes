@@ -1,8 +1,8 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
-import 'package:auravibes_engine/src/skills/models/skill_credential_attribute_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
-import 'package:auravibes_engine/src/skills/models/url_request_method.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_request_template.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_credential_attribute_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_input_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_request_template.dart';
+import 'package:auravibes_engine/src/connectors/models/url_request_method.dart';
 
 const Map<String, Object> searchInputSchema = {
   'type': 'object',
@@ -33,8 +33,8 @@ const Map<String, Object> answerInputSchema = {
 };
 
 const queryInputs = {
-  'query': SkillTemplateInputDefinition(description: 'Search query.'),
-  'maxResults': SkillTemplateInputDefinition(
+  'query': ConnectorToolInputDefinition(description: 'Search query.'),
+  'maxResults': ConnectorToolInputDefinition(
     description: 'Maximum number of results.',
     type: 'integer',
     optional: true,
@@ -43,25 +43,25 @@ const queryInputs = {
 };
 
 const urlInputs = {
-  'url': SkillTemplateInputDefinition(description: 'URL to fetch.'),
+  'url': ConnectorToolInputDefinition(description: 'URL to fetch.'),
 };
 
 const apiKeyCredentialDefinitions = {
-  'apiKey': SkillCredentialAttributeDefinition(description: 'API key.'),
+  'apiKey': ConnectorCredentialAttributeDefinition(description: 'API key.'),
 };
 
 // ignore: unnecessary-nullable, null body is valid for bodyless request templates.
-AppSkillUrlTemplate declarativeTemplate({
+ConnectorToolRequestTemplate declarativeTemplate({
   required String url,
   required Map<String, Object> inputSchema,
   Map<String, String> headers = const {},
   Map<String, String> query = const {},
   String? body,
-  SkillUrlTemplateBodyFormat bodyFormat = SkillUrlTemplateBodyFormat.infer,
-  Map<String, SkillCredentialAttributeDefinition> credentialDefinitions =
+  ConnectorRequestBodyFormat bodyFormat = ConnectorRequestBodyFormat.infer,
+  Map<String, ConnectorCredentialAttributeDefinition> credentialDefinitions =
       apiKeyCredentialDefinitions,
-}) => AppSkillUrlTemplate(
-  template: SkillUrlTemplate(
+}) => ConnectorToolRequestTemplate(
+  template: ConnectorRequestTemplate(
     url: url,
     method: UrlRequestMethod.post,
     headers: headers,
@@ -69,6 +69,6 @@ AppSkillUrlTemplate declarativeTemplate({
     body: body,
     bodyFormat: bodyFormat,
   ),
-  inputs: SkillTemplateInputDefinition.fromJsonSchema(inputSchema),
+  inputs: ConnectorToolInputDefinition.fromJsonSchema(inputSchema),
   credentialDefinitions: credentialDefinitions,
 );

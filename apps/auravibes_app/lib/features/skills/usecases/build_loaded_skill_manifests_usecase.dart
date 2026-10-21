@@ -54,10 +54,8 @@ extension on BuildLoadedSkillManifestsUsecase {
         title: skill.title,
         description: skill.description,
         instructions: skill.content,
-        tools: const [],
         connectorToolIds: connectorToolIds,
       ),
-      tools: const [],
       connectorToolIds: connectorToolIds,
     );
   }

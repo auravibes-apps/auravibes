@@ -262,6 +262,116 @@ void main() {
     expect(jsonEncode(connectionRecords), isNot(contains('must-not-leak')));
   });
 
+  test('cloud Connector discovery includes compatible model Connections', () {
+    final connector = serviceSkillDefinitions.singleWhere(
+      (candidate) => candidate.identifier == 'openai',
+    );
+    final modelConnections = [
+      {
+        'id': 'openai-key',
+        'name': 'OpenAI key',
+        'providerId': 'openai',
+        'hasSecret': true,
+        'apiKey': 'must-not-leak',
+      },
+      {
+        'id': 'other-provider',
+        'name': 'Other provider',
+        'providerId': 'anthropic',
+        'hasSecret': true,
+      },
+      {
+        'id': 'missing-secret',
+        'name': 'Incomplete OpenAI key',
+        'providerId': 'openai',
+        'hasSecret': false,
+      },
+    ];
+
+    final toolRecords = cloudConnectorToolRecords(
+      connectors: [connector],
+      serviceConnections: const [],
+      modelConnections: modelConnections,
+    );
+    final connectionRecords = cloudConnectorConnectionRecords(
+      connectors: [connector],
+      serviceConnections: const [],
+      modelConnections: modelConnections,
+    );
+
+    expect(toolRecords, hasLength(1));
+    expect(
+      toolRecords.single['connections'],
+      [
+        {'id': 'model:openai-key', 'name': 'OpenAI key'},
+      ],
+    );
+    expect(
+      connectionRecords['connections'],
+      [
+        {
+          'id': 'model:openai-key',
+          'name': 'OpenAI key',
+          'connectorIds': ['openai'],
+        },
+      ],
+    );
+    expect(jsonEncode(toolRecords), isNot(contains('must-not-leak')));
+    expect(jsonEncode(connectionRecords), isNot(contains('must-not-leak')));
+  });
+
+  test('converts cloud model credentials for Connector execution', () {
+    expect(
+      cloudModelConnectorCredentialAttributes('openai', 'secret-key'),
+      {'apiKey': 'secret-key'},
+    );
+    final claims = base64Url
+        .encode(
+          utf8.encode(
+            jsonEncode({
+              'https://api.openai.com/auth': {
+                'chatgpt_account_id': 'account-1',
+              },
+            }),
+          ),
+        )
+        .replaceAll('=', '');
+    final token = jsonEncode({
+      'accessToken': 'access-token',
+      'idToken': 'header.$claims.signature',
+    });
+
+    expect(
+      cloudModelConnectorCredentialAttributes('openai-codex', token),
+      {'apiKey': 'access-token', 'accountId': 'account-1'},
+    );
+  });
+
+  test('cloud discovery hides credentialed tools without a Connection', () {
+    final connectors = [
+      serviceSkillDefinitions.singleWhere(
+        (candidate) => candidate.identifier == 'openai',
+      ),
+      serviceSkillDefinitions.singleWhere(
+        (candidate) => candidate.identifier == 'duckduckgo',
+      ),
+    ];
+
+    final records = cloudConnectorToolRecords(
+      connectors: connectors,
+      serviceConnections: const [],
+    );
+
+    expect(
+      records.map((record) => record['connectorId']),
+      isNot(contains('openai')),
+    );
+    expect(
+      records.map((record) => record['toolId']),
+      contains('connector/duckduckgo/search'),
+    );
+  });
+
   test(
     'cloud Connector execution selects only current matching Connection',
     () {

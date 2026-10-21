@@ -1,16 +1,13 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/services/model_sync_service.dart';
@@ -24,6 +21,7 @@ import 'package:auravibes_app/features/service_connections/providers/connector_c
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/delete_service_connection_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -469,7 +467,7 @@ void main() {
         connections: [
           _mcpConnection(name: 'Actual service', displayStatus: .connected),
           _kindConnection(.modelProvider, 'Actual provider'),
-          _kindConnection(.skillCredential, 'Saved value'),
+          _kindConnection(.connector, 'Saved Connector'),
         ],
       );
       addTearDown(container.dispose);
@@ -483,14 +481,10 @@ void main() {
         view == .overview || view == .providers ? findsOneWidget : findsNothing,
       );
       expect(
-        find.text('Saved value'),
+        find.text('Saved Connector'),
         view == .overview || view == .credentials
             ? findsOneWidget
             : findsNothing,
-      );
-      expect(
-        find.text('Advanced: Credential types'),
-        view == .credentials ? findsOneWidget : findsNothing,
       );
     });
   }
@@ -1045,22 +1039,43 @@ void main() {
     );
   });
 
-  testWidgets('deletes service connections from row menu', (tester) async {
+  testWidgets('deletes Connector Connections from row menu', (tester) async {
     _addWidgetTearDown(tester);
     final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     addTearDown(database.close);
     final encryptionService = EncryptionService(_FakeSecretKeyManager());
-    final credentialsRepository = SkillCredentialsRepository(
-      database: database,
-      encryptionService: encryptionService,
-    );
     final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );
+    final repository = ServiceConnectionRepository(
+      database,
+      encryptionService,
+    );
+    final connection = await repository.createConnectorConnection((
+      workspaceId: workspace.id,
+      connectorId: 'notion',
+      name: 'Notion work',
+      apiKey: 'secret-value',
+    ));
     final session = WorkspaceSession(
       LocalWorkspaceRef(localWorkspaceId: workspace.id),
+    );
+    final delete = DeleteServiceConnectionUsecase(
+      modelConnectionRepository: ModelConnectionRepository(
+        database: database,
+        encryptionService: encryptionService,
+      ),
+      deleteConnectorConnection: (id) => repository.deleteConnectorConnection(
+        id,
+        workspaceId: workspace.id,
+      ),
+    );
+    final actions = ServiceConnectionsActionUsecase(
+      (_) async {},
+      (_) async => throw UnimplementedError(),
+      delete,
     );
     final container = ProviderContainer(
       overrides: [
@@ -1071,168 +1086,41 @@ void main() {
         cloudWorkspaceStateGatewayForWorkspaceProvider.overrideWith(
           (_, _) async => null,
         ),
-        serviceConnectionsActionUsecaseProvider(workspace.id).overrideWith(
-          (_) async => ServiceConnectionsActionUsecase(
-            (_) => Future<void>.value(),
-            (_) => throw UnimplementedError(),
-            .new(
-              modelConnectionRepository: ModelConnectionRepository(
-                database: database,
-                encryptionService: encryptionService,
-              ),
-              deleteSkillCredential: credentialsRepository.deleteCredential,
-            ),
-          ),
-        ),
+        serviceConnectionsActionUsecaseProvider(workspace.id)
+            .overrideWith((_) async => actions),
       ],
     );
     addTearDown(container.dispose);
-    final definition = await SkillCredentialDefinitionsRepository(database)
-        .createDefinition(
-          workspace.id,
-          const SkillCredentialDefinitionToCreate(
-            title: 'GitHub Token',
-            attributesJson: '{"token":{"description":"API token"}}',
-          ),
-        );
-    final _ = await credentialsRepository.createCredential(
-      workspace.id,
-      .new(
-        credentialDefinitionId: definition.id,
-        name: 'Main Token',
-        attributes: const {'token': 'secret-value'},
-      ),
-    );
-
-    await _unmountScreen(tester);
     await _pumpScreen(tester, container, workspace.id);
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('Main Token'), findsOneWidget);
+    expect(find.text('Notion work'), findsOneWidget);
+    expect(find.text('secret-value'), findsNothing);
     expect(find.text('Connection kind'), findsOneWidget);
     expect(find.text('Connection health'), findsOneWidget);
     await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).last);
     final _ = await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Model providers'));
+    await tester.tap(find.text('Connectors'));
     final _ = await tester.pumpAndSettle();
-    expect(find.text('Main Token'), findsNothing);
-    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).last);
-    final _ = await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Skill credentials'));
-    final _ = await tester.pumpAndSettle();
-    expect(find.text('Main Token'), findsOneWidget);
-    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).last);
-    final _ = await tester.pumpAndSettle();
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AuraDropdownSelector<ConnectionFilter>).last,
-        matching: find.text('All'),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
+    expect(find.text('Notion work'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.more_vert).first);
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('Delete skill credential'), findsOneWidget);
+    expect(find.text('Delete Connector'), findsOneWidget);
     expect(
       find.text(
-        'Delete credential "Main Token"? This action cannot be undone.',
+        'Delete connection "Notion work"? This action cannot be undone.',
       ),
       findsOneWidget,
     );
     await tester.tap(find.text('Delete').last);
     await _pumpUntil(
       tester,
-      () async => (await credentialsRepository.getCredentialsForDefinition(
-        workspaceId: workspace.id,
-        credentialDefinitionId: definition.id,
-      )).isEmpty,
+      () async => await repository.getById(connection.id) == null,
     );
-    final credentials = await credentialsRepository.getCredentialsForDefinition(
-      workspaceId: workspace.id,
-      credentialDefinitionId: definition.id,
-    );
-    expect(credentials, isEmpty);
-
-    final _ = await credentialsRepository.createCredential(
-      workspace.id,
-      .new(
-        credentialDefinitionId: definition.id,
-        name: 'Second Token',
-        attributes: const {'token': 'secret-value'},
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('Second Token'), findsOneWidget);
-
-    final _ = await database
-        .into(database.serviceConnections)
-        .insertReturning(
-          ServiceConnectionsCompanion.insert(
-            name: 'Stale Token',
-            serviceId: 'missing-definition',
-            kind: .skillCredential,
-            authenticationType: .apiKey,
-            encryptedAuthValue: const Value('encrypted-secret'),
-            keySuffix: const Value('value'),
-            workspaceId: workspace.id,
-          ),
-        );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('Stale Token'), findsOneWidget);
-    expect(
-      find.textContaining('Credential definition not found'),
-      findsOneWidget,
-    );
-    final connection = await database.modelConnectionsDao.insertModelConnection(
-      .insert(
-        name: 'OpenAI Main',
-        serviceId: 'openai',
-        kind: ServiceConnectionKindTable.modelProvider,
-        authenticationType: ServiceAuthenticationTypeTable.apiKey,
-        encryptedAuthValue: const Value('encrypted-key'),
-        keySuffix: const Value('et-key'),
-        workspaceId: workspace.id,
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    await tester.scrollUntilVisible(
-      find.text('OpenAI Main'),
-      150,
-      scrollable: find
-          .descendant(
-            of: find.byType(ListView),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
-    expect(find.text('OpenAI Main'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.more_vert).first);
-    final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('Delete'));
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('Delete model provider'), findsOneWidget);
-    expect(
-      find.text('Delete provider "OpenAI Main"? This action cannot be undone.'),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('Delete').last);
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('OpenAI Main'), findsNothing);
-    final deleted = await database.modelConnectionsDao.getModelConnectionById(
-      connection.id,
-    );
-    expect(deleted, equals(null));
+    expect(find.text('Notion work'), findsNothing);
     final credential = await database
         .into(database.serviceConnections)
         .insertReturning(
@@ -1384,7 +1272,6 @@ ServiceConnectionListItem _mcpConnection({
   serviceName: serviceName,
   kind: .mcpServer,
   keySuffix: null,
-  credentialDefinitionId: null,
   mcpServerId: '$name-server',
   authenticationType: authenticationType,
   displayStatus: displayStatus,
@@ -1503,7 +1390,6 @@ ServiceConnectionListItem _kindConnection(
   serviceName: serviceName,
   kind: kind,
   keySuffix: null,
-  credentialDefinitionId: null,
   mcpServerId: null,
   authenticationType: null,
   displayStatus: displayStatus,

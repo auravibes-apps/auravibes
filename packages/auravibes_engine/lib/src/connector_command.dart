@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/connector_definition.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
 import 'package:crypto/crypto.dart';
 
@@ -16,13 +16,13 @@ const connectorToolCommandNames = <String>{
 };
 
 String connectorToolId(
-  AppSkillDefinition connector,
-  AppSkillToolDefinition tool,
+  ConnectorDefinition connector,
+  ConnectorToolDefinition tool,
 ) => 'connector/${connector.identifier}/${tool.slug}';
 
 String connectorToolRevision(
-  AppSkillDefinition connector,
-  AppSkillToolDefinition tool,
+  ConnectorDefinition connector,
+  ConnectorToolDefinition tool,
 ) {
   final contract = _canonicalJson({
     'toolId': connectorToolId(connector, tool),
@@ -30,7 +30,7 @@ String connectorToolRevision(
     'toolSlug': tool.slug,
     'description': tool.description,
     'inputSchema': tool.inputJsonSchema,
-    'requiresConnection': tool.requiresCredential,
+    'requiresConnection': tool.requiresConnection,
     'compatibleConnectionProviderIds': connector.compatibleModelProviderIds,
     'definition': tool.definition?.toJson(),
   });

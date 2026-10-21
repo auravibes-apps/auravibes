@@ -80,7 +80,6 @@ abstract final class _TaskReturnValidation {
           'agents' ||
           'skills' ||
           'service-connections' ||
-          'skill-credential-definitions' ||
           'manage-workspaces' ||
           'cloud-accounts',
     ] =>
@@ -92,8 +91,7 @@ abstract final class _TaskReturnValidation {
     [
       'agents' ||
           'skills' ||
-          'service-connections' ||
-          'skill-credential-definitions',
+          'service-connections',
       _,
     ] ||
     ['skills', _, 'tools' || 'resources', _] ||

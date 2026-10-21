@@ -1,5 +1,6 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart' show AppSkillResourceDefinition;
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
 const _apiKeyHeader = 'x-api-key';
@@ -7,7 +8,7 @@ const _apiKeyTemplate = '{{ credential.apiKey }}';
 const _contentTypeHeader = 'content-type';
 const _jsonContentType = 'application/json';
 
-final exaSkill = AppSkillDefinition(
+final exaSkill = ServiceSkillPreset(
   identifier: 'exa',
   slug: 'exa',
   title: 'Exa',
@@ -16,8 +17,6 @@ final exaSkill = AppSkillDefinition(
 Use Exa for AI-oriented web discovery, page contents, and grounded answers.
 Prefer it when semantic relevance matters more than a classic result page.
 ''',
-  requiresCredential: true,
-  kind: .template,
   resources: const [
     AppSkillResourceDefinition(
       slug: 'search_modes_and_freshness',
@@ -72,12 +71,12 @@ fallback behavior. `livecrawlTimeout` is milliseconds.
     ),
   ],
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Find relevant web pages for a query.',
       inputJsonSchema: _searchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.exa.ai/search',
         inputSchema: _searchInputSchema,
@@ -89,12 +88,12 @@ fallback behavior. `livecrawlTimeout` is milliseconds.
         bodyFormat: .json,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'contents',
       title: 'Contents',
       description: 'Fetch clean content for a URL.',
       inputJsonSchema: _contentsInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.exa.ai/contents',
         inputSchema: _contentsInputSchema,
@@ -106,12 +105,12 @@ fallback behavior. `livecrawlTimeout` is milliseconds.
         bodyFormat: .json,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'answer',
       title: 'Answer',
       description: 'Answer a question with web grounding.',
       inputJsonSchema: _answerInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.exa.ai/answer',
         inputSchema: _answerInputSchema,

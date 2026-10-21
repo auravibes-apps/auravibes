@@ -63,11 +63,7 @@ class const ToolNameFormatter._() {
     String skillSlug,
     String toolIdentifier,
   ) => (
-    source: switch (kind) {
-      .skillNative => 'app_native',
-      .skillAppTemplate => 'app_template',
-      _ => 'user',
-    },
+    source: kind == AgentResolvedToolKind.skillNative ? 'app_native' : 'user',
     skillSlug: skillSlug,
     toolSlug: toolIdentifier,
   );
@@ -92,9 +88,7 @@ abstract final class _ResolvedToolNameFormatter {
   }
 
   static bool _isSkill(AgentResolvedToolKind kind) =>
-      kind == AgentResolvedToolKind.skillTemplate ||
-      kind == AgentResolvedToolKind.skillNative ||
-      kind == AgentResolvedToolKind.skillAppTemplate;
+      kind == AgentResolvedToolKind.skillNative;
 
   static String _mcpServerName(
     AgentResolvedToolName parsedId,

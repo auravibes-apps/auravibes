@@ -485,19 +485,29 @@ void main() {
         'slug': 'crm',
         'title': 'CRM',
         'description': 'Manage CRM records.',
-        'content': 'Use Notion search.',
-        'connectorToolIds': ['connector/notion/search'],
+        'content': 'Use OpenAI web search.',
+        'connectorToolIds': ['connector/openai/web_search'],
         'isEnabled': true,
       };
 
-      expect(cloudUserSkillReady(skill, const [], const []), isTrue);
+      expect(cloudUserSkillReady(skill, const [], const []), isFalse);
+      expect(
+        cloudUserSkillReady(skill, const [], const [
+          {
+            'kind': 'modelProvider',
+            'providerId': 'openai',
+            'hasSecret': true,
+          },
+        ]),
+        isTrue,
+      );
       final manifest = await buildCloudSkillManifest(
         slug: 'crm',
         userSkills: const [skill],
         tools: const [],
       );
 
-      expect(manifest?.connectorToolIds, ['connector/notion/search']);
+      expect(manifest?.connectorToolIds, ['connector/openai/web_search']);
       expect(manifest?.tools, isEmpty);
     },
   );

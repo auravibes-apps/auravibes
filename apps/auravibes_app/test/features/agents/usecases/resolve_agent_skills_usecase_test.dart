@@ -5,7 +5,9 @@ import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/agents/usecases/resolve_agent_skills_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,7 +37,6 @@ void main() {
       final enabledSkill = await fixture.createSkill(
         fixture.workspaceId,
         'Enabled Skill',
-        connectorToolIds: const ['connector/notion/read_page'],
       );
       final disabledSkill = await fixture.createSkill(
         fixture.workspaceId,
@@ -74,9 +75,6 @@ void main() {
         for (final skill in resolved.available)
           skill.id: skill.connectorToolIds,
       };
-      expect(connectorToolIdsBySkill[enabledSkill.id], [
-        'connector/notion/read_page',
-      ]);
       expect(connectorToolIdsBySkill['openai'], [
         'connector/openai/web_search',
       ]);
@@ -88,6 +86,43 @@ void main() {
       ]);
     },
   );
+
+  test('resolves user Skills with Connector refs only when ready', () async {
+    final fixture = await _ResolveAgentSkillsFixture.create(database);
+    final skill = await fixture.createSkill(
+      fixture.workspaceId,
+      'CRM Skill',
+      connectorToolIds: const ['connector/openai/web_search'],
+    );
+    final withoutConnection = ResolveAgentSkillsUsecase(
+      fixture.skillsRepository,
+      fixture.appSettingsRepository,
+      const AppSkillRegistry(),
+    );
+    final unavailable = await withoutConnection(
+      workspaceId: fixture.workspaceId,
+      refs: [AgentSkillRef.user(skill.id)],
+    );
+    expect(unavailable.available, isEmpty);
+    expect(unavailable.unavailable, [AgentSkillRef.user(skill.id)]);
+
+    final withConnection = ResolveAgentSkillsUsecase(
+      fixture.skillsRepository,
+      fixture.appSettingsRepository,
+      const AppSkillRegistry(),
+      null,
+      const _ConnectedConnectorCandidates(),
+    );
+    final available = await withConnection(
+      workspaceId: fixture.workspaceId,
+      refs: [AgentSkillRef.user(skill.id)],
+    );
+    expect(available.available.map((item) => item.id), [skill.id]);
+    expect(available.available.single.connectorToolIds, [
+      'connector/openai/web_search',
+    ]);
+    expect(available.unavailable, isEmpty);
+  });
 
   test('reports disabled app skills as unavailable', () async {
     final fixture = await _ResolveAgentSkillsFixture.create(database);
@@ -105,6 +140,25 @@ void main() {
 
     expect(resolved.available, isEmpty);
     expect(resolved.unavailable, const [AgentSkillRef.app('skills_manager')]);
+  });
+
+  test('resolves Connector-backed app Skills without a Skill toggle', () async {
+    final fixture = await _ResolveAgentSkillsFixture.create(database);
+    final usecase = ResolveAgentSkillsUsecase(
+      fixture.skillsRepository,
+      fixture.appSettingsRepository,
+      const AppSkillRegistry(),
+      null,
+      const _ConnectedConnectorCandidates(),
+    );
+
+    final resolved = await usecase(
+      workspaceId: fixture.workspaceId,
+      refs: const [AgentSkillRef.app('openai')],
+    );
+
+    expect(resolved.available.map((skill) => skill.id), ['openai']);
+    expect(resolved.unavailable, isEmpty);
   });
 }
 
@@ -134,6 +188,8 @@ class _ResolveAgentSkillsFixture({
         skillsRepository,
         appSettingsRepository,
         const AppSkillRegistry(),
+        null,
+        const _ConnectedConnectorCandidates(),
       ),
       workspaceId: workspace.id,
       otherWorkspaceId: otherWorkspace.id,
@@ -158,4 +214,20 @@ class _ResolveAgentSkillsFixture({
       ),
     );
   }
+}
+
+class const _ConnectedConnectorCandidates()
+    implements ListConnectorConnectionCandidatesUsecase {
+  @override
+  Future<List<ConnectorConnectionCandidate>> forConnector({
+    required String workspaceId,
+    required ConnectorDefinition connector,
+  }) async => connector.identifier == 'openai'
+      ? const [
+          ConnectorConnectionCandidate(
+            id: 'service:openai-connection',
+            name: 'OpenAI',
+          ),
+        ]
+      : const [];
 }

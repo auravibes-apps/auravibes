@@ -4,7 +4,6 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AppSkillToolDefinition,
         buildSkillCommandToolSpecs,
-        materializeSkillToolSchema,
         skillsManagerToolSpecs,
         strictToolSchemaIssue,
         subAgentToolSpecs,
@@ -111,54 +110,25 @@ void main() {
   );
 }
 
-Map<String, dynamic> _appSkillSchema(AppSkillToolDefinition tool) {
-  if (tool.urlTemplate == null) {
-    return Map<String, dynamic>.from(tool.inputJsonSchema);
-  }
-
-  return Map<String, dynamic>.from(
-    materializeSkillToolSchema(
-      tool.inputJsonSchema,
-      requiresCredential: tool.requiresCredential,
-      credentialIds: tool.requiresCredential
-          ? const ['schema-audit-credential']
-          : const [],
-      strictProviderSchema: true,
-    ),
-  );
-}
+Map<String, dynamic> _appSkillSchema(AppSkillToolDefinition tool) =>
+    Map<String, dynamic>.from(tool.inputJsonSchema);
 
 typedef _StrictSchemaException = ({String path, String reason, String issue});
 
 const _strictSchemaExceptions = <String, _StrictSchemaException>{
-  'firecrawl/extract': (
-    path: r'$.properties.schema.properties',
-    reason: 'extraction schema accepts user-defined output properties',
+  'skill__app_native__skills_manager__create_user_skill': (
+    path: r'$.required',
+    reason: 'optional Connector tool references and enabled state',
+    issue: 'https://github.com/auravibes-apps/auravibes/issues/1129',
+  ),
+  'skill__app_native__skills_manager__update_skill_resource': (
+    path: r'$.required',
+    reason: 'resource fields are optional during partial updates',
     issue: 'https://github.com/auravibes-apps/auravibes/issues/1129',
   ),
   'skill__app_native__skills_manager__update_user_skill': (
     path: r'$.required',
-    reason: 'null clears credential assignment; omission preserves it',
-    issue: 'https://github.com/auravibes-apps/auravibes/issues/1129',
-  ),
-  'skill__app_native__skills_manager__create_skill_template_tool': (
-    path: r'$.required',
-    reason: 'free-form definition, template, and input objects need open keys',
-    issue: 'https://github.com/auravibes-apps/auravibes/issues/1129',
-  ),
-  'skill__app_native__skills_manager__update_skill_template_tool': (
-    path: r'$.required',
-    reason: 'free-form definition, template, and input objects need open keys',
-    issue: 'https://github.com/auravibes-apps/auravibes/issues/1129',
-  ),
-  'skill__app_native__skills_manager__create_skill_credential_definition': (
-    path: r'$.properties.attributes.properties',
-    reason: 'credential attributes have user-defined keys',
-    issue: 'https://github.com/auravibes-apps/auravibes/issues/1129',
-  ),
-  'skill__app_native__skills_manager__update_skill_credential_definition': (
-    path: r'$.required',
-    reason: 'credential attributes have user-defined keys',
+    reason: 'null clears connector tool references; omission preserves them',
     issue: 'https://github.com/auravibes-apps/auravibes/issues/1129',
   ),
 };

@@ -1,8 +1,8 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-final geminiSkill = AppSkillDefinition(
+final geminiSkill = ServiceSkillPreset(
   identifier: 'gemini',
   slug: 'gemini',
   title: 'Gemini / Google',
@@ -11,16 +11,14 @@ final geminiSkill = AppSkillDefinition(
 Use Gemini when a Google-grounded answer is useful. Prefer it for questions
 where Google Search grounding or Google model credentials are already desired.
 ''',
-  requiresCredential: true,
   compatibleModelProviderIds: ['google'],
-  kind: .template,
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'google_search_grounded_answer',
       title: 'Grounded answer',
       description: 'Answer a question with Google search grounding.',
       inputJsonSchema: _groundedAnswerInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://generativelanguage.googleapis.com/v1beta/models/{{ input.model | uri_encode }}:generateContent',
         inputSchema: _groundedAnswerInputSchema,

@@ -17,11 +17,9 @@ abstract class const SkillEntity._() with _$SkillEntity {
     required String description,
     required String content,
     required bool isEnabled,
-    required bool isCredentialOptional,
     required DateTime createdAt,
     required DateTime updatedAt,
     @Default(<String>[]) List<String> connectorToolIds,
-    String? credentialDefinitionId,
   }) = _SkillEntity;
 }
 
@@ -35,8 +33,6 @@ abstract class const SkillToCreate._() with _$SkillToCreate {
     required String title,
     required String description,
     required String content,
-    String? credentialDefinitionId,
-    @Default(false) bool isCredentialOptional,
     @Default(<String>[]) List<String> connectorToolIds,
     @Default(true) bool isEnabled,
   }) = _SkillToCreate;
@@ -51,9 +47,6 @@ abstract class const SkillToUpdate._() with _$SkillToUpdate {
     String? title,
     String? description,
     String? content,
-    String? credentialDefinitionId,
-    @Default(false) bool clearCredentialDefinition,
-    bool? isCredentialOptional,
     List<String>? connectorToolIds,
     bool? isEnabled,
   }) = _SkillToUpdate;

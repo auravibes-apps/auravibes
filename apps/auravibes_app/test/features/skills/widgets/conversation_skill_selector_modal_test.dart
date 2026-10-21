@@ -37,7 +37,7 @@ void main() {
                 content: '',
                 source: .user,
                 kind: .template,
-                credentialReadiness: .ready,
+                connectorReadiness: .ready,
               ),
             ],
             loadable: [],
@@ -301,7 +301,7 @@ void main() {
         loaded: [_research],
         loadable: [],
         contextStatusBySlug: {'research': .error},
-        failureBySlug: {'research': .missingCredentials},
+        failureBySlug: {'research': .missingConnection},
       ),
       access: const SkillAccessSummary(
         status: .partial,
@@ -450,7 +450,6 @@ void main() {
             title: 'Search sources',
             status: .missing,
             description: 'Search public sources for a topic.',
-            credentialDefinitionId: 'private-credential-id',
           ),
         ],
       ),
@@ -694,7 +693,7 @@ const _research = AvailableSkill(
   content: 'Use research',
   source: .user,
   kind: .template,
-  credentialReadiness: .ready,
+  connectorReadiness: .ready,
 );
 
 const _weather = AvailableSkill(
@@ -705,5 +704,5 @@ const _weather = AvailableSkill(
   content: 'Use weather',
   source: .user,
   kind: .template,
-  credentialReadiness: .ready,
+  connectorReadiness: .ready,
 );

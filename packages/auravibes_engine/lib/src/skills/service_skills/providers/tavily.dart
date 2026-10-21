@@ -1,8 +1,9 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart' show AppSkillResourceDefinition;
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-final tavilySkill = AppSkillDefinition(
+final tavilySkill = ServiceSkillPreset(
   identifier: 'tavily',
   slug: 'tavily',
   title: 'Tavily',
@@ -11,8 +12,6 @@ final tavilySkill = AppSkillDefinition(
 Use Tavily for agent-oriented web search, URL extraction, site mapping,
 crawling, and research workflows.
 ''',
-  requiresCredential: true,
-  kind: .template,
   resources: const [
     AppSkillResourceDefinition(
       slug: 'search_quality_controls',
@@ -82,19 +81,18 @@ explicit range. Use `includeDomains` for authoritative sources and
   ],
 );
 
-AppSkillToolDefinition _tool(
+ConnectorToolDefinition _tool(
   String slug,
   String title,
   String description,
   Map<String, Object> schema,
   String url,
   String body,
-) => AppSkillToolDefinition(
+) => ConnectorToolDefinition(
   slug: slug,
   title: title,
   description: description,
   inputJsonSchema: schema,
-  requiresCredential: true,
   urlTemplate: declarativeTemplate(
     url: url,
     inputSchema: schema,

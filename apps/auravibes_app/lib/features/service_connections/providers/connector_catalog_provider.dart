@@ -36,39 +36,39 @@ List<ConnectorCatalogOffering> _connectorOfferings(
 List<ConnectorCatalogOffering> _modelProviderOfferings(
   List<ApiModelProviderEntity> modelProviders,
 ) {
-  final skillByProviderId = _modelProviderSkillsById();
+  final connectorByProviderId = _modelProviderConnectorsById();
 
   return [
     for (final provider in modelProviders)
-      _modelProviderOffering(provider, skillByProviderId[provider.id]),
+      _modelProviderOffering(provider, connectorByProviderId[provider.id]),
   ];
 }
 
-Map<String, AppSkillDefinition> _modelProviderSkillsById() => {
-  for (final skill in serviceSkillDefinitions)
-    for (final providerId in skill.compatibleModelProviderIds)
-      providerId: skill,
+Map<String, ConnectorDefinition> _modelProviderConnectorsById() => {
+  for (final connector in connectorDefinitions)
+    for (final providerId in connector.compatibleModelProviderIds)
+      providerId: connector,
 };
 
 ConnectorCatalogOffering _modelProviderOffering(
   ApiModelProviderEntity provider,
-  AppSkillDefinition? skill,
+  ConnectorDefinition? connector,
 ) => ConnectorCatalogOffering(
-  id: skill?.identifier ?? provider.id,
-  name: skill?.title ?? provider.name,
+  id: connector?.identifier ?? provider.id,
+  name: connector?.title ?? provider.name,
   offersModels: true,
   serviceIds: [provider.id],
   modelProviderIds: [provider.id],
 );
 
 List<ConnectorCatalogOffering> _toolSkillOfferings() => [
-  for (final skill in serviceSkillDefinitions.where(
-    (skill) => skill.tools.isNotEmpty,
+  for (final connector in connectorDefinitions.where(
+    (connector) => connector.tools.isNotEmpty,
   ))
     ConnectorCatalogOffering(
-      id: skill.identifier,
-      name: skill.title,
+      id: connector.identifier,
+      name: connector.title,
       offersTools: true,
-      serviceIds: skill.compatibleModelProviderIds,
+      serviceIds: connector.compatibleModelProviderIds,
     ),
 ];

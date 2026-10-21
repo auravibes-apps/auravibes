@@ -25,7 +25,7 @@ void main() {
     content: 'Use primary sources',
     source: .user,
     kind: .template,
-    credentialReadiness: .ready,
+    connectorReadiness: .ready,
   );
 
   for (final failRead in [false, true]) {
@@ -96,7 +96,7 @@ void main() {
           title: 'Research',
           description: 'Find sources',
           revision: revision,
-          tools: const [],
+          connectorToolIds: const [],
         ),
       ],
     );
@@ -177,7 +177,7 @@ void main() {
         content: 'Use plain language',
         source: .user,
         kind: .template,
-        credentialReadiness: .ready,
+        connectorReadiness: .ready,
       );
       final list = _ListSkills();
       final manifests = _BuildManifests();
@@ -234,7 +234,7 @@ void main() {
         content: 'Use plain language',
         source: .user,
         kind: .template,
-        credentialReadiness: .ready,
+        connectorReadiness: .ready,
       );
       final list = _ListSkills();
       final manifests = _BuildManifests();
@@ -266,7 +266,7 @@ void main() {
               title: item.title,
               description: item.description,
               revision: 'r1',
-              tools: const [],
+              connectorToolIds: const [],
             ),
         ],
       );
@@ -312,7 +312,7 @@ void main() {
       content: '',
       source: .user,
       kind: .template,
-      credentialReadiness: .missing,
+      connectorReadiness: .missing,
     );
     final list = _ListSkills();
     final manifests = _BuildManifests();
@@ -336,7 +336,7 @@ void main() {
     );
     expect(
       state.failureBySlug['research'],
-      ConversationSkillContextFailure.missingCredentials,
+      ConversationSkillContextFailure.missingConnection,
     );
   });
 

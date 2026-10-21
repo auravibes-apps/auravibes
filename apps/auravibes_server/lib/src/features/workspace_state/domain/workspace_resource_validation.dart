@@ -138,17 +138,9 @@ class WorkspaceResourceValidation {
         'toolId': WorkspaceResourceKind.tool,
         'toolGroupId': WorkspaceResourceKind.toolGroup,
       },
-      WorkspaceResourceKind.skill => const {
-        'skillDefinitionId': WorkspaceResourceKind.skillDefinition,
-        'credentialDefinitionId': WorkspaceResourceKind.skillDefinition,
-      },
+      WorkspaceResourceKind.skill => const {},
       WorkspaceResourceKind.skillSetting => const {
         'skillId': WorkspaceResourceKind.skill,
-      },
-      WorkspaceResourceKind.skillTemplateTool => const {
-        'skillId': WorkspaceResourceKind.skill,
-        'credentialDefinitionId': WorkspaceResourceKind.skillDefinition,
-        'toolId': WorkspaceResourceKind.tool,
       },
       WorkspaceResourceKind.conversationToolSelection => const {
         'toolId': WorkspaceResourceKind.tool,
@@ -157,16 +149,10 @@ class WorkspaceResourceValidation {
         data['source'] == 'app'
             ? const {}
             : const {'skillId': WorkspaceResourceKind.skill},
-      WorkspaceResourceKind.serviceConnection =>
-        data['kind'] == 'skillCredential'
-            ? const {
-                'credentialDefinitionId': WorkspaceResourceKind.skillDefinition,
-              }
-            : const {},
+      WorkspaceResourceKind.serviceConnection => const {},
       WorkspaceResourceKind.agent ||
       WorkspaceResourceKind.toolGroup ||
       WorkspaceResourceKind.mcpServer ||
-      WorkspaceResourceKind.skillDefinition ||
       WorkspaceResourceKind.compactionSetting ||
       WorkspaceResourceKind.workspaceSetting => const {},
       WorkspaceResourceKind.conversation ||

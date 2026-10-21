@@ -1,8 +1,8 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-final duckDuckGoSkill = AppSkillDefinition(
+final duckDuckGoSkill = ServiceSkillPreset(
   identifier: 'duckduckgo',
   slug: 'duckduckgo',
   title: 'DuckDuckGo Search',
@@ -12,9 +12,8 @@ Use DuckDuckGo for key-free web search results. This integration returns the
 raw no-script search response and may fail if DuckDuckGo changes markup or
 blocks automated traffic.
 ''',
-  kind: .template,
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search DuckDuckGo web results for a query.',

@@ -8,7 +8,6 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
@@ -56,20 +55,6 @@ void main() {
       (
         value: const ModelConnectionToUpdate(key: 'updated-api-key'),
         secret: 'updated-api-key',
-      ),
-      (
-        value: const SkillCredentialToCreate(
-          credentialDefinitionId: 'definition',
-          name: 'Credential',
-          attributes: {'apiKey': 'skill-api-key'},
-        ),
-        secret: 'skill-api-key',
-      ),
-      (
-        value: const SkillCredentialToUpdate(
-          secretAttributes: {'apiKey': 'updated-skill-api-key'},
-        ),
-        secret: 'updated-skill-api-key',
       ),
       (
         value: const AntropicResponseModels.error(

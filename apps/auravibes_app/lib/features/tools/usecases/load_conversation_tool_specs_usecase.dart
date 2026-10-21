@@ -5,9 +5,7 @@ import 'package:auravibes_app/data/repositories/conversation_tools_repository.da
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -28,12 +26,6 @@ class const LoadConversationToolSpecsUsecase({
   final SyncConnectorToolPermissionsUsecase?
   syncConnectorToolPermissionsUsecase,
   final ConversationRepository? conversationRepository,
-  // Ponytail: Compatibility only; manifests now own materialization.
-  // ignore: avoid_unused_constructor_parameters
-  BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase,
-  // Native materializer remains accepted by legacy direct callers.
-  // ignore: avoid_unused_constructor_parameters
-  BuildAppSkillNativeToolSpecsUsecase? buildAppSkillNativeToolSpecsUsecase,
 }) {
   Future<List<ToolSpec>> call({
     required String conversationId,
@@ -80,7 +72,7 @@ class const LoadConversationToolSpecsUsecase({
 
     return _buildCatalog(
       toolCandidates: input.toolCandidates,
-      skillCommandSpecs: input.skillCommandSpecs,
+      skillControlSpecs: input.skillControlSpecs,
       includeRunSubAgent: await _includeRunSubAgent(conversationId),
     );
   }
@@ -88,12 +80,12 @@ class const LoadConversationToolSpecsUsecase({
   Future<
     ({
       List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
-      List<ToolSpec> skillCommandSpecs,
+      List<ToolSpec> skillControlSpecs,
     })
   >
   _loadCatalogInput(String conversationId, String workspaceId) async => (
     toolCandidates: await _loadToolCandidates(conversationId, workspaceId),
-    skillCommandSpecs: await _buildDynamicSkillToolSpecsUsecase.call(
+    skillControlSpecs: await _buildDynamicSkillToolSpecsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
     ),
@@ -111,12 +103,12 @@ class const LoadConversationToolSpecsUsecase({
 
 agent.ToolCatalog<ResolvedTool> _buildCatalog({
   required List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
-  required List<ToolSpec> skillCommandSpecs,
+  required List<ToolSpec> skillControlSpecs,
   required bool includeRunSubAgent,
 }) => agent.buildToolCatalog([
   ...toolCandidates,
   ...agent.buildConnectorCommandToolSpecs().map(_connectorCommandCandidate),
-  ...skillCommandSpecs.map(_skillCommandCandidate),
+  ...skillControlSpecs.map(_skillControlCandidate),
   if (includeRunSubAgent) _runSubAgentCandidate(),
 ]);
 
@@ -127,11 +119,11 @@ agent.ToolCatalogCandidate<ResolvedTool> _connectorCommandCandidate(
   target: ResolvedTool.connectorCommand(commandName: spec.name),
 );
 
-agent.ToolCatalogCandidate<ResolvedTool> _skillCommandCandidate(
+agent.ToolCatalogCandidate<ResolvedTool> _skillControlCandidate(
   ToolSpec spec,
 ) => agent.ToolCatalogCandidate.reserved(
   spec: spec,
-  target: ResolvedTool.skillCommand(commandName: spec.name),
+  target: ResolvedTool.skillControl(toolIdentifier: spec.name),
 );
 
 agent.ToolCatalogCandidate<ResolvedTool> _runSubAgentCandidate() =>

@@ -1,9 +1,7 @@
 // Required: Tests use numeric fixtures.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen.dart';
@@ -54,14 +52,6 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
-      final _ = await SkillCredentialDefinitionsRepository(database)
-          .createDefinition(
-            workspace.id,
-            const SkillCredentialDefinitionToCreate(
-              title: 'Example Service',
-              attributesJson: '{"api_key":{"description":"API key"}}',
-            ),
-          );
       final router = GoRouter(
         routes: [
           GoRoute(
@@ -205,7 +195,6 @@ void main() {
       final _ = skill ?? fail('skill missing');
       expect(skill.description, '# Summary\n\n**Bold**');
       expect(skill.content, 'Summarize text.');
-      expect(skill.credentialDefinitionId, null);
       final savedSkills = await SkillsRepository(database)
           .getWorkspaceSkills(workspace.id);
       expect(savedSkills, hasLength(1));

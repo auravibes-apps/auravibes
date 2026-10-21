@@ -93,8 +93,7 @@ ConnectorCatalogItem _catalogItem(
 
 bool _isConnectorConnection(ServiceConnectionListItem connection) =>
     connection.kind == ServiceConnectionListItemKind.modelProvider ||
-    connection.kind == ServiceConnectionListItemKind.skillCredential &&
-        connection.credentialDefinitionId == null;
+    connection.kind == ServiceConnectionListItemKind.connector;
 
 bool _matchesFilter(
   ConnectorCatalogOffering offering,

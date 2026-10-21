@@ -3,29 +3,19 @@ import 'dart:async';
 import 'package:auravibes_app/features/skills/models/skill_access_summary.dart';
 import 'package:auravibes_app/features/skills/providers/refresh_skill_access.dart';
 import 'package:auravibes_app/features/skills/providers/skill_access_summary_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show ConnectorDefinition, connectorDefinitions;
 import 'package:auravibes_ui/ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-typedef _SkillAccessRecoveryResult = ({
-  bool? result,
-  String? definitionId,
-  bool toolsChanged,
-});
+typedef _SkillAccessRecoveryResult = ({bool? result});
 typedef _SkillAccessRoute = ({
   SkillToolAccess? missingTool,
-  String? definitionId,
-  bool toolsChanged,
-});
-typedef _AppAccessRouteRequest = ({
-  BuildContext context,
-  WidgetRef ref,
-  _SkillAccessRoute route,
 });
 typedef _SkillAccessSetupRequest = ({
   SkillAccessStatusView view,
@@ -42,7 +32,7 @@ class const SkillAccessStatusView({
   final bool isAppSkill = false,
   final VoidCallback? onChanged,
   final bool recoveryEnabled = true,
-  final String? credentialSetupSemanticLabel,
+  final String? connectorSetupSemanticLabel,
   super.key,
 }) extends ConsumerWidget {
   @override
@@ -59,7 +49,7 @@ class const SkillAccessStatusView({
         ref: ref,
         summary: value,
       )),
-      credentialSetupSemanticLabel: credentialSetupSemanticLabel,
+      connectorSetupSemanticLabel: connectorSetupSemanticLabel,
     );
   }
 
@@ -81,74 +71,32 @@ class const SkillAccessStatusView({
     SkillAccessSummary summary,
   ) async {
     final route = _skillAccessRoute(summary, isAppSkill);
-    if (route.toolsChanged) return await _openToolAccessRoute(context, route);
-
-    if (isAppSkill) {
-      return await _openAppAccess((context: context, ref: ref, route: route));
-    }
-
-    return await _openUserAccessRoute(context, route);
-  }
-
-  Future<_SkillAccessRecoveryResult?> _openToolAccessRoute(
-    BuildContext context,
-    _SkillAccessRoute route,
-  ) async {
     final tool = route.missingTool;
     if (tool == null) return null;
 
     return _skillAccessRecoveryResult(
-      await _openToolAccess(context, tool.id),
+      await _openConnectorAccess(context, tool.id),
       route,
     );
   }
 
-  Future<_SkillAccessRecoveryResult> _openUserAccessRoute(
-    BuildContext context,
-    _SkillAccessRoute route,
-  ) async => _skillAccessRecoveryResult(
-    await _openUserAccess(context, route.definitionId),
-    route,
-  );
+  Future<bool?> _openConnectorAccess(BuildContext context, String toolId) {
+    final target = _connectorTarget(toolId);
+    final location = target == null
+        ? ServiceConnectionsRoute(
+            workspaceId: workspaceId,
+            view: 'connectors',
+          ).location
+        : ServiceConnectionCreateRoute(
+            workspaceId: workspaceId,
+            type: target.modelProviderId == null
+                ? 'connector'
+                : 'modelProvider',
+            connectorId: target.connectorId,
+            modelProviderId: target.modelProviderId,
+          ).location;
 
-  Future<bool?> _openToolAccess(BuildContext context, String toolId) =>
-      FeatureDestinations.push<bool>(
-        context,
-        SkillToolEditRoute(
-          workspaceId: workspaceId,
-          skillId: skillId,
-          toolId: toolId,
-        ).location,
-      );
-
-  Future<bool?> _openUserAccess(BuildContext context, String? definitionId) =>
-      FeatureDestinations.push<bool>(
-        context,
-        ServiceConnectionCreateRoute(
-          workspaceId: workspaceId,
-          type: 'skillCredential',
-          credentialDefinitionId: definitionId,
-        ).location,
-      );
-
-  Future<_SkillAccessRecoveryResult?> _openAppAccess(
-    _AppAccessRouteRequest request,
-  ) async {
-    final appSkill = request.ref
-        .read(appSkillRegistryProvider)
-        .getByIdentifier(skillId);
-    if (appSkill == null) return null;
-
-    final result = await FeatureDestinations.push<bool>(
-      request.context,
-      _appAccessLocation(
-        workspaceId,
-        skillId,
-        appSkill.compatibleModelProviderIds.isEmpty,
-      ),
-    );
-
-    return _skillAccessRecoveryResult(result, request.route);
+    return FeatureDestinations.push<bool>(context, location);
   }
 
   void _refreshAfterAccessRoute(
@@ -159,12 +107,7 @@ class const SkillAccessStatusView({
     if (recovery.result == true) {
       RefreshSkillAccess.refresh(
         ProviderScope.containerOf(context, listen: false),
-        (
-          workspaceId: workspaceId,
-          skillId: skillId,
-          credentialDefinitionId: recovery.definitionId,
-          toolsChanged: recovery.toolsChanged,
-        ),
+          (workspaceId: workspaceId, skillId: skillId),
       );
 
       return;
@@ -184,46 +127,37 @@ _SkillAccessRecoveryResult _skillAccessRecoveryResult(
   _SkillAccessRoute route,
 ) => (
   result: result,
-  definitionId: route.definitionId,
-  toolsChanged: route.toolsChanged,
 );
-
-String _appAccessLocation(
-  String workspaceId,
-  String skillId,
-  bool appSkillCredential,
-) {
-  final location = ServiceConnectionCreateRoute(
-    workspaceId: workspaceId,
-    type: appSkillCredential ? 'appSkillCredential' : 'modelProvider',
-  ).location;
-  final uri = Uri.parse(location);
-
-  return uri
-      .replace(
-        queryParameters: {
-          ...uri.queryParameters,
-          if (appSkillCredential) 'appSkillId': skillId,
-        },
-      )
-      .toString();
-}
 
 _SkillAccessRoute _skillAccessRoute(
   SkillAccessSummary summary,
-  bool isAppSkill,
+  bool _,
 ) {
   final missingTool = summary.tools
       .where((tool) => tool.status == .missing)
       .firstOrNull;
-  final definitionId =
-      missingTool?.credentialDefinitionId ?? summary.credentialDefinitionId;
 
-  return (
-    missingTool: missingTool,
-    definitionId: definitionId,
-    toolsChanged: !isAppSkill && definitionId == null,
-  );
+  return (missingTool: missingTool);
+}
+
+({String? connectorId, String? modelProviderId})? _connectorTarget(
+  String toolId,
+) {
+  final parts = toolId.split('/');
+  if (parts.length != 3 || parts.first != 'connector') return null;
+  for (final ConnectorDefinition connector in connectorDefinitions) {
+    if (connector.identifier != parts[1]) continue;
+    if (connector.compatibleModelProviderIds.isEmpty) {
+      return (connectorId: connector.identifier, modelProviderId: null);
+    }
+
+    return (
+      connectorId: null,
+      modelProviderId: connector.compatibleModelProviderIds.first,
+    );
+  }
+
+  return null;
 }
 
 class const _SkillAccessStatusContent({
@@ -231,7 +165,7 @@ class const _SkillAccessStatusContent({
   required final bool showDependencies,
   required final bool recoveryEnabled,
   required final _SkillAccessSetup onSetup,
-  final String? credentialSetupSemanticLabel,
+  final String? connectorSetupSemanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (summary) {
@@ -240,7 +174,7 @@ class const _SkillAccessStatusContent({
       showDependencies: showDependencies,
       recoveryEnabled: recoveryEnabled,
       onSetup: onSetup(value),
-      credentialSetupSemanticLabel: credentialSetupSemanticLabel,
+      connectorSetupSemanticLabel: connectorSetupSemanticLabel,
     ),
     AsyncLoading() => const TextLocale(LocaleKeys.skill_access_checking),
     AsyncData() ||
@@ -261,7 +195,7 @@ class const _SkillAccessSummaryContent({
   required final bool showDependencies,
   required final bool recoveryEnabled,
   required final VoidCallback onSetup,
-  final String? credentialSetupSemanticLabel,
+  final String? connectorSetupSemanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -272,7 +206,7 @@ class const _SkillAccessSummaryContent({
           summary: summary,
           recoveryEnabled: recoveryEnabled,
           onSetup: onSetup,
-          credentialSetupSemanticLabel: credentialSetupSemanticLabel,
+          connectorSetupSemanticLabel: connectorSetupSemanticLabel,
         ),
     ],
     spacing: .xs,
@@ -284,7 +218,7 @@ class const _SkillAccessDependencies({
   required final SkillAccessSummary summary,
   required final bool recoveryEnabled,
   required final VoidCallback onSetup,
-  final String? credentialSetupSemanticLabel,
+  final String? connectorSetupSemanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -296,7 +230,7 @@ class const _SkillAccessDependencies({
         _SkillAccessSetupButton(
           recoveryEnabled: recoveryEnabled,
           onPressed: onSetup,
-          semanticLabel: credentialSetupSemanticLabel,
+          semanticLabel: connectorSetupSemanticLabel,
         ),
     ],
     spacing: .xs,
@@ -315,7 +249,7 @@ class const _SkillAccessSetupButton({
   @override
   Widget build(BuildContext context) => AuraButton(
     onPressed: onPressed,
-    child: const TextLocale(LocaleKeys.skills_selector_credential_setup),
+    child: const TextLocale(LocaleKeys.skills_selector_connector_setup),
     variant: .text,
     disabled: !recoveryEnabled,
     semanticLabel: semanticLabel,

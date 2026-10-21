@@ -2,15 +2,13 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 void main() {
-  const connector = AppSkillDefinition(
+  const connector = ConnectorDefinition(
     identifier: 'notion',
-    slug: 'notion',
     title: 'Notion',
     description: '',
-    content: '',
     compatibleModelProviderIds: ['openai', 'anthropic'],
   );
-  const tool = AppSkillToolDefinition(
+  const tool = ConnectorToolDefinition(
     slug: 'search',
     title: 'Search',
     description: 'Find pages.',
@@ -22,7 +20,7 @@ void main() {
       'required': ['query'],
       'additionalProperties': false,
     },
-    requiresCredential: true,
+    requiresConnection: true,
   );
 
   test('Connector tool ID and revision stay stable across runtimes', () {

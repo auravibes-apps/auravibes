@@ -18,8 +18,21 @@ class const ConnectorToolReferencePicker({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final catalog = ref.watch(connectorToolCatalogProvider);
-    final itemsById = {for (final item in catalog) item.toolId: item};
+    return _ConnectorToolReferencePickerContent(
+      catalog: ref.watch(connectorToolCatalogProvider),
+      selectedToolIds: selectedToolIds,
+      onChanged: onChanged,
+    );
+  }
+}
+
+class const _ConnectorToolReferencePickerContent({
+  required final List<ConnectorToolCatalogItem> catalog,
+  required final Set<String> selectedToolIds,
+  required final ValueChanged<Set<String>> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final selected = selectedToolIds.toList()..sort();
 
     return Column(
@@ -29,26 +42,58 @@ class const ConnectorToolReferencePicker({
         const SizedBox(height: 4),
         const TextLocale(LocaleKeys.skills_screen_connector_tools_hint),
         const SizedBox(height: 8),
-        if (selected.isEmpty)
-          const TextLocale(LocaleKeys.skills_screen_connector_tools_empty)
-        else
-          for (final id in selected) Text(_displayName(itemsById[id], id)),
+        _SelectedConnectorToolLabels(
+          catalog: catalog,
+          selectedToolIds: selected,
+        ),
         const SizedBox(height: 8),
-        AuraButton(
-          onPressed: () => _selectTools(
-            context: context,
-            catalog: catalog,
-            selectedToolIds: selectedToolIds,
-            onChanged: onChanged,
-          ),
-          child: const TextLocale(
-            LocaleKeys.skills_screen_connector_tools_select,
-          ),
-          variant: .outlined,
+        _SelectConnectorToolsButton(
+          catalog: catalog,
+          selectedToolIds: selectedToolIds,
+          onChanged: onChanged,
         ),
       ],
     );
   }
+}
+
+class const _SelectedConnectorToolLabels({
+  required final List<ConnectorToolCatalogItem> catalog,
+  required final List<String> selectedToolIds,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (selectedToolIds.isEmpty) {
+      return const TextLocale(LocaleKeys.skills_screen_connector_tools_empty);
+    }
+
+    final itemsById = {for (final item in catalog) item.toolId: item};
+
+    return Column(
+      crossAxisAlignment: .start,
+      children: [
+        for (final id in selectedToolIds) Text(_displayName(itemsById[id], id)),
+      ],
+    );
+  }
+}
+
+class const _SelectConnectorToolsButton({
+  required final List<ConnectorToolCatalogItem> catalog,
+  required final Set<String> selectedToolIds,
+  required final ValueChanged<Set<String>> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => _selectTools(
+      context: context,
+      catalog: catalog,
+      selectedToolIds: selectedToolIds,
+      onChanged: onChanged,
+    ),
+    child: const TextLocale(LocaleKeys.skills_screen_connector_tools_select),
+    variant: .outlined,
+  );
 }
 
 Future<void> _selectTools({
@@ -88,18 +133,7 @@ class _ConnectorToolPickerDialogState
 
   @override
   Widget build(BuildContext context) {
-    final catalogById = {for (final item in widget.catalog) item.toolId: item};
-    final items = [
-      ...widget.catalog,
-      for (final id in _selectedToolIds)
-        if (!catalogById.containsKey(id))
-          ConnectorToolCatalogItem(
-            toolId: id,
-            connectorName: '',
-            title: id,
-            description: '',
-          ),
-    ]..sort(_compareToolItems);
+    final items = _connectorToolPickerItems(widget.catalog, _selectedToolIds);
 
     return AlertDialog(
       title: const TextLocale(
@@ -110,18 +144,10 @@ class _ConnectorToolPickerDialogState
         selectedToolIds: _selectedToolIds,
         onChanged: _setSelected,
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const TextLocale(LocaleKeys.common_cancel),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(Set.of(_selectedToolIds)),
-          child: const TextLocale(
-            LocaleKeys.skills_screen_connector_tools_apply,
-          ),
-        ),
-      ],
+      actions: _ConnectorToolPickerDialogActions.forSelection(
+        context,
+        _selectedToolIds,
+      ),
     );
   }
 
@@ -133,6 +159,41 @@ class _ConnectorToolPickerDialogState
           : _selectedToolIds.where((toolId) => toolId != id).toSet();
     });
   }
+}
+
+List<ConnectorToolCatalogItem> _connectorToolPickerItems(
+  List<ConnectorToolCatalogItem> catalog,
+  Set<String> selectedToolIds,
+) {
+  final catalogById = {for (final item in catalog) item.toolId: item};
+
+  return [
+    ...catalog,
+    for (final id in selectedToolIds)
+      if (!catalogById.containsKey(id))
+        ConnectorToolCatalogItem(
+          toolId: id,
+          connectorName: '',
+          title: id,
+          description: '',
+        ),
+  ]..sort(_compareToolItems);
+}
+
+abstract final class _ConnectorToolPickerDialogActions {
+  static List<Widget> forSelection(
+    BuildContext context,
+    Set<String> selectedToolIds,
+  ) => [
+    TextButton(
+      onPressed: () => Navigator.of(context).pop(),
+      child: const TextLocale(LocaleKeys.common_cancel),
+    ),
+    TextButton(
+      onPressed: () => Navigator.of(context).pop(Set.of(selectedToolIds)),
+      child: const TextLocale(LocaleKeys.skills_screen_connector_tools_apply),
+    ),
+  ];
 }
 
 class const _ConnectorToolPickerContent({
@@ -149,27 +210,43 @@ class const _ConnectorToolPickerContent({
       children: [
         const TextLocale(LocaleKeys.skills_screen_connector_tools_hint),
         const SizedBox(height: 8),
-        if (items.isEmpty)
-          const TextLocale(LocaleKeys.skills_screen_connector_tools_empty)
-        else
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: .min,
-                children: [
-                  for (final item in items)
-                    _ConnectorToolPickerOption(
-                      item: item,
-                      selected: selectedToolIds.contains(item.toolId),
-                      onChanged: onChanged,
-                    ),
-                ],
-              ),
-            ),
+        Flexible(
+          child: _ConnectorToolPickerItems(
+            items: items,
+            selectedToolIds: selectedToolIds,
+            onChanged: onChanged,
           ),
+        ),
       ],
     ),
   );
+}
+
+class const _ConnectorToolPickerItems({
+  required final List<ConnectorToolCatalogItem> items,
+  required final Set<String> selectedToolIds,
+  required final _ConnectorToolSelectionCallback onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return const TextLocale(LocaleKeys.skills_screen_connector_tools_empty);
+    }
+
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: .min,
+        children: [
+          for (final item in items)
+            _ConnectorToolPickerOption(
+              item: item,
+              selected: selectedToolIds.contains(item.toolId),
+              onChanged: onChanged,
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class const _ConnectorToolPickerOption({
@@ -178,14 +255,17 @@ class const _ConnectorToolPickerOption({
   required final _ConnectorToolSelectionCallback onChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraCheckboxListTile(
-    value: selected,
-    onChanged: (value) => onChanged(id: item.toolId, selected: value),
-    title: Text(_displayName(item, item.toolId)),
-    key: ValueKey('skill-connector-tool-${item.toolId}'),
-    subtitle: item.description.isEmpty ? null : Text(item.description),
-    semanticLabel: _displayName(item, item.toolId),
-  );
+  Widget build(BuildContext context) {
+    final label = _displayName(item, item.toolId);
+
+    return AuraCheckboxListTile(
+      value: selected,
+      onChanged: (value) => onChanged(id: item.toolId, selected: value),
+      title: Text(label),
+      subtitle: item.description.isEmpty ? null : Text(item.description),
+      semanticLabel: label,
+    );
+  }
 }
 
 String _displayName(ConnectorToolCatalogItem? item, String fallback) {

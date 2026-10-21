@@ -9,9 +9,7 @@ class const AvailableSkill({
   required final SkillSource source,
   required final SkillKind kind,
   final List<String> connectorToolIds = const [],
-  final bool isCredentialOptional = false,
-  final String? credentialDefinitionId,
-  final SkillCredentialReadiness credentialReadiness = .unknown,
+  final ConnectorConnectionReadiness connectorReadiness = .unknown,
 });
 
-enum SkillCredentialReadiness { ready, missing, unknown }
+enum ConnectorConnectionReadiness { ready, missing, unknown }

@@ -33,11 +33,8 @@ import 'package:auravibes_app/features/service_connections/screens/service_conne
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
-import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
-import 'package:auravibes_app/features/skills/screens/skill_credential_definitions_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen.dart';
-import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -246,13 +243,6 @@ void main() {
       title: 'markdown_editor.resource_content',
       hint: 'markdown_editor.resource_hint',
       cap: 50000,
-    ),
-    (
-      route: 'SkillToolEditRoute',
-      launcher: 'skills_screen.edit_description',
-      title: 'markdown_editor.tool_description',
-      hint: 'markdown_editor.tool_hint',
-      cap: 1024,
     ),
   ]) {
     for (final locale in const ['en', 'es']) {
@@ -851,7 +841,7 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
     ),
     'ServiceConnectionCreateRoute' => (
       location:
-          '$base/service-connections/new?type=skillCredential&credentialDefinitionId=${f.definitionId}',
+          '$base/service-connections/new?type=connector&connectorId=jina',
       screen: ServiceConnectionCreateScreen,
       selection: 2,
       expected: null,
@@ -910,36 +900,6 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
       selection: 1,
       expected: null,
     ),
-    'SkillToolCreateRoute' => (
-      location: '$base/skills/${f.skillId}/tools/new',
-      screen: SkillToolEditScreen,
-      selection: 1,
-      expected: null,
-    ),
-    'SkillToolEditRoute' => (
-      location: '$base/skills/${f.skillId}/tools/${f.toolId}',
-      screen: SkillToolEditScreen,
-      selection: 1,
-      expected: null,
-    ),
-    'SkillCredentialDefinitionsRoute' => (
-      location: '$base/skill-credential-definitions',
-      screen: SkillCredentialDefinitionsScreen,
-      selection: 2,
-      expected: null,
-    ),
-    'SkillCredentialDefinitionCreateRoute' => (
-      location: '$base/skill-credential-definitions/new',
-      screen: SkillCredentialDefinitionEditScreen,
-      selection: 2,
-      expected: null,
-    ),
-    'SkillCredentialDefinitionEditRoute' => (
-      location: '$base/skill-credential-definitions/${f.definitionId}',
-      screen: SkillCredentialDefinitionEditScreen,
-      selection: 2,
-      expected: null,
-    ),
     _ => throw ArgumentError(name),
   };
 }
@@ -982,11 +942,6 @@ const _routeNames = [
   'SkillDetailRoute',
   'SkillResourceCreateRoute',
   'SkillResourceEditRoute',
-  'SkillToolCreateRoute',
-  'SkillToolEditRoute',
-  'SkillCredentialDefinitionsRoute',
-  'SkillCredentialDefinitionCreateRoute',
-  'SkillCredentialDefinitionEditRoute',
 ];
 
 Future<void> _registerCaptureFont(
@@ -1149,13 +1104,13 @@ List<Object> _overrides(UxValidationFixture fixture, String name) {
               status: ServiceConnectionDisplayStatus.expired,
             ),
             (
-              name: 'Research credential',
-              kind: ServiceConnectionListItemKind.skillCredential,
+              name: 'Research Connector',
+              kind: ServiceConnectionListItemKind.connector,
               status: ServiceConnectionDisplayStatus.unknown,
             ),
             (
-              name: 'Saved service',
-              kind: ServiceConnectionListItemKind.skillCredential,
+              name: 'Saved Connector',
+              kind: ServiceConnectionListItemKind.connector,
               status: ServiceConnectionDisplayStatus.unknown,
             ),
           ])
@@ -1166,7 +1121,6 @@ List<Object> _overrides(UxValidationFixture fixture, String name) {
               serviceName: 'Research',
               kind: item.kind,
               keySuffix: '1234',
-              credentialDefinitionId: null,
               mcpServerId: null,
               authenticationType: null,
               displayStatus: item.status,
@@ -1214,17 +1168,17 @@ List<Object> _overrides(UxValidationFixture fixture, String name) {
     return [
       serviceConnectionOperationsProvider(fixture.workspaceId).overrideWith(
         (ref) async => ServiceConnectionOperations(
-          createAppSkillCredential: ({
+          createConnectorConnection: ({
             required workspaceId,
-            required appSkillServiceId,
+            required connectorId,
             required name,
             required apiKey,
           }) async => throw UnimplementedError(),
           getGenericForEdit: (id) async => id == 'fixture-service'
               ? const GenericServiceConnectionForEdit(
                   id: 'fixture-service',
-                  name: 'Saved research service',
-                  serviceId: 'app-skill',
+                  name: 'Saved research Connector',
+                  serviceId: 'jina',
                   hasSecret: true,
                   keySuffix: '1234',
                 )

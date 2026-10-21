@@ -1,9 +1,9 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_request_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-const syntheticSkill = AppSkillDefinition(
+final syntheticSkill = ServiceSkillPreset(
   identifier: 'synthetic',
   slug: 'synthetic',
   title: 'Synthetic',
@@ -12,18 +12,16 @@ const syntheticSkill = AppSkillDefinition(
 Use Synthetic for simple web result lookup when the workspace has Synthetic
 service or model-provider credentials.
 ''',
-  requiresCredential: true,
   compatibleModelProviderIds: ['synthetic'],
-  kind: .template,
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search web results for a query.',
       inputJsonSchema: searchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: .new(
-        template: SkillUrlTemplate(
+        template: ConnectorRequestTemplate(
           url: 'https://api.synthetic.new/v2/search',
           method: .post,
           headers: {

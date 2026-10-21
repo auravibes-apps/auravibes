@@ -88,8 +88,6 @@ extension SkillsRepositoryCompanionMappings on SkillsRepository {
     description: .new(skill.description),
     content: .new(skill.content),
     connectorToolIdsJson: .new(_encodeConnectorToolIds(skill.connectorToolIds)),
-    credentialDefinitionId: .new(skill.credentialDefinitionId),
-    isCredentialOptional: .new(skill.isCredentialOptional),
     isEnabled: .new(skill.isEnabled),
   );
 
@@ -110,8 +108,6 @@ extension SkillsRepositoryCompanionMappings on SkillsRepository {
       connectorToolIdsJson: connectorToolIds == null
           ? const Value.absent()
           : Value(_encodeConnectorToolIds(connectorToolIds)),
-      credentialDefinitionId: _credentialDefinitionValue(skill),
-      isCredentialOptional: .absentIfNull(skill.isCredentialOptional),
       isEnabled: .absentIfNull(skill.isEnabled),
     );
   }
@@ -120,11 +116,6 @@ extension SkillsRepositoryCompanionMappings on SkillsRepository {
     return title == null ? const Value.absent() : .new(title.trim());
   }
 
-  Value<String?> _credentialDefinitionValue(SkillToUpdate skill) {
-    return skill.clearCredentialDefinition
-        ? const Value(null)
-        : Value.absentIfNull(skill.credentialDefinitionId);
-  }
 }
 
 extension SkillsRepositoryEntityMappings on SkillsRepository {
@@ -155,10 +146,8 @@ extension SkillsRepositoryEntityMappings on SkillsRepository {
   SkillEntity _withSkillState(SkillEntity skill, SkillsTable table) =>
       skill.copyWith(
         isEnabled: table.isEnabled,
-        isCredentialOptional: table.isCredentialOptional,
         createdAt: table.createdAt,
         updatedAt: table.updatedAt,
-        credentialDefinitionId: table.credentialDefinitionId,
       );
 
   SkillSource _mapSource(SkillSourceTable source) {
@@ -205,7 +194,6 @@ final _emptySkillEntity = SkillEntity(
   description: '',
   content: '',
   isEnabled: false,
-  isCredentialOptional: false,
   createdAt: .new(0),
   updatedAt: .new(0),
 );

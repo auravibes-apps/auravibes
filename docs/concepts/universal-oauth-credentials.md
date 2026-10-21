@@ -1,8 +1,7 @@
 # Universal OAuth Credentials
 
-This document explains the current credentials and OAuth implementation. The
-goal is one credential path for MCP servers now, and model providers, skills,
-and other integrations later.
+This document explains the shared credential and OAuth implementation for
+model providers, Connectors, and MCP servers.
 
 ## Core Idea
 
@@ -27,7 +26,7 @@ Important columns:
 
 | Column | Purpose |
 | --- | --- |
-| `kind` | Credential owner/use category, such as `modelProvider`, `mcpServer`, or `skillCredential`. |
+| `kind` | Credential owner/use category, such as `modelProvider`, `mcpServer`, or `customHttp` for Connector access. |
 | `authentication_type` | `none`, `apiKey`, `bearerToken`, or `oauth2`. |
 | `encrypted_auth_value` | Encrypted secret JSON. Never read this directly from UI or feature code. |
 | `metadata_json` | Public/non-secret metadata JSON. Safe to decode for display. |
@@ -155,7 +154,7 @@ Connections rows are built by:
 It combines:
 
 - model provider connections
-- skill credentials
+- generic Connector connections
 - MCP servers joined to their `service_connections` rows
 
 The UI displays only safe metadata. It must not read or render secret JSON.
@@ -190,13 +189,14 @@ Do not store access tokens or refresh tokens on feature tables.
 
 ### 2. Keep a Reference
 
-Add a nullable `service_connection_id` column to the feature table.
+Add a nullable `service_connection_id` column only when a feature owns a
+separate resource that must point to the credential.
 
 Examples:
 
 - MCP: `mcp_servers.service_connection_id`
-- Future model provider OAuth: model connection row references a service
-  connection or becomes backed by one.
+- Model provider OAuth: model connection row references a service connection
+  or becomes backed by one.
 - Connector tools and Skills: resolve the workspace's service connection at
   runtime; neither Skill nor Connector tool owns a credential row. See
   [ADR 0001](../adr/0001-connector-tools-and-skills.md).

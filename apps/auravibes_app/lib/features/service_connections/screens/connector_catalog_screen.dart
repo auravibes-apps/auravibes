@@ -270,8 +270,8 @@ String _connectorCreateLocation(
   ConnectorCatalogItem connector,
 ) => ServiceConnectionCreateRoute(
   workspaceId: workspaceId,
-  type: connector.offersModels ? 'modelProvider' : 'appSkillCredential',
-  appSkillId: connector.offersModels ? null : connector.id,
+  type: connector.offersModels ? 'modelProvider' : 'connector',
+  connectorId: connector.offersModels ? null : connector.id,
   modelProviderId:
       connector.offersModels && connector.modelProviderIds.isNotEmpty
       ? connector.modelProviderIds.first

@@ -1,12 +1,12 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
 const _authorizationHeader = 'Bearer {{ credential.apiKey }}';
 const _contentTypeHeader = 'content-type';
 const _jsonContentType = 'application/json';
 
-final perplexitySkill = AppSkillDefinition(
+final perplexitySkill = ServiceSkillPreset(
   identifier: 'perplexity',
   slug: 'perplexity',
   title: 'Perplexity',
@@ -15,16 +15,14 @@ final perplexitySkill = AppSkillDefinition(
 Use Perplexity for source-backed answers, ranked web results, or agentic web
 research. Prefer Sonar for concise answers and agent for broader workflows.
 ''',
-  requiresCredential: true,
   compatibleModelProviderIds: ['perplexity', 'perplexity-agent'],
-  kind: .template,
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search the web for ranked results.',
       inputJsonSchema: _searchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.perplexity.ai/search',
         inputSchema: _searchInputSchema,
@@ -36,12 +34,12 @@ research. Prefer Sonar for concise answers and agent for broader workflows.
         bodyFormat: .json,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'sonar_answer',
       title: 'Sonar answer',
       description: 'Answer a question with web citations.',
       inputJsonSchema: _sonarInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.perplexity.ai/v1/sonar',
         inputSchema: _sonarInputSchema,
@@ -53,12 +51,12 @@ research. Prefer Sonar for concise answers and agent for broader workflows.
         bodyFormat: .json,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'agent',
       title: 'Agent',
       description: 'Run a Perplexity agent workflow for a question.',
       inputJsonSchema: _agentInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.perplexity.ai/v1/agent',
         inputSchema: _agentInputSchema,

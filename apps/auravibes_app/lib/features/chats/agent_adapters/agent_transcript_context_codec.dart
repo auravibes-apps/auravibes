@@ -71,7 +71,8 @@ List<Map<String, Object?>> _encodeTools(List<ToolSpec> tools) => [
       'name': tool.name,
       'description': tool.description,
       'inputJsonSchema': tool.inputJsonSchema,
-      'requiresCredential': tool.requiresCredential,
+      // Retain the archive field for older readers; tools no longer own credentials.
+      'requiresCredential': false,
     },
 ];
 
@@ -134,7 +135,6 @@ ToolSpec _decodeTool(Object? value) {
     name: _requiredString(data, 'name'),
     description: _requiredString(data, 'description'),
     inputJsonSchema: _requiredObjectMap(data, 'inputJsonSchema'),
-    requiresCredential: _requiredBool(data, 'requiresCredential'),
   );
 }
 
@@ -166,13 +166,6 @@ String? _optionalString(Map<String, Object?> data, String key) {
   final value = data[key];
   if (value == null) return null;
   if (value is! String) throw const FormatException();
-
-  return value;
-}
-
-bool _requiredBool(Map<String, Object?> data, String key) {
-  final value = data[key];
-  if (value is! bool) throw const FormatException();
 
   return value;
 }

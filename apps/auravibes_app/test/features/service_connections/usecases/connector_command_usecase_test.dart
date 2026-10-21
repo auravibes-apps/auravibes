@@ -1,5 +1,5 @@
 import 'package:auravibes_app/features/service_connections/usecases/connector_command_usecase.dart';
-import 'package:auravibes_app/features/skills/models/app_skill_credential_candidate.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_connection_candidate.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,20 +11,20 @@ void main() {
           <
             ({
               String workspaceId,
-              AppSkillDefinition connector,
-              AppSkillToolDefinition tool,
+              ConnectorDefinition connector,
+              ConnectorToolDefinition tool,
               Map<String, dynamic> arguments,
             })
           >[];
       final usecase = _usecase(
         connections: const [
-          AppSkillCredentialCandidate(id: 'service:one', name: 'Work'),
+          ConnectorConnectionCandidate(id: 'service:one', name: 'Work'),
         ],
         onLoadConnections: (workspaceId, _) async {
           loadedWorkspaceIds.add(workspaceId);
 
           return const [
-            AppSkillCredentialCandidate(id: 'service:one', name: 'Work'),
+            ConnectorConnectionCandidate(id: 'service:one', name: 'Work'),
           ];
         },
         onRun:
@@ -61,7 +61,7 @@ void main() {
       expect(calls.single.tool.slug, 'search');
       expect(calls.single.arguments, {
         'query': 'find a record',
-        'credentialId': 'service:one',
+        'connectionId': 'service:one',
       });
     });
 
@@ -105,8 +105,8 @@ void main() {
     test('requires an explicit Connection when several match', () async {
       final usecase = _usecase(
         connections: const [
-          AppSkillCredentialCandidate(id: 'service:one', name: 'Work'),
-          AppSkillCredentialCandidate(id: 'service:two', name: 'Personal'),
+          ConnectorConnectionCandidate(id: 'service:one', name: 'Work'),
+          ConnectorConnectionCandidate(id: 'service:two', name: 'Personal'),
         ],
       );
 
@@ -133,7 +133,7 @@ void main() {
       var ran = false;
       final usecase = _usecase(
         connections: const [
-          AppSkillCredentialCandidate(id: 'service:one', name: 'Work'),
+          ConnectorConnectionCandidate(id: 'service:one', name: 'Work'),
         ],
         onRun:
             ({
@@ -159,21 +159,22 @@ void main() {
         'revision',
       );
       final changedContract = _usecase(
-        connections: const [],
+        connections: const [
+          ConnectorConnectionCandidate(id: 'service:one', name: 'Work'),
+        ],
         connectors: [
-          AppSkillDefinition(
+          ConnectorDefinition(
             identifier: 'example',
-            slug: 'example',
             title: 'Example',
             description: 'Example Connector.',
-            content: '',
             tools: [
-              AppSkillToolDefinition(
+              ConnectorToolDefinition(
                 slug: 'search',
                 title: 'Search',
-                description: 'Search current records.',
+                description: 'Search updated records.',
                 inputJsonSchema: _tool.inputJsonSchema,
                 urlTemplate: _tool.urlTemplate,
+                requiresConnection: true,
               ),
             ],
           ),
@@ -239,7 +240,7 @@ void main() {
     test('discovers tool contracts and safe Connection labels', () async {
       final usecase = _usecase(
         connections: const [
-          AppSkillCredentialCandidate(id: 'service:one', name: 'Work'),
+          ConnectorConnectionCandidate(id: 'service:one', name: 'Work'),
         ],
       );
 
@@ -261,12 +262,45 @@ void main() {
       expect(tools.toString(), isNot(contains('secret-value')));
     });
 
+    test('omits connection-requiring tools without a usable Connection', () async {
+      final publicConnector = connectorDefinitions.singleWhere(
+        (connector) => connector.identifier == 'duckduckgo',
+      );
+      final credentialedConnector = connectorDefinitions.singleWhere(
+        (connector) => connector.identifier == 'openai',
+      );
+      final usecase = _usecase(
+        connections: const [],
+        connectors: [credentialedConnector, publicConnector],
+      );
+
+      final result = _objectMap(
+        await usecase.call(
+          workspaceId: 'workspace-current',
+          commandName: listConnectorToolsToolName,
+          arguments: const {},
+        ),
+      );
+      final tools = _objectList(result['tools'])
+          .map(_objectMap)
+          .toList(growable: false);
+
+      expect(
+        tools.map((tool) => tool['toolId']),
+        contains('connector/duckduckgo/search'),
+      );
+      expect(
+        tools.map((tool) => tool['connectorId']),
+        isNot(contains('openai')),
+      );
+    });
+
     test(
       'lists current Connections without exposing credential data',
       () async {
         final usecase = _usecase(
           connections: const [
-            AppSkillCredentialCandidate(id: 'service:one', name: 'Work'),
+            ConnectorConnectionCandidate(id: 'service:one', name: 'Work'),
           ],
         );
 
@@ -293,7 +327,7 @@ void main() {
     test('replaces executor errors with a safe recoverable result', () async {
       final usecase = _usecase(
         connections: const [
-          AppSkillCredentialCandidate(id: 'service:one', name: 'Work'),
+          ConnectorConnectionCandidate(id: 'service:one', name: 'Work'),
         ],
         onRun:
             ({
@@ -341,7 +375,7 @@ void main() {
       () async {
         final usecase = _usecase(
           connections: const [
-            AppSkillCredentialCandidate(id: 'service:one', name: 'Work'),
+            ConnectorConnectionCandidate(id: 'service:one', name: 'Work'),
           ],
           onRun:
               ({
@@ -394,8 +428,8 @@ void main() {
       Map<String, dynamic>? calledArguments;
       final usecase = _usecase(
         connections: const [
-          AppSkillCredentialCandidate(id: 'service:one', name: 'Work'),
-          AppSkillCredentialCandidate(id: 'service:two', name: 'Personal'),
+          ConnectorConnectionCandidate(id: 'service:one', name: 'Work'),
+          ConnectorConnectionCandidate(id: 'service:two', name: 'Personal'),
         ],
         onRun:
             ({
@@ -420,21 +454,19 @@ void main() {
         },
       );
 
-      expect(calledArguments?['credentialId'], 'service:two');
+      expect(calledArguments?['connectionId'], 'service:two');
     });
   });
 }
 
-const _connector = AppSkillDefinition(
+const _connector = ConnectorDefinition(
   identifier: 'example',
-  slug: 'example',
   title: 'Example',
   description: 'Example Connector.',
-  content: '',
   tools: [_tool],
 );
 
-const _tool = AppSkillToolDefinition(
+const _tool = ConnectorToolDefinition(
   slug: 'search',
   title: 'Search',
   description: 'Search current records.',
@@ -450,12 +482,12 @@ const _tool = AppSkillToolDefinition(
     template: .new(url: 'https://example.invalid/search'),
     inputs: {},
   ),
-  requiresCredential: true,
+  requiresConnection: true,
 );
 
 ConnectorCommandUsecase _usecase({
-  required List<AppSkillCredentialCandidate> connections,
-  List<AppSkillDefinition> connectors = const [_connector],
+  required List<ConnectorConnectionCandidate> connections,
+  List<ConnectorDefinition> connectors = const [_connector],
   ConnectorConnectionsLoader? onLoadConnections,
   ConnectorToolRunner? onRun,
 }) => ConnectorCommandUsecase(

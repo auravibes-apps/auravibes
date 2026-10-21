@@ -77,14 +77,21 @@ void main() {
     );
   });
 
-  test('skill template tools reference their owning skill', () {
-    final references = WorkspaceResourceValidation.references(
-      WorkspaceResourceKind.skillTemplateTool,
-      {'skillId': 'skill-1'},
+  test('Skills and Connections do not reference Skill-owned credentials', () {
+    expect(
+      WorkspaceResourceValidation.references(
+        WorkspaceResourceKind.skill,
+        {'connectorToolIds': ['connector/notion/search']},
+      ),
+      isEmpty,
     );
-
-    expect(references.single.kind, WorkspaceResourceKind.skill);
-    expect(references.single.id, 'skill-1');
+    expect(
+      WorkspaceResourceValidation.references(
+        WorkspaceResourceKind.serviceConnection,
+        {'kind': 'customHttp', 'serviceId': 'notion'},
+      ),
+      isEmpty,
+    );
   });
 
   test('app conversation skill selections do not reference user skills', () {

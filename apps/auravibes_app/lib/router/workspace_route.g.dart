@@ -131,23 +131,6 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
                     ),
                   ],
                 ),
-                GoRouteData.$route(
-                  path: 'skill-credential-definitions',
-                  hasOverriddenOnExit: false,
-                  factory: $SkillCredentialDefinitionsRoute._fromState,
-                  routes: [
-                    GoRouteData.$route(
-                      path: 'new',
-                      hasOverriddenOnExit: true,
-                      factory: $SkillCredentialDefinitionCreateRoute._fromState,
-                    ),
-                    GoRouteData.$route(
-                      path: ':definitionId',
-                      hasOverriddenOnExit: true,
-                      factory: $SkillCredentialDefinitionEditRoute._fromState,
-                    ),
-                  ],
-                ),
               ],
             ),
             ShellRouteData.$route(
@@ -163,16 +146,6 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
                       path: 'new',
                       hasOverriddenOnExit: true,
                       factory: $SkillCreateRoute._fromState,
-                    ),
-                    GoRouteData.$route(
-                      path: ':skillId/tools/new',
-                      hasOverriddenOnExit: true,
-                      factory: $SkillToolCreateRoute._fromState,
-                    ),
-                    GoRouteData.$route(
-                      path: ':skillId/tools/:toolId',
-                      hasOverriddenOnExit: true,
-                      factory: $SkillToolEditRoute._fromState,
                     ),
                     GoRouteData.$route(
                       path: ':skillId/resources/new',
@@ -748,9 +721,7 @@ mixin $ServiceConnectionCreateRoute on GoRouteData {
         workspaceId: state.pathParameters['workspaceId']!,
         returnPath: state.uri.queryParameters['return-path'],
         type: state.uri.queryParameters['type'],
-        credentialDefinitionId:
-            state.uri.queryParameters['credentialDefinitionId'],
-        appSkillId: state.uri.queryParameters['appSkillId'],
+        connectorId: state.uri.queryParameters['connectorId'],
         modelProviderId: state.uri.queryParameters['modelProviderId'],
       );
 
@@ -763,9 +734,7 @@ mixin $ServiceConnectionCreateRoute on GoRouteData {
     queryParams: {
       if (_self.returnPath != null) 'return-path': _self.returnPath,
       if (_self.type != null) 'type': _self.type,
-      if (_self.credentialDefinitionId != null)
-        'credentialDefinitionId': _self.credentialDefinitionId,
-      if (_self.appSkillId != null) 'appSkillId': _self.appSkillId,
+      if (_self.connectorId != null) 'connectorId': _self.connectorId,
       if (_self.modelProviderId != null)
         'modelProviderId': _self.modelProviderId,
     },
@@ -797,102 +766,6 @@ mixin $ServiceConnectionEditRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/service-connections/${Uri.encodeComponent(_self.connectionId)}',
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $SkillCredentialDefinitionsRoute on GoRouteData {
-  static SkillCredentialDefinitionsRoute _fromState(GoRouterState state) =>
-      SkillCredentialDefinitionsRoute(
-        workspaceId: state.pathParameters['workspaceId']!,
-      );
-
-  SkillCredentialDefinitionsRoute get _self =>
-      this as SkillCredentialDefinitionsRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions',
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $SkillCredentialDefinitionCreateRoute on GoRouteData {
-  static SkillCredentialDefinitionCreateRoute _fromState(GoRouterState state) =>
-      SkillCredentialDefinitionCreateRoute(
-        workspaceId: state.pathParameters['workspaceId']!,
-        returnCreated:
-            _$convertMapValue(
-              'return-created',
-              state.uri.queryParameters,
-              _$boolConverter,
-            ) ??
-            false,
-      );
-
-  SkillCredentialDefinitionCreateRoute get _self =>
-      this as SkillCredentialDefinitionCreateRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions/new',
-    queryParams: {
-      if (_self.returnCreated != false)
-        'return-created': _self.returnCreated.toString(),
-    },
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $SkillCredentialDefinitionEditRoute on GoRouteData {
-  static SkillCredentialDefinitionEditRoute _fromState(GoRouterState state) =>
-      SkillCredentialDefinitionEditRoute(
-        workspaceId: state.pathParameters['workspaceId']!,
-        definitionId: state.pathParameters['definitionId']!,
-      );
-
-  SkillCredentialDefinitionEditRoute get _self =>
-      this as SkillCredentialDefinitionEditRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skill-credential-definitions/${Uri.encodeComponent(_self.definitionId)}',
   );
 
   @override
@@ -949,63 +822,6 @@ mixin $SkillCreateRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skills/new',
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $SkillToolCreateRoute on GoRouteData {
-  static SkillToolCreateRoute _fromState(GoRouterState state) =>
-      SkillToolCreateRoute(
-        workspaceId: state.pathParameters['workspaceId']!,
-        skillId: state.pathParameters['skillId']!,
-      );
-
-  SkillToolCreateRoute get _self => this as SkillToolCreateRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skills/${Uri.encodeComponent(_self.skillId)}/tools/new',
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $SkillToolEditRoute on GoRouteData {
-  static SkillToolEditRoute _fromState(GoRouterState state) =>
-      SkillToolEditRoute(
-        workspaceId: state.pathParameters['workspaceId']!,
-        skillId: state.pathParameters['skillId']!,
-        toolId: state.pathParameters['toolId']!,
-      );
-
-  SkillToolEditRoute get _self => this as SkillToolEditRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/skills/${Uri.encodeComponent(_self.skillId)}/tools/${Uri.encodeComponent(_self.toolId)}',
   );
 
   @override
@@ -1231,26 +1047,6 @@ mixin $WorkspaceSettingsRoute on GoRouteData {
 
   @override
   void replace(BuildContext context) => context.replace(location);
-}
-
-T? _$convertMapValue<T>(
-  String key,
-  Map<String, String> map,
-  T? Function(String) converter,
-) {
-  final value = map[key];
-  return value == null ? null : converter(value);
-}
-
-bool _$boolConverter(String value) {
-  switch (value) {
-    case 'true':
-      return true;
-    case 'false':
-      return false;
-    default:
-      throw UnsupportedError('Cannot convert "$value" into a bool.');
-  }
 }
 
 RouteBase get $introRoute => GoRouteData.$route(

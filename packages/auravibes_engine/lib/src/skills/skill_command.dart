@@ -1,47 +1,20 @@
 import 'dart:collection';
 
-import 'package:auravibes_engine/src/skills/skill_tool_materialization.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
 
 const activateSkillToolName = 'activate_skill';
-const listSkillCredentialsToolName = 'list_skill_credentials';
-const callSkillToolName = 'call_skill_tool';
 const loadSkillResourceToolName = 'load_skill_resource';
 
 const skillCommandToolNames = <String>{
   activateSkillToolName,
-  listSkillCredentialsToolName,
-  callSkillToolName,
   loadSkillResourceToolName,
 };
 
-List<ToolSpec> buildSkillCommandToolSpecs({
-  Iterable<SkillManifest> manifests = const [],
-}) => [
+List<ToolSpec> buildSkillCommandToolSpecs() => [
   ToolSpec(
     name: activateSkillToolName,
     description: 'Activate one skill from the current skill catalog.',
     inputJsonSchema: _skillActivationSchema,
-  ),
-  ToolSpec(
-    name: listSkillCredentialsToolName,
-    description: 'List credential ids and names available to a loaded skill.',
-    inputJsonSchema: _skillSlugSchema,
-  ),
-  ToolSpec(
-    name: callSkillToolName,
-    description: 'Call one tool exposed by a loaded skill manifest.',
-    inputJsonSchema: {
-      'type': 'object',
-      'properties': {
-        'skill': {'type': 'string'},
-        'tool': {'type': 'string'},
-        'args': _skillArgumentsSchema(manifests),
-        'revision': {'type': 'string'},
-      },
-      'required': ['skill', 'tool', 'args', 'revision'],
-      'additionalProperties': false,
-    },
   ),
   ToolSpec(
     name: loadSkillResourceToolName,
@@ -57,46 +30,6 @@ List<ToolSpec> buildSkillCommandToolSpecs({
     },
   ),
 ];
-
-Map<String, Object?> _skillArgumentsSchema(Iterable<SkillManifest> manifests) {
-  final contracts =
-      [
-        for (final manifest in manifests)
-          for (final tool in manifest.tools)
-            (
-              skill: manifest.slug,
-              tool: tool.name,
-              schema: strictSkillToolSchema(
-                tool.inputJsonSchema,
-                optionalNullMeansOmission: tool.optionalNullMeansOmission,
-              ),
-            ),
-      ]..sort((left, right) {
-        final skillOrder = left.skill.compareTo(right.skill);
-        return skillOrder == 0 ? left.tool.compareTo(right.tool) : skillOrder;
-      });
-
-  if (contracts.isEmpty) return _emptySkillArgumentsSchema;
-  return {
-    'anyOf': [for (final contract in contracts) contract.schema],
-  };
-}
-
-const _emptySkillArgumentsSchema = <String, Object?>{
-  'type': 'object',
-  'properties': <String, Object?>{},
-  'required': <String>[],
-  'additionalProperties': false,
-};
-
-const _skillSlugSchema = <String, Object?>{
-  'type': 'object',
-  'properties': {
-    'slug': {'type': 'string'},
-  },
-  'required': ['slug'],
-  'additionalProperties': false,
-};
 
 const _skillActivationSchema = <String, Object?>{
   'type': 'object',
@@ -126,55 +59,6 @@ class SkillActivationTarget._({
   }
 }
 
-class SkillCommandTarget._({
-  required final String skill,
-  required final String tool,
-  required final Map<String, Object?> args,
-  required final String revision,
-}) {
-  factory fromArguments(Map<String, Object?> arguments) {
-    final skill = arguments['skill'];
-    final tool = arguments['tool'];
-    final args = arguments['args'];
-    final revision = arguments['revision'];
-    if (skill is! String || skill.isEmpty) {
-      throw const FormatException('skill must be a non-empty string');
-    }
-    if (tool is! String || tool.isEmpty) {
-      throw const FormatException('tool must be a non-empty string');
-    }
-    if (revision is! String || revision.isEmpty) {
-      throw const FormatException('revision must be a non-empty string');
-    }
-    if (args is! Map) {
-      throw const FormatException('args must be an object');
-    }
-
-    final normalizedArgs = <String, Object?>{};
-    for (final entry in args.entries) {
-      if (entry.key is! String) {
-        throw const FormatException('args keys must be strings');
-      }
-      normalizedArgs[entry.key as String] = entry.value;
-    }
-
-    return SkillCommandTarget._(
-      skill: skill,
-      tool: tool,
-      args: _freezeMap(normalizedArgs),
-      revision: revision,
-    );
-  }
-
-  SkillCommandTarget copyWithArguments(Map<String, Object?> args) =>
-      SkillCommandTarget._(
-        skill: skill,
-        tool: tool,
-        args: _freezeMap(args),
-        revision: revision,
-      );
-}
-
 class SkillResourceTarget._({
   required final String skill,
   required final String resource,
@@ -199,10 +83,8 @@ class SkillManifest {
     required this.title,
     required this.description,
     required this.revision,
-    required Iterable<SkillManifestTool> tools,
     Iterable<String> connectorToolIds = const [],
-  }) : tools = List.unmodifiable(tools.toList()..sort(_compareTools)),
-       connectorToolIds = List.unmodifiable(
+  }) : connectorToolIds = List.unmodifiable(
          connectorToolIds
              .map((id) => id.trim())
              .where((id) => id.isNotEmpty)
@@ -215,7 +97,6 @@ class SkillManifest {
   final String title;
   final String description;
   final String revision;
-  final List<SkillManifestTool> tools;
   final List<String> connectorToolIds;
 
   Map<String, Object?> toJson() => {
@@ -224,33 +105,6 @@ class SkillManifest {
     'description': description,
     'revision': revision,
     if (connectorToolIds.isNotEmpty) 'connectorToolIds': connectorToolIds,
-    'tools': tools.map((tool) => tool.toJson()).toList(growable: false),
-  };
-
-  static int _compareTools(SkillManifestTool left, SkillManifestTool right) =>
-      left.name.compareTo(right.name);
-}
-
-class SkillManifestTool {
-  new({
-    required this.name,
-    required this.description,
-    required Map<String, Object?> inputJsonSchema,
-    this.credentialRequired = false,
-    this.optionalNullMeansOmission = false,
-  }) : inputJsonSchema = _freezeMap(inputJsonSchema);
-
-  final String name;
-  final String description;
-  final Map<String, Object?> inputJsonSchema;
-  final bool credentialRequired;
-  final bool optionalNullMeansOmission;
-
-  Map<String, Object?> toJson() => {
-    'name': name,
-    'description': description,
-    if (credentialRequired) 'credentialRequired': true,
-    'inputSchema': inputJsonSchema,
   };
 }
 

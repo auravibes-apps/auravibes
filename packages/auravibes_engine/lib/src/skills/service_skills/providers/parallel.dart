@@ -1,10 +1,10 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
-import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_request_template.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_input_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-final parallelSkill = AppSkillDefinition(
+final parallelSkill = ServiceSkillPreset(
   identifier: 'parallel',
   slug: 'parallel',
   title: 'Parallel',
@@ -13,39 +13,37 @@ final parallelSkill = AppSkillDefinition(
 Use Parallel for fast web search, URL extraction, or larger research tasks.
 Prefer tasks when the request needs deeper synthesis.
 ''',
-  requiresCredential: true,
-  kind: .template,
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search for web results and excerpts.',
       inputJsonSchema: _searchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: _template(
         'https://api.parallel.ai/v1/search',
         _searchBody,
         _searchInputSchema,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'extract',
       title: 'Extract',
       description: 'Extract content from a URL.',
       inputJsonSchema: _extractInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: _template(
         'https://api.parallel.ai/v1/extract',
         _extractBody,
         _extractInputSchema,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'tasks',
       title: 'Tasks',
       description: 'Run a deeper research task.',
       inputJsonSchema: answerInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: _template(
         'https://api.parallel.ai/v1/tasks',
         '{"input":{{ input.question | json }}}',
@@ -55,12 +53,12 @@ Prefer tasks when the request needs deeper synthesis.
   ],
 );
 
-AppSkillUrlTemplate _template(
+ConnectorToolRequestTemplate _template(
   String url,
   String body,
   Map<String, Object> inputSchema,
 ) {
-  return AppSkillUrlTemplate(
+  return ConnectorToolRequestTemplate(
     template: .new(
       url: url,
       method: .post,
@@ -70,7 +68,7 @@ AppSkillUrlTemplate _template(
       },
       body: body,
     ),
-    inputs: SkillTemplateInputDefinition.fromJsonSchema(inputSchema),
+    inputs: ConnectorToolInputDefinition.fromJsonSchema(inputSchema),
     credentialDefinitions: apiKeyCredentialDefinitions,
   );
 }

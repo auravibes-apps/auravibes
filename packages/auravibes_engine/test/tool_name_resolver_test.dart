@@ -25,22 +25,13 @@ void main() {
       expect(tool?.fullName, executeConnectorToolName);
     });
 
-    test('resolves user skill tool names', () {
-      final tool = resolver.resolve('skill__user__writer__draft');
+    test('resolves app native skill tools', () {
+      final tool = resolver.resolve('skill__app_native__agents__run_sub_agent');
 
-      expect(tool?.kind, AgentResolvedToolKind.skillTemplate);
-      expect(tool?.skillSlug, 'writer');
-      expect(tool?.toolIdentifier, 'draft');
-      expect(tool?.fullName, 'skill__user__writer__draft');
-    });
-
-    test('resolves app template skill tool names', () {
-      final tool = resolver.resolve('skill__app_template__writer__open_url');
-
-      expect(tool?.kind, AgentResolvedToolKind.skillAppTemplate);
-      expect(tool?.skillSlug, 'writer');
-      expect(tool?.toolIdentifier, 'open_url');
-      expect(tool?.fullName, 'skill__app_template__writer__open_url');
+      expect(tool?.kind, AgentResolvedToolKind.skillNative);
+      expect(tool?.skillSlug, 'agents');
+      expect(tool?.toolIdentifier, 'run_sub_agent');
+      expect(tool?.fullName, 'skill__app_native__agents__run_sub_agent');
     });
 
     test('resolves MCP tool names', () {
@@ -71,17 +62,17 @@ void main() {
     test('matches configured and composite names exactly', () {
       expect(resolver.resolve('LOAD_SKILL'), isNull);
       expect(resolver.resolve('Built_in_calc_calculator'), isNull);
-      expect(resolver.resolve('skill__User__writer__draft'), isNull);
+      expect(resolver.resolve('skill__user__writer__draft'), isNull);
     });
 
     test('rejects malformed composite names', () {
       for (final name in [
         '',
-        'skill__user__writer',
+        'skill__app_native__agents',
         'skill__other__writer__draft',
-        'skill__user____draft',
-        'skill__user__writer__',
-        'skill__user__writer__draft__extra',
+        'skill__app_native____draft',
+        'skill__app_native__agents__',
+        'skill__app_native__agents__run__extra',
         'mcp_server_calc',
         'mcp__calc_sum',
         'built_in__calculator',

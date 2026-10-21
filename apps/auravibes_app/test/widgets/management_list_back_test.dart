@@ -1,6 +1,4 @@
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
-import 'package:auravibes_app/features/skills/screens/skill_credential_definitions_screen.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,14 +8,10 @@ import 'package:material_ui/material_ui.dart';
 import '../helpers/test_app.dart';
 
 void main() {
-  for (final isManager in [false, true]) {
-    final label = isManager ? 'workspace manager' : 'credential definitions';
-    testWidgets('$label shows Back only with a real predecessor', (
+  testWidgets('workspace manager shows Back only with a real predecessor', (
       tester,
     ) async {
-      final listPath = isManager
-          ? '/workspaces/A/manage-workspaces'
-          : '/workspaces/A/skill-credential-definitions';
+      const listPath = '/workspaces/A/manage-workspaces';
       final router = GoRouter(
         routes: [
           GoRoute(
@@ -30,9 +24,7 @@ void main() {
           GoRoute(
             path: listPath,
             pageBuilder: (_, state) => NoTransitionPage(
-              child: isManager
-                  ? const WorkspaceManagementScreen(workspaceId: 'A')
-                  : const SkillCredentialDefinitionsScreen(workspaceId: 'A'),
+              child: const WorkspaceManagementScreen(workspaceId: 'A'),
               key: state.pageKey,
             ),
           ),
@@ -45,8 +37,6 @@ void main() {
           TestableApp(
             child: Router.withConfig(config: router),
             overrides: [
-              skillCredentialDefinitionsProvider('A')
-                  .overrideWith((_) => Future.value(const [])),
               allWorkspacesProvider.overrideWith((_) => Stream.value(const [])),
               cloudAccountsProvider.overrideWith((_) => Future.value(const [])),
             ],
@@ -65,7 +55,7 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(router.canPop(), isTrue);
       expect(find.byKey(backKey), findsOneWidget);
-      expect(find.byKey(managerKey), isManager ? findsOneWidget : findsNothing);
+      expect(find.byKey(managerKey), findsOneWidget);
       await tester.tap(find.byKey(backKey));
       final _ = await tester.pumpAndSettle();
       await popped;
@@ -74,5 +64,4 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
     });
-  }
 }

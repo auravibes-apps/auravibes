@@ -11,7 +11,6 @@ import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_servic
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/persist_tool_call_results_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
@@ -35,8 +34,6 @@ typedef _ToolResolutionRequest = ({
   ToolResolverService toolResolverService,
   String conversationId,
   String toolName,
-  String argumentsRaw,
-  ResolveEffectiveToolApprovalUsecase? resolveEffectiveToolApprovalUsecase,
 });
 
 typedef _ToolGrantRequest = ({
@@ -96,8 +93,6 @@ class const AppApproveToolCallDataProvider({
   final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase,
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace,
-  final ResolveEffectiveToolApprovalUsecase?
-  resolveEffectiveToolApprovalUsecase,
   final PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
 }) implements agent.ApproveToolCallProvider<ResolvedTool> {
   this
@@ -164,8 +159,6 @@ class const AppApproveToolCallDataProvider({
       toolResolverService: toolResolverService,
       conversationId: conversationId,
       toolName: toolName,
-      argumentsRaw: argumentsRaw,
-      resolveEffectiveToolApprovalUsecase: resolveEffectiveToolApprovalUsecase,
     ));
   }
 
@@ -324,27 +317,9 @@ Future<ResolvedTool?> _resolveToolInConversation(
   ConversationEntity conversation,
 ) async {
   final catalog = await _loadConversationToolCatalog(request, conversation);
-  final resolved = request.toolResolverService.resolveTool(
+  return request.toolResolverService.resolveTool(
     request.toolName,
     catalog,
-  );
-
-  return await _resolveEffectiveTool(request, conversation, resolved);
-}
-
-Future<ResolvedTool?> _resolveEffectiveTool(
-  _ToolResolutionRequest request,
-  ConversationEntity conversation,
-  ResolvedTool? resolved,
-) {
-  final resolver = request.resolveEffectiveToolApprovalUsecase;
-  if (resolved == null || resolver == null) return Future.value(resolved);
-
-  return resolver.call(
-    conversationId: request.conversationId,
-    workspaceId: conversation.workspaceId,
-    requestedTool: resolved,
-    argumentsRaw: request.argumentsRaw,
   );
 }
 

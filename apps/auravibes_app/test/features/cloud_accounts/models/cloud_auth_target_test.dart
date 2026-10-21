@@ -31,7 +31,7 @@ void main() {
   });
   test('return accepts recognized same-workspace context', () {
     const path =
-        '/workspaces/w/service-connections/new?credential-definition-id=cred&app-skill-id=skill';
+        '/workspaces/w/service-connections/new?type=connector&connectorId=jina';
     expect(TaskReturn.validate(path, workspaceId: 'w'), path);
     for (final destination in [
       'tools',
@@ -43,12 +43,8 @@ void main() {
       'skills/new',
       'skills/skill',
       'skills/skill/resources/resource',
-      'skills/skill/tools/tool',
       'service-connections',
       'service-connections/connection',
-      'skill-credential-definitions',
-      'skill-credential-definitions/new',
-      'skill-credential-definitions/definition',
       'manage-workspaces?view=connect',
       'manage-workspaces/create',
       'manage-workspaces/cloud/account/42',

@@ -1,10 +1,11 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart' show AppSkillResourceDefinition;
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_input_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_request_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-final braveSkill = AppSkillDefinition(
+final braveSkill = ServiceSkillPreset(
   identifier: 'brave',
   slug: 'brave',
   title: 'Brave Search',
@@ -13,8 +14,6 @@ final braveSkill = AppSkillDefinition(
 Use Brave when you need current public web results, news, images, videos,
 or compact context for grounding an answer. Prefer it for broad web discovery.
   ''',
-  requiresCredential: true,
-  kind: .template,
   resources: const [
     AppSkillResourceDefinition(
       slug: 'query_operators_and_paging',
@@ -45,14 +44,14 @@ page; overlapping results are possible.
     ),
   ],
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'web_search',
       title: 'Web search',
       description: 'Search the public web for pages matching a query.',
       inputJsonSchema: _inputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: .new(
-        template: SkillUrlTemplate(
+        template: ConnectorRequestTemplate(
           url: 'https://api.search.brave.com/res/v1/web/search',
           headers: _headers,
           query: _query(includeCount: true),
@@ -61,14 +60,14 @@ page; overlapping results are possible.
         credentialDefinitions: apiKeyCredentialDefinitions,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'llm_context',
       title: 'LLM context',
       description: 'Get compact web context for grounding an answer.',
       inputJsonSchema: _inputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: .new(
-        template: SkillUrlTemplate(
+        template: ConnectorRequestTemplate(
           url: 'https://api.search.brave.com/res/v1/llm/context',
           headers: _headers,
           query: _query(),
@@ -77,14 +76,14 @@ page; overlapping results are possible.
         credentialDefinitions: apiKeyCredentialDefinitions,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'news_search',
       title: 'News search',
       description: 'Search current news results for a query.',
       inputJsonSchema: _inputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: .new(
-        template: SkillUrlTemplate(
+        template: ConnectorRequestTemplate(
           url: 'https://api.search.brave.com/res/v1/news/search',
           headers: _headers,
           query: _query(includeCount: true),
@@ -93,14 +92,14 @@ page; overlapping results are possible.
         credentialDefinitions: apiKeyCredentialDefinitions,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'image_search',
       title: 'Image search',
       description: 'Search public image results for a query.',
       inputJsonSchema: _inputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: .new(
-        template: SkillUrlTemplate(
+        template: ConnectorRequestTemplate(
           url: 'https://api.search.brave.com/res/v1/images/search',
           headers: _headers,
           query: _query(includeCount: true),
@@ -109,14 +108,14 @@ page; overlapping results are possible.
         credentialDefinitions: apiKeyCredentialDefinitions,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'video_search',
       title: 'Video search',
       description: 'Search public video results for a query.',
       inputJsonSchema: _inputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: .new(
-        template: SkillUrlTemplate(
+        template: ConnectorRequestTemplate(
           url: 'https://api.search.brave.com/res/v1/videos/search',
           headers: _headers,
           query: _query(includeCount: true),
@@ -165,72 +164,72 @@ const _headers = {
   'X-Loc-Postal-Code': '{{ input.locPostalCode }}',
 };
 
-const Map<String, SkillTemplateInputDefinition> _inputs = {
+const Map<String, ConnectorToolInputDefinition> _inputs = {
   ...queryInputs,
-  'country': SkillTemplateInputDefinition(
+  'country': ConnectorToolInputDefinition(
     description: 'Country code.',
     optional: true,
   ),
-  'searchLang': SkillTemplateInputDefinition(
+  'searchLang': ConnectorToolInputDefinition(
     description: 'Search language.',
     optional: true,
   ),
-  'uiLang': SkillTemplateInputDefinition(
+  'uiLang': ConnectorToolInputDefinition(
     description: 'UI language.',
     optional: true,
   ),
-  'safeSearch': SkillTemplateInputDefinition(
+  'safeSearch': ConnectorToolInputDefinition(
     description: 'Safe search mode.',
     optional: true,
   ),
-  'freshness': SkillTemplateInputDefinition(
+  'freshness': ConnectorToolInputDefinition(
     description: 'Freshness filter.',
     optional: true,
   ),
-  'spellcheck': SkillTemplateInputDefinition(
+  'spellcheck': ConnectorToolInputDefinition(
     description: 'Whether to spellcheck.',
     type: 'boolean',
     optional: true,
   ),
-  'resultFilter': SkillTemplateInputDefinition(
+  'resultFilter': ConnectorToolInputDefinition(
     description: 'Result type filter.',
     optional: true,
   ),
-  'goggles': SkillTemplateInputDefinition(
+  'goggles': ConnectorToolInputDefinition(
     description: 'Goggles identifier.',
     optional: true,
   ),
-  'offset': SkillTemplateInputDefinition(
+  'offset': ConnectorToolInputDefinition(
     description: 'Result offset.',
     type: 'integer',
     optional: true,
     minimum: 0,
   ),
-  'locLat': SkillTemplateInputDefinition(
+  'locLat': ConnectorToolInputDefinition(
     description: 'Location latitude.',
     optional: true,
   ),
-  'locLong': SkillTemplateInputDefinition(
+  'locLong': ConnectorToolInputDefinition(
     description: 'Location longitude.',
     optional: true,
   ),
-  'locTimezone': SkillTemplateInputDefinition(
+  'locTimezone': ConnectorToolInputDefinition(
     description: 'Location timezone.',
     optional: true,
   ),
-  'locCity': SkillTemplateInputDefinition(
+  'locCity': ConnectorToolInputDefinition(
     description: 'Location city.',
     optional: true,
   ),
-  'locState': SkillTemplateInputDefinition(
+  'locState': ConnectorToolInputDefinition(
     description: 'Location state.',
     optional: true,
   ),
-  'locCountry': SkillTemplateInputDefinition(
+  'locCountry': ConnectorToolInputDefinition(
     description: 'Location country.',
     optional: true,
   ),
-  'locPostalCode': SkillTemplateInputDefinition(
+  'locPostalCode': ConnectorToolInputDefinition(
     description: 'Location postal code.',
     optional: true,
   ),

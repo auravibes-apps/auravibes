@@ -1,13 +1,14 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart' show AppSkillResourceDefinition;
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_request_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
 const _authorizationHeader = 'Bearer {{ credential.apiKey }}';
 const _contentTypeHeader = 'content-type';
 const _jsonContentType = 'application/json';
 
-final firecrawlSkill = AppSkillDefinition(
+final firecrawlSkill = ServiceSkillPreset(
   identifier: 'firecrawl',
   slug: 'firecrawl',
   title: 'Firecrawl',
@@ -16,8 +17,6 @@ final firecrawlSkill = AppSkillDefinition(
 Use Firecrawl when page content matters: scraping pages, crawling sites,
 discovering URLs, or extracting structured data from public pages.
 ''',
-  requiresCredential: true,
-  kind: .template,
   resources: const [
     AppSkillResourceDefinition(
       slug: 'search_map_and_scrape_controls',
@@ -123,20 +122,19 @@ use `extract` as a substitute for full-page content.
   ],
 );
 
-AppSkillToolDefinition _tool(
+ConnectorToolDefinition _tool(
   String slug,
   String title,
   String description,
   Map<String, Object> schema,
-  AppSkillUrlTemplate template,
+  ConnectorToolRequestTemplate template,
 ) {
-  return AppSkillToolDefinition(
+  return ConnectorToolDefinition(
     slug: slug,
     title: title,
     description: description,
     inputJsonSchema: schema,
-    requiresCredential: true,
-    urlTemplate: template,
+      urlTemplate: template,
   );
 }
 
@@ -221,7 +219,7 @@ const Map<String, Object> _extractInputSchema = {
   'additionalProperties': false,
 };
 
-final AppSkillUrlTemplate _searchTemplate = declarativeTemplate(
+final ConnectorToolRequestTemplate _searchTemplate = declarativeTemplate(
   url: 'https://api.firecrawl.dev/v2/search',
   inputSchema: _searchInputSchema,
   headers: {
@@ -244,7 +242,7 @@ final AppSkillUrlTemplate _searchTemplate = declarativeTemplate(
   bodyFormat: .json,
 );
 
-final AppSkillUrlTemplate _scrapeTemplate = declarativeTemplate(
+final ConnectorToolRequestTemplate _scrapeTemplate = declarativeTemplate(
   url: 'https://api.firecrawl.dev/v2/scrape',
   inputSchema: _scrapeInputSchema,
   headers: {
@@ -261,7 +259,7 @@ final AppSkillUrlTemplate _scrapeTemplate = declarativeTemplate(
   bodyFormat: .json,
 );
 
-final AppSkillUrlTemplate _crawlTemplate = declarativeTemplate(
+final ConnectorToolRequestTemplate _crawlTemplate = declarativeTemplate(
   url: 'https://api.firecrawl.dev/v2/crawl',
   inputSchema: fetchInputSchema,
   headers: {
@@ -272,7 +270,7 @@ final AppSkillUrlTemplate _crawlTemplate = declarativeTemplate(
   bodyFormat: .json,
 );
 
-final AppSkillUrlTemplate _mapTemplate = declarativeTemplate(
+final ConnectorToolRequestTemplate _mapTemplate = declarativeTemplate(
   url: 'https://api.firecrawl.dev/v2/map',
   inputSchema: _mapInputSchema,
   headers: {
@@ -289,7 +287,7 @@ final AppSkillUrlTemplate _mapTemplate = declarativeTemplate(
   bodyFormat: .json,
 );
 
-final AppSkillUrlTemplate _extractTemplate = declarativeTemplate(
+final ConnectorToolRequestTemplate _extractTemplate = declarativeTemplate(
   url: 'https://api.firecrawl.dev/v2/extract',
   inputSchema: _extractInputSchema,
   headers: {

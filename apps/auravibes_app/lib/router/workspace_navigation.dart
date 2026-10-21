@@ -16,7 +16,6 @@ abstract final class WorkspaceNavigation {
     ['chat', 'new'] || ['chats', ...] => .chats,
     ['agents', ...] || ['skills', ...] => .agentsAndSkills,
     ['service-connections', ...] ||
-    ['skill-credential-definitions', ...] ||
     ['tools'] ||
     ['models'] => .connections,
     ['settings'] => .appSettings,

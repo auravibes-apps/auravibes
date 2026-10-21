@@ -1,21 +1,21 @@
 import 'dart:convert';
 
-import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/run_connector_tool_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod/riverpod.dart';
 
 typedef ConnectorConnectionsLoader =
-    Future<List<AppSkillCredentialCandidate>> Function(
+    Future<List<ConnectorConnectionCandidate>> Function(
       String workspaceId,
-      AppSkillDefinition connector,
+      ConnectorDefinition connector,
     );
 
 typedef ConnectorToolRunner = Future<Object?> Function({
   required String workspaceId,
-  required AppSkillDefinition connector,
-  required AppSkillToolDefinition tool,
+  required ConnectorDefinition connector,
+  required ConnectorToolDefinition tool,
   required Map<String, dynamic> arguments,
 });
 
@@ -27,8 +27,8 @@ typedef _ConnectorExecutionRequest = ({
 });
 
 typedef _ResolvedConnectorExecution = ({
-  AppSkillDefinition connector,
-  AppSkillToolDefinition tool,
+  ConnectorDefinition connector,
+  ConnectorToolDefinition tool,
   Map<String, dynamic> arguments,
 });
 
@@ -46,25 +46,25 @@ class _ConnectorConnectionRecord({
 }
 
 class _ConnectorToolCatalog {
-  static List<AppSkillToolDefinition> connectorTools(
-    AppSkillDefinition connector,
+  static List<ConnectorToolDefinition> connectorTools(
+    ConnectorDefinition connector,
   ) => connector.tools
       .where((tool) => tool.urlTemplate != null)
       .toList(growable: false);
 
   static String toolId(
-    AppSkillDefinition connector,
-    AppSkillToolDefinition tool,
+    ConnectorDefinition connector,
+    ConnectorToolDefinition tool,
   ) => connectorToolId(connector, tool);
 
   static String revision(
-    AppSkillDefinition connector,
-    AppSkillToolDefinition tool,
+    ConnectorDefinition connector,
+    ConnectorToolDefinition tool,
   ) => connectorToolRevision(connector, tool);
 }
 
 class _ConnectorCommandDiscovery({
-  required final List<AppSkillDefinition> connectors,
+  required final List<ConnectorDefinition> connectors,
   required final ConnectorConnectionsLoader loadConnections,
 }) {
   Future<Map<String, Object?>> listConnections(String workspaceId) async {
@@ -92,7 +92,7 @@ class _ConnectorCommandDiscovery({
 
   Future<List<Map<String, Object?>>> _toolRecordsForConnector(
     String workspaceId,
-    AppSkillDefinition connector,
+    ConnectorDefinition connector,
   ) async {
     final connectorTools = _ConnectorToolCatalog.connectorTools(connector);
     if (connectorTools.isEmpty) return const [];
@@ -104,8 +104,8 @@ class _ConnectorCommandDiscovery({
 
   void _addConnections(
     Map<String, _ConnectorConnectionRecord> connectionsById,
-    AppSkillDefinition connector,
-    List<AppSkillCredentialCandidate> connections,
+    ConnectorDefinition connector,
+    List<ConnectorConnectionCandidate> connections,
   ) {
     for (final connection in connections) {
       final item = connectionsById.putIfAbsent(
@@ -120,20 +120,22 @@ class _ConnectorCommandDiscovery({
   }
 
   List<Map<String, Object?>> _toolRecords(
-    AppSkillDefinition connector,
-    List<AppSkillToolDefinition> tools,
-    List<AppSkillCredentialCandidate> connections,
+    ConnectorDefinition connector,
+    List<ConnectorToolDefinition> tools,
+    List<ConnectorConnectionCandidate> connections,
   ) {
     final connectionOptions = _connectionOptions(connections);
 
     return [
-      for (final tool in tools) _toolRecord(connector, tool, connectionOptions),
+      for (final tool in tools)
+        if (!tool.requiresConnection || connectionOptions.isNotEmpty)
+          _toolRecord(connector, tool, connectionOptions),
     ];
   }
 
   Map<String, Object?> _toolRecord(
-    AppSkillDefinition connector,
-    AppSkillToolDefinition tool,
+    ConnectorDefinition connector,
+    ConnectorToolDefinition tool,
     List<Map<String, String>> connectionOptions,
   ) => {
     'toolId': _ConnectorToolCatalog.toolId(connector, tool),
@@ -143,12 +145,12 @@ class _ConnectorCommandDiscovery({
     'description': tool.description,
     'inputSchema': Map<String, Object?>.from(tool.inputJsonSchema),
     'revision': _ConnectorToolCatalog.revision(connector, tool),
-    'requiresConnection': tool.requiresCredential,
+    'requiresConnection': tool.requiresConnection,
     'connections': connectionOptions,
   };
 
   List<Map<String, String>> _connectionOptions(
-    List<AppSkillCredentialCandidate> connections,
+    List<ConnectorConnectionCandidate> connections,
   ) => [
     for (final connection in connections)
       {'id': connection.id, 'name': connection.name},
@@ -161,7 +163,7 @@ class _ConnectorCommandDiscovery({
 class const ConnectorCommandUsecase({
   required final ConnectorConnectionsLoader loadConnections,
   required final ConnectorToolRunner runTool,
-  final List<AppSkillDefinition> connectors = const [],
+  final List<ConnectorDefinition> connectors = const [],
 }) {
   Future<Object?> call({
     required String workspaceId,
@@ -235,7 +237,7 @@ class const ConnectorCommandUsecase({
 }
 
 class _ConnectorCommandExecution({
-  required final List<AppSkillDefinition> connectors,
+  required final List<ConnectorDefinition> connectors,
   required final ConnectorConnectionsLoader loadConnections,
   required final ConnectorToolRunner runTool,
 }) {
@@ -278,8 +280,8 @@ class _ConnectorCommandExecution({
 
   void _validateToolContract(
     _ConnectorExecutionRequest request,
-    AppSkillDefinition connector,
-    AppSkillToolDefinition tool,
+    ConnectorDefinition connector,
+    ConnectorToolDefinition tool,
   ) {
     _validateRevision(request.revision, connector, tool);
     _validateArguments(
@@ -290,27 +292,27 @@ class _ConnectorCommandExecution({
 
   Future<String?> _resolveConnectionId({
     required String workspaceId,
-    required AppSkillDefinition connector,
+    required ConnectorDefinition connector,
     required _ConnectorExecutionRequest request,
-    required AppSkillToolDefinition tool,
+    required ConnectorToolDefinition tool,
   }) async {
     final connections = await _currentConnections(
       workspaceId: workspaceId,
       connector: connector,
-      requiresConnection: tool.requiresCredential,
+      requiresConnection: tool.requiresConnection,
     );
 
     return _selectConnection(
       connections: connections,
       explicitConnectionId: request.connectionId,
-      requiresConnection: tool.requiresCredential,
+      requiresConnection: tool.requiresConnection,
     );
   }
 
   void _validateRevision(
     String? requestedRevision,
-    AppSkillDefinition connector,
-    AppSkillToolDefinition tool,
+    ConnectorDefinition connector,
+    ConnectorToolDefinition tool,
   ) {
     final currentRevision = _ConnectorToolCatalog.revision(connector, tool);
     if (requestedRevision != null && requestedRevision != currentRevision) {
@@ -340,9 +342,9 @@ class _ConnectorCommandExecution({
     }
   }
 
-  Future<List<AppSkillCredentialCandidate>> _currentConnections({
+  Future<List<ConnectorConnectionCandidate>> _currentConnections({
     required String workspaceId,
-    required AppSkillDefinition connector,
+    required ConnectorDefinition connector,
     required bool requiresConnection,
   }) async {
     if (!requiresConnection) return const [];
@@ -356,7 +358,7 @@ class _ConnectorCommandExecution({
   ) {
     final executionArguments = Map<String, dynamic>.from(arguments);
     if (connectionId != null) {
-      executionArguments['credentialId'] = connectionId;
+      executionArguments['connectionId'] = connectionId;
     }
 
     return executionArguments;
@@ -364,8 +366,8 @@ class _ConnectorCommandExecution({
 
   Future<Object?> _runConnectorTool({
     required String workspaceId,
-    required AppSkillDefinition connector,
-    required AppSkillToolDefinition tool,
+    required ConnectorDefinition connector,
+    required ConnectorToolDefinition tool,
     required Map<String, dynamic> arguments,
   }) async {
     try {
@@ -386,7 +388,7 @@ class _ConnectorCommandExecution({
     }
   }
 
-  ({AppSkillDefinition connector, AppSkillToolDefinition tool}) _resolveTool(
+  ({ConnectorDefinition connector, ConnectorToolDefinition tool}) _resolveTool(
     String toolId,
   ) {
     for (final connector in connectors) {
@@ -462,7 +464,7 @@ class _ConnectorExecutionArgumentParser {
 }
 
 String? _selectConnection({
-  required List<AppSkillCredentialCandidate> connections,
+  required List<ConnectorConnectionCandidate> connections,
   required String? explicitConnectionId,
   required bool requiresConnection,
 }) {
@@ -474,7 +476,7 @@ String? _selectConnection({
 }
 
 String? _selectOptionalConnection(
-  List<AppSkillCredentialCandidate> connections,
+  List<ConnectorConnectionCandidate> connections,
   String? connectionId,
 ) {
   if (connectionId == null) return null;
@@ -487,7 +489,7 @@ String? _selectOptionalConnection(
 }
 
 String _selectRequiredConnection(
-  List<AppSkillCredentialCandidate> connections,
+  List<ConnectorConnectionCandidate> connections,
   String? connectionId,
 ) {
   if (connections.isEmpty) {
@@ -516,7 +518,7 @@ String _selectRequiredConnection(
   );
 }
 
-bool _hasConnection(List<AppSkillCredentialCandidate> connections, String id) =>
+bool _hasConnection(List<ConnectorConnectionCandidate> connections, String id) =>
     connections.any((connection) => connection.id == id);
 
 class const _ConnectorCommandException({
@@ -541,25 +543,25 @@ final connectorCommandUsecaseProvider = Provider<ConnectorCommandUsecase>((
   ref,
 ) {
   final listConnections = ref.watch(
-    listAppSkillCredentialCandidatesUsecaseProvider,
+    listConnectorConnectionCandidatesUsecaseProvider,
   );
-  final runAppSkillTool = ref.watch(runAppSkillToolUsecaseProvider);
+  final runConnectorTool = ref.watch(runConnectorToolUsecaseProvider);
 
   return ConnectorCommandUsecase(
     loadConnections: (workspaceId, connector) =>
-        listConnections.call(workspaceId: workspaceId, skill: connector),
+        listConnections.forConnector(workspaceId: workspaceId, connector: connector),
     runTool:
         ({
           required workspaceId,
           required connector,
           required tool,
           required arguments,
-        }) => runAppSkillTool.call(
+        }) => runConnectorTool.call(
           workspaceId: workspaceId,
-          skillSlug: connector.slug,
+          connectorId: connector.identifier,
           toolSlug: tool.slug,
           arguments: arguments,
         ),
-    connectors: serviceSkillDefinitions,
+    connectors: connectorDefinitions,
   );
 });

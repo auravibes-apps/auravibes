@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
@@ -19,12 +18,11 @@ void main() {
       'deletes model provider connections through model repository',
       () async {
         final modelRepository = _MockModelConnectionRepository();
-        final credentialsRepository = _MockSkillCredentialsRepository();
         when(() => modelRepository.deleteModelConnection('model-connection-1'))
             .thenAnswer((_) => Future<void>.value());
         final usecase = DeleteServiceConnectionUsecase(
           modelConnectionRepository: modelRepository,
-          deleteSkillCredential: credentialsRepository.deleteCredential,
+          deleteConnectorConnection: (_) async {},
         );
 
         await expectLater(
@@ -38,59 +36,56 @@ void main() {
         verify(
           () => modelRepository.deleteModelConnection('model-connection-1'),
         ).called(1);
-        final _ = verifyNever(
-          () => credentialsRepository.deleteCredential(any()),
-        );
       },
     );
 
-    test('deletes skill credentials through credentials repository', () async {
+    test('deletes Connector Connections through injected operation', () async {
       final modelRepository = _MockModelConnectionRepository();
-      final credentialsRepository = _MockSkillCredentialsRepository();
-      when(() => credentialsRepository.deleteCredential('credential-1'))
-          .thenAnswer((_) => Future<void>.value());
+      var deletedId = '';
       final usecase = DeleteServiceConnectionUsecase(
         modelConnectionRepository: modelRepository,
-        deleteSkillCredential: credentialsRepository.deleteCredential,
+        deleteConnectorConnection: (id) async => deletedId = id,
       );
 
       await expectLater(
         usecase(
-          connectionId: 'credential-1',
-          kind: ServiceConnectionListItemKind.skillCredential,
+          connectionId: 'connector-1',
+          kind: ServiceConnectionListItemKind.connector,
         ),
         completes,
       );
 
       final _ = verifyNever(() => modelRepository.deleteModelConnection(any()));
-      final _ = verify(
-        () => credentialsRepository.deleteCredential('credential-1'),
-      ).called(1);
+      expect(deletedId, 'connector-1');
     });
 
-    test('deletes cloud credentials through injected operation only', () async {
-      final modelRepository = _MockModelConnectionRepository();
-      var deletedId = '';
-      final usecase = DeleteServiceConnectionUsecase(
-        modelConnectionRepository: modelRepository,
-        deleteSkillCredential: (id) async => deletedId = id,
-      );
+    test(
+      'deletes cloud Connector Connections through injected operation',
+      () async {
+        final modelRepository = _MockModelConnectionRepository();
+        var deletedId = '';
+        final usecase = DeleteServiceConnectionUsecase(
+          modelConnectionRepository: modelRepository,
+          deleteConnectorConnection: (id) async => deletedId = id,
+        );
 
-      await usecase(
-        connectionId: 'cloud-credential',
-        kind: ServiceConnectionListItemKind.skillCredential,
-      );
+        await usecase(
+          connectionId: 'cloud-credential',
+          kind: ServiceConnectionListItemKind.connector,
+        );
 
-      expect(deletedId, 'cloud-credential');
-      final _ = verifyNever(() => modelRepository.deleteModelConnection(any()));
-    });
+        expect(deletedId, 'cloud-credential');
+        final _ = verifyNever(
+          () => modelRepository.deleteModelConnection(any()),
+        );
+      },
+    );
 
     test('rejects MCP server delete requests', () {
       final modelRepository = _MockModelConnectionRepository();
-      final credentialsRepository = _MockSkillCredentialsRepository();
       final usecase = DeleteServiceConnectionUsecase(
         modelConnectionRepository: modelRepository,
-        deleteSkillCredential: credentialsRepository.deleteCredential,
+        deleteConnectorConnection: (_) async {},
       );
 
       expect(
@@ -107,9 +102,6 @@ void main() {
         ),
       );
       final _ = verifyNever(() => modelRepository.deleteModelConnection(any()));
-      final _ = verifyNever(
-        () => credentialsRepository.deleteCredential(any()),
-      );
     });
 
     test(
@@ -152,6 +144,3 @@ class _MockModelConnectionRepository extends Mock
     implements ModelConnectionRepository;
 
 class _MockModelConnectionStore extends Mock implements ModelConnectionStore;
-
-class _MockSkillCredentialsRepository extends Mock
-    implements SkillCredentialsRepository;

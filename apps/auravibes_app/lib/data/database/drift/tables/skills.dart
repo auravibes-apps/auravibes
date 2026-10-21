@@ -3,7 +3,6 @@
 // (See api_models.dart).
 // DCL cannot score Drift's generated table behavior from schema declarations.
 // ignore_for_file: number-of-methods, weight-of-class
-import 'package:auravibes_app/data/database/drift/tables/skill_credential_definitions.dart';
 import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:drift/drift.dart';
@@ -27,15 +26,6 @@ class Skills extends Table with TableMixin {
 
   TextColumn get connectorToolIdsJson =>
       text().withDefault(const Constant('[]'))();
-
-  TextColumn get credentialDefinitionId => text().nullable().references(
-    SkillCredentialDefinitions,
-    #id,
-    onDelete: .setNull,
-  )();
-
-  BoolColumn get isCredentialOptional =>
-      boolean().withDefault(const Constant(false))();
 
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 

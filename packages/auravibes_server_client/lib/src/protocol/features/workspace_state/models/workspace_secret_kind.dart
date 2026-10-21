@@ -14,8 +14,7 @@ import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 enum WorkspaceSecretKind implements _isc.SerializableModel {
   provider,
-  mcp,
-  skillCredential;
+  mcp;
 
   static WorkspaceSecretKind fromJson(String name) {
     switch (name) {
@@ -23,8 +22,6 @@ enum WorkspaceSecretKind implements _isc.SerializableModel {
         return WorkspaceSecretKind.provider;
       case 'mcp':
         return WorkspaceSecretKind.mcp;
-      case 'skillCredential':
-        return WorkspaceSecretKind.skillCredential;
       default:
         throw ArgumentError(
           'Value "$name" cannot be converted to "WorkspaceSecretKind"',
