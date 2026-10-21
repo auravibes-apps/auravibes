@@ -4,7 +4,6 @@ import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential
 import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
-import 'package:crypto/crypto.dart';
 import 'package:riverpod/riverpod.dart';
 
 typedef ConnectorConnectionsLoader =
@@ -56,25 +55,12 @@ class _ConnectorToolCatalog {
   static String toolId(
     AppSkillDefinition connector,
     AppSkillToolDefinition tool,
-  ) => 'connector/${connector.identifier}/${tool.slug}';
+  ) => connectorToolId(connector, tool);
 
   static String revision(
     AppSkillDefinition connector,
     AppSkillToolDefinition tool,
-  ) {
-    final contract = _canonicalJson({
-      'toolId': toolId(connector, tool),
-      'connectorId': connector.identifier,
-      'toolSlug': tool.slug,
-      'description': tool.description,
-      'inputSchema': tool.inputJsonSchema,
-      'requiresConnection': tool.requiresCredential,
-      'compatibleConnectionProviderIds': connector.compatibleModelProviderIds,
-      'definition': tool.definition?.toJson(),
-    });
-
-    return sha256.convert(utf8.encode(contract)).toString();
-  }
+  ) => connectorToolRevision(connector, tool);
 }
 
 class _ConnectorCommandDiscovery({
@@ -550,17 +536,6 @@ AgentToolExecutionFailure _toolFailure(
   stackTrace: stackTrace,
   failurePhase: 'connector.command',
 );
-
-String _canonicalJson(Object? value) => jsonEncode(_canonicalize(value));
-
-Object? _canonicalize(Object? value) => switch (value) {
-  final Map<Object?, Object?> map => {
-    for (final key in map.keys.map((key) => '$key').toList()..sort())
-      key: _canonicalize(map[key]),
-  },
-  final List<Object?> list => [for (final item in list) _canonicalize(item)],
-  _ => value,
-};
 
 final connectorCommandUsecaseProvider = Provider<ConnectorCommandUsecase>((
   ref,

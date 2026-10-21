@@ -1098,6 +1098,25 @@ void main() {
     );
   });
 
+  test('cloud exposes Connector commands independently of Skills', () {
+    final tools = fixedCloudConnectorCommandTools();
+
+    expect(
+      tools.map((tool) => tool.spec.name),
+      orderedEquals(buildConnectorCommandToolSpecs().map((spec) => spec.name)),
+    );
+    expect(
+      tools.every(
+        (tool) =>
+            tool.descriptor.kind == AgentResolvedToolKind.connectorCommand &&
+            serverToolIsExecutable(tool.descriptor) &&
+            defaultCloudToolPermission(tool.descriptor) ==
+                AgentToolPermissionResult.needsConfirmation,
+      ),
+      isTrue,
+    );
+  });
+
   test('cloud and local command schemas share active skill contracts', () {
     final manifest = SkillManifest(
       slug: 'research',

@@ -53,6 +53,8 @@ bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
         descriptor.tableId == backgroundWorkResultReaderTableId &&
         descriptor.toolIdentifier == backgroundWorkResultReaderToolName) ||
     descriptor.kind == AgentResolvedToolKind.mcp ||
+    (descriptor.kind == AgentResolvedToolKind.connectorCommand &&
+        connectorToolCommandNames.contains(descriptor.toolIdentifier)) ||
     descriptor.kind == AgentResolvedToolKind.skillTemplate ||
     (descriptor.kind == AgentResolvedToolKind.skillAppTemplate &&
         serviceSkillDefinitions.any(
@@ -173,6 +175,18 @@ List<ServerResolvedTool> fixedCloudSkillCommandTools({
       ),
     )
     .toList(growable: false);
+
+List<ServerResolvedTool> fixedCloudConnectorCommandTools() =>
+    buildConnectorCommandToolSpecs()
+        .map(
+          (spec) => ServerResolvedTool(
+            descriptor: AgentResolvedToolName.connectorCommand(
+              toolIdentifier: spec.name,
+            ),
+            spec: spec,
+          ),
+        )
+        .toList(growable: false);
 
 Future<SkillManifest?> buildCloudSkillManifest({
   required String slug,
@@ -748,6 +762,7 @@ AgentToolPermissionResult defaultCloudToolPermission(
   AgentResolvedToolName descriptor,
 ) {
   if ((descriptor.isSkill ||
+          descriptor.kind == AgentResolvedToolKind.connectorCommand ||
           descriptor.kind == AgentResolvedToolKind.skillControl) &&
       serverToolIsExecutable(descriptor)) {
     return AgentToolPermissionResult.needsConfirmation;
@@ -971,6 +986,7 @@ class ServerToolRuntime({
 
     return [
       ...genericTools,
+      ...fixedCloudConnectorCommandTools(),
       ...fixedCloudSkillCommandTools(manifests: skillManifests),
       ...agentTools,
       ServerResolvedTool(

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:async/async.dart';
@@ -127,6 +128,200 @@ void main() {
       AgentToolPermissionResult.needsConfirmation,
     );
   });
+
+  test('cloud resolves known Connector contract without discovery', () {
+    final connector = serviceSkillDefinitions.singleWhere(
+      (candidate) => candidate.identifier == 'duckduckgo',
+    );
+    final tool = connector.tools.single;
+    final toolId = connectorToolId(connector, tool);
+    final revision = connectorToolRevision(connector, tool);
+
+    final resolved = resolveCloudConnectorTool(
+      toolId: toolId,
+      revision: revision,
+      arguments: const {'query': 'weather'},
+    );
+    expect(resolved.connector, same(connector));
+    expect(resolved.tool, same(tool));
+    expect(
+      () => resolveCloudConnectorTool(
+        toolId: toolId,
+        revision: 'stale',
+        arguments: const {'query': 'weather'},
+      ),
+      throwsA(
+        isA<AgentToolExecutionFailure>().having(
+          (failure) => failure.responseRaw,
+          'stale contract failure',
+          contains('"code":"stale_contract"'),
+        ),
+      ),
+    );
+    expect(
+      () => resolveCloudConnectorTool(
+        toolId: toolId,
+        arguments: const {'query': 5},
+      ),
+      throwsA(
+        isA<AgentToolExecutionFailure>().having(
+          (failure) => failure.responseRaw,
+          'invalid arguments failure',
+          contains('"code":"invalid_tool_arguments"'),
+        ),
+      ),
+    );
+    expect(
+      () => resolveCloudConnectorTool(
+        toolId: 'connector/unknown/tool',
+        arguments: const {},
+      ),
+      throwsA(
+        isA<AgentToolExecutionFailure>().having(
+          (failure) => failure.responseRaw,
+          'unknown tool failure',
+          contains('"code":"unknown_tool"'),
+        ),
+      ),
+    );
+  });
+
+  test('cloud Connector discovery lists current tools without secrets', () {
+    final connector = serviceSkillDefinitions.singleWhere(
+      (candidate) => candidate.identifier == 'anthropic',
+    );
+    final connections = [
+      {
+        'id': 'anthropic-connection',
+        'name': 'Work account',
+        'kind': 'appSkillCredential',
+        'serviceId': connector.identifier,
+        'isEnabled': true,
+        'hasSecret': true,
+        'apiKey': 'must-not-leak',
+      },
+      {
+        'id': 'disabled-connection',
+        'name': 'Disabled account',
+        'kind': 'appSkillCredential',
+        'serviceId': connector.identifier,
+        'isEnabled': false,
+        'hasSecret': true,
+      },
+      {
+        'id': 'missing-secret',
+        'name': 'Incomplete account',
+        'kind': 'appSkillCredential',
+        'serviceId': connector.identifier,
+        'isEnabled': true,
+        'hasSecret': false,
+      },
+    ];
+
+    final toolRecords = cloudConnectorToolRecords(
+      connectors: [connector],
+      serviceConnections: connections,
+    );
+    final connectionRecords = cloudConnectorConnectionRecords(
+      connectors: [connector],
+      serviceConnections: connections,
+    );
+    final firstTool = connector.tools
+        .where((tool) => tool.urlTemplate != null)
+        .first;
+    final firstToolRecord = toolRecords.singleWhere(
+      (record) => record['toolId'] == connectorToolId(connector, firstTool),
+    );
+
+    expect(toolRecords, isNotEmpty);
+    expect(toolRecords.first['toolId'], startsWith('connector/anthropic/'));
+    expect(firstToolRecord['inputSchema'], firstTool.inputJsonSchema);
+    expect(
+      firstToolRecord['revision'],
+      connectorToolRevision(connector, firstTool),
+    );
+    expect(
+      toolRecords.first['connections'],
+      [
+        {'id': 'service:anthropic-connection', 'name': 'Work account'},
+      ],
+    );
+    expect(
+      connectionRecords,
+      {
+        'connections': [
+          {
+            'id': 'service:anthropic-connection',
+            'name': 'Work account',
+            'connectorIds': ['anthropic'],
+          },
+        ],
+      },
+    );
+    expect(jsonEncode(toolRecords), isNot(contains('must-not-leak')));
+    expect(jsonEncode(connectionRecords), isNot(contains('must-not-leak')));
+  });
+
+  test(
+    'cloud Connector execution selects only current matching Connection',
+    () {
+      final connections = [
+        {'id': 'service:first', 'name': 'First'},
+        {'id': 'service:second', 'name': 'Second'},
+      ];
+
+      expect(
+        resolveCloudConnectorConnectionId(
+          connections: const [],
+          requiresConnection: false,
+        ),
+        isNull,
+      );
+      expect(
+        () => resolveCloudConnectorConnectionId(
+          connections: const [],
+          requiresConnection: true,
+        ),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'recoverable response',
+            contains('"recoverable":true'),
+          ),
+        ),
+      );
+      expect(
+        resolveCloudConnectorConnectionId(
+          connections: [connections.first],
+          requiresConnection: true,
+        ),
+        'service:first',
+      );
+      expect(
+        resolveCloudConnectorConnectionId(
+          connections: connections,
+          requiresConnection: true,
+          requestedConnectionId: 'service:second',
+        ),
+        'service:second',
+      );
+      expect(
+        () => resolveCloudConnectorConnectionId(
+          connections: connections,
+          requiresConnection: true,
+        ),
+        throwsA(isA<AgentToolExecutionFailure>()),
+      );
+      expect(
+        () => resolveCloudConnectorConnectionId(
+          connections: connections,
+          requiresConnection: true,
+          requestedConnectionId: 'service:stale',
+        ),
+        throwsA(isA<AgentToolExecutionFailure>()),
+      );
+    },
+  );
 
   test('compiled DuckDuckGo template uses injected HTTP client', () async {
     UrlRequest? captured;

@@ -87,6 +87,195 @@ String? cloudToolCredentialId(Object? value) {
   return null;
 }
 
+List<Map<String, String>> cloudConnectorConnectionOptions({
+  required AppSkillDefinition connector,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) => [
+  for (final connection in serviceConnections)
+    if (connection['kind'] == 'appSkillCredential' &&
+        connection['serviceId'] == connector.identifier &&
+        connection['isEnabled'] != false &&
+        connection['hasSecret'] == true)
+      if (connection['id'] case final String id)
+        {
+          'id': 'service:$id',
+          'name': connection['name'] is String
+              ? connection['name']! as String
+              : id,
+        },
+];
+
+Map<String, Object?> cloudConnectorConnectionRecords({
+  required Iterable<AppSkillDefinition> connectors,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) {
+  final connectionsById = <String, Map<String, Object?>>{};
+  for (final connector in connectors) {
+    if (!connector.tools.any((tool) => tool.urlTemplate != null)) continue;
+    for (final connection in cloudConnectorConnectionOptions(
+      connector: connector,
+      serviceConnections: serviceConnections,
+    )) {
+      final record = connectionsById.putIfAbsent(
+        connection['id']!,
+        () => {
+          'id': connection['id'],
+          'name': connection['name'],
+          'connectorIds': <String>[],
+        },
+      );
+      (record['connectorIds']! as List<String>).add(connector.identifier);
+    }
+  }
+  return {
+    'connections': [
+      for (final record in connectionsById.values)
+        {
+          ...record,
+          'connectorIds': (record['connectorIds']! as List<String>)..sort(),
+        },
+    ],
+  };
+}
+
+List<Map<String, Object?>> cloudConnectorToolRecords({
+  required Iterable<AppSkillDefinition> connectors,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) {
+  final records = [
+    for (final connector in connectors)
+      for (final tool in connector.tools)
+        if (tool.urlTemplate != null)
+          {
+            'toolId': connectorToolId(connector, tool),
+            'connectorId': connector.identifier,
+            'connectorName': connector.title,
+            'name': tool.title,
+            'description': tool.description,
+            'inputSchema': Map<String, Object?>.from(tool.inputJsonSchema),
+            'revision': connectorToolRevision(connector, tool),
+            'requiresConnection': tool.requiresCredential,
+            'connections': cloudConnectorConnectionOptions(
+              connector: connector,
+              serviceConnections: serviceConnections,
+            ),
+          },
+  ];
+  records.sort(
+    (left, right) => '${left['toolId']}'.compareTo('${right['toolId']}'),
+  );
+  return records;
+}
+
+String? resolveCloudConnectorConnectionId({
+  required List<Map<String, String>> connections,
+  required bool requiresConnection,
+  String? requestedConnectionId,
+}) {
+  if (!requiresConnection) {
+    if (requestedConnectionId == null) return null;
+    if (connections.any(
+      (connection) => connection['id'] == requestedConnectionId,
+    )) {
+      return requestedConnectionId;
+    }
+    _throwCloudConnectorCommandFailure(
+      'connection_unavailable',
+      'Connection is not available for this Connector tool.',
+      StackTrace.current,
+    );
+  }
+  if (connections.isEmpty) {
+    _throwCloudConnectorCommandFailure(
+      'connection_required',
+      'No enabled Connection is available for this tool. Connect one in the '
+          'current workspace and retry.',
+      StackTrace.current,
+    );
+  }
+  if (requestedConnectionId != null) {
+    if (connections.any(
+      (connection) => connection['id'] == requestedConnectionId,
+    )) {
+      return requestedConnectionId;
+    }
+    _throwCloudConnectorCommandFailure(
+      'connection_unavailable',
+      'Connection is not available for this Connector tool.',
+      StackTrace.current,
+    );
+  }
+  if (connections.length == 1) return connections.single['id'];
+  _throwCloudConnectorCommandFailure(
+    'connection_selection_required',
+    'Choose a Connection by passing connectionId to execute_connector_tool.',
+    StackTrace.current,
+  );
+}
+
+({AppSkillDefinition connector, AppSkillToolDefinition tool})
+resolveCloudConnectorTool({
+  required String toolId,
+  required Map<String, dynamic> arguments,
+  String? revision,
+  Iterable<AppSkillDefinition>? connectors,
+}) {
+  for (final connector in connectors ?? serviceSkillDefinitions) {
+    for (final tool in connector.tools) {
+      if (tool.urlTemplate == null ||
+          connectorToolId(connector, tool) != toolId) {
+        continue;
+      }
+      if (revision != null &&
+          revision != connectorToolRevision(connector, tool)) {
+        _throwCloudConnectorCommandFailure(
+          'stale_contract',
+          'Connector tool contract changed. Refresh and retry.',
+          StackTrace.current,
+        );
+      }
+      try {
+        validateToolArguments(tool.inputJsonSchema, arguments);
+      } on FormatException {
+        _throwCloudConnectorCommandFailure(
+          'invalid_tool_arguments',
+          'Arguments do not match this Connector tool schema. Refresh the '
+              'contract and retry.',
+          StackTrace.current,
+        );
+      }
+      return (connector: connector, tool: tool);
+    }
+  }
+  _throwCloudConnectorCommandFailure(
+    'unknown_tool',
+    'Unknown Connector tool ID. Refresh Connector tools and retry.',
+    StackTrace.current,
+  );
+}
+
+class const _CloudConnectorCommandException({
+  required final String code,
+  required final String message,
+}) implements Exception;
+
+Never _throwCloudConnectorCommandFailure(
+  String code,
+  String message,
+  StackTrace stackTrace,
+) => Error.throwWithStackTrace(
+  AgentToolExecutionFailure(
+    responseRaw: jsonEncode({
+      'error': {'code': code, 'message': message},
+      'recoverable': true,
+    }),
+    error: _CloudConnectorCommandException(code: code, message: message),
+    stackTrace: stackTrace,
+    failurePhase: 'connector.command',
+  ),
+  stackTrace,
+);
+
 PatchWorkspaceStateRequest cloudSkillSelectionPatchRequest({
   required int workspaceId,
   required String turnRequestId,
@@ -287,6 +476,12 @@ class const ServerToolExecutorService({
         tool,
         request,
       ),
+      AgentResolvedToolKind.connectorCommand => _runConnectorCommand(
+        session,
+        turn,
+        tool,
+        request,
+      ),
       AgentResolvedToolKind.skillTemplate => _runSkill(
         session,
         turn,
@@ -317,6 +512,195 @@ class const ServerToolExecutorService({
       ),
       _ => throw const ServerToolNotConfiguredException(),
     };
+  }
+
+  Future<Object?> _runConnectorCommand(
+    Session session,
+    ConversationTurn turn,
+    ServerResolvedTool tool,
+    ServerToolRequest request,
+  ) async {
+    try {
+      validateToolArguments(tool.spec.inputJsonSchema, request.arguments);
+      final serviceConnections = await _connectorServiceConnections(
+        session,
+        turn.workspaceId,
+      );
+      return switch (tool.descriptor.toolIdentifier) {
+        listConnectorConnectionsToolName => cloudConnectorConnectionRecords(
+          connectors: serviceSkillDefinitions,
+          serviceConnections: serviceConnections,
+        ),
+        listConnectorToolsToolName => {
+          'tools': cloudConnectorToolRecords(
+            connectors: serviceSkillDefinitions,
+            serviceConnections: serviceConnections,
+          ),
+        },
+        executeConnectorToolName => await _executeConnectorTool(
+          session,
+          turn,
+          request,
+          serviceConnections,
+        ),
+        _ => throw const _CloudConnectorCommandException(
+          code: 'unknown_command',
+          message: 'Unknown Connector command.',
+        ),
+      };
+    } on _CloudConnectorCommandException catch (error, stackTrace) {
+      _throwCloudConnectorCommandFailure(
+        error.code,
+        error.message,
+        stackTrace,
+      );
+    } on AgentToolExecutionFailure catch (failure, stackTrace) {
+      if (failure.error is _CloudConnectorCommandException) rethrow;
+      _throwCloudConnectorCommandFailure(
+        'execution_failed',
+        'Connector command failed. Check the Connection and retry.',
+        stackTrace,
+      );
+    } on ConversationCancelledException {
+      rethrow;
+    } on Object catch (_, stackTrace) {
+      _throwCloudConnectorCommandFailure(
+        'execution_failed',
+        'Connector command failed. Check the Connection and retry.',
+        stackTrace,
+      );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _connectorServiceConnections(
+    Session session,
+    int workspaceId,
+  ) async {
+    final resources = await WorkspaceResource.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.resourceKind.equals(WorkspaceResourceKind.serviceConnection) &
+          table.deletedAt.equals(null),
+    );
+    return [
+      for (final resource in resources)
+        {'id': resource.resourceId, ..._jsonMap(resource.data)},
+    ];
+  }
+
+  Future<Object?> _executeConnectorTool(
+    Session session,
+    ConversationTurn turn,
+    ServerToolRequest request,
+    List<Map<String, dynamic>> serviceConnections,
+  ) async {
+    final toolId = request.arguments['toolId'];
+    if (toolId is! String || toolId.trim().isEmpty) {
+      throw const _CloudConnectorCommandException(
+        code: 'invalid_arguments',
+        message: 'toolId must be a non-empty string.',
+      );
+    }
+    final rawArguments = request.arguments['args'];
+    if (rawArguments is! Map) {
+      throw const _CloudConnectorCommandException(
+        code: 'invalid_arguments',
+        message: 'args must be an object.',
+      );
+    }
+    final arguments = <String, dynamic>{};
+    for (final entry in rawArguments.entries) {
+      if (entry.key is! String) {
+        throw const _CloudConnectorCommandException(
+          code: 'invalid_arguments',
+          message: 'args keys must be strings.',
+        );
+      }
+      arguments[entry.key! as String] = entry.value;
+    }
+    final requestedRevision = request.arguments['revision'];
+    final requestedConnectionId = request.arguments['connectionId'];
+    if (requestedRevision != null && requestedRevision is! String ||
+        requestedConnectionId != null && requestedConnectionId is! String) {
+      throw const _CloudConnectorCommandException(
+        code: 'invalid_arguments',
+        message: 'revision and connectionId must be strings.',
+      );
+    }
+
+    final resolved = resolveCloudConnectorTool(
+      toolId: toolId.trim(),
+      arguments: arguments,
+      revision: requestedRevision as String?,
+    );
+
+    final connectionOptions = resolved.tool.requiresCredential
+        ? cloudConnectorConnectionOptions(
+            connector: resolved.connector,
+            serviceConnections: serviceConnections,
+          )
+        : const <Map<String, String>>[];
+    final connectionId = resolveCloudConnectorConnectionId(
+      connections: connectionOptions,
+      requiresConnection: resolved.tool.requiresCredential,
+      requestedConnectionId: requestedConnectionId as String?,
+    );
+    var credentials = const <String, String>{};
+    if (connectionId != null) {
+      final resourceId = cloudServiceConnectionId(connectionId);
+      final resource = await _resource(
+        session,
+        turn.workspaceId,
+        WorkspaceResourceKind.serviceConnection,
+        resourceId,
+      );
+      if (!isCloudAppSkillCredential(
+        _jsonMap(resource.data),
+        resolved.connector.identifier,
+      )) {
+        _throwCloudConnectorCommandFailure(
+          'connection_unavailable',
+          'Connection is not available for this Connector tool.',
+          StackTrace.current,
+        );
+      }
+      final secret = await _secret(
+        session,
+        turn.workspaceId,
+        turn.initiatorUserId,
+        WorkspaceSecretKind.skillCredential,
+        resourceId,
+      );
+      if (secret == null) {
+        _throwCloudConnectorCommandFailure(
+          'connection_unavailable',
+          'Connection is not available for this Connector tool.',
+          StackTrace.current,
+        );
+      }
+      credentials = Map<String, String>.from(
+        _jsonMap(
+          await const WorkspaceSecretCipher().decrypt(session, secret),
+        ),
+      );
+    }
+    final executionArguments = Map<String, dynamic>.from(arguments);
+    if (connectionId != null) {
+      executionArguments['credentialId'] = connectionId;
+    }
+    return await runCompiledServiceSkillTool(
+      skillSlug: resolved.connector.slug,
+      toolSlug: resolved.tool.slug,
+      input: executionArguments,
+      credentials: credentials,
+      httpClient: _skillHttpClient(
+        session,
+        turn,
+        requireHttps: credentials.isNotEmpty,
+        isCancelled: request.isCancelled,
+      ),
+    );
   }
 
   Future<Map<String, Object?>> _readBackgroundWorkResult(

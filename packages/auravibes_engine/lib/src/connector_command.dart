@@ -1,4 +1,9 @@
+import 'dart:convert';
+
+import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
+import 'package:crypto/crypto.dart';
 
 const listConnectorConnectionsToolName = 'list_connector_connections';
 const listConnectorToolsToolName = 'list_connector_tools';
@@ -8,6 +13,39 @@ const connectorToolCommandNames = <String>{
   listConnectorConnectionsToolName,
   listConnectorToolsToolName,
   executeConnectorToolName,
+};
+
+String connectorToolId(
+  AppSkillDefinition connector,
+  AppSkillToolDefinition tool,
+) => 'connector/${connector.identifier}/${tool.slug}';
+
+String connectorToolRevision(
+  AppSkillDefinition connector,
+  AppSkillToolDefinition tool,
+) {
+  final contract = _canonicalJson({
+    'toolId': connectorToolId(connector, tool),
+    'connectorId': connector.identifier,
+    'toolSlug': tool.slug,
+    'description': tool.description,
+    'inputSchema': tool.inputJsonSchema,
+    'requiresConnection': tool.requiresCredential,
+    'compatibleConnectionProviderIds': connector.compatibleModelProviderIds,
+    'definition': tool.definition?.toJson(),
+  });
+  return sha256.convert(utf8.encode(contract)).toString();
+}
+
+String _canonicalJson(Object? value) => jsonEncode(_canonicalize(value));
+
+Object? _canonicalize(Object? value) => switch (value) {
+  final Map<Object?, Object?> map => {
+    for (final key in map.keys.map((key) => '$key').toList()..sort())
+      key: _canonicalize(map[key]),
+  },
+  final List<Object?> list => [for (final item in list) _canonicalize(item)],
+  _ => value,
 };
 
 List<ToolSpec> buildConnectorCommandToolSpecs() => [
