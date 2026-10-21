@@ -281,8 +281,8 @@ void main() {
         );
         Future<String> call(
           String id, {
-          String name = listSkillCredentialsToolName,
-          Map<String, dynamic> arguments = const {'slug': 'research'},
+          String name = listConnectorConnectionsToolName,
+          Map<String, dynamic> arguments = const {},
         }) async {
           await runtime.handle(
             fixture.database,
@@ -340,89 +340,15 @@ void main() {
         expect(executions, 0);
         expect(await call('new-after-mode'), 'success');
         expect(executions, 1);
-        const skill = {
-          'id': 'research',
-          'slug': 'research',
-          'title': 'Research',
-          'description': 'Search sources',
-          'content': 'Search sources',
-          'isEnabled': true,
-        };
-        const template = {
-          'id': 'research-search',
-          'skillId': 'research',
-          'skillSlug': 'research',
-          'toolSlug': 'search',
-          'isEnabled': true,
-          'requiresCredential': false,
-          'inputsJson': '[{"name":"query","type":"string"}]',
-        };
-        await resource(WorkspaceResourceKind.skill, 'research', skill);
-        await resource(
-          WorkspaceResourceKind.skillTemplateTool,
-          'research-search',
-          template,
-        );
-        await resource(
-          WorkspaceResourceKind.conversationSkillSelection,
-          'child:research',
-          {
-            'conversationId': child.stableId,
-            'skillId': 'research',
-          },
-        );
-        final targets = materializeCloudSkillTools(
-          selectedSkillIds: {'research'},
-          userSkills: [skill],
-          templateTools: [template],
-          appSkillSettings: const [],
-          isChildConversation: true,
-        );
-        final manifest = (await buildCloudSkillManifest(
-          slug: 'research',
-          userSkills: [skill],
-          tools: targets,
-        ))!;
-        expect(
-          await call(
-            'valid-nested',
-            name: callSkillToolName,
-            arguments: {
-              'skill': 'research',
-              'tool': 'search',
-              'revision': manifest.revision,
-              'args': {'query': 'sources'},
-            },
-          ),
-          'success',
-        );
-        expect(executions, 2);
-        expect(
-          await call('malformed', name: callSkillToolName, arguments: const {}),
-          isNot('success'),
-        );
-        expect(
-          await call(
-            'stale',
-            name: callSkillToolName,
-            arguments: const {
-              'skill': 'research',
-              'tool': 'search',
-              'revision': 'stale',
-              'args': {'query': 'sources'},
-            },
-          ),
-          isNot('success'),
-        );
         expect(await call('unknown', name: 'missing_tool'), 'toolNotFound');
-        expect(executions, 2);
+        expect(executions, 1);
         child = await Conversation.db.updateRow(
           fixture.database,
           child.copyWith(agentId: 'agent'),
         );
         await resource(WorkspaceResourceKind.agentAssociation, 'deny-agent', {
           'agentId': 'agent',
-          'toolId': listSkillCredentialsToolName,
+          'toolId': listConnectorConnectionsToolName,
           'permissionMode': 'alwaysDeny',
         });
         expect(await call('agent-deny-no-workspace'), 'disabledInWorkspace');
@@ -431,7 +357,7 @@ void main() {
           'conversation-policy',
           {
             'conversationId': child.stableId,
-            'toolId': listSkillCredentialsToolName,
+            'toolId': listConnectorConnectionsToolName,
             'permissionMode': 'alwaysAsk',
           },
         );
@@ -450,18 +376,18 @@ void main() {
           policy.copyWith(
             data: jsonEncode({
               'conversationId': child.stableId,
-              'toolId': listSkillCredentialsToolName,
+              'toolId': listConnectorConnectionsToolName,
               'permissionMode': 'alwaysAllow',
             }),
           ),
         );
         expect(await call('explicit-conversation-grant'), 'success');
-        expect(executions, 3);
+        expect(executions, 2);
         await resource(
           WorkspaceResourceKind.toolPermission,
           'disabled-tool-config',
           {
-            'toolId': listSkillCredentialsToolName,
+            'toolId': listConnectorConnectionsToolName,
             'isEnabled': false,
             'permissionMode': 'alwaysAllow',
           },
@@ -485,7 +411,7 @@ void main() {
             await call('disabled-config-conversation-grant-$mode'),
             'disabledInWorkspace',
           );
-          expect(executions, 3);
+          expect(executions, 2);
         }
         await WorkspaceResource.db.updateRow(
           fixture.database,
@@ -496,7 +422,7 @@ void main() {
           policy.copyWith(
             data: jsonEncode({
               'conversationId': child.stableId,
-              'toolId': listSkillCredentialsToolName,
+              'toolId': listConnectorConnectionsToolName,
               'permissionMode': 'alwaysDeny',
             }),
           ),
@@ -521,7 +447,7 @@ void main() {
           'parent-conversation-deny',
           {
             'conversationId': root.stableId,
-            'toolId': listSkillCredentialsToolName,
+            'toolId': listConnectorConnectionsToolName,
             'permissionMode': 'alwaysDeny',
           },
         );
@@ -529,7 +455,7 @@ void main() {
           await call('parent-conversation-deny'),
           'disabledInWorkspace',
         );
-        expect(executions, 3);
+        expect(executions, 2);
         final parentDeny = (await WorkspaceResource.db.findFirstRow(
           fixture.database,
           where: (table) =>
@@ -544,7 +470,7 @@ void main() {
           WorkspaceResourceKind.toolPermission,
           'workspace-policy',
           {
-            'toolId': listSkillCredentialsToolName,
+            'toolId': listConnectorConnectionsToolName,
             'permissionMode': 'alwaysDeny',
           },
         );
@@ -569,7 +495,7 @@ void main() {
           child.copyWith(parentConversationStableId: child.stableId),
         );
         expect(await call('cyclic-parent'), 'pending');
-        expect(executions, 3);
+        expect(executions, 2);
       },
     );
   }, rollbackDatabase: RollbackDatabase.disabled);

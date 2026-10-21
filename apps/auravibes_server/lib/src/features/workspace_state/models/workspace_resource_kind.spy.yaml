@@ -15,9 +15,7 @@ values:
   - toolPermission
   - mcpServer
   - skill
-  - skillDefinition
   - skillSetting
-  - skillTemplateTool
   - conversationToolSelection
   - conversationSkillSelection
   - compactionSetting

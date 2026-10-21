@@ -2,17 +2,10 @@ import 'package:auravibes_app/data/repositories/agents_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/markdown/screens/markdown_editor_screen.dart';
-import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
-import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
-import 'package:auravibes_app/features/skills/models/app_skill_credential_candidate.dart';
-import 'package:auravibes_app/features/skills/providers/skill_access_summary_provider.dart';
-import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/workspaces/providers/last_workspace_selection_repository_provider.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:drift/drift.dart' show Value;
-import 'package:flutter_svg/svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -21,160 +14,6 @@ import '../helpers/ux_validation_fixture.dart';
 
 void main() {
   tearDownAll(UxValidationFixture.closeDatabase);
-  for (final skill in ['anthropic', 'codex', 'jina']) {
-    testWidgets(
-      'actual app skill $skill recovery opens usable credential form',
-      (tester) async {
-        final f = await UxValidationFixture.create();
-        final _ = await f.database.apiModelProvidersDao.upsertProvider(
-          .insert(
-            id: 'anthropic',
-            name: 'Anthropic',
-            type: const Value(.anthropic),
-          ),
-        );
-        final _ = await f.database.apiModelProvidersDao.upsertProvider(
-          .insert(id: 'openai', name: 'OpenAI', type: const Value(.openai)),
-        );
-        await tester.runAsync(_cacheProviderLogos);
-        addTearDown(svg.cache.clear);
-        final parent = SkillDetailRoute(
-          workspaceId: f.workspaceId,
-          skillId: skill,
-        ).location;
-        final router = await f.pump(
-          tester,
-          parent,
-          size: const Size(1280, 1800),
-        );
-        if (skill == 'jina') {
-          final container = ProviderScope.containerOf(
-            tester.element(find.byType(SkillDetailScreen)),
-            listen: false,
-          );
-          final summary = await container.read(
-            skillAccessSummaryProvider(f.workspaceId, skill).future,
-          );
-          expect(summary?.instructionsAvailable, isTrue);
-          expect(summary?.status.name, 'partial');
-          expect(
-            summary?.tools.any((tool) => tool.status.name == 'available'),
-            isTrue,
-          );
-          expect(
-            find.text('Instructions available; access setup incomplete'),
-            findsOneWidget,
-          );
-          expect(
-            find.text('This skill needs a credential before it can be loaded.'),
-            findsNothing,
-          );
-          expect(find.text('Add Credential'), findsOneWidget);
-        }
-        await tester.ensureVisible(find.text('Set up credentials'));
-        await tester.tap(find.text('Set up credentials'));
-        await f.settle(tester);
-        expect(find.byType(ServiceConnectionCreateScreen), findsOneWidget);
-        final destination = tester.widget<ServiceConnectionCreateScreen>(
-          find.byType(ServiceConnectionCreateScreen),
-        );
-        if (skill == 'jina') {
-          expect(destination.initialAppSkillId, 'jina');
-          expect(find.byType(AddModelProviderWidget), findsNothing);
-          expect(find.text('API key'), findsOneWidget);
-          expect(
-            find.byWidgetPredicate((widget) => widget is AuraInput),
-            findsNWidgets(2),
-          );
-        } else {
-          expect(find.byType(AddModelProviderWidget), findsOneWidget);
-          expect(destination.initialAppSkillId, isNull);
-          await tester.tap(
-            find.text(skill == 'codex' ? 'OpenAI Codex' : 'Anthropic').last,
-          );
-          await f.settle(tester);
-          if (skill == 'codex') {
-            expect(find.text('Use device code'), findsOneWidget);
-            expect(
-              find.textContaining('Browser sign-in requires'),
-              findsOneWidget,
-            );
-          } else {
-            expect(find.text('Verify connection'), findsOneWidget);
-            expect(
-              find.byWidgetPredicate((widget) => widget is AuraInput),
-              findsNWidgets(2),
-            );
-          }
-        }
-        router.pop();
-        await f.settle(tester);
-        if (find.text('Discard changes').evaluate().isNotEmpty) {
-          await tester.tap(find.text('Discard changes'));
-          await f.settle(tester);
-        }
-        expect(find.byType(SkillDetailScreen), findsOneWidget);
-        expect(router.state.uri.toString(), parent);
-        expect(find.text('Set up credentials'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-        await f.close(tester);
-      },
-    );
-  }
-
-  for (final failed in [false, true]) {
-    testWidgets(
-      'actual Jina credential ${failed ? 'error' : 'count'} stays explicit',
-      (tester) async {
-        final f = await UxValidationFixture.create();
-        final _ = await f.pump(
-          tester,
-          SkillDetailRoute(
-            workspaceId: f.workspaceId,
-            skillId: 'jina',
-          ).location,
-          size: const Size(1280, 1800),
-          overrides: [
-            appSkillCredentialCandidatesProvider(
-              f.workspaceId,
-              'jina',
-            ).overrideWith((_) async {
-              if (failed) {
-                throw StateError('Controlled credential lookup failure');
-              }
-
-              return const [
-                AppSkillCredentialCandidate(
-                  id: 'saved-credential',
-                  name: 'Saved access',
-                ),
-              ];
-            }),
-          ],
-        );
-        expect(
-          find.text(
-            failed ? 'Error loading credentials' : '1 credential configured',
-          ),
-          findsOneWidget,
-        );
-        expect(
-          find.text(
-            failed ? 'Access status unknown' : 'Saved access available',
-          ),
-          findsWidgets,
-        );
-        expect(
-          find.text('This skill needs a credential before it can be loaded.'),
-          findsNothing,
-        );
-        if (failed) expect(find.text('Add Credential'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-        await f.close(tester);
-      },
-    );
-  }
-
   testWidgets('ordinary Markdown Close and Apply retain dirty owning agent', (
     tester,
   ) async {
@@ -339,19 +178,5 @@ void main() {
         await f.close(tester);
       });
     }
-  }
-}
-
-Future<void> _cacheProviderLogos() async {
-  final bytes = await const SvgStringLoader(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">'
-    ' <circle cx="10" cy="10" r="8"/></svg>',
-  ).loadBytes(null);
-  for (final id in ['anthropic', 'openai', 'openai-codex']) {
-    final loader = SvgNetworkLoader('https://models.dev/logos/$id.svg');
-    final _ = await svg.cache.putIfAbsent(
-      loader.cacheKey(null),
-      () async => bytes,
-    );
   }
 }

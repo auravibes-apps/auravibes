@@ -41,7 +41,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 30);
+      expect(fixture.database.schemaVersion, 32);
     });
 
     test('migration from schema 29 adds unbookmarked messages', () async {
@@ -62,6 +62,70 @@ void main() {
           .getSingle();
 
       expect(row.read<bool>('is_bookmarked'), isFalse);
+    });
+
+    test('migration from schema 30 adds empty Connector references', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 30
+        ..execute('CREATE TABLE skills (id TEXT PRIMARY KEY)')
+        ..execute('INSERT INTO skills VALUES (?)', ['existing']);
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final row = await database
+          .customSelect(
+            'SELECT connector_tool_ids_json FROM skills WHERE id = ?',
+            variables: [const Variable<String>('existing')],
+          )
+          .getSingle();
+
+      expect(row.read<String>('connector_tool_ids_json'), '[]');
+    });
+
+    test('migration from schema 31 retires Skill-owned storage', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 31
+        ..execute(
+          'CREATE TABLE service_connections '
+          '(id TEXT PRIMARY KEY, kind TEXT, encrypted_auth_value TEXT)',
+        )
+        ..execute('INSERT INTO service_connections VALUES (?, ?, ?)', [
+          'skill',
+          'skillCredential',
+          'encrypted',
+        ])
+        ..execute('INSERT INTO service_connections VALUES (?, ?, ?)', [
+          'app-skill',
+          'appSkillCredential',
+          'encrypted',
+        ])
+        ..execute('INSERT INTO service_connections VALUES (?, ?, ?)', [
+          'notion',
+          'customHttp',
+          'encrypted',
+        ])
+        ..execute('CREATE TABLE skill_template_tools (id TEXT PRIMARY KEY)')
+        ..execute(
+          'CREATE TABLE skill_credential_definitions (id TEXT PRIMARY KEY)',
+        );
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final connections = await database
+          .customSelect('SELECT id, kind FROM service_connections')
+          .get();
+      final retiredTables = await database.customSelect('''
+SELECT name FROM sqlite_master WHERE type = 'table'
+AND name IN ('skill_template_tools', 'skill_credential_definitions')
+''').get();
+
+      expect(connections.map((row) => row.read<String>('id')), ['notion']);
+      expect(connections.single.read<String>('kind'), 'customHttp');
+      expect(retiredTables, isEmpty);
     });
 
     test(
@@ -338,8 +402,6 @@ void main() {
       expect(fixture.database.modelUsageRecordsDao, isNotNull);
       expect(fixture.database.conversationToolsDao, isNotNull);
       expect(fixture.database.skillsDao, isNotNull);
-      expect(fixture.database.skillCredentialDefinitionsDao, isNotNull);
-      expect(fixture.database.skillTemplateToolsDao, isNotNull);
       expect(fixture.database.conversationSkillsDao, isNotNull);
       expect(fixture.database.appSkillWorkspaceSettingsDao, isNotNull);
       expect(fixture.database.recentModelSelectionsDao, isNotNull);
@@ -532,10 +594,7 @@ void main() {
       expect(messages, isEmpty);
     });
 
-    const migrationDefinitionTestName =
-        'migration converts legacy skill tool fragments '
-        'to a definition';
-    test(migrationDefinitionTestName, () async {
+    test('migration retires skill-owned tool and credential storage', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 11
         ..execute('''
@@ -570,23 +629,47 @@ void main() {
             '{"url":"https://example.com","method":"GET"}',
             '{"query":{"type":"string","description":"Query"}}'
           );
+        ''')
+        ..execute('''
+          CREATE TABLE service_connections (
+            id TEXT NOT NULL PRIMARY KEY,
+            kind TEXT NOT NULL
+          );
+        ''')
+        ..execute('''
+          INSERT INTO service_connections (id, kind) VALUES
+            ('skill-credential', 'skillCredential'),
+            ('app-skill-credential', 'appSkillCredential'),
+            ('connector', 'connector');
+        ''')
+        ..execute('''
+          CREATE TABLE skill_credential_definitions (
+            id TEXT NOT NULL PRIMARY KEY
+          );
         ''');
       final database = _MigrationAppDatabase<_MigrationCase8>(
         connection: NativeDatabase.opened(sqliteDb),
       );
       addTearDown(database.close);
 
-      final row = await database
+      final legacyTables = await database
           .customSelect(
-            'SELECT definition_json FROM skill_template_tools WHERE id = ?',
-            variables: [const Variable<String>('tool-1')],
+            'SELECT name FROM sqlite_master WHERE type = ? AND name IN (?, ?)',
+            variables: [
+              const Variable<String>('table'),
+              const Variable<String>('skill_template_tools'),
+              const Variable<String>('skill_credential_definitions'),
+            ],
           )
-          .getSingle();
-      final definition = row.read<String>('definition_json');
+          .get();
+      final connectionKinds = await database
+          .customSelect('SELECT kind FROM service_connections')
+          .get();
 
-      expect(definition, contains('"version":1'));
-      expect(definition, contains('"inputSchema"'));
-      expect(definition, contains('"request"'));
+      expect(legacyTables, isEmpty);
+      expect(connectionKinds.map((row) => row.read<String>('kind')), [
+        'connector',
+      ]);
     });
 
     test('migration strategy has onCreate callback', () {

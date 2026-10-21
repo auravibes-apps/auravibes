@@ -1,10 +1,10 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_request_template.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_tool_input_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 
-final tinyFishSkill = AppSkillDefinition(
+final tinyFishSkill = ServiceSkillPreset(
   identifier: 'tinyfish',
   slug: 'tinyfish',
   title: 'TinyFish',
@@ -13,17 +13,15 @@ final tinyFishSkill = AppSkillDefinition(
 Use TinyFish for web search and page fetching. Prefer fetch when the user gives
 specific URLs and wants extracted content.
   ''',
-  requiresCredential: true,
-  kind: .template,
   tools: [
-    const AppSkillToolDefinition(
+    const ConnectorToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search the web for a query.',
       inputJsonSchema: _searchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: .new(
-        template: SkillUrlTemplate(
+        template: ConnectorRequestTemplate(
           url: 'https://api.search.tinyfish.ai',
           headers: {'X-API-Key': '{{ credential.apiKey }}'},
           query: {
@@ -42,12 +40,12 @@ specific URLs and wants extracted content.
         credentialDefinitions: apiKeyCredentialDefinitions,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'fetch',
       title: 'Fetch',
       description: 'Fetch clean content from a URL.',
       inputJsonSchema: _fetchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.fetch.tinyfish.ai',
         inputSchema: _fetchInputSchema,
@@ -102,39 +100,39 @@ const Map<String, Object> _fetchInputSchema = {
   'additionalProperties': false,
 };
 
-const Map<String, SkillTemplateInputDefinition> _searchInputs = {
+const Map<String, ConnectorToolInputDefinition> _searchInputs = {
   ...queryInputs,
-  'purpose': SkillTemplateInputDefinition(
+  'purpose': ConnectorToolInputDefinition(
     description: 'Search purpose.',
     optional: true,
   ),
-  'location': SkillTemplateInputDefinition(
+  'location': ConnectorToolInputDefinition(
     description: 'Search location.',
     optional: true,
   ),
-  'language': SkillTemplateInputDefinition(
+  'language': ConnectorToolInputDefinition(
     description: 'Search language.',
     optional: true,
   ),
-  'afterDate': SkillTemplateInputDefinition(
+  'afterDate': ConnectorToolInputDefinition(
     description: 'Start date.',
     optional: true,
   ),
-  'beforeDate': SkillTemplateInputDefinition(
+  'beforeDate': ConnectorToolInputDefinition(
     description: 'End date.',
     optional: true,
   ),
-  'recencyMinutes': SkillTemplateInputDefinition(
+  'recencyMinutes': ConnectorToolInputDefinition(
     description: 'Recency window in minutes.',
     type: 'integer',
     optional: true,
   ),
-  'page': SkillTemplateInputDefinition(
+  'page': ConnectorToolInputDefinition(
     description: 'Result page.',
     type: 'integer',
     optional: true,
   ),
-  'includeThumbnail': SkillTemplateInputDefinition(
+  'includeThumbnail': ConnectorToolInputDefinition(
     description: 'Whether to include thumbnails.',
     type: 'boolean',
     optional: true,

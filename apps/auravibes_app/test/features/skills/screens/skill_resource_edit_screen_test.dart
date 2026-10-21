@@ -74,7 +74,6 @@ class _Fixture {
     description: 'Description',
     content: 'Instructions',
     isEnabled: true,
-    isCredentialOptional: false,
     appResources: const [
       AppSkillResourceDefinition(
         slug: 'guide',

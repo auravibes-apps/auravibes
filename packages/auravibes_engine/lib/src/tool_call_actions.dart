@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:auravibes_engine/src/skills/skill_command.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 import 'package:crypto/crypto.dart';
 
@@ -159,9 +158,7 @@ class const ApproveToolCallService<TTool extends Object>({
       await provider.updateToolCallResult((
         messageId: messageId,
         toolCallId: toolCallId,
-        resultStatus: toolCall.name == callSkillToolName
-            ? .notConfigured
-            : .toolNotFound,
+        resultStatus: .toolNotFound,
         conversationId: conversationId,
         responseRaw: null,
         responseContextRaw: null,

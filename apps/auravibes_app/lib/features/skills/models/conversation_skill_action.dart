@@ -17,6 +17,6 @@ enum ConversationSkillActionResult {
   stale,
   unavailable,
   unauthorized,
-  credentialsMissing,
-  credentialsUnknown,
+  connectionMissing,
+  connectionUnknown,
 }

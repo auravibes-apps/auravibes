@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:auravibes_engine/src/skills/models/url_request.dart';
-import 'package:auravibes_engine/src/skills/models/url_request_method.dart';
-import 'package:auravibes_engine/src/skills/models/url_response.dart';
-import 'package:auravibes_engine/src/skills/models/url_response_format.dart';
+import 'package:auravibes_engine/src/connectors/models/url_request.dart';
+import 'package:auravibes_engine/src/connectors/models/url_request_method.dart';
+import 'package:auravibes_engine/src/connectors/models/url_response.dart';
+import 'package:auravibes_engine/src/connectors/models/url_response_format.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
 import 'package:auravibes_engine/src/url_content_transformer.dart';
 

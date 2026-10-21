@@ -7,7 +7,6 @@ import 'package:auravibes_app/features/skills/constants/skill_tool_permission_co
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
@@ -39,7 +38,6 @@ typedef _InsertToolRequest = ({
 class const SyncSkillToolPermissionsUsecase({
   required final AppDatabase database,
   required final BuildDynamicSkillToolSpecsUsecase buildDynamicSkillToolSpecs,
-  required final BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecs,
   required final BuildAppSkillNativeToolSpecsUsecase
   buildAppSkillNativeToolSpecs,
   final ListConversationAgentSkillsUsecase? listConversationAgentSkillsUsecase,
@@ -110,7 +108,6 @@ extension _SyncSkillToolPermissionsUsecaseSync
 
     final specs = [
       ...await _dynamicSpecs(conversationId, workspaceId),
-      ...await _templateSpecs(conversationId, workspaceId, agentSkills),
       ...await _nativeSpecs(conversationId, workspaceId, agentSkills),
     ];
     _addRunSubAgentSpec(specs);
@@ -147,16 +144,6 @@ extension _SyncSkillToolPermissionsUsecaseSync
   ) => buildDynamicSkillToolSpecs.call(
     conversationId: conversationId,
     workspaceId: workspaceId,
-  );
-
-  Future<List<ToolSpec>> _templateSpecs(
-    String conversationId,
-    String workspaceId,
-    List<AvailableSkill> extraSkills,
-  ) => buildSkillTemplateToolSpecs.call(
-    conversationId: conversationId,
-    workspaceId: workspaceId,
-    extraSkills: extraSkills,
   );
 
   Future<List<ToolSpec>> _nativeSpecs(
@@ -326,9 +313,6 @@ final syncSkillToolPermissionsUsecaseProvider =
         buildDynamicSkillToolSpecs: ref.watch(
           buildDynamicSkillToolSpecsUsecaseProvider,
         ),
-        buildSkillTemplateToolSpecs: ref.watch(
-          buildSkillTemplateToolSpecsUsecaseProvider,
-        ),
         buildAppSkillNativeToolSpecs: ref.watch(
           buildAppSkillNativeToolSpecsUsecaseProvider,
         ),
@@ -340,12 +324,7 @@ final syncSkillToolPermissionsUsecaseProvider =
 
 abstract final class SkillPermissionTools {
   static bool isSkillPermissionToolName(String toolName) {
-    final resolved = const AgentToolNameResolver(
-      skillControlToolNames: {
-        activateSkillToolName,
-        SkillToolNames.listCredentials,
-      },
-    ).resolve(toolName);
+    final resolved = const AgentToolNameResolver().resolve(toolName);
 
     return resolved?.isSkill == true ||
         resolved?.kind == AgentResolvedToolKind.skillControl;

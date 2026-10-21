@@ -3,10 +3,12 @@ import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_rep
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
+import 'package:auravibes_app/features/skills/usecases/connector_tool_reference_readiness.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
@@ -16,6 +18,7 @@ class const ResolveAgentSkillsUsecase(
   final AppSkillWorkspaceSettingsRepository? _appSkillSettingsRepository,
   final AppSkillRegistry _appSkillRegistry, [
   final CloudSkillStore? _cloudStore,
+  final ListConnectorConnectionCandidatesUsecase? _connectorCandidates,
 ]) {
   Future<ResolvedAgentSkills> call({
     required String workspaceId,
@@ -70,11 +73,24 @@ class const ResolveAgentSkillsUsecase(
     final skill =
         await _cloudStore?.skill(skillId) ??
         await _skillsRepository?.getSkillById(skillId);
-    if (skill == null || skill.workspaceId != workspaceId || !skill.isEnabled) {
-      return null;
-    }
+    if (skill == null) return null;
+    if (!await _userSkillReady(workspaceId, skill)) return null;
 
     return skill.toAvailableSkill();
+  }
+
+  Future<bool> _userSkillReady(String workspaceId, SkillEntity skill) async {
+    if (skill.workspaceId != workspaceId || !skill.isEnabled) return false;
+    if (skill.connectorToolIds.isEmpty) return true;
+
+    final candidates = _connectorCandidates;
+
+    return candidates != null &&
+        await ConnectorToolReferenceReadiness.areReady(
+          connectorToolIds: skill.connectorToolIds,
+          workspaceId: workspaceId,
+          credentialCandidates: candidates,
+        );
   }
 
   Future<AvailableSkill?> _resolveAppSkill({
@@ -82,10 +98,28 @@ class const ResolveAgentSkillsUsecase(
     required String identifier,
   }) async {
     final skill = _appSkillRegistry.getByIdentifier(identifier);
+    if (skill == null) return null;
+
     final enabled = await _isAppSkillEnabled(workspaceId, identifier);
-    if (skill == null || !enabled) return null;
+    if (!enabled && !await _hasConnectorConnection(workspaceId, skill)) {
+      return null;
+    }
 
     return _toAvailableAppSkill(skill);
+  }
+
+  Future<bool> _hasConnectorConnection(
+    String workspaceId,
+    AppSkillDefinition skill,
+  ) async {
+    final candidates = _connectorCandidates;
+    if (candidates == null || skill.connectorToolIds.isEmpty) return false;
+
+    return await ConnectorToolReferenceReadiness.areReady(
+      connectorToolIds: skill.connectorToolIds,
+      workspaceId: workspaceId,
+      credentialCandidates: candidates,
+    );
   }
 
   Future<bool> _isAppSkillEnabled(String workspaceId, String identifier) {
@@ -114,6 +148,7 @@ AvailableSkill _toAvailableAppSkill(AppSkillDefinition skill) => AvailableSkill(
   content: skill.content,
   source: .app,
   kind: .native,
+  connectorToolIds: skill.connectorToolIds,
 );
 
 class const ResolvedAgentSkills({
@@ -133,6 +168,7 @@ resolveAgentSkillsUsecaseProvider =
             : null,
         ref.watch(appSkillRegistryProvider),
         cloud,
+        ref.watch(listConnectorConnectionCandidatesUsecaseProvider),
       );
     });
 
@@ -146,8 +182,7 @@ extension AgentSkillEntityAvailableSkill on SkillEntity {
       content: content,
       source: source,
       kind: kind,
-      isCredentialOptional: isCredentialOptional,
-      credentialDefinitionId: credentialDefinitionId,
+      connectorToolIds: connectorToolIds,
     );
   }
 }

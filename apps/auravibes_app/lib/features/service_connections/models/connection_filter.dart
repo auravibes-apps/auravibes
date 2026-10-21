@@ -1,7 +1,7 @@
 enum ConnectionFilter {
   all,
   modelProviders,
-  skillCredentials,
+  connectors,
   mcpServers,
   oauth,
   failed,

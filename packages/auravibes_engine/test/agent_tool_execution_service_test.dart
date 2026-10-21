@@ -284,15 +284,14 @@ void main() {
   });
 
   test('passes original arguments to approval before execution', () async {
-    const argumentsRaw =
-        '{"skill":"research","tool":"search","args":{},"revision":"r1"}';
+    const argumentsRaw = '{"slug":"research","revision":"r1"}';
     final provider = _FakeExecutionProvider(
       latestToolCalls: const LoadLatestMessageToolCallsResult(
         messageId: 'message-1',
         hasToolCalls: true,
         toolsToRun: [
           AgentToolToCall(
-            tool: callSkillToolName,
+            tool: activateSkillToolName,
             id: 'tool-1',
             argumentsRaw: argumentsRaw,
           ),

@@ -67,6 +67,26 @@ void main() {
       expect(result, 'mcp:server-1:sum:1');
     });
 
+    test(
+      'runs connector commands with current conversation workspace',
+      () async {
+        final usecase = _usecase();
+
+        final result = await usecase.call(
+          conversationId: 'c1',
+          tool: AgentResolvedToolName.connectorCommand(
+            toolIdentifier: executeConnectorToolName,
+          ),
+          arguments: const {
+            'toolId': 'openai/search',
+            'args': {'query': 'x'},
+          },
+        );
+
+        expect(result, 'connector-command:w1:$executeConnectorToolName');
+      },
+    );
+
     test('rejects MCP tools without server binding', () async {
       final usecase = _usecase();
 
@@ -98,25 +118,6 @@ void main() {
 
       expect(result, 'control:w1:$activateSkillToolName');
     });
-
-    test(
-      'runs skill template tools with workspace from conversation',
-      () async {
-        final usecase = _usecase();
-
-        final result = await usecase.call(
-          conversationId: 'c1',
-          tool: AgentResolvedToolName.skillTemplate(
-            tableId: 'draft',
-            skillSlug: 'writer',
-            toolIdentifier: 'draft',
-          ),
-          arguments: {'topic': 'x'},
-        );
-
-        expect(result, 'template:w1:writer:draft');
-      },
-    );
 
     test('runs skill native tools with workspace from conversation', () async {
       final usecase = _usecase();
@@ -178,6 +179,12 @@ class const _FakeResolvedToolProvider()
   }
 
   @override
+  Future<Object?> runConnectorCommandTool(
+    ConnectorCommandToolRequest request,
+  ) async =>
+      'connector-command:${request.workspaceId}:${request.toolIdentifier}';
+
+  @override
   Future<String> getConversationWorkspaceId(String conversationId) async {
     return 'w1';
   }
@@ -188,22 +195,8 @@ class const _FakeResolvedToolProvider()
   }
 
   @override
-  Future<Object?> runSkillTemplateTool(SkillTemplateToolRequest request) async {
-    return 'template:${request.workspaceId}:${request.skillSlug}:'
-        '${request.toolSlug}';
-  }
-
-  @override
   Future<Object?> runSkillNativeTool(SkillNativeToolRequest request) async {
     return 'native-skill:${request.workspaceId}:'
         '${request.skillSlug}:${request.toolSlug}';
-  }
-
-  @override
-  Future<Object?> runSkillAppTemplateTool(
-    SkillAppTemplateToolRequest request,
-  ) async {
-    return 'app-template:${request.workspaceId}:${request.skillSlug}:'
-        '${request.toolSlug}';
   }
 }

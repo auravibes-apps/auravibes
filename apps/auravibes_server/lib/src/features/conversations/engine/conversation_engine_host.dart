@@ -131,18 +131,6 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
         },
       )
       .toList(growable: false);
-  final templateTools = resources
-      .where(
-        (resource) =>
-            resource.resourceKind == WorkspaceResourceKind.skillTemplateTool,
-      )
-      .map(
-        (resource) => {
-          'id': resource.resourceId,
-          ..._jsonObject(resource.data),
-        },
-      )
-      .toList(growable: false);
   final appSkillSettings = resources
       .where(
         (resource) =>
@@ -150,41 +138,44 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
       )
       .map((resource) => _jsonObject(resource.data))
       .toList(growable: false);
-  final serviceConnections = resources
-      .where(
-        (resource) =>
-            resource.resourceKind == WorkspaceResourceKind.serviceConnection,
-      )
-      .map(
-        (resource) => {
-          'id': resource.resourceId,
-          ..._jsonObject(resource.data),
-        },
-      )
-      .toList(growable: false);
+  final modelConnections = await WorkspaceModelConnection.db.find(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
+  );
+  final serviceConnections = [
+    ...resources
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.serviceConnection,
+        )
+        .map(
+          (resource) => {
+            'id': resource.resourceId,
+            ..._jsonObject(resource.data),
+          },
+        ),
+    for (final connection in modelConnections)
+      {
+        'id': connection.connectionId,
+        'name': connection.name,
+        'kind': 'modelProvider',
+        'providerId': connection.providerId,
+        'hasSecret': connection.hasSecret,
+      },
+  ];
   final candidates = _cloudSkillCatalogCandidates(
     userSkills: userSkills,
-    templateTools: templateTools,
     serviceConnections: serviceConnections,
     appSkillSettings: appSkillSettings,
     isChildConversation: isChildConversation,
     a2uiSupportedComponents: a2uiSupportedComponents,
-  );
-  final candidateIds = candidates.map((candidate) => candidate.id).toSet();
-  final tools = materializeCloudSkillTools(
-    selectedSkillIds: candidateIds,
-    userSkills: userSkills,
-    templateTools: templateTools,
-    appSkillSettings: appSkillSettings,
-    serviceConnections: serviceConnections,
-    isChildConversation: isChildConversation,
   );
   final entries = <SkillCatalogEntry>[];
   for (final candidate in candidates) {
     final manifest = await buildCloudSkillManifest(
       slug: candidate.slug,
       userSkills: userSkills,
-      tools: tools,
     );
     if (manifest == null) continue;
     entries.add(
@@ -204,7 +195,6 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
 
 List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
   required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<Map<String, dynamic>> templateTools,
   required Iterable<Map<String, dynamic>> serviceConnections,
   required Iterable<Map<String, dynamic>> appSkillSettings,
   required bool isChildConversation,
@@ -213,7 +203,6 @@ List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
   final candidates = <_CloudSkillCatalogCandidate>[
     ..._cloudUserSkillCatalogCandidates(
       userSkills: userSkills,
-      templateTools: templateTools,
       serviceConnections: serviceConnections,
     ),
     if (!isChildConversation &&
@@ -225,7 +214,6 @@ List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
         description: '',
       ),
     ..._cloudServiceSkillCatalogCandidates(
-      appSkillSettings: appSkillSettings,
       serviceConnections: serviceConnections,
     ),
   ];
@@ -249,7 +237,6 @@ List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
 
 Iterable<_CloudSkillCatalogCandidate> _cloudUserSkillCatalogCandidates({
   required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<Map<String, dynamic>> templateTools,
   required Iterable<Map<String, dynamic>> serviceConnections,
 }) sync* {
   for (final skill in userSkills) {
@@ -259,7 +246,7 @@ Iterable<_CloudSkillCatalogCandidate> _cloudUserSkillCatalogCandidates({
     if (id is! String ||
         slug is! String ||
         title is! String ||
-        !cloudUserSkillReady(skill, templateTools, serviceConnections)) {
+        !cloudUserSkillReady(skill, serviceConnections)) {
       continue;
     }
     yield (
@@ -272,13 +259,10 @@ Iterable<_CloudSkillCatalogCandidate> _cloudUserSkillCatalogCandidates({
 }
 
 Iterable<_CloudSkillCatalogCandidate> _cloudServiceSkillCatalogCandidates({
-  required Iterable<Map<String, dynamic>> appSkillSettings,
   required Iterable<Map<String, dynamic>> serviceConnections,
 }) => serviceSkillDefinitions
     .where(
-      (skill) =>
-          cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
-          cloudServiceSkillReady(skill, serviceConnections),
+      (skill) => cloudServiceSkillReady(skill, serviceConnections),
     )
     .map(
       (skill) => (
@@ -1200,17 +1184,33 @@ final class const ServerConversationEngineHost({
               resource.resourceKind == WorkspaceResourceKind.skillSetting,
         )
         .map((resource) => _jsonObject(resource.data));
-    final serviceConnections = appResources
-        .where(
-          (resource) =>
-              resource.resourceKind == WorkspaceResourceKind.serviceConnection,
-        )
-        .map(
-          (resource) => {
-            'id': resource.resourceId,
-            ..._jsonObject(resource.data),
-          },
-        );
+    final appModelConnections = await WorkspaceModelConnection.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
+    );
+    final serviceConnections = [
+      ...appResources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                WorkspaceResourceKind.serviceConnection,
+          )
+          .map(
+            (resource) => {
+              'id': resource.resourceId,
+              ..._jsonObject(resource.data),
+            },
+          ),
+      for (final connection in appModelConnections)
+        {
+          'id': connection.connectionId,
+          'name': connection.name,
+          'kind': 'modelProvider',
+          'providerId': connection.providerId,
+          'hasSecret': connection.hasSecret,
+        },
+    ];
     final enabledAppSkillIds = skillIds.where((skillId) {
       if (skillId == agentsSkillSlug) {
         return cloudAppSkillEnabled(agentsSkillSlug, appSettings);
@@ -1222,7 +1222,6 @@ final class const ServerConversationEngineHost({
           )
           .firstOrNull;
       return definition != null &&
-          cloudAppSkillEnabled(definition.identifier, appSettings) &&
           cloudServiceSkillReady(definition, serviceConnections);
     });
     skills.addAll(cloudAppSkillsForIds(enabledAppSkillIds));
@@ -1239,25 +1238,6 @@ final class const ServerConversationEngineHost({
           },
         )
         .toList(growable: false);
-    final targets = materializeCloudSkillTools(
-      selectedSkillIds: skillIds.toSet(),
-      userSkills: userSkills,
-      templateTools: appResources
-          .where(
-            (resource) =>
-                resource.resourceKind ==
-                WorkspaceResourceKind.skillTemplateTool,
-          )
-          .map(
-            (resource) => {
-              'id': resource.resourceId,
-              ..._jsonObject(resource.data),
-            },
-          ),
-      appSkillSettings: appSettings,
-      serviceConnections: serviceConnections,
-      isChildConversation: isChildConversation,
-    );
     final withManifests = <AgentSkill>[];
     for (final skill in skills) {
       final user = userSkills
@@ -1272,7 +1252,6 @@ final class const ServerConversationEngineHost({
           : await buildCloudSkillManifest(
               slug: slug,
               userSkills: userSkills,
-              tools: targets,
             );
       withManifests.add(
         AgentSkill(
