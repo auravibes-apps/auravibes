@@ -35,10 +35,19 @@ def _documented_command(root: Path, command: str) -> bool:
     return False
 
 
+def _matches_any(content: str, patterns: tuple[str, ...]) -> bool:
+    content = content.replace("`", "")
+    return any(
+        re.search(pattern, content, re.IGNORECASE | re.DOTALL)
+        for pattern in patterns
+    )
+
+
 def _formatting_check(root: Path) -> list[str]:
     failures = []
     pubspec = _read_text(root, "pubspec.yaml")
     workflow = _read_text(root, ".github/workflows/ci.yml")
+    skill = _read_text(root, ".agents/skills/melos-7/SKILL.md")
     if pubspec is None:
         failures.append("Root pubspec.yaml is missing.")
     else:
@@ -72,6 +81,22 @@ def _formatting_check(root: Path) -> list[str]:
         )
     if not _documented_command(root, "fvm dart format"):
         failures.append("The pinned Dart formatting command is not documented.")
+    if skill is None or not _matches_any(
+        skill,
+        (
+            r"\bformatting changes are allowed\b",
+            r"\b(?:contributors|developers|agents) may format (?:source )?files\b",
+            r"\bformatting (?:is|remains) permitted\b",
+        ),
+    ) or _matches_any(
+        skill,
+        (
+            r"\b(?:do not|don't|must not|never|should not|avoid)\s+(?:run|use|apply)\s+(?:the )?(?:dart )?formatter\b",
+            r"\bformatting changes are not allowed\b",
+            r"\bdo not run formatting commands\b",
+        ),
+    ):
+        failures.append("Melos guidance must allow contributors to format source files.")
     if workflow is None or "melos run format:check" not in workflow:
         failures.append("CI does not run the Melos format:check script.")
     return failures
@@ -92,6 +117,20 @@ def _fvm_pub_resolution(root: Path) -> list[str]:
         skill is None
         or ".fvmrc" not in skill
         or "--skip-pub-get" not in skill
+        or not _matches_any(
+            skill,
+            (
+                r"\.fvmrc.{0,100}enables? (?:flutter )?pub (?:get|resolution) by default",
+                r"\bfvm.{0,80}switch(?:es|ing)? .{0,80}pub (?:get|resolution) runs? (?:by default|unless)",
+            ),
+        )
+        or _matches_any(
+            skill,
+            (
+                r"\bfvm (?:does not|doesn't|never|will not|won't) run (?:flutter )?pub (?:get|resolution) by default",
+                r"\.fvmrc.{0,80}disables? (?:flutter )?pub (?:get|resolution)",
+            ),
+        )
     ):
         failures.append(
             "Melos setup guidance does not explain default Pub resolution and the skip flag."
@@ -102,6 +141,7 @@ def _fvm_pub_resolution(root: Path) -> list[str]:
 def _melos_bootstrap(root: Path) -> list[str]:
     failures = []
     pubspec = _read_text(root, "pubspec.yaml")
+    skill = _read_text(root, ".agents/skills/melos-7/SKILL.md")
     if pubspec is None or not re.search(r"(?m)^  melos:\s*\S+", pubspec):
         failures.append("The root package does not declare Melos as a dependency.")
     if pubspec is None or not re.search(r"(?m)^workspace:\s*$", pubspec):
@@ -119,6 +159,21 @@ def _melos_bootstrap(root: Path) -> list[str]:
 
     if not _documented_command(root, "fvm dart run melos bootstrap"):
         failures.append("The pinned Melos bootstrap command is not documented.")
+    if skill is None or not _matches_any(
+        skill,
+        (
+            r"pub workspace membership does not replace (?:that step|(?:melos )?bootstrap)",
+            r"pub workspace alone is not a substitute for (?:the )?(?:repository's )?melos bootstrap",
+            r"(?:melos )?bootstrap is still (?:required|needed)",
+        ),
+    ) or _matches_any(
+        skill,
+        (
+            r"pub workspace membership makes (?:melos )?bootstrap redundant",
+            r"(?:melos )?bootstrap (?:is )?(?:redundant|unnecessary|not needed|can be skipped)",
+        ),
+    ):
+        failures.append("Melos guidance must keep bootstrap distinct from Pub workspace setup.")
     return failures
 
 
@@ -143,6 +198,7 @@ def evaluate_skill_evals(root: Path) -> list[ScenarioResult]:
 
     results = []
     seen_ids = set()
+    check_counts = {check_name: 0 for check_name in _CHECKS}
     for case in cases:
         if not isinstance(case, dict) or "checks" not in case:
             continue
@@ -152,7 +208,10 @@ def evaluate_skill_evals(root: Path) -> list[ScenarioResult]:
         seen_ids.add(case_id)
         checks = case["checks"]
         if not isinstance(checks, list) or not checks:
-            raise ValueError(f"Eval {case_id} must have one or more behavior checks.")
+            raise ValueError(
+                f"The eval file must exercise all behavior checks; eval {case_id} "
+                "has no behavior checks."
+            )
 
         failures = []
         for check_name in checks:
@@ -160,6 +219,7 @@ def evaluate_skill_evals(root: Path) -> list[ScenarioResult]:
             if check is None:
                 failures.append(f"Unknown behavior check: {check_name!r}.")
                 continue
+            check_counts[check_name] += 1
             failures.extend(check(root))
         results.append(
             ScenarioResult(
@@ -169,6 +229,16 @@ def evaluate_skill_evals(root: Path) -> list[ScenarioResult]:
             )
         )
 
+    incomplete_checks = [
+        f"{check_name} ({count} scenarios)"
+        for check_name, count in check_counts.items()
+        if count != 1
+    ]
+    if incomplete_checks:
+        raise ValueError(
+            "The eval file must exercise all behavior checks exactly once; "
+            f"missing or repeated: {', '.join(incomplete_checks)}."
+        )
     if not results:
         raise ValueError("The eval file contains no runnable behavior scenarios.")
     return results

@@ -51,6 +51,62 @@ class MelosSkillEvalTest(unittest.TestCase):
         self.assertIn("pub resolution", " ".join(results[1].failures).lower())
         self.assertIn("bootstrap", " ".join(results[2].failures).lower())
 
+    def test_rejects_guidance_that_contradicts_behavior_scenarios(self):
+        skill_path = self.root / ".agents/skills/melos-7/SKILL.md"
+        skill = skill_path.read_text()
+        skill = skill.replace(
+            "Formatting changes are allowed",
+            "Do not run formatting commands",
+        )
+        skill = skill.replace(
+            "Pub workspace membership does not replace that step.",
+            "Pub workspace membership makes Melos bootstrap redundant.",
+        )
+        skill = skill.replace(
+            "The repository's `.fvmrc` enables Pub resolution by default when FVM changes SDKs.",
+            "FVM does not run Pub resolution by default when switching SDKs.",
+        )
+        skill_path.write_text(skill)
+
+        results = evaluate_skill_evals(self.root)
+
+        self.assertFalse(results[0].passed)
+        self.assertFalse(results[1].passed)
+        self.assertFalse(results[2].passed)
+
+    def test_requires_every_behavior_scenario_to_run(self):
+        cases_path = self.root / ".agents/skills/melos-7/evals/evals.json"
+        cases = json.loads(cases_path.read_text())
+        cases["evals"][2]["checks"] = []
+        cases_path.write_text(json.dumps(cases))
+
+        with self.assertRaisesRegex(ValueError, "all behavior checks"):
+            evaluate_skill_evals(self.root)
+
+    def test_accepts_equivalent_setup_guidance_wording(self):
+        skill_path = self.root / ".agents/skills/melos-7/SKILL.md"
+        skill = skill_path.read_text()
+        skill = skill.replace(
+            "Formatting changes are allowed",
+            "Contributors may format source files",
+        )
+        skill = skill.replace(
+            "Pub workspace membership does not replace that step.",
+            "A Pub workspace alone is not a substitute for Melos bootstrap.",
+        )
+        skill = skill.replace(
+            "The repository's `.fvmrc` enables Pub resolution by default when FVM changes SDKs.",
+            "When FVM switches SDKs, Pub resolution runs by default. This repository's `.fvmrc` enables that setting.",
+        )
+        skill_path.write_text(skill)
+
+        results = evaluate_skill_evals(self.root)
+
+        self.assertEqual(
+            [(result.case_id, result.passed) for result in results],
+            [(1, True), (2, True), (3, True)],
+        )
+
     def _write_repository_facts(self):
         self._write(
             ".agents/skills/melos-7/evals/evals.json",
@@ -115,8 +171,9 @@ melos:
             ".agents/skills/melos-7/SKILL.md",
             "The repository's `.fvmrc` enables Pub resolution by default when FVM changes SDKs.\n"
             "Use `--skip-pub-get` to skip that resolution.\n"
-            "Pub workspace membership does not replace Melos bootstrap.\n"
-            "Run `fvm dart run melos bootstrap` from the root.\n",
+            "Pub workspace membership does not replace that step.\n"
+            "Run `fvm dart run melos bootstrap` from the root.\n"
+            "Formatting changes are allowed; apply them with `fvm dart format <paths>`.\n",
         )
         self._write(
             ".github/workflows/ci.yml",
