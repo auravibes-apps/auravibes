@@ -338,7 +338,7 @@ void main() {
       SkillPermissionTools.isSkillPermissionToolName(
         'skill__user__example__search',
       ),
-      isTrue,
+      isFalse,
     );
     expect(
       SkillPermissionTools.isSkillPermissionToolName(

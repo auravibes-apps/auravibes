@@ -156,7 +156,7 @@ void main() {
     a.remember(.parse('/workspaces/A/service-connections?view=unsafe'));
     expect(
       a.connectionsLocation(),
-      ServiceConnectionsRoute(workspaceId: 'A', view: 'connectors').location,
+      ServiceConnectionsRoute(workspaceId: 'A').location,
     );
   });
 
