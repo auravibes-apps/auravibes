@@ -1,3 +1,5 @@
+import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
+
 const skillContextMetadataKind = 'skill_context';
 
 const toolCallNarrationInstruction = '''
@@ -27,6 +29,7 @@ class const AgentPromptToolCall({
   required final Map<String, Object?> arguments,
   required final bool isResolved,
   final Object? response,
+  final List<AgentToolResultMedia> media = const [],
 });
 
 class const AgentPromptMessage({
@@ -49,6 +52,7 @@ class const AgentToolResponse({
   required final String ref,
   required final String name,
   required final Object? output,
+  final List<AgentToolResultMedia> media = const [],
 });
 
 class AgentChatPart {
@@ -179,6 +183,7 @@ class const BuildPromptChatMessages() {
               ref: toolCall.id,
               name: toolCall.name,
               output: toolCall.response,
+              media: toolCall.media,
             ),
           ),
     ];

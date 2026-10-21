@@ -72,7 +72,6 @@ void main() {
     });
     await tester.pump();
     await tester.pump();
-    await tester.pump();
   }
 
   testWidgets('renders nothing when queuedDrafts is empty', (tester) async {
@@ -82,7 +81,9 @@ void main() {
     expect(find.byType(AuraBadge), findsNothing);
   });
 
-  testWidgets('renders queued draft content', (tester) async {
+  testWidgets('renders queued drafts, count, and close buttons', (
+    tester,
+  ) async {
     final drafts = [
       ConversationQueuedDraft(
         id: 'q-1',
@@ -98,40 +99,8 @@ void main() {
 
     expect(find.text('Hello'), findsOneWidget);
     expect(find.text('World'), findsOneWidget);
-  });
-
-  testWidgets('renders count badge with draft count', (tester) async {
-    final drafts = [
-      ConversationQueuedDraft(
-        id: 'q-1',
-        draft: const ChatDraft(text: 'Hello'),
-      ),
-      ConversationQueuedDraft(
-        id: 'q-2',
-        draft: const ChatDraft(text: 'World'),
-      ),
-    ];
-
-    await pumpAndInit(tester, buildSubject(queuedDrafts: drafts));
-
     expect(find.byType(AuraBadge), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
-  });
-
-  testWidgets('renders close icon buttons for each draft', (tester) async {
-    final drafts = [
-      ConversationQueuedDraft(
-        id: 'q-1',
-        draft: const ChatDraft(text: 'Hello'),
-      ),
-      ConversationQueuedDraft(
-        id: 'q-2',
-        draft: const ChatDraft(text: 'World'),
-      ),
-    ];
-
-    await pumpAndInit(tester, buildSubject(queuedDrafts: drafts));
-
     expect(find.byIcon(Icons.close), findsNWidgets(2));
   });
 

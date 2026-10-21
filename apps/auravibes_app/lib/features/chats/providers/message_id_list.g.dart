@@ -97,6 +97,88 @@ final class ChatMessagesByConversationFamily extends $Family
   String toString() => r'chatMessagesByConversationProvider';
 }
 
+@ProviderFor(fetchConversationMessageById)
+final fetchConversationMessageByIdProvider =
+    FetchConversationMessageByIdFamily._();
+
+final class FetchConversationMessageByIdProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<MessageEntity?>,
+          MessageEntity?,
+          FutureOr<MessageEntity?>
+        >
+    with $FutureModifier<MessageEntity?>, $FutureProvider<MessageEntity?> {
+  FetchConversationMessageByIdProvider._({
+    required FetchConversationMessageByIdFamily super.from,
+    required _MessageLookupRequest super.argument,
+  }) : super(
+         retry: null,
+         name: r'fetchConversationMessageByIdProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$fetchConversationMessageByIdHash();
+
+  @override
+  String toString() {
+    return r'fetchConversationMessageByIdProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<MessageEntity?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<MessageEntity?> create(Ref ref) {
+    final argument = this.argument as _MessageLookupRequest;
+    return fetchConversationMessageById(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is FetchConversationMessageByIdProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$fetchConversationMessageByIdHash() =>
+    r'0c4a0bdd83a5080f1bf777c44ae6f9b3e5ee27a4';
+
+final class FetchConversationMessageByIdFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<MessageEntity?>,
+          _MessageLookupRequest
+        > {
+  FetchConversationMessageByIdFamily._()
+    : super(
+        retry: null,
+        name: r'fetchConversationMessageByIdProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  FetchConversationMessageByIdProvider call(_MessageLookupRequest request) =>
+      FetchConversationMessageByIdProvider._(argument: request, from: this);
+
+  @override
+  String toString() => r'fetchConversationMessageByIdProvider';
+}
+
 @ProviderFor(latestAssistantMessageByConversation)
 final latestAssistantMessageByConversationProvider =
     LatestAssistantMessageByConversationFamily._();

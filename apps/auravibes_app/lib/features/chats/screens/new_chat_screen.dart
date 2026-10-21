@@ -11,7 +11,6 @@ import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_readiness_summary.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -21,6 +20,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -222,7 +222,7 @@ void _bindNewChatGuard(_NewChatGuardRequest request) {
       isSaving: () =>
           request.ref.read(newChatProvider(request.workspaceId)).isLoading,
     ),
-    confirm: _confirmNewChatWorkspaceDiscard,
+    callbacks: const .new(confirm: _confirmNewChatWorkspaceDiscard),
   );
 }
 
@@ -267,6 +267,10 @@ class const _NewChatActions({
         .setReasoningConfiguration(value);
   }
 
+  void setToolAccessMode(ConversationToolAccessMode mode) {
+    ref.read(newChatProvider(workspaceId).notifier).setToolAccessMode(mode);
+  }
+
   Future<void> handleSendMessage(ChatDraft draft) async {
     try {
       await _openNewConversation(draft);
@@ -300,7 +304,9 @@ class const _NewChatActions({
     final configuration = state.reasoningConfiguration;
     if (state.modelId != modelId || configuration == null) return;
     if (_isInvalidReasoningConfiguration(configuration, selectedModel)) {
-      _resetReasoningConfiguration();
+      ref
+          .read(newChatProvider(workspaceId).notifier)
+          .setReasoningConfiguration(null);
     }
   }
 
@@ -312,10 +318,6 @@ class const _NewChatActions({
       !configuration.isValidFor(
         selectedModel.workspaceModelSelection.reasoningOptions,
       );
-
-  void _resetReasoningConfiguration() => ref
-      .read(newChatProvider(workspaceId).notifier)
-      .setReasoningConfiguration(null);
 
   Future<void> _openNewConversation(ChatDraft draft) async {
     final conversation = await _startNewConversation(ref, workspaceId, draft);
@@ -376,7 +378,7 @@ class const _NewChatBody({required final _NewChatBodyData data})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
+    return AppScreen(
       child: AuraLoadingOverlay(
         isLoading: data.state.isLoading,
         child: _NewChatInputArea(data: data),
@@ -424,14 +426,52 @@ class const _NewChatInputAreaContent({
   required final bool modelAvailable,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      Expanded(
-        child: SingleChildScrollView(
-          child: ChatReadinessSummary(workspaceId: data.workspaceId),
-        ),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _NewChatInputAreaViewport(
+      data: data,
+      height: constraints.maxHeight,
+      modalitiesInput: modalitiesInput,
+      reasoningOptions: reasoningOptions,
+      modelAvailable: modelAvailable,
+    ),
+  );
+}
+
+class const _NewChatInputAreaViewport({
+  required final _NewChatBodyData data,
+  required final double height,
+  required final List<String> modalitiesInput,
+  required final List<ReasoningOption> reasoningOptions,
+  required final bool modelAvailable,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    reverse: true,
+    child: ConstrainedBox(
+      constraints: .new(minHeight: height),
+      child: _NewChatInputAreaColumns(
+        data: data,
+        modalitiesInput: modalitiesInput,
+        reasoningOptions: reasoningOptions,
+        modelAvailable: modelAvailable,
       ),
+    ),
+  );
+}
+
+class const _NewChatInputAreaColumns({
+  required final _NewChatBodyData data,
+  required final List<String> modalitiesInput,
+  required final List<ReasoningOption> reasoningOptions,
+  required final bool modelAvailable,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisAlignment: .spaceBetween,
+    children: [
+      ChatReadinessSummary(workspaceId: data.workspaceId),
       _NewChatInput.fromData(
+        context,
         data,
         modalitiesInput,
         reasoningOptions,
@@ -474,6 +514,7 @@ List<String> _watchNewChatModalities(
 class const _NewChatInput({required final Widget child})
     extends StatelessWidget {
   new fromData(
+    BuildContext context,
     _NewChatBodyData data,
     List<String> modalitiesInput,
     List<ReasoningOption> reasoningOptions, {
@@ -485,28 +526,37 @@ class const _NewChatInput({required final Widget child})
            onToolsPress: data.actions.onToolsPress,
            modelSheetControl: _NewChatModelSheetControl(data: data),
            agentSheetControl: _NewChatAgentSheetControl(data: data),
-           modelCompactControl: _NewChatModelCompactControl(data: data),
-           agentCompactControl: _NewChatAgentCompactControl(data: data),
+           modelCompactControl: (onPressed) =>
+               _NewChatModelCompactControl(data: data, onCompactTap: onPressed),
+           agentCompactControl: (onPressed) =>
+               _NewChatAgentCompactControl(data: data, onCompactTap: onPressed),
            onDraftStatusChanged: (hasDraft) =>
                data.draftStatus.value = hasDraft,
            autofocus: true,
-           reasoningControl:
+           toolAccessMode: data.state.toolAccessMode,
+           onToolAccessModeChanged: (mode) =>
+               data.actions.setToolAccessMode(mode),
+           reasoningSettingsControl:
                ChatReasoningControls.hasSupportedReasoningOptions(
                  reasoningOptions,
                )
-               ? ChatReasoningControl(
+               ? ChatReasoningControls(
                    options: reasoningOptions,
                    value: data.state.reasoningConfiguration,
                    onChanged: data.actions.setReasoningConfiguration,
                  )
                : null,
            modalitiesInput: modalitiesInput,
-           disabledHint: data.state.modelId == null
+           disabledHint:
+               data.state.modelId == null &&
+                   MediaQuery.viewInsetsOf(context).bottom == 0
                ? const TextLocale(
                    LocaleKeys.chats_screens_new_chat_no_model_selected,
                  )
                : null,
            disabled: data.state.isLoading || !modelAvailable,
+           acceptDroppedFilesWhenDisabled:
+               data.state.modelId == null && !data.state.isLoading,
          ),
        );
 
@@ -536,24 +586,30 @@ class const _NewChatAgentSheetControl({required final _NewChatBodyData data})
   );
 }
 
-class const _NewChatModelCompactControl({required final _NewChatBodyData data})
-    extends StatelessWidget {
+class const _NewChatModelCompactControl({
+  required final _NewChatBodyData data,
+  required final VoidCallback onCompactTap,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CompactWorkspaceModelSelector(
     workspaceId: data.workspaceId,
     workspaceModelSelectionId: data.state.modelId,
     onChanged: data.actions.setModelId,
     compactMode: true,
+    onCompactTap: onCompactTap,
   );
 }
 
-class const _NewChatAgentCompactControl({required final _NewChatBodyData data})
-    extends StatelessWidget {
+class const _NewChatAgentCompactControl({
+  required final _NewChatBodyData data,
+  required final VoidCallback onCompactTap,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CompactAgentSelector(
     workspaceId: data.workspaceId,
     agentId: data.state.agentId,
     onChanged: data.actions.setAgentId,
+    onCompactTap: onCompactTap,
     compactMode: true,
   );
 }
@@ -561,7 +617,7 @@ class const _NewChatAgentCompactControl({required final _NewChatBodyData data})
 class const _NewChatUnavailable({required final String workspaceId})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: _NewChatUnavailableBody(workspaceId: workspaceId),
     appBar: const AuraAppBarWithDrawer(
       title: TextLocale(LocaleKeys.menu_new_chat),
@@ -607,8 +663,8 @@ class const _UnavailableChatInput({required final String workspaceId})
     },
     modelSheetControl: const SizedBox.shrink(),
     agentSheetControl: const SizedBox.shrink(),
-    modelCompactControl: const SizedBox.shrink(),
-    agentCompactControl: const SizedBox.shrink(),
+    modelCompactControl: (_) => const SizedBox.shrink(),
+    agentCompactControl: (_) => const SizedBox.shrink(),
     disabled: true,
   );
 }

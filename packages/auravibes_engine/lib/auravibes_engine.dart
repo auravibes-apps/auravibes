@@ -6,6 +6,8 @@ export 'src/a2ui/a2ui_skill_definition.dart';
 export 'src/a2ui/a2ui_stream_decoder.dart';
 export 'src/a2ui/a2ui_validation.dart';
 export 'src/a2ui/a2ui_wire_codec.dart';
+export 'src/agent_background_work.dart';
+export 'src/agent_background_work_status.dart';
 export 'src/agent_continuation_preparer.dart';
 export 'src/agent_iteration_context.dart';
 export 'src/agent_iteration_decision.dart';
@@ -15,6 +17,7 @@ export 'src/agent_runtime.dart';
 export 'src/agent_service.dart' hide AgentService;
 export 'src/agent_stop_service.dart' hide AgentStopService;
 export 'src/agent_stream_service.dart' hide AgentStreamService;
+export 'src/agent_tool_approval_policy.dart';
 export 'src/agent_tool_batch_executor.dart';
 export 'src/agent_tool_decision_service.dart' hide AgentToolDecisionService;
 export 'src/agent_tool_execution_service.dart' hide AgentToolExecutionService;
@@ -26,6 +29,7 @@ export 'src/context_window.dart';
 export 'src/continue_agent_result.dart';
 export 'src/conversation_compaction.dart';
 export 'src/conversation_title.dart';
+export 'src/conversation_tool_access_mode.dart';
 export 'src/genkit_providers/chat_completions_provider.dart'
     show
         ChatCompletionsCodec,
@@ -37,7 +41,8 @@ export 'src/genkit_providers/chat_completions_provider.dart'
         ToolSamplingPolicy,
         ToolSamplingResult,
         ToolSamplingValidationException,
-        ToolSamplingValidationReason;
+        ToolSamplingValidationReason,
+        sanitizeProviderErrorDetail;
 export 'src/genkit_providers/openai_codex.dart'
     show OpenAICodexCodec, isRetryableCodexError, openAICodexModel;
 export 'src/genkit_providers/openai_compat_chat_options.dart';
@@ -51,6 +56,7 @@ export 'src/namespaces/agent_namespace.dart';
 export 'src/namespaces/conversations_namespace.dart';
 export 'src/namespaces/tools_namespace.dart';
 export 'src/prompt_messages.dart';
+export 'src/provider_failure_recovery.dart';
 export 'src/provider_profile.dart';
 export 'src/provider_tool_exchange.dart';
 export 'src/providers/agent_data_provider.dart';
@@ -63,6 +69,8 @@ export 'src/skills/execution/app_skill_executor.dart';
 export 'src/skills/execution/resolve_skill_url_template.dart';
 export 'src/skills/execution/run_skill_url_template.dart';
 export 'src/skills/execution/skill_http_client.dart';
+export 'src/skills/execution/skill_response_decoder.dart'
+    show SkillStreamFailure;
 export 'src/skills/execution/skill_template_preview.dart';
 export 'src/skills/models/app_skill_definition.dart';
 export 'src/skills/models/app_skill_tool_definition.dart';
@@ -82,6 +90,7 @@ export 'src/skills/skill_credentials.dart';
 export 'src/skills/skill_eligibility.dart';
 export 'src/skills/skill_tool_materialization.dart';
 export 'src/skills/skills_manager.dart';
+export 'src/strict_tool_sampling_profile.dart';
 export 'src/sub_agents/sub_agent_runner.dart';
 export 'src/sub_agents/sub_agent_tool_specs.dart';
 export 'src/tool_approval_target.dart';
@@ -95,7 +104,8 @@ export 'src/tool_execution_dispatcher.dart'
 export 'src/tool_name_resolver.dart';
 export 'src/tool_output_policy.dart';
 export 'src/tool_resume_service.dart' hide AgentToolResumeService;
-export 'src/tool_schema_strict.dart' show ToolSchemaIssueReason;
+export 'src/tool_schema_strict.dart'
+    show ToolSchemaIssue, ToolSchemaIssueReason, strictToolSchemaIssue;
 export 'src/tool_spec.dart';
 export 'src/transcript_context.dart';
 export 'src/transcript_selection.dart';

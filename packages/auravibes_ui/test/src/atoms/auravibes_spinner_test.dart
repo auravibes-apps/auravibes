@@ -5,30 +5,39 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraSpinner', () {
-    testWidgets('renders spinner correctly', (tester) async {
+    testWidgets('renders default spinner correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(home: Scaffold(body: AuraSpinner())),
       );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.byType(SizedBox), findsOneWidget);
+
+      final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox));
+      expect(sizedBox.width, 24.0);
+      expect(sizedBox.height, 24.0);
+
+      final progressIndicator = tester.widget<CircularProgressIndicator>(
+        find.byType(CircularProgressIndicator),
+      );
+      expect(progressIndicator.color, DesignColors.primaryBase);
+      expect(progressIndicator.semanticsLabel, isNull);
     });
 
-    testWidgets('applies expected dimensions for supported sizes', (
+    testWidgets('applies expected dimensions for small and large sizes', (
       tester,
     ) async {
-      const cases = <({String label, AuraSpinnerSize? size, double dimension})>[
-        (label: 'default medium', size: null, dimension: 24.0),
+      const cases = <({String label, AuraSpinnerSize size, double dimension})>[
         (label: 'large', size: AuraSpinnerSize.large, dimension: 32.0),
         (label: 'small', size: AuraSpinnerSize.small, dimension: 16.0),
       ];
 
       for (final (:label, :size, :dimension) in cases) {
-        final spinner = size == null
-            ? const AuraSpinner()
-            : AuraSpinner(size: size);
-
-        await tester.pumpWidget(MaterialApp(home: Scaffold(body: spinner)));
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: AuraSpinner(size: size)),
+          ),
+        );
 
         final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox));
         expect(sizedBox.width, dimension, reason: label);
@@ -36,12 +45,20 @@ void main() {
       }
     });
 
-    testWidgets('applies custom color correctly', (tester) async {
+    testWidgets('applies custom indicator overrides', (tester) async {
       const customColor = Colors.red;
+      const customStrokeWidth = 4.0;
+      const semanticLabel = 'Loading content';
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: AuraSpinner(color: customColor)),
+          home: Scaffold(
+            body: AuraSpinner(
+              color: customColor,
+              strokeWidth: customStrokeWidth,
+              semanticLabel: semanticLabel,
+            ),
+          ),
         ),
       );
 
@@ -49,60 +66,8 @@ void main() {
         find.byType(CircularProgressIndicator),
       );
       expect(progressIndicator.color, customColor);
-    });
-
-    testWidgets('applies default primary color when no color specified', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: AuraSpinner())),
-      );
-
-      final progressIndicator = tester.widget<CircularProgressIndicator>(
-        find.byType(CircularProgressIndicator),
-      );
-      expect(progressIndicator.color, DesignColors.primaryBase);
-    });
-
-    testWidgets('applies custom stroke width correctly', (tester) async {
-      const customStrokeWidth = 4.0;
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraSpinner(strokeWidth: customStrokeWidth)),
-        ),
-      );
-
-      final progressIndicator = tester.widget<CircularProgressIndicator>(
-        find.byType(CircularProgressIndicator),
-      );
       expect(progressIndicator.strokeWidth, customStrokeWidth);
-    });
-
-    testWidgets('applies semantic label correctly', (tester) async {
-      const semanticLabel = 'Loading content';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraSpinner(semanticLabel: semanticLabel)),
-        ),
-      );
-
-      final progressIndicator = tester.widget<CircularProgressIndicator>(
-        find.byType(CircularProgressIndicator),
-      );
       expect(progressIndicator.semanticsLabel, semanticLabel);
-    });
-
-    testWidgets('omits semantic label when none provided', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: AuraSpinner())),
-      );
-
-      final progressIndicator = tester.widget<CircularProgressIndicator>(
-        find.byType(CircularProgressIndicator),
-      );
-      expect(progressIndicator.semanticsLabel, isNull);
     });
 
     group('AuraSpinnerSize enum', () {
@@ -118,7 +83,9 @@ void main() {
   });
 
   group('AuraLoadingOverlay', () {
-    testWidgets('shows overlay when isLoading is true', (tester) async {
+    testWidgets('shows loading overlay with and without a message', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(home: Scaffold(body: AuraLoadingOverlay())),
       );
@@ -128,9 +95,43 @@ void main() {
         find.byType(Container),
         findsOneWidget,
       ); // Inner container only (overlay uses ColoredBox).
+
+      const childText = 'Content';
+      const message = 'Loading data...';
+      const customBackgroundColor = Colors.red;
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AuraLoadingOverlay(
+              child: Text(childText),
+              message: message,
+              backgroundColor: customBackgroundColor,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text(childText), findsOneWidget);
+      expect(find.byType(AuraSpinner), findsOneWidget);
+      expect(find.byType(AuraLoadingOverlay), findsOneWidget);
+      final loadingOverlay = tester.widget<AuraLoadingOverlay>(
+        find.byType(AuraLoadingOverlay),
+      );
+      expect(loadingOverlay.isLoading, isTrue);
+
+      expect(find.text(message), findsOneWidget);
+      final coloredBox = tester.widget<ColoredBox>(
+        find.descendant(
+          of: find.byType(AuraLoadingOverlay),
+          matching: find.byType(ColoredBox),
+        ),
+      );
+      expect(coloredBox.color, customBackgroundColor);
     });
 
-    testWidgets('hides overlay when isLoading is false', (tester) async {
+    testWidgets('hides loading overlay and preserves optional child', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(body: AuraLoadingOverlay(isLoading: false)),
@@ -139,11 +140,8 @@ void main() {
 
       expect(find.byType(AuraSpinner), findsNothing);
       expect(find.byType(SizedBox), findsOneWidget);
-    });
 
-    testWidgets('shows child when isLoading is false', (tester) async {
       const childText = 'Content';
-
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -154,62 +152,6 @@ void main() {
 
       expect(find.text(childText), findsOneWidget);
       expect(find.byType(AuraSpinner), findsNothing);
-    });
-
-    testWidgets('shows overlay over child when isLoading is true', (
-      tester,
-    ) async {
-      const childText = 'Content';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraLoadingOverlay(child: Text(childText))),
-        ),
-      );
-
-      expect(find.text(childText), findsOneWidget);
-      expect(find.byType(AuraSpinner), findsOneWidget);
-      expect(find.byType(AuraLoadingOverlay), findsOneWidget);
-
-      // Verify the overlay Stack specifically.
-      // (Not the MaterialApp's internal stack).
-      final loadingOverlay = tester.widget<AuraLoadingOverlay>(
-        find.byType(AuraLoadingOverlay),
-      );
-      expect(loadingOverlay.isLoading, isTrue);
-    });
-
-    testWidgets('shows message when provided', (tester) async {
-      const message = 'Loading data...';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraLoadingOverlay(message: message)),
-        ),
-      );
-
-      expect(find.byType(AuraSpinner), findsOneWidget);
-      expect(find.text(message), findsOneWidget);
-    });
-
-    testWidgets('applies custom background color', (tester) async {
-      const customBackgroundColor = Colors.red;
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraLoadingOverlay(backgroundColor: customBackgroundColor),
-          ),
-        ),
-      );
-
-      final coloredBox = tester.widget<ColoredBox>(
-        find.descendant(
-          of: find.byType(AuraLoadingOverlay),
-          matching: find.byType(ColoredBox),
-        ),
-      );
-      expect(coloredBox.color, customBackgroundColor);
     });
   });
 }

@@ -11,11 +11,21 @@ import 'pinned_http_client.dart';
 
 typedef McpAddressLookup = Future<List<InternetAddress>> Function(String host);
 
+typedef McpProbeHttpClientFactory = HttpClient Function(
+  Uri uri,
+  InternetAddress address,
+);
+
 class McpServerProbe {
-  new({McpAddressLookup? lookup}) : _lookup = lookup ?? InternetAddress.lookup;
+  new({
+    McpAddressLookup? lookup,
+    McpProbeHttpClientFactory? httpClientFactory,
+  }) : _lookup = lookup ?? InternetAddress.lookup,
+       _httpClientFactory = httpClientFactory ?? pinnedHttpClient;
 
   static const _timeout = Duration(seconds: 10);
   final McpAddressLookup _lookup;
+  final McpProbeHttpClientFactory _httpClientFactory;
 
   Future<DiscoverMcpServerResult> call({
     required Uri uri,
@@ -38,25 +48,43 @@ class McpServerProbe {
         addresses.first,
         bearerToken,
         httpHeaders,
+        _httpClientFactory,
       );
     }
-    final client = pinnedHttpClient(uri, addresses.first)
+    final client = _httpClientFactory(uri, addresses.first)
       ..connectionTimeout = _timeout
       ..autoUncompress = false;
+    var clientClosed = false;
     try {
-      final initialized = await _rpc(
-        client,
-        uri,
-        bearerToken,
-        httpHeaders,
-        1,
-        'initialize',
-        {
-          'protocolVersion': '2025-06-18',
-          'capabilities': <String, Object?>{},
-          'clientInfo': {'name': 'AuraVibes Server', 'version': '1.0.0'},
-        },
-      );
+      late final ({Map<String, Object?> result, String? sessionId}) initialized;
+      try {
+        initialized = await _rpc(
+          client,
+          uri,
+          bearerToken,
+          httpHeaders,
+          1,
+          'initialize',
+          {
+            'protocolVersion': '2025-06-18',
+            'capabilities': <String, Object?>{},
+            'clientInfo': {'name': 'AuraVibes Server', 'version': '1.0.0'},
+          },
+        );
+      } on _McpHttpResponseException catch (error) {
+        client.close(force: true);
+        clientClosed = true;
+        if (error.isJsonRpcError) {
+          throw const HttpException('MCP request failed.');
+        }
+        return await _discoverSse(
+          uri,
+          addresses.first,
+          bearerToken,
+          httpHeaders,
+          _httpClientFactory,
+        );
+      }
       await _rpc(
         client,
         uri,
@@ -96,7 +124,7 @@ class McpServerProbe {
         tools: tools,
       );
     } finally {
-      client.close(force: true);
+      if (!clientClosed) client.close(force: true);
     }
   }
 
@@ -105,12 +133,14 @@ class McpServerProbe {
     InternetAddress address,
     String? bearerToken,
     Map<String, String> httpHeaders,
+    McpProbeHttpClientFactory httpClientFactory,
   ) async {
     final session = await McpSseSession.connect(
       uri,
       address,
       bearerToken: bearerToken,
       httpHeaders: httpHeaders,
+      httpClient: httpClientFactory(uri, address),
     );
     try {
       final initialized = await session.request(1, 'initialize', {
@@ -177,6 +207,18 @@ class McpServerProbe {
     if (response.isRedirect ||
         response.statusCode != HttpStatus.ok &&
             (!notification || response.statusCode != HttpStatus.accepted)) {
+      if (method == 'initialize' &&
+          id != null &&
+          const {
+            HttpStatus.badRequest,
+            HttpStatus.notFound,
+            HttpStatus.methodNotAllowed,
+          }.contains(response.statusCode)) {
+        final bytes = await _readResponseBody(response);
+        throw _McpHttpResponseException(
+          isJsonRpcError: _isRecognizedJsonRpcError(bytes, id),
+        );
+      }
       await _drain(response);
       throw const HttpException('MCP request failed.');
     }
@@ -204,6 +246,17 @@ class McpServerProbe {
     );
   }
 
+  Future<List<int>> _readResponseBody(HttpClientResponse response) async {
+    final bytes = <int>[];
+    await for (final chunk in response.timeout(_timeout)) {
+      bytes.addAll(chunk);
+      if (bytes.length > McpServerPolicy.maxResponseBytes) {
+        throw const FormatException('MCP response is too large.');
+      }
+    }
+    return bytes;
+  }
+
   Future<void> _drain(HttpClientResponse response) async {
     var length = 0;
     await for (final chunk in response.timeout(_timeout)) {
@@ -212,6 +265,27 @@ class McpServerProbe {
         throw const FormatException('MCP response is too large.');
       }
     }
+  }
+}
+
+final class _McpHttpResponseException implements Exception {
+  const _McpHttpResponseException({required this.isJsonRpcError});
+
+  final bool isJsonRpcError;
+}
+
+bool _isRecognizedJsonRpcError(List<int> body, int requestId) {
+  try {
+    final decoded = jsonDecode(utf8.decode(body));
+    if (decoded is! Map ||
+        decoded['jsonrpc'] != '2.0' ||
+        decoded['id'] != requestId) {
+      return false;
+    }
+    final error = decoded['error'];
+    return error is Map && error['code'] is num && error['message'] is String;
+  } on FormatException {
+    return false;
   }
 }
 

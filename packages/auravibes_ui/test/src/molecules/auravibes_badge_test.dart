@@ -32,7 +32,7 @@ void main() {
           (container.decoration ??
                   fail('Expected container.decoration to be non-null'))
               as BoxDecoration;
-      expect(decoration.color, DesignColors.primaryBase);
+      expect(decoration.color, AuraTheme.light.colors.fillFor(.primary));
     });
 
     testWidgets('uses readable foreground for text in dark theme', (
@@ -60,7 +60,7 @@ void main() {
         ),
       );
 
-      expect(contentStyle?.color, AuraTheme.dark.colors.onPrimary);
+      expect(contentStyle?.color, AuraTheme.dark.colors.onFill(.primary));
     });
 
     for (final dark in [false, true]) {
@@ -113,7 +113,7 @@ void main() {
           (container.decoration ??
                   fail('Expected container.decoration to be non-null'))
               as BoxDecoration;
-      expect(decoration.color, DesignColors.secondaryBase);
+      expect(decoration.color, AuraTheme.light.colors.fillFor(.secondary));
     });
 
     testWidgets('applies outlined variant styling correctly', (tester) async {

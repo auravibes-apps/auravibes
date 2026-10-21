@@ -18,6 +18,36 @@ void main() {
     expect(result.packages, isEmpty);
   });
 
+  test('skill guidance and eval metadata select no Dart tests', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified('.agents/skills/example/SKILL.md'),
+        const ChangedFile.modified('.agents/skills/example/evals/evals.json'),
+      ],
+      headSources: {},
+      baseSources: {},
+      packageRoots: {},
+    );
+
+    expect(result.mode, SelectionMode.none);
+    expect(result.packages, isEmpty);
+  });
+
+  test('skill executable assets use conservative full selection', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified(
+          '.agents/skills/example/scripts/validate.py',
+        ),
+      ],
+      headSources: {},
+      baseSources: {},
+      packageRoots: {},
+    );
+
+    expect(result.mode, SelectionMode.full);
+  });
+
   test('non-Dart non-global diff returns none', () {
     final result = selectChangedTests(
       changes: [
@@ -70,6 +100,7 @@ void main() {
       changes: [
         const ChangedFile.modified('.pi/new-config.json'),
         const ChangedFile.modified('sonar-project.properties'),
+        const ChangedFile.modified('.agents/skills/example/evals/evals.json'),
         const ChangedFile.modified('packages/core/lib/leaf.dart'),
       ],
       headSources: _sources,
@@ -737,6 +768,14 @@ void main() {
       );
       expect(capturedArguments, isNot(contains('--total-shards=2')));
       expect(capturedArguments, isNot(contains('--shard-index=1')));
+      final command = jsonDecode(
+        await File('${root.path}/command-packages-core.json').readAsString(),
+      );
+      expect(command, {
+        'package': 'packages/core',
+        'tool': 'dart',
+        'arguments': capturedArguments,
+      });
     },
   );
 
@@ -889,6 +928,10 @@ void main() {
 
             return 7;
           },
+      totalShards: 2,
+      shardIndex: 1,
+      coverage: true,
+      timingsDir: root.path,
     );
     expect(code, 7);
     expect(
@@ -898,8 +941,20 @@ void main() {
         '--exclude-tags=integration,golden',
         '--concurrency=1',
         '--timeout=30s',
-        '--reporter=compact',
+        '--reporter=failures-only',
       ]),
+    );
+    final command = jsonDecode(
+      await File('${root.path}/command-packages-core.json').readAsString(),
+    );
+    expect(command, {
+      'package': 'packages/core',
+      'tool': 'flutter',
+      'arguments': capturedArguments,
+    });
+    expect(
+      capturedArguments,
+      containsAll(['--coverage', '--total-shards=2', '--shard-index=1']),
     );
   });
 

@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -110,6 +111,12 @@ class _FakeWorkspaceModelSelectionRepository([
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
       getWorkspaceModelSelectionById(id);
+
+  @override
+  Future<void> updateToolSamplingPolicy(
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  ) => throw UnimplementedError();
 
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(

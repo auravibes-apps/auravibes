@@ -140,7 +140,9 @@ Future<int?> _modelContextLimit(
   final value = await ref.watch(
     getModelByProviderAndModelIdProvider(
       workspaceId: workspaceId,
-      providerId: selection.modelsProvider.id,
+      providerId: _isCodexSelection(selection)
+          ? 'openai'
+          : selection.modelsProvider.id,
       modelId: selection.workspaceModelSelection.modelId,
     ).future,
   );

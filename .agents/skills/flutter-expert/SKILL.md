@@ -6,7 +6,7 @@ metadata:
   author: https://github.com/Jeffallan
   version: "1.0.0"
   domain: frontend
-  triggers: Flutter, Dart, widget, Riverpod, Bloc, GoRouter, cross-platform
+  triggers: Flutter, Dart, widget, Riverpod, GoRouter, cross-platform
   role: specialist
   scope: implementation
   output-format: code
@@ -26,7 +26,7 @@ You are a senior Flutter developer. For AuraVibes, use the Flutter version pinne
 ## When to Use This Skill
 
 - Building cross-platform Flutter applications
-- Implementing state management (Riverpod, Bloc)
+- Implementing state management (Riverpod)
 - Setting up navigation with GoRouter
 - Creating custom widgets and animations
 - Optimizing Flutter performance
@@ -35,7 +35,7 @@ You are a senior Flutter developer. For AuraVibes, use the Flutter version pinne
 ## Core Workflow
 
 1. **Setup** - Project structure, dependencies, routing
-2. **State** - Riverpod providers or Bloc setup
+2. **State** - Riverpod providers
 3. **Widgets** - Reusable, const-optimized components
 4. **Test** - Widget tests, integration tests
 5. **Optimize** - Profile, reduce rebuilds
@@ -46,12 +46,7 @@ Load detailed guidance based on context:
 
 | Topic | Reference | Load When |
 |-------|-----------|-----------|
-| Riverpod | `references/riverpod-state.md` | State management, providers, notifiers |
-| Bloc | `references/bloc-state.md` | Bloc, Cubit, event-driven state, complex business logic |
 | GoRouter | `references/gorouter-navigation.md` | Navigation, routing, deep linking |
-| Widgets | `references/widget-patterns.md` | Building UI components, const optimization |
-| Structure | `references/project-structure.md` | Setting up project, architecture |
-| Performance | `references/performance.md` | Optimization, profiling, jank fixes |
 
 ## Guidance
 

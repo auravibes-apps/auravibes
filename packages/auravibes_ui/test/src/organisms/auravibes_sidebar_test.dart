@@ -1,36 +1,59 @@
 import 'dart:ui' show Tristate;
 
+import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/organisms/aura_sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraSidebar', () {
-    testWidgets('renders navigation items', (tester) async {
+    testWidgets('renders navigation items at expanded and collapsed widths', (
+      tester,
+    ) async {
+      int? tappedIndex;
+      const items = [
+        AuraNavigationData(icon: Icon(Icons.home), label: Text('Home')),
+        AuraNavigationData(icon: Icon(Icons.settings), label: Text('Settings')),
+      ];
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AuraSidebar(
-              navigationItems: const [
-                AuraNavigationData(icon: Icon(Icons.home), label: Text('Home')),
-                AuraNavigationData(
-                  icon: Icon(Icons.settings),
-                  label: Text('Settings'),
+            body: Row(
+              children: [
+                AuraSidebar(
+                  navigationItems: items,
+                  onNavigationTap: (index) => tappedIndex = index,
+                ),
+                AuraSidebar(
+                  navigationItems: items,
+                  onNavigationTap: (index) => tappedIndex = index,
+                  isExpanded: false,
                 ),
               ],
-              onNavigationTap: (_) {
-                final _ = Object();
-              },
             ),
           ),
         ),
       );
 
-      expect(find.text('Home'), findsOneWidget);
-      expect(find.text('Settings'), findsOneWidget);
+      final sidebars = find.byType(AuraSidebar);
+      expect(sidebars, findsNWidgets(2));
+      expect(tester.getSize(sidebars.at(0)).width, 280);
+      expect(tester.getSize(sidebars.at(1)).width, 80);
+      expect(
+        find.descendant(of: sidebars.at(0), matching: find.text('Home')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: sidebars.at(0), matching: find.text('Settings')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.descendant(of: sidebars.at(0), matching: find.text('Settings')),
+      );
+      expect(tappedIndex, 1);
     });
 
-    testWidgets('has expanded width when isExpanded is true', (tester) async {
+    testWidgets('insets item content from rounded surface', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -38,16 +61,57 @@ void main() {
               navigationItems: const [
                 AuraNavigationData(icon: Icon(Icons.home), label: Text('Home')),
               ],
-              onNavigationTap: (_) {
-                final _ = Object();
-              },
+              onNavigationTap: (_) => fail('layout test must not tap sidebar'),
             ),
           ),
         ),
       );
 
-      final size = tester.getSize(find.byType(AuraSidebar));
-      expect(size.width, 280);
+      final surface = tester.getRect(find.byType(AuraPressable));
+      final icon = tester.getRect(find.byIcon(Icons.home));
+      expect(icon.left - surface.left, 16);
+    });
+
+    testWidgets('applies caller padding inside its full-width surface', (
+      tester,
+    ) async {
+      for (final direction in [TextDirection.ltr, TextDirection.rtl]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Directionality(
+                textDirection: direction,
+                child: AuraSidebar(
+                  navigationItems: const [
+                    AuraNavigationData(
+                      icon: Icon(Icons.home),
+                      label: Text('Home'),
+                    ),
+                  ],
+                  onNavigationTap: (_) =>
+                      fail('padding test must not tap sidebar'),
+                  padding: const EdgeInsetsDirectional.only(
+                    start: 24,
+                    top: 16,
+                    bottom: 12,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        final sidebar = tester.getRect(find.byType(AuraSidebar));
+        final icon = tester.getRect(find.byIcon(Icons.home));
+        expect(sidebar.left, 0);
+        expect(sidebar.width, 280);
+        if (direction == TextDirection.ltr) {
+          expect(icon.left, greaterThanOrEqualTo(sidebar.left + 24));
+        } else {
+          expect(icon.right, lessThanOrEqualTo(sidebar.right - 24));
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
     });
 
     testWidgets('fits navigation labels at large RTL text scale', (
@@ -95,51 +159,6 @@ void main() {
       } finally {
         semantics.dispose();
       }
-    });
-
-    testWidgets('has collapsed width when isExpanded is false', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraSidebar(
-              navigationItems: const [
-                AuraNavigationData(icon: Icon(Icons.home), label: Text('Home')),
-              ],
-              onNavigationTap: (_) {
-                final _ = Object();
-              },
-              isExpanded: false,
-            ),
-          ),
-        ),
-      );
-
-      final size = tester.getSize(find.byType(AuraSidebar));
-      expect(size.width, 80);
-    });
-
-    testWidgets('calls onNavigationTap with correct index', (tester) async {
-      int? tappedIndex;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraSidebar(
-              navigationItems: const [
-                AuraNavigationData(icon: Icon(Icons.home), label: Text('Home')),
-                AuraNavigationData(
-                  icon: Icon(Icons.settings),
-                  label: Text('Settings'),
-                ),
-              ],
-              onNavigationTap: (index) => tappedIndex = index,
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Settings'));
-      expect(tappedIndex, 1);
     });
 
     testWidgets('exposes selected and unselected semantics', (tester) async {
@@ -238,7 +257,35 @@ void main() {
       expect(tappedIndex, 1);
     });
 
-    testWidgets('renders header when provided', (tester) async {
+    testWidgets('shows each icon-only navigation label in a tooltip', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraSidebar(
+              navigationItems: const [
+                AuraNavigationData(
+                  icon: Icon(Icons.home),
+                  label: Text('Home'),
+                  semanticLabel: 'Home',
+                ),
+              ],
+              onNavigationTap: (_) {
+                final _ = Object();
+              },
+              isExpanded: false,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byTooltip('Home'), findsOneWidget);
+    });
+
+    testWidgets('renders optional header, middle section, and footer', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -248,47 +295,15 @@ void main() {
                 final _ = Object();
               },
               header: const Text('Header'),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Header'), findsOneWidget);
-    });
-
-    testWidgets('renders footer when provided', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraSidebar(
-              navigationItems: const [],
-              onNavigationTap: (_) {
-                final _ = Object();
-              },
+              middleSection: const Text('Middle'),
               footer: const Text('Footer'),
             ),
           ),
         ),
       );
 
+      expect(find.text('Header'), findsOneWidget);
       expect(find.text('Footer'), findsOneWidget);
-    });
-
-    testWidgets('renders middleSection when provided', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraSidebar(
-              navigationItems: const [],
-              onNavigationTap: (_) {
-                final _ = Object();
-              },
-              middleSection: const Text('Middle'),
-            ),
-          ),
-        ),
-      );
-
       expect(find.text('Middle'), findsOneWidget);
     });
 
@@ -321,10 +336,10 @@ void main() {
       );
       expect(
         find.descendant(
-          of: find.byType(SafeArea),
+          of: find.byType(ListView),
           matching: find.text('Logout'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
     });
   });

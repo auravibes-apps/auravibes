@@ -18,6 +18,8 @@ import 'package:auravibes_server/src/generated/features/codex_oauth/models/compl
     as _ir0ud11r;
 import 'package:auravibes_server/src/generated/features/codex_oauth/models/start_codex_oauth_request.dart'
     as _ivuexb4h;
+import 'package:auravibes_server/src/generated/features/conversations/models/bookmark_message_request.dart'
+    as _iqabnln6;
 import 'package:auravibes_server/src/generated/features/conversations/models/cancel_turn_request.dart'
     as _i4j5a2zc;
 import 'package:auravibes_server/src/generated/features/conversations/models/compact_conversation_request.dart'
@@ -32,6 +34,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/cre
     as _ish3zj9o;
 import 'package:auravibes_server/src/generated/features/conversations/models/delete_conversation_request.dart'
     as _il5llor3;
+import 'package:auravibes_server/src/generated/features/conversations/models/detach_tool_call_request.dart'
+    as _inotib2f;
 import 'package:auravibes_server/src/generated/features/conversations/models/edit_pending_conversation_message_request.dart'
     as _igstxg4l;
 import 'package:auravibes_server/src/generated/features/conversations/models/fork_conversation_request.dart'
@@ -40,10 +44,14 @@ import 'package:auravibes_server/src/generated/features/conversations/models/get
     as _itkmf3xs;
 import 'package:auravibes_server/src/generated/features/conversations/models/get_turn_request.dart'
     as _iaqawmcu;
+import 'package:auravibes_server/src/generated/features/conversations/models/list_background_works_request.dart'
+    as _i2euehas;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_conversation_messages_request.dart'
     as _i5dqxctc;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_conversations_request.dart'
     as _i0m5o1i2;
+import 'package:auravibes_server/src/generated/features/conversations/models/list_message_bookmarks_request.dart'
+    as _inxcvjob;
 import 'package:auravibes_server/src/generated/features/conversations/models/queue_conversation_message_request.dart'
     as _i605rjdx;
 import 'package:auravibes_server/src/generated/features/conversations/models/remove_pending_conversation_message_request.dart'
@@ -52,14 +60,20 @@ import 'package:auravibes_server/src/generated/features/conversations/models/reo
     as _ilmuzuyl;
 import 'package:auravibes_server/src/generated/features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _if7qtxue;
+import 'package:auravibes_server/src/generated/features/conversations/models/search_conversation_messages_request.dart'
+    as _i71vvsjf;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
     as _ijasfsbp;
+import 'package:auravibes_server/src/generated/features/conversations/models/stop_background_work_request.dart'
+    as _iysdyp93;
 import 'package:auravibes_server/src/generated/features/conversations/models/stop_conversation_request.dart'
     as _ii20rgdx;
 import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_batch_request.dart'
     as _i6vuisoi;
 import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
     as _ii7vetdc;
+import 'package:auravibes_server/src/generated/features/conversations/models/unbookmark_message_request.dart'
+    as _i88e9bqv;
 import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_request.dart'
     as _i8uhzhf3;
 import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_settings_request.dart'
@@ -88,6 +102,8 @@ import 'package:auravibes_server/src/generated/features/model_connections/models
     as _iskhxh94;
 import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
     as _i2yb5fxk;
+import 'package:auravibes_server/src/generated/features/model_connections/models/update_workspace_model_selection_policy_request.dart'
+    as _ijxinstp;
 import 'package:auravibes_server/src/generated/features/model_connections/models/verify_model_connection_request.dart'
     as _ij84b3fp;
 import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_request.dart'
@@ -717,6 +733,86 @@ class Endpoints extends _is.EndpointDispatch {
                         params['request'],
                       ),
         ),
+        'bookmarkMessage': _is.MethodConnector(
+          name: 'bookmarkMessage',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iqabnln6.BookmarkMessageRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .bookmarkMessage(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'unbookmarkMessage': _is.MethodConnector(
+          name: 'unbookmarkMessage',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i88e9bqv.UnbookmarkMessageRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .unbookmarkMessage(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'listMessageBookmarks': _is.MethodConnector(
+          name: 'listMessageBookmarks',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_inxcvjob.ListMessageBookmarksRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .listMessageBookmarks(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'searchMessages': _is.MethodConnector(
+          name: 'searchMessages',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i71vvsjf.SearchConversationMessagesRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .searchMessages(
+                        session,
+                        params['request'],
+                      ),
+        ),
         'update': _is.MethodConnector(
           name: 'update',
           params: {
@@ -833,6 +929,66 @@ class Endpoints extends _is.EndpointDispatch {
               ) async =>
                   (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
                       .getConversationSnapshot(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'detachToolCall': _is.MethodConnector(
+          name: 'detachToolCall',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_inotib2f.DetachToolCallRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .detachToolCall(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'listBackgroundWorks': _is.MethodConnector(
+          name: 'listBackgroundWorks',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i2euehas.ListBackgroundWorksRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .listBackgroundWorks(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'stopBackgroundWork': _is.MethodConnector(
+          name: 'stopBackgroundWork',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iysdyp93.StopBackgroundWorkRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .stopBackgroundWork(
                         session,
                         params['request'],
                       ),
@@ -1345,6 +1501,30 @@ class Endpoints extends _is.EndpointDispatch {
                   (endpoints['modelConnection']
                           as _irncar1s.ModelConnectionEndpoint)
                       .listSelections(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'updateToolSamplingPolicy': _is.MethodConnector(
+          name: 'updateToolSamplingPolicy',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is
+                  .getType<
+                    _ijxinstp.UpdateWorkspaceModelSelectionPolicyRequest
+                  >(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
+                      .updateToolSamplingPolicy(
                         session,
                         params['request'],
                       ),

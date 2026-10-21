@@ -37,6 +37,13 @@ extension MessageDaoCoreOperations on MessageDao {
 
     return count > 0;
   }
+
+  Future<bool> setBookmarked(String id, {required bool isBookmarked}) async {
+    final count = await (update(messages)..where((tbl) => tbl.id.equals(id)))
+        .write(MessagesCompanion(isBookmarked: .new(isBookmarked)));
+
+    return count > 0;
+  }
 }
 
 extension MessageDaoConversationOperations on MessageDao {
@@ -81,6 +88,52 @@ extension MessageDaoConversationOperations on MessageDao {
 
   Future<List<MessagesTable>> getUserMessages(String conversationId) =>
       _messagesByUserQuery(conversationId, isUser: true).get();
+
+  Future<List<QueryRow>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    required int offset,
+  }) {
+    final normalizedQuery = query.trim();
+    if (normalizedQuery.isEmpty || workspaceIds.isEmpty) {
+      return Future.value([]);
+    }
+
+    return _searchMessageRows(normalizedQuery, workspaceIds, limit, offset);
+  }
+
+  Future<List<QueryRow>> _searchMessageRows(
+    String query,
+    Set<String> workspaceIds,
+    int limit,
+    int offset,
+  ) => customSelect(
+    _searchMessagesSql(workspaceIds.length),
+    variables: _searchMessageVariables(query, workspaceIds, limit, offset),
+    readsFrom: {
+      messages,
+      attachedDatabase.conversations,
+      attachedDatabase.workspaces,
+    },
+  ).get();
+
+  List<Variable> _searchMessageVariables(
+    String query,
+    Set<String> workspaceIds,
+    int limit,
+    int offset,
+  ) {
+    final ids = workspaceIds.toList()..sort();
+
+    return [
+      for (final id in ids) Variable<String>(id),
+      Variable<String>(MessagesTableType.text.value),
+      Variable<String>(query),
+      Variable<int>(limit),
+      Variable<int>(offset),
+    ];
+  }
 }
 
 extension MessageDaoStatusOperations on MessageDao {
@@ -112,6 +165,27 @@ extension MessageDaoStatusOperations on MessageDao {
 }
 
 extension MessageDaoRawQueryOperations on MessageDao {
+  String _searchMessagesSql(int workspaceCount) =>
+      '''
+    SELECT
+      m.id AS message_id,
+      m.created_at AS created_at,
+      m.conversation_id AS conversation_id,
+      m.content AS content,
+      m.is_user AS is_user,
+      c.title AS conversation_title,
+      c.workspace_id AS workspace_id,
+      w.name AS workspace_name
+    FROM messages AS m
+    INNER JOIN conversations AS c ON c.id = m.conversation_id
+    INNER JOIN workspaces AS w ON w.id = c.workspace_id
+    WHERE c.workspace_id IN (${List.filled(workspaceCount, '?').join(', ')})
+      AND m.message_type = ?
+      AND instr(lower(m.content), lower(?)) > 0
+    ORDER BY m.created_at DESC, c.workspace_id DESC, m.id DESC
+    LIMIT ? OFFSET ?
+    ''';
+
   Selectable<QueryRow> _latestAssistantMessagesQuery(
     List<String> conversationIds,
   ) {

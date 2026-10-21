@@ -23,31 +23,47 @@ class const WorkspaceConfigurationArchiveUsecase({
   final WorkspaceConfigurationFileService _fileService =
       const WorkspaceConfigurationFileService(),
 }) {
-  Future<bool> exportArchive(WorkspaceEntity workspace) async {
-    final archive = await _workspaceArchive(workspace);
+  Future<bool> exportArchive(
+    WorkspaceEntity workspace, {
+    Set<WorkspaceConfigurationKind> selectedKinds =
+        WorkspaceConfigurationKind.all,
+  }) async {
+    final archive = await _workspaceArchive(
+      workspace,
+      selectedKinds: selectedKinds,
+    );
     final json = WorkspaceConfigurationArchiveCodec.encode(archive);
 
     return await _fileService.saveArchiveJson(json);
   }
 
-  Future<bool> importArchive([WorkspaceEntity? workspace]) async {
+  Future<WorkspaceConfigurationArchivePreview?> pickArchivePreview() async {
     final json = await _fileService.pickArchiveJson();
-    if (json == null) return false;
+    if (json == null) return null;
 
-    await _importArchive(workspace, json);
-
-    return true;
+    return WorkspaceConfigurationArchiveCodec.preview(json);
   }
 
+  Future<void> applyArchivePreview(
+    WorkspaceConfigurationArchivePreview preview, {
+    WorkspaceEntity? workspace,
+  }) => _importArchive(workspace, _encodePreview(preview));
+
   Future<WorkspaceConfigurationArchive> _workspaceArchive(
-    WorkspaceEntity workspace,
-  ) async {
+    WorkspaceEntity workspace, {
+    Set<WorkspaceConfigurationKind> selectedKinds =
+        WorkspaceConfigurationKind.all,
+  }) async {
     final cloudWorkspaceId = workspace.cloudWorkspaceId;
     if (cloudWorkspaceId == null) {
-      return await _localRepository.export(workspace.id);
+      return await _localRepository.export(
+        workspace.id,
+        selectedKinds: selectedKinds,
+      );
     }
 
-    return await (await _cloudRepositoryFor(workspace)).export();
+    return await (await _cloudRepositoryFor(workspace))
+        .export(selectedKinds: selectedKinds);
   }
 
   Future<void> _importArchive(WorkspaceEntity? workspace, String json) async {
@@ -64,6 +80,9 @@ class const WorkspaceConfigurationArchiveUsecase({
     );
   }
 }
+
+String _encodePreview(WorkspaceConfigurationArchivePreview preview) =>
+    WorkspaceConfigurationArchiveCodec.encode(preview.toArchive());
 
 @riverpod
 WorkspaceConfigurationArchiveUsecase workspaceConfigurationArchiveUsecase(

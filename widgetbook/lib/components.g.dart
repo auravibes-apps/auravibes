@@ -7,6 +7,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:widgetbook/widgetbook.dart' as _widgetbook;
+import 'package:widgetbook_workspace/aura_ui/aura_corner_radius_scope.stories.dart' as _widgetbook_workspace_aura_ui_aura_corner_radius_scope_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_a2ui_catalog.stories.dart' as _widgetbook_workspace_aura_ui_auravibes_a2ui_catalog_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_alert_dialog.stories.dart' as _widgetbook_workspace_aura_ui_auravibes_alert_dialog_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_animated_content.stories.dart' as _widgetbook_workspace_aura_ui_auravibes_animated_content_stories;
@@ -63,6 +64,7 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_tooltip.stories.dart' as 
 import 'package:widgetbook_workspace/aura_ui/auravibes_typing_indicator.stories.dart' as _widgetbook_workspace_aura_ui_auravibes_typing_indicator_stories;
 
 final components = <_widgetbook.Component>[
+  _widgetbook_workspace_aura_ui_aura_corner_radius_scope_stories.RadiusScopeDemoComponent,
   _widgetbook_workspace_aura_ui_auravibes_a2ui_catalog_stories.A2uiCatalogShowcaseComponent,
   _widgetbook_workspace_aura_ui_auravibes_alert_dialog_stories.AlertDialogDemoComponent,
   _widgetbook_workspace_aura_ui_auravibes_animated_content_stories.AuraAnimatedContentComponent,

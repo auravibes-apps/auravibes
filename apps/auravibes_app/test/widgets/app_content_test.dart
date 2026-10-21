@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
-  testWidgets('renders child widget', (tester) async {
+  testWidgets('renders child and constrains max width', (tester) async {
     await tester.pumpWidget(
       AuraThemeScope(
         theme: .light,
@@ -17,18 +17,6 @@ void main() {
 
     expect(find.text('child content'), findsOneWidget);
     expect(find.byType(AppContent), findsOneWidget);
-  });
-
-  testWidgets('constrains max width to DesignBreakpoints.sm', (tester) async {
-    await tester.pumpWidget(
-      AuraThemeScope(
-        theme: .light,
-        child: MaterialApp(
-          home: const Scaffold(body: AppContent(child: SizedBox.shrink())),
-          theme: .new(),
-        ),
-      ),
-    );
 
     final constrainedBox = tester.widget<ConstrainedBox>(
       find.descendant(

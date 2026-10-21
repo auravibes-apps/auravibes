@@ -20,6 +20,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_repository
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
@@ -183,8 +184,8 @@ extension _ConnectionEditGuardActions on _ServiceConnectionEditScreenState {
         isDirty: () => _isDirty,
         isSaving: () => _isSaving || _isTestingModelProvider,
       ),
+      callbacks: .new(onReturn: _returnFromEdit),
       preferReturn: widget.onReturn != null,
-      onReturn: _returnFromEdit,
     );
   }
 
@@ -981,7 +982,7 @@ class const _ConnectionEditPage({
       );
     }
 
-    return AuraScreen(
+    return AppScreen(
       child: _ConnectionEditSnapshotView(snapshot: snapshot, owner: owner),
       appBar: _ConnectionEditAppBar(owner: owner, state: snapshot.data),
     );

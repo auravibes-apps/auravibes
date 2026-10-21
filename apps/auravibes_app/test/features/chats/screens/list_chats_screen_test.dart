@@ -14,6 +14,7 @@ import '../../../helpers/test_app.dart';
 import '../../../helpers/ux_validation_fixture.dart';
 
 void main() {
+  tearDownAll(UxValidationFixture.closeDatabase);
   testWidgets('View all opens older history in the production shell', (
     tester,
   ) async {
@@ -55,7 +56,7 @@ void main() {
       tester
           .widget<AppWithResponsiveDrawer>(find.byType(AppWithResponsiveDrawer))
           .selectedIndex,
-      0,
+      -1,
     );
     await f.settle(tester);
     await tester.scrollUntilVisible(

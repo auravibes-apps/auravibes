@@ -28,6 +28,10 @@ import 'package:auravibes_server_client/src/protocol/features/codex_oauth/models
     as _ijrb3tyt;
 import 'package:auravibes_server_client/src/protocol/features/codex_oauth/models/start_codex_oauth_result.dart'
     as _i614hct4;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/background_work_view.dart'
+    as _ii9na0oj;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/bookmark_message_request.dart'
+    as _i2vimay9;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/cancel_turn_request.dart'
     as _icy1uco6;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/compact_conversation_request.dart'
@@ -36,6 +40,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _iikp15t9;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/continue_turn_request.dart'
     as _ivlxpbcf;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_search_result.dart'
+    as _id2d4bnf;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_view.dart'
     as _isubclmd;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_mutation_result.dart'
@@ -54,6 +60,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _ij3epthu;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/delete_conversation_request.dart'
     as _ik9usty6;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/detach_tool_call_request.dart'
+    as _i0pja7fm;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/edit_pending_conversation_message_request.dart'
     as _i4hkj4ob;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/fork_conversation_request.dart'
@@ -62,10 +70,16 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _i3j9438n;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/get_turn_request.dart'
     as _inh22t6z;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_background_works_request.dart'
+    as _izjha4p3;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_conversation_messages_request.dart'
     as _ikmnkbtb;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_conversations_request.dart'
     as _it3m8kdz;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_message_bookmarks_request.dart'
+    as _i7pc0xlt;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/message_bookmark_view.dart'
+    as _iricssvi;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/queue_conversation_message_request.dart'
     as _iia9quot;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/remove_pending_conversation_message_request.dart'
@@ -74,10 +88,14 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _i28kt77m;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _id785g3f;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/search_conversation_messages_request.dart'
+    as _izqmo6ty;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_request.dart'
     as _iewqezs8;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_result.dart'
     as _iwmr2a61;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/stop_background_work_request.dart'
+    as _it7u65ep;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/stop_conversation_request.dart'
     as _ijtzjq4c;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/submit_tool_decision_batch_request.dart'
@@ -88,6 +106,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _iqbrsea4;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/turn_snapshot.dart'
     as _i2p4k8hs;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/unbookmark_message_request.dart'
+    as _ip59ad7x;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/update_conversation_request.dart'
     as _irx2op5d;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/update_conversation_settings_request.dart'
@@ -132,6 +152,8 @@ import 'package:auravibes_server_client/src/protocol/features/model_connections/
     as _i5neyvt3;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/update_model_connection_request.dart'
     as _ip0z8mdx;
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/update_workspace_model_selection_policy_request.dart'
+    as _iojwkt1u;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/verify_model_connection_request.dart'
     as _il6rxhco;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/verify_model_connection_result.dart'
@@ -586,6 +608,38 @@ class EndpointConversation extends _isc.EndpointRef {
     {'request': request},
   );
 
+  _ida.Future<void> bookmarkMessage(_i2vimay9.BookmarkMessageRequest request) =>
+      caller.callServerEndpoint<void>(
+        'conversation',
+        'bookmarkMessage',
+        {'request': request},
+      );
+
+  _ida.Future<void> unbookmarkMessage(
+    _ip59ad7x.UnbookmarkMessageRequest request,
+  ) => caller.callServerEndpoint<void>(
+    'conversation',
+    'unbookmarkMessage',
+    {'request': request},
+  );
+
+  _ida.Future<List<_iricssvi.MessageBookmarkView>> listMessageBookmarks(
+    _i7pc0xlt.ListMessageBookmarksRequest request,
+  ) => caller.callServerEndpoint<List<_iricssvi.MessageBookmarkView>>(
+    'conversation',
+    'listMessageBookmarks',
+    {'request': request},
+  );
+
+  _ida.Future<List<_id2d4bnf.ConversationMessageSearchResult>> searchMessages(
+    _izqmo6ty.SearchConversationMessagesRequest request,
+  ) => caller
+      .callServerEndpoint<List<_id2d4bnf.ConversationMessageSearchResult>>(
+        'conversation',
+        'searchMessages',
+        {'request': request},
+      );
+
   _ida.Future<_i54dvwkh.ConversationSummary> update(
     _irx2op5d.UpdateConversationRequest request,
   ) => caller.callServerEndpoint<_i54dvwkh.ConversationSummary>(
@@ -630,6 +684,30 @@ class EndpointConversation extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<_i0ao9hou.ConversationSnapshot>(
     'conversation',
     'getConversationSnapshot',
+    {'request': request},
+  );
+
+  _ida.Future<_ii9na0oj.BackgroundWorkView> detachToolCall(
+    _i0pja7fm.DetachToolCallRequest request,
+  ) => caller.callServerEndpoint<_ii9na0oj.BackgroundWorkView>(
+    'conversation',
+    'detachToolCall',
+    {'request': request},
+  );
+
+  _ida.Future<List<_ii9na0oj.BackgroundWorkView>> listBackgroundWorks(
+    _izjha4p3.ListBackgroundWorksRequest request,
+  ) => caller.callServerEndpoint<List<_ii9na0oj.BackgroundWorkView>>(
+    'conversation',
+    'listBackgroundWorks',
+    {'request': request},
+  );
+
+  _ida.Future<_ii9na0oj.BackgroundWorkView> stopBackgroundWork(
+    _it7u65ep.StopBackgroundWorkRequest request,
+  ) => caller.callServerEndpoint<_ii9na0oj.BackgroundWorkView>(
+    'conversation',
+    'stopBackgroundWork',
     {'request': request},
   );
 
@@ -855,6 +933,14 @@ class EndpointModelConnection extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<List<_i9qkc4pk.WorkspaceModelSelectionView>>(
     'modelConnection',
     'listSelections',
+    {'request': request},
+  );
+
+  _ida.Future<void> updateToolSamplingPolicy(
+    _iojwkt1u.UpdateWorkspaceModelSelectionPolicyRequest request,
+  ) => caller.callServerEndpoint<void>(
+    'modelConnection',
+    'updateToolSamplingPolicy',
     {'request': request},
   );
 

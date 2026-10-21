@@ -629,6 +629,17 @@ Future<int> runSelectedTests(
                     selectedGroups.indexOf(group),
                   ),
           );
+          if (timingsDir != null) {
+            final base = _artifactBase(group.package.relativeRoot);
+            final _ = await File('$timingsDir/command-$base.json')
+                .writeAsString(
+                  jsonEncode({
+                    'package': group.package.relativeRoot,
+                    'tool': group.package.flutter ? 'flutter' : 'dart',
+                    'arguments': command.arguments,
+                  }),
+                );
+          }
           var activeCommand = command;
           reportDiagnostic(
             'changed-test-selector: '
@@ -823,8 +834,8 @@ Future<void> main(List<String> args) async {
       case 'select':
         _checkOptions(options, const {'base', 'head', 'output'});
         final result = await selectRepository(
-          base: _requiredOption(options, 'base'),
           rootPath: Directory.current.path,
+          base: _requiredOption(options, 'base'),
           head: _requiredOption(options, 'head'),
         );
         final _ = await File(_requiredOption(options, 'output'))
@@ -1132,7 +1143,7 @@ _Command _command(
     if (coverage && !group.package.flutter) '--coverage=coverage',
     '--concurrency=${group.package.flutter ? 1 : 2}',
     '--timeout=30s',
-    '--reporter=compact',
+    '--reporter=failures-only',
     if (timingFile != null) '--file-reporter=json:$timingFile',
     if (shard.total > 1) '--total-shards=${shard.total}',
     if (shard.total > 1) '--shard-index=${shard.index}',
@@ -1724,8 +1735,16 @@ bool _isDocumentation(String path) {
 
 bool _isNonExecutablePath(String path) =>
     _isDocumentation(path) ||
+    _isSkillMetadataPath(path) ||
     path.startsWith('.pi/') ||
     path == 'sonar-project.properties';
+
+bool _isSkillMetadataPath(String path) {
+  if (!path.startsWith('.agents/skills/')) return false;
+  final filename = path.split('/').last.toLowerCase();
+
+  return filename.endsWith('.mdx') || path.endsWith('/evals/evals.json');
+}
 
 bool _isGlobal(String path) {
   final normalized = path.replaceAll(r'\', '/');

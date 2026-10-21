@@ -4,6 +4,60 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ColorContrast.apcaLc', () {
+    test('matches pinned apca-w3 0.1.9 colored and gray reference pairs', () {
+      // Generated with APCAcontrast(sRGBtoY(foreground), sRGBtoY(background)).
+      // Source SHA256:
+      // 7980633564cc5749aad608f163ad1a015af57f573729af2ea081034458ab79fe.
+      const references = [
+        (
+          foreground: Color(0xFF777777),
+          background: Color(0xFFFFFFFF),
+          lc: 71.111103,
+        ),
+        (
+          foreground: Color(0xFFFFFFFF),
+          background: Color(0xFF777777),
+          lc: -76.581946,
+        ),
+        (
+          foreground: Color(0xFF0F766E),
+          background: Color(0xFFFFFFFF),
+          lc: 76.877951,
+        ),
+        (
+          foreground: Color(0xFFFFFFFF),
+          background: Color(0xFF0F766E),
+          lc: -82.203236,
+        ),
+        (
+          foreground: Color(0xFFFF0000),
+          background: Color(0xFFFFFFFF),
+          lc: 64.126215,
+        ),
+        (
+          foreground: Color(0xFF000000),
+          background: Color(0xFFFF0000),
+          lc: 39.95039,
+        ),
+      ];
+      for (final reference in references) {
+        expect(
+          ColorContrast.apcaLc(
+            foreground: reference.foreground,
+            background: reference.background,
+          ),
+          closeTo(reference.lc, 1e-5),
+        );
+      }
+    });
+
+    test('clips low contrast to zero in both polarities', () {
+      const gray = Color(0xFFF8F8F8);
+      const white = Color(0xFFFFFFFF);
+      expect(ColorContrast.apcaLc(foreground: gray, background: white), 0);
+      expect(ColorContrast.apcaLc(foreground: white, background: gray), 0);
+    });
+
     test('positive for dark foreground on light background', () {
       const black = Color(0xFF000000);
       const white = Color(0xFFFFFFFF);

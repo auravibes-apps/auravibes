@@ -73,6 +73,7 @@ void main() {
     await tester.drag(
       find.byType(SingleChildScrollView),
       const Offset(-300, 0),
+      kind: .mouse,
     );
     final _ = await tester.pumpAndSettle();
     expect(scrollable.position.pixels, greaterThan(0));
@@ -96,6 +97,33 @@ void main() {
       );
       expect(tester.takeException(), isArgumentError);
     }
+  });
+
+  testWidgets('table fills the width bounded by its parent', (tester) async {
+    const width = 320.0;
+    await tester.pumpWidget(
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: width),
+                child: const AuraTable(
+                  columns: ['Name'],
+                  rows: [
+                    ['A'],
+                  ],
+                ),
+              ),
+            ),
+          ),
+          theme: .new(),
+        ),
+      ),
+    );
+
+    expect(tester.getSize(find.byType(AuraEdgy)).width, width);
   });
 
   testWidgets('charts render signed, constant, empty and extreme series', (

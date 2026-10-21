@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../database_test_utils.dart';
 
 QueryExecutor createTestConnection() {
   return DatabaseConnection.delayed(
@@ -23,11 +26,9 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ?? fail('Database fixture not initialized');
+      _database ??= .new(connection: createConnection());
 
-  void reset() {
-    _database = .new(connection: createConnection());
-  }
+  Future<void> reset() => clearAppDatabase(database);
 
   Future<void> close() async {
     await _database?.close();
@@ -41,14 +42,14 @@ void main() {
     var workspaceId = '';
 
     setUp(() async {
-      fixture.reset();
+      await fixture.reset();
       final ws = await fixture.database.workspaceDao.insertWorkspace(
         .insert(name: 'WS', type: WorkspaceType.local),
       );
       workspaceId = ws.id;
     });
 
-    tearDown(() async {
+    tearDownAll(() async {
       await fixture.close();
     });
 
@@ -168,6 +169,56 @@ void main() {
         equals('openai'),
       );
     });
+
+    test(
+      'persists each tool sampling policy and clears to legacy null',
+      () async {
+        final _ = await fixture.database.apiModelProvidersDao.upsertProvider(
+          .insert(id: 'openai', name: 'OpenAI'),
+        );
+        final conn = await fixture.database.modelConnectionsDao
+            .insertModelConnection(
+              .insert(
+                name: 'Conn',
+                serviceId: 'openai',
+                kind: ServiceConnectionKindTable.modelProvider,
+                authenticationType: ServiceAuthenticationTypeTable.apiKey,
+                encryptedAuthValue: const Value('key'),
+                workspaceId: workspaceId,
+              ),
+            );
+        await fixture.database.workspaceModelSelectionsDao
+            .insertWorkspaceModelSelections([
+              WorkspaceModelSelectionsCompanion.insert(
+                modelId: 'gpt-4o',
+                modelConnectionId: conn.id,
+              ),
+            ]);
+        final selection =
+            (await fixture.database.workspaceModelSelectionsDao
+                    .getAllWorkspaceModelSelectionsByWorkspace(
+                      workspaceIds: [workspaceId],
+                    ))
+                .single
+                .model;
+
+        for (final policy in ToolSamplingPolicy.values) {
+          final updatedRows = await fixture.database.workspaceModelSelectionsDao
+              .updateToolSamplingPolicy(selection.id, policy.name);
+          expect(updatedRows, 1);
+          final updated = await fixture.database.workspaceModelSelectionsDao
+              .getWorkspaceModelSelectionById(selection.id);
+          expect(updated?.model.toolSamplingPolicy, policy.name);
+        }
+
+        final clearedRows = await fixture.database.workspaceModelSelectionsDao
+            .updateToolSamplingPolicy(selection.id, null);
+        expect(clearedRows, 1);
+        final cleared = await fixture.database.workspaceModelSelectionsDao
+            .getWorkspaceModelSelectionById(selection.id);
+        expect(cleared?.model.toolSamplingPolicy, isNull);
+      },
+    );
 
     test(
       'getWorkspaceModelSelectionById returns null for nonexistent',

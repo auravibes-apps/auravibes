@@ -14,16 +14,11 @@ void main() {
   setUpAll(registerTestFallbackValues);
 
   group('ToolsGroupsRepository', () {
-    var mockDao = MockToolsGroupsDao();
-    var database = _TestAppDatabase(mockDao);
-    var repository = ToolsGroupsRepository(database);
+    final mockDao = MockToolsGroupsDao();
+    final database = _TestAppDatabase(mockDao);
+    final repository = ToolsGroupsRepository(database);
 
-    tearDown(() async {
-      await database.close();
-      mockDao = MockToolsGroupsDao();
-      database = _TestAppDatabase(mockDao);
-      repository = ToolsGroupsRepository(database);
-    });
+    setUp(() => reset(mockDao));
 
     tearDownAll(() async {
       await database.close();

@@ -123,7 +123,13 @@ class const _ActiveSubAgentTapTarget({
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
     child: InkWell(
-      child: _ActiveSubAgentBadge(count: count),
+      child: ConstrainedBox(
+        constraints: .new(
+          minWidth: context.auraTheme.interactionSizes.minimumTargetSize,
+          minHeight: context.auraTheme.interactionSizes.minimumTargetSize,
+        ),
+        child: Center(child: _ActiveSubAgentBadge(count: count)),
+      ),
       onTap: onTap,
       borderRadius: .circular(context.auraTheme.fromBorderRadius(.full)),
     ),
@@ -399,6 +405,8 @@ String _statusLabel(ActiveSubAgentStatus status) => switch (status) {
         .tr(),
   .completed =>
     LocaleKeys.chats_screens_chat_conversation_sub_agent_status_completed.tr(),
+  .partial =>
+    LocaleKeys.chats_screens_chat_conversation_sub_agent_status_partial.tr(),
   .failed =>
     LocaleKeys.chats_screens_chat_conversation_sub_agent_status_failed.tr(),
   .stopped =>

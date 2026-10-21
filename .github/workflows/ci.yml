@@ -35,6 +35,8 @@ jobs:
 
       - name: Check import sorting
         run: dart run import_sorter:main --exit-if-changed
+      - name: Check workspace benchmark imports
+        run: dart run tool/check_benchmark_imports.dart
 
   analysis:
     name: analysis
@@ -56,7 +58,39 @@ jobs:
         run: melos run dcl:analyze
 
       - name: Test CI tools
-        run: dart test tool/changed_test_selector_test.dart tool/merge_lcov_test.dart
+        run: >-
+          dart test
+          tool/changed_test_selector_test.dart
+          tool/merge_lcov_test.dart
+          tool/marionette_run_test.dart
+
+      - name: Test Python tools
+        run: |
+          python3 tool/classify_ci_changes_test.py
+          python3 tool/ci_summary_test.py
+          python3 tool/validation_lease_test.py
+          python3 tool/agent_worktree_test.py
+
+      - name: Audit first-party tool schemas
+        working-directory: apps/auravibes_app
+        run: flutter test test/first_party_tool_schema_audit_test.dart --no-pub
+
+  localization-audit:
+    name: localization audit
+    needs: change
+    if: ${{ needs.change.outputs.run_code_checks == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Audit localization
+        working-directory: apps/auravibes_app
+        run: dart run tool/localization_audit.dart
 
   code-health:
     name: code health
@@ -104,6 +138,16 @@ jobs:
             exit 1
           fi
 
+      - name: Check DCL analyzer plugin version
+        run: |
+          plugin_version="$(ruby -ryaml -e 'puts YAML.load_file("analysis_options.yaml").fetch("plugins").fetch("dart_code_linter").fetch("version")')"
+          locked_version="$(ruby -ryaml -e 'puts YAML.load_file("pubspec.lock").fetch("packages").fetch("dart_code_linter").fetch("version")')"
+
+          if [ "$plugin_version" != "$locked_version" ]; then
+            echo "::error::DCL analyzer plugin version must match pubspec.lock. Expected ${locked_version}; found ${plugin_version}."
+            exit 1
+          fi
+
       - uses: ./.github/actions/setup-workspace
 
       - name: Check dependency artifact drift
@@ -146,6 +190,8 @@ jobs:
     outputs:
       platforms: ${{ steps.platforms.outputs.platforms }}
       run_code_checks: ${{ steps.platforms.outputs.run_code_checks }}
+      run_server_integration: ${{ steps.platforms.outputs.run_server_integration }}
+      renovate_config_changes: ${{ steps.platforms.outputs.renovate_config_changes }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -166,13 +212,22 @@ jobs:
           all_platforms='["android","ios","macos","linux","windows","web"]'
           full_build=false
           run_code_checks=true
+          renovate_config_changes=false
           base_sha=''
           head_sha="$GITHUB_SHA"
+          changed_files=''
+          unknown_range=true
+          trap 'status=$?; if ((status == 0)); then printf "%s\n" "$changed_files" | UNKNOWN_RANGE="$unknown_range" python3 tool/ci_summary.py routing --outputs "$GITHUB_OUTPUT"; fi; exit "$status"' EXIT
 
           case "$EVENT_NAME" in
             pull_request)
               base_sha="$(jq -r '.pull_request.base.sha // empty' "$EVENT_PATH")"
               head_sha="$(jq -r '.pull_request.head.sha // empty' "$EVENT_PATH")"
+              ;;
+            merge_group)
+              base_sha="$(jq -r '.merge_group.base_sha // empty' "$EVENT_PATH")"
+              head_sha="$(jq -r '.merge_group.head_sha // empty' "$EVENT_PATH")"
+              full_build=true
               ;;
             push)
               base_sha="$(jq -r '.before // empty' "$EVENT_PATH")"
@@ -189,7 +244,8 @@ jobs:
             full_build=true
           elif ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
             full_build=true
-          elif [[ "$EVENT_NAME" == "push" ]] && ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
+          elif [[ "$EVENT_NAME" == "push" || "$EVENT_NAME" == "merge_group" ]] \
+            && ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
             full_build=true
           elif [[ "$EVENT_NAME" == "pull_request" ]]; then
             if [[ -z "$head_sha" ]] || ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
@@ -197,15 +253,32 @@ jobs:
             fi
           fi
 
-          if [[ "$full_build" == true ]]; then
+          if [[ "$base_sha" == "" || "$base_sha" =~ ^0+$ ]] || \
+            ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null || \
+            [[ "$head_sha" == "" ]] || \
+            ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
             printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
             printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
+            printf 'run_server_integration=true\n' >> "$GITHUB_OUTPUT"
+            printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           changed_files="$(git diff --name-only --diff-filter=ACDMRTUXB "$base_sha" "$head_sha")"
+          unknown_range=false
+          classification="$(printf '%s\n' "$changed_files" | python3 tool/classify_ci_changes.py)"
+          run_code_checks="$(jq -r '.run_code_checks' <<< "$classification")"
+          run_server_integration="$(jq -r '.run_server_integration' <<< "$classification")"
+          renovate_config_changes="$(jq -r '.renovate_config_changes' <<< "$classification")"
           platforms=()
-          run_code_checks=false
+
+          if [[ "$full_build" == true ]]; then
+            printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
+            printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
+            printf 'run_server_integration=%s\n' "$run_server_integration" >> "$GITHUB_OUTPUT"
+            printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           add_platform() {
             local platform="$1"
@@ -216,17 +289,6 @@ jobs:
           }
 
           while IFS= read -r path; do
-            case "$path" in
-              .github/*|.fvm/*|.fvmrc|.vscode/settings.json|assets/*|*/assets/*)
-                run_code_checks=true
-                ;;
-              *.md|*.mdx|README|*/README|CHANGELOG|*/CHANGELOG|LICENSE|*/LICENSE|.pi/*|sonar-project.properties)
-                ;;
-              *)
-                run_code_checks=true
-                ;;
-            esac
-
             case "$path" in
               apps/auravibes_app/android/*) add_platform android ;;
               apps/auravibes_app/ios/*) add_platform ios ;;
@@ -253,6 +315,31 @@ jobs:
             printf '%s\n' "${platforms[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))' | sed 's/^/platforms=/' >> "$GITHUB_OUTPUT"
           fi
           printf 'run_code_checks=%s\n' "$run_code_checks" >> "$GITHUB_OUTPUT"
+          printf 'run_server_integration=%s\n' "$run_server_integration" >> "$GITHUB_OUTPUT"
+          printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
+
+  renovate-validation:
+    name: validate Renovate configuration
+    needs: change
+    if: ${{ needs.change.outputs.renovate_config_changes == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.1
+
+      - name: Validate Renovate configuration
+        run: npx --yes --package renovate@44.149.0 -- renovate-config-validator --strict
+        # This checks configuration syntax and supported options. It does not
+        # run dependency lookups or prove that package names resolve.
 
   platform-builds:
     name: platform builds
@@ -274,6 +361,7 @@ jobs:
       coverage-report-count: ${{ steps.plan.outputs.coverage-report-count }}
       reason: ${{ steps.plan.outputs.reason }}
       timing-source: ${{ steps.plan.outputs.timing-source }}
+      artifact-url: ${{ steps.upload-test-plan.outputs.artifact-url }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -329,7 +417,7 @@ jobs:
           fi
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            if ! dart run tool/changed_test_selector.dart select \
+            if ! dart tool/changed_test_selector.dart select \
               --base "${{ github.event.pull_request.base.sha }}" \
               --head HEAD \
               --output "$manifest"; then
@@ -350,7 +438,7 @@ jobs:
           if [ -s "$timings" ]; then
             matrix_args+=(--timings "$timings")
           fi
-          matrix="$(dart run tool/changed_test_selector.dart "${matrix_args[@]}")"
+          matrix="$(dart tool/changed_test_selector.dart "${matrix_args[@]}")"
           printf '%s\n' "$matrix" > "$matrix_file"
           report_count="$(ruby -rjson -e 'puts JSON.parse(ARGF.read).fetch("include").length' <<< "$matrix")"
           timing_source="fixed shard fallback"
@@ -371,11 +459,17 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Upload test plan
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        id: upload-test-plan
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: test-plan
           path: ${{ runner.temp }}/test-plan
           if-no-files-found: error
+
+      - name: Summarize test plan
+        env:
+          ARTIFACT_URL: ${{ steps.upload-test-plan.outputs.artifact-url }}
+        run: python3 tool/ci_summary.py plan --plan-dir "$RUNNER_TEMP/test-plan"
 
   test:
     name: test (${{ matrix.package }} shard ${{ matrix.shardIndex }})
@@ -395,7 +489,7 @@ jobs:
       - uses: ./.github/actions/setup-workspace
 
       - name: Download test plan
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: test-plan
           path: ${{ runner.temp }}/test-plan
@@ -442,27 +536,8 @@ jobs:
           )
           command_file="$RUNNER_TEMP/test-timings/test-command.txt"
           dart run tool/changed_test_selector.dart "${selector_args[@]}" --dry-run > "$command_file"
-          package_display="$(ruby -ruri -e 'puts URI::DEFAULT_PARSER.escape(ARGV.fetch(0), /[^A-Za-z0-9\/_.-]/)' "$MATRIX_PACKAGE")"
-          {
-            echo "### Test shard"
-            echo "- Mode: $TEST_MODE"
-            echo "- Reason: $TEST_REASON"
-            echo "- Timing source: $TIMING_SOURCE"
-            printf -- '- Package: `%s`\n' "$package_display"
-            echo "- Sharding: $MATRIX_SHARD_MODE $MATRIX_SHARD_INDEX/$MATRIX_TOTAL_SHARDS"
-            if [ "$MATRIX_SHARD_MODE" = "timed" ]; then
-              echo "- Timed paths:"
-              ruby -rjson -ruri -e '
-                JSON.parse(ARGF.read).each do |path|
-                  encoded = URI::DEFAULT_PARSER.escape(path, /[^A-Za-z0-9\/_.-]/)
-                  puts "- `#{encoded}`"
-                end
-              ' <<< "$MATRIX_PATHS"
-            else
-              printf -- '- Native arguments: `--total-shards %s --shard-index %s`\n' "$MATRIX_TOTAL_SHARDS" "$MATRIX_SHARD_INDEX"
-            fi
-            echo
-          } >> "$GITHUB_STEP_SUMMARY"
+          python3 tool/ci_summary.py replay --report-dir "$RUNNER_TEMP/test-timings"
+          cp -r "$RUNNER_TEMP/test-plan" "$RUNNER_TEMP/test-timings/test-plan"
           status=0
           if dart run tool/changed_test_selector.dart "${selector_args[@]}"; then
             status=0
@@ -472,18 +547,54 @@ jobs:
           echo "command_completed=true" >> "$GITHUB_OUTPUT"
           exit "$status"
 
+      - name: Upload Widgetbook golden failures
+        id: upload-widgetbook-golden-failures
+        if: ${{ failure() && matrix.package == 'widgetbook' && steps.run-tests.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: widgetbook-golden-failures-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.artifact }}
+          # LocalFileComparator writes beside the test, not the golden baseline.
+          path: widgetbook/test/failures/*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Summarize Widgetbook golden failures
+        if: ${{ always() && matrix.package == 'widgetbook' && steps.run-tests.outcome == 'failure' }}
+        env:
+          ARTIFACT_URL: ${{ steps.upload-widgetbook-golden-failures.outputs.artifact-url }}
+          ARTIFACT_NAME: widgetbook-golden-failures-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.artifact }}
+        run: |
+          if [[ -n "$ARTIFACT_URL" ]]; then
+            printf 'Widgetbook golden failure artifact: [%s](%s)\n' "$ARTIFACT_NAME" "$ARTIFACT_URL" >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'No artifact was produced for Widgetbook golden failures (%s).\n' "$ARTIFACT_NAME" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload shard test report
+        id: upload-test-report
         if: ${{ !cancelled() && steps.run-tests.outputs.command_completed == 'true' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: test-report-${{ matrix.artifact }}
           path: ${{ runner.temp }}/test-timings
           if-no-files-found: ignore
 
+      - name: Summarize test shard
+        if: ${{ !cancelled() && steps.run-tests.outputs.command_completed == 'true' }}
+        env:
+          MATRIX_ROW: ${{ toJSON(matrix) }}
+          TEST_OUTCOME: ${{ steps.run-tests.outcome }}
+          ARTIFACT_URL: ${{ steps.upload-test-report.outputs.artifact-url }}
+          PLAN_ARTIFACT_URL: ${{ needs.test-plan.outputs.artifact-url }}
+        run: |
+          python3 tool/ci_summary.py shard \
+            --plan-dir "$RUNNER_TEMP/test-plan" \
+            --report-dir "$RUNNER_TEMP/test-timings"
+
       - name: Upload shard timing
         if: ${{ success() && needs.test-plan.outputs.mode == 'full' }}
         continue-on-error: true
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: test-timing-${{ matrix.artifact }}
           path: ${{ runner.temp }}/test-timings/*.json
@@ -500,7 +611,7 @@ jobs:
 
       - name: Upload coverage artifact
         if: ${{ success() && needs.test-plan.outputs.mode != 'none' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: coverage-${{ matrix.artifact }}
           path: ${{ runner.temp }}/coverage/${{ matrix.artifact }}
@@ -519,32 +630,38 @@ jobs:
 
       - uses: ./.github/actions/setup-workspace
 
-      - name: Run responsive shell goldens
-        id: responsive-shell-test
+      - name: Run app UI goldens
+        id: app-golden-test
         working-directory: apps/auravibes_app
-        run: flutter test test/widgets/responsive_shell_test.dart --no-pub --tags=golden
+        run: flutter test --no-pub --tags=golden
 
-      - name: Upload responsive shell golden failures
+      - name: Run shared UI goldens
+        id: shared-ui-golden-test
+        working-directory: packages/auravibes_ui
+        run: flutter test --no-pub --tags=golden
+
+      - name: Upload UI golden failures
         id: upload-golden-failures
-        if: ${{ failure() && steps.responsive-shell-test.outcome == 'failure' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: ${{ failure() && (steps.app-golden-test.outcome == 'failure' || steps.shared-ui-golden-test.outcome == 'failure') }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: responsive-shell-golden-failures-${{ github.run_id }}-${{ github.run_attempt }}
-          path: apps/auravibes_app/test/widgets/failures/*.png
+          name: ui-golden-failures-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            apps/auravibes_app/test/**/failures/*.png
+            packages/auravibes_ui/test/**/failures/*.png
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Summarize responsive shell golden failures
-        id: summarize-golden-failures
-        if: ${{ always() && steps.responsive-shell-test.outcome == 'failure' }}
+      - name: Summarize UI golden failures
+        if: ${{ always() && (steps.app-golden-test.outcome == 'failure' || steps.shared-ui-golden-test.outcome == 'failure') }}
         env:
           ARTIFACT_URL: ${{ steps.upload-golden-failures.outputs.artifact-url }}
-          ARTIFACT_NAME: responsive-shell-golden-failures-${{ github.run_id }}-${{ github.run_attempt }}
+          ARTIFACT_NAME: ui-golden-failures-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           if [[ -n "$ARTIFACT_URL" ]]; then
-            printf 'Responsive shell golden failure artifact: [%s](%s)\n' "$ARTIFACT_NAME" "$ARTIFACT_URL" >> "$GITHUB_STEP_SUMMARY"
+            printf 'UI golden failure artifact: [%s](%s)\n' "$ARTIFACT_NAME" "$ARTIFACT_URL" >> "$GITHUB_STEP_SUMMARY"
           else
-            printf 'No artifact was produced for responsive shell golden failures (%s).\n' "$ARTIFACT_NAME" >> "$GITHUB_STEP_SUMMARY"
+            printf 'No artifact was produced for UI golden failures (%s).\n' "$ARTIFACT_NAME" >> "$GITHUB_STEP_SUMMARY"
           fi
 
   test-timings:
@@ -567,7 +684,7 @@ jobs:
       - uses: ./.github/actions/setup-workspace
 
       - name: Download shard timings
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: test-timing-*
           path: ${{ runner.temp }}/test-timings
@@ -581,7 +698,7 @@ jobs:
             --source-sha "${{ github.sha }}"
 
       - name: Upload historical test timings
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: test-timings
           path: ${{ runner.temp }}/test_timings.json
@@ -612,7 +729,7 @@ jobs:
       - uses: ./.github/actions/setup-workspace
 
       - name: Download coverage artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: coverage-*
           path: ${{ runner.temp }}/coverage-artifacts
@@ -639,7 +756,7 @@ jobs:
 
       - name: SonarCloud Scan
         if: ${{ github.event_name == 'push' && steps.check-sonar-token.outputs.token_available == 'true' }}
-        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
@@ -872,10 +989,70 @@ jobs:
         working-directory: apps/auravibes_server
         run: docker compose down -v --remove-orphans
 
+  server-integration:
+    name: server integration tests
+    needs: change
+    if: ${{ needs.change.outputs.run_server_integration == 'true' }}
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_PASSWORD: ci-postgres-password
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Configure disposable test database credentials
+        working-directory: apps/auravibes_server
+        shell: bash
+        run: |
+          set -euo pipefail
+          awk -v database_password="$POSTGRES_PASSWORD" '
+            /^test:$/ { in_test = 1; print; next }
+            /^[^[:space:]]/ { in_test = 0 }
+            in_test && /^  database:/ {
+              printf "  database: \"%s\"\n", database_password
+              replaced = 1
+              next
+            }
+            { print }
+            END { if (!replaced) exit 1 }
+          ' config/passwords.example.yaml > config/passwords.yaml
+
+      - name: Start PostgreSQL test service
+        working-directory: apps/auravibes_server
+        run: docker compose up -d --remove-orphans postgres_test
+
+      - name: Wait for PostgreSQL
+        working-directory: apps/auravibes_server
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in {1..60}; do
+            if docker compose exec -T postgres_test pg_isready \
+              -U postgres -d auravibes_server_test; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker compose logs postgres_test
+          exit 1
+
+      - name: Run Serverpod integration suite
+        working-directory: apps/auravibes_server
+        run: dart test test/integration --reporter=compact
+
+      - name: Stop PostgreSQL test service
+        if: ${{ always() }}
+        working-directory: apps/auravibes_server
+        run: docker compose down -v --remove-orphans
+
   ci-success:
     name: ci success
     if: ${{ always() }}
-    needs: [change, format, analysis, code-health, integrity, test-plan, test, responsive-shell-goldens, coverage, platform-builds, server-compose]
+    needs: [change, format, analysis, localization-audit, code-health, integrity, test-plan, test, responsive-shell-goldens, coverage, platform-builds, server-compose, server-integration, renovate-validation]
     runs-on: ubuntu-latest
     steps:
       - name: Fail for failed required checks

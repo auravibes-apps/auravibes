@@ -19,11 +19,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ?? fail('Database fixture not initialized');
-
-  void reset() {
-    _database = .new(connection: createConnection());
-  }
+      _database ??= .new(connection: createConnection());
 
   Future<void> close() async {
     await _database?.close();
@@ -36,14 +32,13 @@ void main() {
     final fixture = _DatabaseFixture(_testConnection);
     var columns = <QueryRow>[];
 
-    setUp(() async {
-      fixture.reset();
+    setUpAll(() async {
       columns = await fixture.database
           .customSelect('PRAGMA table_info(workspaces)')
           .get();
     });
 
-    tearDown(fixture.close);
+    tearDownAll(fixture.close);
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();

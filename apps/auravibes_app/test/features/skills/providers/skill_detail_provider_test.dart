@@ -46,8 +46,8 @@ void main() {
         cloudSkillStoreProvider(workspaceId).overrideWithValue(
           _cloudStore([
             _resource(
-              source: SkillSource.app,
               id: 'duckduckgo',
+              source: .app,
               kind: .native,
               title: 'Workspace Search',
               slug: 'workspace_search',
@@ -84,8 +84,8 @@ void main() {
           cloudSkillStoreProvider(workspaceId).overrideWithValue(
             _cloudStore([
               _resource(
-                source: SkillSource.user,
                 id: 'duckduckgo',
+                source: .user,
                 kind: .template,
                 title: 'My Search',
                 slug: 'my_search',

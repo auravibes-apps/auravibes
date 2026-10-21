@@ -28,8 +28,14 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  tearDownAll(database.close);
 
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
@@ -40,7 +46,7 @@ void main() {
     testWidgets('embedded provider $action has one exit owner', (tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 1200));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      final fixture = await _pumpEmbeddedProvider(tester);
+      final fixture = await _pumpEmbeddedProvider(tester, database);
       final provider = fixture.container.read(
         addModelProviderStateProvider(fixture.workspaceId).notifier,
       );
@@ -121,10 +127,7 @@ void main() {
   testWidgets('preselects credential definition from initial params', (
     tester,
   ) async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
+    await clearAppDatabase(database);
     final container = ProviderContainer(
       overrides: [appDatabaseProvider.overrideWithValue(database)],
     );
@@ -193,11 +196,8 @@ void main() {
 Future<
   ({ProviderContainer container, String workspaceId, _ProviderStore store})
 >
-_pumpEmbeddedProvider(WidgetTester tester) async {
-  final database = AppDatabase(
-    connection: DatabaseConnection(NativeDatabase.memory()),
-  );
-  addTearDown(database.close);
+_pumpEmbeddedProvider(WidgetTester tester, AppDatabase database) async {
+  await clearAppDatabase(database);
   final workspace = await WorkspaceRepository(database)
       .createWorkspace(const .new(name: 'Provider workspace', type: .local));
   final session = WorkspaceSession(

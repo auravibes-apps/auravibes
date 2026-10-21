@@ -37,12 +37,9 @@ class AppAnthropicPlugin extends GenkitPlugin {
 
   Future<ModelResponse> _generate(
     String model,
-    ModelRequest? request,
+    ModelRequest request,
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
   ) async {
-    if (request == null) {
-      throw const AnthropicRequestException('missing_request');
-    }
     final encoded = encoder.encode(model, request);
     final client = _createClient();
     try {
@@ -145,7 +142,7 @@ ModelResponse _response(sdk.Message message) => ModelResponse(
 );
 
 GenerationUsage _usage(sdk.Usage usage) => GenerationUsage(
-  inputTokens: usage.inputTokens.toDouble(),
-  outputTokens: usage.outputTokens.toDouble(),
-  totalTokens: (usage.inputTokens + usage.outputTokens).toDouble(),
+  inputTokens: usage.inputTokens,
+  outputTokens: usage.outputTokens,
+  totalTokens: usage.inputTokens + usage.outputTokens,
 );

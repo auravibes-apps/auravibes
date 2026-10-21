@@ -1,4 +1,4 @@
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:async/async.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
@@ -21,12 +21,12 @@ void main() {
       listAvailableSkillsUsecase: (_) => _LoadedSkills(
         skills: const [
           AvailableSkill(
-            source: SkillSource.app,
             id: 'a2ui',
             slug: 'a2ui',
             title: 'A2UI',
             description: 'UI surfaces.',
             content: 'Load A2UI resources when needed.',
+            source: .app,
             kind: .native,
           ),
         ],
@@ -77,6 +77,7 @@ void main() {
 
     final result = await usecase.call((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       commandName: activateSkillToolName,
       arguments: const {'slug': 'a2ui', 'revision': 'a2ui-r1'},
@@ -130,6 +131,7 @@ void main() {
 
     final result = await usecase.call((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       commandName: loadSkillResourceToolName,
       arguments: const {'skill': 'a2ui', 'resource': 'a2ui-core'},
@@ -174,6 +176,7 @@ void main() {
     await expectLater(
       usecase.call((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         commandName: loadSkillResourceToolName,
         arguments: const {'skill': 'a2ui', 'resource': 'a2ui-core'},
@@ -190,12 +193,12 @@ void main() {
       listAvailableSkillsUsecase: (_) => _LoadedSkills(
         skills: const [
           AvailableSkill(
-            source: SkillSource.user,
             id: 'research-skill-row',
             slug: 'research',
             title: 'Research',
             description: 'Search sources.',
             content: 'Use research instructions.',
+            source: .user,
             kind: .template,
           ),
         ],
@@ -241,6 +244,7 @@ void main() {
 
     final result = await usecase.call((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       commandName: activateSkillToolName,
       arguments: const {'slug': 'research', 'revision': 'r1'},
@@ -297,6 +301,7 @@ void main() {
 
     final result = await usecase.call((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       commandName: loadSkillResourceToolName,
       arguments: const {'skill': 'research', 'resource': 'refund_policy'},
@@ -319,12 +324,12 @@ void main() {
       listAvailableSkillsUsecase: (_) => _LoadedSkills(
         skills: const [
           AvailableSkill(
-            source: SkillSource.user,
             id: 'research-skill-row',
             slug: 'research',
             title: 'Research',
             description: 'Search sources.',
             content: 'Use research instructions.',
+            source: .user,
             kind: .template,
           ),
         ],
@@ -353,6 +358,7 @@ void main() {
     await expectLater(
       usecase.call((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         commandName: activateSkillToolName,
         arguments: const {'slug': 'research', 'revision': 'r1'},
@@ -370,12 +376,12 @@ void main() {
         listAvailableSkillsUsecase: (_) => _LoadedSkills(
           skills: const [
             AvailableSkill(
-              source: SkillSource.user,
               id: 'research-skill-row',
               slug: 'research',
               title: 'Research',
               description: 'Search sources.',
               content: 'Use research instructions.',
+              source: .user,
               kind: .template,
             ),
           ],
@@ -396,6 +402,7 @@ void main() {
       await expectLater(
         usecase.call((
           conversationId: 'conversation-1',
+          toolCallId: 'call-1',
           workspaceId: 'workspace-1',
           commandName: activateSkillToolName,
           arguments: const {'slug': 'research', 'revision': 'stale'},
@@ -427,6 +434,7 @@ void main() {
     await expectLater(
       usecase.call((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         commandName: callSkillToolName,
         arguments: const {
@@ -449,6 +457,14 @@ void main() {
         'type': 'object',
         'properties': {
           'title': {'type': 'string'},
+          'filters': {
+            'type': 'object',
+            'properties': {
+              'region': {'type': 'string'},
+            },
+            'required': <String>[],
+            'additionalProperties': false,
+          },
         },
         'required': ['title'],
         'additionalProperties': false,
@@ -490,12 +506,16 @@ void main() {
 
       final result = await usecase.call((
         conversationId: 'conversation-1',
+        toolCallId: 'call-1',
         workspaceId: 'workspace-1',
         commandName: callSkillToolName,
         arguments: {
           'skill': 'github',
           'tool': 'create_issue',
-          'args': {'title': 'Collision regression'},
+          'args': {
+            'title': 'Collision regression',
+            'filters': {'region': null},
+          },
           'revision': loadedManifest.revision,
         },
       ));
@@ -513,7 +533,10 @@ void main() {
       expect(templateRunner.lastWorkspaceId, 'workspace-1');
       expect(templateRunner.lastSkillSlug, 'github');
       expect(templateRunner.lastToolSlug, 'create_issue');
-      expect(templateRunner.lastArguments, {'title': 'Collision regression'});
+      expect(templateRunner.lastArguments, {
+        'title': 'Collision regression',
+        'filters': <String, Object?>{},
+      });
       expect(nativeRunner.calls, 0);
     },
   );
@@ -554,6 +577,7 @@ void main() {
 
     final result = await usecase.call((
       conversationId: 'conversation-1',
+      toolCallId: 'call-1',
       workspaceId: 'workspace-1',
       commandName: callSkillToolName,
       arguments: const <String, Object?>{
@@ -669,12 +693,12 @@ class _AgentsManifests implements BuildLoadedSkillManifestsUsecase {
 class _LoadedSkills({
   final List<AvailableSkill> skills = const [
     AvailableSkill(
-      source: SkillSource.user,
       id: 'github-skill-row',
       slug: 'github',
       title: 'GitHub',
       description: 'Manage GitHub issues.',
       content: 'Create issues when requested.',
+      source: .user,
       kind: .template,
     ),
   ],
@@ -741,6 +765,21 @@ class _TemplateRunner({final Map<String, int>? result})
 
     return result;
   }
+
+  @override
+  CancelableOperation<Object?> callCancelable({
+    required String workspaceId,
+    required String skillSlug,
+    required String toolSlug,
+    required Map<String, dynamic> arguments,
+  }) => CancelableOperation.fromFuture(
+    call(
+      workspaceId: workspaceId,
+      skillSlug: skillSlug,
+      toolSlug: toolSlug,
+      arguments: arguments,
+    ),
+  );
 }
 
 class _NativeRunner implements RunAppSkillToolUsecase {

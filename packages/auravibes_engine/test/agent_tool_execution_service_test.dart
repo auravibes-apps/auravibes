@@ -1,11 +1,33 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_tool_execution_service.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('already requested approval skips permission re-evaluation', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [],
+        pendingApprovalToolCallIds: ['manual-id'],
+        notFoundToolCallIds: [],
+        previouslyFailedToolCallIds: [],
+      ),
+      decisions: const {'manual-id': AgentToolPermissionResult.granted},
+    );
+    final result = await AgentToolExecutionService<String>(provider: provider)(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+    );
+    expect(result, AgentIterationDecision.waitForToolApproval);
+    expect(provider.approvalArgumentsRaw, isEmpty);
+    expect(provider.updates, isEmpty);
+  });
+
   test('stops pending tools when cancellation is already requested', () async {
     final provider = _FakeExecutionProvider(
       latestToolCalls: _latestToolCalls(),
@@ -72,6 +94,45 @@ void main() {
       provider.updates.map((update) => update.responseRaw),
       everyElement(contains('Tool "')),
     );
+  });
+
+  test('preserves typed screenshot media in tool result updates', () async {
+    final media = AgentToolResultMedia(
+      bytes: Uint8List.fromList([1, 2, 3]),
+      mimeType: 'image/png',
+      fileName: 'browser-viewport.png',
+    );
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [
+          AgentToolToCall(
+            tool: 'browser_capture_screenshot',
+            id: 'screenshot-call',
+            argumentsRaw: '{}',
+          ),
+        ],
+        notFoundToolCallIds: [],
+        previouslyFailedToolCallIds: [],
+      ),
+      decisions: const {'screenshot-call': AgentToolPermissionResult.granted},
+      results: {
+        'browser_capture_screenshot': AgentToolExecutionOutput(
+          output: const {'screenshotCaptured': true},
+          media: [media],
+        ),
+      },
+    );
+
+    final result = await AgentToolExecutionService<String>(provider: provider)(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+    );
+
+    expect(result, AgentIterationDecision.continueIteration);
+    expect(provider.updates.single.responseRaw, contains('screenshotCaptured'));
+    expect(provider.updates.single.media, [media]);
   });
 
   test(
@@ -214,8 +275,10 @@ void main() {
     );
 
     expect(result, AgentIterationDecision.waitForToolApproval);
+    expect(provider.updates.first.approvalRequested, isTrue);
+    expect(provider.updates.first.resultStatus, isNull);
     expect(
-      provider.updates.single.resultStatus,
+      provider.updates.last.resultStatus,
       AgentToolResultStatus.executionError,
     );
   });
@@ -351,6 +414,7 @@ class _FakeExecutionProvider({
   @override
   Future<Object?> runResolvedTool({
     required String conversationId,
+    required String toolCallId,
     required String tool,
     required Map<String, dynamic> arguments,
   }) async {

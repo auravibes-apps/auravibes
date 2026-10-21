@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -24,6 +25,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_servic
 import 'package:auravibes_app/features/skills/usecases/app_skill_http_client_adapter.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
@@ -39,6 +41,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
@@ -48,12 +51,13 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
   group('SkillsRepository', () {
-    final initialDatabase = AppDatabase(
+    final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
-    var database = initialDatabase;
     var workspaceRepository = WorkspaceRepository(database);
     var conversationRepository = ConversationRepository(database);
     var skillsRepository = SkillsRepository(database);
@@ -82,10 +86,8 @@ void main() {
       .new(skillCredentialsRepository),
     );
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
+    setUp(() async {
+      await clearAppDatabase(database);
       workspaceRepository = WorkspaceRepository(database);
       conversationRepository = ConversationRepository(database);
       skillsRepository = SkillsRepository(database);
@@ -115,13 +117,7 @@ void main() {
       );
     });
 
-    tearDown(() async {
-      await database.close();
-    });
-
-    tearDownAll(() async {
-      await initialDatabase.close();
-    });
+    tearDownAll(database.close);
 
     DuplicateSkillUsecase duplicateSkillUsecase() {
       return DuplicateSkillUsecase(
@@ -517,10 +513,20 @@ void main() {
         appSkillSettingsRepository,
         const AppSkillRegistry(),
       );
-      final buildSpecsUsecase = BuildDynamicSkillToolSpecsUsecase(
+      final loadedManifests = BuildLoadedSkillManifestsUsecase(
         (_) => listAvailableSkillsUsecase,
-        const AppSkillRegistry(),
-        .new(() => serviceConnectionRepository),
+        .new(
+          (_) => listAvailableSkillsUsecase,
+          toolsRepository,
+          skillCredentialsRepository,
+        ),
+        .new(
+          (_) => listAvailableSkillsUsecase,
+          .new(() => serviceConnectionRepository),
+        ),
+      );
+      final buildSpecsUsecase = BuildDynamicSkillToolSpecsUsecase(
+        loadedManifests,
       );
 
       var specs = await buildSpecsUsecase.call(
@@ -1105,6 +1111,7 @@ void main() {
           required mcpServerId,
           required toolIdentifier,
           required arguments,
+          onElicitation,
         }) async => '',
         conversationRepository: conversationRepository,
         listAvailableSkillsUsecase: (_) => listAvailableSkillsUsecase,
@@ -1949,7 +1956,13 @@ void main() {
           skillCredentialsRepository,
           .new(
             const ResolveSkillUrlTemplate(),
-            AppSkillHttpClientAdapter(urlService).execute,
+            AppSkillHttpClientAdapter(
+              urlService,
+              requirePublicUri: (url) => PublicUrlGuard.resolveHttpsUri(
+                url,
+                lookup: (_) async => [InternetAddress('8.8.8.8')],
+              ),
+            ).execute,
           ),
           (workspaceId) async => WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: workspaceId),

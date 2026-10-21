@@ -31,6 +31,10 @@ import 'package:auravibes_server/src/generated/features/codex_oauth/models/start
     as _ivuexb4h;
 import 'package:auravibes_server/src/generated/features/codex_oauth/models/start_codex_oauth_result.dart'
     as _ixo9bpue;
+import 'package:auravibes_server/src/generated/features/conversations/models/background_work_view.dart'
+    as _idn3a4nr;
+import 'package:auravibes_server/src/generated/features/conversations/models/bookmark_message_request.dart'
+    as _iqabnln6;
 import 'package:auravibes_server/src/generated/features/conversations/models/cancel_turn_request.dart'
     as _i4j5a2zc;
 import 'package:auravibes_server/src/generated/features/conversations/models/compact_conversation_request.dart'
@@ -39,6 +43,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/con
     as _ihn1s8rq;
 import 'package:auravibes_server/src/generated/features/conversations/models/continue_turn_request.dart'
     as _io8jb8cg;
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_search_result.dart'
+    as _inj3grkb;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_view.dart'
     as _icvgm34f;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_mutation_result.dart'
@@ -57,6 +63,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/cre
     as _ish3zj9o;
 import 'package:auravibes_server/src/generated/features/conversations/models/delete_conversation_request.dart'
     as _il5llor3;
+import 'package:auravibes_server/src/generated/features/conversations/models/detach_tool_call_request.dart'
+    as _inotib2f;
 import 'package:auravibes_server/src/generated/features/conversations/models/edit_pending_conversation_message_request.dart'
     as _igstxg4l;
 import 'package:auravibes_server/src/generated/features/conversations/models/fork_conversation_request.dart'
@@ -65,10 +73,16 @@ import 'package:auravibes_server/src/generated/features/conversations/models/get
     as _itkmf3xs;
 import 'package:auravibes_server/src/generated/features/conversations/models/get_turn_request.dart'
     as _iaqawmcu;
+import 'package:auravibes_server/src/generated/features/conversations/models/list_background_works_request.dart'
+    as _i2euehas;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_conversation_messages_request.dart'
     as _i5dqxctc;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_conversations_request.dart'
     as _i0m5o1i2;
+import 'package:auravibes_server/src/generated/features/conversations/models/list_message_bookmarks_request.dart'
+    as _inxcvjob;
+import 'package:auravibes_server/src/generated/features/conversations/models/message_bookmark_view.dart'
+    as _iiqbx0k7;
 import 'package:auravibes_server/src/generated/features/conversations/models/queue_conversation_message_request.dart'
     as _i605rjdx;
 import 'package:auravibes_server/src/generated/features/conversations/models/remove_pending_conversation_message_request.dart'
@@ -77,10 +91,14 @@ import 'package:auravibes_server/src/generated/features/conversations/models/reo
     as _ilmuzuyl;
 import 'package:auravibes_server/src/generated/features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _if7qtxue;
+import 'package:auravibes_server/src/generated/features/conversations/models/search_conversation_messages_request.dart'
+    as _i71vvsjf;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
     as _ijasfsbp;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_result.dart'
     as _i43ad401;
+import 'package:auravibes_server/src/generated/features/conversations/models/stop_background_work_request.dart'
+    as _iysdyp93;
 import 'package:auravibes_server/src/generated/features/conversations/models/stop_conversation_request.dart'
     as _ii20rgdx;
 import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_batch_request.dart'
@@ -91,6 +109,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/sub
     as _ii7vetdc;
 import 'package:auravibes_server/src/generated/features/conversations/models/turn_snapshot.dart'
     as _i9qtpae9;
+import 'package:auravibes_server/src/generated/features/conversations/models/unbookmark_message_request.dart'
+    as _i88e9bqv;
 import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_request.dart'
     as _i8uhzhf3;
 import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_settings_request.dart'
@@ -135,6 +155,8 @@ import 'package:auravibes_server/src/generated/features/model_connections/models
     as _iskhxh94;
 import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
     as _i2yb5fxk;
+import 'package:auravibes_server/src/generated/features/model_connections/models/update_workspace_model_selection_policy_request.dart'
+    as _ijxinstp;
 import 'package:auravibes_server/src/generated/features/model_connections/models/verify_model_connection_request.dart'
     as _ij84b3fp;
 import 'package:auravibes_server/src/generated/features/model_connections/models/verify_model_connection_result.dart'
@@ -1158,6 +1180,122 @@ class _ConversationEndpoint {
     });
   }
 
+  _ida.Future<void> bookmarkMessage(
+    _ist.TestSessionBuilder sessionBuilder,
+    _iqabnln6.BookmarkMessageRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'bookmarkMessage',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'bookmarkMessage',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<void> unbookmarkMessage(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i88e9bqv.UnbookmarkMessageRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'unbookmarkMessage',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'unbookmarkMessage',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_iiqbx0k7.MessageBookmarkView>> listMessageBookmarks(
+    _ist.TestSessionBuilder sessionBuilder,
+    _inxcvjob.ListMessageBookmarksRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'listMessageBookmarks',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'listMessageBookmarks',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_iiqbx0k7.MessageBookmarkView>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_inj3grkb.ConversationMessageSearchResult>> searchMessages(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i71vvsjf.SearchConversationMessagesRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'searchMessages',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'searchMessages',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_inj3grkb.ConversationMessageSearchResult>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _ida.Future<_itibmfuz.ConversationSummary> update(
     _ist.TestSessionBuilder sessionBuilder,
     _i8uhzhf3.UpdateConversationRequest request,
@@ -1325,6 +1463,93 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_idn3a4nr.BackgroundWorkView> detachToolCall(
+    _ist.TestSessionBuilder sessionBuilder,
+    _inotib2f.DetachToolCallRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'detachToolCall',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'detachToolCall',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_idn3a4nr.BackgroundWorkView>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_idn3a4nr.BackgroundWorkView>> listBackgroundWorks(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i2euehas.ListBackgroundWorksRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'listBackgroundWorks',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'listBackgroundWorks',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_idn3a4nr.BackgroundWorkView>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_idn3a4nr.BackgroundWorkView> stopBackgroundWork(
+    _ist.TestSessionBuilder sessionBuilder,
+    _iysdyp93.StopBackgroundWorkRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'stopBackgroundWork',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'stopBackgroundWork',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_idn3a4nr.BackgroundWorkView>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2089,6 +2314,35 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_ipmnqqs6.WorkspaceModelSelectionView>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<void> updateToolSamplingPolicy(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ijxinstp.UpdateWorkspaceModelSelectionPolicyRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'updateToolSamplingPolicy',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'updateToolSamplingPolicy',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

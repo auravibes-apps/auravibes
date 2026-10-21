@@ -55,4 +55,13 @@ class ConnectionsListViewNotifier extends _$ConnectionsListViewNotifier {
       oauthOnly: state.oauthOnly,
     );
   }
+
+  void clearFilters() {
+    state = (
+      searchQuery: state.searchQuery,
+      filter: .all,
+      kind: .all,
+      oauthOnly: false,
+    );
+  }
 }

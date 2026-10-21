@@ -395,6 +395,93 @@ void main() {
       },
     );
 
+    test(
+      'credential deletion clears its secret without trusting the flag',
+      () async {
+        final f = await _Fixture.create(sessionBuilder.build());
+        final created = await f.mutate(
+          f.credentialRequest(secret: {'token': 'synthetic-value'}),
+        );
+
+        final deleted = await f.mutate(
+          MutateWorkspaceCredentialRequest(
+            workspaceId: f.workspaceId,
+            requestId: const Uuid().v4().toString(),
+            resourceOperation: WorkspacePatchOperation(
+              operation: .delete,
+              resourceKind: .serviceConnection,
+              resourceId: 'prepared',
+              expectedRevision: created.resource.revision,
+              fieldMask: [],
+            ),
+            secretKind: .skillCredential,
+            scope: .workspace,
+            secret: 'stale-secret-payload',
+            clearSecret: false,
+            expectedSecretRevision: created.secretRevision,
+          ),
+        );
+
+        expect(deleted.configured, isFalse);
+        final resource = await WorkspaceResource.db.findFirstRow(
+          f.session,
+          where: (t) =>
+              t.workspaceId.equals(f.workspaceId) &
+              t.resourceId.equals('prepared'),
+        );
+        final secret = await WorkspaceSecret.db.findFirstRow(
+          f.session,
+          where: (t) =>
+              t.workspaceId.equals(f.workspaceId) &
+              t.resourceId.equals('prepared'),
+        );
+        expect(resource!.deletedAt, isNotNull);
+        expect(secret!.deletedAt, isNotNull);
+        expect(await f.events(), hasLength(4));
+      },
+    );
+
+    test(
+      'credential deletion without a secret avoids a tombstone',
+      () async {
+        final f = await _Fixture.create(sessionBuilder.build());
+        await f.insert(.serviceConnection, 'prepared', {
+          'kind': 'skillCredential',
+          'credentialDefinitionId': 'definition',
+          'name': 'Prepared',
+          'attributes': <String, String>{},
+          'isEnabled': true,
+        });
+
+        final deleted = await f.mutate(
+          MutateWorkspaceCredentialRequest(
+            workspaceId: f.workspaceId,
+            requestId: const Uuid().v4().toString(),
+            resourceOperation: WorkspacePatchOperation(
+              operation: .delete,
+              resourceKind: .serviceConnection,
+              resourceId: 'prepared',
+              expectedRevision: 1,
+              fieldMask: [],
+            ),
+            secretKind: .skillCredential,
+            scope: .workspace,
+            clearSecret: false,
+          ),
+        );
+
+        expect(deleted.configured, isFalse);
+        final secret = await WorkspaceSecret.db.findFirstRow(
+          f.session,
+          where: (t) =>
+              t.workspaceId.equals(f.workspaceId) &
+              t.resourceId.equals('prepared'),
+        );
+        expect(secret, isNull);
+        expect(await f.events(), hasLength(1));
+      },
+    );
+
     test('direct patch blocks disabled reference-only deletion', () async {
       final fixture = await _Fixture.create(sessionBuilder.build());
       await fixture.insert(.skill, 'skill', {
@@ -484,6 +571,110 @@ void main() {
     );
   });
   withServerpod('Credential definition races', (sessionBuilder, _) {
+    for (final mutation in ['remove', 'require', 'delete']) {
+      for (final credentialFirst in [false, true]) {
+        test(
+          'credential endpoint serializes $mutation, credential first: $credentialFirst',
+          () async {
+            final fixture = await _Fixture.create(
+              sessionBuilder.build(),
+              schema: '{"token":{},"old":{"optional":true}}',
+            );
+            final operation = WorkspacePatchOperation(
+              operation: mutation == 'delete' ? .delete : .update,
+              resourceKind: .skillDefinition,
+              resourceId: 'definition',
+              expectedRevision: 1,
+              fieldMask: [],
+              data: mutation == 'delete'
+                  ? null
+                  : jsonEncode({
+                      'title': 'Type',
+                      'attributesJson': mutation == 'remove'
+                          ? '{"token":{}}'
+                          : '{"token":{},"old":{"optional":true},"added":{}}',
+                    }),
+            );
+            final locked = Completer<void>();
+            final release = Completer<void>();
+            final attempted = Completer<void>();
+            Future<void> run(
+              WorkspaceStateRepository repository, {
+              required bool create,
+              required Session session,
+            }) async {
+              final usecases = WorkspaceStateUseCases(repository);
+              if (create) {
+                await usecases.mutateCredential(
+                  session,
+                  userId: fixture.userId,
+                  request: fixture.credentialRequest(
+                    secret: {'token': 'fixture', 'old': 'fixture'},
+                  ),
+                );
+              } else {
+                await usecases.patch(
+                  session,
+                  userId: fixture.userId,
+                  request: fixture.request([operation]),
+                );
+              }
+            }
+
+            final first = run(
+              _PausedRepository(locked, release),
+              create: credentialFirst,
+              session: fixture.session,
+            );
+            await locked.future;
+            final rejected = expectLater(
+              run(
+                _ObservedRepository(attempted),
+                create: !credentialFirst,
+                session: sessionBuilder.build(),
+              ),
+              throwsA(
+                isA<CloudWorkspaceException>().having(
+                  (error) => error.code,
+                  'code',
+                  credentialFirst
+                      ? CloudWorkspaceErrorCode.conflict
+                      : CloudWorkspaceErrorCode.validationFailed,
+                ),
+              ),
+            );
+            await attempted.future;
+            release.complete();
+            await first;
+            await rejected;
+            final definition = await fixture.definition();
+            expect(definition.revision, credentialFirst ? 1 : 2);
+            expect(
+              definition.deletedAt != null,
+              !credentialFirst && mutation == 'delete',
+            );
+            if (credentialFirst) {
+              expect(
+                jsonDecode(definition.data)['attributesJson'],
+                '{"token":{},"old":{"optional":true}}',
+              );
+              final credential = await WorkspaceResource.db.findFirstRow(
+                fixture.session,
+                where: (t) =>
+                    t.workspaceId.equals(fixture.workspaceId) &
+                    t.resourceKind.equals(
+                      WorkspaceResourceKind.serviceConnection,
+                    ),
+              );
+              expect(credential, isNotNull);
+              expect(await fixture.events(), hasLength(2));
+            } else {
+              await fixture.expectNoCredentialWrites(eventCount: 1);
+            }
+          },
+        );
+      }
+    }
     test(
       'schema mutation rechecks after concurrent credential creation',
       () async {
@@ -621,12 +812,40 @@ class _ObservedRepository(this.attempted) extends WorkspaceStateRepository {
   }
 }
 
+class _PausedRepository(this.locked, this.release)
+    extends WorkspaceStateRepository {
+  final Completer<void> locked;
+  final Completer<void> release;
+  @override
+  Future<CloudWorkspace?> findWorkspace(
+    Session session,
+    int workspaceId, {
+    Transaction? transaction,
+    bool lock = false,
+  }) async {
+    final workspace = await super.findWorkspace(
+      session,
+      workspaceId,
+      transaction: transaction,
+      lock: lock,
+    );
+    if (lock) {
+      locked.complete();
+      await release.future;
+    }
+    return workspace;
+  }
+}
+
 class _Fixture {
   const _Fixture(this.session, this.workspaceId, this.userId);
   final Session session;
   final int workspaceId;
   final String userId;
-  static Future<_Fixture> create(Session session) async {
+  static Future<_Fixture> create(
+    Session session, {
+    String schema = '{"token":{}}',
+  }) async {
     final user = const Uuid().v4().toString();
     final workspace = await workspace_repo.CloudWorkspaceRepository()
         .createWorkspace(
@@ -638,7 +857,7 @@ class _Fixture {
     final fixture = _Fixture(session, workspace.id!, user);
     await fixture.insert(.skillDefinition, 'definition', {
       'title': 'Type',
-      'attributesJson': '{"token":{}}',
+      'attributesJson': schema,
     });
 
     return fixture;

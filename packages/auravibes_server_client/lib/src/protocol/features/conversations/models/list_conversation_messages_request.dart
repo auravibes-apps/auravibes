@@ -20,6 +20,7 @@ abstract class ListConversationMessagesRequest
     required this.workspaceId,
     required this.conversationId,
     required this.limit,
+    this.messageId,
     this.a2uiSupportedComponents,
   });
 
@@ -27,6 +28,7 @@ abstract class ListConversationMessagesRequest
     required int workspaceId,
     required String conversationId,
     required int limit,
+    String? messageId,
     List<String>? a2uiSupportedComponents,
   }) = _ListConversationMessagesRequestImpl;
 
@@ -37,6 +39,7 @@ abstract class ListConversationMessagesRequest
       workspaceId: jsonSerialization['workspaceId'] as int,
       conversationId: jsonSerialization['conversationId'] as String,
       limit: jsonSerialization['limit'] as int,
+      messageId: jsonSerialization['messageId'] as String?,
       a2uiSupportedComponents:
           jsonSerialization['a2uiSupportedComponents'] == null
           ? null
@@ -52,6 +55,8 @@ abstract class ListConversationMessagesRequest
 
   int limit;
 
+  String? messageId;
+
   List<String>? a2uiSupportedComponents;
 
   /// Returns a shallow copy of this [ListConversationMessagesRequest]
@@ -61,6 +66,7 @@ abstract class ListConversationMessagesRequest
     int? workspaceId,
     String? conversationId,
     int? limit,
+    String? messageId,
     List<String>? a2uiSupportedComponents,
   });
   @override
@@ -70,6 +76,7 @@ abstract class ListConversationMessagesRequest
       'workspaceId': workspaceId,
       'conversationId': conversationId,
       'limit': limit,
+      if (messageId != null) 'messageId': messageId,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
@@ -82,6 +89,7 @@ abstract class ListConversationMessagesRequest
       'workspaceId': workspaceId,
       'conversationId': conversationId,
       'limit': limit,
+      if (messageId != null) 'messageId': messageId,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
@@ -101,11 +109,13 @@ class _ListConversationMessagesRequestImpl
     required int workspaceId,
     required String conversationId,
     required int limit,
+    String? messageId,
     List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
          conversationId: conversationId,
          limit: limit,
+         messageId: messageId,
          a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
@@ -117,12 +127,14 @@ class _ListConversationMessagesRequestImpl
     int? workspaceId,
     String? conversationId,
     int? limit,
+    Object? messageId = _Undefined,
     Object? a2uiSupportedComponents = _Undefined,
   }) {
     return ListConversationMessagesRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       conversationId: conversationId ?? this.conversationId,
       limit: limit ?? this.limit,
+      messageId: messageId is String? ? messageId : this.messageId,
       a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
           ? a2uiSupportedComponents
           : this.a2uiSupportedComponents?.map((e0) => e0).toList(),

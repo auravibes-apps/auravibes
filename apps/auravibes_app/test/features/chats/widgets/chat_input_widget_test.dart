@@ -2,7 +2,6 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
@@ -15,14 +14,19 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/foundation.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:super_clipboard/super_clipboard.dart';
+import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -55,7 +59,12 @@ void main() {
   Widget buildSubject({
     required FutureOr<void> Function(ChatDraft) onSendMessage,
     VoidCallback onToolsPress = _noop,
+    ConversationToolAccessMode toolAccessMode =
+        ConversationToolAccessMode.defaultMode,
+    ValueChanged<ConversationToolAccessMode>? onToolAccessModeChanged,
+    Locale locale = const Locale('en'),
     bool disabled = false,
+    bool acceptDroppedFilesWhenDisabled = false,
     bool isBusy = false,
     bool? showStopButton,
     VoidCallback? onStop,
@@ -66,7 +75,7 @@ void main() {
     Widget agentSheetControl = const SizedBox.shrink(),
     Widget modelCompactControl = const SizedBox.shrink(),
     Widget agentCompactControl = const SizedBox.shrink(),
-    Widget? reasoningControl,
+    Widget? reasoningSettingsControl,
     VoidCallback? onCompact,
     bool canCompact = true,
     String? compactDisabledHint,
@@ -103,11 +112,25 @@ void main() {
               onToolsPress: onToolsPress,
               modelSheetControl: modelSheetControl,
               agentSheetControl: agentSheetControl,
-              modelCompactControl: modelCompactControl,
-              agentCompactControl: agentCompactControl,
+              modelCompactControl: (onPressed) => AuraTile(
+                child: modelCompactControl,
+                onTap: onPressed,
+                variant: .outlined,
+                size: .small,
+                leading: const AuraIcon(Icons.memory_outlined, size: .small),
+              ),
+              agentCompactControl: (onPressed) => AuraTile(
+                child: agentCompactControl,
+                onTap: onPressed,
+                variant: .selected,
+                size: .small,
+                leading: const AuraIcon(Icons.smart_toy_outlined),
+              ),
               onDraftStatusChanged: onDraftStatusChanged,
               conversationId: conversationId,
-              reasoningControl: reasoningControl,
+              toolAccessMode: toolAccessMode,
+              onToolAccessModeChanged: onToolAccessModeChanged,
+              reasoningSettingsControl: reasoningSettingsControl,
               draftToLoad: draftToLoad,
               modalitiesInput: modalitiesInput,
               onSkillsPress: onSkillsPress,
@@ -116,6 +139,7 @@ void main() {
               disabledHint: disabledHint,
               compactDisabledHint: compactDisabledHint,
               disabled: disabled,
+              acceptDroppedFilesWhenDisabled: acceptDroppedFilesWhenDisabled,
               isBusy: isBusy,
               showStopButton: showStopButton,
               onStop: onStop,
@@ -153,18 +177,23 @@ void main() {
                 ),
               ),
               locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                sdk_localizations.GlobalMaterialLocalizations.delegate,
+                ...context.localizationDelegates,
+              ],
               supportedLocales: context.supportedLocales,
             );
           },
         ),
       ),
-      supportedLocales: const [Locale('en')],
+      supportedLocales: const [Locale('en'), Locale('es')],
       path: 'assets/i18n',
       fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
+      startLocale: locale,
       useOnlyLangCode: true,
       useFallbackTranslations: true,
+      saveLocale: false,
     );
   }
 
@@ -180,6 +209,185 @@ void main() {
   void overridePlatform(TargetPlatform platform) {
     debugDefaultTargetPlatformOverride = platform;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
+  }
+
+  testWidgets('tool access control requires callback', (tester) async {
+    await pumpAndInit(tester, buildSubject(onSendMessage: (_) => _noop()));
+    expect(
+      find.byKey(const ValueKey<String>('chat_tool_access_mode')),
+      findsNothing,
+    );
+  });
+
+  testWidgets(
+    'tool access supports keyboard focus, open, selection and escape',
+    (tester) async {
+      ConversationToolAccessMode? changed;
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          onSendMessage: (_) => _noop(),
+          onToolAccessModeChanged: (mode) => changed = mode,
+        ),
+      );
+      final control = find.byKey(
+        const ValueKey<String>('chat_tool_access_mode'),
+      );
+      final popup = find.ancestor(
+        of: control,
+        matching: find.byType(AuraPopupMenu),
+      );
+      final focus =
+          (tester
+                    .widgetList<Focus>(
+                      find.descendant(of: popup, matching: find.byType(Focus)),
+                    )
+                    .firstWhere((widget) => widget.focusNode != null)
+                    .focusNode ??
+                (throw StateError('Missing dropdown focus')))
+            ..requestFocus();
+      await tester.pump();
+      expect(focus.hasFocus, isTrue);
+      final _ = await tester.sendKeyEvent(.enter);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Allow all'), findsOneWidget);
+      final _ = await tester.sendKeyEvent(.tab);
+      final _ = await tester.sendKeyEvent(.tab);
+      final _ = await tester.sendKeyEvent(.enter);
+      final _ = await tester.pumpAndSettle();
+      expect(changed, ConversationToolAccessMode.allowAll);
+      expect(focus.hasFocus, isTrue);
+      expect(focus.descendants.any((node) => node.hasPrimaryFocus), isTrue);
+      final _ = await tester.sendKeyEvent(.space);
+      final _ = await tester.pumpAndSettle();
+      final _ = await tester.sendKeyEvent(.escape);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Default'), findsOneWidget);
+      expect(focus.hasFocus, isTrue);
+      final _ = await tester.sendKeyEvent(.enter);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Allow all'), findsOneWidget);
+    },
+  );
+
+  for (final mode in ConversationToolAccessMode.values) {
+    testWidgets('tool access exposes $mode and selects both options', (
+      tester,
+    ) async {
+      ConversationToolAccessMode? changed;
+      final semantics = tester.ensureSemantics();
+      try {
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            onSendMessage: (_) => _noop(),
+            toolAccessMode: mode,
+            onToolAccessModeChanged: (value) => changed = value,
+          ),
+        );
+        final control = find.byKey(
+          const ValueKey<String>('chat_tool_access_mode'),
+        );
+        expect(
+          find.descendant(of: find.byType(AuraInput), matching: control),
+          findsOneWidget,
+        );
+        expect(find.text('Tool access'), findsNothing);
+        expect(
+          find.text(
+            mode == ConversationToolAccessMode.defaultMode
+                ? 'Default'
+                : 'Allow all',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Follows normal tool approval rules.'), findsNothing);
+        expect(
+          find.text('Skips prompts for otherwise permitted tools.'),
+          findsNothing,
+        );
+        expect(find.bySemanticsLabel(RegExp('Tool access')), findsWidgets);
+        for (final option in ConversationToolAccessMode.values) {
+          await tester.tap(control);
+          final _ = await tester.pumpAndSettle();
+          expect(
+            find.text('Follows normal tool approval rules.'),
+            findsOneWidget,
+          );
+          expect(
+            find.text('Skips prompts for otherwise permitted tools.'),
+            findsOneWidget,
+          );
+          await tester.tap(
+            find
+                .text(
+                  option == ConversationToolAccessMode.defaultMode
+                      ? 'Default'
+                      : 'Allow all',
+                )
+                .last,
+          );
+          final _ = await tester.pumpAndSettle();
+          expect(changed, option);
+        }
+      } finally {
+        semantics.dispose();
+      }
+    });
+  }
+
+  for (final mode in ConversationToolAccessMode.values) {
+    testWidgets('Spanish tool access $mode fits narrow composer', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final semantics = tester.ensureSemantics();
+      try {
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            onSendMessage: (_) => _noop(),
+            toolAccessMode: mode,
+            onToolAccessModeChanged: (_) => _noop(),
+            locale: const Locale('es'),
+          ),
+        );
+        expect(find.text('Acceso a herramientas'), findsNothing);
+        expect(find.text('Normal'), findsNothing);
+        expect(find.text('Todas'), findsNothing);
+        expect(
+          find.bySemanticsLabel(
+            mode == ConversationToolAccessMode.defaultMode
+                ? 'Acceso a herramientas: Predeterminado'
+                : 'Acceso a herramientas: Permitir todas',
+          ),
+          findsWidgets,
+        );
+        await tester.tap(
+          find.byKey(const ValueKey<String>('chat_tool_access_mode')),
+        );
+        final _ = await tester.pumpAndSettle();
+        expect(find.text('Predeterminado'), findsWidgets);
+        expect(find.text('Permitir todas'), findsWidgets);
+        expect(
+          find.text(
+            'Sigue las reglas normales de '
+            'aprobaci${String.fromCharCode(0xf3)}n de herramientas.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Omite las confirmaciones de herramientas permitidas.'),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
+    });
   }
 
   testWidgets('reports text draft changes', (tester) async {
@@ -400,6 +608,7 @@ void main() {
   testWidgets('keeps failed send draft and clears successful send draft', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
     final activeConversation = ValueNotifier<String?>('chat-1');
     addTearDown(activeConversation.dispose);
     var attempts = 0;
@@ -416,7 +625,9 @@ void main() {
     );
     await tester.enterText(find.byType(EditableText), 'unsent message');
     await tester.pump();
-    await tester.tap(find.byIcon(Icons.arrow_upward).hitTestable());
+    await tester.tap(
+      find.bySemanticsIdentifier('chat_send_button').hitTestable(),
+    );
     await tester.pump();
     expect(attempts, 1);
     expect(
@@ -432,13 +643,9 @@ void main() {
       tester.widget<EditableText>(find.byType(EditableText)).controller.text,
       'unsent message',
     );
-    final sendButton = find.descendant(
-      of: find.byKey(const ValueKey<String>('chat_send_button')),
-      matching: find.byType(AuraButton),
-    );
-    expect(tester.widget<AuraButton>(sendButton).disabled, isFalse);
-
-    tester.widget<AuraButton>(sendButton).onPressed();
+    final sendButton = find.bySemanticsIdentifier('chat_send_button');
+    expect(sendButton, findsOneWidget);
+    await tester.tap(sendButton.hitTestable());
     final _ = await tester.pumpAndSettle();
     expect(attempts, 2);
     expect(
@@ -454,6 +661,7 @@ void main() {
       isEmpty,
     );
     expect(attempts, 2);
+    semantics.dispose();
   });
 
   testWidgets('renders without error', (tester) async {
@@ -467,7 +675,160 @@ void main() {
     );
 
     expect(find.byType(ChatInputWidget), findsOneWidget);
+    expect(find.byType(DropRegion), findsOneWidget);
     expect(find.byType(AuraInput), findsOneWidget);
+  });
+
+  testWidgets('shows hint outside and highlights inside drop target', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        disabled: true,
+        acceptDroppedFilesWhenDisabled: true,
+        onSendMessage: (_) => _noop(),
+      ),
+    );
+
+    final dropMonitor = tester.widget<DropMonitor>(find.byType(DropMonitor));
+    expect(
+      tester.getRect(find.byType(DropRegion)),
+      tester.getRect(find.byType(AuraInput)),
+    );
+    final session = _TestFileDropSession();
+    dropMonitor.onDropOver?.call(
+      .new(
+        session: session,
+        position: .new(
+          local: const Offset(-10, -10),
+          global: const Offset(10, 10),
+        ),
+        isInside: false,
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byIcon(Icons.file_upload_outlined), findsOneWidget);
+    expect(find.text('Drop files to attach'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('chat_input_drop_highlight')),
+      findsNothing,
+    );
+
+    dropMonitor.onDropOver?.call(
+      .new(
+        session: session,
+        position: .new(
+          local: .zero,
+          global: tester.getCenter(find.byType(AuraInput)),
+        ),
+        isInside: true,
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('chat_input_drop_highlight')),
+      findsOneWidget,
+    );
+
+    dropMonitor.onDropOver?.call(
+      .new(
+        session: session,
+        position: .new(
+          local: const Offset(-10, -10),
+          global: const Offset(10, 10),
+        ),
+        isInside: false,
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('chat_input_drop_highlight')),
+      findsNothing,
+    );
+    expect(find.text('Drop files to attach'), findsOneWidget);
+
+    dropMonitor.onDropLeave?.call(.new(session: session));
+    await tester.pump();
+
+    expect(find.text('Drop files to attach'), findsNothing);
+  });
+
+  testWidgets('adds dropped files to disabled new-chat draft', (tester) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 8,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(attachment);
+    final bytes = Uint8List.fromList('report!!'.codeUnits);
+    final dropFile = _TestDataReaderFile('report.pdf', bytes);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        disabled: true,
+        acceptDroppedFilesWhenDisabled: true,
+        attachmentService: attachmentService,
+        onSendMessage: (_) => _noop(),
+      ),
+    );
+
+    final dropRegion = tester.widget<DropRegion>(find.byType(DropRegion));
+    final session = _TestFileDropSession(dataReader: _TestDataReader(dropFile));
+    final _ = await dropRegion.onPerformDrop(
+      .new(
+        session: session,
+        position: .new(local: .zero, global: .zero),
+        acceptedOperation: .copy,
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('report.pdf'), findsOneWidget);
+    expect(attachmentService.copiedBytes, bytes);
+    expect(attachmentService.copiedFileName, 'report.pdf');
+    expect(dropFile.wasClosed, isTrue);
+  });
+
+  testWidgets('blocks send when draft attachment is unsupported', (
+    tester,
+  ) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 2048,
+    );
+    final sentDrafts = <ChatDraft>[];
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['text'],
+        attachmentService: _FakeLocalChatAttachmentService(attachment),
+        draftToLoad: const ChatDraft(
+          text: 'Question',
+          attachments: [attachment],
+        ),
+        onSendMessage: sentDrafts.add,
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.arrow_upward).hitTestable());
+    final _ = await tester.pumpAndSettle();
+
+    expect(sentDrafts, isEmpty);
+    expect(find.text('report.pdf'), findsOneWidget);
+    expect(find.textContaining('support file input'), findsOneWidget);
   });
 
   testWidgets('loads a queued draft with its attachments', (tester) async {
@@ -498,7 +859,7 @@ void main() {
       'Edited message',
     );
     await tester.pump();
-    final sendButton = find.descendant(
+    final sendButton = find.ancestor(
       of: find.byKey(const ValueKey<String>('chat_send_button')),
       matching: find.byType(AuraButton),
     );
@@ -512,6 +873,7 @@ void main() {
   });
 
   testWidgets('exposes stable selectors for composer controls', (tester) async {
+    final semantics = tester.ensureSemantics();
     await pumpAndInit(
       tester,
       buildSubject(
@@ -520,7 +882,7 @@ void main() {
         modelSheetControl: const Text('sheet model'),
         agentCompactControl: const Text('compact agent'),
         agentSheetControl: const Text('sheet agent'),
-        reasoningControl: const Text('reasoning control'),
+        reasoningSettingsControl: const Text('reasoning settings'),
         showStopButton: true,
         onStop: _noop,
         onSendMessage: (_) {
@@ -534,16 +896,43 @@ void main() {
       'chat_agent_selector',
       'chat_model_selector',
       'chat_attachment_options_button',
-      'chat_send_button',
       'chat_stop_generation',
     ]) {
       expect(find.byKey(ValueKey<String>(selector)), findsOneWidget);
     }
-    expect(find.text('reasoning control'), findsOneWidget);
+    for (final selector in [
+      'chat_attachment_options_button',
+      'chat_stop_generation',
+    ]) {
+      expect(find.bySemanticsIdentifier(selector), findsOneWidget);
+      expect(
+        find.byKey(ValueKey<String>(selector)).evaluate().single,
+        find.bySemanticsIdentifier(selector).evaluate().single,
+      );
+    }
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsNothing,
+    );
+    expect(find.text('reasoning settings'), findsNothing);
+    final composerRadii = tester
+        .widgetList<AuraCornerRadiusScope>(
+          find.ancestor(
+            of: find.byKey(
+              const ValueKey<String>('chat_attachment_options_button'),
+            ),
+            matching: find.byType(AuraCornerRadiusScope),
+          ),
+        )
+        .map((scope) => scope.radius)
+        .toList();
+    expect(composerRadii, contains(16));
+    expect(composerRadii, contains(12));
     expect(
       find.byKey(const ValueKey<String>('chat_voice_button')),
       kIsWeb ? findsNothing : findsOneWidget,
     );
+    semantics.dispose();
   });
 
   testWidgets('clears text as soon as send is accepted', (tester) async {
@@ -601,6 +990,8 @@ void main() {
       buildSubject(
         modalitiesInput: const ['text', 'file'],
         attachmentService: _FakeLocalChatAttachmentService(attachment),
+        isBusy: true,
+        onStop: _noop,
         onSendMessage: (draft) {
           sentDrafts.add(draft);
 
@@ -609,11 +1000,27 @@ void main() {
       ),
     );
 
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsNothing,
+    );
     await tester.tap(find.byIcon(Icons.tune_rounded));
     await tester.pump();
     await tester.tap(find.byIcon(Icons.attach_file));
     final _ = await tester.pumpAndSettle();
     expect(find.text('report.pdf'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsNothing,
+    );
 
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await tester.tap(find.byIcon(Icons.arrow_upward));
@@ -985,10 +1392,7 @@ void main() {
     expect(
       tester
           .widget<AuraIconButton>(
-            find.descendant(
-              of: micButton,
-              matching: find.byType(AuraIconButton),
-            ),
+            find.ancestor(of: micButton, matching: find.byType(AuraIconButton)),
           )
           .disabled,
       isTrue,
@@ -1363,7 +1767,53 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('shows send for a busy text draft, then returns to stop', (
+    tester,
+  ) async {
+    ChatDraft? sentDraft;
+    var stopCount = 0;
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (draft) => sentDraft = draft,
+        isBusy: true,
+        onStop: () => stopCount++,
+      ),
+    );
+
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    await tester.enterText(find.byType(EditableText), 'draft while busy');
+    await tester.pump();
+
+    final sendButton = find.byKey(const ValueKey<String>('chat_send_button'));
+    expect(sendButton, findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsNothing,
+    );
+    await tester.tap(sendButton);
+    final _ = await tester.pumpAndSettle();
+
+    expect(sentDraft?.text, 'draft while busy');
+    expect(stopCount, 0);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(sendButton, findsNothing);
   });
 
   testWidgets('does not expose stop button when isBusy is false', (
@@ -1401,7 +1851,14 @@ void main() {
 
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isBusy, isTrue);
-    expect(find.byIcon(Icons.stop_rounded).hitTestable(), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('hides stop button when onStop is null', (tester) async {
@@ -1415,10 +1872,17 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.stop_rounded), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat_send_button')),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('tabs from input to more button and opens with enter', (
+  testWidgets('tabs through composer controls to model and effort selector', (
     tester,
   ) async {
     await pumpAndInit(
@@ -1427,6 +1891,10 @@ void main() {
         onSendMessage: (_) {
           final _ = Object();
         },
+        onToolAccessModeChanged: (_) => _noop(),
+        modelCompactControl: const Text('compact model'),
+        modelSheetControl: const Text('sheet model'),
+        reasoningSettingsControl: const Text('reasoning settings'),
       ),
     );
 
@@ -1437,14 +1905,21 @@ void main() {
     await tester.pump();
     expect(find.byIcon(Icons.build_circle_outlined), findsNothing);
 
-    expect(await tester.sendKeyEvent(.enter), isTrue);
-    await tester.pump();
+    expect(await tester.sendKeyEvent(.tab), isTrue);
+    expect(await tester.sendKeyEvent(.tab), isTrue);
 
-    expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
+    expect(await tester.sendKeyEvent(.enter), isTrue);
+    final pumpCount = await tester.pumpAndSettle();
+    expect(pumpCount, greaterThanOrEqualTo(0));
+
+    expect(find.text('sheet model'), findsOneWidget);
+    expect(find.text('reasoning settings'), findsOneWidget);
   });
 
-  testWidgets('compact controls use menu model agent layout', (tester) async {
-    tester.view.physicalSize = const Size(400, 800);
+  testWidgets('composer controls share one row in requested order', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -1455,22 +1930,52 @@ void main() {
         onSendMessage: (_) {
           final _ = Object();
         },
-        modelCompactControl: const Text('compact model'),
+        onToolAccessModeChanged: (_) => _noop(),
+        locale: const Locale('es'),
         modelSheetControl: const Text('sheet model'),
-        agentCompactControl: const Text('compact agent'),
         agentSheetControl: const Text('sheet agent'),
+        modelCompactControl: const Text(
+          'compact model',
+          overflow: .ellipsis,
+          maxLines: 1,
+        ),
+        agentCompactControl: const Text('compact agent'),
+        reasoningSettingsControl: const Text('reasoning settings'),
       ),
     );
 
     expect(find.text('compact model'), findsOneWidget);
     expect(find.text('compact agent'), findsOneWidget);
     expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
+    final controlKeys = [
+      'chat_attachment_options_button',
+      'chat_tool_access_mode',
+      'chat_model_selector',
+      'chat_voice_button',
+      'chat_send_button',
+    ];
+    final centers = [
+      for (final key in controlKeys)
+        tester.getCenter(find.byKey(ValueKey<String>(key))),
+    ];
+    for (var index = 1; index < centers.length; index++) {
+      expect(centers[index - 1].dy, closeTo(centers[index].dy, 1));
+      if (index > 0) {
+        expect(centers[index - 1].dx, lessThan(centers[index].dx));
+      }
+    }
+    expect(tester.takeException(), isNull);
+    expect(
+      find.byKey(const ValueKey<String>('chat_reasoning_selector')),
+      findsNothing,
+    );
 
     await tester.tap(find.text('compact model'));
     final pumpCount = await tester.pumpAndSettle();
     expect(pumpCount, greaterThanOrEqualTo(0));
 
     expect(find.text('sheet model'), findsOneWidget);
+    expect(find.text('reasoning settings'), findsOneWidget);
   });
 
   testWidgets('model selector opens from blank space inside its target', (
@@ -1557,9 +2062,7 @@ void main() {
     expect(find.text('sheet agent'), findsOneWidget);
   });
 
-  testWidgets('agent control opens sheet with a non-interactive tile', (
-    tester,
-  ) async {
+  testWidgets('agent tile opens sheet', (tester) async {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -1571,7 +2074,7 @@ void main() {
         onSendMessage: (_) {
           final _ = Object();
         },
-        agentCompactControl: const AuraTile(child: Text('compact agent')),
+        agentCompactControl: const Text('compact agent'),
         agentSheetControl: const Text('sheet agent'),
       ),
     );
@@ -1582,6 +2085,73 @@ void main() {
 
     expect(find.text('sheet agent'), findsOneWidget);
   });
+
+  testWidgets('compact agent and model selectors show hover feedback', (
+    tester,
+  ) async {
+    final previousStrategy = FocusManager.instance.highlightStrategy;
+    FocusManager.instance.highlightStrategy = .alwaysTraditional;
+    addTearDown(
+      () => FocusManager.instance.highlightStrategy = previousStrategy,
+    );
+
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        modelCompactControl: const Text('compact model'),
+        modelSheetControl: const Text('sheet model'),
+        agentCompactControl: const Text('compact agent'),
+        agentSheetControl: const Text('sheet agent'),
+      ),
+    );
+
+    final agent = find.byKey(const ValueKey<String>('chat_agent_selector'));
+    final model = find.byKey(const ValueKey<String>('chat_model_selector'));
+    final agentTile = find.descendant(
+      of: agent,
+      matching: find.byType(AuraTile),
+    );
+    final modelTile = find.descendant(
+      of: model,
+      matching: find.byType(AuraTile),
+    );
+    expect(agentTile, findsOneWidget);
+    expect(modelTile, findsOneWidget);
+    expect(tester.widget<AuraTile>(agentTile).onTap, isNotNull);
+    expect(tester.widget<AuraTile>(modelTile).onTap, isNotNull);
+
+    final agentLayer = find
+        .descendant(of: agentTile, matching: find.byType(AnimatedContainer))
+        .first;
+    final modelLayer = find
+        .descendant(of: modelTile, matching: find.byType(AnimatedContainer))
+        .first;
+    final agentColor = _animatedContainerColor(tester, agentLayer);
+    final modelColor = _animatedContainerColor(tester, modelLayer);
+    final mouse = await tester.createGesture(kind: .mouse);
+    await mouse.addPointer();
+    await mouse.moveTo(tester.getCenter(agent));
+    final _ = await tester.pumpAndSettle();
+    expect(_animatedContainerColor(tester, agentLayer), isNot(agentColor));
+
+    await mouse.moveTo(tester.getCenter(model));
+    final _ = await tester.pumpAndSettle();
+    expect(_animatedContainerColor(tester, modelLayer), isNot(modelColor));
+  });
+}
+
+Color _animatedContainerColor(WidgetTester tester, Finder finder) {
+  final decoration = tester.widget<AnimatedContainer>(finder).decoration;
+  if (decoration case BoxDecoration(:final Color color)) return color;
+  fail('Expected an animated container with a color.');
 }
 
 ConversationSkillSelectorState _skillSelectorState(int count) =>
@@ -1589,12 +2159,12 @@ ConversationSkillSelectorState _skillSelectorState(int count) =>
       loaded: [
         for (var index = 0; index < count; index++)
           AvailableSkill(
-            source: SkillSource.user,
             id: 'skill-$index',
             slug: 'skill-$index',
             title: 'Skill $index',
             description: 'Description $index',
             content: '',
+            source: .user,
             kind: .template,
             credentialReadiness: .ready,
           ),
@@ -1606,6 +2176,87 @@ void _noop() {
   final _ = Object();
 }
 
+class _TestFileDropSession({final DataReader? dataReader}) extends DropSession {
+  @override
+  final List<DropItem> items = [_TestFileDropItem(dataReader)];
+
+  @override
+  Listenable get onDisposed => const _TestListenable();
+
+  @override
+  Set<DropOperation> get allowedOperations => {DropOperation.copy};
+}
+
+class _TestFileDropItem(final DataReader? _dataReader) extends DropItem {
+  @override
+  DataReader? get dataReader => _dataReader;
+
+  @override
+  Null get localData => null;
+
+  @override
+  List<PlatformFormat> get platformFormats => const [];
+
+  @override
+  bool canProvide(DataFormat format) => true;
+}
+
+class const _TestListenable() implements Listenable {
+  @override
+  void addListener(VoidCallback listener) {
+    final _ = listener;
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    final _ = listener;
+  }
+}
+
+class _TestDataReader(final DataReaderFile file) implements DataReader {
+  @override
+  ReadProgress? getFile(
+    FileFormat? format,
+    AsyncValueChanged<DataReaderFile> onFile, {
+    ValueChanged<Object>? onError,
+    bool allowVirtualFiles = true,
+    bool synthesizeFilesFromURIs = true,
+  }) {
+    unawaited(Future<void>.sync(() => onFile(file)).whenComplete(file.close));
+
+    return _TestReadProgress();
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _TestReadProgress implements ReadProgress {
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _TestDataReaderFile(
+  @override final String? fileName,
+  final Uint8List bytes,
+) implements DataReaderFile {
+  bool wasClosed = false;
+
+  @override
+  int get fileSize => bytes.length;
+
+  @override
+  void close() {
+    wasClosed = true;
+  }
+
+  @override
+  Stream<Uint8List> getStream() => Stream.value(bytes);
+
+  @override
+  Future<Uint8List> readAll() async => bytes;
+}
+
 class _FakeLocalChatAttachmentService(
   final MessageAttachmentToCreate attachment, {
   final Exception? copyError,
@@ -1615,6 +2266,8 @@ class _FakeLocalChatAttachmentService(
 }) implements LocalChatAttachmentService {
   final String storageNamespace = 'test';
   final deletedPaths = <String>[];
+  Uint8List? copiedBytes;
+  String? copiedFileName;
   int startCount = 0;
   int stopCount = 0;
   int cancelCount = 0;
@@ -1629,6 +2282,19 @@ class _FakeLocalChatAttachmentService(
     return attachment.copyWith(
       displayName: displayName ?? attachment.displayName,
     );
+  }
+
+  @override
+  Future<MessageAttachmentToCreate> copyBytesIntoAppStorage(
+    Uint8List bytes, {
+    required String fileName,
+    required String displayName,
+  }) async {
+    if (copyError case final error?) throw error;
+    copiedBytes = .fromList(bytes);
+    copiedFileName = fileName;
+
+    return attachment.copyWith(displayName: displayName);
   }
 
   @override
@@ -1651,6 +2317,14 @@ class _FakeLocalChatAttachmentService(
 
     return Future.value(recordingResult);
   }
+
+  @override
+  Future<MessageAttachmentToCreate> createToolResultAttachment({
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    required String toolCallId,
+  }) => throw UnimplementedError();
 
   @override
   @override

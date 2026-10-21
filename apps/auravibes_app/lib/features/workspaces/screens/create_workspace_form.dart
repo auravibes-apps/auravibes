@@ -260,8 +260,10 @@ mixin _CreateWorkspaceFormDraftActions on ConsumerState<CreateWorkspaceForm> {
         isDirty: () => _draftState._isDirty,
         isSaving: () => _draftState._isCreating,
       ),
-      onReturn: (_) => widget.onReturn?.call(),
-      confirm: (_) => _confirmDiscard(context),
+      callbacks: .new(
+        confirm: (_) => _confirmDiscard(context),
+        onReturn: (_) => widget.onReturn?.call(),
+      ),
     );
   }
 

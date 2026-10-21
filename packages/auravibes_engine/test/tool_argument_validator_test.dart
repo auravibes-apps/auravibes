@@ -1,5 +1,4 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_engine/src/tool_schema_strict.dart';
 import 'package:genkit/plugin.dart';
 import 'package:test/test.dart';
 
@@ -114,6 +113,30 @@ void main() {
         'tags': ['llm'],
       }),
       returnsNormally,
+    );
+  });
+
+  test('measures string bounds in Unicode code points', () {
+    const maximumLengthSchema = <String, Object?>{
+      'type': 'object',
+      'properties': {
+        'value': {'type': 'string', 'maxLength': 1},
+      },
+    };
+    const minimumLengthSchema = <String, Object?>{
+      'type': 'object',
+      'properties': {
+        'value': {'type': 'string', 'minLength': 2},
+      },
+    };
+
+    expect(
+      () => validateToolArguments(maximumLengthSchema, {'value': '😀'}),
+      returnsNormally,
+    );
+    expect(
+      () => validateToolArguments(minimumLengthSchema, {'value': '😀'}),
+      throwsFormatException,
     );
   });
 

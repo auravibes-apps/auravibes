@@ -10,6 +10,7 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/workspace_selection_repository.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/marionette/marionette_development_state.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -18,11 +19,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../data/database/drift/database_test_utils.dart';
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
   SharedPreferences.setMockInitialValues({});
 
-  var database = AppDatabase(
+  final database = AppDatabase(
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
   var selectionRepository = _SelectionRepository();
@@ -63,21 +66,19 @@ void main() {
   setUp(() async {
     container.dispose();
     container = ProviderContainer();
-    await database.close();
+    await clearAppDatabase(database);
     SharedPreferences.setMockInitialValues({});
-    database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
     selectionRepository = _SelectionRepository();
     lastLocation = null;
     modelSelectionCalls = 0;
     state = createState();
   });
 
-  tearDown(() async {
+  tearDown(() {
     container.dispose();
-    await database.close();
   });
+
+  tearDownAll(database.close);
 
   test('seeds deterministic credential-free data idempotently', () async {
     final firstSeed = await state.seedDemoData();
@@ -137,6 +138,90 @@ void main() {
     expect(messages, hasLength(1));
     expect(messages.single.content, 'Deterministic Marionette demo message.');
     expect(messages.single.messageType, MessagesTableType.text);
+  });
+
+  test(
+    'seeds and clears a second local workspace for switch coverage',
+    () async {
+      final seededData = await state.seedDemoData();
+      expect(
+        seededData['conversationId'],
+        MarionetteDevelopmentState.demoConversationId,
+      );
+
+      final smokeWorkspace =
+          await (database.select(database.workspaces)..where(
+                (table) => table.id.equals(
+                  MarionetteDevelopmentState.smokeWorkspaceId,
+                ),
+              ))
+              .getSingleOrNull();
+      expect(smokeWorkspace?.type, WorkspaceType.local);
+      expect(smokeWorkspace?.name, 'Marionette Smoke Workspace');
+
+      final clearResult = await state.clearDevelopmentState();
+      expect(clearResult['deletedSmokeWorkspace'], isTrue);
+
+      final clearedWorkspace =
+          await (database.select(database.workspaces)..where(
+                (table) => table.id.equals(
+                  MarionetteDevelopmentState.smokeWorkspaceId,
+                ),
+              ))
+              .getSingleOrNull();
+      expect(clearedWorkspace, isNull);
+    },
+  );
+
+  test('navigates only to the seeded local demo conversation', () async {
+    final _ = await state.seedDemoData();
+
+    final result = await state.navigate(
+      route: 'demo_conversation',
+      workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
+    );
+    final expectedLocation = ConversationRoute(
+      workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
+      chatId: MarionetteDevelopmentState.demoConversationId,
+    ).location;
+
+    expect(result['route'], 'demo_conversation');
+    expect(result['workspaceId'], MarionetteDevelopmentState.demoWorkspaceId);
+    expect(result['location'], expectedLocation);
+    expect(lastLocation, expectedLocation);
+  });
+
+  test('rejects demo navigation before local fixture setup', () async {
+    await expectLater(
+      state.navigate(
+        route: 'demo_conversation',
+        workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
+      ),
+      throwsArgumentError,
+    );
+
+    expect(lastLocation, isNull);
+  });
+
+  test('rejects demo navigation from another local workspace', () async {
+    final _ = await database.workspaceDao.insertWorkspace(
+      .insert(
+        id: const Value('other-local-workspace'),
+        name: 'Other local',
+        type: .local,
+      ),
+    );
+    final _ = await state.seedDemoData();
+
+    await expectLater(
+      state.navigate(
+        route: 'demo_conversation',
+        workspaceId: 'other-local-workspace',
+      ),
+      throwsArgumentError,
+    );
+
+    expect(lastLocation, isNull);
   });
 
   test(

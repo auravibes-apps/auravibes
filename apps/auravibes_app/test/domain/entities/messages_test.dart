@@ -35,6 +35,49 @@ void main() {
       expect(toolCall.toJson(), isNot(contains('userFacingDescription')));
     });
 
+    test('background eligibility defaults safely and round-trips', () {
+      final legacyToolCall = MessageToolCallEntity.fromJson(
+        const <String, dynamic>{
+          'id': 'call_legacy',
+          'name': 'test_tool',
+          'argumentsRaw': '{}',
+        },
+      );
+      final eligibleToolCall = MessageToolCallEntity.fromJson(
+        const <String, dynamic>{
+          'id': 'call_background',
+          'name': 'test_tool',
+          'argumentsRaw': '{}',
+          'backgroundEligible': true,
+        },
+      );
+
+      expect(legacyToolCall.backgroundEligible, isFalse);
+      expect(eligibleToolCall.backgroundEligible, isTrue);
+      expect(eligibleToolCall.toJson()['backgroundEligible'], isTrue);
+    });
+
+    test('app result data round-trips outside model response', () {
+      const toolCall = MessageToolCallEntity(
+        id: 'call_app',
+        name: 'mcp_server_tool',
+        argumentsRaw: '{}',
+        responseRaw: 'model result',
+        appData: {
+          'content': [
+            {'type': 'text', 'text': 'tool result'},
+          ],
+          '_meta': {
+            'ui': {'resourceUri': 'ui://tool/view'},
+          },
+        },
+      );
+      final restored = MessageToolCallEntity.fromJson(toolCall.toJson());
+
+      expect(restored.appData, toolCall.appData);
+      expect(restored.getResponseForAI(), 'model result');
+    });
+
     test('isResolved true when resultStatus is non-null', () {
       const toolCall = MessageToolCallEntity(
         id: 'call_3',
@@ -207,6 +250,7 @@ void main() {
             'id': 'call-1',
             'name': 'native_url_url',
             'argumentsRaw': '{"url":"https://example.com"}',
+            'backgroundEligible': false,
             'responseRaw': 'ok',
             'outputTruncated': false,
             'fullOutputForContext': false,

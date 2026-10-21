@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usec
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -23,10 +24,16 @@ final _logger = Logger('WorkspaceSwitcher');
 /// State Contract, manual AsyncValue toggling is avoided; the state object
 /// itself tracks idle/loading/error status.
 @Riverpod(keepAlive: true)
-class WorkspaceSwitcher extends _$WorkspaceSwitcher
+class WorkspaceSwitcher({
+  @visibleForTesting
+  final Duration debounceDuration = const Duration(milliseconds: 300),
+}) extends _$WorkspaceSwitcher
     with _WorkspaceSwitcherActions, _WorkspaceSwitcherTransitionActions {
   Timer? _debounceTimer;
-  final _switchQueue = Queue<({String workspaceId, int generation})>();
+  final _switchQueue =
+      Queue<
+        ({String workspaceId, String? destinationLocation, int generation})
+      >();
   var _isProcessingQueue = false;
   var _switchGeneration = 0;
 
@@ -41,12 +48,13 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher
   ///
   /// Rapid calls are debounced so only the last selection is processed.
   /// If a pending switch has not yet started it is cancelled.
-  void switchToWorkspace(String workspaceId) {
+  void switchToWorkspace(String workspaceId, {String? destinationLocation}) {
+    _validateDestinationLocation(workspaceId, destinationLocation);
     _debounceTimer?.cancel();
     final switchGeneration = ++_switchGeneration;
 
-    _debounceTimer = .new(const Duration(milliseconds: 300), () {
-      _queueSwitch(workspaceId, switchGeneration);
+    _debounceTimer = .new(debounceDuration, () {
+      _queueSwitch(workspaceId, destinationLocation, switchGeneration);
     });
   }
 
@@ -65,10 +73,15 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher
 }
 
 mixin _WorkspaceSwitcherActions on _$WorkspaceSwitcher {
-  void _queueSwitch(String workspaceId, int switchGeneration) {
+  void _queueSwitch(
+    String workspaceId,
+    String? destinationLocation,
+    int switchGeneration,
+  ) {
     final switcher = this as WorkspaceSwitcher;
     switcher._switchQueue.add((
       workspaceId: workspaceId,
+      destinationLocation: destinationLocation,
       generation: switchGeneration,
     ));
     if (switcher._isProcessingQueue) return;
@@ -86,11 +99,20 @@ mixin _WorkspaceSwitcherActions on _$WorkspaceSwitcher {
     }
   }
 
-  Future<void> _performSwitch(String workspaceId, int switchGeneration) async {
+  Future<void> _performSwitch(
+    String workspaceId,
+    String? destinationLocation,
+    int switchGeneration,
+  ) async {
     final switcher = this as WorkspaceSwitcher;
 
     try {
-      await _performSwitchRequest(switcher, workspaceId, switchGeneration);
+      await _performSwitchRequest(
+        switcher,
+        workspaceId,
+        destinationLocation,
+        switchGeneration,
+      );
     } on Object catch (error, stackTrace) {
       if (ref.mounted) {
         ref.read(draftExitRegistryProvider).releaseApprovals();
@@ -135,12 +157,13 @@ mixin _WorkspaceSwitcherTransitionActions on _$WorkspaceSwitcher {
 
   void _completeSwitch(
     String workspaceId,
+    String? destinationLocation,
     DateTime startTime,
     int switchGeneration,
   ) {
     final router = ref.read(routerProvider);
     ref.read(draftExitRegistryProvider).completeActiveTransition(router);
-    router.go('/workspaces/$workspaceId/chat/new');
+    router.go(destinationLocation ?? '/workspaces/$workspaceId/chat/new');
     final duration = DateTime.now().difference(startTime);
     _logger.info('Workspace switch completed in ${duration.inMilliseconds}ms');
     if (_isCurrent(switchGeneration)) state = const WorkspaceSwitchState();
@@ -206,11 +229,13 @@ mixin _WorkspaceSwitcherTransitionActions on _$WorkspaceSwitcher {
 Future<void> _performSwitchRequest(
   WorkspaceSwitcher switcher,
   String workspaceId,
+  String? destinationLocation,
   int switchGeneration,
 ) {
   final attempt = (
     switcher: switcher,
     workspaceId: workspaceId,
+    destinationLocation: destinationLocation,
     switchGeneration: switchGeneration,
     startTime: DateTime.now(),
   );
@@ -221,13 +246,18 @@ Future<void> _performSwitchRequest(
 Future<void> _drainSwitchQueueRequests(WorkspaceSwitcher switcher) async {
   while (switcher._switchQueue.isNotEmpty) {
     final request = switcher._switchQueue.removeFirst();
-    await switcher._performSwitch(request.workspaceId, request.generation);
+    await switcher._performSwitch(
+      request.workspaceId,
+      request.destinationLocation,
+      request.generation,
+    );
   }
 }
 
 typedef _SwitchAttempt = ({
   WorkspaceSwitcher switcher,
   String workspaceId,
+  String? destinationLocation,
   int switchGeneration,
   DateTime startTime,
 });
@@ -240,7 +270,24 @@ void _completeSwitchIfCurrent(
   if (!switcher._isCurrent(attempt.switchGeneration)) return;
   switcher._completeSwitch(
     workspaceId,
+    attempt.destinationLocation,
     attempt.startTime,
     attempt.switchGeneration,
   );
+}
+
+void _validateDestinationLocation(String workspaceId, String? location) {
+  if (location == null) return;
+  final uri = Uri.tryParse(location);
+  if (uri == null ||
+      uri.hasScheme ||
+      uri.hasAuthority ||
+      uri.pathSegments.firstOrNull != 'workspaces' ||
+      uri.pathSegments.skip(1).firstOrNull != workspaceId) {
+    throw ArgumentError.value(
+      location,
+      'destinationLocation',
+      'Must be a route inside the target workspace.',
+    );
+  }
 }

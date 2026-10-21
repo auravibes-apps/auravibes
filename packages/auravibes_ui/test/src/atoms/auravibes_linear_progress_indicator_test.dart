@@ -5,68 +5,50 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraLinearProgressIndicator', () {
-    testWidgets('renders without Material linear progress indicator', (
+    testWidgets('renders determinate, tinted and semantic variants', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraLinearProgressIndicator(value: 0.5)),
-        ),
-      );
-
-      expect(find.byType(LinearProgressIndicator), findsNothing);
-      expect(find.byType(FractionallySizedBox), findsOneWidget);
-    });
-
-    testWidgets('clamps value below zero', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraLinearProgressIndicator(value: -1)),
-        ),
-      );
-
-      final fill = tester.widget<FractionallySizedBox>(
-        find.byType(FractionallySizedBox),
-      );
-      expect(fill.widthFactor, 0);
-    });
-
-    testWidgets('clamps value above one', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraLinearProgressIndicator(value: 2)),
-        ),
-      );
-
-      final fill = tester.widget<FractionallySizedBox>(
-        find.byType(FractionallySizedBox),
-      );
-      expect(fill.widthFactor, 1);
-    });
-
-    testWidgets('applies height', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraLinearProgressIndicator(value: 0.5, height: 8),
-          ),
-        ),
-      );
-
-      final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox));
-      expect(sizedBox.height, 8);
-    });
-
-    testWidgets('resolves tints', (tester) async {
       await tester.pumpWidget(
         AuraThemeScope(
           theme: .light,
           child: MaterialApp(
             home: const Scaffold(
-              body: AuraLinearProgressIndicator(
-                value: 0.5,
-                tint: .error,
-                backgroundAlpha: 0.25,
+              body: Column(
+                crossAxisAlignment: .stretch,
+                children: [
+                  KeyedSubtree(
+                    key: ValueKey('default'),
+                    child: AuraLinearProgressIndicator(value: 0.5),
+                  ),
+                  KeyedSubtree(
+                    key: ValueKey('below'),
+                    child: AuraLinearProgressIndicator(value: -1),
+                  ),
+                  KeyedSubtree(
+                    key: ValueKey('above'),
+                    child: AuraLinearProgressIndicator(value: 2),
+                  ),
+                  KeyedSubtree(
+                    key: ValueKey('height'),
+                    child: AuraLinearProgressIndicator(value: 0.5, height: 8),
+                  ),
+                  KeyedSubtree(
+                    key: ValueKey('tint'),
+                    child: AuraLinearProgressIndicator(
+                      value: 0.5,
+                      tint: .error,
+                      backgroundAlpha: 0.25,
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: ValueKey('semantics'),
+                    child: AuraLinearProgressIndicator(
+                      value: 0.5,
+                      semanticLabel: 'Context usage',
+                      semanticValue: '50%',
+                    ),
+                  ),
+                ],
               ),
             ),
             theme: ThemeData.light().copyWith(),
@@ -74,10 +56,51 @@ void main() {
         ),
       );
 
+      final defaultProgress = find.byKey(const ValueKey('default'));
+      expect(
+        find.descendant(
+          of: defaultProgress,
+          matching: find.byType(LinearProgressIndicator),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: defaultProgress,
+          matching: find.byType(FractionallySizedBox),
+        ),
+        findsOneWidget,
+      );
+
+      final belowProgress = find.byKey(const ValueKey('below'));
+      final belowFill = tester.widget<FractionallySizedBox>(
+        find.descendant(
+          of: belowProgress,
+          matching: find.byType(FractionallySizedBox),
+        ),
+      );
+      expect(belowFill.widthFactor, 0);
+
+      final aboveProgress = find.byKey(const ValueKey('above'));
+      final aboveFill = tester.widget<FractionallySizedBox>(
+        find.descendant(
+          of: aboveProgress,
+          matching: find.byType(FractionallySizedBox),
+        ),
+      );
+      expect(aboveFill.widthFactor, 1);
+
+      final heightProgress = find.byKey(const ValueKey('height'));
+      final sizedBox = tester.widget<SizedBox>(
+        find.descendant(of: heightProgress, matching: find.byType(SizedBox)),
+      );
+      expect(sizedBox.height, 8);
+
+      final tintProgress = find.byKey(const ValueKey('tint'));
       final coloredBoxes = tester
           .widgetList<ColoredBox>(
             find.descendant(
-              of: find.byType(AuraLinearProgressIndicator),
+              of: tintProgress,
               matching: find.byType(ColoredBox),
             ),
           )
@@ -89,26 +112,10 @@ void main() {
         AuraTheme.light.colors.surfaceVariant.withValues(alpha: 0.25),
       );
       expect(fill.color, AuraTheme.light.colors.error);
-    });
 
-    testWidgets('passes semantic label and value', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraLinearProgressIndicator(
-              value: 0.5,
-              semanticLabel: 'Context usage',
-              semanticValue: '50%',
-            ),
-          ),
-        ),
-      );
-
+      final semanticProgress = find.byKey(const ValueKey('semantics'));
       final semantics = tester.widget<Semantics>(
-        find.descendant(
-          of: find.byType(AuraLinearProgressIndicator),
-          matching: find.byType(Semantics),
-        ),
+        find.descendant(of: semanticProgress, matching: find.byType(Semantics)),
       );
       expect(semantics.properties.label, 'Context usage');
       expect(semantics.properties.value, '50%');

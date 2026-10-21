@@ -3,6 +3,8 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database_test_utils.dart';
+
 QueryExecutor createTestConnection() {
   return DatabaseConnection.delayed(
     Future(() {
@@ -19,11 +21,9 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ?? fail('Database fixture not initialized');
+      _database ??= .new(connection: createConnection());
 
-  void reset() {
-    _database = .new(connection: createConnection());
-  }
+  Future<void> reset() => clearAppDatabase(database);
 
   Future<void> close() async {
     await _database?.close();
@@ -34,10 +34,18 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
 void main() {
   group('ApiModelProvidersDao', () {
     final fixture = _DatabaseFixture(createTestConnection);
+    var isFirstTest = true;
 
-    setUp(fixture.reset);
+    setUp(() async {
+      if (isFirstTest) {
+        isFirstTest = false;
 
-    tearDown(() async {
+        return;
+      }
+      await fixture.reset();
+    });
+
+    tearDownAll(() async {
       await fixture.close();
     });
 

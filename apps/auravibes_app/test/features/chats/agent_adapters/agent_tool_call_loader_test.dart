@@ -42,6 +42,7 @@ void main() {
             id: 'running-tool',
             name: 'built_in_calc_calculator',
             argumentsRaw: '{}',
+            approvalRequested: false,
             resultStatus: .running,
           ),
         ],
@@ -105,6 +106,45 @@ void main() {
       );
     });
 
+    for (final requested in [null, true, false]) {
+      test(
+        'approval marker $requested survives reload before policy',
+        () async {
+          final call = MessageToolCallEntity(
+            id: 'approval-tool',
+            name: catalog.specs.first.name,
+            argumentsRaw: '{}',
+            approvalRequested: requested,
+          );
+          final restored = MessageToolCallEntity.fromJson(call.toJson());
+          when(
+            () => messageRepository.getMessagesByConversation('conversation-1'),
+          ).thenAnswer(
+            (_) async => [
+              _message(
+                id: 'assistant-1',
+                metadata: .new(toolCalls: [restored]),
+              ),
+            ],
+          );
+          final result = await usecase(conversationId: 'conversation-1');
+          if (requested == false) {
+            expect(result.toolsToRun.single.id, call.id);
+            expect(result.pendingApprovalToolCallIds, isEmpty);
+          } else {
+            expect(result.toolsToRun, isEmpty);
+            expect(result.pendingApprovalToolCallIds, [call.id]);
+            final _ = verifyNever(
+              () => loadToolSpecs.buildCatalog(
+                conversationId: any(named: 'conversationId'),
+                workspaceId: any(named: 'workspaceId'),
+              ),
+            );
+          }
+        },
+      );
+    }
+
     test('rejects unadvertised legacy agent tool names', () {
       final tool = const ToolResolverService().resolveTool(
         agent.listAgentsToolName,
@@ -154,6 +194,7 @@ void main() {
                       id: 'unknown-tool',
                       name: 'unknown-tool',
                       argumentsRaw: '{}',
+                      approvalRequested: false,
                     ),
                   ],
                 ),
@@ -261,11 +302,13 @@ void main() {
                           catalog.specs.firstOrNull?.name ??
                           (throw StateError('Expected a tool catalog spec.')),
                       argumentsRaw: '{}',
+                      approvalRequested: false,
                     ),
                     const .new(
                       id: 'missing-tool',
                       name: 'unknown_tool',
                       argumentsRaw: '{}',
+                      approvalRequested: false,
                     ),
                     MessageToolCallEntity(
                       id: 'already-resolved',
@@ -273,6 +316,7 @@ void main() {
                           catalog.specs.firstOrNull?.name ??
                           (throw StateError('Expected a tool catalog spec.')),
                       argumentsRaw: '{}',
+                      approvalRequested: false,
                       resultStatus: .success,
                     ),
                   ],
@@ -318,6 +362,7 @@ void main() {
                       id: 'generated-tool',
                       name: generatedName,
                       argumentsRaw: '{}',
+                      approvalRequested: false,
                     ),
                   ],
                 ),
@@ -364,6 +409,7 @@ void main() {
                       id: 'running-tool',
                       name: 'built_in_calc_calculator',
                       argumentsRaw: '{}',
+                      approvalRequested: false,
                       resultStatus: .running,
                     ),
                   ],
@@ -393,6 +439,7 @@ void main() {
                       id: 'native-tool-1',
                       name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://example.com"}',
+                      approvalRequested: false,
                     ),
                   ],
                 ),
@@ -422,6 +469,7 @@ void main() {
                       id: 'old-call-1',
                       name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://example.com"}',
+                      approvalRequested: false,
                       resultStatus: .notConfigured,
                     ),
                   ],
@@ -436,11 +484,13 @@ void main() {
                       id: 'new-call-1',
                       name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://other.com"}',
+                      approvalRequested: false,
                     ),
                     MessageToolCallEntity(
                       id: 'new-call-2',
                       name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://example.com"}',
+                      approvalRequested: false,
                     ),
                   ],
                 ),

@@ -22,8 +22,11 @@ void main() {
       _workspace.serverUrl,
       httpClientOverride: MockClient((request) async {
         final body = jsonDecode(request.body) as Map<String, dynamic>;
-        requests[request.url.pathSegments.last] =
-            body['request'] as Map<String, dynamic>;
+        final requestBody = body['request'] as Map<String, dynamic>;
+        requests[requestBody['messageId'] == null
+                ? request.url.pathSegments.last
+                : 'listExactMessage'] =
+            requestBody;
 
         return http.Response(
           'Test transport stopped after request capture',
@@ -81,6 +84,17 @@ void main() {
         conversationId: 'conversation',
         expectedProjectionRevision: 1,
       ),
+      'detachToolCall': () => gateway.detachToolCall(
+        requestId: 'detach',
+        conversationId: 'conversation',
+        toolCallId: 'tool-call',
+      ),
+      'listBackgroundWorks': () => gateway.listBackgroundWorks('conversation'),
+      'stopBackgroundWork': () => gateway.stopBackgroundWork(
+        requestId: 'stop-work',
+        conversationId: 'conversation',
+        workId: 'work',
+      ),
       'getTurn': () => gateway.getTurn(turnId: 'turn'),
       'getConversationSnapshot': () =>
           gateway.getConversationSnapshot('conversation'),
@@ -91,16 +105,30 @@ void main() {
         expectedConversationRevision: 7,
       ),
       'listMessages': () => gateway.listConversationMessages('conversation'),
+      'listExactMessage': () => gateway.listConversationMessages(
+        'conversation',
+        limit: 1,
+        messageId: 'older-message',
+      ),
     };
     for (final entry in operations.entries) {
       await expectLater(entry.value(), throwsA(anything));
       expect(requests, contains(entry.key));
       if (entry.key != 'restoreCompactionCheckpoint') {
-        expect(
-          requests[entry.key]!['a2uiSupportedComponents'],
-          unorderedEquals(supportedA2uiChatComponents),
-          reason: entry.key,
-        );
+        if (entry.key == 'detachToolCall' ||
+            entry.key == 'stopBackgroundWork' ||
+            entry.key == 'listBackgroundWorks') {
+          expect(
+            requests[entry.key]!['workspaceId'],
+            _workspace.cloudWorkspaceId,
+          );
+        } else {
+          expect(
+            requests[entry.key]!['a2uiSupportedComponents'],
+            unorderedEquals(supportedA2uiChatComponents),
+            reason: entry.key,
+          );
+        }
       }
     }
     expect(
@@ -114,6 +142,18 @@ void main() {
     expect(
       requests['restoreCompactionCheckpoint'],
       containsPair('checkpointMessageId', 'checkpoint'),
+    );
+    expect(requests['detachToolCall'], containsPair('requestId', 'detach'));
+    expect(requests['detachToolCall'], containsPair('toolCallId', 'tool-call'));
+    expect(
+      requests['listBackgroundWorks'],
+      containsPair('conversationId', 'conversation'),
+    );
+    expect(requests['stopBackgroundWork'], containsPair('workId', 'work'));
+    expect(requests['listExactMessage'], containsPair('limit', 1));
+    expect(
+      requests['listExactMessage'],
+      containsPair('messageId', 'older-message'),
     );
   });
 

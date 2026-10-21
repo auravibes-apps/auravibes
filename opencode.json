@@ -32,15 +32,11 @@
         "type": "local",
         "command": [
           "serverpod",
+          "-q",
           "mcp-server",
           "--server-dir",
           "apps/auravibes_server"
         ]
-      },
-      "sonarqube": {
-        "type": "local",
-        "command": ["sonar", "run", "mcp"],
-        "disabled": false
       }
     }
   }

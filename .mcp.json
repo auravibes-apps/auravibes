@@ -27,6 +27,7 @@
     "serverpod": {
       "command": "serverpod",
       "args": [
+        "-q",
         "mcp-server",
         "--server-dir",
         "apps/auravibes_server"
@@ -42,14 +43,6 @@
       ],
       "lifecycle": "lazy",
       "directTools": true
-    },
-    "sonarqube": {
-      "command": "sonar",
-      "args": [
-        "run",
-        "mcp"
-      ],
-      "lifecycle": "lazy"
     }
   }
 }

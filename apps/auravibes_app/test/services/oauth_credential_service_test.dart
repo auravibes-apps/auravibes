@@ -15,6 +15,8 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 final class _FakeHttpClientAdapter({
   required final Future<ResponseBody> Function(RequestOptions options) onFetch,
 }) implements HttpClientAdapter {
@@ -35,10 +37,22 @@ final class _FakeHttpClientAdapter({
 
 void main() {
   group('OAuthCredentialService', () {
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    var isFirstTest = true;
+    setUp(() async {
+      if (isFirstTest) {
+        isFirstTest = false;
+
+        return;
+      }
+
+      await clearAppDatabase(database);
+    });
+    tearDownAll(database.close);
+
     Future<_Fixture> createFixture() async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
       final row = await database
           .into(database.workspaces)
           .insertReturning(
@@ -56,7 +70,6 @@ void main() {
       'creates MCP bearer credential without storing auth on MCP row',
       () async {
         final fixture = await createFixture();
-        addTearDown(fixture.close);
         final repository = fixture.serviceConnectionRepository;
         final credentialId = await repository.createMcpServiceConnection(
           workspaceId: fixture.workspaceId,
@@ -114,7 +127,6 @@ void main() {
           },
         );
       final fixture = await createFixture();
-      addTearDown(fixture.close);
       final service = OAuthCredentialService(
         fixture.serviceConnectionRepository,
         dio: dio,
@@ -167,7 +179,6 @@ void main() {
 
     test('token updates preserve existing refresh token', () async {
       final fixture = await createFixture();
-      addTearDown(fixture.close);
       final service = OAuthCredentialService(
         fixture.serviceConnectionRepository,
       );
@@ -221,7 +232,6 @@ void main() {
       'resolveMcpAuthentication handles empty and disabled credentials',
       () async {
         final fixture = await createFixture();
-        addTearDown(fixture.close);
         final service = OAuthCredentialService(
           fixture.serviceConnectionRepository,
         );
@@ -251,7 +261,6 @@ void main() {
 
     test('resolveMcpAuthentication returns bearer token auth', () async {
       final fixture = await createFixture();
-      addTearDown(fixture.close);
       final service = OAuthCredentialService(
         fixture.serviceConnectionRepository,
       );
@@ -278,7 +287,6 @@ void main() {
       'resolveMcpAuthentication returns OAuth auth without refreshing',
       () async {
         final fixture = await createFixture();
-        addTearDown(fixture.close);
         final service = OAuthCredentialService(
           fixture.serviceConnectionRepository,
         );
@@ -326,7 +334,6 @@ void main() {
       'self-test refuses expired OAuth without refreshing or saving',
       () async {
         final fixture = await createFixture();
-        addTearDown(fixture.close);
         var requests = 0;
         final dio = Dio()
           ..httpClientAdapter = _FakeHttpClientAdapter(
@@ -374,7 +381,6 @@ void main() {
 
     test('getValidAccessToken returns non-expired token', () async {
       final fixture = await createFixture();
-      addTearDown(fixture.close);
       final service = OAuthCredentialService(
         fixture.serviceConnectionRepository,
       );
@@ -405,7 +411,6 @@ void main() {
 
     test('getValidAccessToken accepts non-expiring OAuth tokens', () async {
       final fixture = await createFixture();
-      addTearDown(fixture.close);
       final service = OAuthCredentialService(
         fixture.serviceConnectionRepository,
       );
@@ -435,7 +440,6 @@ void main() {
 
     test('forceRefresh marks reauth when refresh config is missing', () async {
       final fixture = await createFixture();
-      addTearDown(fixture.close);
       final service = OAuthCredentialService(
         fixture.serviceConnectionRepository,
       );
@@ -474,7 +478,6 @@ void main() {
             },
           );
         final fixture = await createFixture();
-        addTearDown(fixture.close);
         final service = OAuthCredentialService(
           fixture.serviceConnectionRepository,
           dio: dio,
@@ -520,7 +523,6 @@ void main() {
             },
           );
         final fixture = await createFixture();
-        addTearDown(fixture.close);
         final service = OAuthCredentialService(
           fixture.serviceConnectionRepository,
           dio: dio,
@@ -566,7 +568,6 @@ void main() {
             },
           );
         final fixture = await createFixture();
-        addTearDown(fixture.close);
         final service = OAuthCredentialService(
           fixture.serviceConnectionRepository,
           dio: dio,
@@ -598,7 +599,6 @@ void main() {
 
     test('getValidAccessToken throws when connection is missing', () async {
       final fixture = await createFixture();
-      addTearDown(fixture.close);
       final service = OAuthCredentialService(
         fixture.serviceConnectionRepository,
       );
@@ -611,7 +611,6 @@ void main() {
 
     test('deleteMcpServiceConnection removes only MCP credentials', () async {
       final fixture = await createFixture();
-      addTearDown(fixture.close);
       final mcpCredentialId = await fixture.serviceConnectionRepository
           .createMcpServiceConnection(
             workspaceId: fixture.workspaceId,
@@ -686,10 +685,6 @@ class const _Fixture({
 }) {
   ServiceConnectionRepository get serviceConnectionRepository {
     return ServiceConnectionRepository(database, encryption);
-  }
-
-  Future<void> close() {
-    return database.close();
   }
 }
 

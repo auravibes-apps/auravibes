@@ -31,6 +31,7 @@ typedef LoadSkillResourceContent =
 
 typedef RunSkillNativeToolRequest = ({
   String conversationId,
+  String toolCallId,
   String workspaceId,
   AgentResolvedToolName target,
   Map<String, dynamic> arguments,
@@ -67,6 +68,7 @@ typedef RunSkillCommandDependencies = ({
 
 typedef RunSkillCommandRequest = ({
   String conversationId,
+  String toolCallId,
   String workspaceId,
   String commandName,
   Map<String, dynamic> arguments,
@@ -74,6 +76,7 @@ typedef RunSkillCommandRequest = ({
 
 typedef _SkillToolExecutionRequest = ({
   String conversationId,
+  String toolCallId,
   String workspaceId,
   AgentResolvedToolName target,
   SkillCommandTarget command,
@@ -415,6 +418,13 @@ Future<Map<String, Object?>> _callTool(
   return {'result': result};
 }
 
+typedef _SkillCallExecutionRequest = ({
+  RunSkillCommandUsecase usecase,
+  RunSkillCommandRequest request,
+  SkillCommandTarget command,
+  AgentResolvedToolName target,
+});
+
 Future<SkillCommandTarget> _validatedCallTool(
   RunSkillCommandUsecase usecase,
   RunSkillCommandRequest request,
@@ -436,22 +446,70 @@ Future<Object?> _executeCallTool(
     command,
   );
 
-  return await _RunSkillCommandExecution(usecase)._runSkillTool((
-    conversationId: request.conversationId,
-    workspaceId: request.workspaceId,
+  return await _executeResolvedSkillTool((
+    usecase: usecase,
+    request: request,
+    command: command,
+    target: target,
+  ));
+}
+
+Future<Object?> _executeResolvedSkillTool(_SkillCallExecutionRequest request) =>
+    _handleResolvedSkillToolFailure(
+      request,
+      () => _runResolvedSkillTool(request),
+    );
+
+Future<Object?> _runResolvedSkillTool(_SkillCallExecutionRequest request) {
+  final call = request.request;
+  final target = request.target;
+  final command = request.command;
+
+  return _RunSkillCommandExecution(request.usecase)._runSkillTool((
+    conversationId: call.conversationId,
+    toolCallId: call.toolCallId,
+    workspaceId: call.workspaceId,
     target: target,
     command: command,
   ));
 }
+
+Future<Object?> _handleResolvedSkillToolFailure(
+  _SkillCallExecutionRequest request,
+  Future<Object?> Function() run,
+) async {
+  try {
+    return await run();
+  } on AgentToolExecutionFailure {
+    rethrow;
+  } on Object catch (error, stackTrace) {
+    _throwSkillToolExecutionFailure(request.target, error, stackTrace);
+  }
+}
+
+Never _throwSkillToolExecutionFailure(
+  AgentResolvedToolName target,
+  Object error,
+  StackTrace stackTrace,
+) => Error.throwWithStackTrace(
+  AgentToolExecutionFailure(
+    responseRaw: 'Tool execution failed.',
+    error: error,
+    stackTrace: stackTrace,
+    failurePhase: 'callSkillTool.${target.kind.name}',
+  ),
+  stackTrace,
+);
 
 class const _RunSkillCommandValidation(final RunSkillCommandUsecase _usecase) {
   Future<SkillCommandTarget> _validatedCommand(
     String conversationId,
     String workspaceId,
     Map<String, dynamic> arguments,
-  ) async {
+  ) {
     final command = SkillCommandTarget.fromArguments(arguments);
-    await _validateCommandManifest(
+
+    return _validateCommandManifest(
       .new(
         conversationId: conversationId,
         workspaceId: workspaceId,
@@ -460,19 +518,25 @@ class const _RunSkillCommandValidation(final RunSkillCommandUsecase _usecase) {
       ),
       command,
     );
-
-    return command;
   }
 
-  Future<void> _validateCommandManifest(
+  Future<SkillCommandTarget> _validateCommandManifest(
     _SkillManifestRequest request,
     SkillCommandTarget command,
   ) async {
     final manifest = await _requiredManifest(request);
-    validateToolArguments(
-      _requiredManifestTool(manifest, command).inputJsonSchema,
-      command.args,
+    final tool = _requiredManifestTool(manifest, command);
+    final schema = tool.inputJsonSchema;
+    final normalized = command.copyWithArguments(
+      normalizeSkillToolArguments(
+        schema,
+        command.args,
+        optionalNullMeansOmission: tool.optionalNullMeansOmission,
+      ),
     );
+    validateToolArguments(schema, normalized.args);
+
+    return normalized;
   }
 
   SkillManifestTool _requiredManifestTool(
@@ -632,6 +696,7 @@ class const _RunSkillCommandExecution(final RunSkillCommandUsecase _usecase) {
 
     return nativeRunner((
       conversationId: request.conversationId,
+      toolCallId: request.toolCallId,
       workspaceId: request.workspaceId,
       target: request.target,
       arguments: Map<String, dynamic>.from(request.command.args),

@@ -2,6 +2,20 @@ import 'package:genkit/plugin.dart';
 
 abstract final class LogRedaction {
   static const _redacted = '[REDACTED]';
+  static const _suffixCaptureCount = 2;
+  static const _suffixCaptureIndex = 2;
+  static const _jsonCookieSuffixCaptureIndex = 3;
+
+  static final _jsonCookiePatterns = <RegExp>[
+    RegExp(
+      r'''(["'](?:cookie|set-cookie)["']\s*:\s*")((?:\\.|[^"\\])*)(")''',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'''(["'](?:cookie|set-cookie)["']\s*:\s*')((?:\\.|[^'\\])*)(')''',
+      caseSensitive: false,
+    ),
+  ];
 
   static final _secretPatterns = <RegExp>[
     RegExp(r'(\b)(?:sk|rk)-[A-Za-z0-9_-]+\b'),
@@ -9,22 +23,32 @@ abstract final class LogRedaction {
       r'\b(authorization\s*[:=]\s*bearer\s+)[^\s,;]+',
       caseSensitive: false,
     ),
+    RegExp(
+      r'\b(authorization\s*[:=]\s*basic\s+)[^\s,;]+',
+      caseSensitive: false,
+    ),
     RegExp(r'\b(bearer\s+)[^\s,;]+', caseSensitive: false),
+    RegExp(
+      r'(?<![\x22\x27])\b((?:set-cookie|cookie)\s*[:=]\s*)[^\r\n]+',
+      caseSensitive: false,
+    ),
     RegExp(
       r'\b((?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|oauth[_-]?token|bearer[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|token|secret|password|code|state|nonce)\s*[:=]\s*)[^\s,;&]+',
       caseSensitive: false,
     ),
+    RegExp(r'(\b[a-z][a-z0-9+.-]*://)(?:[^/@\s]+)(@)', caseSensitive: false),
     RegExp(
       '(["\'](?:x[_-]?api[_-]?key|authorization|api[_-]?key|'
       'access[_-]?token|refresh[_-]?token|'
       'auth[_-]?token|oauth[_-]?token|bearer[_-]?token|client[_-]?secret|'
       'id[_-]?token|code[_-]?verifier|authorization[_-]?code|'
-      'verification[_-]?code|token|secret|password|code|state|nonce)["\']\\s*:\\s*["\'])'
+      'verification[_-]?code|token|secret|password|code|state|nonce|'
+      'cookie|set-cookie)["\']\\s*:\\s*["\'])'
       '[^"\']+',
       caseSensitive: false,
     ),
     RegExp(
-      r'([?&](?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|oauth[_-]?token|bearer[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|token|secret|password|code|state|nonce)=)[^&#\s]+',
+      r'([?&](?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|oauth[_-]?(?:token|signature)|bearer[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|x-amz-signature|x-goog-signature|signature|hmac|sig|token|secret|password|code|state|nonce)=)[^&#\s\x22\x27]+',
       caseSensitive: false,
     ),
   ];
@@ -57,6 +81,9 @@ abstract final class LogRedaction {
 
   static String _redact(String text) {
     var redacted = text;
+    for (final pattern in _jsonCookiePatterns) {
+      redacted = redacted.replaceAllMapped(pattern, _replaceJsonCookieValue);
+    }
     for (final pattern in _secretPatterns) {
       redacted = redacted.replaceAllMapped(pattern, _replaceMatch);
     }
@@ -64,8 +91,20 @@ abstract final class LogRedaction {
     return redacted;
   }
 
+  static String _replaceJsonCookieValue(Match match) {
+    final prefix = match.group(1) ?? '';
+    final suffix = match.group(_jsonCookieSuffixCaptureIndex) ?? '';
+
+    return '$prefix$_redacted$suffix';
+  }
+
   static String _replaceMatch(Match match) {
     final prefix = match.group(1) ?? '';
+    if (match.groupCount == _suffixCaptureCount) {
+      final suffix = match.group(_suffixCaptureIndex) ?? '';
+
+      return '$prefix$_redacted$suffix';
+    }
 
     return '$prefix$_redacted';
   }

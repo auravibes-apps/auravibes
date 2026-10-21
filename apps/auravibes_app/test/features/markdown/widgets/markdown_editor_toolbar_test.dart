@@ -1,6 +1,8 @@
+import 'package:auravibes_app/features/markdown/widgets/markdown_editor_shortcut_scope.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -8,7 +10,14 @@ void main() {
   Widget buildSubject({
     required TextEditingController controller,
     required FocusNode focusNode,
+    FocusNode? otherFocusNode,
+    TargetPlatform? platform,
+    bool readOnly = false,
+    bool enabled = true,
+    bool shortcutsEnabled = true,
   }) {
+    final shortcutController = MarkdownEditorShortcutController();
+
     return EasyLocalization(
       child: Builder(
         builder: (context) {
@@ -16,16 +25,29 @@ void main() {
             home: AuraThemeScope(
               theme: .light,
               child: Theme(
-                data: .new(),
+                data: .new(platform: platform),
                 child: Scaffold(
-                  body: Column(
-                    children: [
-                      TextField(controller: controller, focusNode: focusNode),
-                      MarkdownEditorToolbar(
-                        controller: controller,
-                        focusNode: focusNode,
-                      ),
-                    ],
+                  body: MarkdownEditorShortcutScope(
+                    controller: shortcutController,
+                    focusNode: focusNode,
+                    enabled: shortcutsEnabled && enabled && !readOnly,
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          readOnly: readOnly,
+                          enabled: enabled,
+                        ),
+                        if (otherFocusNode case final otherFocusNode?)
+                          TextField(focusNode: otherFocusNode),
+                        MarkdownEditorToolbar(
+                          controller: controller,
+                          focusNode: focusNode,
+                          shortcutController: shortcutController,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -45,11 +67,39 @@ void main() {
     );
   }
 
+  Finder toolbarButton(IconData icon) => find.byWidgetPredicate(
+    (widget) => widget is AuraIconButton && widget.icon == icon,
+  );
+
   Future<void> pumpAndInit(WidgetTester tester, Widget widget) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(widget);
     });
     await tester.pump();
+  }
+
+  Future<void> sendShortcut(
+    WidgetTester tester,
+    LogicalKeyboardKey key, {
+    bool meta = false,
+    bool control = false,
+    bool shift = false,
+    bool alt = false,
+  }) async {
+    final modifiers = [
+      if (meta) LogicalKeyboardKey.metaLeft,
+      if (control) LogicalKeyboardKey.controlLeft,
+      if (shift) LogicalKeyboardKey.shiftLeft,
+      if (alt) LogicalKeyboardKey.altLeft,
+    ];
+    for (final modifier in modifiers) {
+      final _ = await tester.sendKeyDownEvent(modifier);
+    }
+    final _ = await tester.sendKeyDownEvent(key);
+    final _ = await tester.sendKeyUpEvent(key);
+    for (final modifier in modifiers.reversed) {
+      final _ = await tester.sendKeyUpEvent(modifier);
+    }
     await tester.pump();
   }
 
@@ -98,6 +148,269 @@ void main() {
       expect(focusNode.hasFocus, isTrue);
       expect(controller.text, '**bold**');
     });
+
+    testWidgets('does not replace the editor focus node key handler', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      KeyEventResult handleKeyEvent(FocusNode _, KeyEvent _) => .ignored;
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      focusNode.onKeyEvent = handleKeyEvent;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      expect(identical(focusNode.onKeyEvent, handleKeyEvent), isTrue);
+    });
+
+    testWidgets('does not apply formatting shortcuts to a read-only field', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'text');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          controller: controller,
+          focusNode: focusNode,
+          platform: .windows,
+          readOnly: true,
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+
+      await sendShortcut(tester, .keyB, control: true);
+
+      expect(focusNode.hasPrimaryFocus, isTrue);
+      expect(controller.text, 'text');
+    });
+
+    testWidgets('does not apply formatting shortcuts when editor is disabled', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'text');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          controller: controller,
+          focusNode: focusNode,
+          platform: .windows,
+          enabled: false,
+          shortcutsEnabled: false,
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+
+      await sendShortcut(tester, .keyB, control: true);
+
+      expect(focusNode.hasPrimaryFocus, isFalse);
+      expect(controller.text, 'text');
+    });
+
+    testWidgets('uses macOS Command shortcuts and records selection for undo', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'bold');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+      final originalValue = controller.value;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          controller: controller,
+          focusNode: focusNode,
+          platform: .macOS,
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+
+      await sendShortcut(tester, .keyB, control: true);
+      expect(controller.text, 'bold');
+
+      controller.value = originalValue;
+      await tester.pump();
+      await sendShortcut(tester, .keyB, meta: true);
+
+      expect(controller.text, '**bold**');
+      expect(focusNode.hasFocus, isTrue);
+
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+
+      expect(controller.value, originalValue);
+
+      controller.value = const TextEditingValue(
+        text: 'italic',
+        selection: .new(baseOffset: 0, extentOffset: 6),
+      );
+      await tester.pump();
+      await sendShortcut(tester, .keyI, meta: true);
+
+      expect(controller.text, '*italic*');
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      expect(
+        controller.value,
+        const TextEditingValue(
+          text: 'italic',
+          selection: .new(baseOffset: 0, extentOffset: 6),
+        ),
+      );
+    });
+
+    testWidgets('uses Control shortcuts on Windows and Linux', (tester) async {
+      final controller = TextEditingController(text: 'text');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+
+      for (final platform in [TargetPlatform.windows, TargetPlatform.linux]) {
+        controller.value = const TextEditingValue(
+          text: 'text',
+          selection: .new(baseOffset: 0, extentOffset: 4),
+        );
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            controller: controller,
+            focusNode: focusNode,
+            platform: platform,
+          ),
+        );
+        focusNode.requestFocus();
+        await tester.pump();
+
+        await sendShortcut(tester, .keyB, meta: true);
+        expect(controller.text, 'text');
+        await sendShortcut(tester, .keyB, control: true, shift: true);
+        expect(controller.text, 'text');
+        await sendShortcut(tester, .keyB, control: true, alt: true);
+        expect(controller.text, 'text');
+        await sendShortcut(tester, .keyB, control: true);
+        expect(controller.text, '**text**');
+
+        controller.value = const TextEditingValue(
+          text: 'code',
+          selection: .new(baseOffset: 0, extentOffset: 4),
+        );
+        await tester.pump();
+        await sendShortcut(tester, .keyE, control: true);
+
+        expect(controller.text, '`code`');
+        expect(focusNode.hasFocus, isTrue);
+      }
+    });
+
+    testWidgets('opens link insertion from the platform shortcut', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'Documentation');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 13,
+      );
+      final originalValue = controller.value;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          controller: controller,
+          focusNode: focusNode,
+          platform: .macOS,
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+      await sendShortcut(tester, .keyK, meta: true);
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      final fields = find.byType(TextField);
+      expect(
+        tester.widget<TextField>(fields.at(1)).controller?.text,
+        'Documentation',
+      );
+      await tester.tap(fields.at(1));
+      await tester.pump();
+      await sendShortcut(tester, .keyB, meta: true);
+      expect(controller.text, 'Documentation');
+      await tester.enterText(fields.last, 'https://docs.example.com');
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(controller.text, '[Documentation](https://docs.example.com)');
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      expect(controller.value, originalValue);
+    });
+
+    testWidgets(
+      'does not handle editor shortcuts when another field has focus',
+      (tester) async {
+        final controller = TextEditingController(text: 'text');
+        final focusNode = FocusNode();
+        final otherFocusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+        addTearDown(otherFocusNode.dispose);
+        controller.selection = const TextSelection(
+          baseOffset: 0,
+          extentOffset: 4,
+        );
+
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            controller: controller,
+            focusNode: focusNode,
+            otherFocusNode: otherFocusNode,
+            platform: .windows,
+          ),
+        );
+        otherFocusNode.requestFocus();
+        await tester.pump();
+        await sendShortcut(tester, .keyB, control: true);
+
+        expect(controller.text, 'text');
+        expect(focusNode.hasFocus, isFalse);
+        expect(otherFocusNode.hasFocus, isTrue);
+      },
+    );
 
     testWidgets('escaped inline delimiters are not toggled as formatting', (
       tester,
@@ -444,6 +757,491 @@ void main() {
         expect(controller.value, unwrapped);
       },
     );
+
+    testWidgets('shows active, inactive, and mixed inline formatting', (
+      tester,
+    ) async {
+      const text = 'plain **bold**';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      final boldButton = toolbarButton(Icons.format_bold);
+      Semantics toggleSemantics() {
+        final state = find.ancestor(
+          of: boldButton,
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.toggled != null ||
+                    widget.properties.mixed != null),
+          ),
+        );
+        expect(state, findsOneWidget);
+
+        return tester.widget<Semantics>(state);
+      }
+
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.outlined,
+      );
+      expect(toggleSemantics().properties.toggled, isFalse);
+
+      final boldStart = text.indexOf('bold');
+      controller.selection = .collapsed(offset: boldStart + 1);
+      await tester.pump();
+
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.filled,
+      );
+      expect(toggleSemantics().properties.toggled, isTrue);
+
+      controller.selection = .new(
+        baseOffset: boldStart,
+        extentOffset: boldStart + 'bold'.length,
+      );
+      await tester.pump();
+
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.filled,
+      );
+      expect(toggleSemantics().properties.toggled, isTrue);
+
+      controller.selection = .new(
+        baseOffset: boldStart - '**'.length,
+        extentOffset: text.length,
+      );
+      await tester.pump();
+
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.filled,
+      );
+      expect(toggleSemantics().properties.toggled, isTrue);
+
+      controller.selection = .new(baseOffset: 0, extentOffset: boldStart + 2);
+      await tester.pump();
+
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.outlined,
+      );
+      expect(
+        find.byKey(const ValueKey('markdown-toolbar-mixed-indicator-bold')),
+        findsOneWidget,
+      );
+      expect(toggleSemantics().properties.mixed, isTrue);
+      expect(toggleSemantics().properties.toggled, isNull);
+
+      controller.selection = const .new(
+        baseOffset: 0,
+        extentOffset: text.length,
+      );
+      await tester.pump();
+
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.outlined,
+      );
+      expect(toggleSemantics().properties.mixed, isTrue);
+      expect(toggleSemantics().properties.toggled, isNull);
+
+      controller.value = const .new(
+        text: 'plain',
+        selection: TextSelection.collapsed(offset: 2),
+      );
+      await tester.pump();
+
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.outlined,
+      );
+      expect(toggleSemantics().properties.mixed, isNull);
+      expect(toggleSemantics().properties.toggled, isFalse);
+    });
+
+    testWidgets('tracks italic and inline code formatting', (tester) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_italic, name: 'italic', marker: '*'),
+        (icon: Icons.code, name: 'code', marker: '`'),
+      ]) {
+        const content = 'word';
+        final text = 'plain ${action.marker}$content${action.marker}';
+        final contentStart = text.indexOf(content);
+        controller.value = .new(
+          text: text,
+          selection: .collapsed(offset: contentStart + 1),
+        );
+        await tester.pump();
+
+        final button = toolbarButton(action.icon);
+        expect(
+          tester.widget<AuraIconButton>(button).variant,
+          AuraIconButtonVariant.filled,
+        );
+
+        controller.selection = .new(
+          baseOffset: 0,
+          extentOffset: contentStart + 2,
+        );
+        await tester.pump();
+
+        expect(
+          tester.widget<AuraIconButton>(button).variant,
+          AuraIconButtonVariant.outlined,
+        );
+        expect(
+          find.byKey(
+            ValueKey('markdown-toolbar-mixed-indicator-${action.name}'),
+          ),
+          findsOneWidget,
+        );
+        final state = find.ancestor(
+          of: button,
+          matching: find.byWidgetPredicate(
+            (widget) => widget is Semantics && widget.properties.mixed == true,
+          ),
+        );
+        expect(state, findsOneWidget);
+
+        controller.selection = const TextSelection.collapsed(offset: 0);
+        await tester.pump();
+        expect(
+          tester.widget<AuraIconButton>(button).variant,
+          AuraIconButtonVariant.outlined,
+        );
+      }
+    });
+
+    testWidgets('ignores emphasis markers inside inline code', (tester) async {
+      const text = '`**bold** and _italic_`';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_bold, text: 'bold'),
+        (icon: Icons.format_italic, text: 'italic'),
+      ]) {
+        final contentStart = text.indexOf(action.text);
+        controller.selection = .collapsed(offset: contentStart + 1);
+        await tester.pump();
+
+        expect(
+          tester.widget<AuraIconButton>(toolbarButton(action.icon)).variant,
+          AuraIconButtonVariant.outlined,
+        );
+        expect(
+          tester.widget<AuraIconButton>(toolbarButton(Icons.code)).variant,
+          AuraIconButtonVariant.filled,
+        );
+      }
+
+      final boldMarkersStart = text.indexOf('**bold**');
+      controller.selection = .new(
+        baseOffset: boldMarkersStart,
+        extentOffset: boldMarkersStart + '**bold**'.length,
+      );
+      await tester.pump();
+
+      expect(
+        tester.widget<AuraIconButton>(toolbarButton(Icons.format_bold)).variant,
+        AuraIconButtonVariant.outlined,
+      );
+    });
+
+    testWidgets('ignores emphasis markers inside fenced code blocks', (
+      tester,
+    ) async {
+      const text =
+          'before\n```\n**bold** and _italic_ and `literal`\n```\nafter';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_bold, text: 'bold'),
+        (icon: Icons.format_italic, text: 'italic'),
+        (icon: Icons.code, text: 'literal'),
+      ]) {
+        final contentStart = text.indexOf(action.text);
+        controller.selection = .collapsed(offset: contentStart + 1);
+        await tester.pump();
+
+        expect(
+          tester.widget<AuraIconButton>(toolbarButton(action.icon)).variant,
+          AuraIconButtonVariant.outlined,
+        );
+      }
+    });
+
+    testWidgets('matches fenced code container prefixes when closing', (
+      tester,
+    ) async {
+      for (final text in [
+        '> ```\n> **literal**\n> ```',
+        '- ```\n  **literal**\n  ```',
+        '```\n- ```\n**literal**\n```',
+      ]) {
+        final controller = TextEditingController(text: text);
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+
+        final literalStart = text.indexOf('literal');
+        controller.selection = .collapsed(offset: literalStart + 1);
+        await tester.pump();
+
+        expect(
+          tester
+              .widget<AuraIconButton>(toolbarButton(Icons.format_bold))
+              .variant,
+          AuraIconButtonVariant.outlined,
+        );
+      }
+    });
+
+    testWidgets('updates inline state when undoing and redoing formatting', (
+      tester,
+    ) async {
+      const text = '**bold**';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 2,
+        extentOffset: 6,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      final boldButton = toolbarButton(Icons.format_bold);
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.filled,
+      );
+
+      await tester.tap(boldButton);
+      await tester.pump();
+      expect(controller.text, 'bold');
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.outlined,
+      );
+
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      expect(controller.text, text);
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.filled,
+      );
+
+      await tester.tap(find.byIcon(Icons.redo));
+      await tester.pump();
+      expect(controller.text, 'bold');
+      expect(
+        tester.widget<AuraIconButton>(boldButton).variant,
+        AuraIconButtonVariant.outlined,
+      );
+    });
+
+    testWidgets('preserves selection through block formatting and undo', (
+      tester,
+    ) async {
+      const text = 'first\nsecond';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const .new(
+        baseOffset: 0,
+        extentOffset: text.length,
+      );
+      final initialSelection = controller.selection;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      await tester.tap(find.byIcon(Icons.title));
+      await tester.pump();
+
+      expect(controller.text, '# first\n# second');
+      expect(
+        controller.selection,
+        const TextSelection(baseOffset: 2, extentOffset: text.length + 4),
+      );
+
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      expect(controller.text, text);
+      expect(controller.selection, initialSelection);
+
+      await tester.tap(find.byIcon(Icons.redo));
+      await tester.pump();
+      expect(controller.text, '# first\n# second');
+      expect(
+        controller.selection,
+        const TextSelection(baseOffset: 2, extentOffset: text.length + 4),
+      );
+    });
+
+    testWidgets('formats a selected single line as a heading or quote', (
+      tester,
+    ) async {
+      for (final action in [
+        (icon: Icons.title, prefix: '# '),
+        (icon: Icons.format_quote, prefix: '> '),
+      ]) {
+        const content = 'selected line';
+        final controller = TextEditingController(text: content);
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+        controller.selection = const .new(
+          baseOffset: 0,
+          extentOffset: content.length,
+        );
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+
+        expect(controller.text, '${action.prefix}$content');
+        expect(
+          controller.selection,
+          TextSelection(
+            baseOffset: action.prefix.length,
+            extentOffset: action.prefix.length + content.length,
+          ),
+        );
+      }
+    });
+
+    testWidgets('formats only the current line at a collapsed caret', (
+      tester,
+    ) async {
+      for (final action in [
+        (icon: Icons.title, prefix: '# '),
+        (icon: Icons.format_quote, prefix: '> '),
+      ]) {
+        const text = 'before\ncurrent line\nafter';
+        final currentLineOffset = text.indexOf('current line');
+        final caretOffset = currentLineOffset + 3;
+        final controller = TextEditingController(text: text);
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+        controller.selection = .collapsed(offset: caretOffset);
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+
+        final formattedText = 'before\n${action.prefix}current line\nafter';
+        expect(controller.text, formattedText);
+        expect(
+          controller.selection,
+          TextSelection.collapsed(offset: caretOffset + action.prefix.length),
+        );
+
+        await tester.tap(find.byIcon(Icons.undo));
+        await tester.pump();
+        expect(controller.text, text);
+        expect(
+          controller.selection,
+          TextSelection.collapsed(offset: caretOffset),
+        );
+
+        await tester.tap(find.byIcon(Icons.redo));
+        await tester.pump();
+        expect(controller.text, formattedText);
+        expect(
+          controller.selection,
+          TextSelection.collapsed(offset: caretOffset + action.prefix.length),
+        );
+      }
+    });
+
+    testWidgets('removes heading and blockquote markers on repeated toggle', (
+      tester,
+    ) async {
+      for (final action in [
+        (icon: Icons.title, prefix: '# '),
+        (icon: Icons.format_quote, prefix: '> '),
+      ]) {
+        const content = 'first\nsecond';
+        final controller = TextEditingController(
+          text: '${action.prefix}first\n${action.prefix}second',
+        );
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+        controller.selection = .new(
+          baseOffset: 0,
+          extentOffset: controller.text.length,
+        );
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+        expect(controller.text, content);
+      }
+    });
 
     for (final action in [
       (icon: Icons.title, prefix: '# '),

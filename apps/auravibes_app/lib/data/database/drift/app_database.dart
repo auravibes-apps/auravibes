@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/database/drift/daos/agents_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/app_skill_workspace_settings_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/background_works_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
@@ -28,6 +29,7 @@ import 'package:auravibes_app/data/database/drift/tables/agent_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/agents.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_settings.dart';
+import 'package:auravibes_app/data/database/drift/tables/background_works.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
@@ -58,6 +60,7 @@ export 'daos/agents_dao.dart';
 export 'daos/api_model_providers_dao.dart';
 export 'daos/api_models_dao.dart';
 export 'daos/app_skill_workspace_settings_dao.dart';
+export 'daos/background_works_dao.dart';
 export 'daos/conversation_skills_dao.dart';
 export 'daos/conversation_tools_dao.dart';
 export 'daos/message_dao.dart';
@@ -101,9 +104,11 @@ part 'app_database.g.dart';
     AppSkillWorkspaceSettings,
     RecentModelSelections,
     ModelUsageRecords,
+    BackgroundWorks,
   ],
   daos: [
     WorkspaceDao,
+    BackgroundWorksDao,
     ModelConnectionsDao,
     WorkspaceModelSelectionsDao,
     ApiModelProvidersDao,
@@ -164,7 +169,21 @@ class AppDatabase extends _$AppDatabase {
       _modelUsageSchemaVersion + 1;
   static const int _mcpTestSummarySchemaVersion =
       _mcpCatalogSnapshotSchemaVersion + 1;
-  static const int _currentSchemaVersion = _mcpTestSummarySchemaVersion;
+  static const int _toolSamplingPolicySchemaVersion =
+      _mcpTestSummarySchemaVersion + 1;
+  static const int _backgroundWorkSchemaVersion =
+      _toolSamplingPolicySchemaVersion + 1;
+  static const int _autoApproveToolsSchemaVersion =
+      _backgroundWorkSchemaVersion + 1;
+  static const int _toolAccessModeSchemaVersion =
+      _autoApproveToolsSchemaVersion + 1;
+  static const int _backgroundWorkChildLinkSchemaVersion =
+      _toolAccessModeSchemaVersion + 1;
+  static const int _toolCallAttachmentSchemaVersion =
+      _backgroundWorkChildLinkSchemaVersion + 1;
+  static const int _messageBookmarkSchemaVersion =
+      _toolCallAttachmentSchemaVersion + 1;
+  static const int _currentSchemaVersion = _messageBookmarkSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -209,6 +228,41 @@ extension on AppDatabase {
     await _runSkillUpgrades(m, from);
     await _upgradeModelCapabilitiesSchema(m);
     await _upgradeModelUsageSchema(m);
+    await _upgradeToolAccessModeSchema(m);
+    await _upgradeToolCallAttachmentSchema(m, from);
+    await _upgradeMessageBookmarkSchema(m, from);
+  }
+
+  Future<void> _upgradeMessageBookmarkSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._messageBookmarkSchemaVersion ||
+        !await _tableExists('messages') ||
+        await _columnExists('messages', 'is_bookmarked')) {
+      return;
+    }
+    await m.addColumn(messages, messages.isBookmarked);
+  }
+
+  Future<void> _upgradeToolAccessModeSchema(Migrator m) async {
+    if (!await _tableExists('conversations')) return;
+    if (!await _columnExists('conversations', 'tool_access_mode')) {
+      await m.addColumn(conversations, conversations.toolAccessMode);
+    }
+    if (!await _columnExists('conversations', 'auto_approve_tools')) return;
+    await customStatement('''
+      UPDATE conversations SET tool_access_mode =
+      CASE WHEN auto_approve_tools = 1 THEN 'allow_all' ELSE 'default' END''');
+    await customStatement(
+      'ALTER TABLE conversations DROP COLUMN auto_approve_tools',
+    );
+  }
+
+  Future<void> _upgradeToolCallAttachmentSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._toolCallAttachmentSchemaVersion ||
+        !await _tableExists('message_attachments') ||
+        await _columnExists('message_attachments', 'tool_call_id')) {
+      return;
+    }
+    await m.addColumn(messageAttachments, messageAttachments.toolCallId);
   }
 
   Future<void> _upgradeModelUsageSchema(Migrator m) async {
@@ -235,15 +289,45 @@ extension on AppDatabase {
   }
 
   Future<void> _runCoreUpgrades(Migrator m, int from) async {
+    await _runAgentAndWorkspaceUpgrades(m, from);
+    await _runCatalogAndConversationUpgrades(m, from);
+  }
+
+  Future<void> _runAgentAndWorkspaceUpgrades(Migrator m, int from) async {
     await _upgradeAgentsSchema(m, from);
     await _upgradeAgentToolsSchema(m, from);
     await _upgradeAttachmentSchema(m, from);
     await _upgradeCloudAgentSchema(m, from);
     await _backfillAgentDescriptions(from);
     await _upgradeCloudWorkspaceSchema(m, from);
+  }
+
+  Future<void> _runCatalogAndConversationUpgrades(Migrator m, int from) async {
     await _upgradeAgentCatalogSchema(from);
     await _runMcpSchemaUpgrades(m, from);
     await _runConversationUpgrades(m, from);
+    await _upgradeToolSamplingPolicySchema(m);
+    await _upgradeBackgroundWorkSchema(m, from);
+    await _upgradeBackgroundWorkChildLinkSchema(m, from);
+  }
+
+  Future<void> _upgradeBackgroundWorkSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._backgroundWorkSchemaVersion) return;
+    if (!await _tableExists('background_works')) {
+      await m.createTable(backgroundWorks);
+    }
+  }
+
+  Future<void> _upgradeBackgroundWorkChildLinkSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._backgroundWorkChildLinkSchemaVersion ||
+        !await _tableExists('background_works') ||
+        await _columnExists('background_works', 'child_conversation_id')) {
+      return;
+    }
+    await m.addColumn(backgroundWorks, backgroundWorks.childConversationId);
   }
 
   Future<void> _runMcpSchemaUpgrades(Migrator m, int from) async {
@@ -452,6 +536,20 @@ extension on AppDatabase {
     );
   }
 
+  Future<void> _upgradeToolSamplingPolicySchema(Migrator m) async {
+    if (!await _tableExists('workspace_model_selections') ||
+        await _columnExists(
+          'workspace_model_selections',
+          'tool_sampling_policy',
+        )) {
+      return;
+    }
+    await m.addColumn(
+      workspaceModelSelections,
+      workspaceModelSelections.toolSamplingPolicy,
+    );
+  }
+
   Future<void> _upgradeLegacyStreamingStatuses(int from) async {
     if (from >= AppDatabase._legacyStreamingStatusSchemaVersion ||
         !await _tableExists('messages')) {
@@ -582,11 +680,11 @@ extension on AppDatabase {
 /// with proper configuration for mobile and desktop platforms.
 QueryExecutor _openConnection({String? dbHashSource}) {
   return driftDatabase(
-    native: const DriftNativeOptions(shareAcrossIsolates: true),
     name: AppDatabase.databaseNameForHashSource(dbHashSource),
     web: .new(
       sqlite3Wasm: Uri.parse('sqlite3.wasm'),
       driftWorker: Uri.parse('drift_worker.dart.js'),
     ),
+    native: const DriftNativeOptions(shareAcrossIsolates: true),
   );
 }

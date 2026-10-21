@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/repositories/recent_skill_usage_repository.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/models/skill_context_preparation_result.dart';
@@ -13,6 +14,7 @@ import 'package:auravibes_app/features/chats/usecases/prepare_conversation_skill
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/skills/providers/recent_skill_usage_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -61,12 +63,12 @@ void main() {
         ),
       );
       final skill = AvailableSkill(
-        source: skillEntity.source,
         id: skillEntity.id,
         slug: skillEntity.slug,
         title: skillEntity.title,
         description: skillEntity.description,
         content: skillEntity.content,
+        source: skillEntity.source,
         kind: skillEntity.kind,
         credentialReadiness: .ready,
       );
@@ -278,8 +280,24 @@ ProviderContainer _container(
     listAvailableSkillsUsecaseProvider(workspaceId)
         .overrideWith((_) => listSkills),
     buildLoadedSkillManifestsUsecaseProvider.overrideWith((_) => manifests),
+    recentSkillUsageRepositoryProvider.overrideWithValue(
+      const _EmptyRecentSkillUsageRepository(),
+    ),
   ],
 );
+
+class const _EmptyRecentSkillUsageRepository()
+    implements RecentSkillUsageRepository {
+  @override
+  Future<List<String>> readRecentSkillSlugs(String workspaceId) async =>
+      const [];
+
+  @override
+  Future<void> recordUseNow({
+    required String workspaceId,
+    required String skillSlug,
+  }) => Future<void>.value();
+}
 
 class _PersistedListSkills(
   final ConversationSkillsRepository _conversationSkills,

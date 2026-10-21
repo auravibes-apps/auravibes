@@ -5,17 +5,18 @@
 
 import 'dart:async';
 
-import 'package:auravibes_app/features/service_connections/widgets/connections_tabs.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_mixin.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/add_tool_modal.dart';
-import 'package:auravibes_app/features/tools/widgets/tool_count_enabled_widget.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_workspace_list_widget.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/adaptive_master_detail_layout.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
+import 'package:auravibes_app/widgets/feature_destination_app_bar.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -50,10 +51,17 @@ class const _ToolsScreenView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
-      child: _ToolsScreenStack(
-        workspaceId: workspaceId,
-        showAddToolButton: showAddToolButton,
+    return AppScreen(
+      child: AdaptiveMasterDetailLayout(
+        destinations: FeatureDestinations.connections(workspaceId),
+        selectedLocation: FeatureDestinations.connectionLocation(
+          workspaceId,
+          .tools,
+        ),
+        child: _ToolsScreenStack(
+          workspaceId: workspaceId,
+          showAddToolButton: showAddToolButton,
+        ),
       ),
       appBar: _ToolsScreenAppBar(
         workspaceId: workspaceId,
@@ -116,114 +124,9 @@ class const _ToolsScreenContent({required final String workspaceId})
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        _ToolsOverviewCard(workspaceId: workspaceId),
+        _ReconnectFailedMcpsButton(workspaceId: workspaceId),
         Expanded(child: ToolsWorkspaceListWidget(workspaceId: workspaceId)),
       ],
-    );
-  }
-}
-
-class const _ToolsOverviewCard({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraCard(child: _ToolsOverviewContent(workspaceId: workspaceId));
-  }
-}
-
-class const _ToolsOverviewContent({required final String workspaceId})
-    extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return AuraColumn(
-      children: [
-        const _ToolsOverviewText(),
-        if (!(ref
-                .watch(workspaceSessionForRouteProvider(workspaceId))
-                .value
-                ?.capabilities
-                .nativeTools ??
-            false))
-          const TextLocale('connection_setup.native_tools_restriction'),
-        const TextLocale('connection_setup.tool_permissions'),
-        _EnabledToolsBadge(workspaceId: workspaceId),
-        _ReconnectFailedMcpsButton(workspaceId: workspaceId),
-      ],
-      spacing: .sm,
-      crossAxisAlignment: .start,
-    );
-  }
-}
-
-class const _ToolsOverviewText() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const AuraColumn(
-      children: [
-        _ToolsOverviewHeader(),
-        AuraText(
-          child: TextLocale(
-            LocaleKeys.tools_screen_enable_configure_description,
-          ),
-        ),
-      ],
-      spacing: .sm,
-      crossAxisAlignment: .start,
-    );
-  }
-}
-
-class const _ToolsOverviewHeader() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const AuraRow(
-      children: [
-        AuraText(
-          child: Icon(Icons.build_circle_outlined),
-          style: .heading3,
-          tint: .primary,
-        ),
-        Expanded(
-          child: AuraText(
-            child: TextLocale(LocaleKeys.tools_screen_workspace_ai_tools),
-            style: .heading4,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class const _EnabledToolsBadge({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(children: [_EnabledToolsBadgeContent(workspaceId: workspaceId)]);
-  }
-}
-
-class const _EnabledToolsBadgeContent({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraBadge(
-      child: _EnabledToolsBadgeLabel(workspaceId: workspaceId),
-      variant: .success,
-    );
-  }
-}
-
-class const _EnabledToolsBadgeLabel({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraRow(
-      children: [
-        Icon(Icons.check_circle, size: 16, color: context.auraColors.onSuccess),
-        ToolCountEnabledWidget(workspaceId: workspaceId),
-      ],
-      spacing: .xs,
-      mainAxisSize: .min,
     );
   }
 }
@@ -348,18 +251,22 @@ class const _ToolsScreenAppBar({
   required final VoidCallback onReset,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight * 2);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
-    return AuraAppBarWithDrawer(
-      title: const TextLocale(LocaleKeys.tools_screen_title),
+    return FeatureDestinationAppBar(
+      destinations: FeatureDestinations.connections(workspaceId),
+      selectedLocation: FeatureDestinations.connectionLocation(
+        workspaceId,
+        .tools,
+      ),
+      masterTitleKey: LocaleKeys.navigation_connections,
       actions: [
         _AddMcpButton(workspaceId: workspaceId),
         _ResetToolsButton(onPressed: onReset),
         _RefreshToolsButton(onPressed: onRefresh),
       ],
-      bottom: ConnectionsTabs(workspaceId: workspaceId, value: .tools),
     );
   }
 }

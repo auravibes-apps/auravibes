@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:auravibes_engine/src/skills/skill_tool_materialization.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
 
 const activateSkillToolName = 'activate_skill';
@@ -14,7 +15,9 @@ const skillCommandToolNames = <String>{
   loadSkillResourceToolName,
 };
 
-List<ToolSpec> buildSkillCommandToolSpecs() => [
+List<ToolSpec> buildSkillCommandToolSpecs({
+  Iterable<SkillManifest> manifests = const [],
+}) => [
   ToolSpec(
     name: activateSkillToolName,
     description: 'Activate one skill from the current skill catalog.',
@@ -28,12 +31,12 @@ List<ToolSpec> buildSkillCommandToolSpecs() => [
   ToolSpec(
     name: callSkillToolName,
     description: 'Call one tool exposed by a loaded skill manifest.',
-    inputJsonSchema: const {
+    inputJsonSchema: {
       'type': 'object',
       'properties': {
         'skill': {'type': 'string'},
         'tool': {'type': 'string'},
-        'args': {'type': 'object'},
+        'args': _skillArgumentsSchema(manifests),
         'revision': {'type': 'string'},
       },
       'required': ['skill', 'tool', 'args', 'revision'],
@@ -54,6 +57,37 @@ List<ToolSpec> buildSkillCommandToolSpecs() => [
     },
   ),
 ];
+
+Map<String, Object?> _skillArgumentsSchema(Iterable<SkillManifest> manifests) {
+  final contracts =
+      [
+        for (final manifest in manifests)
+          for (final tool in manifest.tools)
+            (
+              skill: manifest.slug,
+              tool: tool.name,
+              schema: strictSkillToolSchema(
+                tool.inputJsonSchema,
+                optionalNullMeansOmission: tool.optionalNullMeansOmission,
+              ),
+            ),
+      ]..sort((left, right) {
+        final skillOrder = left.skill.compareTo(right.skill);
+        return skillOrder == 0 ? left.tool.compareTo(right.tool) : skillOrder;
+      });
+
+  if (contracts.isEmpty) return _emptySkillArgumentsSchema;
+  return {
+    'anyOf': [for (final contract in contracts) contract.schema],
+  };
+}
+
+const _emptySkillArgumentsSchema = <String, Object?>{
+  'type': 'object',
+  'properties': <String, Object?>{},
+  'required': <String>[],
+  'additionalProperties': false,
+};
 
 const _skillSlugSchema = <String, Object?>{
   'type': 'object',
@@ -131,6 +165,14 @@ class SkillCommandTarget._({
       revision: revision,
     );
   }
+
+  SkillCommandTarget copyWithArguments(Map<String, Object?> args) =>
+      SkillCommandTarget._(
+        skill: skill,
+        tool: tool,
+        args: _freezeMap(args),
+        revision: revision,
+      );
 }
 
 class SkillResourceTarget._({
@@ -184,12 +226,14 @@ class SkillManifestTool {
     required this.description,
     required Map<String, Object?> inputJsonSchema,
     this.credentialRequired = false,
+    this.optionalNullMeansOmission = false,
   }) : inputJsonSchema = _freezeMap(inputJsonSchema);
 
   final String name;
   final String description;
   final Map<String, Object?> inputJsonSchema;
   final bool credentialRequired;
+  final bool optionalNullMeansOmission;
 
   Map<String, Object?> toJson() => {
     'name': name,

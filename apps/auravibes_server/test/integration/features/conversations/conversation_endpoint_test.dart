@@ -1,7 +1,8 @@
-import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
-
 import 'dart:convert';
 
+import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
+import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';
@@ -12,6 +13,567 @@ import 'package:test/test.dart';
 import '../../test_tools/serverpod_test_tools.dart';
 
 void main() {
+  // Template execution opens a separate session that must see committed rows.
+  withServerpod('ConversationAutoApproval', (sessionBuilder, endpoints) {
+    Future<
+      ({
+        TestSessionBuilder session,
+        Session database,
+        int workspaceId,
+        String userId,
+      })
+    >
+    prepare() async {
+      final userId = const Uuid().v4().toString();
+      final session = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final database = session.build();
+      await AuthUser.db.insertRow(
+        database,
+        AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+      );
+      await EmailAccount.db.insertRow(
+        database,
+        EmailAccount(
+          authUserId: UuidValue.fromString(userId),
+          email: '$userId@example.com',
+          passwordHash: 'unused',
+        ),
+      );
+      final workspace = await workspace_repo.CloudWorkspaceRepository()
+          .createWorkspace(
+            database,
+            name: 'Auto approval',
+            ownerUserId: userId,
+            now: DateTime.now().toUtc(),
+          );
+      return (
+        session: session,
+        database: database,
+        workspaceId: workspace.id!,
+        userId: userId,
+      );
+    }
+
+    test(
+      'persists mode through create, update, projection and root/child forks',
+      () async {
+        final fixture = await prepare();
+        final root = await endpoints.conversation.create(
+          fixture.session,
+          CreateConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'create-root',
+            conversationId: 'root',
+            title: 'Root',
+            isPinned: true,
+            toolAccessMode: 'allow_all',
+          ),
+        );
+        expect(root.toolAccessMode, 'allow_all');
+        final child = await endpoints.conversation.create(
+          fixture.session,
+          CreateConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'create-child',
+            toolAccessMode: 'future_mode',
+            conversationId: 'child',
+            title: 'Child',
+            isPinned: false,
+            parentConversationId: root.id,
+          ),
+        );
+        expect(child.toolAccessMode, 'default');
+        final now = DateTime.now().toUtc();
+        for (final summary in [root, child]) {
+          final row = (await Conversation.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.stableId.equals(summary.id),
+          ))!;
+          await ConversationMessage.db.insertRow(
+            fixture.database,
+            ConversationMessage(
+              workspaceId: fixture.workspaceId,
+              conversationId: row.id!,
+              stableId: '${summary.id}-message',
+              role: 'assistant',
+              kind: 'text',
+              status: ConversationStatuses.completed,
+              content: 'Finished',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          final fork = await endpoints.conversation.fork(
+            fixture.session,
+            ForkConversationRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'fork-${summary.id}',
+              sourceConversationId: summary.id,
+              forkConversationId: '${summary.id}-fork',
+              throughMessageId: '${summary.id}-message',
+            ),
+          );
+          expect(fork.toolAccessMode, 'allow_all');
+        }
+        final updated = await endpoints.conversation.update(
+          fixture.session,
+          UpdateConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'disable-root',
+            conversationId: root.id,
+            expectedRevision: root.revision,
+            toolAccessMode: 'default',
+            clearModel: false,
+            clearAgent: false,
+            clearReasoningConfig: false,
+            clearParent: false,
+          ),
+        );
+        expect(updated.toolAccessMode, 'default');
+        expect(updated.title, root.title);
+        expect(updated.isPinned, root.isPinned);
+        expect(updated.modelId, root.modelId);
+        expect(updated.agentId, root.agentId);
+        final renamed = await endpoints.conversation.update(
+          fixture.session,
+          UpdateConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'rename-root-fork',
+            conversationId: 'root-fork',
+            expectedRevision: 1,
+            title: 'Renamed',
+            clearModel: false,
+            clearAgent: false,
+            clearReasoningConfig: false,
+            clearParent: false,
+          ),
+        );
+        expect(renamed.toolAccessMode, 'allow_all');
+        expect(
+          (await endpoints.conversation.get(
+            fixture.session,
+            GetConversationRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: 'root-fork',
+            ),
+          )).toolAccessMode,
+          'allow_all',
+        );
+        expect(
+          (await endpoints.conversation.getConversationSnapshot(
+            fixture.session,
+            GetConversationRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: 'root-fork',
+            ),
+          )).conversation.toolAccessMode,
+          'allow_all',
+        );
+        final page = await endpoints.conversation.listPage(
+          fixture.session,
+          ListConversationsRequest(workspaceId: fixture.workspaceId, limit: 10),
+        );
+        expect(
+          page.conversations
+              .singleWhere((row) => row.id == root.id)
+              .toolAccessMode,
+          'default',
+        );
+        expect(
+          page.conversations
+              .singleWhere((row) => row.id == renamed.id)
+              .toolAccessMode,
+          'allow_all',
+        );
+        final unknown = await endpoints.conversation.update(
+          fixture.session,
+          UpdateConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'unknown-mode-root-fork',
+            conversationId: renamed.id,
+            expectedRevision: renamed.revision,
+            toolAccessMode: 'future_mode',
+            clearModel: false,
+            clearAgent: false,
+            clearReasoningConfig: false,
+            clearParent: false,
+          ),
+        );
+        expect(unknown.toolAccessMode, 'default');
+        expect(unknown.title, renamed.title);
+      },
+    );
+
+    test(
+      'server mode honors current root, denial priority and pending calls',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        Future<Conversation> conversation(
+          String id, {
+          String? parent,
+          String mode = 'default',
+        }) => Conversation.db.insertRow(
+          fixture.database,
+          Conversation(
+            workspaceId: fixture.workspaceId,
+            stableId: id,
+            title: id,
+            isPinned: false,
+            parentConversationStableId: parent,
+            toolAccessMode: mode,
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final root = await conversation('root');
+        var child = await conversation(
+          'child',
+          parent: root.stableId,
+          mode: 'allow_all',
+        );
+        final turn = await ConversationTurn.db.insertRow(
+          fixture.database,
+          ConversationTurn(
+            workspaceId: fixture.workspaceId,
+            conversationId: child.id!,
+            requestId: 'turn',
+            requestHash: 'hash',
+            initiatorUserId: fixture.userId,
+            status: 'running',
+            revision: 1,
+            acceptedSequence: 0,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final message = await ConversationMessage.db.insertRow(
+          fixture.database,
+          ConversationMessage(
+            workspaceId: fixture.workspaceId,
+            conversationId: child.id!,
+            turnId: turn.id,
+            stableId: 'message',
+            role: 'assistant',
+            kind: 'text',
+            status: 'running',
+            content: '',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        var executions = 0;
+        final runtime = ServerToolRuntime(
+          executor: (_, _, _, _) async {
+            executions++;
+            return 'ok';
+          },
+        );
+        Future<String> call(
+          String id, {
+          String name = listSkillCredentialsToolName,
+          Map<String, dynamic> arguments = const {'slug': 'research'},
+        }) async {
+          await runtime.handle(
+            fixture.database,
+            turn: turn,
+            messageId: message.id!,
+            request: ServerToolRequest(
+              id: id,
+              name: name,
+              arguments: arguments,
+            ),
+          );
+          return (await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.stableId.equals(id),
+          ))!.status;
+        }
+
+        Future<void> resource(
+          WorkspaceResourceKind kind,
+          String id,
+          Map<String, Object?> data,
+        ) async {
+          await WorkspaceResource.db.insertRow(
+            fixture.database,
+            WorkspaceResource(
+              workspaceId: fixture.workspaceId,
+              resourceKind: kind,
+              resourceId: id,
+              data: jsonEncode(data),
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+        }
+
+        expect(await call('pending-before-mode'), 'pending');
+        await endpoints.conversation.update(
+          fixture.session,
+          UpdateConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'enable-root',
+            conversationId: root.stableId,
+            expectedRevision: 1,
+            toolAccessMode: 'allow_all',
+            clearModel: false,
+            clearAgent: false,
+            clearReasoningConfig: false,
+            clearParent: false,
+          ),
+        );
+        expect(await call('pending-before-mode'), 'pending');
+        expect(executions, 0);
+        expect(await call('new-after-mode'), 'success');
+        expect(executions, 1);
+        const skill = {
+          'id': 'research',
+          'slug': 'research',
+          'title': 'Research',
+          'description': 'Search sources',
+          'content': 'Search sources',
+          'isEnabled': true,
+        };
+        const template = {
+          'id': 'research-search',
+          'skillId': 'research',
+          'skillSlug': 'research',
+          'toolSlug': 'search',
+          'isEnabled': true,
+          'requiresCredential': false,
+          'inputsJson': '[{"name":"query","type":"string"}]',
+        };
+        await resource(WorkspaceResourceKind.skill, 'research', skill);
+        await resource(
+          WorkspaceResourceKind.skillTemplateTool,
+          'research-search',
+          template,
+        );
+        await resource(
+          WorkspaceResourceKind.conversationSkillSelection,
+          'child:research',
+          {
+            'conversationId': child.stableId,
+            'skillId': 'research',
+          },
+        );
+        final targets = materializeCloudSkillTools(
+          selectedSkillIds: {'research'},
+          userSkills: [skill],
+          templateTools: [template],
+          appSkillSettings: const [],
+          isChildConversation: true,
+        );
+        final manifest = (await buildCloudSkillManifest(
+          slug: 'research',
+          userSkills: [skill],
+          tools: targets,
+        ))!;
+        expect(
+          await call(
+            'valid-nested',
+            name: callSkillToolName,
+            arguments: {
+              'skill': 'research',
+              'tool': 'search',
+              'revision': manifest.revision,
+              'args': {'query': 'sources'},
+            },
+          ),
+          'success',
+        );
+        expect(executions, 2);
+        expect(
+          await call('malformed', name: callSkillToolName, arguments: const {}),
+          isNot('success'),
+        );
+        expect(
+          await call(
+            'stale',
+            name: callSkillToolName,
+            arguments: const {
+              'skill': 'research',
+              'tool': 'search',
+              'revision': 'stale',
+              'args': {'query': 'sources'},
+            },
+          ),
+          isNot('success'),
+        );
+        expect(await call('unknown', name: 'missing_tool'), 'toolNotFound');
+        expect(executions, 2);
+        child = await Conversation.db.updateRow(
+          fixture.database,
+          child.copyWith(agentId: 'agent'),
+        );
+        await resource(WorkspaceResourceKind.agentAssociation, 'deny-agent', {
+          'agentId': 'agent',
+          'toolId': listSkillCredentialsToolName,
+          'permissionMode': 'alwaysDeny',
+        });
+        expect(await call('agent-deny-no-workspace'), 'disabledInWorkspace');
+        await resource(
+          WorkspaceResourceKind.conversationToolSelection,
+          'conversation-policy',
+          {
+            'conversationId': child.stableId,
+            'toolId': listSkillCredentialsToolName,
+            'permissionMode': 'alwaysAsk',
+          },
+        );
+        expect(
+          await call('agent-deny-conversation-ask'),
+          'disabledInWorkspace',
+        );
+        final policy = (await WorkspaceResource.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.resourceId.equals('conversation-policy'),
+        ))!;
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          policy.copyWith(
+            data: jsonEncode({
+              'conversationId': child.stableId,
+              'toolId': listSkillCredentialsToolName,
+              'permissionMode': 'alwaysAllow',
+            }),
+          ),
+        );
+        expect(await call('explicit-conversation-grant'), 'success');
+        expect(executions, 3);
+        await resource(
+          WorkspaceResourceKind.toolPermission,
+          'disabled-tool-config',
+          {
+            'toolId': listSkillCredentialsToolName,
+            'isEnabled': false,
+            'permissionMode': 'alwaysAllow',
+          },
+        );
+        final disabledConfig = (await WorkspaceResource.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.resourceId.equals('disabled-tool-config'),
+        ))!;
+        var currentRoot = (await Conversation.db.findById(
+          fixture.database,
+          root.id!,
+        ))!;
+        for (final mode in ['default', 'allow_all']) {
+          currentRoot = await Conversation.db.updateRow(
+            fixture.database,
+            currentRoot.copyWith(toolAccessMode: mode),
+          );
+          expect(
+            await call('disabled-config-conversation-grant-$mode'),
+            'disabledInWorkspace',
+          );
+          expect(executions, 3);
+        }
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          disabledConfig.copyWith(deletedAt: now),
+        );
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          policy.copyWith(
+            data: jsonEncode({
+              'conversationId': child.stableId,
+              'toolId': listSkillCredentialsToolName,
+              'permissionMode': 'alwaysDeny',
+            }),
+          ),
+        );
+        expect(await call('explicit-conversation-deny'), 'disabledInWorkspace');
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          policy.copyWith(deletedAt: now),
+        );
+        final agentPolicy = (await WorkspaceResource.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.resourceId.equals('deny-agent'),
+        ))!;
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          agentPolicy.copyWith(deletedAt: now),
+        );
+        await resource(
+          WorkspaceResourceKind.conversationToolSelection,
+          'parent-conversation-deny',
+          {
+            'conversationId': root.stableId,
+            'toolId': listSkillCredentialsToolName,
+            'permissionMode': 'alwaysDeny',
+          },
+        );
+        expect(
+          await call('parent-conversation-deny'),
+          'disabledInWorkspace',
+        );
+        expect(executions, 3);
+        final parentDeny = (await WorkspaceResource.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.resourceId.equals('parent-conversation-deny'),
+        ))!;
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          parentDeny.copyWith(deletedAt: now),
+        );
+        await resource(
+          WorkspaceResourceKind.toolPermission,
+          'workspace-policy',
+          {
+            'toolId': listSkillCredentialsToolName,
+            'permissionMode': 'alwaysDeny',
+          },
+        );
+        expect(await call('workspace-deny'), 'disabledInWorkspace');
+        final workspacePolicy = (await WorkspaceResource.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.resourceId.equals('workspace-policy'),
+        ))!;
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          workspacePolicy.copyWith(deletedAt: now),
+        );
+        child = await Conversation.db.updateRow(
+          fixture.database,
+          child.copyWith(parentConversationStableId: 'missing'),
+        );
+        expect(await call('missing-parent'), 'pending');
+        await Conversation.db.updateRow(
+          fixture.database,
+          child.copyWith(parentConversationStableId: child.stableId),
+        );
+        expect(await call('cyclic-parent'), 'pending');
+        expect(executions, 3);
+      },
+    );
+  }, rollbackDatabase: RollbackDatabase.disabled);
+
   withServerpod('ConversationEndpoint', (sessionBuilder, endpoints) {
     test('persists stable IDs and rejects stale mutations', () async {
       final userId = const Uuid().v4().toString();

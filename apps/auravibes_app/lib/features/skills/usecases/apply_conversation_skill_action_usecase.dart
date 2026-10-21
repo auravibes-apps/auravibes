@@ -1,15 +1,21 @@
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
+import 'package:auravibes_app/features/skills/providers/recent_skill_usage_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
+
+final _logger = Logger('apply_conversation_skill_action');
 
 class ApplyConversationSkillActionUsecase({
   required final Future<String?> Function(String conversationId)
@@ -37,6 +43,12 @@ class ApplyConversationSkillActionUsecase({
     ChatDraft draft,
   )
   sendMessage,
+  required final Future<void> Function(
+    String workspaceId,
+    String conversationId,
+    String skillSlug,
+  )
+  recordRecentSkillUse,
 }) {
   final Set<String> _inProgress = {};
 
@@ -223,6 +235,20 @@ extension on ApplyConversationSkillActionUsecase {
   ) async {
     if (request.action == .add) return .added;
     try {
+      await recordRecentSkillUse(
+        request.workspaceId,
+        request.conversationId,
+        skill.slug,
+      );
+    } on Object {
+      // Ignore this optional write. Do not retry or block the explicit request.
+      // Storage errors can contain user data. Do not log their details.
+      _logger.warning(
+        'Recent skill history write failed. Request continues without retry.',
+      );
+    }
+
+    try {
       await sendMessage(
         request.workspaceId,
         request.conversationId,
@@ -281,8 +307,22 @@ final applyConversationSkillActionUsecaseProvider =
               workspaceId: workspaceId,
               slug: slug,
             ),
-        sendMessage: (workspaceId, conversationId, draft) => ref
-            .read(sendMessageUsecaseProvider(workspaceId))
-            .call(conversationId: conversationId, draft: draft),
+        sendMessage: (workspaceId, conversationId, draft) async {
+          final iterationLimitNotifier = ref.read(
+            conversationIterationLimitProvider(conversationId).notifier,
+          );
+          final decision = await ref
+              .read(sendMessageUsecaseProvider(workspaceId))
+              .call(conversationId: conversationId, draft: draft);
+          iterationLimitNotifier.markIfIterationLimitReached(decision);
+        },
+        recordRecentSkillUse: (workspaceId, conversationId, skillSlug) async {
+          await ref
+              .read(recentSkillUsageRepositoryProvider)
+              .recordUseNow(workspaceId: workspaceId, skillSlug: skillSlug);
+          ref.invalidate(
+            conversationSkillSelectorProvider(workspaceId, conversationId),
+          );
+        },
       );
     });

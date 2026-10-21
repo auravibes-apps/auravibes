@@ -46,6 +46,7 @@ typedef AgentToolCallResultUpdateRequest = ({
   AgentToolResultStatus resultStatus,
   String? responseRaw,
   String? responseContextRaw,
+  List<AgentToolResultMedia> media,
   bool outputTruncated,
   int? originalResponseBytes,
   bool fullOutputForContext,
@@ -77,6 +78,7 @@ abstract interface class ApproveToolCallProvider<TTool extends Object> {
 
   Future<Object?> runResolvedTool({
     required String conversationId,
+    required String toolCallId,
     required TTool tool,
     required Map<String, dynamic> arguments,
   });
@@ -163,6 +165,7 @@ class const ApproveToolCallService<TTool extends Object>({
         conversationId: conversationId,
         responseRaw: null,
         responseContextRaw: null,
+        media: const [],
         outputTruncated: false,
         originalResponseBytes: null,
         fullOutputForContext: false,
@@ -202,6 +205,7 @@ class const ApproveToolCallService<TTool extends Object>({
       resultStatus: executionResult.resultStatus,
       responseRaw: executionResult.responseRaw,
       responseContextRaw: executionResult.responseContextRaw,
+      media: executionResult.media,
       outputTruncated: executionResult.outputTruncated,
       originalResponseBytes: executionResult.originalResponseBytes,
       fullOutputForContext: executionResult.fullOutputForContext,

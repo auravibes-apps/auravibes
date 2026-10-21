@@ -1,6 +1,7 @@
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:widgetbook/widgetbook.dart';
+import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_chart.stories.bridge.g.dart';
 part 'auravibes_chart.stories.g.dart';
@@ -10,7 +11,7 @@ const _meta = Meta(AuraChart.new);
 abstract final class _StorybookDefinitions {
   static final $Example = _Story(
     name: 'AuraChart',
-    setup: (context, child, args) => SizedBox(width: 320, child: child),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(
       labels: .fixed(const ['A', 'B', 'C', 'D', 'E']),
       series: .fixed(const [

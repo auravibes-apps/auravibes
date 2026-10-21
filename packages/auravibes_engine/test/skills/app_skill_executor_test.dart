@@ -310,6 +310,22 @@ void main() {
       );
     });
 
+    test('rejects null Kagi summarize url and text', () {
+      final executor = _executor((request) {
+        fail('HTTP client should not run without summarize content.');
+      });
+
+      expect(
+        () => executor.run(
+          skill: _skill('kagi'),
+          toolSlug: 'summarize',
+          input: const {'url': null, 'text': null},
+          credentials: const {'apiKey': 'kagi-key'},
+        ),
+        throwsFormatException,
+      );
+    });
+
     test('does not execute tools without a URL template', () {
       expect(
         () =>

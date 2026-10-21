@@ -17,6 +17,7 @@ import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.d
 import 'package:auravibes_app/features/service_connections/models/connection_filter.dart';
 import 'package:auravibes_app/features/service_connections/models/mcp_connection_test_result.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
+import 'package:auravibes_app/features/service_connections/notifiers/connections_list_view_notifier.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
@@ -168,10 +169,9 @@ void main() {
     expect(find.textContaining('Authentication expired'), findsOneWidget);
   });
 
-  testWidgets('tests MCP connection and copies a safe diagnostic report', (
-    tester,
-  ) async {
+  Future<void> renderRedactedMcpDiagnostics(WidgetTester tester) async {
     _addWidgetTearDown(tester);
+    await tester.binding.setSurfaceSize(const Size(960, 1200));
     PackageInfo.setMockInitialValues(
       appName: 'AuraVibes',
       packageName: 'me.auravibes.app',
@@ -205,8 +205,8 @@ void main() {
         toolCount: 0,
         durationMilliseconds: 0,
         errorDetails:
-            'https://mcp.example.com/mcp?api_key=secret '
-            'Authorization: Bearer secret',
+            'https://mcp.example.test/mcp?api_key=fixture-secret '
+            'Authorization: Bearer fixture-secret',
       );
     });
     final container = _syncTestContainer(
@@ -232,6 +232,10 @@ void main() {
     expect(find.textContaining('Tested '), findsOneWidget);
     await tester.tap(find.text('View details'));
     final _ = await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/service_connection_diagnostics.png'),
+    );
     await tester.tap(find.text('Copy'));
     final _ = await tester.pumpAndSettle();
 
@@ -239,10 +243,16 @@ void main() {
     expect(copied.single, contains('Status category: network'));
     expect(copied.single, contains('Attempt time: 2026-09-27T12:30:00.000Z'));
     expect(copied.single, contains('App version: 0.0.4'));
-    expect(copied.single, isNot(contains('mcp.example.com')));
+    expect(copied.single, isNot(contains('mcp.example.test')));
     expect(copied.single, isNot(contains('secret')));
     verify(() => testUsecase('Failed MCP-server')).called(1);
-  });
+  }
+
+  testWidgets(
+    'renders redacted MCP diagnostic output from fixtures',
+    renderRedactedMcpDiagnostics,
+    tags: ['golden'],
+  );
 
   testWidgets('localizes authentication recovery and historic diagnostics', (
     tester,
@@ -539,35 +549,202 @@ void main() {
           );
           await tester.binding.setSurfaceSize(.new(width, 1200));
           final _ = await tester.pumpAndSettle();
+          if (width < 600) {
+            expect(
+              tester.widgetList<AuraDropdownSelector<ConnectionFilter>>(
+                find.byType(AuraDropdownSelector<ConnectionFilter>),
+              ),
+              isEmpty,
+            );
+            await tester.tap(
+              find.byKey(const ValueKey('app_filter_sheet')).first,
+            );
+            final _ = await tester.pumpAndSettle();
+          }
           tester
               .widget<AuraDropdownSelector<ConnectionFilter>>(
                 find.byType(AuraDropdownSelector<ConnectionFilter>).first,
               )
               .onChanged
-              ?.call(.mcpServers);
+              ?.call(.needsAuth);
           final _ = await tester.pumpAndSettle();
           tester
               .widget<AuraDropdownSelector<ConnectionFilter>>(
                 find.byType(AuraDropdownSelector<ConnectionFilter>).last,
               )
               .onChanged
-              ?.call(.needsAuth);
+              ?.call(.mcpServers);
           final _ = await tester.pumpAndSettle();
           expect(find.text('Repair this service'), findsOneWidget);
           expect(find.text('Healthy service'), findsNothing);
           expect(find.text('Healthy provider'), findsNothing);
           expect(
-            tester
-                .widget<AuraDropdownSelector<ConnectionFilter>>(
-                  find.byType(AuraDropdownSelector<ConnectionFilter>).first,
-                )
-                .value,
-            ConnectionFilter.mcpServers,
+            container
+                .read(connectionsListViewProvider(_syncWorkspaceId, .overview))
+                .filter,
+            ConnectionFilter.needsAuth,
           );
           expect(tester.takeException(), isNull);
         },
       );
     }
+  }
+
+  for (final locale in [const Locale('en'), const Locale('es')]) {
+    testWidgets('filters restore and clear ${locale.languageCode}', (
+      tester,
+    ) async {
+      _addWidgetTearDown(tester);
+      final container = _syncTestContainer(
+        .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+        connections: [
+          _mcpConnection(name: 'Notion', displayStatus: .needsReauth),
+        ],
+      );
+      addTearDown(container.dispose);
+      await _pumpScreen(tester, container, _syncWorkspaceId, locale: locale);
+      await tester.binding.setSurfaceSize(const Size(466, 700));
+      final _ = await tester.pumpAndSettle();
+      final provider = connectionsListViewProvider(_syncWorkspaceId, .overview);
+      final notifier = container.read(provider.notifier);
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('service_connections_search')),
+        'Notion',
+      );
+      notifier
+        ..setFilter(.needsAuth)
+        ..setKind(.modelProviders)
+        ..setOauthOnly(value: true);
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.text(locale.languageCode == 'en' ? 'Filters (3)' : 'Filtros (3)'),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(AuraCard),
+          matching: find.text('Notion'),
+        ),
+        findsNothing,
+      );
+      await tester.tap(find.byKey(const ValueKey('app_filter_sheet')).first);
+      final _ = await tester.pumpAndSettle();
+      final filters = tester.widgetList<AuraDropdownSelector<ConnectionFilter>>(
+        find.byType(AuraDropdownSelector<ConnectionFilter>),
+      );
+      expect(filters.map((filter) => filter.value), [
+        ConnectionFilter.needsAuth,
+        ConnectionFilter.modelProviders,
+      ]);
+      expect(
+        tester
+            .widget<AuraCheckboxListTile>(find.byType(AuraCheckboxListTile))
+            .value,
+        isTrue,
+      );
+      expect(
+        find.text(
+          locale.languageCode == 'en' ? 'Clear filters' : 'Borrar filtros',
+        ),
+        findsOneWidget,
+      );
+
+      tester
+          .widget<AuraDropdownSelector<ConnectionFilter>>(
+            find.byType(AuraDropdownSelector<ConnectionFilter>).last,
+          )
+          .onChanged
+          ?.call(.mcpServers);
+      tester
+          .widget<AuraCheckboxListTile>(find.byType(AuraCheckboxListTile))
+          .onChanged
+          ?.call(false);
+      final _ = await tester.pumpAndSettle();
+      expect(
+        tester
+            .widgetList<AuraDropdownSelector<ConnectionFilter>>(
+              find.byType(AuraDropdownSelector<ConnectionFilter>),
+            )
+            .map((filter) => filter.value),
+        [ConnectionFilter.needsAuth, ConnectionFilter.mcpServers],
+      );
+      expect(
+        tester
+            .widget<AuraCheckboxListTile>(find.byType(AuraCheckboxListTile))
+            .value,
+        isFalse,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(AuraCard),
+          matching: find.text('Notion'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(locale.languageCode == 'en' ? 'Filters (2)' : 'Filtros (2)'),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.text(
+          locale.languageCode == 'en' ? 'Clear filters' : 'Borrar filtros',
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(
+        find.text(locale.languageCode == 'en' ? 'Filters (0)' : 'Filtros (0)'),
+        findsOneWidget,
+      );
+      await tester.tapAt(const Offset(20, 20));
+      final _ = await tester.pumpAndSettle();
+
+      expect(container.read(provider), (
+        searchQuery: 'Notion',
+        filter: ConnectionFilter.all,
+        kind: ConnectionFilter.all,
+        oauthOnly: false,
+      ));
+      expect(
+        find.descendant(
+          of: find.byType(AuraCard),
+          matching: find.text('Notion'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<EditableText>(
+              find.descendant(
+                of: find.byKey(
+                  const ValueKey<String>('service_connections_search'),
+                ),
+                matching: find.byType(EditableText),
+              ),
+            )
+            .controller
+            .text,
+        'Notion',
+      );
+
+      await tester.tap(find.byKey(const ValueKey('app_filter_sheet')).first);
+      final _ = await tester.pumpAndSettle();
+      final resetFilters = tester
+          .widgetList<AuraDropdownSelector<ConnectionFilter>>(
+            find.byType(AuraDropdownSelector<ConnectionFilter>),
+          );
+      expect(resetFilters.map((filter) => filter.value), [
+        ConnectionFilter.all,
+        ConnectionFilter.all,
+      ]);
+      expect(
+        tester
+            .widget<AuraCheckboxListTile>(find.byType(AuraCheckboxListTile))
+            .value,
+        isFalse,
+      );
+    });
   }
 
   testWidgets('list load failure retries without exposing the error', (
@@ -666,7 +843,7 @@ void main() {
     expect(find.text('Notion'), findsOneWidget);
 
     final _ = await tester.enterText(searchField, '');
-    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).last);
+    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).first);
     final _ = await tester.pumpAndSettle();
     final needsAuthFilter = find.text('Needs auth');
     final _ = await tester.ensureVisible(needsAuthFilter);
@@ -675,7 +852,7 @@ void main() {
     expect(find.text('Notion'), findsOneWidget);
     expect(find.text('GitHub'), findsNothing);
 
-    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).last);
+    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).first);
     final _ = await tester.pumpAndSettle();
     final allFilter = find.text('All').hitTestable().last;
     final _ = await tester.ensureVisible(allFilter);
@@ -692,6 +869,7 @@ void main() {
   testWidgets('syncs the local model catalog with visible progress', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
     _addWidgetTearDown(tester);
     final completer = Completer<void>();
     final usecase = _MockSyncApiModelsUseCase();
@@ -706,7 +884,9 @@ void main() {
       find.byKey(const ValueKey<String>('service_connections_sync')),
       findsOneWidget,
     );
-    await tester.tap(find.byIcon(Icons.sync));
+    await tester.tap(
+      find.bySemanticsIdentifier('service_connections_sync').hitTestable(),
+    );
     await tester.pump();
 
     expect(find.byType(AuraSpinner), findsOneWidget);
@@ -723,6 +903,7 @@ void main() {
     expect(find.text('Model catalog synced'), findsOneWidget);
     expect(find.text('Last refreshed'), findsOneWidget);
     await _unmountScreen(tester);
+    semantics.dispose();
   });
 
   testWidgets('shows sync failure and allows retry', (tester) async {
@@ -858,21 +1039,26 @@ void main() {
     expect(find.text('Main Token'), findsOneWidget);
     expect(find.text('Connection kind'), findsOneWidget);
     expect(find.text('Connection health'), findsOneWidget);
-    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).first);
+    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).last);
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.text('Model providers'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Main Token'), findsNothing);
-    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).first);
+    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).last);
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.text('Skill credentials'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Main Token'), findsOneWidget);
-    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).first);
+    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).last);
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('All').hitTestable().last);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AuraDropdownSelector<ConnectionFilter>).last,
+        matching: find.text('All'),
+      ),
+    );
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.more_vert).first);
@@ -1025,6 +1211,55 @@ void main() {
 
     await _unmountScreen(tester);
   });
+
+  for (final width in [420.0, 960.0]) {
+    final layout = width == 420.0 ? 'compact' : 'wide';
+    Future<void> renderConnectionStates(WidgetTester tester) async {
+      _addWidgetTearDown(tester);
+      await tester.binding.setSurfaceSize(.new(width, 1000));
+      final container = _syncTestContainer(
+        .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+        connections: [
+          _mcpConnection(
+            name: 'Notion',
+            displayStatus: .needsReauth,
+            serviceName: 'mcp.notion.test',
+            canReconnect: true,
+          ),
+          _mcpConnection(
+            name: 'Linear',
+            displayStatus: .connected,
+            serviceName: 'mcp.linear.test',
+            transport: const McpTransportTypeStreamableHttp(),
+          ),
+          _mcpConnection(
+            name: 'Sentry',
+            displayStatus: .failed,
+            serviceName: 'mcp.sentry.test',
+            canReconnect: true,
+            lastAuthError: 'Fixture connection failed',
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await _pumpScreen(tester, container, _syncWorkspaceId);
+
+      await expectLater(
+        find.byType(ServiceConnectionsScreen),
+        matchesGoldenFile('goldens/service_connections_$layout.png'),
+      );
+      expect(find.text('Notion'), findsOneWidget);
+      expect(find.text('Linear'), findsOneWidget);
+      expect(find.text('Sentry'), findsOneWidget);
+    }
+
+    testWidgets(
+      'renders $layout connection and authentication states',
+      renderConnectionStates,
+      tags: ['golden'],
+    );
+  }
 }
 
 ProviderContainer _syncTestContainer(
@@ -1104,20 +1339,22 @@ Future<void> _pumpScreen(
           builder: (context) {
             return UncontrolledProviderScope(
               container: container,
-              child: MaterialApp(
-                home: ServiceConnectionsScreen(
-                  workspaceId: workspaceId,
-                  view: view,
+              child: Portal(
+                child: MaterialApp(
+                  home: ServiceConnectionsScreen(
+                    workspaceId: workspaceId,
+                    view: view,
+                  ),
+                  builder: (context, child) =>
+                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+                  locale: context.locale,
+                  localizationsDelegates: [
+                    ...GlobalMaterialLocalizations.delegates,
+                    flutter_localizations.GlobalMaterialLocalizations.delegate,
+                    ...context.localizationDelegates,
+                  ],
+                  supportedLocales: context.supportedLocales,
                 ),
-                builder: (context, child) =>
-                    AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
-                locale: context.locale,
-                localizationsDelegates: [
-                  ...GlobalMaterialLocalizations.delegates,
-                  flutter_localizations.GlobalMaterialLocalizations.delegate,
-                  ...context.localizationDelegates,
-                ],
-                supportedLocales: context.supportedLocales,
               ),
             );
           },

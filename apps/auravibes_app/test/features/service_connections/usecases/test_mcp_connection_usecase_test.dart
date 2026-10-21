@@ -272,6 +272,7 @@ class _Manager extends McpManagerService {
     McpManagerClient client, {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    required McpToolElicitationContext elicitation,
   }) async {
     toolCalls++;
 

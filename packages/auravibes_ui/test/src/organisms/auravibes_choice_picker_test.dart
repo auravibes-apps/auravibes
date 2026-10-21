@@ -120,42 +120,16 @@ void main() {
   });
 
   group('AuraChoicePicker', () {
-    testWidgets('renders labeled options and changes one selection', (
+    testWidgets('renders options and keeps first mutually exclusive value', (
       tester,
     ) async {
+      final semantics = tester.ensureSemantics();
       List<String>? changedValues;
 
       await tester.pumpWidget(
         _buildApp(
           AuraChoicePicker<String>(
             options: const [
-              AuraChoiceOption(value: 'first', label: Text('First')),
-              AuraChoiceOption(value: 'second', label: Text('Second')),
-            ],
-            value: const ['first'],
-            onChanged: (value) => changedValues = value,
-          ),
-        ),
-      );
-
-      expect(find.text('First'), findsOneWidget);
-      expect(find.text('Second'), findsOneWidget);
-      expect(find.byType(AuraRadio<String>), findsNWidgets(2));
-
-      await tester.tap(find.text('Second'));
-
-      expect(changedValues, ['second']);
-    });
-
-    testWidgets('uses only the first value in mutually exclusive mode', (
-      tester,
-    ) async {
-      final semantics = tester.ensureSemantics();
-
-      await tester.pumpWidget(
-        _buildApp(
-          const AuraChoicePicker<String>(
-            options: [
               AuraChoiceOption(
                 value: 'first',
                 label: Text('First'),
@@ -167,13 +141,16 @@ void main() {
                 semanticLabel: 'Second choice',
               ),
             ],
-            value: ['first', 'second'],
-            onChanged: _noopChanged,
+            value: const ['first', 'second'],
+            onChanged: (value) => changedValues = value,
           ),
         ),
       );
 
+      expect(find.text('First'), findsOneWidget);
+      expect(find.text('Second'), findsOneWidget);
       final radios = find.byType(AuraRadio<String>);
+      expect(radios, findsNWidgets(2));
       expect(
         tester.widget<AuraRadio<String>>(radios.at(0)).groupValue,
         'first',
@@ -197,6 +174,9 @@ void main() {
         ui.CheckedState.isFalse,
       );
 
+      await tester.tap(find.text('Second'));
+
+      expect(changedValues, ['second']);
       semantics.dispose();
     });
 
@@ -259,63 +239,52 @@ void main() {
       expect(changedValues, isEmpty);
     });
 
-    testWidgets('ignores maxAllowedSelections for single selection', (
-      tester,
-    ) async {
-      List<String>? changedValues;
+    testWidgets(
+      'ignores single-selection limits and disables unavailable options',
+      (tester) async {
+        final changes = <List<String>>[];
 
-      await tester.pumpWidget(
-        _buildApp(
-          AuraChoicePicker<String>(
-            options: const [
-              AuraChoiceOption(value: 'first', label: Text('First')),
-              AuraChoiceOption(value: 'second', label: Text('Second')),
-            ],
-            value: const ['first'],
-            onChanged: (value) => changedValues = value,
-            maxAllowedSelections: 0,
+        await tester.pumpWidget(
+          _buildApp(
+            AuraChoicePicker<String>(
+              options: const [
+                AuraChoiceOption(value: 'first', label: Text('First')),
+                AuraChoiceOption(value: 'second', label: Text('Second')),
+                AuraChoiceOption(
+                  value: 'unavailable',
+                  label: Text('Unavailable'),
+                  disabled: true,
+                ),
+              ],
+              value: const ['first'],
+              onChanged: changes.add,
+              maxAllowedSelections: 0,
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.tap(find.text('Second'));
+        await tester.tap(find.text('Second'));
 
-      expect(changedValues, ['second']);
-    });
+        expect(changes, [
+          <String>['second'],
+        ]);
+        changes.clear();
 
-    testWidgets('does not change a disabled option', (tester) async {
-      List<String>? changedValues;
+        await tester.tap(find.text('Unavailable'));
 
-      await tester.pumpWidget(
-        _buildApp(
-          AuraChoicePicker<String>(
-            options: const [
-              AuraChoiceOption(
-                value: 'unavailable',
-                label: Text('Unavailable'),
-                disabled: true,
-              ),
-            ],
-            value: const [],
-            onChanged: (value) => changedValues = value,
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Unavailable'));
-
-      final radio = tester.widget<AuraRadio<String>>(
-        find.byType(AuraRadio<String>),
-      );
-      expect(radio.disabled, isTrue);
-      final disabledLabel = find.ancestor(
-        of: find.text('Unavailable'),
-        matching: find.byType(Opacity),
-      );
-      expect(disabledLabel, findsOneWidget);
-      expect(tester.widget<Opacity>(disabledLabel).opacity, 0.6);
-      expect(changedValues, isNull);
-    });
+        final radio = tester.widget<AuraRadio<String>>(
+          find.byType(AuraRadio<String>).last,
+        );
+        expect(radio.disabled, isTrue);
+        final disabledLabel = find.ancestor(
+          of: find.text('Unavailable'),
+          matching: find.byType(Opacity),
+        );
+        expect(disabledLabel, findsOneWidget);
+        expect(tester.widget<Opacity>(disabledLabel).opacity, 0.6);
+        expect(changes, isEmpty);
+      },
+    );
 
     testWidgets('renders no controls for empty options', (tester) async {
       await tester.pumpWidget(

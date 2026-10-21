@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('AccentHueNotifier', () {
-    test('build defaults to brand teal hue', () async {
+    test('build defaults to violet hue', () async {
       SharedPreferences.setMockInitialValues({});
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -14,6 +14,7 @@ void main() {
         await container.read(accentHueProvider.future),
         AccentHue.defaultValue,
       );
+      expect(AccentHue.defaultValue, 300);
     });
 
     test('build restores saved hue', () async {

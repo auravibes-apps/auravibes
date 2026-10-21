@@ -1,11 +1,16 @@
+import 'package:auravibes_app/domain/repositories/recent_skill_usage_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/skills/providers/recent_skill_usage_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_skill_selector_provider.g.dart';
+
+final _logger = Logger('conversation_skill_selector');
 
 typedef _SkillLoadRequest = ({
   ListAvailableSkillsUsecase usecase,
@@ -23,6 +28,7 @@ typedef _SkillSelectorLoadRequest = ({
 typedef _SkillSelectorDependencies = ({
   BuildLoadedSkillManifestsUsecase buildManifests,
   ListAvailableSkillsUsecase listSkills,
+  RecentSkillUsageRepository recentSkillUsageRepository,
   String workspaceId,
   String conversationId,
   ConversationSkillContextSnapshot? snapshot,
@@ -31,8 +37,16 @@ typedef _SkillSelectorDependencies = ({
 typedef _SkillSelectorStateRequest = ({
   List<AvailableSkill> loaded,
   List<AvailableSkill> loadable,
+  List<AvailableSkill> recentSkills,
   Map<String, String> revisions,
   ConversationSkillContextSnapshot? snapshot,
+});
+
+typedef _RecentSkillReadRequest = ({
+  RecentSkillUsageRepository repository,
+  String workspaceId,
+  List<AvailableSkill> loaded,
+  List<AvailableSkill> loadable,
 });
 
 typedef _SkillContextState = ({
@@ -65,6 +79,7 @@ Future<ConversationSkillSelectorState> conversationSkillSelector(
 ) => _buildSelectorState((
   buildManifests: ref.watch(buildLoadedSkillManifestsUsecaseProvider),
   listSkills: ref.watch(listAvailableSkillsUsecaseProvider(workspaceId)),
+  recentSkillUsageRepository: ref.watch(recentSkillUsageRepositoryProvider),
   workspaceId: workspaceId,
   conversationId: conversationId,
   snapshot: ref.watch(conversationSkillContextRuntimeProvider)[conversationId],
@@ -78,16 +93,66 @@ Future<ConversationSkillSelectorState> _buildSelectorState(
     workspaceId: dependencies.workspaceId,
     conversationId: dependencies.conversationId,
   ));
-  final loaded = skills.loaded;
-  final revisions = await _currentSkillRevisions(dependencies, loaded);
+  final stateRequest = await _selectorStateRequest(dependencies, skills);
 
-  return _selectorState((
+  return _selectorState(stateRequest);
+}
+
+Future<_SkillSelectorStateRequest> _selectorStateRequest(
+  _SkillSelectorDependencies dependencies,
+  ({List<AvailableSkill> loaded, List<AvailableSkill> loadable}) skills,
+) async {
+  final loaded = skills.loaded;
+  final recentSkills = await _readRecentSkills((
+    repository: dependencies.recentSkillUsageRepository,
+    workspaceId: dependencies.workspaceId,
     loaded: loaded,
     loadable: skills.loadable,
+  ));
+  final revisions = await _currentSkillRevisions(dependencies, loaded);
+
+  return (
+    loaded: loaded,
+    loadable: skills.loadable,
+    recentSkills: recentSkills,
     revisions: revisions,
     snapshot: dependencies.snapshot,
-  ));
+  );
 }
+
+Future<List<AvailableSkill>> _readRecentSkills(
+  _RecentSkillReadRequest request,
+) async {
+  try {
+    final recentSlugs = await request.repository.readRecentSkillSlugs(
+      request.workspaceId,
+    );
+
+    return _skillsInRecentOrder(recentSlugs, _skillIndex(request));
+  } on Object {
+    // Ignore this optional read. A later selector load reads history again.
+    // Storage errors can contain user data. Do not log their details.
+    _logger.warning(
+      'Recent skill history read failed. Selector uses empty history.',
+    );
+
+    return const [];
+  }
+}
+
+Map<String, AvailableSkill> _skillIndex(_RecentSkillReadRequest request) => {
+  for (final skill in request.loadable) skill.slug: skill,
+  for (final skill in request.loaded) skill.slug: skill,
+};
+
+List<AvailableSkill> _skillsInRecentOrder(
+  List<String> recentSlugs,
+  Map<String, AvailableSkill> skillsBySlug,
+) => recentSlugs
+    .toSet()
+    .map((slug) => skillsBySlug[slug])
+    .whereType<AvailableSkill>()
+    .toList();
 
 Future<Map<String, String>> _currentSkillRevisions(
   _SkillSelectorDependencies dependencies,
@@ -118,6 +183,7 @@ ConversationSkillSelectorState _selectorState(
   return ConversationSkillSelectorState(
     loaded: request.loaded,
     loadable: request.loadable,
+    recentSkills: request.recentSkills,
     contextStatusBySlug: _contextStatuses(contextBySlug),
     failureBySlug: _contextFailures(contextBySlug),
   );

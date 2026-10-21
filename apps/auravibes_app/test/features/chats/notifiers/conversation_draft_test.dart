@@ -28,4 +28,59 @@ void main() {
     expect(container.read(first), isNull);
     expect(container.read(second)?.text, 'second');
   });
+
+  test('disposes empty providers after their last listener closes', () async {
+    final observer = _DisposedProviderObserver();
+    final container = ProviderContainer(observers: [observer]);
+    addTearDown(container.dispose);
+    final provider = conversationDraftProvider('ws-1', 'chat-1');
+    final observedDrafts = <ChatDraft?>[];
+    container.listen(provider, (_, draft) => observedDrafts.add(draft)).close();
+
+    await container.pump();
+
+    expect(observer.disposedProviders, contains(provider.toString()));
+    expect(observedDrafts, isEmpty);
+  });
+
+  test('retains saved drafts until they are cleared', () async {
+    final observer = _DisposedProviderObserver();
+    final container = ProviderContainer(observers: [observer]);
+    addTearDown(container.dispose);
+    final provider = conversationDraftProvider('ws-1', 'chat-1');
+    final observedDrafts = <ChatDraft?>[];
+    final subscription = container.listen(
+      provider,
+      (_, draft) => observedDrafts.add(draft),
+    );
+    const draft = ChatDraft(text: 'draft');
+
+    container.read(provider.notifier).save(draft);
+    subscription.close();
+    await container.pump();
+
+    expect(observer.disposedProviders, isNot(contains(provider.toString())));
+    expect(container.read(provider), same(draft));
+    expect(observedDrafts, [draft]);
+
+    final retainedSubscription = container.listen(
+      provider,
+      (_, currentDraft) => observedDrafts.add(currentDraft),
+    );
+    container.read(provider.notifier).clear();
+    retainedSubscription.close();
+    await container.pump();
+
+    expect(observer.disposedProviders, contains(provider.toString()));
+    expect(observedDrafts, [draft, null]);
+  });
+}
+
+final class _DisposedProviderObserver extends ProviderObserver {
+  final disposedProviders = <String>[];
+
+  @override
+  void didDisposeProvider(ProviderObserverContext context) {
+    disposedProviders.add(context.provider.toString());
+  }
 }

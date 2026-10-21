@@ -22,6 +22,8 @@ abstract class ConversationToolCallView
     required this.argumentsJson,
     required this.argumentsDigest,
     this.userFacingDescription,
+    bool? backgroundEligible,
+    this.backgroundWorkStableId,
     required this.status,
     this.decision,
     this.resultJson,
@@ -31,7 +33,8 @@ abstract class ConversationToolCallView
     required this.revision,
     required this.createdAt,
     required this.updatedAt,
-  }) : resultOutputTruncated = resultOutputTruncated ?? false;
+  }) : backgroundEligible = backgroundEligible ?? false,
+       resultOutputTruncated = resultOutputTruncated ?? false;
 
   factory ConversationToolCallView({
     required String id,
@@ -41,6 +44,8 @@ abstract class ConversationToolCallView
     required String argumentsJson,
     required String argumentsDigest,
     String? userFacingDescription,
+    bool? backgroundEligible,
+    String? backgroundWorkStableId,
     required String status,
     String? decision,
     String? resultJson,
@@ -64,6 +69,13 @@ abstract class ConversationToolCallView
       argumentsDigest: jsonSerialization['argumentsDigest'] as String,
       userFacingDescription:
           jsonSerialization['userFacingDescription'] as String?,
+      backgroundEligible: jsonSerialization['backgroundEligible'] == null
+          ? null
+          : _isc.BoolJsonExtension.fromJson(
+              jsonSerialization['backgroundEligible'],
+            ),
+      backgroundWorkStableId:
+          jsonSerialization['backgroundWorkStableId'] as String?,
       status: jsonSerialization['status'] as String,
       decision: jsonSerialization['decision'] as String?,
       resultJson: jsonSerialization['resultJson'] as String?,
@@ -98,6 +110,10 @@ abstract class ConversationToolCallView
 
   String? userFacingDescription;
 
+  bool backgroundEligible;
+
+  String? backgroundWorkStableId;
+
   String status;
 
   String? decision;
@@ -127,6 +143,8 @@ abstract class ConversationToolCallView
     String? argumentsJson,
     String? argumentsDigest,
     String? userFacingDescription,
+    bool? backgroundEligible,
+    String? backgroundWorkStableId,
     String? status,
     String? decision,
     String? resultJson,
@@ -149,6 +167,9 @@ abstract class ConversationToolCallView
       'argumentsDigest': argumentsDigest,
       if (userFacingDescription != null)
         'userFacingDescription': userFacingDescription,
+      'backgroundEligible': backgroundEligible,
+      if (backgroundWorkStableId != null)
+        'backgroundWorkStableId': backgroundWorkStableId,
       'status': status,
       if (decision != null) 'decision': decision,
       if (resultJson != null) 'resultJson': resultJson,
@@ -174,6 +195,9 @@ abstract class ConversationToolCallView
       'argumentsDigest': argumentsDigest,
       if (userFacingDescription != null)
         'userFacingDescription': userFacingDescription,
+      'backgroundEligible': backgroundEligible,
+      if (backgroundWorkStableId != null)
+        'backgroundWorkStableId': backgroundWorkStableId,
       'status': status,
       if (decision != null) 'decision': decision,
       if (resultJson != null) 'resultJson': resultJson,
@@ -204,6 +228,8 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
     required String argumentsJson,
     required String argumentsDigest,
     String? userFacingDescription,
+    bool? backgroundEligible,
+    String? backgroundWorkStableId,
     required String status,
     String? decision,
     String? resultJson,
@@ -221,6 +247,8 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
          argumentsJson: argumentsJson,
          argumentsDigest: argumentsDigest,
          userFacingDescription: userFacingDescription,
+         backgroundEligible: backgroundEligible,
+         backgroundWorkStableId: backgroundWorkStableId,
          status: status,
          decision: decision,
          resultJson: resultJson,
@@ -244,6 +272,8 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
     String? argumentsJson,
     String? argumentsDigest,
     Object? userFacingDescription = _Undefined,
+    bool? backgroundEligible,
+    Object? backgroundWorkStableId = _Undefined,
     String? status,
     Object? decision = _Undefined,
     Object? resultJson = _Undefined,
@@ -264,6 +294,10 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
       userFacingDescription: userFacingDescription is String?
           ? userFacingDescription
           : this.userFacingDescription,
+      backgroundEligible: backgroundEligible ?? this.backgroundEligible,
+      backgroundWorkStableId: backgroundWorkStableId is String?
+          ? backgroundWorkStableId
+          : this.backgroundWorkStableId,
       status: status ?? this.status,
       decision: decision is String? ? decision : this.decision,
       resultJson: resultJson is String? ? resultJson : this.resultJson,

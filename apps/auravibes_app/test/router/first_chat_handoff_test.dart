@@ -15,22 +15,24 @@ import 'package:auravibes_app/features/skills/providers/skill_credential_operati
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../data/database/drift/database_test_utils.dart';
 import '../helpers/test_app.dart';
 
 void main() {
-  testWidgets('pushed credential returns true and retains parent draft', (
+  final database = AppDatabase(connection: NativeDatabase.memory());
+  tearDownAll(database.close);
+  testWidgets('pushed credential returns to chat and retains parent draft', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final database = AppDatabase(connection: NativeDatabase.memory());
-    addTearDown(database.close);
     final workspace = await WorkspaceRepository(database)
         .createWorkspace(const .new(name: 'Credential parent', type: .local));
     final definition = await SkillCredentialDefinitionsRepository(database)
@@ -96,18 +98,20 @@ void main() {
           .first,
       'Retain the parent draft',
     );
-    final result = ServiceConnectionCreateRoute(
-      workspaceId: workspace.id,
-      type: 'skillCredential',
-      credentialDefinitionId: definition.id,
-    ).push<bool>(tester.element(find.byType(NewChatScreen)));
+    final _ = FeatureDestinations.push<void>(
+      tester.element(find.byType(NewChatScreen)),
+      ServiceConnectionCreateRoute(
+        workspaceId: workspace.id,
+        type: 'skillCredential',
+        credentialDefinitionId: definition.id,
+      ).location,
+    );
     final _ = await tester.pumpAndSettle();
     expect(find.text('Test type'), findsOneWidget);
     await tester.enterText(find.byType(AuraInput).first, 'Created connection');
     await tester.enterText(find.byType(AuraInput).last, 'fixture-secret');
     await tester.tap(find.text('Save'));
     final _ = await tester.pumpAndSettle();
-    expect(await result, isTrue);
     expect(created?.credentialDefinitionId, definition.id);
     expect(created?.name, 'Created connection');
     expect(find.text('Retain the parent draft'), findsOneWidget);
@@ -124,8 +128,7 @@ void main() {
       ) async {
         await tester.binding.setSurfaceSize(const Size(1000, 1400));
         addTearDown(() => tester.binding.setSurfaceSize(null));
-        final database = AppDatabase(connection: NativeDatabase.memory());
-        addTearDown(database.close);
+        await clearAppDatabase(database);
         final workspace = await WorkspaceRepository(database)
             .createWorkspace(const .new(name: 'Handoff', type: .local));
         final chat = NewChatRoute(workspaceId: workspace.id).location;

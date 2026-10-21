@@ -14,16 +14,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
 
   group('ConversationRepository', () {
-    var mockDao = MockConversationDao();
-    var database = _TestAppDatabase(mockDao);
+    final mockDao = MockConversationDao();
+    final database = _TestAppDatabase(mockDao);
     var repository = ConversationRepository(database);
+    var isFirstTest = true;
 
     setUp(() async {
+      reset(mockDao);
+      if (isFirstTest) {
+        isFirstTest = false;
+      } else {
+        await clearAppDatabase(database);
+      }
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(id: const Value('ws-1'), name: 'Test Workspace', type: .local),
       );
@@ -36,13 +44,6 @@ void main() {
               title: 'Test Conversation',
             ),
           );
-    });
-
-    tearDown(() async {
-      await database.close();
-      mockDao = MockConversationDao();
-      database = _TestAppDatabase(mockDao);
-      repository = ConversationRepository(database);
     });
 
     tearDownAll(() async {
@@ -69,6 +70,7 @@ void main() {
         modelId: modelId,
         agentId: agentId,
         reasoningConfigJson: reasoningConfigJson,
+        toolAccessMode: 'default',
         isPinned: isPinned,
       );
     }
@@ -206,6 +208,7 @@ void main() {
           updatedAt: now,
           workspaceId: 'ws-1',
           title: 'New Chat',
+          toolAccessMode: 'default',
           isPinned: true,
         );
 
@@ -236,6 +239,7 @@ void main() {
             workspaceId: 'ws-1',
             title: 'Reasoning Chat',
             reasoningConfigJson: configuration.encode(),
+            toolAccessMode: 'default',
             isPinned: false,
           );
 
@@ -297,6 +301,7 @@ void main() {
           updatedAt: now,
           workspaceId: 'ws-1',
           title: 'Updated Title',
+          toolAccessMode: 'default',
           isPinned: true,
         );
 

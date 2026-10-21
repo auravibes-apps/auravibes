@@ -186,21 +186,22 @@ String _contextUsageLimitUnavailable() => LocaleKeys
 String _standardTooltip(
   ContextUsageLevel level,
   Map<String, String> tooltipArgs,
-) {
-  final key = switch (level) {
-    .normal =>
-      LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_normal,
-    .elevated =>
-      LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_elevated,
-    .warning =>
-      LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_warning,
-    _ =>
-      LocaleKeys
-          .chats_screens_chat_conversation_context_usage_limit_unavailable,
-  };
-
-  return key.tr(namedArgs: tooltipArgs);
-}
+) => switch (level) {
+  .normal =>
+    LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_normal.tr(
+      namedArgs: tooltipArgs,
+    ),
+  .elevated =>
+    LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_elevated
+        .tr(namedArgs: tooltipArgs),
+  .warning =>
+    LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_warning.tr(
+      namedArgs: tooltipArgs,
+    ),
+  _ =>
+    LocaleKeys.chats_screens_chat_conversation_context_usage_limit_unavailable
+        .tr(namedArgs: tooltipArgs),
+};
 
 String _overflowTooltip(
   ContextUsageData data,
@@ -230,27 +231,24 @@ String _standardSemanticValue(
   ContextUsageData data,
   Locale locale,
 ) {
-  final key = switch (level) {
-    .normal =>
-      LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_normal,
-    .elevated =>
-      LocaleKeys
-          .chats_screens_chat_conversation_context_usage_semantic_elevated,
-    .warning =>
-      LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_warning,
-    .overflow || .unknown => null,
+  final namedArgs = {
+    'usage': data.usageLabelFor(locale),
+    'percent': data.percentValueFor(locale),
   };
 
-  if (key == null) {
-    return _semanticLimitUnavailable(data.usageLabelFor(locale));
-  }
-
-  return key.tr(
-    namedArgs: {
-      'usage': data.usageLabelFor(locale),
-      'percent': data.percentValueFor(locale),
-    },
-  );
+  return switch (level) {
+    .normal =>
+      LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_normal
+          .tr(namedArgs: namedArgs),
+    .elevated =>
+      LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_elevated
+          .tr(namedArgs: namedArgs),
+    .warning =>
+      LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_warning
+          .tr(namedArgs: namedArgs),
+    .overflow ||
+    .unknown => _semanticLimitUnavailable(data.usageLabelFor(locale)),
+  };
 }
 
 String _overflowSemanticValue(ContextUsageData data, Locale locale) =>

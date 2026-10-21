@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/settings/widgets/compaction_settings_sect
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -19,7 +20,7 @@ class const WorkspaceSettingsScreen({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final view = useWorkspaceSettingsSnapshot(ref, workspaceId, guard);
+    final view = _useWorkspaceSettingsSnapshot(ref, workspaceId, guard);
 
     return DraftExitScope(
       guard: view.guard,
@@ -41,7 +42,7 @@ typedef _WorkspaceSettingsSnapshot = ({
   bool loaded,
 });
 
-_WorkspaceSettingsSnapshot useWorkspaceSettingsSnapshot(
+_WorkspaceSettingsSnapshot _useWorkspaceSettingsSnapshot(
   WidgetRef ref,
   String workspaceId,
   DraftExitGuard guard,
@@ -76,7 +77,7 @@ class const _WorkspaceSettingsView({
   required final bool loaded,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: ListView(
       padding: const EdgeInsets.all(16),
       children: [

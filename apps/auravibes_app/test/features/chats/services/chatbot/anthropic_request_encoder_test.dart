@@ -277,4 +277,12 @@ void main() {
       throwsA(isA<AnthropicRequestException>()),
     );
   });
+
+  test('required tool choice requests any tool', () {
+    final result = encoder([initial]).encode(
+      'claude-opus-5',
+      .new(messages: prefix, toolChoice: ToolChoice.required),
+    );
+    expect(result.request.toJson()['tool_choice'], {'type': 'any'});
+  });
 }

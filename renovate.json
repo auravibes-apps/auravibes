@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
   "additionalBranchPrefix": "{{parentDir}}-",
   "packageRules": [
     {
@@ -69,6 +69,13 @@
       "matchManagers": ["pub"],
       "matchPackageNames": ["test", "test_api"],
       "groupName": "Dart test",
+      "additionalBranchPrefix": ""
+    },
+    {
+      "description": "Update Marionette CLI, MCP, and Flutter packages together",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["marionette_cli", "marionette_mcp", "marionette_flutter"],
+      "groupName": "Marionette",
       "additionalBranchPrefix": ""
     },
     {

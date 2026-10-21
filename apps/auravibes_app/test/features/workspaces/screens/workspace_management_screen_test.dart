@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -15,13 +16,18 @@ import 'package:auravibes_app/features/cloud_accounts/screens/cloud_accounts_scr
 import 'package:auravibes_app/features/cloud_accounts/usecases/check_cloud_account_usecase.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_configuration_archive.dart';
 import 'package:auravibes_app/features/workspaces/providers/last_workspace_selection_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
+import 'package:auravibes_app/features/workspaces/services/workspace_configuration_file_service.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_configuration_archive_usecase.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart' show DatabaseConnection, Value;
+import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,6 +35,8 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../data/database/drift/database_test_utils.dart';
 
 class _UnusedCloudClient extends Mock implements Client;
 class _CloudEndpoint extends Mock implements EndpointCloudWorkspace;
@@ -44,6 +52,57 @@ class _FakeGoRouter implements GoRouter {
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
+
+class _MemoryArchiveFileService({final String? pickedJson})
+    extends WorkspaceConfigurationFileService {
+  String? savedJson;
+  int pickCount = 0;
+
+  @override
+  Future<String?> pickArchiveJson() async {
+    pickCount++;
+
+    return pickedJson;
+  }
+
+  @override
+  Future<bool> saveArchiveJson(String json) async {
+    savedJson = json;
+
+    return true;
+  }
+}
+
+String _agentArchiveJson({String workspaceName = 'Portable'}) =>
+    WorkspaceConfigurationArchiveCodec.encode(
+      .new(
+        workspaceName: workspaceName,
+        entries: const [
+          WorkspaceConfigurationEntry(
+            kind: .agent,
+            id: 'archive-agent',
+            data: {
+              'name': 'Imported assistant',
+              'description': 'Archive preview',
+              'content': 'Instructions',
+              'isEnabled': true,
+              'visibility': 'both',
+            },
+          ),
+        ],
+      ),
+    );
+
+WorkspaceConfigurationArchiveUsecase _archiveUsecase(
+  AppDatabase database,
+  _MemoryArchiveFileService fileService,
+) => WorkspaceConfigurationArchiveUsecase(
+  localRepository: .new(database),
+  localImporter: .new(database),
+  cloudRepositoryFor: (_) async =>
+      throw StateError('Local archive actions must not request a cloud repo.'),
+  fileService: fileService,
+);
 
 class _FakeWorkspaceSelectionRepository
     implements WorkspaceSelectionRepository {
@@ -69,6 +128,8 @@ class _FakeWorkspaceSelectionRepository
 
 class _FakeWorkspaceRepository implements WorkspaceRepository {
   Exception? deleteError;
+  final Set<String> failedDeleteIds = {};
+  final List<String> deleteAttempts = [];
   bool failCloudRemoval = false;
   final removedMirrors = <CloudAccountKey>[];
   final List<WorkspaceEntity> _workspaces = [];
@@ -98,6 +159,11 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     _emit();
 
     return entity;
+  }
+
+  void addWorkspaceForTest(WorkspaceEntity workspace) {
+    _workspaces.add(workspace);
+    _emit();
   }
 
   @override
@@ -130,8 +196,10 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 
   @override
   Future<bool> deleteWorkspace(String id) async {
+    deleteAttempts.add(id);
     final error = deleteError;
     if (error != null) throw error;
+    if (failedDeleteIds.contains(id)) throw StateError('delete failed');
 
     final index = _workspaces.indexWhere((w) => w.id == id);
     if (index == -1) return false;
@@ -225,7 +293,9 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
       serverUrl: serverUrl,
     );
     if (mirror == null) return false;
-    removedMirrors.add(cloudAccountKey(serverUrl, cloudAccountId));
+    removedMirrors.add(
+      CloudAccountKeyFactory.fromIdentity(serverUrl, cloudAccountId),
+    );
     final _ = _workspaces.remove(mirror);
     _emit();
 
@@ -255,8 +325,13 @@ void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceManagementScreen', () {
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
     var repository = _FakeWorkspaceRepository();
     var router = _FakeGoRouter();
+
+    tearDownAll(database.close);
 
     setUpAll(() {
       registerFallbackValue(
@@ -301,6 +376,7 @@ void main() {
       bool nullCloudUsecase = false,
       ValueNotifier<bool>? viewNotifier,
       WorkspaceSelectionRepository? selectionRepository,
+      WorkspaceConfigurationArchiveUsecase? archiveUsecase,
     }) {
       final useRepo = repo ?? repository;
 
@@ -336,6 +412,13 @@ void main() {
               workspaceRepositoryProvider.overrideWithValue(useRepo),
               currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
             ];
+            if (archiveUsecase != null) {
+              overrides.add(
+                workspaceConfigurationArchiveUsecaseProvider.overrideWithValue(
+                  archiveUsecase,
+                ),
+              );
+            }
             if (selectionRepository != null) {
               overrides.add(
                 lastWorkspaceSelectionRepositoryProvider.overrideWithValue(
@@ -475,7 +558,10 @@ void main() {
               email: 'two@example.test',
             ),
           ];
-          final first = cloudAccountKey('https://one.example', 'same');
+          final first = CloudAccountKeyFactory.fromIdentity(
+            'https://one.example',
+            'same',
+          );
           final second = accounts.last.key;
           final checks = <CloudAccountKey>[];
           var expired = false;
@@ -641,7 +727,7 @@ void main() {
                 WorkspaceManagementScreen(workspaceId: active.id),
           ),
           GoRoute(
-            path: '/workspaces/:workspaceId/more/cloud-accounts/login',
+            path: '/workspaces/:workspaceId/cloud-accounts/login',
             builder: (context, state) => const Text('Auth destination'),
           ),
         ],
@@ -663,10 +749,10 @@ void main() {
       );
       final _ = await tester.pumpAndSettle();
       final uri = navigationRouter.routeInformationProvider.value.uri;
-      expect(uri.path, '/workspaces/${active.id}/more/cloud-accounts/login');
+      expect(uri.path, '/workspaces/${active.id}/cloud-accounts/login');
       expect(
         uri.queryParameters['return-path'],
-        '/workspaces/${active.id}/more/manage-workspaces',
+        '/workspaces/${active.id}/manage-workspaces',
       );
       expect(uri.queryParameters['serverUrl'], 'https://two.example');
       expect(uri.queryParameters['accountId'], 'same');
@@ -741,6 +827,8 @@ void main() {
         expect(await repository.getWorkspaceById(cloud.id), isNotNull);
         expect(find.textContaining('Remove Cloud'), findsWidgets);
         expect(repository.removedMirrors, isEmpty);
+        await tester.tap(find.text('Close'));
+        final _ = await tester.pumpAndSettle();
         if (nullUsecase) return;
         repository.failCloudRemoval = false;
         await tester.tap(
@@ -752,7 +840,7 @@ void main() {
         final _ = await tester.pumpAndSettle();
         expect(await repository.getWorkspaceById(cloud.id), isNull);
         expect(repository.removedMirrors, [
-          cloudAccountKey('https://one.example', 'same'),
+          CloudAccountKeyFactory.fromIdentity('https://one.example', 'same'),
         ]);
       });
     }
@@ -782,7 +870,10 @@ void main() {
               ),
             ],
             cloudLoaders: {
-              cloudAccountKey('https://one.example', 'same'): () async {
+              CloudAccountKeyFactory.fromIdentity(
+                'https://one.example',
+                'same',
+              ): () async {
                 discoveryCalls++;
 
                 return const CloudWorkspaceViewState(
@@ -845,10 +936,16 @@ void main() {
               ),
             ],
             cloudWorkspaceStatesByAccount: {
-              cloudAccountKey('https://one.example', 'same'): state(
+              CloudAccountKeyFactory.fromIdentity(
+                'https://one.example',
+                'same',
+              ): state(
                 'One Attached',
               ),
-              cloudAccountKey('https://two.example', 'same'): state(
+              CloudAccountKeyFactory.fromIdentity(
+                'https://two.example',
+                'same',
+              ): state(
                 'Two Available',
               ),
             },
@@ -909,7 +1006,7 @@ void main() {
         expect(
           tester
               .widget<AuraInput>(
-                find.descendant(
+                find.ancestor(
                   of: find.byKey(const ValueKey('workspace_search')),
                   matching: find.byType(AuraInput),
                 ),
@@ -991,6 +1088,222 @@ void main() {
       expect(find.text('Import configuration here'), findsOneWidget);
     });
 
+    testWidgets('previews import source, counts, and new destination', (
+      tester,
+    ) async {
+      final fileService = _MemoryArchiveFileService(
+        pickedJson: _agentArchiveJson(),
+      );
+      final screenRepository = _FakeWorkspaceRepository();
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: 'unused',
+          repo: screenRepository,
+          archiveUsecase: _archiveUsecase(database, fileService),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey('workspace-archive-import-new')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Source: Portable'), findsOneWidget);
+      expect(find.text('Destination: a new local workspace'), findsOneWidget);
+      expect(find.text('Agents'), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
+      expect(await database.workspaceDao.getWorkspaceCount(), 0);
+      expect(fileService.pickCount, 1);
+    });
+
+    testWidgets('canceling import leaves workspace data unchanged', (
+      tester,
+    ) async {
+      await clearAppDatabase(database);
+      final workspaceRepository = WorkspaceRepository(database);
+      final workspace = await workspaceRepository.createWorkspace(
+        const WorkspaceToCreate(name: 'Target', type: .local),
+      );
+      final screenRepository = _FakeWorkspaceRepository()
+        ..addWorkspaceForTest(workspace);
+      final fileService = _MemoryArchiveFileService(
+        pickedJson: _agentArchiveJson(),
+      );
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: workspace.id,
+          repo: screenRepository,
+          archiveUsecase: _archiveUsecase(database, fileService),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(ValueKey('workspace_menu_${workspace.id}')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Import configuration here'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Destination: Target'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(await database.workspaceDao.getWorkspaceCount(), 1);
+      expect(await database.select(database.agents).get(), isEmpty);
+      expect(fileService.pickCount, 1);
+    });
+
+    testWidgets('confirms import once and rejects invalid archives', (
+      tester,
+    ) async {
+      await clearAppDatabase(database);
+      final screenRepository = _FakeWorkspaceRepository();
+      final fileService = _MemoryArchiveFileService(
+        pickedJson: _agentArchiveJson(),
+      );
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: 'unused',
+          repo: screenRepository,
+          archiveUsecase: _archiveUsecase(database, fileService),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey('workspace-archive-import-new')),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(await database.workspaceDao.getWorkspaceCount(), 1);
+      expect(await database.select(database.agents).get(), hasLength(1));
+      expect(fileService.pickCount, 1);
+
+      final invalidFileService = _MemoryArchiveFileService(
+        pickedJson: 'not an archive',
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          workspaceId: 'unused',
+          repo: screenRepository,
+          archiveUsecase: _archiveUsecase(database, invalidFileService),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('workspace-archive-import-new')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'This workspace configuration archive is invalid or damaged.',
+        ),
+        findsOneWidget,
+      );
+      expect(await database.workspaceDao.getWorkspaceCount(), 1);
+      expect(await database.select(database.agents).get(), hasLength(1));
+    });
+
+    testWidgets('selects export types and includes required dependencies', (
+      tester,
+    ) async {
+      await clearAppDatabase(database);
+      final workspaceRepository = WorkspaceRepository(database);
+      final workspace = await workspaceRepository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace', type: .local),
+      );
+      final screenRepository = _FakeWorkspaceRepository()
+        ..addWorkspaceForTest(workspace);
+      final _ = await database
+          .into(database.serviceConnections)
+          .insert(
+            ServiceConnectionsCompanion.insert(
+              id: const Value('connection-1'),
+              name: 'Provider',
+              serviceId: 'openai',
+              kind: .modelProvider,
+              authenticationType: .apiKey,
+              workspaceId: workspace.id,
+            ),
+          );
+      final _ = await database
+          .into(database.workspaceModelSelections)
+          .insert(
+            WorkspaceModelSelectionsCompanion.insert(
+              id: const Value('selection-1'),
+              modelId: 'gpt-4o',
+              modelConnectionId: 'connection-1',
+              toolSamplingPolicy: const Value('prefer'),
+            ),
+          );
+      final fileService = _MemoryArchiveFileService();
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: workspace.id,
+          repo: screenRepository,
+          archiveUsecase: _archiveUsecase(database, fileService),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(ValueKey('workspace_menu_${workspace.id}')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Export configuration'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.text('Required linked configuration is included automatically.'),
+        findsOneWidget,
+      );
+      for (final kind in WorkspaceConfigurationKind.values) {
+        final option = find.byKey(
+          ValueKey('workspace-archive-kind-${kind.name}'),
+        );
+        await tester.ensureVisible(option);
+        await tester.tap(option);
+        await tester.pump();
+      }
+
+      final exportButton = find.byKey(
+        const ValueKey('workspace-archive-export-confirm'),
+      );
+      expect(tester.widget<TextButton>(exportButton).onPressed, isNull);
+      expect(fileService.savedJson, isNull);
+
+      final modelSelection = find.byKey(
+        const ValueKey('workspace-archive-kind-modelSelection'),
+      );
+      await tester.ensureVisible(modelSelection);
+      await tester.tap(modelSelection);
+      await tester.pump();
+      expect(tester.widget<TextButton>(exportButton).onPressed, isNotNull);
+
+      await tester.tap(exportButton);
+      final _ = await tester.pumpAndSettle();
+
+      final savedJson = fileService.savedJson;
+      if (savedJson == null) fail('No selected archive was saved.');
+      final exported = WorkspaceConfigurationArchiveCodec.decode(savedJson);
+      expect(
+        exported.entries.map((entry) => entry.kind),
+        unorderedEquals([
+          WorkspaceConfigurationKind.modelConnection,
+          WorkspaceConfigurationKind.modelSelection,
+        ]),
+      );
+    });
+
     testWidgets(
       'filters local and connected names, then shows no-results state',
       (tester) async {
@@ -1064,7 +1377,7 @@ void main() {
         ),
       ];
       final cloudWorkspaceStates = {
-        cloudAccountKey(
+        CloudAccountKeyFactory.fromIdentity(
           'http://localhost:8080',
           'account-1',
         ): CloudWorkspaceViewState(
@@ -1081,7 +1394,7 @@ void main() {
           ],
           pendingInvites: const [],
         ),
-        cloudAccountKey(
+        CloudAccountKeyFactory.fromIdentity(
           'http://localhost:8080',
           'account-2',
         ): CloudWorkspaceViewState(
@@ -1212,9 +1525,42 @@ void main() {
       final combiningAcute = String.fromCharCode(0x0301);
       final precomposedCafe = 'Caf$acuteE';
       final decomposedCafe = 'Cafe$combiningAcute';
+      final compatibilityForm = '${String.fromCharCode(0xfb02)}ower Local';
+      final extendedCombiningMark = 'a${String.fromCharCode(0x1ab0)}x Local';
+      final greekLetters = String.fromCharCodes([
+        0x0391,
+        0x03b8,
+        0x03ae,
+        0x03bd,
+        0x03b1,
+      ]);
+      final greekName = '$greekLetters Local';
+      final dottedCapitalI = '${String.fromCharCode(0x0130)}stanbul Local';
+      final dotlessI = '${String.fromCharCode(0x0131)}stanbul Local';
+      final sharpS = 'Stra${String.fromCharCode(0x00df)}e Local';
+      final sharpSQuery = 'stra${String.fromCharCode(0x00df)}e';
+      final greekQuery = String.fromCharCodes([
+        0x03b1,
+        0x03b8,
+        0x03b7,
+        0x03bd,
+        0x03b1,
+      ]);
       final local = await repository.createWorkspace(
         .new(name: '$precomposedCafe Local', type: .local),
       );
+      for (final name in [
+        compatibilityForm,
+        extendedCombiningMark,
+        greekName,
+        dottedCapitalI,
+        dotlessI,
+        sharpS,
+      ]) {
+        final _ = await repository.createWorkspace(
+          .new(name: name, type: .local),
+        );
+      }
       final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Other Local', type: .local),
       );
@@ -1243,6 +1589,8 @@ void main() {
         ],
         pendingInvites: const [],
       );
+      final viewNotifier = ValueNotifier(true);
+      addTearDown(viewNotifier.dispose);
 
       await _pumpAndInit(
         tester,
@@ -1251,6 +1599,7 @@ void main() {
           accounts: [account],
           connectView: true,
           cloudWorkspaceState: cloudState,
+          viewNotifier: viewNotifier,
         ),
       );
       final _ = await tester.pumpAndSettle();
@@ -1266,6 +1615,33 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(find.text('$decomposedCafe Connected'), findsNothing);
       expect(find.text('Caf$graveE Cloud'), findsOneWidget);
+
+      viewNotifier.value = false;
+      final _ = await tester.pumpAndSettle();
+      await tester.enterText(find.byType(AuraInput), 'flower');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(compatibilityForm), findsOneWidget);
+
+      await tester.enterText(find.byType(AuraInput), 'ax');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(extendedCombiningMark), findsOneWidget);
+
+      await tester.enterText(find.byType(AuraInput), greekQuery);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(greekName), findsOneWidget);
+
+      await tester.enterText(find.byType(AuraInput), 'istanbul');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(dottedCapitalI), findsOneWidget);
+      expect(find.text(dotlessI), findsNothing);
+
+      await tester.enterText(find.byType(AuraInput), 'strasse');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(sharpS), findsNothing);
+
+      await tester.enterText(find.byType(AuraInput), sharpSQuery);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(sharpS), findsOneWidget);
     });
 
     testWidgets('retry reloads only the failed cloud account', (tester) async {
@@ -1306,13 +1682,19 @@ void main() {
           accounts: accounts,
           connectView: true,
           cloudLoaders: {
-            cloudAccountKey('http://localhost:8080', 'account-1'): () async {
+            CloudAccountKeyFactory.fromIdentity(
+              'http://localhost:8080',
+              'account-1',
+            ): () async {
               firstLoads++;
               if (firstLoads == 1) throw StateError('temporary failure');
 
               return state('Cloud One', 1);
             },
-            cloudAccountKey('http://localhost:8080', 'account-2'): () async {
+            CloudAccountKeyFactory.fromIdentity(
+              'http://localhost:8080',
+              'account-2',
+            ): () async {
               secondLoads++;
 
               return state('Cloud Two', 2);
@@ -1393,7 +1775,7 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(selectionRepository.selectedWorkspaceId, 'ws-2');
-      expect(router.lastLocation, '/workspaces/ws-2/more/manage-workspaces');
+      expect(router.lastLocation, '/workspaces/ws-2/manage-workspaces');
     });
 
     testWidgets('shows switch-specific error when selection fails', (
@@ -1497,6 +1879,7 @@ void main() {
     testWidgets('confirms before discarding dirty workspace edits', (
       tester,
     ) async {
+      final semantics = tester.ensureSemantics();
       final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: .local),
       );
@@ -1514,7 +1897,7 @@ void main() {
       await tester.enterText(_workspaceNameEditor(), 'Workspace B');
       await tester.pump();
       final _ = await tester.tap(
-        find.byKey(const ValueKey<String>('workspace_management_back')),
+        find.bySemanticsIdentifier('workspace_management_back'),
       );
       final _ = await tester.pumpAndSettle();
 
@@ -1526,7 +1909,7 @@ void main() {
       expect(_workspaceNameEditor(), findsOneWidget);
 
       final _ = await tester.tap(
-        find.byKey(const ValueKey<String>('workspace_cancel')),
+        find.bySemanticsIdentifier('workspace_cancel'),
       );
       final _ = await tester.pumpAndSettle();
       final _ = await tester.tap(find.text('Discard'));
@@ -1535,11 +1918,13 @@ void main() {
       expect(find.text('Discard unsaved changes?'), findsNothing);
       expect(_workspaceNameEditor(), findsNothing);
       expect((await repository.getWorkspaceById('ws-1'))?.name, 'Workspace A');
+      semantics.dispose();
     });
 
     testWidgets('saves workspace edits without showing discard confirmation', (
       tester,
     ) async {
+      final semantics = tester.ensureSemantics();
       final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace A', type: .local),
       );
@@ -1555,14 +1940,13 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       await tester.enterText(_workspaceNameEditor(), 'Workspace B');
-      final _ = await tester.tap(
-        find.byKey(const ValueKey<String>('workspace_save')),
-      );
+      final _ = await tester.tap(find.bySemanticsIdentifier('workspace_save'));
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Discard unsaved changes?'), findsNothing);
       expect(_workspaceNameEditor(), findsNothing);
       expect((await repository.getWorkspaceById('ws-1'))?.name, 'Workspace B');
+      semantics.dispose();
     });
 
     testWidgets('shows sign-in recovery for an expired cloud session', (
@@ -1867,66 +2251,198 @@ void main() {
       }
     });
 
-    for (final names in <List<String>>[
-      ['Fail One'],
-      ['Fail One', 'Fail Two'],
-      [
-        'Fail Very long workspace name beyond the preview limit',
-        'Fail Two',
-        'Fail Three',
-        'Fail Four',
-      ],
-    ]) {
-      testWidgets(
-        'bounds workspace failure feedback for ${names.length} items',
-        (tester) async {
-          final active = await repository.createWorkspace(
-            const WorkspaceToCreate(name: 'Home', type: .local),
-          );
-          for (final name in names) {
-            final _ = await repository.createWorkspace(
-              .new(name: name, type: .local),
-            );
-          }
-          repository.deleteError = .new('delete failed');
-
-          await _pumpAndInit(tester, _buildScreen(workspaceId: active.id));
-          final _ = await tester.pumpAndSettle();
-          await tester.enterText(find.byType(AuraInput), 'Fail');
-          final _ = await tester.pumpAndSettle();
-          await tester.tap(find.byKey(const ValueKey('workspace-select-all')));
-          final _ = await tester.pumpAndSettle();
-          await tester.tap(
-            find.byKey(const ValueKey('workspace-delete-selected')),
-          );
-          final _ = await tester.pumpAndSettle();
-          await tester.tap(find.text('Delete'));
-          final _ = await tester.pumpAndSettle();
-
-          final feedback =
-              tester
-                  .widget<Text>(
-                    find.textContaining(
-                      'Could not delete or remove ${names.length} workspace',
-                    ),
-                  )
-                  .data ??
-              fail('Expected failure feedback');
-          expect(
-            feedback,
-            contains(names.length == 4 ? 'Fail Very long' : 'Fail One'),
-          );
-          expect(feedback, isNot(contains('Fail Three')));
-          if (names.length == 4) {
-            expect(feedback, contains('2 more failures'));
-            expect(feedback, isNot(contains('preview limit')));
-          }
-          expect(
-            find.textContaining('${names.length} selected'),
-            findsOneWidget,
-          );
-        },
+    testWidgets('shows and retries only failed workspace deletions', (
+      tester,
+    ) async {
+      final active = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Home', type: .local),
       );
-    }
+      final success = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Target Success', type: .local),
+      );
+      final failedOne = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Target Fail One', type: .local),
+      );
+      final failedTwo = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Target Fail Two', type: .local),
+      );
+      final failedThree = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Target Fail Three', type: .local),
+      );
+      repository.failedDeleteIds.addAll([
+        failedOne.id,
+        failedTwo.id,
+        failedThree.id,
+      ]);
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: active.id));
+      final _ = await tester.pumpAndSettle();
+      await tester.enterText(find.byType(AuraInput), 'Target');
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('workspace-select-all')));
+      final _ = await tester.pumpAndSettle();
+      await tester.enterText(find.byType(AuraInput), '');
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('workspace-delete-selected')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(repository.deleteAttempts.toSet(), {
+        success.id,
+        failedOne.id,
+        failedTwo.id,
+        failedThree.id,
+      });
+      final failureDialog = find.byType(AlertDialog);
+      expect(
+        find.descendant(
+          of: failureDialog,
+          matching: find.text('Some items could not be deleted'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Retry failed'), findsOneWidget);
+      for (final name in [
+        'Target Fail One',
+        'Target Fail Two',
+        'Target Fail Three',
+      ]) {
+        expect(
+          find.descendant(of: failureDialog, matching: find.text(name)),
+          findsOneWidget,
+        );
+      }
+      expect(await repository.getWorkspaceById(success.id), isNull);
+
+      final beforeFirstRetry = repository.deleteAttempts.length;
+      repository.failedDeleteIds
+        ..clear()
+        ..add(failedTwo.id);
+      await tester.tap(find.text('Retry failed'));
+      final _ = await tester.pumpAndSettle();
+      expect(repository.deleteAttempts.skip(beforeFirstRetry).toSet(), {
+        failedOne.id,
+        failedTwo.id,
+        failedThree.id,
+      });
+      expect(
+        find.descendant(
+          of: failureDialog,
+          matching: find.text('Target Fail Two'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: failureDialog,
+          matching: find.text('Target Fail One'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: failureDialog,
+          matching: find.text('Target Fail Three'),
+        ),
+        findsNothing,
+      );
+
+      repository.failedDeleteIds.clear();
+      final beforeSecondRetry = repository.deleteAttempts.length;
+      await tester.tap(find.text('Retry failed'));
+      final _ = await tester.pumpAndSettle();
+      expect(repository.deleteAttempts.skip(beforeSecondRetry).toList(), [
+        failedTwo.id,
+      ]);
+      expect(await repository.getWorkspaceById(failedOne.id), isNull);
+      expect(await repository.getWorkspaceById(failedTwo.id), isNull);
+      expect(await repository.getWorkspaceById(failedThree.id), isNull);
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets(
+      'captures workspace layout, bulk selection, and sign-in status goldens',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(960, 1200));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final active = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Design system', type: .local),
+        );
+        final planning = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Planning', type: .local),
+        );
+        final research = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Research', type: .local),
+        );
+        final viewNotifier = ValueNotifier(false);
+        addTearDown(viewNotifier.dispose);
+
+        await _pumpAndInit(
+          tester,
+          _buildScreen(
+            workspaceId: active.id,
+            repo: repository,
+            viewNotifier: viewNotifier,
+            accounts: const [
+              CloudAccountSession(
+                serverUrl: 'http://localhost:8080',
+                userId: 'account-1',
+                email: 'dev@example.com',
+              ),
+            ],
+            cloudAuthenticationRequired: true,
+          ),
+        );
+        final _ = await tester.pumpAndSettle();
+
+        await expectLater(
+          find.byType(WorkspaceManagementScreen),
+          matchesGoldenFile('goldens/workspace_management.png'),
+        );
+
+        final selectAll = find.byKey(const ValueKey('workspace-select-all'));
+        await tester.tap(selectAll);
+        final _ = await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<AuraCheckbox>(
+                find.byKey(ValueKey('workspace-selection-${planning.id}')),
+              )
+              .value,
+          isTrue,
+        );
+        expect(
+          tester
+              .widget<AuraCheckbox>(
+                find.byKey(ValueKey('workspace-selection-${research.id}')),
+              )
+              .value,
+          isTrue,
+        );
+        await expectLater(
+          find.byType(WorkspaceManagementScreen),
+          matchesGoldenFile('goldens/workspace_management_bulk_selection.png'),
+        );
+
+        await tester.tap(selectAll);
+        final _ = await tester.pumpAndSettle();
+        await tester.binding.setSurfaceSize(const Size(420, 900));
+        final _ = await tester.pumpAndSettle();
+        await expectLater(
+          find.byType(WorkspaceManagementScreen),
+          matchesGoldenFile('goldens/workspace_management_compact.png'),
+        );
+
+        viewNotifier.value = true;
+        final _ = await tester.pumpAndSettle();
+        expect(find.text('Needs sign in'), findsOneWidget);
+        await expectLater(
+          find.byType(WorkspaceManagementScreen),
+          matchesGoldenFile('goldens/workspace_management_account_status.png'),
+        );
+      },
+      tags: ['golden'],
+    );
   });
 }

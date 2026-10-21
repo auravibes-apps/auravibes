@@ -1,6 +1,18 @@
 import 'dart:convert';
 
+import 'package:auravibes_engine/src/provider_error_sanitizer.dart';
 import 'package:auravibes_engine/src/skills/models/url_response.dart';
+
+/// A terminal stream failure with safe, bounded diagnostic text.
+final class SkillStreamFailure implements Exception {
+  const new _(this.terminalType, this.partialText);
+
+  final String terminalType;
+  final String partialText;
+
+  @override
+  String toString() => 'Skill stream failed: $terminalType';
+}
 
 /// Converts standard server-sent event responses into tool-readable text.
 ///
@@ -9,19 +21,39 @@ import 'package:auravibes_engine/src/skills/models/url_response.dart';
 /// event streams, while preserving unknown event streams for callers that
 /// need the raw protocol.
 class const SkillResponseDecoder() {
-  UrlResponse call(UrlResponse response) {
-    if (!_isEventStream(response)) return response;
+  UrlResponse call(
+    UrlResponse response, {
+    Iterable<String> secrets = const [],
+  }) {
+    final redactedBody = _redactSecrets(response.body, secrets);
+    if (!_isEventStream(response)) return _withBody(response, redactedBody);
 
-    final body = _SseTextAccumulator.decode(response.body);
-    if (body == null) return response;
+    final body = _SseTextAccumulator.decode(response.body, secrets);
+    if (body == null) return _withBody(response, redactedBody);
 
-    return UrlResponse(
-      statusCode: response.statusCode,
-      body: body,
-      headers: response.headers,
-      elapsed: response.elapsed,
-    );
+    return _withBody(response, _redactSecrets(body, secrets));
   }
+}
+
+UrlResponse _withBody(UrlResponse response, String body) {
+  if (body == response.body) return response;
+
+  return UrlResponse(
+    statusCode: response.statusCode,
+    body: body,
+    headers: response.headers,
+    elapsed: response.elapsed,
+  );
+}
+
+String _redactSecrets(String value, Iterable<String> secrets) {
+  var redacted = value;
+  final values = secrets.where((secret) => secret.isNotEmpty).toList()
+    ..sort((left, right) => right.length.compareTo(left.length));
+  for (final secret in values) {
+    redacted = redacted.replaceAll(secret, '[REDACTED]');
+  }
+  return redacted;
 }
 
 bool _isEventStream(UrlResponse response) {
@@ -43,12 +75,12 @@ bool _isEventStream(UrlResponse response) {
           1;
 }
 
-final class _SseTextAccumulator {
+final class _SseTextAccumulator(final Iterable<String> _secrets) {
   final StringBuffer _text = StringBuffer();
   final Map<String, String> _citations = {};
 
-  static String? decode(String body) {
-    final accumulator = _SseTextAccumulator();
+  static String? decode(String body, Iterable<String> secrets) {
+    final accumulator = _SseTextAccumulator(secrets);
     _SseEventParser(accumulator).parse(body);
 
     return accumulator.result();
@@ -65,6 +97,7 @@ final class _SseTextAccumulator {
   }
 
   void consume(String? eventType, String rawData) {
+    _throwIfFailure(eventType?.toLowerCase() ?? '');
     final data = rawData.trim();
     if (data.isEmpty || data == '[DONE]') return;
 
@@ -78,12 +111,25 @@ final class _SseTextAccumulator {
 
     final event = Map<String, dynamic>.from(decoded);
     final type = '${event['type'] ?? eventType ?? ''}'.toLowerCase();
+    _throwIfFailure(type);
     _collectCitations(event);
     final delta = _deltaText(event, type);
     if (delta != null) _appendDelta(delta);
 
     final finalText = _finalText(event, type);
     if (finalText != null) _reconcile(finalText);
+  }
+
+  void _throwIfFailure(String type) {
+    if (!const {
+      'response.failed',
+      'response.incomplete',
+      'error',
+    }.contains(type)) {
+      return;
+    }
+    final partial = _redactSecrets(_text.toString(), _secrets);
+    throw SkillStreamFailure._(type, sanitizeProviderErrorDetail(partial));
   }
 
   String? _finalText(Map<String, dynamic> event, String type) {
@@ -203,7 +249,7 @@ final class _SseEventParser(final _SseTextAccumulator _accumulator) {
     }
     if (line.startsWith(':')) return;
     if (line.startsWith('event:')) {
-      _consumeEventBeforeNewField();
+      if (_eventType != null) _consumeEventBeforeNewField();
       _eventType = _fieldValue(line);
 
       return;
@@ -222,7 +268,7 @@ final class _SseEventParser(final _SseTextAccumulator _accumulator) {
   }
 
   void _consumeEvent() {
-    if (_data.isEmpty) {
+    if (_data.isEmpty && _eventType == null) {
       _eventType = null;
 
       return;
@@ -258,7 +304,8 @@ Object? _decodeJson(String value) {
 
 bool _isFinalEvent(String type) =>
     type.contains('completed') ||
-    type.contains('complete') ||
+    type == 'complete' ||
+    type.endsWith('.complete') ||
     type.endsWith('.done') ||
     type.contains('message_stop') ||
     type.contains('finished');

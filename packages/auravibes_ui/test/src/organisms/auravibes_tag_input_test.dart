@@ -11,49 +11,63 @@ void main() {
     ),
   );
 
-  testWidgets('removes a tag through an accessible local control', (
+  testWidgets('removes tags only outside a read-only interaction scope', (
     tester,
   ) async {
-    var tags = <String>['planning', 'release'];
+    var editableTags = <String>['planning', 'release'];
+    var readOnlyChanges = 0;
     await tester.pumpWidget(
       app(
-        StatefulBuilder(
-          builder: (context, setState) => AuraTagInput(
-            value: tags,
-            onChanged: (value) => setState(() => tags = value),
-            removeLabel: (tag) => 'Remove $tag',
-          ),
+        Column(
+          children: [
+            StatefulBuilder(
+              builder: (context, setState) => AuraTagInput(
+                value: editableTags,
+                onChanged: (value) => setState(() => editableTags = value),
+                removeLabel: (tag) => 'Remove editable $tag',
+                key: const ValueKey('editable'),
+              ),
+            ),
+            AuraInteractionScope(
+              policy: const AuraInteractionPolicy.readOnly(),
+              child: AuraTagInput(
+                value: const ['planning'],
+                onChanged: (_) => readOnlyChanges++,
+                removeLabel: (tag) => 'Remove read-only $tag',
+                key: const ValueKey('read-only'),
+              ),
+            ),
+          ],
         ),
       ),
     );
 
-    await tester.tap(find.byTooltip('Remove planning'));
+    await tester.tap(find.byTooltip('Remove editable planning'));
     final _ = await tester.pumpAndSettle();
-
-    expect(find.text('planning'), findsNothing);
-    expect(find.text('release'), findsOneWidget);
-  });
-
-  testWidgets('does not remove tags in a read-only interaction scope', (
-    tester,
-  ) async {
-    var changes = 0;
-    await tester.pumpWidget(
-      app(
-        AuraInteractionScope(
-          policy: const AuraInteractionPolicy.readOnly(),
-          child: AuraTagInput(
-            value: const ['planning'],
-            onChanged: (_) => changes++,
-            removeLabel: (tag) => 'Remove $tag',
-          ),
-        ),
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('editable')),
+        matching: find.text('planning'),
       ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('editable')),
+        matching: find.text('release'),
+      ),
+      findsOneWidget,
     );
 
-    await tester.tap(find.byTooltip('Remove planning'));
+    await tester.tap(find.byTooltip('Remove read-only planning'));
     final _ = await tester.pumpAndSettle();
-
-    expect(changes, 0);
+    expect(readOnlyChanges, 0);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('read-only')),
+        matching: find.text('planning'),
+      ),
+      findsOneWidget,
+    );
   });
 }

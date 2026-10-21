@@ -336,11 +336,13 @@ Map<String, dynamic> _generationOptions(ModelRequest request) {
   };
 }
 
-Map<String, dynamic>? _toolChoice(String? choice) {
-  if (choice == null) return null;
-  if (['auto', 'any', 'none'].contains(choice)) return {'type': choice};
+Map<String, dynamic>? _toolChoice(ToolChoice? choice) {
+  final value = choice?.value;
+  if (value == null) return null;
+  if (value == 'required') return {'type': 'any'};
+  if (['auto', 'any', 'none'].contains(value)) return {'type': value};
 
-  return {'type': 'tool', 'name': choice};
+  return {'type': 'tool', 'name': value};
 }
 
 Map<String, dynamic>? _thinking(Object? value) {

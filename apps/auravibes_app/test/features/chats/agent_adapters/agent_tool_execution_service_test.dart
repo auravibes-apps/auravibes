@@ -1,10 +1,14 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_execution_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
@@ -16,6 +20,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         SkillCommandTarget,
         callSkillToolName;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../test_mocks.dart';
@@ -44,6 +49,7 @@ void main() {
               required mcpServerId,
               required toolIdentifier,
               required arguments,
+              onElicitation,
             }) async {
               calledMcpServerId = mcpServerId;
               calledMcpToolIdentifier = toolIdentifier;
@@ -69,6 +75,15 @@ void main() {
       calledMcpArguments = null;
 
       toolMessage = _runAllowedToolsToolMessage();
+      when(() => messageRepository.getMessageById(any()))
+          .thenAnswer((_) async => toolMessage);
+      when(
+        () => messageRepository.patchMessage(
+          any(),
+          any(),
+          conversationId: any(named: 'conversationId'),
+        ),
+      ).thenAnswer((_) async => toolMessage);
 
       usecase = AgentToolExecutionService(
         loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
@@ -80,6 +95,7 @@ void main() {
                 required mcpServerId,
                 required toolIdentifier,
                 required arguments,
+                onElicitation,
               }) async {
                 calledMcpServerId = mcpServerId;
                 calledMcpToolIdentifier = toolIdentifier;
@@ -105,6 +121,7 @@ void main() {
             required mcpServerId,
             required toolIdentifier,
             required arguments,
+            onElicitation,
           }) async => 'unused',
         ),
         toolDecisionService: getAgentIterationDecisionUsecase,
@@ -146,6 +163,77 @@ void main() {
       expect(decision.permissionResult.name, 'granted');
     });
 
+    test(
+      'logs execution phase and redacted unsupported error details',
+      () async {
+        final provider = AppAllowedToolsDataProvider(
+          messageRepository: messageRepository,
+          loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
+          resolvedToolService: .new(
+            agentCancellationRuntime: agentCancellationRuntime,
+            mcpToolCaller: ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+              onElicitation,
+            }) async => 'unused',
+          ),
+          toolDecisionService: getAgentIterationDecisionUsecase,
+          agentCancellationRuntime: agentCancellationRuntime,
+        );
+        final messages = <String>[];
+        final subscription = Logger.root.onRecord.listen((record) {
+          if (record.loggerName == 'agent_tool_execution_service') {
+            messages.add(record.message);
+          }
+        });
+
+        provider
+          ..logToolExecutionError((
+            conversationId: 'conversation-1',
+            toolCallId: 'call-1',
+            tool: ResolvedTool.skillCommand(commandName: callSkillToolName),
+            error: UnsupportedError(
+              'App skill tool has no executor: browser_read_page '
+              'apiKey=secret',
+            ),
+            stackTrace: StackTrace.current,
+            failurePhase: 'callSkillTool.skillNative',
+          ))
+          ..logToolExecutionError((
+            conversationId: 'conversation-1',
+            toolCallId: 'call-2',
+            tool: ResolvedTool.skillCommand(commandName: callSkillToolName),
+            error: TimeoutException(
+              'Waiting for WebView.',
+              const Duration(seconds: 8),
+            ),
+            stackTrace: StackTrace.current,
+            failurePhase: 'callSkillTool.skillNative',
+          ));
+        await Future<void>.delayed(.zero);
+        await subscription.cancel();
+
+        expect(messages, hasLength(2));
+        final unsupportedMessage = messages.singleWhere(
+          (message) => message.contains('errorType=UnsupportedError'),
+        );
+        final timeoutMessage = messages.singleWhere(
+          (message) => message.contains('errorType=TimeoutException'),
+        );
+        expect(
+          unsupportedMessage,
+          contains('failurePhase=callSkillTool.skillNative'),
+        );
+        expect(
+          unsupportedMessage,
+          contains('App skill tool has no executor: browser_read_page'),
+        );
+        expect(unsupportedMessage, isNot(contains('apiKey=secret')));
+        expect(timeoutMessage, contains('duration=8s'));
+      },
+    );
+
     group('effective approval targets', () {
       AppAllowedToolsDataProvider providerWith(
         ResolveSkillCommandTarget? resolveSkillTarget,
@@ -159,6 +247,7 @@ void main() {
               required mcpServerId,
               required toolIdentifier,
               required arguments,
+              onElicitation,
             }) async => 'unused',
           ),
           toolDecisionService: getAgentIterationDecisionUsecase,
@@ -178,6 +267,7 @@ void main() {
               required mcpServerId,
               required toolIdentifier,
               required arguments,
+              onElicitation,
             }) async => 'unused',
           ),
           toolDecisionService: getAgentIterationDecisionUsecase,
@@ -575,9 +665,58 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.waitForToolApproval);
-        final _ = verifyNever(
-          () => messageRepository.patchMessage(any(), any()),
+        final patches = verify(
+          () => messageRepository.patchMessage(
+            any(),
+            captureAny(),
+            conversationId: 'conversation-1',
+          ),
+        ).captured.cast<MessagePatch>();
+        expect(patches, isNotEmpty);
+        final restored =
+            MessageMetadataEntity.fromJsonString(
+              jsonEncode(
+                (patches.last.metadata ?? fail('Expected metadata')).toJson(),
+              ),
+            ) ??
+            fail('Expected restored metadata');
+        expect(restored.toolCalls.first.approvalRequested, isTrue);
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-1',
+            resolvedTool: tool.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-1',
+            permissionResult: .granted,
+          ),
         );
+        when(
+          () => loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => const LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [],
+            notFoundToolCallIds: [],
+            previouslyFailedToolCallIds: [],
+            pendingApprovalToolCallIds: ['tool-1'],
+          ),
+        );
+        clearInteractions(resolveToolApprovalDecision);
+        expect(
+          await usecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+          AgentIterationDecision.waitForToolApproval,
+        );
+        verifyZeroInteractions(resolveToolApprovalDecision);
       },
     );
 
@@ -657,6 +796,101 @@ void main() {
             .resultStatus,
         ToolCallResultStatus.toolNotFound,
       );
+    });
+
+    test('persists MCP App data separately from model output', () async {
+      const appData = <String, Object?>{
+        'content': [
+          {'type': 'text', 'text': 'tool result'},
+        ],
+        '_meta': {
+          'ui': {'resourceUri': 'ui://tool/view'},
+        },
+      };
+      final tool = AgentToolToCall(
+        tool: ResolvedTool.mcp(
+          tableId: 'tool-1',
+          toolIdentifier: 'remote-tool',
+          mcp: (
+            mcpServerId: 'server-1',
+            mcpSlug: 'server-1',
+            outputSchemaJson: null,
+          ),
+        ),
+        id: 'tool-1',
+        argumentsRaw: '{}',
+      );
+      final service = AgentToolExecutionService(
+        loadLatestMessageToolCallsUsecase: loadLatestMessageToolCallsUsecase,
+        messageRepository: messageRepository,
+        runResolvedToolUsecase: .new(
+          agentCancellationRuntime: agentCancellationRuntime,
+          mcpToolCaller:
+              ({
+                required mcpServerId,
+                required toolIdentifier,
+                required arguments,
+                onElicitation,
+              }) async => const McpToolCallerResult(
+                modelText: 'model result',
+                appData: appData,
+              ),
+        ),
+        getAgentIterationDecisionUsecase: getAgentIterationDecisionUsecase,
+        agentCancellationRuntime: agentCancellationRuntime,
+        resolveToolApprovalDecision: resolveToolApprovalDecision,
+      );
+
+      when(
+        () => loadLatestMessageToolCallsUsecase.call(
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer(
+        (_) async => LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [tool],
+          notFoundToolCallIds: const [],
+          previouslyFailedToolCallIds: const [],
+        ),
+      );
+      when(() => messageRepository.getMessageById('message-1'))
+          .thenAnswer((_) async => toolMessage);
+      when(
+        () => resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-1',
+          resolvedTool: tool.tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-1',
+          permissionResult: .granted,
+        ),
+      );
+      when(
+        () => messageRepository.patchMessage(
+          'message-1',
+          any(),
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer((_) async => toolMessage);
+      when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
+          .thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+      final _ = await service.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      final updatedToolCalls = _capturedToolCalls(messageRepository);
+      if (updatedToolCalls == null) fail('Expected persisted tool calls.');
+      final updatedToolCall = updatedToolCalls.singleWhere(
+        (value) => value.id == 'tool-1',
+      );
+      expect(updatedToolCall.responseRaw, 'model result');
+      expect(updatedToolCall.appData, appData);
     });
 
     test('executes multiple granted tools and collects all results', () async {
@@ -1121,9 +1355,14 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.waitForToolApproval);
-        final _ = verifyNever(
-          () => messageRepository.patchMessage(any(), any()),
-        );
+        final patches = verify(
+          () => messageRepository.patchMessage(
+            any(),
+            captureAny(),
+            conversationId: 'conversation-1',
+          ),
+        ).captured.cast<MessagePatch>();
+        expect(patches, isNotEmpty);
       },
     );
   });
@@ -1145,6 +1384,7 @@ void main() {
               required mcpServerId,
               required toolIdentifier,
               required arguments,
+              onElicitation,
             }) async {
               return 'mcp result';
             },
@@ -1172,6 +1412,7 @@ void main() {
                 required mcpServerId,
                 required toolIdentifier,
                 required arguments,
+                onElicitation,
               }) async {
                 return 'mcp result';
               },
@@ -1223,6 +1464,27 @@ void main() {
           ),
         );
 
+        final message = _runAllowedToolsToolMessage().copyWith(
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'native-tool-1',
+                name: 'url',
+                argumentsRaw: '{}',
+                approvalRequested: false,
+              ),
+            ],
+          ),
+        );
+        when(() => messageRepository.getMessageById('message-1'))
+            .thenAnswer((_) async => message);
+        when(
+          () => messageRepository.patchMessage(
+            'message-1',
+            any(),
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer((_) async => message);
         final result = await usecase.call(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
@@ -1237,9 +1499,14 @@ void main() {
             resolvedTool: nativeTool.tool,
           ),
         ).called(1);
-        final _ = verifyNever(
-          () => messageRepository.patchMessage(any(), any()),
-        );
+        final patches = verify(
+          () => messageRepository.patchMessage(
+            any(),
+            captureAny(),
+            conversationId: 'conversation-1',
+          ),
+        ).captured.cast<MessagePatch>();
+        expect(patches, isNotEmpty);
       },
     );
 
@@ -1612,6 +1879,7 @@ void main() {
               required mcpServerId,
               required toolIdentifier,
               required arguments,
+              onElicitation,
             }) async {
               return 'mcp result';
             },
@@ -1639,6 +1907,7 @@ void main() {
                 required mcpServerId,
                 required toolIdentifier,
                 required arguments,
+                onElicitation,
               }) async {
                 return 'mcp result';
               },

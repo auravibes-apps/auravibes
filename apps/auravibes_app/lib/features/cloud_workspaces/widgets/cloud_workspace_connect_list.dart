@@ -274,9 +274,9 @@ class const _AvailableWorkspaceMenu({
           if (onDetails != null) _detailsItem(),
           if (onCopyId != null) _copyIdItem(),
         ],
+        identifier: selectorId,
         tooltip: LocaleKeys.common_show_more.tr(),
       ),
-      identifier: selectorId,
     );
   }
 

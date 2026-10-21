@@ -8,24 +8,28 @@ class ModelConnectionRepository {
     Session session, {
     required int workspaceId,
     required String userId,
+    Transaction? transaction,
   }) => WorkspaceMember.db.findFirstRow(
     session,
     where: (table) =>
         table.workspaceId.equals(workspaceId) &
         table.userId.equals(userId) &
         table.removedAt.equals(null),
+    transaction: transaction,
   );
 
   Future<WorkspaceModelConnection?> findConnection(
     Session session, {
     required int workspaceId,
     required String connectionId,
+    Transaction? transaction,
   }) => WorkspaceModelConnection.db.findFirstRow(
     session,
     where: (table) =>
         table.workspaceId.equals(workspaceId) &
         table.connectionId.equals(connectionId) &
         table.deletedAt.equals(null),
+    transaction: transaction,
   );
 
   Future<List<WorkspaceModelConnection>> listConnections(
@@ -35,6 +39,60 @@ class ModelConnectionRepository {
     session,
     where: (table) =>
         table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
+  );
+
+  Future<List<WorkspaceModelSelectionToolSamplingPolicy>>
+  listToolSamplingPolicies(
+    Session session, {
+    required int workspaceId,
+  }) => WorkspaceModelSelectionToolSamplingPolicy.db.find(
+    session,
+    where: (table) => table.workspaceId.equals(workspaceId),
+  );
+
+  Future<WorkspaceModelSelectionToolSamplingPolicy?> findToolSamplingPolicy(
+    Session session, {
+    required int workspaceId,
+    required String connectionId,
+    required String modelId,
+    required Transaction transaction,
+  }) => WorkspaceModelSelectionToolSamplingPolicy.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.connectionId.equals(connectionId) &
+        table.modelId.equals(modelId),
+    transaction: transaction,
+  );
+
+  Future<WorkspaceModelSelectionToolSamplingPolicy> insertToolSamplingPolicy(
+    Session session,
+    WorkspaceModelSelectionToolSamplingPolicy policy, {
+    required Transaction transaction,
+  }) => WorkspaceModelSelectionToolSamplingPolicy.db.insertRow(
+    session,
+    policy,
+    transaction: transaction,
+  );
+
+  Future<WorkspaceModelSelectionToolSamplingPolicy> updateToolSamplingPolicy(
+    Session session,
+    WorkspaceModelSelectionToolSamplingPolicy policy, {
+    required Transaction transaction,
+  }) => WorkspaceModelSelectionToolSamplingPolicy.db.updateRow(
+    session,
+    policy,
+    transaction: transaction,
+  );
+
+  Future<WorkspaceModelSelectionToolSamplingPolicy> deleteToolSamplingPolicy(
+    Session session,
+    WorkspaceModelSelectionToolSamplingPolicy policy, {
+    required Transaction transaction,
+  }) => WorkspaceModelSelectionToolSamplingPolicy.db.deleteRow(
+    session,
+    policy,
+    transaction: transaction,
   );
 
   Future<List<RecentModelSelection>> listRecentSelections(
@@ -135,6 +193,7 @@ class ModelConnectionRepository {
     required int workspaceId,
     required String userId,
     required String connectionId,
+    Transaction? transaction,
   }) => const WorkspaceSecretResolver().findForInitiator(
     session,
     workspaceId: workspaceId,
@@ -142,5 +201,6 @@ class ModelConnectionRepository {
     initiatorUserId: userId,
     resourceId: connectionId,
     allowWorkspaceFallback: true,
+    transaction: transaction,
   );
 }

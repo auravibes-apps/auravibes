@@ -6,6 +6,7 @@ import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -31,17 +32,35 @@ void main() {
               GoRoute(
                 path: '/',
                 builder: (context, state) => AuraSdkMaterialSurface(
-                  child: Builder(
-                    builder: (context) {
-                      observedTheme = context.auraTheme;
-                      final materialTheme = Theme.of(context);
-                      observedMaterialTheme = materialTheme;
-                      observedSelectionTheme = materialTheme.textSelectionTheme;
-                      observedPageTransitionsTheme =
-                          materialTheme.pageTransitionsTheme;
+                  child: Column(
+                    children: [
+                      Builder(
+                        builder: (context) {
+                          observedTheme = context.auraTheme;
+                          final materialTheme = Theme.of(context);
+                          observedMaterialTheme = materialTheme;
+                          observedSelectionTheme =
+                              materialTheme.textSelectionTheme;
+                          observedPageTransitionsTheme =
+                              materialTheme.pageTransitionsTheme;
 
-                      return const SizedBox.shrink();
-                    },
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                      SizedBox(
+                        height: 100,
+                        child: ListView(
+                          children: const [SizedBox(height: 300)],
+                        ),
+                      ),
+                      SizedBox(
+                        height: 100,
+                        child: ListView(
+                          scrollDirection: .horizontal,
+                          children: const [SizedBox(width: 1200)],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -70,6 +89,13 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(observedTheme?.colors.onSurface, AuraTheme.light.colors.onSurface);
+    var systemOverlayStyle = tester
+        .widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+          find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+        )
+        .value;
+    expect(systemOverlayStyle.statusBarBrightness, Brightness.light);
+    expect(systemOverlayStyle.statusBarIconBrightness, Brightness.dark);
     final materialTheme =
         observedMaterialTheme ??
         fail('Expected the route to build with a Material theme.');
@@ -161,6 +187,13 @@ void main() {
         brightness: .dark,
       ).onSurface,
     );
+    systemOverlayStyle = tester
+        .widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+          find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+        )
+        .value;
+    expect(systemOverlayStyle.statusBarBrightness, Brightness.dark);
+    expect(systemOverlayStyle.statusBarIconBrightness, Brightness.light);
     final darkPrimary = observedTheme?.colors.primary;
     expect(observedSelectionTheme?.cursorColor, darkPrimary);
     expect(observedSelectionTheme?.selectionHandleColor, darkPrimary);
@@ -169,63 +202,6 @@ void main() {
       darkPrimary?.withValues(alpha: 0.24),
     );
     expect(find.byType(AuraSdkMaterialSurface), findsWidgets);
-  });
-
-  testWidgets('app scroll behavior adds one scrollbar per scrollable', (
-    tester,
-  ) async {
-    AppFlavorConfig.instance.setAppFlavor(.dev);
-    final router = GoRouter(
-      routes: [
-        GoRoute(
-          path: '/',
-          builder: (_, _) => AuraSdkMaterialSurface(
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 100,
-                  child: ListView(children: const [SizedBox(height: 300)]),
-                ),
-                SizedBox(
-                  height: 100,
-                  child: ListView(
-                    scrollDirection: .horizontal,
-                    children: const [SizedBox(width: 1200)],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-    addTearDown(router.dispose);
-    final container = ProviderContainer(
-      overrides: [
-        themeProvider.overrideWith(_TestThemeNotifier.new),
-        accentHueProvider.overrideWith(_TestAccentHueNotifier.new),
-        routerProvider.overrideWith((ref) => router),
-      ],
-    );
-    addTearDown(container.dispose);
-
-    final _ = await tester.runAsync(
-      () => tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: EasyLocalization(
-            child: const app.MyApp(),
-            supportedLocales: const [Locale('en')],
-            path: 'assets/i18n',
-            fallbackLocale: const Locale('en'),
-            startLocale: const Locale('en'),
-            useOnlyLangCode: true,
-          ),
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
     expect(find.byType(Scrollbar), findsNWidgets(2));
   });
 }

@@ -8,15 +8,58 @@ import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 
 void main() {
   group('ApplyConversationSkillActionUsecase', () {
+    test('history write failure logs no content and does not retry', () async {
+      final records = <LogRecord>[];
+      final subscription = Logger.root.onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      var writes = 0;
+      var sends = 0;
+      final usecase = _usecase(
+        send: (_, _, _) async => sends++,
+        recordRecentSkillUse: (_, _, _) async {
+          writes++;
+          throw StateError('research Research secret-prompt credential-token');
+        },
+      );
+
+      final result = await _call(
+        usecase,
+        workspaceId: 'workspace-1',
+        conversationId: 'conversation-1',
+        slug: 'research',
+        action: .useNow,
+        userRequestForSkill: _requestForSkill,
+      );
+
+      expect(result, ConversationSkillActionResult.used);
+      expect(writes, 1);
+      expect(sends, 1);
+      final diagnostics = records
+          .where(
+            (record) => record.loggerName == 'apply_conversation_skill_action',
+          )
+          .toList();
+      expect(diagnostics, hasLength(1));
+      expect(diagnostics.single.level, Level.WARNING);
+      expect(
+        diagnostics.single.message,
+        'Recent skill history write failed. Request continues without retry.',
+      );
+      expect(diagnostics.single.error, isNull);
+      expect(diagnostics.single.stackTrace, isNull);
+    });
     test('Add persists selection without sending a message', () async {
       var loads = 0;
       var sends = 0;
+      final recentSkills = <String>[];
       final usecase = _usecase(
         load: (_, _, _) async => loads++,
         send: (_, _, _) async => sends++,
+        recordRecentSkillUse: (_, _, slug) async => recentSkills.add(slug),
       );
 
       final result = await _call(
@@ -31,7 +74,36 @@ void main() {
       expect(result, ConversationSkillActionResult.added);
       expect(loads, 1);
       expect(sends, 0);
+      expect(recentSkills, isEmpty);
     });
+
+    test(
+      'Use now records the workspace skill before sending its request',
+      () async {
+        final events = <String>[];
+        final usecase = _usecase(
+          send: (_, _, _) {
+            events.add('send');
+
+            return Future<void>.value();
+          },
+          recordRecentSkillUse: (workspaceId, conversationId, slug) async =>
+              events.add('recent:$workspaceId:$conversationId:$slug'),
+        );
+
+        final result = await _call(
+          usecase,
+          workspaceId: 'workspace-1',
+          conversationId: 'conversation-1',
+          slug: 'research',
+          action: .useNow,
+          userRequestForSkill: _requestForSkill,
+        );
+
+        expect(result, ConversationSkillActionResult.used);
+        expect(events, ['recent:workspace-1:conversation-1:research', 'send']);
+      },
+    );
 
     test(
       'stale catalog revision prevents selection and continuation',
@@ -320,6 +392,12 @@ ApplyConversationSkillActionUsecase _usecase({
     ChatDraft draft,
   )?
   send,
+  Future<void> Function(
+    String workspaceId,
+    String conversationId,
+    String skillSlug,
+  )?
+  recordRecentSkillUse,
   String catalogRevision = 'current-revision',
 }) => ApplyConversationSkillActionUsecase(
   workspaceIdForConversation:
@@ -341,27 +419,29 @@ ApplyConversationSkillActionUsecase _usecase({
   ],
   loadSkill: load ?? (_, _, _) => Future<void>.value(),
   sendMessage: send ?? (_, _, _) => Future<void>.value(),
+  recordRecentSkillUse:
+      recordRecentSkillUse ?? (_, _, _) => Future<void>.value(),
 );
 
 const _skill = AvailableSkill(
-  source: .user,
   id: 'skill-1',
   slug: 'research',
   title: 'Research',
   description: 'Research topics.',
   content: 'Research carefully.',
+  source: .user,
   kind: .template,
   credentialReadiness: .ready,
 );
 
 AvailableSkill _skillWithReadiness(SkillCredentialReadiness readiness) =>
     AvailableSkill(
-      source: _skill.source,
       id: _skill.id,
       slug: _skill.slug,
       title: _skill.title,
       description: _skill.description,
       content: _skill.content,
+      source: _skill.source,
       kind: _skill.kind,
       credentialReadiness: readiness,
     );

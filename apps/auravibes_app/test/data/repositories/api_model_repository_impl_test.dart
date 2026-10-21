@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   test(
@@ -19,7 +20,9 @@ void main() {
         'model-capabilities',
       );
       final file = File('${directory.path}/models.sqlite');
-      var database = AppDatabase(connection: NativeDatabase(file));
+      AppDatabase database = _CapabilitiesDatabaseBeforeReopen(
+        NativeDatabase(file),
+      );
       try {
         final repository = ApiModelRepository(database);
         final _ = await repository.batchUpsertProviders([
@@ -46,7 +49,7 @@ void main() {
             ),
         ]);
         await database.close();
-        database = AppDatabase(connection: NativeDatabase(file));
+        database = _CapabilitiesDatabaseAfterReopen(NativeDatabase(file));
         final models = await ApiModelRepository(database).getAllModels();
         expect(models, hasLength(4));
         for (final model in models) {
@@ -67,9 +70,9 @@ void main() {
   group('ApiModelRepository', () {
     final fixture = _ApiModelRepositoryFixture();
 
-    setUp(fixture.reset);
+    setUp(fixture.resetForTest);
 
-    tearDown(fixture.dispose);
+    tearDownAll(fixture.dispose);
 
     const providerRow = ApiModelProvidersTable(
       id: 'openai',
@@ -302,6 +305,22 @@ void main() {
     });
 
     group('replaceAllData', () {
+      final failureDatabase = _ModelReplacementFailureDatabase(
+        DatabaseConnection(NativeDatabase.memory()),
+      );
+
+      setUp(() async {
+        await failureDatabase.customStatement(
+          'DROP TRIGGER IF EXISTS fail_model_sync',
+        );
+        await failureDatabase.customStatement(
+          'DROP TRIGGER IF EXISTS fail_stale_provider_delete',
+        );
+        await clearAppDatabase(failureDatabase);
+      });
+
+      tearDownAll(failureDatabase.close);
+
       test('upserts providers and models in a transaction', () async {
         when(() => fixture.mockProvidersDao.batchUpsertProviders(any()))
             .thenAnswer((_) async => [providerRow]);
@@ -348,16 +367,12 @@ void main() {
       });
 
       test('preserves existing data when model replacement fails', () async {
-        final database = AppDatabase(
-          connection: DatabaseConnection(NativeDatabase.memory()),
-        );
-        addTearDown(database.close);
-        final repository = ApiModelRepository(database);
+        final repository = ApiModelRepository(failureDatabase);
 
-        final _ = await database.apiModelProvidersDao.upsertProvider(
+        final _ = await failureDatabase.apiModelProvidersDao.upsertProvider(
           .insert(id: 'existing-provider', name: 'Existing Provider'),
         );
-        final _ = await database.apiModelsDao.upsertModel(
+        final _ = await failureDatabase.apiModelsDao.upsertModel(
           .insert(
             modelProvider: 'existing-provider',
             id: 'existing-model',
@@ -366,7 +381,7 @@ void main() {
             limitOutput: 4096,
           ),
         );
-        await database.customStatement('''
+        await failureDatabase.customStatement('''
           CREATE TRIGGER fail_model_sync
           BEFORE INSERT ON api_models
           WHEN NEW.id = 'new-model'
@@ -406,16 +421,12 @@ void main() {
       });
 
       test('rolls back when provider deletion fails', () async {
-        final database = AppDatabase(
-          connection: DatabaseConnection(NativeDatabase.memory()),
-        );
-        addTearDown(database.close);
-        final repository = ApiModelRepository(database);
+        final repository = ApiModelRepository(failureDatabase);
 
-        final _ = await database.apiModelProvidersDao.upsertProvider(
+        final _ = await failureDatabase.apiModelProvidersDao.upsertProvider(
           .insert(id: 'existing-provider', name: 'Existing Provider'),
         );
-        final _ = await database.apiModelsDao.upsertModel(
+        final _ = await failureDatabase.apiModelsDao.upsertModel(
           .insert(
             modelProvider: 'existing-provider',
             id: 'existing-model',
@@ -424,7 +435,7 @@ void main() {
             limitOutput: 4096,
           ),
         );
-        await database.customStatement('''
+        await failureDatabase.customStatement('''
           CREATE TRIGGER fail_stale_provider_delete
           BEFORE DELETE ON api_model_providers
           WHEN OLD.id = 'existing-provider'
@@ -565,40 +576,70 @@ void main() {
   });
 }
 
+typedef _ApiModelRepositoryFixtureSetup = ({
+  MockApiModelProvidersDao mockProvidersDao,
+  MockApiModelsDao mockModelsDao,
+  _TestAppDatabase database,
+  ApiModelRepository repository,
+});
+
+_ApiModelRepositoryFixtureSetup _createApiModelRepositoryFixtureSetup() {
+  final mockProvidersDao = MockApiModelProvidersDao();
+  final mockModelsDao = MockApiModelsDao();
+  final database = _TestAppDatabase(mockProvidersDao, mockModelsDao);
+
+  return (
+    mockProvidersDao: mockProvidersDao,
+    mockModelsDao: mockModelsDao,
+    database: database,
+    repository: .new(database),
+  );
+}
+
 class _ApiModelRepositoryFixture {
-  MockApiModelProvidersDao? _mockProvidersDao;
-  MockApiModelsDao? _mockModelsDao;
-  _TestAppDatabase? _database;
-  ApiModelRepository? _repository;
+  new() : this._(_createApiModelRepositoryFixtureSetup());
 
-  MockApiModelProvidersDao get mockProvidersDao =>
-      _mockProvidersDao ?? fail('Fixture not initialized');
+  new _(_ApiModelRepositoryFixtureSetup setup)
+    : _mockProvidersDao = setup.mockProvidersDao,
+      _mockModelsDao = setup.mockModelsDao,
+      _database = setup.database,
+      _repository = setup.repository;
 
-  MockApiModelsDao get mockModelsDao =>
-      _mockModelsDao ?? fail('Fixture not initialized');
+  final MockApiModelProvidersDao _mockProvidersDao;
+  final MockApiModelsDao _mockModelsDao;
+  final _TestAppDatabase _database;
+  final ApiModelRepository _repository;
 
-  _TestAppDatabase get database => _database ?? fail('Fixture not initialized');
+  MockApiModelProvidersDao get mockProvidersDao => _mockProvidersDao;
 
-  ApiModelRepository get repository =>
-      _repository ?? fail('Fixture not initialized');
+  MockApiModelsDao get mockModelsDao => _mockModelsDao;
 
-  void reset() {
-    final providersDao = MockApiModelProvidersDao();
-    final modelsDao = MockApiModelsDao();
-    final database = _TestAppDatabase(providersDao, modelsDao);
-    _mockProvidersDao = providersDao;
-    _mockModelsDao = modelsDao;
-    _database = database;
-    _repository = .new(database);
+  _TestAppDatabase get database => _database;
+
+  ApiModelRepository get repository => _repository;
+
+  Future<void> resetForTest() async {
+    reset(_mockProvidersDao);
+    reset(_mockModelsDao);
+    _database.transactionCount = 0;
+    await clearAppDatabase(_database);
   }
 
   Future<void> dispose() async {
-    await database.close();
-    _mockProvidersDao = null;
-    _mockModelsDao = null;
-    _database = null;
-    _repository = null;
+    await _database.close();
   }
+}
+
+final class _CapabilitiesDatabaseBeforeReopen extends AppDatabase {
+  new(QueryExecutor connection) : super(connection: connection);
+}
+
+final class _CapabilitiesDatabaseAfterReopen extends AppDatabase {
+  new(QueryExecutor connection) : super(connection: connection);
+}
+
+final class _ModelReplacementFailureDatabase extends AppDatabase {
+  new(QueryExecutor connection) : super(connection: connection);
 }
 
 class _TestAppDatabase(

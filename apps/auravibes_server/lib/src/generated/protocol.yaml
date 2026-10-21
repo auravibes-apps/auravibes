@@ -25,12 +25,19 @@ conversation:
   - listPage:
   - get:
   - listMessages:
+  - bookmarkMessage:
+  - unbookmarkMessage:
+  - listMessageBookmarks:
+  - searchMessages:
   - update:
   - delete:
   - startTurn:
   - continueTurn:
   - getTurn:
   - getConversationSnapshot:
+  - detachToolCall:
+  - listBackgroundWorks:
+  - stopBackgroundWork:
   - queueConversationMessage:
   - continueConversation:
   - stopConversation:
@@ -59,6 +66,7 @@ modelConnection:
   - update:
   - delete:
   - listSelections:
+  - updateToolSamplingPolicy:
   - listRecentSelections:
   - recordRecentSelection:
   - testAndSync:

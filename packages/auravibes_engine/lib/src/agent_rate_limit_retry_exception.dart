@@ -8,7 +8,7 @@ final class AgentRateLimitRetryException extends GenkitException {
         providerException.message,
         status: providerException.status,
         details: providerException.details,
-        underlyingException: providerException.underlyingException,
+        cause: providerException.cause,
         stackTrace: providerException.stackTrace,
       );
 

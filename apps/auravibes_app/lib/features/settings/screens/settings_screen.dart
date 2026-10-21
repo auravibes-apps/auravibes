@@ -5,7 +5,9 @@
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/widgets/accent_color_section.dart';
 import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
+import 'package:auravibes_app/features/settings/widgets/legal_links_section.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -107,7 +109,7 @@ class const _SettingsPageSurface({
   required final VoidCallback onThemeReset,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: _SettingsBody(
       workspaceId: workspaceId,
       currentTheme: currentTheme,
@@ -149,6 +151,7 @@ class const _SettingsBody({
             onThemeReset: onThemeReset,
           ),
           const AccentColorSection(),
+          const LegalLinksSection(),
           const AppVersionIndicator(),
         ],
         crossAxisAlignment: .start,
@@ -184,16 +187,13 @@ class const _ThemeResetButton({required final VoidCallback onPressed})
   @override
   Widget build(BuildContext _) => Align(
     alignment: .centerRight,
-    child: Semantics(
-      key: const ValueKey<String>('settings_theme_reset'),
-      child: AuraButton(
-        onPressed: onPressed,
-        child: const TextLocale(
-          LocaleKeys.settings_screen_actions_reset_defaults,
-        ),
-        variant: .ghost,
-        size: .small,
+    child: AuraButton(
+      onPressed: onPressed,
+      child: const TextLocale(
+        LocaleKeys.settings_screen_actions_reset_defaults,
       ),
+      variant: .ghost,
+      size: .small,
       identifier: 'settings_theme_reset',
     ),
   );
@@ -204,18 +204,15 @@ class const _ThemeTile({
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('settings_theme'),
-    child: AuraTile(
-      child: const AuraText(
-        child: TextLocale(LocaleKeys.settings_screen_theme_title),
-        style: .bodyLarge,
-      ),
-      onTap: onTap,
-      variant: .ghost,
-      leading: _ThemeTileIcon(color: context.auraColors.secondary),
-      trailing: _ThemeTileTrailing(theme: theme),
+  Widget build(BuildContext context) => AuraTile(
+    child: const AuraText(
+      child: TextLocale(LocaleKeys.settings_screen_theme_title),
+      style: .bodyLarge,
     ),
+    onTap: onTap,
+    variant: .ghost,
+    leading: _ThemeTileIcon(color: context.auraColors.secondary),
+    trailing: _ThemeTileTrailing(theme: theme),
     identifier: 'settings_theme',
   );
 }

@@ -322,18 +322,27 @@ _pumpSetup(
     routes: [
       GoRoute(
         path: ServiceConnectionsRoute(workspaceId: workspace.id).location,
-        builder: (_, _) => const Text('Credential saved'),
+        pageBuilder: (_, state) => NoTransitionPage(
+          child: const Text('Credential saved'),
+          key: state.pageKey,
+        ),
       ),
       GoRoute(
         path: '/draft',
-        builder: (context, state) => createRoute(state).build(context, state),
+        pageBuilder: (context, state) => NoTransitionPage(
+          child: createRoute(state).build(context, state),
+          key: state.pageKey,
+        ),
         redirect: (context, state) =>
             createRoute(state).redirect(context, state),
         onExit: (context, state) => createRoute(state).onExit(context, state),
       ),
       GoRoute(
         path: Uri.parse(definitionRoute.location).path,
-        builder: definitionRoute.build,
+        pageBuilder: (context, state) => NoTransitionPage(
+          child: definitionRoute.build(context, state),
+          key: state.pageKey,
+        ),
         onExit: definitionRoute.onExit,
       ),
     ],

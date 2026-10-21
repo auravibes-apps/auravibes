@@ -18,9 +18,11 @@ class const AgentToolApprovalDecision({
 
 class const AgentToolResultUpdate({
   required final String toolCallId,
-  required final AgentToolResultStatus resultStatus,
+  required final AgentToolResultStatus? resultStatus,
+  final bool approvalRequested = false,
   final String? responseRaw,
   final String? responseContextRaw,
+  final List<AgentToolResultMedia> media = const [],
   final bool outputTruncated = false,
   final int? originalResponseBytes,
   final bool fullOutputForContext = false,
@@ -45,6 +47,7 @@ abstract interface class AgentToolExecutionProvider<TTool extends Object> {
 
   Future<Object?> runResolvedTool({
     required String conversationId,
+    required String toolCallId,
     required TTool tool,
     required Map<String, dynamic> arguments,
   });
@@ -83,7 +86,7 @@ class const AgentToolExecutionService<TTool extends Object>({
       conversationId: conversationId,
     );
     final updates = <AgentToolResultUpdate>[];
-    var hasPendingTools = false;
+    var hasPendingTools = latestToolCalls.pendingApprovalToolCallIds.isNotEmpty;
 
     if (!latestToolCalls.hasToolCalls) {
       return AgentIterationDecision.done;
@@ -136,6 +139,13 @@ class const AgentToolExecutionService<TTool extends Object>({
           grantedTools.add(toolToCall);
         case .needsConfirmation:
           hasPendingTools = true;
+          updates.add(
+            AgentToolResultUpdate(
+              toolCallId: toolToCall.id,
+              resultStatus: null,
+              approvalRequested: true,
+            ),
+          );
         case .disabledInConversation:
           updates.add(
             AgentToolResultUpdate(
@@ -226,6 +236,7 @@ class const AgentToolExecutionService<TTool extends Object>({
             resultStatus: batchResult.result.resultStatus,
             responseRaw: batchResult.result.responseRaw,
             responseContextRaw: batchResult.result.responseContextRaw,
+            media: batchResult.result.media,
             outputTruncated: batchResult.result.outputTruncated,
             originalResponseBytes: batchResult.result.originalResponseBytes,
             fullOutputForContext: batchResult.result.fullOutputForContext,

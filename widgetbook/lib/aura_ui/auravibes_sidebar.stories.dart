@@ -6,8 +6,6 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 part 'auravibes_sidebar.stories.bridge.g.dart';
 part 'auravibes_sidebar.stories.g.dart';
 
-const _sidebarWidth = 360.0;
-const _sidebarHeight = 640.0;
 const _maxSidebarIndex = 2;
 
 class const _SidebarInput({
@@ -32,8 +30,7 @@ final _Defaults _sidebarDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $Sidebar = _Story(
     name: 'Sidebar',
-    setup: (context, child, args) =>
-        SizedBox(width: _sidebarWidth, height: _sidebarHeight, child: child),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(
       expanded: BoolArg(true, name: 'Expanded'),
       selectedIndex: IntArg(

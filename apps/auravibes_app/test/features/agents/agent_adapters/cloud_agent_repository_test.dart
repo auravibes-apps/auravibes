@@ -25,10 +25,6 @@ void main() {
     var duplicateCalls = 0;
     var patchCalls = 0;
     final repository = CloudAgentRepository(
-      patch: ({required requestId, required operations}) {
-        patchCalls++;
-        fail('Duplicate must not use the generic patch API');
-      },
       workspaceId: 'workspace',
       read: () async => const [],
       watch: (_) => const Stream.empty(),
@@ -73,6 +69,10 @@ void main() {
           sequence: 3,
         );
       },
+      patch: ({required requestId, required operations}) {
+        patchCalls++;
+        fail('Duplicate must not use the generic patch API');
+      },
     );
 
     final duplicate = await repository.duplicateAgent('agent-1');
@@ -108,6 +108,16 @@ void main() {
         revision: 7,
       );
       final repository = CloudAgentRepository(
+        workspaceId: 'workspace',
+        read: () async => const [],
+        watch: (_) => const Stream.empty(),
+        readAgent: (_) async {
+          readCalls++;
+
+          return [current];
+        },
+        list: (_) async => const AgentListPage(agents: []),
+        duplicate: (_) async => fail('Unexpected duplicate'),
         patch: ({required requestId, required operations}) async {
           final operation = operations.single;
           capturedOperations.add(operation);
@@ -127,16 +137,6 @@ void main() {
             sequence: 8,
           );
         },
-        workspaceId: 'workspace',
-        read: () async => const [],
-        watch: (_) => const Stream.empty(),
-        readAgent: (_) async {
-          readCalls++;
-
-          return [current];
-        },
-        list: (_) async => const AgentListPage(agents: []),
-        duplicate: (_) async => fail('Unexpected duplicate'),
       );
 
       final updated = await repository.updateAgentVisibility(
@@ -166,26 +166,6 @@ void main() {
     final capturedOperations = <WorkspacePatchOperation>[];
     final now = DateTime.utc(2026);
     final repository = CloudAgentRepository(
-      patch: ({required requestId, required operations}) async {
-        capturedOperations.addAll(operations);
-        final agentOperation =
-            operations.firstOrNull ?? fail('Expected an agent operation');
-
-        return PatchWorkspaceStateResponse(
-          resources: [
-            WorkspaceResource(
-              workspaceId: 1,
-              resourceKind: .agent,
-              resourceId: agentOperation.resourceId,
-              data: agentOperation.data ?? '{}',
-              revision: 1,
-              createdAt: now,
-              updatedAt: now,
-            ),
-          ],
-          sequence: 1,
-        );
-      },
       workspaceId: 'workspace',
       read: () async => [
         WorkspaceResource(
@@ -220,6 +200,26 @@ void main() {
       ],
       list: (_) async => const AgentListPage(agents: []),
       duplicate: (_) async => fail('Unexpected duplicate'),
+      patch: ({required requestId, required operations}) async {
+        capturedOperations.addAll(operations);
+        final agentOperation =
+            operations.firstOrNull ?? fail('Expected an agent operation');
+
+        return PatchWorkspaceStateResponse(
+          resources: [
+            WorkspaceResource(
+              workspaceId: 1,
+              resourceKind: .agent,
+              resourceId: agentOperation.resourceId,
+              data: agentOperation.data ?? '{}',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          ],
+          sequence: 1,
+        );
+      },
     );
 
     expect(
@@ -295,6 +295,12 @@ void main() {
     ];
     final captured = <WorkspacePatchOperation>[];
     final repository = CloudAgentRepository(
+      workspaceId: 'workspace',
+      read: () async => List.of(resources),
+      watch: (_) => const Stream.empty(),
+      readAgent: (_) async => List.of(resources),
+      list: (_) async => const AgentListPage(agents: []),
+      duplicate: (_) async => fail('Unexpected duplicate'),
       patch: ({required requestId, required operations}) async {
         captured.addAll(operations);
         final changed = <WorkspaceResource>[];
@@ -336,12 +342,6 @@ void main() {
 
         return PatchWorkspaceStateResponse(resources: changed, sequence: 1);
       },
-      workspaceId: 'workspace',
-      read: () async => List.of(resources),
-      watch: (_) => const Stream.empty(),
-      readAgent: (_) async => List.of(resources),
-      list: (_) async => const AgentListPage(agents: []),
-      duplicate: (_) async => fail('Unexpected duplicate'),
     );
 
     final loaded = await repository.getAgentById('agent-1');
@@ -405,8 +405,6 @@ void main() {
     ];
     List<WorkspaceResourceKind>? watchedKinds;
     final repository = CloudAgentRepository(
-      patch: ({required requestId, required operations}) =>
-          throw StateError('Unexpected patch'),
       workspaceId: 'workspace',
       read: () async => throw StateError('Unexpected read'),
       watch: (kinds) {
@@ -420,6 +418,8 @@ void main() {
       readAgent: (_) async => throw StateError('Unexpected agent read'),
       list: (_) async => throw StateError('Unexpected list'),
       duplicate: (_) async => throw StateError('Unexpected duplicate'),
+      patch: ({required requestId, required operations}) =>
+          throw StateError('Unexpected patch'),
     );
 
     final snapshots = await repository

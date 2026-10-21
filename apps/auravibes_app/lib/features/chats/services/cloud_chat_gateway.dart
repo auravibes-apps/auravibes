@@ -423,15 +423,33 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
         ),
       );
   Future<List<ConversationMessageView>> listConversationMessages(
-    String conversationId,
-  ) => CloudAppErrors.guardCall(
+    String conversationId, {
+    int limit = 500,
+    String? messageId,
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.listMessages(
       .new(
         workspaceId: _workspaceId,
         conversationId: conversationId,
-        limit: 500,
+        limit: limit,
+        messageId: messageId,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+      ),
+    ),
+  );
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required int limit,
+    required int offset,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.searchMessages(
+      .new(
+        workspaceId: _workspaceId,
+        query: query,
+        limit: limit,
+        offset: offset,
       ),
     ),
   );
@@ -442,6 +460,125 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
     () => _client.conversation.update(
       request.copyWith(workspaceId: _workspaceId),
     ),
+  );
+}
+
+extension CloudChatGatewayMessageBookmarkOps on CloudChatGateway {
+  Future<void> bookmarkMessage({
+    required String requestId,
+    required String conversationId,
+    required String sourceConversationId,
+    required String messageId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.bookmarkMessage(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        sourceConversationId: sourceConversationId,
+        messageId: messageId,
+      ),
+    ),
+  );
+
+  Future<void> unbookmarkMessage({
+    required String requestId,
+    required String conversationId,
+    required String sourceConversationId,
+    required String messageId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.unbookmarkMessage(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        sourceConversationId: sourceConversationId,
+        messageId: messageId,
+      ),
+    ),
+  );
+
+  Future<List<MessageBookmarkView>> listMessageBookmarks() =>
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.listMessageBookmarks(
+          .new(workspaceId: _workspaceId),
+        ),
+      );
+}
+
+extension CloudChatGatewayBackgroundWorkOps on CloudChatGateway {
+  Future<BackgroundWorkView> detachToolCall({
+    required String requestId,
+    required String conversationId,
+    required String toolCallId,
+  }) async {
+    try {
+      return await _guardedDetachToolCall(
+        requestId: requestId,
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+      );
+    } on CloudAppException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        _backgroundWorkDetachmentError(error),
+        stackTrace,
+      );
+    }
+  }
+
+  Future<BackgroundWorkView> _guardedDetachToolCall({
+    required String requestId,
+    required String conversationId,
+    required String toolCallId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.detachToolCall(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+      ),
+    ),
+  );
+
+  Future<List<BackgroundWorkView>> listBackgroundWorks(String conversationId) =>
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.listBackgroundWorks(
+          .new(workspaceId: _workspaceId, conversationId: conversationId),
+        ),
+      );
+
+  Future<BackgroundWorkView> stopBackgroundWork({
+    required String requestId,
+    required String conversationId,
+    required String workId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.stopBackgroundWork(
+      .new(
+        requestId: requestId,
+        workspaceId: _workspaceId,
+        conversationId: conversationId,
+        workId: workId,
+      ),
+    ),
+  );
+}
+
+CloudAppException _backgroundWorkDetachmentError(CloudAppException error) {
+  if (error.code != ConversationErrorCode.turnConflict.name) return error;
+
+  return CloudAppException(
+    localizationKey:
+        'chats_screens.chat_conversation.background_work.'
+        'detachment_unavailable',
+    context: .conversation,
+    code: error.code,
   );
 }
 

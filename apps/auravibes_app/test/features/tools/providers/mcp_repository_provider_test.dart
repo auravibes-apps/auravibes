@@ -21,14 +21,12 @@ QueryExecutor _testConnection() {
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
-  AppDatabase? testDatabase;
+  final database = AppDatabase(connection: _testConnection());
   ProviderContainer? container;
   ProviderContainer readContainer() =>
       container ?? fail('ProviderContainer not initialized');
 
   setUp(() {
-    final database = AppDatabase(connection: _testConnection());
-    testDatabase = database;
     container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
@@ -45,10 +43,11 @@ void main() {
     );
   });
 
-  tearDown(() async {
+  tearDown(() {
     container?.dispose();
-    await testDatabase?.close();
   });
+
+  tearDownAll(database.close);
 
   group('mcpServersRepositoryProvider', () {
     test('returns a McpServersRepository instance', () {

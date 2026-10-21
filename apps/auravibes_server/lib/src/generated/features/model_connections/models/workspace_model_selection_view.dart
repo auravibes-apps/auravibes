@@ -27,6 +27,7 @@ abstract class WorkspaceModelSelectionView
     required this.revision,
     required this.createdAt,
     required this.updatedAt,
+    this.toolSamplingPolicy,
   });
 
   factory WorkspaceModelSelectionView({
@@ -42,6 +43,7 @@ abstract class WorkspaceModelSelectionView
     required int revision,
     required DateTime createdAt,
     required DateTime updatedAt,
+    String? toolSamplingPolicy,
   }) = _WorkspaceModelSelectionViewImpl;
 
   factory WorkspaceModelSelectionView.fromJson(
@@ -66,6 +68,7 @@ abstract class WorkspaceModelSelectionView
       updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
+      toolSamplingPolicy: jsonSerialization['toolSamplingPolicy'] as String?,
     );
   }
 
@@ -93,6 +96,8 @@ abstract class WorkspaceModelSelectionView
 
   DateTime updatedAt;
 
+  String? toolSamplingPolicy;
+
   /// Returns a shallow copy of this [WorkspaceModelSelectionView]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
@@ -109,6 +114,7 @@ abstract class WorkspaceModelSelectionView
     int? revision,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? toolSamplingPolicy,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -127,6 +133,7 @@ abstract class WorkspaceModelSelectionView
       'revision': revision,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
+      if (toolSamplingPolicy != null) 'toolSamplingPolicy': toolSamplingPolicy,
     };
   }
 
@@ -147,6 +154,7 @@ abstract class WorkspaceModelSelectionView
       'revision': revision,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
+      if (toolSamplingPolicy != null) 'toolSamplingPolicy': toolSamplingPolicy,
     };
   }
 
@@ -172,6 +180,7 @@ class _WorkspaceModelSelectionViewImpl extends WorkspaceModelSelectionView {
     required int revision,
     required DateTime createdAt,
     required DateTime updatedAt,
+    String? toolSamplingPolicy,
   }) : super._(
          id: id,
          connectionId: connectionId,
@@ -185,6 +194,7 @@ class _WorkspaceModelSelectionViewImpl extends WorkspaceModelSelectionView {
          revision: revision,
          createdAt: createdAt,
          updatedAt: updatedAt,
+         toolSamplingPolicy: toolSamplingPolicy,
        );
 
   /// Returns a shallow copy of this [WorkspaceModelSelectionView]
@@ -204,6 +214,7 @@ class _WorkspaceModelSelectionViewImpl extends WorkspaceModelSelectionView {
     int? revision,
     DateTime? createdAt,
     DateTime? updatedAt,
+    Object? toolSamplingPolicy = _Undefined,
   }) {
     return WorkspaceModelSelectionView(
       id: id ?? this.id,
@@ -222,6 +233,9 @@ class _WorkspaceModelSelectionViewImpl extends WorkspaceModelSelectionView {
       revision: revision ?? this.revision,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      toolSamplingPolicy: toolSamplingPolicy is String?
+          ? toolSamplingPolicy
+          : this.toolSamplingPolicy,
     );
   }
 }

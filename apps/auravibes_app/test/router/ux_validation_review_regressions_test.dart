@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/skills/providers/skill_access_summary_pro
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/workspaces/providers/last_workspace_selection_repository_provider.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_svg/svg.dart';
@@ -19,6 +20,7 @@ import 'package:material_ui/material_ui.dart';
 import '../helpers/ux_validation_fixture.dart';
 
 void main() {
+  tearDownAll(UxValidationFixture.closeDatabase);
   for (final skill in ['anthropic', 'codex', 'jina']) {
     testWidgets(
       'actual app skill $skill recovery opens usable credential form',
@@ -321,7 +323,9 @@ void main() {
           router.state.uri.toString(),
           workspaceSwitch
               ? NewChatRoute(workspaceId: second.id).location
-              : ServiceConnectionsRoute(workspaceId: f.workspaceId).location,
+              : FeatureDestinations.masterLocation(
+                  ServiceConnectionsRoute(workspaceId: f.workspaceId).location,
+                ),
         );
         expect(
           await tester.runAsync(selection.read),

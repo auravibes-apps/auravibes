@@ -290,6 +290,11 @@ mixin _CloudModelStoreSelectionMethods {
         .where((item) => item.workspaceModelSelection.id == id)
         .firstOrNull;
   }
+
+  Future<void> updateToolSamplingPolicy(
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  ) => _usecases.updateToolSamplingPolicy(selectionId, policy);
 }
 
 Future<ModelConnectionView> _createConnection(
@@ -406,6 +411,9 @@ WorkspaceModelSelectionEntity _workspaceSelection(
   updatedAt: selection.updatedAt,
   modelConnectionId: selection.connectionId,
   modelName: selection.modelName,
+  toolSamplingPolicy: selection.toolSamplingPolicy == null
+      ? null
+      : ToolSamplingPolicy.fromJson(selection.toolSamplingPolicy),
 );
 
 ModelConnectionEntity _selectionConnection(

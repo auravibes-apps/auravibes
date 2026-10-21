@@ -84,6 +84,41 @@ void main() {
     expect(await resolver.get('workspace-1', 'brave', 'missing'), isNull);
   });
 
+  test(
+    'browser skill exposes navigation and page inspection resources',
+    () async {
+      const resolver = SkillResourceResolver(null, null, .new());
+      final summaries = await resolver.list('workspace-1', 'browser');
+      final navigation = await resolver.get(
+        'workspace-1',
+        'browser',
+        'navigation',
+      );
+      final pageInspection = await resolver.get(
+        'workspace-1',
+        'browser',
+        'page-inspection',
+      );
+      final browser = const AppSkillRegistry().getBySlug('browser');
+
+      expect(
+        summaries.map((resource) => resource.slug),
+        containsAll(['navigation', 'page-inspection']),
+      );
+      expect(navigation?.content, contains('browser_go_back'));
+      expect(pageInspection?.content, contains('browser_query_page'));
+      expect(
+        browser?.tools.map((tool) => tool.slug),
+        containsAll([
+          'browser_go_back',
+          'browser_go_forward',
+          'browser_reload',
+          'browser_query_page',
+        ]),
+      );
+    },
+  );
+
   test('resolves internal A2UI resources', () async {
     const resolver = SkillResourceResolver(null, null, .new());
 
@@ -319,9 +354,9 @@ WorkspaceResource _skillWorkspaceResource({
 
 SkillEntity _skill({required String slug, String id = 'skill-1'}) =>
     SkillEntity(
-      source: .user,
       id: id,
       workspaceId: 'workspace-1',
+      source: .user,
       kind: .template,
       title: 'Custom',
       slug: slug,

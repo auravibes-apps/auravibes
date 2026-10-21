@@ -349,6 +349,12 @@ void main() {
     expect(response.finishReason, FinishReason.failed);
     expect(chunks, hasLength(1));
     expect(attempts, 1);
+    final cause = response.cause;
+    if (cause == null) fail('Expected provider failure cause.');
+    expect(
+      ProviderFailureRecovery.fromError(cause).category,
+      ProviderFailureCategory.transientOutage,
+    );
   });
 
   test('cancellation during retry wait prevents another request', () async {

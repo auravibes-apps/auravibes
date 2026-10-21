@@ -31,19 +31,28 @@ class const SkillTemplateExecutor(
     if (resolvedTemplate == null || resolvedInputDefinitions == null) {
       throw ArgumentError('A skill template definition is required.');
     }
+    final resolvedCredentialDefinitions = {
+      ...credentialDefinitions,
+      ...?resolvedDefinition?.credentialDefinitions,
+    };
     final request = _resolver(
       template: resolvedTemplate,
       inputs: inputs,
       credentials: credentials,
       inputDefinitions: resolvedInputDefinitions,
       schema: schema ?? resolvedDefinition?.inputSchema,
-      credentialDefinitions: {
-        ...credentialDefinitions,
-        ...?resolvedDefinition?.credentialDefinitions,
-      },
+      credentialDefinitions: resolvedCredentialDefinitions,
     );
+    final secrets = credentials.entries
+        .where(
+          (entry) => resolvedCredentialDefinitions[entry.key]?.secret != false,
+        )
+        .map((entry) => entry.value)
+        .toList();
 
-    return _httpClient(request)
-        .then((response) => const SkillResponseDecoder().call(response));
+    return _httpClient(request).then(
+      (response) =>
+          const SkillResponseDecoder().call(response, secrets: secrets),
+    );
   }
 }

@@ -114,6 +114,79 @@ void main() {
     );
 
     test(
+      'reconstructs tool screenshot media only when provider supports it',
+      () async {
+        final directory = await Directory.systemTemp.createTemp();
+        addTearDown(() => directory.delete(recursive: true));
+        final screenshot = File('${directory.path}/capture.png');
+        final _ = await screenshot.writeAsBytes([1, 2, 3]);
+        final message = MessageEntity(
+          id: 'assistant-1',
+          conversationId: 'conversation-1',
+          content: 'Checking the page.',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tool-1',
+                name: 'browser_capture_screenshot',
+                argumentsRaw: '{}',
+                responseRaw: '{"snapshot":"Bounded DOM fallback"}',
+                resultStatus: ToolCallResultStatus.success,
+              ),
+            ],
+          ),
+          attachments: [
+            MessageAttachmentEntity(
+              id: 'attachment-1',
+              messageId: 'assistant-1',
+              toolCallId: 'tool-1',
+              localPath: screenshot.path,
+              fileName: 'capture.png',
+              displayName: 'capture.png',
+              mimeType: 'image/png',
+              modality: MessageAttachmentModality.image,
+              sizeBytes: 3,
+              createdAt: DateTime(2025),
+              updatedAt: DateTime(2025),
+            ),
+          ],
+        );
+
+        final imageCapable = await const BuildPromptChatMessages(
+          modalitiesInput: ['image'],
+          supportsImageToolResults: true,
+        ).call([message]);
+        final fallback = await const BuildPromptChatMessages(
+          modalitiesInput: ['image'],
+        ).call([message]);
+        final imageResponse = imageCapable[1].parts
+            .whereType<ToolResponsePart>()
+            .single
+            .toolResponse;
+        final fallbackResponse = fallback[1].parts
+            .whereType<ToolResponsePart>()
+            .single
+            .toolResponse;
+
+        expect(imageResponse.output, contains('Bounded DOM fallback'));
+        expect(imageResponse.content, hasLength(1));
+        expect(
+          MediaPart.fromJson(
+            Map<String, dynamic>.from(imageResponse.content!.single as Map),
+          ).media.url,
+          'data:image/png;base64,AQID',
+        );
+        expect(fallbackResponse.output, contains('Bounded DOM fallback'));
+        expect(fallbackResponse.content, isEmpty);
+      },
+    );
+
+    test(
       'adds form answers to provider content without changing chat text',
       () async {
         const content = 'Answers received.';

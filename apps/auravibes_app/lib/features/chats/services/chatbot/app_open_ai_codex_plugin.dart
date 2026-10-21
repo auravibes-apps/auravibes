@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 class AppOpenAICodexPlugin({
   required final String accessToken,
@@ -31,6 +33,8 @@ class AppOpenAICodexPlugin({
   ) => actionType == ActionType.model ? _createModel(name) : null;
 }
 
+const int _maximumRetryAfterSeconds = 60;
+
 extension on AppOpenAICodexPlugin {
   Model<dynamic> _createModel(String modelName) => Model<dynamic>(
     name: '$name/$modelName',
@@ -39,11 +43,9 @@ extension on AppOpenAICodexPlugin {
 
   Future<ModelResponse> _generateModel(
     String modelName,
-    ModelRequest? request,
+    ModelRequest request,
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
   ) async {
-    if (request == null) throw ArgumentError.notNull('request');
-
     final body = _requestBody(modelName, request, context.streamingRequested);
     if (!context.streamingRequested) {
       return await codec.complete(_transport, body);
@@ -99,7 +101,7 @@ extension on AppOpenAICodexPlugin {
 
     throw GenkitException(
       '[openai_codex] OAuth access token is required.',
-      status: .INVALID_ARGUMENT,
+      status: .invalidArgument,
     );
   }
 
@@ -122,19 +124,104 @@ extension on AppOpenAICodexPlugin {
     http.Request request,
   ) async {
     try {
-      final response = await client.send(request).timeout(requestTimeout);
-
-      return ProviderTransportResponse(
-        statusCode: response.statusCode,
-        body: httpClient == null
-            ? _closeAfter(response.stream.timeout(requestTimeout), client)
-            : response.stream.timeout(requestTimeout),
+      final response = await _sendProviderRequest(
+        client,
+        request,
+        requestTimeout,
       );
-    } on Object {
-      if (httpClient == null) client.close();
-      rethrow;
+
+      return _providerTransportResponse(
+        response,
+        client,
+        requestTimeout: requestTimeout,
+        closeClient: httpClient == null,
+      );
+    } on Object catch (error, stackTrace) {
+      _closeProviderClient(client, httpClient == null);
+      Error.throwWithStackTrace(
+        _classifyProviderTransportError(error),
+        stackTrace,
+      );
     }
   }
+}
+
+Future<http.StreamedResponse> _sendProviderRequest(
+  http.Client client,
+  http.Request request,
+  Duration requestTimeout,
+) => client.send(request).timeout(requestTimeout);
+
+void _closeProviderClient(http.Client client, bool closeClient) {
+  if (closeClient) client.close();
+}
+
+Object _classifyProviderTransportError(Object error) => switch (error) {
+  http.ClientException() => ProviderTransientFailureException(error),
+  _ => error,
+};
+
+ProviderTransportResponse _providerTransportResponse(
+  http.StreamedResponse response,
+  http.Client client, {
+  required Duration requestTimeout,
+  required bool closeClient,
+}) {
+  final body = response.stream.timeout(requestTimeout);
+
+  return ProviderTransportResponse(
+    statusCode: response.statusCode,
+    body: _classifyProviderTransportStream(
+      closeClient ? _closeAfter(body, client) : body,
+    ),
+    retryAfter: _providerRetryAfter(response.headers['retry-after']),
+  );
+}
+
+Stream<List<int>> _classifyProviderTransportStream(
+  Stream<List<int>> stream,
+) async* {
+  try {
+    yield* stream;
+  } on http.ClientException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      ProviderTransientFailureException(error),
+      stackTrace,
+    );
+  }
+}
+
+Duration? _providerRetryAfter(String? value) {
+  final header = value?.trim();
+  if (header == null || header.isEmpty) return null;
+
+  final seconds = int.tryParse(header);
+  if (seconds == null) return _providerRetryAfterDate(header);
+  if (seconds > _maximumRetryAfterSeconds) {
+    return const Duration(seconds: _maximumRetryAfterSeconds);
+  }
+
+  return _limitProviderRetryAfter(
+    seconds <= 0 ? Duration.zero : Duration(seconds: seconds),
+  );
+}
+
+Duration? _providerRetryAfterDate(String header) {
+  try {
+    final difference = parseHttpDate(header).difference(DateTime.now().toUtc());
+
+    return _limitProviderRetryAfter(
+      difference.isNegative ? Duration.zero : difference,
+    );
+  } on FormatException {
+    return null;
+  }
+}
+
+Duration _limitProviderRetryAfter(Duration delay) {
+  const maximumDelay = Duration(seconds: 60);
+
+  return delay > maximumDelay ? maximumDelay : delay;
 }
 
 bool _shouldRetryStream(GenkitException error, int attempt, bool sentChunks) =>

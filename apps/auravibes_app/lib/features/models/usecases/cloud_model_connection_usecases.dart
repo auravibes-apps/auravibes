@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/models/models/cloud_model_resources.dart';
 import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 typedef _CreateModelConnectionRequest = ({
@@ -33,6 +34,11 @@ extension CloudModelConnectionUsecasesActions on CloudModelConnectionUsecases {
 
   Stream<List<WorkspaceModelSelectionView>> watchSelections() =>
       _gateway.watchModelSelections();
+
+  Future<void> updateToolSamplingPolicy(
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  ) => _gateway.updateToolSamplingPolicy(selectionId, policy);
 
   Future<ModelConnectionView> create(
     _CreateModelConnectionRequest request,

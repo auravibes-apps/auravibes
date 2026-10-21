@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
+import 'package:auravibes_app/features/chats/screens/conversation_message_search_screen.dart';
+import 'package:auravibes_app/features/chats/screens/message_bookmarks_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_add_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_forgot_password_screen.dart';
@@ -13,10 +17,10 @@ import 'package:auravibes_app/features/cloud_accounts/screens/cloud_accounts_scr
 import 'package:auravibes_app/features/cloud_workspaces/screens/cloud_workspace_detail_screen.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
+import 'package:auravibes_app/features/quick_switcher/widgets/quick_switcher_shortcut_scope.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
-import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
@@ -38,6 +42,9 @@ import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
 import 'package:auravibes_app/router/workspace_navigation.dart';
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
+import 'package:auravibes_app/widgets/feature_destination_shell.dart';
+import 'package:auravibes_app/widgets/feature_destination_shell_scope.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/route_recovery_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -62,13 +69,47 @@ final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
 // Required: GoRouter navigator key must remain top-level.
 // ignore: prefer-static-class
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+// Required: Feature Navigator keys stay stable across router updates.
+// ignore: prefer-static-class
+final GlobalKey<NavigatorState> connectionsFeatureNavigatorKey =
+    GlobalKey<NavigatorState>();
+// Required: Feature Navigator keys stay stable across router updates.
+// ignore: prefer-static-class
+final GlobalKey<NavigatorState> agentsSkillsFeatureNavigatorKey =
+    GlobalKey<NavigatorState>();
+// Required: Workspace branch navigator keys stay stable across router updates.
+// ignore: prefer-static-class
+final GlobalKey<NavigatorState> workspaceChatsNavigatorKey =
+    GlobalKey<NavigatorState>();
+// Required: Workspace branch navigator keys stay stable across router updates.
+// ignore: prefer-static-class
+final GlobalKey<NavigatorState> workspaceFeatureNavigatorKey =
+    GlobalKey<NavigatorState>();
+// Required: Workspace branch navigator keys stay stable across router updates.
+// ignore: prefer-static-class
+final GlobalKey<NavigatorState> workspaceSettingsNavigatorKey =
+    GlobalKey<NavigatorState>();
+final _pendingFeatureLocations = <String, String>{};
+final _pendingFeatureAuthReturnLocations = <String, String>{};
+
+abstract class const _AppGoRouteData() extends GoRouteData {
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) =>
+      MaterialPage<void>(
+        child: build(context, state),
+        key: state.pageKey,
+        name: state.name ?? state.path,
+        arguments: {...state.pathParameters, ...state.uri.queryParameters},
+        restorationId: state.pageKey.value,
+      );
+}
 
 @TypedGoRoute<WorkspaceRoute>(
   path: '$workspacePathPrefix/:workspaceId',
   routes: [
     TypedStatefulShellRoute<MyShellRouteData>(
       branches: <TypedStatefulShellBranch<StatefulShellBranchData>>[
-        TypedStatefulShellBranch(
+        TypedStatefulShellBranch<WorkspaceChatsBranchData>(
           routes: [
             TypedGoRoute<NewChatRoute>(path: 'chat/new'),
             TypedGoRoute<ConversationRoute>(
@@ -80,13 +121,14 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
               ],
             ),
             TypedGoRoute<ChatsRoute>(path: 'chats'),
+            TypedGoRoute<MessageBookmarksRoute>(path: 'bookmarks'),
+            TypedGoRoute<ConversationSearchRoute>(path: 'search'),
           ],
         ),
-        TypedStatefulShellBranch(
+        TypedStatefulShellBranch<WorkspaceFeatureBranchData>(
           routes: [
-            TypedGoRoute<MoreRoute>(path: 'more'),
             TypedGoRoute<WorkspaceManagementRoute>(
-              path: 'more/manage-workspaces',
+              path: 'manage-workspaces',
               routes: [
                 TypedGoRoute<WorkspaceCreateRoute>(path: 'create'),
                 TypedGoRoute<CloudWorkspaceDetailRoute>(
@@ -95,7 +137,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
               ],
             ),
             TypedGoRoute<CloudAccountsRoute>(
-              path: 'more/cloud-accounts',
+              path: 'cloud-accounts',
               routes: [
                 TypedGoRoute<CloudAccountAddRoute>(path: 'add'),
                 TypedGoRoute<CloudAccountLoginRoute>(path: 'login'),
@@ -105,51 +147,65 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
                 ),
               ],
             ),
-            TypedGoRoute<ToolsRoute>(path: 'more/tools'),
-            TypedGoRoute<ModelsRoute>(path: 'more/models'),
-            TypedGoRoute<ServiceConnectionsRoute>(
-              path: 'more/service-connections',
+            TypedGoRoute<ModelsRoute>(path: 'models'),
+            TypedShellRoute<ConnectionsFeatureShellRouteData>(
               routes: [
-                TypedGoRoute<ServiceConnectionCreateRoute>(path: 'new'),
-                TypedGoRoute<ServiceConnectionEditRoute>(path: ':connectionId'),
-              ],
-            ),
-            TypedGoRoute<SkillsRoute>(
-              path: 'more/skills',
-              routes: [
-                TypedGoRoute<SkillCreateRoute>(path: 'new'),
-                TypedGoRoute<SkillToolCreateRoute>(path: ':skillId/tools/new'),
-                TypedGoRoute<SkillToolEditRoute>(
-                  path: ':skillId/tools/:toolId',
+                TypedGoRoute<ToolsRoute>(path: 'tools'),
+                TypedGoRoute<ServiceConnectionsRoute>(
+                  path: 'service-connections',
+                  routes: [
+                    TypedGoRoute<ServiceConnectionCreateRoute>(path: 'new'),
+                    TypedGoRoute<ServiceConnectionEditRoute>(
+                      path: ':connectionId',
+                    ),
+                  ],
                 ),
-                TypedGoRoute<SkillResourceCreateRoute>(
-                  path: ':skillId/resources/new',
-                ),
-                TypedGoRoute<SkillResourceEditRoute>(
-                  path: ':skillId/resources/:resourceId',
-                ),
-                TypedGoRoute<SkillDetailRoute>(path: ':skillId'),
-              ],
-            ),
-            TypedGoRoute<SkillCredentialDefinitionsRoute>(
-              path: 'more/skill-credential-definitions',
-              routes: [
-                TypedGoRoute<SkillCredentialDefinitionCreateRoute>(path: 'new'),
-                TypedGoRoute<SkillCredentialDefinitionEditRoute>(
-                  path: ':definitionId',
+                TypedGoRoute<SkillCredentialDefinitionsRoute>(
+                  path: 'skill-credential-definitions',
+                  routes: [
+                    TypedGoRoute<SkillCredentialDefinitionCreateRoute>(
+                      path: 'new',
+                    ),
+                    TypedGoRoute<SkillCredentialDefinitionEditRoute>(
+                      path: ':definitionId',
+                    ),
+                  ],
                 ),
               ],
             ),
-            TypedGoRoute<AgentsRoute>(
-              path: 'more/agents',
+            TypedShellRoute<AgentsSkillsFeatureShellRouteData>(
               routes: [
-                TypedGoRoute<AgentCreateRoute>(path: 'new'),
-                TypedGoRoute<AgentDetailRoute>(path: ':agentId'),
+                TypedGoRoute<SkillsRoute>(
+                  path: 'skills',
+                  routes: [
+                    TypedGoRoute<SkillCreateRoute>(path: 'new'),
+                    TypedGoRoute<SkillToolCreateRoute>(
+                      path: ':skillId/tools/new',
+                    ),
+                    TypedGoRoute<SkillToolEditRoute>(
+                      path: ':skillId/tools/:toolId',
+                    ),
+                    TypedGoRoute<SkillResourceCreateRoute>(
+                      path: ':skillId/resources/new',
+                    ),
+                    TypedGoRoute<SkillResourceEditRoute>(
+                      path: ':skillId/resources/:resourceId',
+                    ),
+                    TypedGoRoute<SkillDetailRoute>(path: ':skillId'),
+                  ],
+                ),
+                TypedGoRoute<AgentsRoute>(
+                  path: 'agents',
+                  routes: [
+                    TypedGoRoute<AgentCreateRoute>(path: 'new'),
+                    TypedGoRoute<AgentDetailRoute>(path: ':agentId'),
+                  ],
+                ),
               ],
             ),
           ],
         ),
-        TypedStatefulShellBranch(
+        TypedStatefulShellBranch<WorkspaceSettingsBranchData>(
           routes: [
             TypedGoRoute<SettingsRoute>(path: 'settings'),
             TypedGoRoute<WorkspaceSettingsRoute>(path: 'workspace-settings'),
@@ -160,7 +216,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
   ],
 )
 class WorkspaceRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $WorkspaceRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
@@ -197,6 +253,105 @@ class const MyShellRouteData() extends StatefulShellRouteData {
       navigationShell: navigationShell,
     );
   }
+}
+
+class const WorkspaceFeatureBranchData() extends StatefulShellBranchData {
+  static final GlobalKey<NavigatorState> $navigatorKey =
+      workspaceFeatureNavigatorKey;
+}
+
+class const WorkspaceChatsBranchData() extends StatefulShellBranchData {
+  static final GlobalKey<NavigatorState> $navigatorKey =
+      workspaceChatsNavigatorKey;
+}
+
+class const WorkspaceSettingsBranchData() extends StatefulShellBranchData {
+  static final GlobalKey<NavigatorState> $navigatorKey =
+      workspaceSettingsNavigatorKey;
+}
+
+class const ConnectionsFeatureShellRouteData() extends ShellRouteData {
+  static final GlobalKey<NavigatorState> $navigatorKey =
+      connectionsFeatureNavigatorKey;
+
+  @override
+  String? redirect(BuildContext context, GoRouterState state) =>
+      _seedFeatureMaster(
+        state,
+        navigatorKey: $navigatorKey,
+        masterLocation: FeatureDestinations.masterLocation(
+          ServiceConnectionsRoute(
+            workspaceId: state.pathParameters['workspaceId']!,
+          ).location,
+        ),
+        pendingKey: 'connections:${state.pathParameters['workspaceId']}',
+      );
+
+  @override
+  Widget builder(BuildContext context, GoRouterState state, Widget navigator) {
+    final workspaceId = state.pathParameters['workspaceId']!;
+    final pendingKey = 'connections:$workspaceId';
+    final initialLocation = _pendingFeatureLocations.remove(pendingKey);
+
+    return FeatureDestinationShell(
+      navigatorKey: $navigatorKey,
+      parentNavigatorKey: workspaceFeatureNavigatorKey,
+      destinations: FeatureDestinations.connections(workspaceId),
+      child: navigator,
+      initialLocation: initialLocation,
+      key: ValueKey(pendingKey),
+    );
+  }
+}
+
+class const AgentsSkillsFeatureShellRouteData() extends ShellRouteData {
+  static final GlobalKey<NavigatorState> $navigatorKey =
+      agentsSkillsFeatureNavigatorKey;
+
+  @override
+  String? redirect(BuildContext context, GoRouterState state) =>
+      _seedFeatureMaster(
+        state,
+        navigatorKey: $navigatorKey,
+        masterLocation: FeatureDestinations.masterLocation(
+          AgentsRoute(workspaceId: state.pathParameters['workspaceId']!)
+              .location,
+        ),
+        pendingKey: 'agents-skills:${state.pathParameters['workspaceId']}',
+      );
+
+  @override
+  Widget builder(BuildContext context, GoRouterState state, Widget navigator) {
+    final workspaceId = state.pathParameters['workspaceId']!;
+    final pendingKey = 'agents-skills:$workspaceId';
+    final initialLocation = _pendingFeatureLocations.remove(pendingKey);
+
+    return FeatureDestinationShell(
+      navigatorKey: $navigatorKey,
+      parentNavigatorKey: workspaceFeatureNavigatorKey,
+      destinations: FeatureDestinations.agents(workspaceId),
+      child: navigator,
+      initialLocation: initialLocation,
+      key: ValueKey(pendingKey),
+    );
+  }
+}
+
+String? _seedFeatureMaster(
+  GoRouterState state, {
+  required GlobalKey<NavigatorState> navigatorKey,
+  required String masterLocation,
+  required String pendingKey,
+}) {
+  if (FeatureDestinations.isMasterLocation(state.uri) ||
+      state.extra is FeatureDestinationStackPush ||
+      (navigatorKey.currentState?.canPop() ?? false)) {
+    return null;
+  }
+  _pendingFeatureLocations[pendingKey] = state.uri.toString();
+  _pendingFeatureAuthReturnLocations[masterLocation] = state.uri.toString();
+
+  return masterLocation;
 }
 
 class const _WorkspaceSessionGate({
@@ -250,6 +405,7 @@ class const _WorkspaceSessionGateContent({
         session: loadedSession,
         child: shell,
         onChooseWorkspace: onChooseWorkspace,
+        returnLocation: _takeFeatureAuthReturnLocation(context),
       );
     }
     if (isAppScoped) return shell;
@@ -261,6 +417,11 @@ class const _WorkspaceSessionGateContent({
     );
   }
 }
+
+String? _takeFeatureAuthReturnLocation(BuildContext context) =>
+    _pendingFeatureAuthReturnLocations.remove(
+      GoRouterState.of(context).uri.toString(),
+    );
 
 WorkspaceSession? _loadedWorkspaceSession(
   AsyncValue<WorkspaceSession> session,
@@ -301,16 +462,19 @@ class const _WorkspaceShell({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PopScope(
-    child: AuraSidebarWrapper(
-      navigationShell: navigationShell,
+    child: QuickSwitcherShortcutScope(
       workspaceId: workspaceId,
+      child: AuraSidebarWrapper(
+        navigationShell: navigationShell,
+        workspaceId: workspaceId,
+      ),
     ),
     canPop: false,
   );
 }
 
 class ChatsRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $ChatsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
@@ -318,12 +482,28 @@ class ChatsRoute({required final String workspaceId})
   }
 }
 
+class MessageBookmarksRoute({required final String workspaceId})
+    extends _AppGoRouteData
+    with $MessageBookmarksRoute {
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      MessageBookmarksScreen(workspaceId: workspaceId);
+}
+
+class ConversationSearchRoute({required final String workspaceId})
+    extends _AppGoRouteData
+    with $ConversationSearchRoute {
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      ConversationMessageSearchScreen(workspaceId: workspaceId);
+}
+
 class NewChatRoute({
   required final String workspaceId,
   final String? modelSelectionId,
-}) extends GoRouteData with $NewChatRoute {
+}) extends _AppGoRouteData with $NewChatRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
   @override
   Widget build(BuildContext context, GoRouterState state) {
@@ -337,7 +517,8 @@ class NewChatRoute({
 class ConversationRoute({
   required final String workspaceId,
   required final String chatId,
-}) extends GoRouteData with $ConversationRoute {
+  @TypedQueryParameter(name: 'message-id') final String? messageId,
+}) extends _AppGoRouteData with $ConversationRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return ChatConversationScreen(workspaceId: workspaceId, chatId: chatId);
@@ -348,7 +529,7 @@ class SubAgentConversationRoute({
   required final String workspaceId,
   required final String chatId,
   required final String subAgentConversationId,
-}) extends GoRouteData with $SubAgentConversationRoute {
+}) extends _AppGoRouteData with $SubAgentConversationRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return _SubAgentConversationGate(
@@ -524,7 +705,7 @@ bool _isMatchingConversation(
     conversation?.parentConversationId == parentConversationId;
 
 class ToolsRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $ToolsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
@@ -533,7 +714,7 @@ class ToolsRoute({required final String workspaceId})
 }
 
 class ModelsRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $ModelsRoute {
   @override
   String redirect(BuildContext context, GoRouterState state) {
@@ -545,7 +726,7 @@ class ModelsRoute({required final String workspaceId})
 }
 
 class SkillsRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $SkillsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
@@ -554,10 +735,10 @@ class SkillsRoute({required final String workspaceId})
 }
 
 class SkillCreateRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $SkillCreateRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -570,7 +751,7 @@ class SkillCreateRoute({required final String workspaceId})
 }
 
 class AgentsRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $AgentsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
@@ -579,10 +760,10 @@ class AgentsRoute({required final String workspaceId})
 }
 
 class AgentCreateRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $AgentCreateRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -597,9 +778,9 @@ class AgentCreateRoute({required final String workspaceId})
 class AgentDetailRoute({
   required final String workspaceId,
   required final String agentId,
-}) extends GoRouteData with $AgentDetailRoute {
+}) extends _AppGoRouteData with $AgentDetailRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -615,9 +796,9 @@ class AgentDetailRoute({
 class SkillDetailRoute({
   required final String workspaceId,
   required final String skillId,
-}) extends GoRouteData with $SkillDetailRoute {
+}) extends _AppGoRouteData with $SkillDetailRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -633,11 +814,11 @@ class SkillDetailRoute({
 class SkillToolCreateRoute({
   required final String workspaceId,
   required final String skillId,
-}) extends GoRouteData with $SkillToolCreateRoute {
+}) extends _AppGoRouteData with $SkillToolCreateRoute {
   final SkillToolEditRouteGuard _exitGuard = .new();
 
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
   @override
   Widget build(BuildContext context, GoRouterState state) =>
@@ -653,11 +834,11 @@ class SkillToolEditRoute({
   required final String workspaceId,
   required final String skillId,
   required final String toolId,
-}) extends GoRouteData with $SkillToolEditRoute {
+}) extends _AppGoRouteData with $SkillToolEditRoute {
   final SkillToolEditRouteGuard _exitGuard = .new();
 
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
   @override
   Widget build(BuildContext context, GoRouterState state) {
@@ -678,9 +859,9 @@ class SkillToolEditRoute({
 class SkillResourceCreateRoute({
   required final String workspaceId,
   required final String skillId,
-}) extends GoRouteData with $SkillResourceCreateRoute {
+}) extends _AppGoRouteData with $SkillResourceCreateRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -697,9 +878,9 @@ class SkillResourceEditRoute({
   required final String workspaceId,
   required final String skillId,
   required final String resourceId,
-}) extends GoRouteData with $SkillResourceEditRoute {
+}) extends _AppGoRouteData with $SkillResourceEditRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -718,7 +899,7 @@ class SkillResourceEditRoute({
 }
 
 class SkillCredentialDefinitionsRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $SkillCredentialDefinitionsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
@@ -729,9 +910,9 @@ class SkillCredentialDefinitionsRoute({required final String workspaceId})
 class SkillCredentialDefinitionCreateRoute({
   required final String workspaceId,
   final bool returnCreated = false,
-}) extends GoRouteData with $SkillCredentialDefinitionCreateRoute {
+}) extends _AppGoRouteData with $SkillCredentialDefinitionCreateRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -747,9 +928,9 @@ class SkillCredentialDefinitionCreateRoute({
 class SkillCredentialDefinitionEditRoute({
   required final String workspaceId,
   required final String definitionId,
-}) extends GoRouteData with $SkillCredentialDefinitionEditRoute {
+}) extends _AppGoRouteData with $SkillCredentialDefinitionEditRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -765,7 +946,7 @@ class SkillCredentialDefinitionEditRoute({
 class ServiceConnectionsRoute({
   required final String workspaceId,
   final String? view,
-}) extends GoRouteData with $ServiceConnectionsRoute {
+}) extends _AppGoRouteData with $ServiceConnectionsRoute {
   ConnectionDestination get destination =>
       WorkspaceNavigation.connectionView(view);
   @override
@@ -783,9 +964,9 @@ class ServiceConnectionCreateRoute({
   final String? type,
   @TypedQueryParameter(name: 'credentialDefinitionId')
   final String? credentialDefinitionId,
-}) extends GoRouteData with $ServiceConnectionCreateRoute {
+}) extends _AppGoRouteData with $ServiceConnectionCreateRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -794,16 +975,59 @@ class ServiceConnectionCreateRoute({
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
+    final crossShellPush = _crossShellCreateReturn(state.extra);
+
     return ServiceConnectionCreateScreen(
       workspaceId: workspaceId,
-      initialType: ServiceConnectionCreateTypeQuery.fromQueryValue(type),
+      initialType: _serviceConnectionCreateType(type),
       initialCredentialDefinitionId: credentialDefinitionId,
-      initialAppSkillId: state.uri.queryParameters['appSkillId'],
-      returnPath: returnPath,
-      key: ValueKey((workspaceId: workspaceId, context: state.uri.query)),
+      initialAppSkillId: _serviceConnectionCreateAppSkillId(state),
+      returnPath: _serviceConnectionCreateReturnPath(
+        returnPath,
+        crossShellPush?.returnLocation,
+      ),
+      returnNavigatorKey: crossShellPush?.navigatorKey,
+      key: _serviceConnectionCreateScreenKey(workspaceId, state.uri.query),
     );
   }
 }
+
+Key _serviceConnectionCreateScreenKey(String workspaceId, String query) =>
+    ValueKey(_serviceConnectionCreateScreenIdentity(workspaceId, query));
+
+Object _serviceConnectionCreateScreenIdentity(
+  String workspaceId,
+  String query,
+) => (workspaceId: workspaceId, context: query);
+
+String? _serviceConnectionCreateAppSkillId(GoRouterState state) =>
+    state.uri.queryParameters['appSkillId'];
+
+ServiceConnectionCreateType? _serviceConnectionCreateType(String? type) =>
+    ServiceConnectionCreateTypeQuery.fromQueryValue(type);
+
+String? _serviceConnectionCreateReturnPath(
+  String? returnPath,
+  String? crossShellReturnPath,
+) => returnPath ?? crossShellReturnPath;
+
+({GlobalKey<NavigatorState>? navigatorKey, String? returnLocation})?
+_crossShellCreateReturn(Object? extra) => switch (extra) {
+  FeatureDestinationStackPush(
+    :final sourceNavigatorKey,
+    :final parentNavigatorKey,
+    :final returnLocation,
+  ) =>
+    (
+      navigatorKey:
+          sourceNavigatorKey != null &&
+              sourceNavigatorKey != connectionsFeatureNavigatorKey
+          ? parentNavigatorKey
+          : null,
+      returnLocation: returnLocation,
+    ),
+  _ => null,
+};
 
 Future<String?> _serviceConnectionCreateRedirect(
   BuildContext context,
@@ -869,9 +1093,9 @@ Uri? _serviceConnectionRedirectTarget(
 class ServiceConnectionEditRoute({
   required final String workspaceId,
   required final String connectionId,
-}) extends GoRouteData with $ServiceConnectionEditRoute {
+}) extends _AppGoRouteData with $ServiceConnectionEditRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -885,7 +1109,7 @@ class ServiceConnectionEditRoute({
 }
 
 class SettingsRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $SettingsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
@@ -894,12 +1118,12 @@ class SettingsRoute({required final String workspaceId})
 }
 
 class WorkspaceSettingsRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $WorkspaceSettingsRoute {
   final DraftExitGuard _exitGuard = .new();
 
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -911,17 +1135,8 @@ class WorkspaceSettingsRoute({required final String workspaceId})
       );
 }
 
-class MoreRoute({required final String workspaceId})
-    extends GoRouteData
-    with $MoreRoute {
-  @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return MoreScreen(workspaceId: workspaceId);
-  }
-}
-
 class CloudAccountsRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $CloudAccountsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
@@ -934,7 +1149,7 @@ class CloudWorkspaceDetailRoute({
   required final String cloudAccountId,
   required final int cloudWorkspaceId,
   final String? serverUrl,
-}) extends GoRouteData with $CloudWorkspaceDetailRoute {
+}) extends _AppGoRouteData with $CloudWorkspaceDetailRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CloudWorkspaceDetailScreen(
@@ -949,7 +1164,7 @@ class CloudWorkspaceDetailRoute({
 class CloudAccountAddRoute({
   required final String workspaceId,
   final String? returnPath,
-}) extends GoRouteData with $CloudAccountAddRoute {
+}) extends _AppGoRouteData with $CloudAccountAddRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CloudAccountAddScreen(
@@ -963,7 +1178,7 @@ class CloudAccountAddRoute({
 class CloudAccountLoginRoute({
   required final String workspaceId,
   final String? returnPath,
-}) extends GoRouteData with $CloudAccountLoginRoute {
+}) extends _AppGoRouteData with $CloudAccountLoginRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CloudAccountLoginScreen(
@@ -977,7 +1192,7 @@ class CloudAccountLoginRoute({
 class CloudAccountRegisterRoute({
   required final String workspaceId,
   final String? returnPath,
-}) extends GoRouteData with $CloudAccountRegisterRoute {
+}) extends _AppGoRouteData with $CloudAccountRegisterRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CloudAccountRegisterScreen(
@@ -991,7 +1206,7 @@ class CloudAccountRegisterRoute({
 class CloudAccountForgotPasswordRoute({
   required final String workspaceId,
   final String? returnPath,
-}) extends GoRouteData with $CloudAccountForgotPasswordRoute {
+}) extends _AppGoRouteData with $CloudAccountForgotPasswordRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CloudAccountForgotPasswordScreen(
@@ -1005,7 +1220,7 @@ class CloudAccountForgotPasswordRoute({
 class WorkspaceManagementRoute({
   required final String workspaceId,
   final String? view,
-}) extends GoRouteData with $WorkspaceManagementRoute {
+}) extends _AppGoRouteData with $WorkspaceManagementRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return WorkspaceManagementScreen(
@@ -1016,10 +1231,10 @@ class WorkspaceManagementRoute({
 }
 
 class WorkspaceCreateRoute({required final String workspaceId})
-    extends GoRouteData
+    extends _AppGoRouteData
     with $WorkspaceCreateRoute {
   @override
-  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+  FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
 
   @override
@@ -1032,8 +1247,12 @@ class WorkspaceCreateRoute({required final String workspaceId})
 }
 // Top-level API/provider declarations are required by their consumers.
 
-Future<bool> _canExitDraft(BuildContext context, GoRouterState state) =>
-    ProviderScope.containerOf(
-      context,
-      listen: false,
-    ).read(draftExitRegistryProvider).canExitRoute(state.uri);
+FutureOr<bool> _canExitDraft(BuildContext context, GoRouterState state) {
+  final registry = ProviderScope.containerOf(
+    context,
+    listen: false,
+  ).read(draftExitRegistryProvider);
+  if (registry.canUseNativeBack(.of(context))) return true;
+
+  return registry.canExitRoute(state.uri);
+}

@@ -7,57 +7,135 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:auravibes_app/domain/entities/compaction_settings.dart';
-import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/features/chats/models/chat_draft.dart';
-import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
-import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
-import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
-import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
-import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
-import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
-import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
-import 'package:auravibes_app/features/skills/models/available_skill.dart';
-import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
-import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
-import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
-import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
-import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
-import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
-import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
-import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/router/workspace_route.dart';
-import 'package:auravibes_app/services/log_redaction.dart';
-import 'package:auravibes_app/utils/number_formatter.dart';
-import 'package:auravibes_app/utils/open_system_browser.dart';
-import 'package:auravibes_app/utils/relative_time_formatter.dart';
-import 'package:auravibes_app/utils/string_extensions.dart';
-import 'package:auravibes_app/utils/tool_name_formatter.dart';
-import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
-import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
+import 'package:auravibes_app/features/chats/notifiers/activity_run_expansion_notifier.dart';
+import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
+import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.dart';
+import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
+import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
+import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result.dart';
+import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result_controller.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_announcement.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
+import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
+import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
+import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
+import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/services/log_redaction.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
+import 'package:auravibes_app/utils/relative_time_formatter.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
+import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
+import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:auravibes_app/widgets/confirmed_external_link.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
+
 final _a2uiLogger = Logger('chat_a2ui_actions');
 const _latestMessageScrollThreshold = 64.0;
+
+String? _searchTargetMessageId(BuildContext context) {
+  final arguments = ModalRoute.of(context)?.settings.arguments;
+  if (arguments is! Map) return null;
+  final messageId = arguments['message-id'];
+
+  return messageId is String ? messageId : null;
+}
+
+List<String> _messageIdsAroundTarget(List<String> messages, String targetId) {
+  final targetIndex = messages.indexOf(targetId);
+  if (targetIndex < 0) return const [];
+  final start = targetIndex < 500 ? 0 : targetIndex - 499;
+  final end = targetIndex + 501 < messages.length
+      ? targetIndex + 501
+      : messages.length;
+
+  return messages.sublist(start, end);
+}
+
+List<String> _messageIdsWithTargetContext({
+  required String targetId,
+  required List<String> liveMessageIds,
+  required List<MessageEntity> targetMessages,
+  required Map<String, MessageEntity>? liveMessagesById,
+}) {
+  final targetIds = targetMessages.map((message) => message.id).toList();
+  final targetIdIndex = liveMessageIds.indexOf(targetId);
+  MessageEntity? targetMessage;
+  for (final message in targetMessages) {
+    if (message.id == targetId) {
+      targetMessage = message;
+      break;
+    }
+  }
+  final targetCreatedAt = targetMessage?.createdAt;
+  final liveTail = targetIdIndex >= 0
+      ? liveMessageIds.skip(targetIdIndex + 1)
+      : targetCreatedAt == null
+      ? const <String>[]
+      : liveMessageIds.where((messageId) {
+          final message = liveMessagesById?[messageId];
+
+          return message != null && message.createdAt.isAfter(targetCreatedAt);
+        });
+  final includedIds = targetIds.toSet();
+
+  return [
+    ...targetIds,
+    for (final messageId in liveTail.take(500))
+      if (includedIds.add(messageId)) messageId,
+  ];
+}
+
+typedef _ActivityToolDisplay = ({
+  String displayName,
+  String? description,
+  VoidCallback? openSkillDetails,
+});
 
 class const ChatPrimaryScrollController({
   required final Widget child,
@@ -76,9 +154,11 @@ class const ChatMessagesWidget({
   required final String workspaceId,
   required final String conversationId,
   required final List<String> messages,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   final Map<String, MessageEntity>? messageEntitiesById,
   final List<PendingToolCall> pendingToolCalls = const [],
   final bool showThinking = false,
+  final bool isStopRequested = false,
   final Future<void> Function(MessageEntity message)? onRetryMessage,
   super.key,
 }) extends HookConsumerWidget {
@@ -89,6 +169,36 @@ class const ChatMessagesWidget({
     final controller =
         PrimaryScrollController.of(context) as _DisclosureScrollController;
     final parentConversationId = conversationId;
+    final targetMessageId = _searchTargetMessageId(context);
+    final isTargetInLiveMessages =
+        targetMessageId != null && messages.contains(targetMessageId);
+    final isCloudWorkspace =
+        ref.watch(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
+        null;
+    final targetMessageRequest =
+        targetMessageId == null || !isCloudWorkspace || isTargetInLiveMessages
+        ? null
+        : (
+            workspaceId: workspaceId,
+            conversationId: conversationId,
+            messageId: targetMessageId,
+          );
+    final targetMessagesAsync = targetMessageRequest == null
+        ? null
+        : ref.watch(
+            conversationMessageTargetMessagesProvider(targetMessageRequest),
+          );
+    final backgroundWorksAsync = isCloudWorkspace
+        ? ref.watch(
+            cloudConversationBackgroundWorksProvider((
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            )),
+          )
+        : ref.watch(conversationBackgroundWorksProvider(conversationId));
+    final backgroundToolCallIds = backgroundWorksAsync.value
+        ?.map((work) => work.identity.toolCallId)
+        .toSet();
     final conversation = ref
         .watch(
           conversationByIdStreamProvider(
@@ -197,17 +307,54 @@ class const ChatMessagesWidget({
     );
     final isCompacting =
         compactionState?.status == CompactionExecutionStatus.running;
+    final targetMessages = targetMessagesAsync?.asData?.value;
+    final effectiveMessageIds = switch (targetMessageId) {
+      null => messages,
+      _ when isCloudWorkspace =>
+        targetMessages == null
+            ? messages
+            : _messageIdsWithTargetContext(
+                targetId: targetMessageId,
+                liveMessageIds: messages,
+                targetMessages: targetMessages,
+                liveMessagesById: messageEntitiesById,
+              ),
+      final messageId => _messageIdsAroundTarget(messages, messageId),
+    };
+    final effectiveMessageEntities = {
+      ...?messageEntitiesById,
+      for (final message in targetMessages ?? const <MessageEntity>[])
+        message.id: message,
+    };
     final resolvedMessages = <_ResolvedChatMessage?>[];
-    for (final messageId in messages) {
-      final message =
-          ref.watch(
-            messageConversationByIdProvider((
+    final focusedMessageId = GoRouter.maybeOf(context) == null
+        ? null
+        : GoRouterState.of(context).uri.queryParameters['message-id'] ??
+              GoRouterState.of(context).uri.queryParameters['messageId'];
+    final focusedMessageAsync =
+        focusedMessageId == null ||
+            effectiveMessageIds.contains(focusedMessageId) ||
+            targetMessageRequest != null
+        ? null
+        : ref.watch(
+            fetchConversationMessageByIdProvider((
               workspaceId: workspaceId,
               conversationId: conversationId,
-              messageId: messageId,
+              messageId: focusedMessageId,
             )),
-          ) ??
-          messageEntitiesById?[messageId];
+          );
+    final focusedMessage = focusedMessageAsync?.asData?.value;
+    for (final messageId in effectiveMessageIds) {
+      final storedMessage = ref.watch(
+        messageConversationByIdProvider((
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          messageId: messageId,
+        )),
+      );
+      final message = messageId == targetMessageId
+          ? effectiveMessageEntities[messageId] ?? storedMessage
+          : storedMessage ?? effectiveMessageEntities[messageId];
       final isStreaming = ref.watch(isMessageStreamingProvider(messageId));
       resolvedMessages.add(
         message == null
@@ -215,14 +362,88 @@ class const ChatMessagesWidget({
             : _ResolvedChatMessage(message: message, isStreaming: isStreaming),
       );
     }
+    if (focusedMessage != null &&
+        !effectiveMessageIds.contains(focusedMessage.id)) {
+      resolvedMessages.add(
+        _ResolvedChatMessage(message: focusedMessage, isStreaming: false),
+      );
+    }
+    if (targetMessageId != null &&
+        (targetMessagesAsync?.isLoading == true ||
+            focusedMessageAsync?.isLoading == true)) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (targetMessagesAsync?.hasError == true) {
+      if (targetMessagesAsync?.error case CloudAppException(code: 'notFound')) {
+        return const Center(
+          child: TextLocale(
+            LocaleKeys.chats_screens_conversation_search_target_not_found,
+          ),
+        );
+      }
+      return Center(
+        child: Column(
+          mainAxisSize: .min,
+          children: [
+            const TextLocale(
+              LocaleKeys.chats_screens_conversation_search_target_load_error,
+            ),
+            TextButton(
+              onPressed: () {
+                if (targetMessageRequest == null) return;
+                ref.invalidate(
+                  conversationMessageTargetMessagesProvider(
+                    targetMessageRequest,
+                  ),
+                );
+              },
+              child: const TextLocale(
+                LocaleKeys.chats_screens_conversation_search_target_retry,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    if (targetMessageId != null &&
+        !effectiveMessageIds.contains(targetMessageId) &&
+        focusedMessage == null &&
+        focusedMessageAsync?.hasError != true) {
+      return const Center(
+        child: TextLocale(
+          LocaleKeys.chats_screens_conversation_search_target_not_found,
+        ),
+      );
+    }
     final data = _buildChatTimelineItems(
       resolvedMessages,
       submittedA2uiReplayPayloads,
+      searchTargetMessageId: targetMessageId,
       pendingToolCallKeys: {
         for (final pendingCall in pendingToolCalls)
           _activityToolCallKey(pendingCall.messageId, pendingCall.toolCall.id),
       },
     ).reversed.toList(growable: false);
+    final assistantResponseProgress = <ChatAssistantResponseProgress>[
+      for (final source in resolvedMessages)
+        if (source != null &&
+            !source.message.isUser &&
+            !source.message.isForkReference &&
+            source.message.messageType != MessageType.system &&
+            source.message.messageType != MessageType.toolCall)
+          ChatAssistantResponseProgress(
+            messageId: source.message.id,
+            isStreaming: source.isStreaming,
+            status: source.message.status,
+            hasResponse: _hasAssistantResponseCandidate(
+              source,
+              submittedA2uiReplayPayloads,
+            ),
+            isAwaitingUserAction:
+                source.message.status == MessageStatus.unfinished &&
+                _hasA2uiMessageState(source.message),
+          ),
+    ];
     final retryableMessageId = _retryableUserMessageId(resolvedMessages);
 
     void updateDisclosure(VoidCallback update) => update();
@@ -230,6 +451,40 @@ class const ChatMessagesWidget({
     final thinkingCount = showThinking ? 1 : 0;
     final compactionCount = isCompacting ? 1 : 0;
     final itemCount = data.length + thinkingCount + compactionCount;
+    final focusedItemIndex = focusedMessageId == null
+        ? -1
+        : data.indexWhere(
+            (item) => _timelineItemContainsMessageId(item, focusedMessageId),
+          );
+    final focusedListIndex = focusedItemIndex < 0
+        ? -1
+        : focusedItemIndex + thinkingCount + compactionCount;
+    final itemKeys = useMemoized(
+      () => focusedListIndex < 0
+          ? <GlobalKey>[]
+          : List<GlobalKey>.generate(itemCount, (_) => GlobalKey()),
+      [focusedListIndex, itemCount, messages],
+    );
+    final hasFocusedTarget = useRef(false);
+    useEffect(() {
+      hasFocusedTarget.value = false;
+      return null;
+    }, [focusedMessageId]);
+    useEffect(
+      () => _focusMessageEffect(
+        controller: controller,
+        itemKeys: itemKeys,
+        itemIndex: focusedListIndex,
+        hasFocusedTarget: hasFocusedTarget,
+      ),
+      [
+        controller,
+        focusedListIndex,
+        focusedMessageId,
+        hasFocusedTarget,
+        itemKeys,
+      ],
+    );
 
     void jumpToLatest() {
       if (!controller.hasClients) return;
@@ -247,31 +502,60 @@ class const ChatMessagesWidget({
         ListView.separated(
           reverse: true,
           controller: controller,
-          padding: const EdgeInsets.all(16),
-          itemBuilder: (context, index) => _buildChatTimelineItem(
-            index: index,
-            data: data,
-            showThinking: showThinking,
-            isCompacting: isCompacting,
-            thinkingCount: thinkingCount,
-            compactionCount: compactionCount,
-            disclosureController: controller,
-            onDisclosureChanged: updateDisclosure,
-            parentConversationId: parentConversationId,
-            childConversations: childConversations,
-            workspaceId: workspaceId,
-            a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
-            replayPayloadsByMessageId: submittedA2uiReplayPayloads,
-            conversation: conversation,
-            retryableMessageId: retryableMessageId,
-            onRetryMessage: onRetryMessage,
-          ),
-          separatorBuilder: (context, index) => const AuraSizedBox(height: .md),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemBuilder: (context, index) {
+            final item = _buildChatTimelineItem(
+              context: context,
+              index: index,
+              data: data,
+              focusedMessageId: focusedMessageId,
+              showThinking: showThinking,
+              isCompacting: isCompacting,
+              thinkingCount: thinkingCount,
+              compactionCount: compactionCount,
+              disclosureController: controller,
+              onDisclosureChanged: updateDisclosure,
+              parentConversationId: parentConversationId,
+              childConversations: childConversations,
+              workspaceId: workspaceId,
+              isCloudWorkspace: isCloudWorkspace,
+              backgroundToolCallIds: backgroundToolCallIds,
+              a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
+              replayPayloadsByMessageId: submittedA2uiReplayPayloads,
+              conversation: conversation,
+              searchTargetMessageId: targetMessageId,
+              retryableMessageId: retryableMessageId,
+              onRetryMessage: onRetryMessage,
+              onOpenToolResult: onOpenToolResult,
+            );
+
+            return focusedListIndex < 0
+                ? item
+                : KeyedSubtree(key: itemKeys[index], child: item);
+          },
+          separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
           itemCount: itemCount,
           addAutomaticKeepAlives: false,
           scrollCacheExtent: const ScrollCacheExtent.pixels(500),
           keyboardDismissBehavior: .manual,
         ),
+        ChatAssistantResponseAnnouncement(
+          key: ValueKey('assistant_response_announcements_$conversationId'),
+          conversationId: conversationId,
+          responses: assistantResponseProgress,
+          isStopRequested: isStopRequested,
+        ),
+        if (focusedMessageAsync case AsyncError(:final error))
+          Positioned(
+            top: 12,
+            left: 16,
+            right: 16,
+            child: AuraCallout(
+              title: CloudAppErrors.localizationKey(error).tr(),
+              icon: Icons.error_outline,
+              tint: .error,
+            ),
+          ),
         Positioned(
           right: 16,
           bottom: 16,
@@ -500,21 +784,22 @@ void _showConversationSkillPicker(
   String workspaceId,
   String conversationId,
 ) {
-  FocusManager.instance.primaryFocus?.unfocus();
+  if (!context.mounted) return;
+
   unawaited(
-    showDialog<void>(
+    ConversationSkillSelectorModal.show(
       context: context,
-      builder: (context) => ConversationSkillSelectorModal(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      ),
+      workspaceId: workspaceId,
+      conversationId: conversationId,
     ),
   );
 }
 
 Widget _buildChatTimelineItem({
+  required BuildContext context,
   required int index,
   required List<_ChatTimelineItem> data,
+  required String? focusedMessageId,
   required bool showThinking,
   required bool isCompacting,
   required int thinkingCount,
@@ -524,11 +809,15 @@ Widget _buildChatTimelineItem({
   required String parentConversationId,
   required List<ConversationEntity> childConversations,
   required String workspaceId,
+  required String? searchTargetMessageId,
+  required bool isCloudWorkspace,
+  required Set<String>? backgroundToolCallIds,
   required ChatA2uiRuntime? a2uiRuntime,
   required Map<String, List<String>> replayPayloadsByMessageId,
   required ConversationEntity? conversation,
   required String? retryableMessageId,
   required Future<void> Function(MessageEntity message)? onRetryMessage,
+  required ValueChanged<SidebarToolResultTab> onOpenToolResult,
 }) {
   if (showThinking && index == 0) {
     return const ChatThinkingIndicator(
@@ -540,6 +829,8 @@ Widget _buildChatTimelineItem({
   }
 
   final item = data[index - thinkingCount - compactionCount];
+  final isTopLevelConversation =
+      conversation != null && conversation.parentConversationId == null;
   final messageId = switch (item) {
     _ActivityRunTimelineItem(:final run) => run.responseMessageId,
     _MessageTimelineItem(:final source) => source.message.id,
@@ -552,6 +843,9 @@ Widget _buildChatTimelineItem({
       parentConversationId: parentConversationId,
       childConversations: childConversations,
       workspaceId: workspaceId,
+      isCloudWorkspace: isCloudWorkspace,
+      backgroundToolCallIds: backgroundToolCallIds,
+      isTopLevelConversation: isTopLevelConversation,
       a2uiRuntime: a2uiRuntime,
       a2uiReplayPayloadsByMessageId: replayPayloadsByMessageId,
       a2uiReplayPayloads: run.responseMessageId == null
@@ -559,6 +853,7 @@ Widget _buildChatTimelineItem({
           : replayPayloadsByMessageId[run.responseMessageId] ?? const [],
       canRetry: run.responseMessageId == retryableMessageId,
       onRetryMessage: onRetryMessage,
+      onOpenToolResult: onOpenToolResult,
     ),
     _MessageTimelineItem(
       :final source,
@@ -568,30 +863,48 @@ Widget _buildChatTimelineItem({
       _ChatMessageTimelineItem(
         key: ValueKey(source.message.id),
         source: source,
+        isSearchTarget: messageId == searchTargetMessageId,
         activityRenderedInSession: activityRenderedInSession,
         onDisclosureChanged: onDisclosureChanged,
         parentConversationId: parentConversationId,
         childConversations: childConversations,
         workspaceId: workspaceId,
+        isCloudWorkspace: isCloudWorkspace,
+        backgroundToolCallIds: backgroundToolCallIds,
+        isTopLevelConversation: isTopLevelConversation,
         a2uiRuntime: a2uiRuntime,
         a2uiReplayPayloads:
             replayPayloadsByMessageId[source.message.id] ?? const [],
         showResponseActions: showResponseActions,
         canRetry: source.message.id == retryableMessageId,
         onRetryMessage: onRetryMessage,
+        onOpenToolResult: onOpenToolResult,
       ),
   };
   final rendered = _DisclosureSizeReporter(
     controller: disclosureController,
     child: child,
   );
+  final highlighted =
+      focusedMessageId != null &&
+      _timelineItemContainsMessageId(item, focusedMessageId);
+  final focused = highlighted
+      ? DecoratedBox(
+          key: ValueKey('focused_message_$focusedMessageId'),
+          decoration: BoxDecoration(
+            border: Border.all(color: context.auraColors.primary, width: 2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: rendered,
+        )
+      : rendered;
   if (conversation != null &&
       messageId != null &&
       conversation.forkThroughMessageId == messageId) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        rendered,
+        focused,
         _ForkBoundaryDivider(
           conversation: conversation!,
           workspaceId: workspaceId,
@@ -599,7 +912,102 @@ Widget _buildChatTimelineItem({
       ],
     );
   }
-  return rendered;
+  return focused;
+}
+
+bool _timelineItemContainsMessageId(_ChatTimelineItem item, String messageId) =>
+    switch (item) {
+      _ActivityRunTimelineItem(:final run) => run.sources.any(
+        (source) => source.message.id == messageId,
+      ),
+      _MessageTimelineItem(:final source) => source.message.id == messageId,
+    };
+
+VoidCallback? _focusMessageEffect({
+  required _DisclosureScrollController controller,
+  required List<GlobalKey> itemKeys,
+  required int itemIndex,
+  required ObjectRef<bool> hasFocusedTarget,
+}) {
+  if (itemIndex < 0 || itemIndex >= itemKeys.length) return null;
+  var active = true;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!active || hasFocusedTarget.value || !controller.hasClients) return;
+    unawaited(
+      _focusMessage(
+        controller: controller,
+        itemKeys: itemKeys,
+        itemIndex: itemIndex,
+        hasFocusedTarget: hasFocusedTarget,
+      ),
+    );
+  });
+  return () {
+    active = false;
+  };
+}
+
+Future<void> _focusMessage({
+  required _DisclosureScrollController controller,
+  required List<GlobalKey> itemKeys,
+  required int itemIndex,
+  required ObjectRef<bool> hasFocusedTarget,
+}) async {
+  if (itemKeys[itemIndex].currentContext case final targetContext?) {
+    await Scrollable.ensureVisible(
+      targetContext,
+      alignment: 0.5,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+    hasFocusedTarget.value = true;
+    return;
+  }
+
+  if (itemKeys.length <= 1) return;
+  final position = controller.position;
+  final scrollRange = position.maxScrollExtent - position.minScrollExtent;
+  controller.jumpTo(
+    (position.minScrollExtent + scrollRange * itemIndex / (itemKeys.length - 1))
+        .clamp(position.minScrollExtent, position.maxScrollExtent),
+  );
+
+  while (controller.hasClients) {
+    await WidgetsBinding.instance.endOfFrame;
+    if (itemKeys[itemIndex].currentContext case final targetContext?) {
+      await Scrollable.ensureVisible(
+        targetContext,
+        alignment: 0.5,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+      hasFocusedTarget.value = true;
+      return;
+    }
+    if (!controller.hasClients) return;
+
+    final mounted = [
+      for (var index = 0; index < itemKeys.length; index++)
+        if (itemKeys[index].currentContext case final context?) index,
+    ];
+    if (mounted.isEmpty) return;
+    final currentPosition = controller.position;
+    final direction = itemIndex < mounted.first
+        ? -1
+        : itemIndex > mounted.last
+        ? 1
+        : 0;
+    if (direction == 0) return;
+    final nextPosition =
+        (currentPosition.pixels +
+                direction * currentPosition.viewportDimension * .8)
+            .clamp(
+              currentPosition.minScrollExtent,
+              currentPosition.maxScrollExtent,
+            );
+    if (nextPosition == currentPosition.pixels) return;
+    controller.jumpTo(nextPosition);
+  }
 }
 
 class _ResolvedChatMessage {
@@ -769,6 +1177,7 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
   List<_ResolvedChatMessage?> messages,
   Map<String, List<String>> replayPayloadsByMessageId, {
   Set<String> pendingToolCallKeys = const {},
+  String? searchTargetMessageId,
 }) {
   final items = <_ChatTimelineItem>[];
   final activitySources = <_ResolvedChatMessage>[];
@@ -800,6 +1209,11 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
     }
 
     final message = source.message;
+    if (message.id == searchTargetMessageId) {
+      addActivityRun();
+      items.add(_MessageTimelineItem(source));
+      continue;
+    }
     final hasVisibleResponse = _hasVisibleAssistantResponse(
       message,
       replayPayloadsByMessageId,
@@ -892,6 +1306,18 @@ bool _hasVisibleAssistantResponse(
     message.content.trim().isNotEmpty ||
     _requiresMessageTimelineItem(message, replayPayloadsByMessageId);
 
+bool _hasAssistantResponseCandidate(
+  _ResolvedChatMessage source,
+  Map<String, List<String>> replayPayloadsByMessageId,
+) {
+  if (_hasVisibleAssistantResponse(source.message, replayPayloadsByMessageId)) {
+    return true;
+  }
+
+  return source.isStreaming &&
+      source.message.metadata?.toolCalls.isNotEmpty != true;
+}
+
 bool _requiresMessageTimelineItem(
   MessageEntity message,
   Map<String, List<String>> replayPayloadsByMessageId,
@@ -907,13 +1333,21 @@ bool _isTimelineBoundary(MessageEntity message) =>
     message.status == MessageStatus.error ||
     message.metadata?.isCompactionSummary == true;
 
+bool _isErrorMessage(MessageEntity message) =>
+    _isErrorSystemMessage(message) ||
+    (!message.isUser &&
+        message.status == MessageStatus.error &&
+        _isProviderErrorMessage(message));
+
 bool _isErrorSystemMessage(MessageEntity message) =>
     !message.isUser &&
     message.messageType == MessageType.system &&
     message.status == MessageStatus.error;
 
 bool _isProviderErrorMessage(MessageEntity message) =>
-    message.metadata?.modelMetadata['providerError'] == true;
+    message.metadata?.modelMetadata[ProviderRecoveryMetadata
+        .providerErrorKey] ==
+    true;
 
 String? _retryableUserMessageId(List<_ResolvedChatMessage?> messages) {
   for (final source in messages.reversed) {
@@ -930,21 +1364,27 @@ bool _canRetryUserMessage(MessageEntity message) =>
     message.isUser &&
     !message.isForkReference &&
     message.hasValidContent &&
-    (message.status == MessageStatus.error ||
-        message.status == MessageStatus.unfinished);
+    (message.status == MessageStatus.unfinished ||
+        (message.status == MessageStatus.error &&
+            ProviderRecoveryMetadata.isRetryEligible(message)));
 
 class const _ChatMessageTimelineItem({
   required final _ResolvedChatMessage source,
+  final bool isSearchTarget = false,
   final bool activityRenderedInSession = false,
   required final void Function(VoidCallback update) onDisclosureChanged,
   required final String parentConversationId,
   required final List<ConversationEntity> childConversations,
   required final String workspaceId,
+  required final bool isCloudWorkspace,
+  required final Set<String>? backgroundToolCallIds,
+  required final bool isTopLevelConversation,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
   final bool showResponseActions = true,
   required final bool canRetry,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -959,10 +1399,11 @@ class const _ChatMessageTimelineItem({
       );
     }
 
-    if (_isErrorSystemMessage(message)) {
+    if (_isErrorMessage(message)) {
       return _ErrorMessageWidget(
         content: message.content,
         isProviderError: _isProviderErrorMessage(message),
+        providerFailureCategory: ProviderRecoveryMetadata.categoryFor(message),
         key: ValueKey(message.id),
       );
     }
@@ -971,7 +1412,7 @@ class const _ChatMessageTimelineItem({
         !activityRenderedInSession &&
         !_isTimelineBoundary(message) &&
         _hasAssistantActivity(message);
-    return AuraColumn(
+    final content = AuraColumn(
       crossAxisAlignment: message.isUser
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
@@ -984,6 +1425,10 @@ class const _ChatMessageTimelineItem({
             parentConversationId: parentConversationId,
             childConversations: childConversations,
             workspaceId: workspaceId,
+            isCloudWorkspace: isCloudWorkspace,
+            backgroundToolCallIds: backgroundToolCallIds,
+            isTopLevelConversation: isTopLevelConversation,
+            onOpenToolResult: onOpenToolResult,
           ),
         _ChatMessageContent(
           message: message,
@@ -997,6 +1442,19 @@ class const _ChatMessageTimelineItem({
           onRetryMessage: onRetryMessage,
         ),
       ],
+    );
+    if (!isSearchTarget) return content;
+
+    return Semantics(
+      container: true,
+      label: LocaleKeys.chats_screens_conversation_search_highlight.tr(),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(color: context.auraColors.primary, width: 2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: content,
+      ),
     );
   }
 }
@@ -1044,6 +1502,7 @@ class const _ChatMessageContent({
         onRetryMessage: onRetryMessage,
       ),
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: .xs,
     );
   }
 }
@@ -1119,7 +1578,8 @@ List<Widget> _messageContentChildren({
     if (showResponseActions &&
         !hasA2uiResponse &&
         (_messageCopyText(message, a2uiRuntime) != null ||
-            (canRetry && onRetryMessage != null)))
+            (canRetry && onRetryMessage != null) ||
+            message.isBookmarkEligible))
       _MessageActions(
         message: message,
         resolveContent: () => _messageCopyText(message, a2uiRuntime),
@@ -1130,7 +1590,6 @@ List<Widget> _messageContentChildren({
     if (showResponseActions && hasA2uiResponse)
       _MessageFooter(
         key: ValueKey('message_footer_${message.id}'),
-        createdAt: message.createdAt,
         status: status,
         resolveContent: () => _messageCopyText(message, a2uiRuntime),
         message: message,
@@ -1151,10 +1610,10 @@ String? _messageCopyText(MessageEntity message, ChatA2uiRuntime? a2uiRuntime) {
 }
 
 Color _userMessageSelectionColor(AuraColorScheme colors) {
-  final overlayColor = colors.onPrimary.computeLuminance() > .5
-      ? Colors.black
-      : Colors.white;
-  return Color.alphaBlend(overlayColor.withValues(alpha: .24), colors.primary);
+  return Color.alphaBlend(
+    colors.primary.withValues(alpha: .24),
+    colors.surfaceVariant,
+  );
 }
 
 AuraMessageDeliveryStatus _mapMessageStatus(
@@ -1255,7 +1714,10 @@ Future<void> _submitA2uiAction(
   required ChatUiAction action,
 }) async {
   try {
-    await ref
+    final iterationLimitNotifier = ref.read(
+      conversationIterationLimitProvider(conversationId).notifier,
+    );
+    final decision = await ref
         .read(sendMessageUsecaseProvider(workspaceId))
         .call(
           conversationId: conversationId,
@@ -1264,6 +1726,7 @@ Future<void> _submitA2uiAction(
             metadataJson: action.metadataJson,
           ),
         );
+    iterationLimitNotifier.markIfIterationLimitReached(decision);
   } on Object catch (error, stackTrace) {
     runtime.rejectFormSubmission(action.surfaceId);
     _a2uiLogger.warning(
@@ -1310,18 +1773,13 @@ class const _MessageTextContent({
       return TextSelectionTheme(
         data: Theme.of(context).textSelectionTheme.copyWith(
           selectionColor: _userMessageSelectionColor(colors),
-          selectionHandleColor: colors.onPrimary,
+          selectionHandleColor: colors.primary,
         ),
         child: AuraMessageBubble(
           content: message.content,
           isUser: true,
           key: ValueKey(message.id),
           status: status,
-          timestamp: message.createdAt,
-          timestampLabel: RelativeTimeFormatter.format(
-            message.createdAt,
-            translate: (key, {args}) => context.tr(key, args: args),
-          ),
         ),
       );
     }
@@ -1332,7 +1790,6 @@ class const _MessageTextContent({
         if (hasContent)
           _AiMessageContent(
             content: message.content,
-            timestamp: message.createdAt,
             key: ValueKey(message.id),
             status: status,
             showMetadata: showMetadata,
@@ -1346,57 +1803,28 @@ class const _MessageFooter({
   required final MessageEntity message,
   required final String workspaceId,
   required final String conversationId,
-  required final DateTime createdAt,
   required final AuraMessageDeliveryStatus status,
   required final String? Function() resolveContent,
   super.key,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final typography = context.auraTheme.typography;
     final copyableText = resolveContent();
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (copyableText != null)
-                _MessageActions(
-                  message: message,
-                  resolveContent: resolveContent,
-                  workspaceId: workspaceId,
-                  conversationId: conversationId,
-                ),
-              if (copyableText == null && _canForkMessage(message))
-                _MessageForkAction(
-                  message: message,
-                  workspaceId: workspaceId,
-                  conversationId: conversationId,
-                ),
-              Text(
-                RelativeTimeFormatter.format(
-                  createdAt,
-                  locale: Localizations.localeOf(context),
-                ),
-                style: TextStyle(
-                  color: auraColors.onSurfaceVariant,
-                  fontSize: typography.fontSizeXs,
-                  fontFamily: typography.bodyFontFamily,
-                ),
-              ),
-            ],
-          ),
-          if (status != AuraMessageDeliveryStatus.sent) ...[
-            SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
-            AuraMessageStatus(status: status),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _MessageActions(
+          message: message,
+          resolveContent: copyableText == null ? null : resolveContent,
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        ),
+        if (status != AuraMessageDeliveryStatus.sent) ...[
+          SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
+          AuraMessageStatus(status: status),
         ],
-      ),
+      ],
     );
   }
 }
@@ -1410,28 +1838,128 @@ class const _MessageActions({
   required final String workspaceId,
   required final String conversationId,
   final Future<void> Function(MessageEntity message)? onRetryMessage,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final resolve = resolveContent;
     final retry = onRetryMessage;
+    final typography = context.auraTheme.typography;
+    final timestamp = Text(
+      RelativeTimeFormatter.format(
+        message.createdAt,
+        locale: Localizations.localeOf(context),
+        translate: (key, {args}) => context.tr(key, args: args),
+      ),
+      style: TextStyle(
+        color: context.auraColors.onSurfaceVariant,
+        fontSize: typography.fontSizeXs,
+        fontFamily: typography.bodyFontFamily,
+      ),
+    );
 
     return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (message.isUser) ...[
+            timestamp,
+            SizedBox(width: context.auraTheme.fromSpacing(.xs)),
+          ],
           if (resolve != null) _MessageCopyAction(resolveContent: resolve),
           if (retry != null)
             _MessageRetryAction(message: message, onRetryMessage: retry),
+          if (message.isBookmarkEligible)
+            _MessageBookmarkAction(
+              message: message,
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            ),
           if (_canForkMessage(message))
             _MessageForkAction(
               message: message,
               workspaceId: workspaceId,
               conversationId: conversationId,
             ),
+          if (!message.isUser) ...[
+            SizedBox(width: context.auraTheme.fromSpacing(.xs)),
+            timestamp,
+          ],
         ],
       ),
+    );
+  }
+}
+
+class const _MessageBookmarkAction({
+  required final MessageEntity message,
+  required final String workspaceId,
+  required final String conversationId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookmarks = ref.watch(messageBookmarksProvider(workspaceId)).value;
+    final messageId = message.sourceMessageId ?? message.id;
+    final isBookmarked =
+        bookmarks?.any(
+          (bookmark) =>
+              bookmark.workspace.workspaceId == workspaceId &&
+              bookmark.details.messageId == messageId,
+        ) ??
+        false;
+    final tooltip = isBookmarked
+        ? LocaleKeys.chats_screens_chat_conversation_unbookmark_message.tr()
+        : LocaleKeys.chats_screens_chat_conversation_bookmark_message.tr();
+
+    return AuraIconButton(
+      key: ValueKey('bookmark_message_${message.id}'),
+      icon: isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+      size: .small,
+      tooltip: tooltip,
+      onPressed: () => unawaited(
+        _toggleMessageBookmark(context, ref, (
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          message: message,
+          isBookmarked: isBookmarked,
+        )),
+      ),
+    );
+  }
+}
+
+Future<void> _toggleMessageBookmark(
+  BuildContext context,
+  WidgetRef ref,
+  ({
+    String workspaceId,
+    String conversationId,
+    MessageEntity message,
+    bool isBookmarked,
+  })
+  request,
+) async {
+  try {
+    final cloud = await ref.read(messageBookmarkUseCaseProvider).toggle((
+      workspaceId: request.workspaceId,
+      conversationId: request.conversationId,
+      message: request.message,
+      isBookmarked: request.isBookmarked,
+      resolveCloudConversation: () => ref.read(
+        cloudConversationUsecaseProvider(request.workspaceId).future,
+      ),
+    ));
+    if (!context.mounted) return;
+    ref.invalidate(messageBookmarksProvider(request.workspaceId));
+    if (cloud) ref.invalidate(cloudMessageBookmarksProvider);
+  } on Object {
+    if (!context.mounted) return;
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_bookmark_error,
+      ),
+      variant: .error,
     );
   }
 }
@@ -1561,7 +2089,13 @@ class const _ForkBoundaryDivider({
               workspaceId: source.workspaceId,
               chatId: source.id,
             ).go(context),
-            child: row,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: context.auraTheme.interactionSizes.minimumTargetSize,
+                minHeight: context.auraTheme.interactionSizes.minimumTargetSize,
+              ),
+              child: Center(child: row),
+            ),
           );
   }
 }
@@ -1619,54 +2153,46 @@ Widget _chatMarkdown({
   ),
 );
 
-Future<void> _openChatMarkdownLink(BuildContext context, String url) async {
-  final uri = Uri.tryParse(url);
-  if (uri == null ||
-      !uri.isAbsolute ||
-      !uri.hasAuthority ||
-      (uri.scheme != 'http' && uri.scheme != 'https') ||
-      uri.host.isEmpty ||
-      uri.userInfo.isNotEmpty) {
-    return;
-  }
+Future<void> _openChatMarkdownLink(BuildContext context, String url) =>
+    ConfirmedExternalLink.open(
+      context: context,
+      url: url,
+      confirm: (uri) => _confirmChatExternalLink(context, uri),
+      onLaunchFailure: () => _showChatExternalLinkError(context),
+    );
 
-  final confirmed = await AuraDialogs.confirm(
-    context: context,
-    title: Text(
-      LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
-    ),
-    message: AuraSelectableText(
-      LocaleKeys.chats_screens_chat_conversation_external_link_message.tr(
-        namedArgs: {'host': uri.host, 'url': uri.toString()},
+Future<bool?> _confirmChatExternalLink(BuildContext context, Uri uri) =>
+    AuraDialogs.confirm(
+      context: context,
+      title: Text(
+        LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
       ),
-    ),
-    actions: AuraConfirmDialogActions(
-      confirmLabel: Text(
-        LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
-      ),
-      cancelLabel: Text(LocaleKeys.common_cancel.tr()),
-    ),
-  );
-  if (confirmed != true || !context.mounted) return;
-
-  try {
-    await OpenSystemBrowser.call(uri);
-  } on Object {
-    if (!context.mounted) return;
-    unawaited(AuraHaptics.error());
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: TextLocale(
-          LocaleKeys.models_screens_add_provider_device_code_open_link_failed,
+      message: AuraSelectableText(
+        LocaleKeys.chats_screens_chat_conversation_external_link_message.tr(
+          namedArgs: {'host': uri.host, 'url': uri.toString()},
         ),
       ),
+      actions: AuraConfirmDialogActions(
+        confirmLabel: Text(
+          LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
+        ),
+        cancelLabel: Text(LocaleKeys.common_cancel.tr()),
+      ),
     );
-  }
+
+void _showChatExternalLinkError(BuildContext context) {
+  unawaited(AuraHaptics.error());
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: TextLocale(
+        LocaleKeys.models_screens_add_provider_device_code_open_link_failed,
+      ),
+    ),
+  );
 }
 
 class const _AiMessageContent({
   required final String content,
-  required final DateTime timestamp,
   super.key,
   final AuraMessageDeliveryStatus status = AuraMessageDeliveryStatus.sent,
   final bool showMetadata = true,
@@ -1689,23 +2215,9 @@ class const _AiMessageContent({
             fontFamily: typography.bodyFontFamily,
           ),
         ),
-        if (showMetadata) ...[
+        if (showMetadata && status != AuraMessageDeliveryStatus.sent) ...[
           const AuraSizedBox(height: .xs),
-          Text(
-            RelativeTimeFormatter.format(
-              timestamp,
-              locale: Localizations.localeOf(context),
-            ),
-            style: TextStyle(
-              color: auraColors.onSurfaceVariant,
-              fontSize: typography.fontSizeXs,
-              fontFamily: typography.bodyFontFamily,
-            ),
-          ),
-          if (status != AuraMessageDeliveryStatus.sent) ...[
-            SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
-            AuraMessageStatus(status: status),
-          ],
+          AuraMessageStatus(status: status),
         ],
       ],
     );
@@ -1718,6 +2230,10 @@ class const _AssistantActivityRun({
   required final String parentConversationId,
   required final List<ConversationEntity> childConversations,
   required final String workspaceId,
+  required final bool isCloudWorkspace,
+  required final Set<String>? backgroundToolCallIds,
+  required final bool isTopLevelConversation,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
   final Map<String, List<String>> a2uiReplayPayloadsByMessageId = const {},
@@ -1727,6 +2243,9 @@ class const _AssistantActivityRun({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final mcpAppControllers = useMemoized(
+      () => <String, McpAppToolResultController>{},
+    );
     final activityEntries = _buildActivityRunEntries(run);
     final responseEntryIndex = activityEntries.indexWhere(
       (entry) => entry is _ActivityResponseEntry && entry.isFinal,
@@ -1773,15 +2292,70 @@ class const _AssistantActivityRun({
           .map((item) => item.toolCall)
           .toList(growable: false),
     );
-    final traceExpanded = useState(isLive);
-    final expandedToolGroupIds = useState<Set<String>>(
-      isLive
+    final initialExpansionState = (
+      isLive: isLive,
+      traceExpanded: isLive,
+      expandedToolGroupIds: isLive
           ? liveToolGroupIds.where(expandableToolGroupIds.contains).toSet()
           : <String>{},
+      expandedToolIds: latestPendingToolId == null
+          ? <String>{}
+          : <String>{latestPendingToolId},
     );
-    final expandedToolIds = useState(
-      latestPendingToolId == null ? <String>{} : <String>{latestPendingToolId},
+    final expansionState =
+        ref.watch(
+          activityRunExpansionProvider.select(
+            (state) => state[parentConversationId]?[run.id],
+          ),
+        ) ??
+        initialExpansionState;
+    final renderedExpansionState = expansionState;
+
+    List<McpAppToolResultController?> appControllersForToolIds(
+      Set<String> toolIds,
+    ) => [
+      for (final toolCall in toolCalls)
+        if (toolIds.contains(toolCall.toolCall.id))
+          mcpAppControllers[toolCall.toolCall.id],
+    ];
+
+    void updateExpansionState(
+      ActivityRunExpansionState Function(ActivityRunExpansionState) update,
+    ) => ref
+        .read(activityRunExpansionProvider.notifier)
+        .updateExpansion(
+          conversationId: parentConversationId,
+          activityRunId: run.id,
+          initialState: initialExpansionState,
+          update: update,
+        );
+
+    void updateExpansionStateAfterBuild(
+      ActivityRunExpansionState Function(ActivityRunExpansionState) update,
+    ) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        updateExpansionState(update);
+      });
+    }
+
+    Future<void> collapseAfterRun() => runAfterMcpAppToolResultsTeardown(
+      controllers: appControllersForToolIds(expansionState.expandedToolIds),
+      action: () {
+        if (!context.mounted) return;
+        onDisclosureChanged(() {
+          updateExpansionStateAfterBuild(
+            (_) => (
+              isLive: false,
+              traceExpanded: false,
+              expandedToolGroupIds: const {},
+              expandedToolIds: const {},
+            ),
+          );
+        });
+      },
     );
+
     final previousIsLive = useRef(isLive);
     final previousToolSignature = useRef(toolSignature);
     final previousPendingToolId = useRef(latestPendingToolId);
@@ -1792,25 +2366,23 @@ class const _AssistantActivityRun({
         final hasNewTool = previousToolSignature.value != toolSignature;
         final hasNewPendingTool =
             previousPendingToolId.value != latestPendingToolId;
-        if (isLive && (!wasLive || hasNewTool || hasNewPendingTool)) {
+        if (!isLive && (expansionState.isLive || wasLive)) {
+          unawaited(collapseAfterRun());
+        } else if (isLive && (!wasLive || hasNewTool || hasNewPendingTool)) {
           onDisclosureChanged(() {
-            traceExpanded.value = true;
-            expandedToolGroupIds.value = {
-              ...expandedToolGroupIds.value,
-              ...liveToolGroupIds.where(expandableToolGroupIds.contains),
-            };
-            if (latestPendingToolId != null) {
-              expandedToolIds.value = {
-                ...expandedToolIds.value,
-                latestPendingToolId,
-              };
-            }
-          });
-        } else if (!isLive && wasLive) {
-          onDisclosureChanged(() {
-            traceExpanded.value = false;
-            expandedToolGroupIds.value = <String>{};
-            expandedToolIds.value = <String>{};
+            updateExpansionStateAfterBuild(
+              (current) => (
+                isLive: true,
+                traceExpanded: true,
+                expandedToolGroupIds: {
+                  ...current.expandedToolGroupIds,
+                  ...liveToolGroupIds.where(expandableToolGroupIds.contains),
+                },
+                expandedToolIds: latestPendingToolId == null
+                    ? current.expandedToolIds
+                    : {...current.expandedToolIds, latestPendingToolId},
+              ),
+            );
           });
         }
         previousIsLive.value = isLive;
@@ -1820,6 +2392,7 @@ class const _AssistantActivityRun({
       },
       [
         expandableToolGroupIds.length,
+        expansionState.isLive,
         isLive,
         latestPendingToolId,
         liveToolGroupSignature,
@@ -1830,51 +2403,160 @@ class const _AssistantActivityRun({
     final toolContents = <String, Widget>{};
     for (final entry in toolGroupEntries) {
       final groupId = _activityToolGroupId(entry);
-      final activityToolCalls = [
-        for (final item in entry.toolCalls)
-          (
-            messageId: item.messageId,
+      final activityToolCalls =
+          <
+            ({
+              String messageId,
+              MessageToolCallEntity toolCall,
+              bool isForkReference,
+              String displayName,
+              String? description,
+              bool showArguments,
+              VoidCallback? openSkillDetails,
+              VoidCallback? openSubAgent,
+              VoidCallback? onRunInBackground,
+            })
+          >[];
+      for (final item in entry.toolCalls) {
+        final display = _activityToolDisplay(
+          context: context,
+          ref: ref,
+          workspaceId: workspaceId,
+          toolCall: item.toolCall,
+        );
+        activityToolCalls.add((
+          messageId: item.messageId,
+          toolCall: item.toolCall,
+          isForkReference: item.isForkReference,
+          displayName: display.displayName,
+          description: display.description,
+          showArguments: !item.hideArguments,
+          openSkillDetails: display.openSkillDetails,
+          openSubAgent: _openSubAgent(
+            context: context,
+            ref: ref,
+            workspaceId: workspaceId,
+            parentConversationId: parentConversationId,
+            childConversations: childConversations,
             toolCall: item.toolCall,
-            isForkReference: item.isForkReference,
-            displayName: _activityToolCallDisplayName(
-              context: context,
-              ref: ref,
-              workspaceId: workspaceId,
-              toolCall: item.toolCall,
-            ),
-            showArguments: !item.hideArguments,
-            openSubAgent: _openSubAgent(
-              context: context,
-              ref: ref,
-              workspaceId: workspaceId,
-              parentConversationId: parentConversationId,
-              childConversations: childConversations,
-              toolCall: item.toolCall,
-            ),
           ),
-      ];
+          onRunInBackground:
+              !item.isForkReference &&
+                  isTopLevelConversation &&
+                  item.toolCall.isRunning &&
+                  !(backgroundToolCallIds?.contains(item.toolCall.id) ??
+                      false) &&
+                  (isCloudWorkspace
+                      ? item.toolCall.backgroundEligible
+                      : ref
+                                .watch(
+                                  toolBackgroundEligibilityProvider((
+                                    conversationId: parentConversationId,
+                                    toolCallId: item.toolCall.id,
+                                  )),
+                                )
+                                .value ==
+                            true)
+              ? () => _detachToolCallFromActivity(
+                  context: context,
+                  ref: ref,
+                  workspaceId: workspaceId,
+                  conversationId: parentConversationId,
+                  isCloud: isCloudWorkspace,
+                  toolCallId: item.toolCall.id,
+                  toolKind: display.displayName,
+                  originatingMessageId: item.messageId,
+                )
+              : null,
+        ));
+      }
       final toolRows = [
         for (final activityToolCall in activityToolCalls)
           _ActivityToolCallRow(
             key: ValueKey('activity_tool_row_${activityToolCall.toolCall.id}'),
+            controller: mcpAppControllers.putIfAbsent(
+              activityToolCall.toolCall.id,
+              McpAppToolResultController.new,
+            ),
+            workspaceId: workspaceId,
+            conversationId: parentConversationId,
             toolCall: activityToolCall.toolCall,
             displayName: activityToolCall.displayName,
+            description: activityToolCall.description,
             showArguments: activityToolCall.showArguments,
-            isExpanded: expandedToolIds.value.contains(
+            isExpanded: renderedExpansionState.expandedToolIds.contains(
               activityToolCall.toolCall.id,
             ),
-            onToggle: () => onDisclosureChanged(
-              () => expandedToolIds.value = _toggledToolIds(
-                expandedToolIds.value,
-                activityToolCall.toolCall.id,
-              ),
-            ),
+            onToggle: () async {
+              final toolCallId = activityToolCall.toolCall.id;
+              final shouldExpandToolCall = !renderedExpansionState
+                  .expandedToolIds
+                  .contains(toolCallId);
+              if (!shouldExpandToolCall) {
+                final controller = mcpAppControllers[toolCallId];
+                if (controller != null) await controller.prepareForTeardown();
+              }
+              if (!context.mounted) return;
+
+              _toggleDisclosure(
+                context: context,
+                update: () => onDisclosureChanged(() {
+                  updateExpansionState(
+                    (current) => (
+                      isLive: current.isLive,
+                      traceExpanded: current.traceExpanded,
+                      expandedToolGroupIds: current.expandedToolGroupIds,
+                      expandedToolIds: updateActivityRunExpandedIds(
+                        expandedIds: current.expandedToolIds,
+                        id: toolCallId,
+                        isExpanded: shouldExpandToolCall,
+                      ),
+                    ),
+                  );
+                }),
+              );
+            },
+            openSkillDetails: activityToolCall.openSkillDetails,
             openSubAgent: activityToolCall.openSubAgent,
+            onRunInBackground: activityToolCall.onRunInBackground,
+            onOpenToolResult: onOpenToolResult,
           ),
       ];
       if (toolRows.length == 1) {
         toolContents[groupId] = toolRows.single;
       } else {
+        final shouldExpandToolGroup = !renderedExpansionState
+            .expandedToolGroupIds
+            .contains(groupId);
+        Future<void> toggleToolGroup() => runAfterMcpAppToolResultsTeardown(
+          controllers: shouldExpandToolGroup
+              ? const <McpAppToolResultController?>[]
+              : [
+                  for (final activityToolCall in activityToolCalls)
+                    if (renderedExpansionState.expandedToolIds.contains(
+                      activityToolCall.toolCall.id,
+                    ))
+                      mcpAppControllers[activityToolCall.toolCall.id],
+                ],
+          action: () {
+            if (!context.mounted) return;
+            onDisclosureChanged(() {
+              updateExpansionState((current) {
+                return (
+                  isLive: current.isLive,
+                  traceExpanded: current.traceExpanded,
+                  expandedToolGroupIds: updateActivityRunExpandedIds(
+                    expandedIds: current.expandedToolGroupIds,
+                    id: groupId,
+                    isExpanded: shouldExpandToolGroup,
+                  ),
+                  expandedToolIds: current.expandedToolIds,
+                );
+              });
+            });
+          },
+        );
+
         toolContents[groupId] = AuraColumn(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1886,14 +2568,12 @@ class const _AssistantActivityRun({
                 Localizations.localeOf(context),
               ),
               color: context.auraColors.secondary,
-              isExpanded: expandedToolGroupIds.value.contains(groupId),
-              onPressed: () => onDisclosureChanged(() {
-                final next = {...expandedToolGroupIds.value};
-                if (!next.remove(groupId)) next.add(groupId);
-                expandedToolGroupIds.value = next;
-              }),
+              isExpanded: renderedExpansionState.expandedToolGroupIds.contains(
+                groupId,
+              ),
+              onPressed: () => unawaited(toggleToolGroup()),
             ),
-            if (expandedToolGroupIds.value.contains(groupId))
+            if (renderedExpansionState.expandedToolGroupIds.contains(groupId))
               Padding(
                 padding: EdgeInsets.only(
                   left: context.auraTheme.fromSpacing(.sm),
@@ -1913,6 +2593,26 @@ class const _AssistantActivityRun({
         ? LocaleKeys.chats_screens_chat_conversation_activity_thinking.tr()
         : LocaleKeys.chats_screens_chat_conversation_activity_tools_count
               .plural(toolCalls.length, context: context);
+    final shouldExpandTrace = !renderedExpansionState.traceExpanded;
+    Future<void> toggleTrace() => runAfterMcpAppToolResultsTeardown(
+      controllers: shouldExpandTrace
+          ? const <McpAppToolResultController?>[]
+          : appControllersForToolIds(renderedExpansionState.expandedToolIds),
+      action: () {
+        if (!context.mounted) return;
+        onDisclosureChanged(() {
+          updateExpansionState(
+            (current) => (
+              isLive: current.isLive,
+              traceExpanded: shouldExpandTrace,
+              expandedToolGroupIds: current.expandedToolGroupIds,
+              expandedToolIds: current.expandedToolIds,
+            ),
+          );
+        });
+      },
+    );
+
     Widget activityEntry(_ActivityRunEntry entry) {
       if (entry case _ActivityNarrativeEntry(
         :final messageId,
@@ -1983,13 +2683,11 @@ class const _AssistantActivityRun({
             label: activityLabel,
             color: context.auraColors.onSurfaceVariant,
             isActivity: true,
-            isExpanded: traceExpanded.value,
-            onPressed: () => onDisclosureChanged(
-              () => traceExpanded.value = !traceExpanded.value,
-            ),
+            isExpanded: renderedExpansionState.traceExpanded,
+            onPressed: () => unawaited(toggleTrace()),
           ),
         if (hasOuterDisclosure &&
-            traceExpanded.value &&
+            renderedExpansionState.traceExpanded &&
             entriesBeforeResponse.isNotEmpty)
           Padding(
             padding: EdgeInsets.only(
@@ -2005,7 +2703,7 @@ class const _AssistantActivityRun({
         if (responseContent != null) responseContent,
         if (responseSource != null &&
             hasOuterDisclosure &&
-            traceExpanded.value &&
+            renderedExpansionState.traceExpanded &&
             entriesAfterResponse.isNotEmpty)
           Padding(
             padding: EdgeInsets.only(
@@ -2111,35 +2809,65 @@ String _toolCallDisplayName(
   ),
 );
 
-String _activityToolCallDisplayName({
+_ActivityToolDisplay _activityToolDisplay({
   required BuildContext context,
   required WidgetRef ref,
   required String workspaceId,
   required MessageToolCallEntity toolCall,
 }) {
   final target = SkillToolCallDisplay.parseTarget(toolCall);
-  if (target != null) {
-    final titlesAsync = ref.watch(
-      skillToolCallDisplayTitlesProvider(
-        workspaceId,
-        target.skillSlug,
-        target.toolSlug,
+  if (target == null) {
+    return (
+      displayName: _toolCallDisplayName(
+        ref.watch(toolDisplayNameProvider(workspaceId, toolCall.name)),
+        toolCall.name,
       ),
-    );
-
-    return SkillToolCallDisplay.displayName(
-      context: context,
-      titles: titlesAsync.maybeWhen(
-        data: (titles) => titles,
-        orElse: () => null,
+      description: SkillToolCallDisplay.description(
+        context: context,
+        titles: null,
+        userFacingDescription: toolCall.userFacingDescription,
       ),
-      target: target,
+      openSkillDetails: null,
     );
   }
 
-  return _toolCallDisplayName(
-    ref.watch(toolDisplayNameProvider(workspaceId, toolCall.name)),
-    toolCall.name,
+  final titlesAsync = ref.watch(
+    skillToolCallDisplayTitlesProvider(
+      workspaceId,
+      target.skillSlug,
+      target.toolSlug,
+    ),
+  );
+  final titles = titlesAsync.maybeWhen(
+    data: (value) => value,
+    orElse: () => null,
+  );
+  final skillId = titles?.skillId;
+
+  return (
+    displayName: SkillToolCallDisplay.displayName(
+      context: context,
+      titles: titles,
+      target: target,
+    ),
+    description: SkillToolCallDisplay.description(
+      context: context,
+      titles: titles,
+      userFacingDescription: toolCall.userFacingDescription,
+    ),
+    openSkillDetails: skillId == null || skillId.isEmpty
+        ? null
+        : () {
+            unawaited(
+              FeatureDestinations.push<void>(
+                context,
+                SkillDetailRoute(
+                  workspaceId: workspaceId,
+                  skillId: skillId,
+                ).location,
+              ),
+            );
+          },
   );
 }
 
@@ -2164,13 +2892,6 @@ String? _latestPendingToolId(List<MessageToolCallEntity> toolCalls) {
   return null;
 }
 
-Set<String> _toggledToolIds(Set<String> expandedToolIds, String toolCallId) {
-  final updated = {...expandedToolIds};
-  if (!updated.add(toolCallId)) updated.remove(toolCallId);
-
-  return updated;
-}
-
 VoidCallback? _openSubAgent({
   required BuildContext context,
   required WidgetRef ref,
@@ -2190,6 +2911,50 @@ VoidCallback? _openSubAgent({
     chatId: parentConversationId,
     subAgentConversationId: subAgentConversationId,
   ).push(context);
+}
+
+void _detachToolCallFromActivity({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String workspaceId,
+  required String conversationId,
+  required bool isCloud,
+  required String toolCallId,
+  required String toolKind,
+  required String originatingMessageId,
+}) {
+  unawaited(() async {
+    try {
+      final detached = await BackgroundWorkActions.runToolInBackground((
+        ref: ref,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+        toolKind: toolKind,
+        originatingMessageId: originatingMessageId,
+        isCloud: isCloud,
+      ));
+      if (detached || !context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: TextLocale(
+            LocaleKeys
+                .chats_screens_chat_conversation_background_work_detach_error,
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: TextLocale(
+            LocaleKeys
+                .chats_screens_chat_conversation_background_work_detach_error,
+          ),
+        ),
+      );
+    }
+  }());
 }
 
 class const _ActivityTraceDisclosure({
@@ -2390,12 +3155,19 @@ void _toggleDisclosure({
 }
 
 class const _ActivityToolCallRow({
+  required final McpAppToolResultController controller,
+  required final String workspaceId,
+  required final String conversationId,
   required final MessageToolCallEntity toolCall,
   required final String displayName,
+  required final String? description,
   required final bool showArguments,
   required final bool isExpanded,
-  required final VoidCallback onToggle,
+  required final Future<void> Function() onToggle,
   required final VoidCallback? openSubAgent,
+  required final VoidCallback? onRunInBackground,
+  required final VoidCallback? openSkillDetails,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -2405,27 +3177,32 @@ class const _ActivityToolCallRow({
         : null;
     final decodedResponse = ToolMetadataDecoder.decode(toolCall.responseRaw);
     final hasDetails =
-        decodedArgs?.isNotEmpty == true || decodedResponse?.isNotEmpty == true;
+        decodedArgs?.isNotEmpty == true ||
+        decodedResponse?.isNotEmpty == true ||
+        toolCall.appData?.isNotEmpty == true;
     final statusKey = _statusLocaleKey();
     final statusColor = _statusColor(context);
-    final description = normalizeToolCallUserFacingDescription(
-      toolCall.userFacingDescription,
-    );
     final onOpenSubAgent = openSubAgent;
+    final onBackground = onRunInBackground;
+    final onOpenSkillDetails = openSkillDetails;
+    final statusBadge = _ActivityToolStatusBadge(
+      label: statusKey.tr(),
+      color: statusColor,
+      textKey: ValueKey('activity_tool_status_${toolCall.id}'),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: .baseline,
+          textBaseline: .alphabetic,
           children: [
             Expanded(
               child: AuraPressable(
                 key: ValueKey('activity_tool_${toolCall.id}'),
                 color: statusColor,
-                onPressed: hasDetails
-                    ? () =>
-                          _toggleDisclosure(context: context, update: onToggle)
-                    : null,
+                onPressed: hasDetails ? () => unawaited(onToggle()) : null,
                 interaction: AuraPressableInteraction.localNavigation,
                 padding: const AuraEdgeInsetsGeometry.symmetric(
                   horizontal: .sm,
@@ -2436,78 +3213,64 @@ class const _ActivityToolCallRow({
                   if (description != null) description,
                   statusKey.tr(),
                 ].join(' '),
-                child: Row(
-                  children: [
-                    Icon(_statusIcon(), size: 14, color: statusColor),
-                    const AuraSizedBox(width: .xs),
-                    Expanded(
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(text: displayName),
-                            if (description != null)
-                              TextSpan(
-                                text: ' · $description',
-                                style: TextStyle(
-                                  color: statusColor.withValues(alpha: .72),
-                                  fontSize:
-                                      context.auraTheme.typography.fontSizeXs,
-                                  fontFamily: context
-                                      .auraTheme
-                                      .typography
-                                      .bodyFontFamily,
-                                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isCompact = constraints.maxWidth < 240;
+
+                    return Row(
+                      children: [
+                        Icon(_statusIcon(), size: 14, color: statusColor),
+                        const AuraSizedBox(width: .xs),
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(text: displayName),
+                                if (description != null)
+                                  TextSpan(
+                                    text: ' · $description',
+                                    style: TextStyle(
+                                      color: statusColor.withValues(alpha: .72),
+                                      fontSize: context
+                                          .auraTheme
+                                          .typography
+                                          .fontSizeXs,
+                                      fontFamily: context
+                                          .auraTheme
+                                          .typography
+                                          .bodyFontFamily,
+                                    ),
+                                  ),
+                              ],
+                              style: TextStyle(
+                                color: statusColor,
+                                fontSize:
+                                    context.auraTheme.typography.fontSizeSm,
+                                fontFamily:
+                                    context.auraTheme.typography.bodyFontFamily,
                               ),
-                          ],
-                          style: TextStyle(
+                            ),
+                            key: ValueKey('activity_tool_label_${toolCall.id}'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const AuraSizedBox(width: .xs),
+                        if (isCompact)
+                          Flexible(child: statusBadge)
+                        else
+                          statusBadge,
+                        if (hasDetails)
+                          Icon(
+                            isExpanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            size: 18,
                             color: statusColor,
-                            fontSize: context.auraTheme.typography.fontSizeSm,
-                            fontFamily:
-                                context.auraTheme.typography.bodyFontFamily,
                           ),
-                        ),
-                        key: ValueKey('activity_tool_label_${toolCall.id}'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const AuraSizedBox(width: .xs),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 120),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: context.auraTheme.fromSpacing(.xs),
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: .12),
-                          borderRadius: BorderRadius.circular(
-                            context.auraTheme.fromBorderRadius(.sm),
-                          ),
-                        ),
-                        child: Text(
-                          statusKey.tr(),
-                          key: ValueKey('activity_tool_status_${toolCall.id}'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: context.auraTheme.typography.fontSizeXs,
-                            fontFamily:
-                                context.auraTheme.typography.bodyFontFamily,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (hasDetails)
-                      Icon(
-                        isExpanded
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down,
-                        size: 18,
-                        color: statusColor,
-                      ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -2529,14 +3292,46 @@ class const _ActivityToolCallRow({
                 variant: .ghost,
                 size: .small,
               ),
+            if (onOpenSkillDetails != null)
+              AuraButton(
+                key: ValueKey('activity_open_skill_${toolCall.id}'),
+                onPressed: onOpenSkillDetails,
+                child: const AuraRow(
+                  children: [
+                    TextLocale(LocaleKeys.related_lists_view_skill),
+                    AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
+                  ],
+                  spacing: .xs,
+                  mainAxisSize: .min,
+                ),
+                variant: .ghost,
+                size: .small,
+              ),
           ],
         ),
+        if (onBackground != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: AuraButton(
+              key: ValueKey('activity_run_in_background_${toolCall.id}'),
+              onPressed: onBackground,
+              variant: .ghost,
+              size: .small,
+              child: const TextLocale(
+                LocaleKeys.chats_screens_chat_conversation_background_work_run,
+              ),
+            ),
+          ),
         if (isExpanded && hasDetails)
           _ActivityToolCallDetails(
             key: ValueKey('activity_tool_details_${toolCall.id}'),
+            controller: controller,
+            workspaceId: workspaceId,
+            conversationId: conversationId,
             toolCall: toolCall,
             decodedArgs: decodedArgs,
             decodedResponse: decodedResponse,
+            onOpenToolResult: onOpenToolResult,
           ),
       ],
     );
@@ -2591,10 +3386,48 @@ class const _ActivityToolCallRow({
   }
 }
 
+class const _ActivityToolStatusBadge({
+  required final String label,
+  required final Color color,
+  required final Key textKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 120),
+    child: Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: context.auraTheme.fromSpacing(.xs),
+        vertical: 1,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(
+          context.auraTheme.fromBorderRadius(.sm),
+        ),
+      ),
+      child: Text(
+        label,
+        key: textKey,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: context.auraTheme.typography.fontSizeXs,
+          fontFamily: context.auraTheme.typography.bodyFontFamily,
+        ),
+      ),
+    ),
+  );
+}
+
 class const _ActivityToolCallDetails({
+  required final McpAppToolResultController controller,
+  required final String workspaceId,
+  required final String conversationId,
   required final MessageToolCallEntity toolCall,
   required final String? decodedArgs,
   required final String? decodedResponse,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -2610,10 +3443,19 @@ class const _ActivityToolCallDetails({
     final persistedProjection = responseRaw == null
         ? null
         : readToolOutputProjectionMetadata(responseRaw);
+    final truncationMetadata = contextProjection ?? persistedProjection;
     final truncationKey = persistedProjection == null
         ? LocaleKeys.chats_screens_chat_conversation_activity_context_truncated
         : LocaleKeys
               .chats_screens_chat_conversation_activity_persisted_truncated;
+    final truncationMessage = truncationMetadata == null
+        ? null
+        : truncationKey.tr(
+            namedArgs: {
+              'originalBytes': truncationMetadata.originalBytes.toString(),
+              'limitBytes': truncationMetadata.limitBytes.toString(),
+            },
+          );
 
     return Padding(
       padding: EdgeInsets.only(
@@ -2638,20 +3480,20 @@ class const _ActivityToolCallDetails({
                   ),
                 ),
               ),
-            if (contextProjection != null)
-              Text(
-                truncationKey.tr(
-                  namedArgs: {
-                    'originalBytes': contextProjection.originalBytes.toString(),
-                    'limitBytes': contextProjection.limitBytes.toString(),
-                  },
+            if (truncationMessage case final value?)
+              Semantics(
+                child: Text(
+                  value,
+                  key: ValueKey('activity_tool_truncation_${toolCall.id}'),
+                  style: TextStyle(
+                    color: colors.onSurfaceVariant,
+                    fontSize: theme.typography.fontSizeXs,
+                    fontFamily: theme.typography.bodyFontFamily,
+                  ),
                 ),
-                key: ValueKey('activity_tool_truncation_${toolCall.id}'),
-                style: TextStyle(
-                  color: colors.onSurfaceVariant,
-                  fontSize: theme.typography.fontSizeXs,
-                  fontFamily: theme.typography.bodyFontFamily,
-                ),
+                container: true,
+                excludeSemantics: true,
+                label: value,
               ),
             if (decodedResponse case final value? when value.isNotEmpty)
               Padding(
@@ -2665,12 +3507,25 @@ class const _ActivityToolCallDetails({
                     padding: .small,
                     borderRadius: 8,
                     child: ToolCallResponsePreview(
-                      toolName: toolCall.name,
                       content: value,
+                      inspectionStatus: truncationMessage,
+                      onShowMore: () => onOpenToolResult((
+                        id: toolCall.id,
+                        title: toolCall.name,
+                        content: value,
+                        status: truncationMessage,
+                      )),
                     ),
                   ),
                 ),
               ),
+            McpAppToolResult(
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+              toolCall: toolCall,
+              fallbackText: decodedResponse,
+              controller: controller,
+            ),
           ],
         ),
       ),
@@ -2742,6 +3597,19 @@ String? _subAgentConversationId(MessageToolCallEntity toolCall) {
     final decoded = jsonDecode(responseRaw);
     if (decoded case {'conversationId': final String conversationId}) {
       return conversationId;
+    }
+    if (decoded case {
+      'childConversationId': final String childConversationId,
+    }) {
+      return childConversationId;
+    }
+    if (decoded case {'children': final List children}) {
+      final childIds = children
+          .whereType<Map>()
+          .map((child) => child['conversationId'])
+          .whereType<String>()
+          .toSet();
+      return childIds.length == 1 ? childIds.single : null;
     }
   } on Object {
     return null;
@@ -2862,6 +3730,7 @@ class const _CompactedMessageWidget({
 class const _ErrorMessageWidget({
   required final String content,
   required final bool isProviderError,
+  required final ProviderFailureCategory? providerFailureCategory,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -2870,6 +3739,9 @@ class const _ErrorMessageWidget({
     final visibleContent = isProviderError
         ? LogRedaction.redact(content)
         : content.tr(context: context);
+    final guidanceLabel = isProviderError
+        ? _providerRecoveryGuidanceLabel(context, providerFailureCategory)
+        : null;
     const iconSize = 16.0;
     const containerBorderRadius = 10.0;
 
@@ -2877,6 +3749,11 @@ class const _ErrorMessageWidget({
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (guidanceLabel case final label?)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(label),
+            ),
           Row(
             children: [
               Icon(
@@ -2888,7 +3765,8 @@ class const _ErrorMessageWidget({
               Flexible(child: AuraSelectableText(visibleContent)),
             ],
           ),
-          _MessageCopyAction(resolveContent: () => visibleContent),
+          if (visibleContent.isNotEmpty)
+            _MessageCopyAction(resolveContent: () => visibleContent),
         ],
       ),
       padding: .medium,
@@ -2899,6 +3777,30 @@ class const _ErrorMessageWidget({
     );
   }
 }
+
+String _providerRecoveryGuidanceLabel(
+  BuildContext context,
+  ProviderFailureCategory? category,
+) => switch (category) {
+  .authentication =>
+    LocaleKeys.chats_screens_chat_conversation_provider_recovery_authentication
+        .tr(context: context),
+  .quotaRateLimit =>
+    LocaleKeys
+        .chats_screens_chat_conversation_provider_recovery_quota_rate_limit
+        .tr(context: context),
+  .transientOutage =>
+    LocaleKeys
+        .chats_screens_chat_conversation_provider_recovery_transient_outage
+        .tr(context: context),
+  .configuration =>
+    LocaleKeys.chats_screens_chat_conversation_provider_recovery_configuration
+        .tr(context: context),
+  .unknown || null =>
+    LocaleKeys.chats_screens_chat_conversation_provider_recovery_unknown.tr(
+      context: context,
+    ),
+};
 
 class const _CompactingIndicator() extends StatelessWidget {
   @override

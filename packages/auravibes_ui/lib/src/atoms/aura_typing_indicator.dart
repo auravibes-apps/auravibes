@@ -1,4 +1,5 @@
 // Required: Component callbacks stay colocated with UI state.
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -213,10 +214,11 @@ class const _AuraTypingIndicatorBox({
   @override
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
+    final radius = AuraCornerRadiusScope.resolve(context, fallback: .lg);
 
     return Container(
       padding: _containerPadding(indicator.size, spacing: auraTheme.spacing),
-      decoration: _containerDecoration(auraTheme, context.auraColors),
+      decoration: _containerDecoration(auraTheme, context.auraColors, radius),
       margin: _containerMargin(indicator.manageAlignment, theme: auraTheme),
       child: child,
     );
@@ -258,13 +260,16 @@ EdgeInsetsGeometry _containerMargin(
       : EdgeInsets.only(bottom: theme.fromSpacing(.sm));
 }
 
-BoxDecoration _containerDecoration(AuraTheme theme, AuraColorScheme colors) =>
-    BoxDecoration(
-      color: colors.surfaceVariant,
-      borderRadius: BorderRadius.all(.circular(theme.fromBorderRadius(.lg)))
-          .copyWith(bottomLeft: .circular(theme.fromBorderRadius(.sm))),
-      boxShadow: const [DesignShadows.sm],
-    );
+BoxDecoration _containerDecoration(
+  AuraTheme theme,
+  AuraColorScheme colors,
+  double radius,
+) => BoxDecoration(
+  color: colors.surfaceVariant,
+  borderRadius: BorderRadius.all(.circular(radius))
+      .copyWith(bottomLeft: .circular(theme.fromBorderRadius(.sm))),
+  boxShadow: const [DesignShadows.sm],
+);
 
 /// The size of a [AuraTypingIndicator].
 enum AuraTypingIndicatorSize {

@@ -53,7 +53,7 @@ final class AgentListNotifierProvider
   }
 }
 
-String _$agentListNotifierHash() => r'e67750d207ede7877c22cbedaa4e4a184e144bca';
+String _$agentListNotifierHash() => r'ec8c08e0b6b5bfe88391c3aa4d57bd66b26e3c34';
 
 /// Retains the existing query, loaded pages and cursor across list visits.
 

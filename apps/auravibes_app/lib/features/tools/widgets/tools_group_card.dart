@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_header.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -137,10 +138,13 @@ Future<bool?> _pushConnectionEditor(
   BuildContext context,
   String workspaceId,
   String connectionId,
-) => ServiceConnectionEditRoute(
-  workspaceId: workspaceId,
-  connectionId: connectionId,
-).push<bool>(context);
+) => FeatureDestinations.push<bool>(
+  context,
+  ServiceConnectionEditRoute(
+    workspaceId: workspaceId,
+    connectionId: connectionId,
+  ).location,
+);
 
 void _invalidateToolsAfterConnectionEdit(WidgetRef ref, String workspaceId) {
   ref

@@ -1,8 +1,7 @@
-// Required: UI callbacks stay local to their widgets.
-import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
+import 'package:auravibes_app/widgets/app_drawer_menu_button.dart';
+import 'package:auravibes_app/widgets/feature_destination_shell_scope.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const AuraAppBarWithDrawer({
@@ -11,6 +10,7 @@ class const AuraAppBarWithDrawer({
   final List<Widget>? actions,
   final PreferredSizeWidget? bottom,
   final Widget? leading,
+  final bool? showBackButton,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize =>
@@ -18,28 +18,51 @@ class const AuraAppBarWithDrawer({
 
   @override
   Widget build(BuildContext context) {
-    final hasBack = leading != null || Navigator.of(context).canPop();
+    final shell = FeatureDestinationShellScope.maybeOf(context);
+    final currentUri = FeatureDestinations.currentUri(context);
 
-    return AuraAppBar(
+    return _AuraAppBarWithDrawerContent(
       title: title,
+      showMenu: _shouldShowMenu(shell, currentUri),
+      showBack:
+          leading != null || (showBackButton ?? Navigator.of(context).canPop()),
       actions: actions,
       bottom: bottom,
-      leading: _AuraAppBarWithDrawerLeading(
-        onMenuPressed: () => _toggleDrawer(context),
-        showAutomaticBack: hasBack,
-        leading: leading,
-      ),
-      leadingWidth: kToolbarHeight * (hasBack ? 2 : 1),
+      leading: leading,
     );
   }
 
-  void _toggleDrawer(BuildContext context) {
-    ResponsiveSlidingDrawerProvider.maybeOf(context)?.toggle();
-  }
+  bool _shouldShowMenu(FeatureDestinationShellScope? shell, Uri? currentUri) =>
+      shell == null ||
+      (shell.isCompact &&
+          currentUri != null &&
+          FeatureDestinations.isMasterLocation(currentUri));
+}
+
+class const _AuraAppBarWithDrawerContent({
+  required final Widget title,
+  required final bool showMenu,
+  required final bool showBack,
+  final List<Widget>? actions,
+  final PreferredSizeWidget? bottom,
+  final Widget? leading,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraAppBar(
+    title: title,
+    actions: actions,
+    bottom: bottom,
+    leading: _AuraAppBarWithDrawerLeading(
+      showMenu: showMenu,
+      showAutomaticBack: showBack,
+      leading: leading,
+    ),
+    leadingWidth: kToolbarHeight * ((showMenu ? 1 : 0) + (showBack ? 1 : 0)),
+  );
 }
 
 class const _AuraAppBarWithDrawerLeading({
-  required final VoidCallback onMenuPressed,
+  required final bool showMenu,
   required final bool showAutomaticBack,
   final Widget? leading,
 }) extends StatelessWidget {
@@ -47,27 +70,12 @@ class const _AuraAppBarWithDrawerLeading({
   Widget build(BuildContext context) => Row(
     mainAxisSize: .min,
     children: [
-      _DrawerMenuButton(onPressed: onMenuPressed),
+      if (showMenu) const AppDrawerMenuButton(),
       if (leading case final value?)
         _NavigationBackButton(child: value)
       else if (showAutomaticBack)
         const _AutomaticNavigationBackButton(),
     ],
-  );
-}
-
-class const _DrawerMenuButton({required final VoidCallback onPressed})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('app_drawer_menu'),
-    child: AuraIconButton(
-      icon: Icons.menu,
-      onPressed: onPressed,
-      semanticLabel: LocaleKeys.navigation_drawer_toggle_tooltip.tr(),
-      tooltip: LocaleKeys.navigation_drawer_toggle_tooltip.tr(),
-    ),
-    identifier: 'app_drawer_menu',
   );
 }
 
@@ -83,10 +91,9 @@ class const _NavigationBackButton({required final Widget child})
 
 class const _AutomaticNavigationBackButton() extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _NavigationBackButton(
-    child: AuraIconButton(
-      icon: Icons.arrow_back,
-      onPressed: () => Navigator.of(context).pop(),
-    ),
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.arrow_back,
+    onPressed: () => Navigator.of(context).pop(),
+    identifier: 'app_navigation_back',
   );
 }

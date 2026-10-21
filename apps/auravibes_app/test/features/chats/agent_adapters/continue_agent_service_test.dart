@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/model_usage_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -46,6 +47,27 @@ void main() {
         costStatus: .unknown,
       ),
     );
+  });
+
+  test('disables tools for unsupported non-Codex models', () {
+    final adapter = _appAgentContinuationAdapter(
+      conversationRepository: .new(),
+      messageRepository: .new(),
+      workspaceModelSelectionsRepository: .new(),
+      apiModelRepository: .new(),
+      selectPromptMessagesUsecase: .new(),
+      loadConversationToolSpecsUsecase: .new(),
+      buildSkillContextMessagesUsecase:
+          const _FakeBuildSkillContextMessagesService([]),
+    );
+    final model = _model.copyWith(
+      modelsProvider: _model.modelsProvider.copyWith(type: .openrouter),
+      workspaceModelSelection: _model.workspaceModelSelection.copyWith(
+        supportsToolCalls: false,
+      ),
+    );
+
+    expect(adapter.shouldDisableTools(model), isTrue);
   });
 
   group('ContinueAgentService', () {
@@ -216,27 +238,6 @@ void main() {
               createdAt: .utc(2026),
             );
           });
-    });
-
-    test('disables tools for unsupported non-Codex models', () {
-      final adapter = _appAgentContinuationAdapter(
-        conversationRepository: conversationRepository,
-        messageRepository: messageRepository,
-        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
-        apiModelRepository: apiModelRepository,
-        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
-        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
-        buildSkillContextMessagesUsecase:
-            const _FakeBuildSkillContextMessagesService([]),
-      );
-      final model = _model.copyWith(
-        modelsProvider: _model.modelsProvider.copyWith(type: .openrouter),
-        workspaceModelSelection: _model.workspaceModelSelection.copyWith(
-          supportsToolCalls: false,
-        ),
-      );
-
-      expect(adapter.shouldDisableTools(model), isTrue);
     });
 
     test('uses model stream as lastResult', () async {
@@ -1425,9 +1426,22 @@ void main() {
         fail('Should have thrown');
         // ignore: avoid_catching_errors - Required to assert propagated StateError.
       } on StateError {
-        final _ = verifyNever(
-          () => messageRepository.patchMessage(any(), any()),
+        final created = verify(
+          () => messageRepository.createMessage(captureAny()),
+        ).captured.cast<MessageToCreate>();
+        expect(created, hasLength(1));
+        final metadata = MessageMetadataEntity.fromJsonString(
+          created.single.metadata,
         );
+        expect(metadata?.modelMetadata['providerError'], isTrue);
+        final recovery = metadata?.modelMetadata['providerRecovery'] as Map?;
+        expect(recovery?['classification'], 'unknown');
+        verify(
+          () => messageRepository.patchMessage(
+            'assistant-1',
+            const MessagePatch(status: .error),
+          ),
+        ).called(1);
       }
 
       verify(
@@ -1527,8 +1541,8 @@ void main() {
             expect(
               created.last.content,
               hasDetails
-                  ? 'Quota exceeded. Bearer [REDACTED]; [REDACTED]'
-                  : 'Provider rejected request. Bearer [REDACTED]',
+                  ? 'Quota exceeded. [REDACTED]; [REDACTED]'
+                  : 'Provider rejected request. [REDACTED]',
             );
           },
         );
@@ -1557,6 +1571,8 @@ void main() {
         id: 'previous-user-error-1',
         status: .error,
       );
+      var persistedUserMessage = previousUserError;
+      final userMessagePatches = <MessagePatch>[];
       when(() => conversationRepository.getConversationById('conversation-1'))
           .thenAnswer((_) async => _conversation);
       when(() => messageRepository.getSystemMessages('conversation-1'))
@@ -1564,6 +1580,8 @@ void main() {
       when(
         () => messageRepository.getMessagesByStatus('conversation-1', .error),
       ).thenAnswer((_) async => [previousUserError]);
+      when(() => messageRepository.getMessageById(previousUserError.id))
+          .thenAnswer((_) async => persistedUserMessage);
       when(() => messageRepository.deleteMessage(any()))
           .thenAnswer((_) async => true);
       when(() => messageRepository.getMessagesByConversation('conversation-1'))
@@ -1591,7 +1609,35 @@ void main() {
         );
       });
       when(() => messageRepository.patchMessage(any(), any()))
-          .thenAnswer((_) async => errorMessage);
+          .thenAnswer((invocation) async {
+            final messageId = invocation.positionalArguments.first as String;
+            final patch = invocation.positionalArguments[1] as MessagePatch;
+            if (messageId != previousUserError.id) return errorMessage;
+
+            userMessagePatches.add(patch);
+            final isRetryReset =
+                persistedUserMessage.status == .error &&
+                patch.status == .sending &&
+                patch.content == null &&
+                patch.metadata == null;
+            final changesTerminalUserMessage =
+                persistedUserMessage.status == .error &&
+                (patch.content != null ||
+                    patch.metadata != null ||
+                    (patch.status != null &&
+                        patch.status != persistedUserMessage.status));
+            if (changesTerminalUserMessage && !isRetryReset) {
+              throw const MessageValidationException(
+                'Terminal message is immutable',
+              );
+            }
+
+            return persistedUserMessage = persistedUserMessage.copyWith(
+              content: patch.content ?? persistedUserMessage.content,
+              metadata: patch.metadata ?? persistedUserMessage.metadata,
+              status: patch.status ?? persistedUserMessage.status,
+            );
+          });
       when(
         () => chatbotService.sendMessage(
           _model,
@@ -1642,6 +1688,11 @@ void main() {
             ?.modelMetadata['providerError'],
         isTrue,
       );
+      final recovery =
+          MessageMetadataEntity.fromJsonString(created.single.metadata)
+                  ?.modelMetadata['providerRecovery']
+              as Map?;
+      expect(recovery?['classification'], 'unknown');
       verify(
         () => messageRepository.patchMessage(
           'system-error-1',
@@ -1654,16 +1705,144 @@ void main() {
           const MessagePatch(status: .sending),
         ),
       ).called(1);
-      verify(
-        () => messageRepository.patchMessage(
-          'previous-user-error-1',
-          const MessagePatch(status: .error),
-        ),
-      ).called(1);
+      expect(userMessagePatches, hasLength(2));
+      expect(
+        userMessagePatches.firstOrNull,
+        const MessagePatch(status: .sending),
+      );
+      expect(userMessagePatches.last.status, MessageStatus.error);
+      expect(
+        userMessagePatches.last.metadata?.modelMetadata['providerRecovery'],
+        {
+          'classification': 'unknown',
+          'retryable': false,
+          'providerStatus': 'INTERNAL',
+        },
+      );
+      expect(persistedUserMessage.status, MessageStatus.error);
+      expect(persistedUserMessage.content, previousUserError.content);
+      expect(
+        persistedUserMessage.metadata?.modelMetadata['providerRecovery'],
+        userMessagePatches.last.metadata?.modelMetadata['providerRecovery'],
+      );
       final _ = verifyNever(
         () => messageRepository.deleteMessage('previous-system-error-1'),
       );
     });
+
+    test('blocks manual continue for non-retryable provider errors', () async {
+      final failedUserMessage = _userMessage.copyWith(
+        status: .error,
+        metadata: const MessageMetadataEntity(
+          modelMetadata: {
+            'providerError': true,
+            'providerRecovery': {
+              'classification': 'authentication',
+              'retryable': false,
+            },
+          },
+        ),
+      );
+      when(
+        () => messageRepository.getMessagesByStatus('conversation-1', .error),
+      ).thenAnswer((_) async => [failedUserMessage]);
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer((_) async => [failedUserMessage]);
+
+      await expectLater(
+        usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(origin: .manualContinue),
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      final _ = verifyNever(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          options: any(named: 'options'),
+        ),
+      );
+    });
+
+    test(
+      'does not let an older non-retryable provider error block a newer turn',
+      () async {
+        final olderFailure = _userMessage.copyWith(
+          id: 'older-user-message',
+          status: .error,
+          createdAt: .utc(2025),
+          metadata: const MessageMetadataEntity(
+            modelMetadata: {
+              'providerError': true,
+              'providerRecovery': {
+                'classification': 'authentication',
+                'retryable': false,
+              },
+            },
+          ),
+        );
+        final latestUserMessage = _userMessage.copyWith(
+          id: 'latest-user-message',
+          status: .sent,
+          createdAt: .utc(2026),
+        );
+        when(
+          () => messageRepository.getMessagesByConversation('conversation-1'),
+        ).thenAnswer((_) async => [olderFailure, latestUserMessage]);
+        when(
+          () => messageRepository.getMessagesByStatus('conversation-1', .error),
+        ).thenAnswer((_) async => [olderFailure]);
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            options: any(named: 'options'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.value(
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Continued'),
+              finishReason: .stop,
+              usage: const LanguageModelUsage(),
+            ),
+          ),
+        );
+        when(() => conversationRepository.getConversationById('conversation-1'))
+            .thenAnswer((_) async => _conversation);
+        when(
+          () => workspaceModelSelectionsRepository
+              .getWorkspaceModelSelectionById('model-1'),
+        ).thenAnswer((_) async => _model);
+        when(
+          () => loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => const []);
+        when(() => selectPromptMessagesUsecase.call('conversation-1'))
+            .thenAnswer((_) async => [latestUserMessage]);
+        when(() => messageRepository.createMessage(any()))
+            .thenAnswer((_) async => _unfinishedAssistantMessage);
+        when(() => messageRepository.patchMessage(any(), any()))
+            .thenAnswer((_) async => _unfinishedAssistantMessage);
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(origin: .manualContinue),
+        );
+
+        expect(result.messageId, 'assistant-1');
+        verify(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            options: any(named: 'options'),
+          ),
+        ).called(1);
+      },
+    );
 
     test(
       'clears the previous inline error only after retry succeeds',

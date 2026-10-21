@@ -119,11 +119,11 @@ void main() {
     workspaceSkillsProvider('ws-1').overrideWith(
       (ref) async => const [
         WorkspaceSkill(
-          source: .user,
           id: 'skill-1',
           slug: 'research',
           title: 'Research Assistant',
           description: '',
+          source: .user,
           kind: .template,
           isEnabled: true,
         ),
@@ -162,7 +162,11 @@ void main() {
       await pumpAndInit(
         tester,
         buildSubject(
-          overrides: [pendingToolCallsProvider.overrideWith((ref, _) => [])],
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => <PendingToolCall>[],
+            ),
+          ],
         ),
       );
 
@@ -173,7 +177,7 @@ void main() {
       );
     });
 
-    testWidgets('renders approval card when pending calls exist', (
+    testWidgets('renders approval card and actions for one pending call', (
       tester,
     ) async {
       final pendingCalls = [_createPendingToolCall()];
@@ -203,33 +207,12 @@ void main() {
         find.byKey(const ValueKey<String>('tool_approval_deny_all')),
         findsNothing,
       );
-    });
-
-    testWidgets('shows batch actions only when multiple calls are pending', (
-      tester,
-    ) async {
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith(
-              (ref, _) => [
-                _createPendingToolCall(),
-                _createPendingToolCall(toolCallId: 'tc-2'),
-              ],
-            ),
-          ],
-        ),
-      );
-
-      expect(
-        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
-        findsOneWidget,
-      );
+      expect(find.text('Read File'), findsOneWidget);
+      expect(find.text('Review the arguments for Read File'), findsOneWidget);
+      expect(find.text('Allow Once'), findsOneWidget);
+      expect(find.text('Allow for Conversation'), findsOneWidget);
+      expect(find.text('Skip'), findsOneWidget);
+      expect(find.text('Stop All'), findsOneWidget);
     });
 
     testWidgets('allow all closes immediately and submits one batch', (
@@ -248,6 +231,15 @@ void main() {
             pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
+        findsOneWidget,
       );
 
       await tester.tap(
@@ -446,49 +438,7 @@ void main() {
       }
     }
 
-    testWidgets('shows navigation chevrons for multiple pending calls', (
-      tester,
-    ) async {
-      final pendingCalls = [
-        _createPendingToolCall(),
-        _createPendingToolCall(toolCallId: 'tc-2'),
-      ];
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
-          ],
-        ),
-      );
-
-      expect(find.byIcon(Icons.chevron_left), findsOneWidget);
-      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey<String>('tool_approval_previous')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('tool_approval_next')),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('shows formatted tool display name', (tester) async {
-      final pendingCalls = [_createPendingToolCall()];
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
-          ],
-        ),
-      );
-
-      expect(find.text('Read File'), findsOneWidget);
-    });
-
-    testWidgets('does not trust the model action description in an approval', (
+    testWidgets('shows normalized user-facing tool descriptions in approvals', (
       tester,
     ) async {
       final pendingCalls = [
@@ -506,8 +456,11 @@ void main() {
         ),
       );
 
-      expect(find.text('I will search for the requested item.'), findsNothing);
-      expect(find.text('Review the arguments for Read File'), findsOneWidget);
+      expect(
+        find.text('I will search for the requested item.'),
+        findsOneWidget,
+      );
+      expect(find.text('Review the arguments for Read File'), findsNothing);
       expect(find.textContaining('arg1: search'), findsOneWidget);
       expect(find.textContaining('arg2: item'), findsOneWidget);
 
@@ -543,32 +496,16 @@ void main() {
       expect(argument.overflow, TextOverflow.clip);
     });
 
-    testWidgets('uses deterministic fallback when description is absent', (
+    testWidgets('shows the current call description while paging approvals', (
       tester,
     ) async {
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith(
-              (ref, _) => [_createPendingToolCall()],
-            ),
-          ],
-        ),
-      );
-
-      expect(find.text('Review the arguments for Read File'), findsOneWidget);
-    });
-
-    testWidgets('never shows a model batch description while paging calls', (
-      tester,
-    ) async {
-      const description = 'I will search and then open the result.';
+      const firstDescription = 'I will search and then open the result.';
+      const secondDescription = 'I will save the selected result.';
       final pendingCalls = [
-        _createPendingToolCall(userFacingDescription: description),
+        _createPendingToolCall(userFacingDescription: firstDescription),
         _createPendingToolCall(
           toolCallId: 'tc-2',
-          userFacingDescription: description,
+          userFacingDescription: secondDescription,
         ),
       ];
       await pumpAndInit(
@@ -580,12 +517,56 @@ void main() {
         ),
       );
 
-      expect(find.text(description), findsNothing);
+      expect(find.text(firstDescription), findsOneWidget);
+      expect(find.text(secondDescription), findsNothing);
       await tester.tap(
         find.byKey(const ValueKey<String>('tool_approval_next')),
       );
       await tester.pump();
-      expect(find.text(description), findsNothing);
+      expect(find.text(secondDescription), findsOneWidget);
+      expect(find.text(firstDescription), findsNothing);
+    });
+
+    testWidgets('uses saved skill tool descriptions as a fallback', (
+      tester,
+    ) async {
+      final pendingCalls = [
+        _createPendingToolCall(
+          toolName: 'call_skill_tool',
+          argumentsRaw: '{"skill":"research","tool":"search_web"}',
+        ),
+        _createPendingToolCall(
+          toolCallId: 'tc-priority',
+          toolName: 'call_skill_tool',
+          argumentsRaw: '{"skill":"research","tool":"search_web"}',
+          userFacingDescription: 'Searching the saved sources now.',
+        ),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+            ..._skillTitleOverrides(),
+          ],
+        ),
+      );
+
+      expect(find.text('Searches the web.'), findsOneWidget);
+      expect(
+        find.text(
+          'Review the arguments for Research Assistant / Search the web',
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_next')),
+      );
+      await tester.pump();
+
+      expect(find.text('Searching the saved sources now.'), findsOneWidget);
+      expect(find.text('Searches the web.'), findsNothing);
     });
 
     testWidgets('shows effective skill target for local approval', (
@@ -829,22 +810,6 @@ void main() {
       expect(find.textContaining('visible'), findsOneWidget);
     });
 
-    testWidgets('renders confirmation buttons', (tester) async {
-      final pendingCalls = [_createPendingToolCall()];
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
-          ],
-        ),
-      );
-
-      expect(find.text('Allow Once'), findsOneWidget);
-      expect(find.text('Skip'), findsOneWidget);
-      expect(find.text('Stop All'), findsOneWidget);
-    });
-
     testWidgets('renders SizedBox.shrink when async has error', (tester) async {
       await pumpAndInit(
         tester,
@@ -864,21 +829,7 @@ void main() {
       );
     });
 
-    testWidgets('shows Allow for Conversation button', (tester) async {
-      final pendingCalls = [_createPendingToolCall()];
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
-          ],
-        ),
-      );
-
-      expect(find.text('Allow for Conversation'), findsOneWidget);
-    });
-
-    testWidgets('navigates to next pending call on chevron right', (
+    testWidgets('shows count and navigates between pending calls', (
       tester,
     ) async {
       final pendingCalls = [
@@ -898,30 +849,22 @@ void main() {
       );
 
       expect(find.text('Read File'), findsOneWidget);
-
-      await tester.tap(find.byIcon(Icons.chevron_right));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('Search'), findsOneWidget);
-    });
-
-    testWidgets('navigates to previous pending call on chevron left', (
-      tester,
-    ) async {
-      final pendingCalls = [
-        _createPendingToolCall(),
-        _createPendingToolCall(
-          toolCallId: 'tc-2',
-          toolName: 'built_in_1_search',
-        ),
-      ];
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
-          ],
-        ),
+      expect(find.byIcon(Icons.chevron_left), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_previous')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_next')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('1'), findsOneWidget);
+      expect(find.textContaining('2'), findsOneWidget);
+      final countText = tester.widget<Text>(find.textContaining('1'));
+      expect(
+        countText.style?.fontFeatures,
+        contains(const FontFeature.tabularFigures()),
       );
 
       await tester.tap(find.byIcon(Icons.chevron_right));
@@ -933,50 +876,6 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Read File'), findsOneWidget);
-    });
-
-    testWidgets('shows pending count text', (tester) async {
-      final pendingCalls = [
-        _createPendingToolCall(),
-        _createPendingToolCall(toolCallId: 'tc-2'),
-      ];
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
-          ],
-        ),
-      );
-
-      expect(find.textContaining('1'), findsOneWidget);
-      expect(find.textContaining('2'), findsOneWidget);
-      final countText = tester.widget<Text>(find.textContaining('1'));
-      expect(
-        countText.style?.fontFeatures,
-        contains(const FontFeature.tabularFigures()),
-      );
-    });
-
-    testWidgets('shows SizedBox.shrink when pending calls empty list', (
-      tester,
-    ) async {
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith(
-              (ref, _) => <PendingToolCall>[],
-            ),
-          ],
-        ),
-      );
-
-      final sizedBoxes = tester.widgetList<SizedBox>(find.byType(SizedBox));
-      expect(
-        sizedBoxes.any((box) => box.width == 0 && box.height == 0),
-        isTrue,
-      );
     });
   });
 }
@@ -1049,6 +948,7 @@ class _DecisionEffects
   @override
   Future<Object?> runResolvedTool({
     required String conversationId,
+    required String toolCallId,
     required ResolvedTool tool,
     required Map<String, dynamic> arguments,
   }) async {

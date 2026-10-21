@@ -53,7 +53,7 @@ void main() {
     expect(container.read(provider).requireValue.search, 'match');
   });
 
-  test('debounces search and ignores a stale result', () async {
+  testWidgets('debounces search and ignores a stale result', (tester) async {
     final stale = Completer<AgentListPage>();
     final current = Completer<AgentListPage>();
     final repository = _FakeAgentRepository([
@@ -73,16 +73,16 @@ void main() {
     final _ = await container.read(agentListProvider(_workspaceId).future);
     final notifier = container.read(agentListProvider(_workspaceId).notifier)
       ..setSearch('first');
-    await Future<void>.delayed(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 200));
     expect(repository.queries, hasLength(1));
-    await Future<void>.delayed(const Duration(milliseconds: 150));
+    await tester.pump(const Duration(milliseconds: 150));
     expect(repository.queries.last.search, 'first');
 
     notifier.setStatus(.enabled);
     current.complete(_page([_agent('current')]));
-    await _flush();
+    await tester.pump();
     stale.complete(_page([_agent('stale')]));
-    await _flush();
+    await tester.pump();
 
     final state = container.read(agentListProvider(_workspaceId)).requireValue;
     expect(state.agents.single.id, 'current');

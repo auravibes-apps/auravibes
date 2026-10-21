@@ -130,12 +130,18 @@ void main() {
       routes: [
         GoRoute(
           path: route.location,
-          builder: route.build,
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: route.build(context, state),
+            key: state.pageKey,
+          ),
           onExit: route.onExit,
         ),
         GoRoute(
           path: '/done',
-          builder: (_, _) => const Text('Done destination'),
+          pageBuilder: (_, state) => NoTransitionPage(
+            child: const Text('Done destination'),
+            key: state.pageKey,
+          ),
         ),
       ],
       initialLocation: route.location,

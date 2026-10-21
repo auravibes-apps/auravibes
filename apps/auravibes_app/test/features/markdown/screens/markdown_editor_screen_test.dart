@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/markdown/screens/markdown_editor_screen.d
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -14,6 +15,31 @@ const _initialMarkdown = 'Saved content';
 const _editedMarkdown = 'Unsaved content';
 
 void main() {
+  Future<void> renderMarkdownToolbar(WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const ui.Size(960, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await _openMarkdownEditor(
+      tester,
+      onResult: (_) => fail('Unexpected editor close'),
+      initialMarkdown: 'Workspace notes - keep changes small.',
+      maxCharacters: 80,
+    );
+    tester.widget<EditableText>(_markdownEditorInput).focusNode.unfocus();
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('37/80'), findsOneWidget);
+
+    await expectLater(
+      find.byType(MarkdownEditorScreen),
+      matchesGoldenFile('goldens/markdown_editor.png'),
+    );
+  }
+
+  testWidgets(
+    'renders markdown toolbar and workspace note limit',
+    renderMarkdownToolbar,
+    tags: ['golden'],
+  );
+
   testWidgets('field context and limits govern Apply changes', (tester) async {
     String? result;
     await _openMarkdownEditor(
@@ -229,14 +255,15 @@ void main() {
     expect(result, _editedMarkdown);
   });
 
-  testWidgets('preview renders the latest unsaved markdown and empty drafts', (
+  testWidgets('preview renders toolbar-formatted markdown and empty drafts', (
     tester,
   ) async {
     await _openMarkdownEditor(
       tester,
       onResult: (value) => fail('Unexpected editor close: $value'),
     );
-    await tester.enterText(_markdownEditorInput, '# Latest unsaved draft');
+    await tester.enterText(_markdownEditorInput, 'Latest unsaved draft');
+    await tester.tap(find.byIcon(Icons.title));
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.bySemanticsLabel('Preview'));
@@ -257,6 +284,47 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Nothing to preview yet'), findsOneWidget);
+  });
+
+  testWidgets('only rendered preview opens Markdown links', (tester) async {
+    final launchedUrls = <String>[];
+    _mockUrlLauncher(tester, (call) async {
+      launchedUrls.add((call.arguments as Map)['url'] as String);
+
+      return true;
+    });
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+      initialMarkdown: '[Open docs](https://docs.example.com/reference)',
+    );
+
+    expect(find.byType(GptMarkdown), findsNothing);
+    final input = tester.widget<EditableText>(_markdownEditorInput);
+    final linkOffset = input.controller.text.indexOf('https://');
+    expect(linkOffset, isNonNegative);
+    final renderEditable = tester
+        .state<EditableTextState>(_markdownEditorInput)
+        .renderEditable;
+    final linkTapPosition = renderEditable
+        .getLocalRectForCaret(.new(offset: linkOffset + 12))
+        .center;
+    await tester.tapAt(renderEditable.localToGlobal(linkTapPosition));
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(AuraConfirmDialog), findsNothing);
+    expect(launchedUrls, isEmpty);
+
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(GptMarkdown), findsOneWidget);
+    await tester.tap(find.text('Open docs'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('Host: docs.example.com'), findsOneWidget);
+    expect(launchedUrls, isEmpty);
+
+    await tester.tap(find.text('Open link'));
+    final _ = await tester.pumpAndSettle();
+    expect(launchedUrls, ['https://docs.example.com/reference']);
   });
 
   testWidgets('source preview restores selection and accessible toggle state', (
@@ -295,6 +363,8 @@ void main() {
       expect(find.byTooltip('Markdown'), findsOneWidget);
       expect(controller.value, sourceValue);
       expect(focusNode.hasFocus, isFalse);
+      await _sendControlShortcut(tester, .keyB);
+      expect(controller.value, sourceValue);
 
       await tester.tap(find.bySemanticsLabel('Preview'));
       final _ = await tester.pumpAndSettle();
@@ -349,6 +419,49 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  testWidgets('keyboard shortcuts keep focus, preview, and undo state', (
+    tester,
+  ) async {
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+    );
+    await tester.showKeyboard(_markdownEditorInput);
+    final editable = tester.widget<EditableText>(_markdownEditorInput);
+    final controller = editable.controller
+      ..value = const TextEditingValue(
+        text: 'text',
+        selection: .new(baseOffset: 0, extentOffset: 4),
+      );
+    final focusNode = editable.focusNode;
+    final originalValue = controller.value;
+    await tester.pump();
+
+    await _sendControlShortcut(tester, .keyB);
+
+    final formattedValue = controller.value;
+    expect(controller.text, '**text**');
+    expect(focusNode.hasFocus, isTrue);
+
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    final _ = await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isFalse);
+
+    await _sendControlShortcut(tester, .keyB);
+    expect(controller.value, formattedValue);
+    expect(find.bySemanticsLabel('Preview'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    final _ = await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isTrue);
+    expect(controller.value, formattedValue);
+
+    await tester.tap(find.byIcon(Icons.undo));
+    final _ = await tester.pumpAndSettle();
+
+    expect(controller.value, originalValue);
   });
 
   testWidgets('preview does not change the draft returned by Save', (
@@ -521,7 +634,7 @@ Future<void> _openMarkdownEditor(
     expect(sourceFocusNode.hasFocus, isTrue);
   }
   await tester.tap(find.text('Open editor'));
-  final _ = await tester.pumpAndSettle();
+  final _ = await tester.pumpAndSettle(const Duration(milliseconds: 500));
   expect(find.byType(MarkdownEditorScreen), findsOneWidget);
   expect(_markdownEditorInput, findsOneWidget);
 }
@@ -530,6 +643,16 @@ Finder get _markdownEditorInput => find.descendant(
   of: find.byType(MarkdownEditorScreen),
   matching: find.byType(EditableText),
 );
+
+void _mockUrlLauncher(
+  WidgetTester tester,
+  Future<Object?> Function(MethodCall call) handler,
+) {
+  const channel = MethodChannel('plugins.flutter.io/url_launcher');
+  final messenger = tester.binding.defaultBinaryMessenger
+    ..setMockMethodCallHandler(channel, handler);
+  addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+}
 
 Future<void> _showMarkdownEditor(
   BuildContext context, {
@@ -551,4 +674,15 @@ Future<void> _showMarkdownEditor(
     ),
   );
   onResult(result);
+}
+
+Future<void> _sendControlShortcut(
+  WidgetTester tester,
+  LogicalKeyboardKey key,
+) async {
+  final _ = await tester.sendKeyDownEvent(.controlLeft);
+  final _ = await tester.sendKeyDownEvent(key);
+  final _ = await tester.sendKeyUpEvent(key);
+  final _ = await tester.sendKeyUpEvent(.controlLeft);
+  await tester.pump();
 }

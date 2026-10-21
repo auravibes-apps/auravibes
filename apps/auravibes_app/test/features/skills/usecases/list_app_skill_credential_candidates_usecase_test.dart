@@ -166,6 +166,9 @@ void main() {
       final duckDuckGo =
           registry.getByIdentifier('duckduckgo') ??
           (throw StateError('DuckDuckGo must be registered.'));
+      final browser =
+          registry.getByIdentifier('browser') ??
+          (throw StateError('Browser must be registered.'));
 
       expect(
         await usecase.hasUsableNativeTool(
@@ -199,6 +202,13 @@ void main() {
         await usecase.hasUsableNativeTool(
           workspaceId: 'workspace-1',
           skill: duckDuckGo,
+        ),
+        isTrue,
+      );
+      expect(
+        await usecase.hasUsableNativeTool(
+          workspaceId: 'workspace-1',
+          skill: browser,
         ),
         isTrue,
       );

@@ -7,6 +7,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../sync/stream/sync_wakeups.dart';
 import '../../agents/agent_catalog_repository.dart';
 import '../../agents/agent_catalog_use_cases.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
@@ -24,6 +25,7 @@ import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
 import 'conversation_host_effects.dart';
 import 'server_tool_runtime.dart';
+import 'background_work_result_reader.dart';
 
 String cloudServiceConnectionId(String credentialId) =>
     credentialId.startsWith('service:')
@@ -267,7 +269,11 @@ class const ServerToolExecutorService({
     ServerResolvedTool tool,
     ServerToolRequest request,
   ) async {
-    await _throwIfCancelled(session, turn);
+    await _throwIfCancelled(
+      session,
+      turn,
+      isCancelled: request.isCancelled,
+    );
     return switch (tool.descriptor.kind) {
       AgentResolvedToolKind.mcp => _runMcp(
         session,
@@ -286,13 +292,20 @@ class const ServerToolExecutorService({
         turn,
         tool,
         request.arguments,
+        isCancelled: request.isCancelled,
       ),
       AgentResolvedToolKind.skillAppTemplate => _runNativeSkill(
         session,
         turn,
         tool,
         request.arguments,
+        isCancelled: request.isCancelled,
       ),
+      AgentResolvedToolKind.builtIn
+          when tool.descriptor.tableId == backgroundWorkResultReaderTableId &&
+              tool.descriptor.toolIdentifier ==
+                  backgroundWorkResultReaderToolName =>
+        _readBackgroundWorkResult(session, turn, request.arguments),
       AgentResolvedToolKind.skillNative
           when tool.descriptor.skillSlug == agentsSkillSlug =>
         _runSubAgentTool(session, turn, tool, request),
@@ -304,6 +317,40 @@ class const ServerToolExecutorService({
       ),
       _ => throw const ServerToolNotConfiguredException(),
     };
+  }
+
+  Future<Map<String, Object?>> _readBackgroundWorkResult(
+    Session session,
+    ConversationTurn turn,
+    Map<String, dynamic> arguments,
+  ) async {
+    final workId = arguments['work_id'];
+    final offset = arguments['offset'];
+    final maxBytes = arguments['max_bytes'];
+    if (workId is! String ||
+        workId.isEmpty ||
+        offset is! int ||
+        maxBytes is! int) {
+      throw const FormatException('Invalid background result request.');
+    }
+    final work = await BackgroundWorkRecord.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(turn.workspaceId) &
+          table.conversationId.equals(turn.conversationId) &
+          table.stableId.equals(workId),
+    );
+    if (work == null) {
+      throw const FormatException('Background result is not available.');
+    }
+    return backgroundWorkResultPage(
+      workId: work.stableId,
+      status: work.status,
+      resultContent: work.resultContent,
+      resultByteLength: work.resultByteLength,
+      offset: offset,
+      maxBytes: maxBytes,
+    );
   }
 
   Future<Object?> _runSkillControl(
@@ -751,8 +798,9 @@ class const ServerToolExecutorService({
     Session session,
     ConversationTurn turn,
     ServerResolvedTool tool,
-    Map<String, dynamic> arguments,
-  ) async {
+    Map<String, dynamic> arguments, {
+    Future<bool> Function()? isCancelled,
+  }) async {
     final skill = serviceSkillDefinitions
         .where((candidate) => candidate.slug == tool.descriptor.skillSlug)
         .firstOrNull;
@@ -800,6 +848,7 @@ class const ServerToolExecutorService({
       session,
       turn,
       requireHttps: credentials.isNotEmpty,
+      isCancelled: isCancelled,
     );
     return runCompiledServiceSkillTool(
       skillSlug: skill.slug,
@@ -869,6 +918,12 @@ class const ServerToolExecutorService({
           agentId: input.agentId,
           parentConversationId: parent.stableId,
         ),
+      );
+      await _recordSubAgentChildConversation(
+        session,
+        turn: turn,
+        toolCallId: request.id,
+        childConversationId: child.id,
       );
       logLifecycle(
         _runCreateChildPhase,
@@ -1078,6 +1133,90 @@ class const ServerToolExecutorService({
     if (message?.metadataJson == null) return null;
     final selectionId = _jsonMap(message!.metadataJson!)['modelSelectionId'];
     return selectionId is String && selectionId.isNotEmpty ? selectionId : null;
+  }
+
+  Future<void> _recordSubAgentChildConversation(
+    Session session, {
+    required ConversationTurn turn,
+    required String toolCallId,
+    required String childConversationId,
+  }) async {
+    var detached = false;
+    var stopRequested = false;
+    await session.db.transaction((transaction) async {
+      final call = await ConversationToolCall.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(turn.workspaceId) &
+            table.turnId.equals(turn.id!) &
+            table.stableId.equals(toolCallId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (call == null) return;
+      detached = call.backgroundWorkStableId != null;
+      final workId = call.backgroundWorkStableId;
+      if (workId != null) {
+        final work = await BackgroundWorkRecord.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(turn.workspaceId) &
+              table.conversationId.equals(turn.conversationId) &
+              table.conversationToolCallId.equals(call.id) &
+              table.stableId.equals(workId),
+          transaction: transaction,
+        );
+        stopRequested = work?.status == 'stopRequested';
+      }
+      final resultJson = call.resultJson;
+      final acknowledgement = detached && resultJson != null
+          ? _withChildConversationAcknowledgement(
+              resultJson,
+              childConversationId,
+            )
+          : resultJson;
+      await ConversationToolCall.db.updateRow(
+        session,
+        call.copyWith(
+          childConversationStableId: childConversationId,
+          resultJson: acknowledgement,
+          revision: call.revision + 1,
+          updatedAt: DateTime.now().toUtc(),
+        ),
+        transaction: transaction,
+      );
+    });
+    if (stopRequested) {
+      await ConversationUseCases(
+        conversation_repo.ConversationRepository(),
+      ).stopBackgroundSubAgentChild(
+        session,
+        userId: turn.initiatorUserId,
+        workspaceId: turn.workspaceId,
+        childConversationId: childConversationId,
+        requestId: 'background-work-stop:$toolCallId:child',
+      );
+    }
+    if (!detached) return;
+    final parent = await Conversation.db.findById(session, turn.conversationId);
+    if (parent == null) return;
+    await SyncWakeups.publishConversation(
+      session,
+      workspaceId: turn.workspaceId,
+      conversationId: parent.stableId,
+    );
+  }
+
+  String? _withChildConversationAcknowledgement(
+    String resultJson,
+    String childConversationId,
+  ) {
+    final decoded = jsonDecode(resultJson);
+    if (decoded is! Map<String, dynamic> ||
+        decoded['status'] != 'running_in_background') {
+      return resultJson;
+    }
+    return jsonEncode({...decoded, 'childConversationId': childConversationId});
   }
 
   Future<void> _compensateCancelledChild(
@@ -1475,8 +1614,9 @@ class const ServerToolExecutorService({
     Session session,
     ConversationTurn turn,
     ServerResolvedTool tool,
-    Map<String, dynamic> arguments,
-  ) async {
+    Map<String, dynamic> arguments, {
+    Future<bool> Function()? isCancelled,
+  }) async {
     final resources = await WorkspaceResource.db.find(
       session,
       where: (table) =>
@@ -1527,7 +1667,7 @@ class const ServerToolExecutorService({
               await const WorkspaceSecretCipher().decrypt(session, secret),
             ),
           );
-    await _throwIfCancelled(session, turn);
+    await _throwIfCancelled(session, turn, isCancelled: isCancelled);
     final response =
         await SkillTemplateExecutor(
               const ResolveSkillUrlTemplate(),
@@ -1535,6 +1675,7 @@ class const ServerToolExecutorService({
                 session,
                 turn,
                 requireHttps: credentials.isNotEmpty,
+                isCancelled: isCancelled,
               ),
             )
             .call(
@@ -1722,6 +1863,7 @@ class const ServerToolExecutorService({
     Session session,
     ConversationTurn turn, {
     required bool requireHttps,
+    Future<bool> Function()? isCancelled,
   }) =>
       (input) => CancelableOperation<UrlResponse>.fromFuture(
         runBoundedServerSkillHttpRequest(
@@ -1739,6 +1881,7 @@ class const ServerToolExecutorService({
               target.addresses,
               input,
               onClient: registerClient,
+              isCancelled: isCancelled,
             );
           },
         ),
@@ -1751,11 +1894,20 @@ class const ServerToolExecutorService({
     List<InternetAddress> addresses,
     UrlRequest input, {
     void Function(HttpClient client)? onClient,
+    Future<bool> Function()? isCancelled,
   }) async {
     final client = _client(uri, addresses);
     onClient?.call(client);
     final requestDone = Completer<void>();
-    unawaited(_closeClientOnCancellation(client, session, turn, requestDone));
+    unawaited(
+      _closeClientOnCancellation(
+        client,
+        session,
+        turn,
+        requestDone,
+        isCancelled: isCancelled,
+      ),
+    );
     final stopwatch = Stopwatch()..start();
     try {
       final request = await client.openUrl(input.method.value, uri);
@@ -1773,7 +1925,7 @@ class const ServerToolExecutorService({
         elapsed: stopwatch.elapsed,
       );
     } on Object {
-      await _throwIfCancelled(session, turn);
+      await _throwIfCancelled(session, turn, isCancelled: isCancelled);
       rethrow;
     } finally {
       client.close(force: true);
@@ -1783,9 +1935,10 @@ class const ServerToolExecutorService({
 
   Future<void> _throwIfCancelled(
     Session session,
-    ConversationTurn turn,
-  ) async {
-    if (await _isCancelled(session, turn)) {
+    ConversationTurn turn, {
+    Future<bool> Function()? isCancelled,
+  }) async {
+    if (await (isCancelled?.call() ?? _isCancelled(session, turn))) {
       throw const ConversationCancelledException();
     }
   }
@@ -1820,10 +1973,12 @@ class const ServerToolExecutorService({
     HttpClient client,
     Session session,
     ConversationTurn turn,
-    Completer<void> requestDone,
-  ) => closeOnServerSkillCancellation(
-    isCancelled: () =>
-        const DatabaseConversationCancellationProbe().isCancelled(
+    Completer<void> requestDone, {
+    Future<bool> Function()? isCancelled,
+  }) => closeOnServerSkillCancellation(
+    isCancelled:
+        isCancelled ??
+        () => const DatabaseConversationCancellationProbe().isCancelled(
           session,
           turn.id!,
         ),

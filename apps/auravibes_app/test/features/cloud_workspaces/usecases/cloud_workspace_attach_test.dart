@@ -7,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 
 class _Repository extends Mock implements WorkspaceRepository;
 class _Client extends Mock implements Client;
+class _CloudWorkspaceEndpoint extends Mock implements EndpointCloudWorkspace;
 
 void main() {
   for (final sameOrigin in [true, false]) {
@@ -79,6 +80,97 @@ void main() {
     expect(mirrors.map((mirror) => mirror.cloudAccountId), ['A', 'B']);
     verify(repository.getAllWorkspaces).called(1);
     verifyNoMoreInteractions(repository);
+  });
+
+  test('attachAuthorizedWorkspace attaches listed workspace', () async {
+    final repository = _Repository();
+    final client = _Client();
+    final endpoint = _CloudWorkspaceEndpoint();
+    final created = _mirror('B', 'https://two.example');
+    when(() => client.cloudWorkspace).thenReturn(endpoint);
+    when(endpoint.listAuthorizedWorkspaces)
+        .thenAnswer((_) async => [_summary()]);
+    when(repository.getAllWorkspaces).thenAnswer((_) async => []);
+    when(
+      () => repository.upsertCloudWorkspaceMirror(
+        cloudWorkspaceId: '11',
+        cloudAccountId: 'B',
+        name: 'Cloud',
+        serverUrl: 'https://two.example',
+      ),
+    ).thenAnswer((_) async => created);
+    final usecase = CloudWorkspaceUseCases(
+      cloudRepository: .new(client),
+      workspaceRepository: repository,
+      cloudAccountId: 'B',
+      serverUrl: 'https://two.example',
+    );
+
+    expect(await usecase.attachAuthorizedWorkspace(11), created);
+    verify(endpoint.listAuthorizedWorkspaces).called(1);
+  });
+
+  test(
+    'attachAuthorizedWorkspace does not reuse another account mirror',
+    () async {
+      final repository = _Repository();
+      final client = _Client();
+      final endpoint = _CloudWorkspaceEndpoint();
+      final original = _mirror('A', 'https://two.example');
+      final created = _mirror('B', 'https://two.example');
+      when(() => client.cloudWorkspace).thenReturn(endpoint);
+      when(endpoint.listAuthorizedWorkspaces)
+          .thenAnswer((_) async => [_summary()]);
+      when(repository.getAllWorkspaces).thenAnswer((_) async => [original]);
+      when(
+        () => repository.upsertCloudWorkspaceMirror(
+          cloudWorkspaceId: '11',
+          cloudAccountId: 'B',
+          name: 'Cloud',
+          serverUrl: 'https://two.example',
+        ),
+      ).thenAnswer((_) async => created);
+      final usecase = CloudWorkspaceUseCases(
+        cloudRepository: .new(client),
+        workspaceRepository: repository,
+        cloudAccountId: 'B',
+        serverUrl: 'https://two.example',
+      );
+
+      expect(await usecase.attachAuthorizedWorkspace(11), created);
+      verify(
+        () => repository.upsertCloudWorkspaceMirror(
+          cloudWorkspaceId: '11',
+          cloudAccountId: 'B',
+          name: 'Cloud',
+          serverUrl: 'https://two.example',
+        ),
+      ).called(1);
+    },
+  );
+
+  test('attachAuthorizedWorkspace rejects inaccessible workspace', () async {
+    final client = _Client();
+    final endpoint = _CloudWorkspaceEndpoint();
+    when(() => client.cloudWorkspace).thenReturn(endpoint);
+    when(endpoint.listAuthorizedWorkspaces).thenAnswer((_) async => const []);
+    final usecase = CloudWorkspaceUseCases(
+      cloudRepository: .new(client),
+      workspaceRepository: _Repository(),
+      cloudAccountId: 'B',
+      serverUrl: 'https://two.example',
+    );
+
+    await expectLater(
+      usecase.attachAuthorizedWorkspace(11),
+      throwsA(
+        isA<AppCloudWorkspaceException>().having(
+          (error) => error.localizationKey,
+          'localizationKey',
+          'cloud_errors.permission_denied',
+        ),
+      ),
+    );
   });
 }
 

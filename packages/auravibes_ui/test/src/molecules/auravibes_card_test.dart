@@ -7,145 +7,96 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraCard', () {
-    testWidgets('renders card with child correctly', (tester) async {
-      const testText = 'Card Content';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraCard(child: Text(testText))),
-        ),
-      );
-
-      expect(find.text(testText), findsOneWidget);
-    });
-
-    testWidgets('handles tap correctly', (tester) async {
+    testWidgets('renders card styles and interactions', (tester) async {
       var wasTapped = false;
+      const semanticLabel = 'Product card';
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AuraCard(
-              child: const Text('Tappable Card'),
-              onTap: () => wasTapped = true,
+            body: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: .min,
+                children: [
+                  const AuraCard(
+                    child: Text('Card Content'),
+                    key: ValueKey('default'),
+                  ),
+                  AuraCard(
+                    child: const Text('Tappable Card'),
+                    key: const ValueKey('tappable'),
+                    onTap: () => wasTapped = true,
+                  ),
+                  const AuraCard(
+                    child: Text('Non-tappable Card'),
+                    key: ValueKey('non-tappable'),
+                  ),
+                  const AuraCard(
+                    child: Text('Content'),
+                    key: ValueKey('semantic'),
+                    semanticLabel: semanticLabel,
+                  ),
+                  const AuraCard(
+                    child: Text('Border Card'),
+                    key: ValueKey('border'),
+                    style: .border,
+                  ),
+                  const AuraCard(
+                    child: Text('Glass Card'),
+                    key: ValueKey('glass'),
+                    style: .glass,
+                  ),
+                  const AuraCard(
+                    child: Text('Tinted Card'),
+                    key: ValueKey('tinted'),
+                    tint: .success,
+                  ),
+                  const AuraCard(
+                    child: Text('Small Padded Card'),
+                    key: ValueKey('padded'),
+                    padding: .small,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       );
 
-      expect(find.byType(AuraPressable), findsOneWidget);
+      Finder within(String key, Finder matching) => find.descendant(
+        of: find.byKey(ValueKey<String>(key)),
+        matching: matching,
+      );
+      AuraPressable pressable(String key) =>
+          tester.widget<AuraPressable>(within(key, find.byType(AuraPressable)));
 
-      await tester.tap(find.byType(AuraCard));
+      expect(find.text('Card Content'), findsOneWidget);
+      expect(within('tappable', find.byType(AuraPressable)), findsOneWidget);
+      expect(within('non-tappable', find.byType(InkWell)), findsNothing);
+      await tester.tap(within('tappable', find.byType(AuraPressable)));
       expect(wasTapped, isTrue);
-    });
-
-    testWidgets('does not show InkWell when onTap is null', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraCard(child: Text('Non-tappable Card'))),
-        ),
-      );
-
-      expect(find.byType(InkWell), findsNothing);
-    });
-
-    testWidgets('applies semantic label correctly', (tester) async {
-      const semanticLabel = 'Product card';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraCard(
-              child: Text('Content'),
-              semanticLabel: semanticLabel,
-            ),
-          ),
-        ),
-      );
-
-      final semantics = tester.widget<Semantics>(
-        find.descendant(
-          of: find.byType(AuraCard),
-          matching: find.byType(Semantics),
-        ),
-      );
-
-      expect(semantics.properties.label, semanticLabel);
-    });
-
-    testWidgets('renders border style card', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraCard(child: Text('Border Card'), style: .border),
-          ),
-        ),
-      );
-
       expect(find.text('Border Card'), findsOneWidget);
-      expect(find.byType(AuraPressable), findsOneWidget);
-    });
-
-    testWidgets('renders glass style card', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraCard(child: Text('Glass Card'), style: .glass),
-          ),
-        ),
-      );
-
+      expect(within('border', find.byType(AuraPressable)), findsOneWidget);
       expect(find.text('Glass Card'), findsOneWidget);
-      expect(find.byType(BackdropFilter), findsOneWidget);
-      expect(find.byType(ClipRRect), findsOneWidget);
-    });
+      expect(within('glass', find.byType(BackdropFilter)), findsOneWidget);
+      expect(within('glass', find.byType(ClipRRect)), findsOneWidget);
 
-    testWidgets('renders elevated style by default', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraCard(child: Text('Elevated Card'))),
-        ),
-      );
+      expect(pressable('default').decoration, isNotNull);
 
-      expect(find.text('Elevated Card'), findsOneWidget);
-      final pressable = tester.widget<AuraPressable>(
-        find.byType(AuraPressable),
-      );
-      expect(pressable.decoration, isNotNull);
-    });
+      final semantics = tester
+          .widgetList<Semantics>(within('semantic', find.byType(Semantics)))
+          .firstWhere(
+            (semantics) => semantics.properties.label == semanticLabel,
+          );
+      expect(semantics.properties.label, semanticLabel);
 
-    testWidgets('blends a semantic tint into the card surface', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraCard(child: Text('Tinted Card'), tint: .success),
-          ),
-        ),
-      );
-
-      final pressable = tester.widget<AuraPressable>(
-        find.byType(AuraPressable),
-      );
-      final decoration = pressable.decoration;
+      final decoration = pressable('tinted').decoration;
       if (decoration is! BoxDecoration) fail('Expected a card decoration.');
       expect(decoration.color, isNot(AuraTheme.light.colors.surface));
-    });
-
-    testWidgets('applies custom padding', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraCard(child: Text('Small Padded Card'), padding: .small),
-          ),
-        ),
-      );
 
       expect(find.text('Small Padded Card'), findsOneWidget);
       final auraPadding = tester.widget<AuraPadding>(
-        find.descendant(
-          of: find.byType(AuraCard),
-          matching: find.byType(AuraPadding),
-        ),
+        within('padded', find.byType(AuraPadding)),
       );
       expect(auraPadding.padding, AuraEdgeInsetsGeometry.small);
     });

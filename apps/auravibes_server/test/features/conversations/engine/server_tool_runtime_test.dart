@@ -2,12 +2,134 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('protocol serializes both named modes and nullable updates', () {
+    final now = DateTime.utc(2026);
+    for (final mode in ['default', 'allow_all']) {
+      final create = CreateConversationRequest(
+        workspaceId: 1,
+        requestId: 'create',
+        conversationId: 'conversation',
+        title: 'Conversation',
+        isPinned: false,
+        toolAccessMode: mode,
+      );
+      expect(
+        CreateConversationRequest.fromJson(create.toJson()).toolAccessMode,
+        mode,
+      );
+      final summary = ConversationSummary(
+        id: 'conversation',
+        title: 'Conversation',
+        isPinned: false,
+        toolAccessMode: mode,
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      );
+      expect(
+        ConversationSummary.fromJson(summary.toJson()).toolAccessMode,
+        mode,
+      );
+      final projection = ConversationProjectionView(
+        id: 'conversation',
+        workspaceId: 1,
+        executionState: 'idle',
+        projectionRevision: 1,
+        sequence: 0,
+        toolAccessMode: mode,
+        updatedAt: now,
+      );
+      expect(
+        ConversationProjectionView.fromJson(projection.toJson()).toolAccessMode,
+        mode,
+      );
+      final update = UpdateConversationRequest(
+        workspaceId: 1,
+        requestId: 'update',
+        conversationId: 'conversation',
+        expectedRevision: 1,
+        toolAccessMode: mode,
+        clearModel: false,
+        clearAgent: false,
+        clearReasoningConfig: false,
+        clearParent: false,
+      );
+      expect(
+        UpdateConversationRequest.fromJson(update.toJson()).toolAccessMode,
+        mode,
+      );
+      expect(update.toJson(), isNot(contains('title')));
+      expect(
+        update.copyWith(toolAccessMode: null).toJson(),
+        isNot(contains('toolAccessMode')),
+      );
+    }
+  });
+
+  test('cloud mode decodes unknown strings before policy evaluation', () {
+    for (final mode in ['default', 'future_mode', 'allowAll', '']) {
+      expect(
+        applyConversationToolAccessMode(
+          AgentToolPermissionResult.needsConfirmation,
+          mode: ConversationToolAccessModeStorage.decode(mode),
+        ),
+        AgentToolPermissionResult.needsConfirmation,
+      );
+    }
+    for (final permission in AgentToolPermissionResult.values) {
+      expect(
+        applyConversationToolAccessMode(
+          permission,
+          mode: ConversationToolAccessModeStorage.decode('allow_all'),
+        ),
+        permission == AgentToolPermissionResult.needsConfirmation
+            ? AgentToolPermissionResult.granted
+            : permission,
+      );
+    }
+  });
+
+  test('conversation ask cannot mask agent or workspace denial', () {
+    for (final workspace in [
+      AgentToolPermissionResult.needsConfirmation,
+      AgentToolPermissionResult.disabledInWorkspace,
+    ]) {
+      expect(
+        applyConversationToolAccessMode(
+          resolveCloudToolPermission(
+            workspacePermission: workspace,
+            agentPermissionMode: 'alwaysDeny',
+            conversationPermissionMode: 'alwaysAsk',
+          ),
+          mode: ConversationToolAccessMode.allowAll,
+        ),
+        AgentToolPermissionResult.disabledInWorkspace,
+      );
+    }
+    expect(
+      resolveCloudToolPermission(
+        workspacePermission: AgentToolPermissionResult.disabledInWorkspace,
+        agentPermissionMode: 'alwaysDeny',
+        conversationPermissionMode: 'alwaysAllow',
+      ),
+      AgentToolPermissionResult.granted,
+    );
+    expect(
+      resolveCloudToolPermission(
+        workspacePermission: AgentToolPermissionResult.granted,
+        conversationPermissionMode: 'alwaysDeny',
+      ),
+      AgentToolPermissionResult.disabledInWorkspace,
+    );
+  });
+
   test('authorizes active agent-associated skills for execution', () {
     final now = DateTime.utc(2026);
     WorkspaceResource resource(
@@ -85,6 +207,105 @@ void main() {
       isTrue,
     );
     expect(serverToolIsReplayableSkillKind(AgentResolvedToolKind.mcp), isFalse);
+  });
+
+  test('only cancellable top-level tools can run in background', () {
+    ServerResolvedTool tool(AgentResolvedToolName descriptor) =>
+        ServerResolvedTool(
+          descriptor: descriptor,
+          spec: ToolSpec(
+            name: descriptor.fullName,
+            description: 'Test tool.',
+            inputJsonSchema: const {'type': 'object'},
+          ),
+        );
+
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.skillTemplate(
+            tableId: 'search',
+            skillSlug: 'research',
+            toolIdentifier: 'search',
+          ),
+        ),
+        isTopLevelConversation: true,
+      ),
+      isTrue,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.skillTemplate(
+            tableId: 'search',
+            skillSlug: 'research',
+            toolIdentifier: 'search',
+          ),
+        ),
+        isTopLevelConversation: false,
+      ),
+      isFalse,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.skillAppTemplate(
+            tableId: 'calendar',
+            skillSlug: 'calendar',
+            toolIdentifier: 'list_events',
+          ),
+        ),
+        isTopLevelConversation: true,
+      ),
+      isTrue,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.skillAppTemplate(
+            tableId: 'calendar',
+            skillSlug: 'calendar',
+            toolIdentifier: 'list_events',
+          ),
+        ),
+        isTopLevelConversation: false,
+      ),
+      isFalse,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.mcp(
+            tableId: 'server',
+            toolIdentifier: 'list',
+            mcpServerId: 'server',
+            mcpSlug: 'list',
+          ),
+        ),
+      ),
+      isFalse,
+    );
+    final runSubAgent = tool(
+      AgentResolvedToolName.skillNative(
+        tableId: 'skill__app_native__agents__run_sub_agent',
+        skillSlug: agentsSkillSlug,
+        toolIdentifier: runSubAgentToolName,
+      ),
+    );
+    expect(
+      serverToolCanRunInBackground(
+        runSubAgent,
+        isTopLevelConversation: true,
+      ),
+      isTrue,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        runSubAgent,
+        isTopLevelConversation: false,
+      ),
+      isFalse,
+    );
   });
 
   test('does not infer an omitted cloud tool credentialId', () {
@@ -866,7 +1087,122 @@ void main() {
       before.every((tool) => serverToolIsExecutable(tool.descriptor)),
       isTrue,
     );
+    final callSkill = before.singleWhere(
+      (tool) => tool.spec.name == callSkillToolName,
+    );
+    expect(
+      strictToolSchemaIssue(
+        Map<String, dynamic>.from(callSkill.spec.inputJsonSchema),
+      ),
+      isNull,
+    );
   });
+
+  test('cloud and local command schemas share active skill contracts', () {
+    final manifest = SkillManifest(
+      slug: 'research',
+      title: 'Research',
+      description: 'Search sources.',
+      revision: 'r1',
+      tools: [
+        SkillManifestTool(
+          name: 'search',
+          description: 'Search sources.',
+          optionalNullMeansOmission: true,
+          inputJsonSchema: const {
+            'type': 'object',
+            'properties': {
+              'query': {'type': 'string'},
+              'limit': {'type': 'integer'},
+            },
+            'required': ['query'],
+            'additionalProperties': false,
+          },
+        ),
+      ],
+    );
+    final local = buildSkillCommandToolSpecs(manifests: [manifest]);
+    final cloud = fixedCloudSkillCommandTools(manifests: [manifest]);
+
+    expect(
+      cloud.map((tool) => tool.spec),
+      orderedEquals(local),
+    );
+    final callSkill = cloud.singleWhere(
+      (tool) => tool.spec.name == callSkillToolName,
+    );
+    expect(
+      strictToolSchemaIssue(
+        Map<String, dynamic>.from(callSkill.spec.inputJsonSchema),
+      ),
+      isNull,
+    );
+  });
+
+  test(
+    'cloud skill command omits null optional nested inputs before validation',
+    () async {
+      final descriptor = AgentResolvedToolName.skillTemplate(
+        tableId: 'tool-1',
+        skillSlug: 'research',
+        toolIdentifier: 'search',
+      );
+      final target = ServerResolvedTool(
+        descriptor: descriptor,
+        spec: ToolSpec(
+          name: descriptor.fullName,
+          description: 'Search sources.',
+          inputJsonSchema: const {
+            'type': 'object',
+            'properties': {
+              'filters': {
+                'type': 'object',
+                'properties': {
+                  'region': {'type': 'string'},
+                },
+                'required': <String>[],
+                'additionalProperties': false,
+              },
+            },
+            'required': <String>[],
+            'additionalProperties': false,
+          },
+        ),
+      );
+      const userSkills = [
+        {
+          'id': 'research-id',
+          'slug': 'research',
+          'title': 'Research',
+          'description': 'Search sources.',
+          'content': 'Find sources.',
+          'isEnabled': true,
+        },
+      ];
+      final manifest = await buildCloudSkillManifest(
+        slug: 'research',
+        userSkills: userSkills,
+        tools: [target],
+      );
+      final command = SkillCommandTarget.fromArguments({
+        'skill': 'research',
+        'tool': 'search',
+        'args': {
+          'filters': {'region': null},
+        },
+        'revision': manifest!.revision,
+      });
+
+      await expectLater(
+        resolveCloudSkillCommandTarget(
+          command: command,
+          userSkills: userSkills,
+          tools: [target],
+        ),
+        completes,
+      );
+    },
+  );
 
   test(
     'builds deterministic cloud manifest from authoritative target specs',

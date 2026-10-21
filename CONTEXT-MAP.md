@@ -1,6 +1,6 @@
 # Context Map
 
-This repository is a Dart workspace. Each workspace member is a context; read the context document relevant to the task.
+This map links workspace areas to their `CONTEXT.md` files. Paths show documentation locations, not separate domain boundaries. Each context document lists its responsibility, data flow, terms, invariants, relationships, and evidence.
 
 ## Contexts
 
@@ -11,4 +11,4 @@ This repository is a Dart workspace. Each workspace member is a context; read th
 - [packages/auravibes_ui](packages/auravibes_ui/CONTEXT.md)
 - [widgetbook](widgetbook/CONTEXT.md)
 
-System-wide ADRs belong in `docs/adr/`. Context-specific ADRs belong in the relevant context's `docs/adr/`. Create those files when a domain decision is resolved.
+Use `docs/adr/` for system-wide ADRs. Use `<context>/docs/adr/` for context-specific ADRs.

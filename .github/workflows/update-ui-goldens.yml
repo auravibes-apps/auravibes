@@ -1,0 +1,38 @@
+name: Update Linux UI goldens
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update-goldens:
+    name: update UI goldens (Linux x64)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Update app goldens
+        working-directory: apps/auravibes_app
+        run: flutter test --no-pub --tags=golden --update-goldens
+
+      - name: Update shared UI goldens
+        working-directory: packages/auravibes_ui
+        run: flutter test --no-pub --tags=golden --update-goldens
+
+      - name: Upload generated goldens
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ui-goldens-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            apps/auravibes_app/test/**/goldens/*.png
+            packages/auravibes_ui/test/**/goldens/*.png
+          if-no-files-found: error
+          retention-days: 7

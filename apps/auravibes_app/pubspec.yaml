@@ -5,7 +5,7 @@ description: "A new Flutter project."
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
-version: 0.0.4
+version: 0.0.6
 
 environment:
   sdk: ^3.13.0
@@ -14,7 +14,6 @@ dependencies:
   a2ui_core: ^0.1.1
   anthropic_sdk_dart: ^8.0.0
   async: ^2.13.0
-  audioplayers: ^6.8.1
   auravibes_engine: ^0.0.1
   auravibes_server_client: ^0.0.1
   auravibes_ui: ^0.0.2
@@ -41,23 +40,30 @@ dependencies:
   flutter_svg: ^2.3.0
   flutter_web_auth_2: ^6.0.0-alpha.8
   freezed_annotation: ^3.1.0
-  genkit: ^0.17.0
-  genkit_anthropic: ^0.4.0
-  genkit_openai: ^0.5.0
+  genkit: ^1.0.0
+  genkit_anthropic: ^1.0.0
+  genkit_openai: ^1.0.0
   genui: ^0.10.4
   go_router: ^18.0.0
   hooks_riverpod: ^3.4.3
   http: ^1.6.0
   http_parser: ^4.1.2
   image_picker: ^1.2.3
+  image_picker_android: ^0.8.13+23
+  image_picker_platform_interface: ^2.11.1
+  in_app_webview_flutter: ^1.1.0
   intl: ^0.20.2
   json_annotation: ^4.12.0
   json_schema_builder: ^0.1.7
+  just_audio: ^0.10.6
+  just_audio_media_kit: ^2.1.0
   logging: ^1.3.0
-  marionette_flutter: 0.6.0
+  marionette_flutter: 0.7.0
   material_ui: ^1.2.0
   math_expressions: ^3.1.0
-  mcp_client: ^2.2.1
+  mcp_client: ^3.0.0
+  media_kit_libs_linux: ^1.2.1
+  media_kit_libs_windows_audio: ^1.0.9
   mime: ^2.1.0
   openai_dart: ^8.0.0
 
@@ -69,21 +75,25 @@ dependencies:
   riverpod: ^3.4.3
   riverpod_annotation: ^4.0.7
   rxdart: ^0.28.0
-  schemantic: ^0.2.0
+  schemantic: ^1.0.0
   serverpod_auth_core_client: ^4.0.3
   serverpod_auth_idp_client: ^4.0.3
   shared_preferences: ^2.5.4
   sqlite3_flutter_libs: ^0.6.0
   stupid_simple_sheet: ^1.0.0-dev.4
+  super_clipboard: ^0.10.0-dev.2
+  super_drag_and_drop: ^0.10.0-dev.2
   textf: ^2.0.0-dev.2
+  toon_dart: ^1.0.0+4
+  unorm_dart: ^0.3.2
   url_launcher: ^6.3.2
   uuid: ^4.5.3
 dev_dependencies:
-  audioplayers_platform_interface: ^7.2.0
   # Code generation for JSON serialization
   build_runner: ^2.16.1
-  # Code generation for Drift
+  # Device preview and screenshot-test helpers.
   device_preview: ^3.0.0
+  # Code generation for Drift
   drift_dev: ^2.35.1
   flutter_flavorizr: ^2.5.0
   flutter_launcher_icons: ^0.14.4
@@ -91,12 +101,14 @@ dev_dependencies:
     sdk: flutter
   freezed: ^4.0.2
   go_router_builder: ^4.5.0
-  image_picker_platform_interface: ^2.11.1
+  irondash_message_channel: ^0.8.0-dev.0
   json_serializable: ^6.14.0
+  just_audio_platform_interface: ^4.6.0
   mocktail: ^1.0.4
   nock: ^1.2.3
   riverpod_generator: ^4.0.9
   sqlite3: ^3.5.2
+  super_native_extensions: ^0.10.0-dev.2
   test: ^1.32.0
 flutter:
   config:

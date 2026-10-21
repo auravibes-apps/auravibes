@@ -6,9 +6,9 @@ import 'package:auravibes_app/features/skills/providers/skill_access_summary_pro
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -42,6 +42,7 @@ class const SkillAccessStatusView({
   final bool isAppSkill = false,
   final VoidCallback? onChanged,
   final bool recoveryEnabled = true,
+  final String? credentialSetupSemanticLabel,
   super.key,
 }) extends ConsumerWidget {
   @override
@@ -58,6 +59,7 @@ class const SkillAccessStatusView({
         ref: ref,
         summary: value,
       )),
+      credentialSetupSemanticLabel: credentialSetupSemanticLabel,
     );
   }
 
@@ -110,18 +112,24 @@ class const SkillAccessStatusView({
   );
 
   Future<bool?> _openToolAccess(BuildContext context, String toolId) =>
-      SkillToolEditRoute(
-        workspaceId: workspaceId,
-        skillId: skillId,
-        toolId: toolId,
-      ).push<bool>(context);
+      FeatureDestinations.push<bool>(
+        context,
+        SkillToolEditRoute(
+          workspaceId: workspaceId,
+          skillId: skillId,
+          toolId: toolId,
+        ).location,
+      );
 
   Future<bool?> _openUserAccess(BuildContext context, String? definitionId) =>
-      ServiceConnectionCreateRoute(
-        workspaceId: workspaceId,
-        type: 'skillCredential',
-        credentialDefinitionId: definitionId,
-      ).push<bool>(context);
+      FeatureDestinations.push<bool>(
+        context,
+        ServiceConnectionCreateRoute(
+          workspaceId: workspaceId,
+          type: 'skillCredential',
+          credentialDefinitionId: definitionId,
+        ).location,
+      );
 
   Future<_SkillAccessRecoveryResult?> _openAppAccess(
     _AppAccessRouteRequest request,
@@ -131,7 +139,8 @@ class const SkillAccessStatusView({
         .getByIdentifier(skillId);
     if (appSkill == null) return null;
 
-    final result = await request.context.push<bool>(
+    final result = await FeatureDestinations.push<bool>(
+      request.context,
       _appAccessLocation(
         workspaceId,
         skillId,
@@ -222,6 +231,7 @@ class const _SkillAccessStatusContent({
   required final bool showDependencies,
   required final bool recoveryEnabled,
   required final _SkillAccessSetup onSetup,
+  final String? credentialSetupSemanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (summary) {
@@ -230,6 +240,7 @@ class const _SkillAccessStatusContent({
       showDependencies: showDependencies,
       recoveryEnabled: recoveryEnabled,
       onSetup: onSetup(value),
+      credentialSetupSemanticLabel: credentialSetupSemanticLabel,
     ),
     AsyncLoading() => const TextLocale(LocaleKeys.skill_access_checking),
     AsyncData() ||
@@ -250,6 +261,7 @@ class const _SkillAccessSummaryContent({
   required final bool showDependencies,
   required final bool recoveryEnabled,
   required final VoidCallback onSetup,
+  final String? credentialSetupSemanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -260,6 +272,7 @@ class const _SkillAccessSummaryContent({
           summary: summary,
           recoveryEnabled: recoveryEnabled,
           onSetup: onSetup,
+          credentialSetupSemanticLabel: credentialSetupSemanticLabel,
         ),
     ],
     spacing: .xs,
@@ -271,6 +284,7 @@ class const _SkillAccessDependencies({
   required final SkillAccessSummary summary,
   required final bool recoveryEnabled,
   required final VoidCallback onSetup,
+  final String? credentialSetupSemanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -282,6 +296,7 @@ class const _SkillAccessDependencies({
         _SkillAccessSetupButton(
           recoveryEnabled: recoveryEnabled,
           onPressed: onSetup,
+          semanticLabel: credentialSetupSemanticLabel,
         ),
     ],
     spacing: .xs,
@@ -295,6 +310,7 @@ bool _requiresSetup(SkillAccessSummary summary) =>
 class const _SkillAccessSetupButton({
   required final bool recoveryEnabled,
   required final VoidCallback onPressed,
+  final String? semanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
@@ -302,6 +318,7 @@ class const _SkillAccessSetupButton({
     child: const TextLocale(LocaleKeys.skills_selector_credential_setup),
     variant: .text,
     disabled: !recoveryEnabled,
+    semanticLabel: semanticLabel,
   );
 }
 

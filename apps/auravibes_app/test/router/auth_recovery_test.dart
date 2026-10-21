@@ -35,6 +35,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 class _AuthRepository extends Mock implements WorkspaceRepository;
 
 class _AuthProtocol extends Mock implements CloudAuthProtocol;
@@ -78,6 +80,10 @@ Future<void> _pump(
 }
 
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  tearDownAll(database.close);
   for (final page in ['login', 'register', 'forgot-password']) {
     for (final leave in [false, true]) {
       testWidgets(
@@ -89,15 +95,12 @@ void main() {
           const account = '11111111-1111-4111-8111-111111111111';
           const email = 'person@example.com';
           const destination =
-              '/workspaces/local/more/cloud-accounts?intent=preserved';
+              '/workspaces/local/cloud-accounts?intent=preserved';
           const chatPath = '/workspaces/local/chat/new';
           const session = WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: workspace),
           );
-          final database = AppDatabase(
-            connection: DatabaseConnection(NativeDatabase.memory()),
-          );
-          addTearDown(database.close);
+          await clearAppDatabase(database);
           final completion = Completer<CloudAuthResult>();
           final resetCompletion = Completer<void>();
           final protocol = _AuthProtocol();
@@ -133,9 +136,18 @@ void main() {
             },
             emailDelivery: .email,
           );
+          final authLocation = Uri(
+            path: '/workspaces/$workspace/cloud-accounts/$page',
+            queryParameters: {
+              'serverUrl': origin,
+              'accountId': account,
+              'email': email,
+              'return-path': destination,
+            },
+          ).toString();
           final router = GoRouter(
             routes: $appRoutes,
-            initialLocation: chatPath,
+            initialLocation: leave ? chatPath : authLocation,
           );
           addTearDown(router.dispose);
           final container = ProviderContainer(
@@ -161,18 +173,10 @@ void main() {
           addTearDown(container.dispose);
           await _pump(tester, router, container);
           final _ = await tester.pumpAndSettle();
-          router.go(
-            Uri(
-              path: '/workspaces/$workspace/more/cloud-accounts/$page',
-              queryParameters: {
-                'serverUrl': origin,
-                'accountId': account,
-                'email': email,
-                'return-path': destination,
-              },
-            ).toString(),
-          );
-          final _ = await tester.pumpAndSettle();
+          if (leave) {
+            router.go(authLocation);
+            final _ = await tester.pumpAndSettle();
+          }
           if (page == 'forgot-password') {
             await tester.tap(find.text('Send reset code'));
             final _ = await tester.pumpAndSettle();
@@ -241,7 +245,7 @@ void main() {
           } else if (page == 'forgot-password') {
             expect(
               router.state.uri.path,
-              '/workspaces/$workspace/more/cloud-accounts/login',
+              '/workspaces/$workspace/cloud-accounts/login',
             );
             expect(
               router.state.uri.queryParameters['password-changed'],
@@ -286,14 +290,11 @@ void main() {
     testWidgets('expired workspace permits $page with auth context', (
       tester,
     ) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       final location =
-          '/workspaces/$workspace/more/cloud-accounts/$page?serverUrl=$origin'
+          '/workspaces/$workspace/cloud-accounts/$page?serverUrl=$origin'
           '&accountId=$account&email=person%40example.com'
-          '&return-path=%2Fworkspaces%2Fremote%2Fmore%2Ftools';
+          '&return-path=%2Fworkspaces%2Fremote%2Ftools';
       final router = GoRouter(routes: $appRoutes, initialLocation: location);
       addTearDown(router.dispose);
       var checks = 0;
@@ -328,13 +329,10 @@ void main() {
   testWidgets(
     'gated workspace reauth targets owning origin/account and validated return',
     (tester) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       final router = GoRouter(
         routes: $appRoutes,
-        initialLocation: '/workspaces/$workspace/more/tools',
+        initialLocation: '/workspaces/$workspace/tools',
       );
       addTearDown(router.dispose);
       final container = ProviderContainer(
@@ -375,7 +373,7 @@ void main() {
       expect(router.state.uri.queryParameters['email'], 'owner@example.com');
       expect(
         router.state.uri.queryParameters['return-path'],
-        '/workspaces/$workspace/more/tools',
+        '/workspaces/$workspace/tools',
       );
       expect(find.byType(CloudAccountAuthContent), findsOneWidget);
     },
@@ -387,7 +385,7 @@ void main() {
     ) async {
       final router = GoRouter(
         routes: $appRoutes,
-        initialLocation: '/workspaces/$workspace/more/tools',
+        initialLocation: '/workspaces/$workspace/tools',
       );
       addTearDown(router.dispose);
       final container = ProviderContainer(
@@ -420,7 +418,7 @@ void main() {
     final router = GoRouter(
       routes: [
         GoRoute(
-          path: '/workspaces/$workspace/more/tools',
+          path: '/workspaces/$workspace/tools',
           builder: (_, _) => WorkspaceAccessGate(
             workspaceId: workspace,
             session: session,
@@ -429,7 +427,7 @@ void main() {
           ),
         ),
       ],
-      initialLocation: '/workspaces/$workspace/more/tools',
+      initialLocation: '/workspaces/$workspace/tools',
     );
     addTearDown(router.dispose);
     final container = ProviderContainer(
@@ -460,14 +458,17 @@ void main() {
   testWidgets('transient retry invalidates only the owning account health', (
     tester,
   ) async {
-    final key = cloudAccountKey(origin, account);
-    final other = cloudAccountKey('https://other.example', account);
+    final key = CloudAccountKeyFactory.fromIdentity(origin, account);
+    final other = CloudAccountKeyFactory.fromIdentity(
+      'https://other.example',
+      account,
+    );
     var checks = 0;
     var otherChecks = 0;
     final router = GoRouter(
       routes: [
         GoRoute(
-          path: '/workspaces/$workspace/more/tools',
+          path: '/workspaces/$workspace/tools',
           builder: (_, _) => WorkspaceAccessGate(
             workspaceId: workspace,
             session: session,
@@ -476,7 +477,7 @@ void main() {
           ),
         ),
       ],
-      initialLocation: '/workspaces/$workspace/more/tools',
+      initialLocation: '/workspaces/$workspace/tools',
     );
     addTearDown(router.dispose);
     final container = ProviderContainer(
@@ -513,10 +514,7 @@ void main() {
   testWidgets(
     'child auth rejection recovers exact account after cached health',
     (tester) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       const location = '/workspaces/$workspace/chats/parent/sub-agents/child';
       final router = GoRouter(routes: $appRoutes, initialLocation: location);
       addTearDown(router.dispose);
@@ -568,13 +566,10 @@ void main() {
   testWidgets(
     'account management remains usable after selected session fails',
     (tester) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       final router = GoRouter(
         routes: $appRoutes,
-        initialLocation: '/workspaces/$workspace/more/cloud-accounts',
+        initialLocation: '/workspaces/$workspace/cloud-accounts',
       );
       addTearDown(router.dispose);
       final container = ProviderContainer(

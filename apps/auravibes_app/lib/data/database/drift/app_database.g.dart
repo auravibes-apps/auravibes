@@ -1659,6 +1659,17 @@ class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
           'REFERENCES service_connections (id) ON DELETE CASCADE',
         ),
       );
+  static const VerificationMeta _toolSamplingPolicyMeta =
+      const VerificationMeta('toolSamplingPolicy');
+  @override
+  late final GeneratedColumn<String> toolSamplingPolicy =
+      GeneratedColumn<String>(
+        'tool_sampling_policy',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1666,6 +1677,7 @@ class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
     updatedAt,
     modelId,
     modelConnectionId,
+    toolSamplingPolicy,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1713,6 +1725,15 @@ class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
     } else if (isInserting) {
       context.missing(_modelConnectionIdMeta);
     }
+    if (data.containsKey('tool_sampling_policy')) {
+      context.handle(
+        _toolSamplingPolicyMeta,
+        toolSamplingPolicy.isAcceptableOrUnknown(
+          data['tool_sampling_policy']!,
+          _toolSamplingPolicyMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1745,6 +1766,10 @@ class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
         DriftSqlType.string,
         data['${effectivePrefix}model_connection_id'],
       )!,
+      toolSamplingPolicy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_sampling_policy'],
+      ),
     );
   }
 
@@ -1768,12 +1793,14 @@ class WorkspaceModelSelectionTable extends DataClass
   /// Model unique identifier.
   final String modelId;
   final String modelConnectionId;
+  final String? toolSamplingPolicy;
   const WorkspaceModelSelectionTable({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
     required this.modelId,
     required this.modelConnectionId,
+    this.toolSamplingPolicy,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1783,6 +1810,9 @@ class WorkspaceModelSelectionTable extends DataClass
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['model_id'] = Variable<String>(modelId);
     map['model_connection_id'] = Variable<String>(modelConnectionId);
+    if (!nullToAbsent || toolSamplingPolicy != null) {
+      map['tool_sampling_policy'] = Variable<String>(toolSamplingPolicy);
+    }
     return map;
   }
 
@@ -1793,6 +1823,9 @@ class WorkspaceModelSelectionTable extends DataClass
       updatedAt: Value(updatedAt),
       modelId: Value(modelId),
       modelConnectionId: Value(modelConnectionId),
+      toolSamplingPolicy: toolSamplingPolicy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolSamplingPolicy),
     );
   }
 
@@ -1807,6 +1840,9 @@ class WorkspaceModelSelectionTable extends DataClass
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       modelId: serializer.fromJson<String>(json['modelId']),
       modelConnectionId: serializer.fromJson<String>(json['modelConnectionId']),
+      toolSamplingPolicy: serializer.fromJson<String?>(
+        json['toolSamplingPolicy'],
+      ),
     );
   }
   @override
@@ -1818,6 +1854,7 @@ class WorkspaceModelSelectionTable extends DataClass
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'modelId': serializer.toJson<String>(modelId),
       'modelConnectionId': serializer.toJson<String>(modelConnectionId),
+      'toolSamplingPolicy': serializer.toJson<String?>(toolSamplingPolicy),
     };
   }
 
@@ -1827,12 +1864,16 @@ class WorkspaceModelSelectionTable extends DataClass
     DateTime? updatedAt,
     String? modelId,
     String? modelConnectionId,
+    Value<String?> toolSamplingPolicy = const Value.absent(),
   }) => WorkspaceModelSelectionTable(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     modelId: modelId ?? this.modelId,
     modelConnectionId: modelConnectionId ?? this.modelConnectionId,
+    toolSamplingPolicy: toolSamplingPolicy.present
+        ? toolSamplingPolicy.value
+        : this.toolSamplingPolicy,
   );
   WorkspaceModelSelectionTable copyWithCompanion(
     WorkspaceModelSelectionsCompanion data,
@@ -1845,6 +1886,9 @@ class WorkspaceModelSelectionTable extends DataClass
       modelConnectionId: data.modelConnectionId.present
           ? data.modelConnectionId.value
           : this.modelConnectionId,
+      toolSamplingPolicy: data.toolSamplingPolicy.present
+          ? data.toolSamplingPolicy.value
+          : this.toolSamplingPolicy,
     );
   }
 
@@ -1855,14 +1899,21 @@ class WorkspaceModelSelectionTable extends DataClass
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('modelId: $modelId, ')
-          ..write('modelConnectionId: $modelConnectionId')
+          ..write('modelConnectionId: $modelConnectionId, ')
+          ..write('toolSamplingPolicy: $toolSamplingPolicy')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, createdAt, updatedAt, modelId, modelConnectionId);
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    modelId,
+    modelConnectionId,
+    toolSamplingPolicy,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1871,7 +1922,8 @@ class WorkspaceModelSelectionTable extends DataClass
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.modelId == this.modelId &&
-          other.modelConnectionId == this.modelConnectionId);
+          other.modelConnectionId == this.modelConnectionId &&
+          other.toolSamplingPolicy == this.toolSamplingPolicy);
 }
 
 class WorkspaceModelSelectionsCompanion
@@ -1881,6 +1933,7 @@ class WorkspaceModelSelectionsCompanion
   final Value<DateTime> updatedAt;
   final Value<String> modelId;
   final Value<String> modelConnectionId;
+  final Value<String?> toolSamplingPolicy;
   final Value<int> rowid;
   const WorkspaceModelSelectionsCompanion({
     this.id = const Value.absent(),
@@ -1888,6 +1941,7 @@ class WorkspaceModelSelectionsCompanion
     this.updatedAt = const Value.absent(),
     this.modelId = const Value.absent(),
     this.modelConnectionId = const Value.absent(),
+    this.toolSamplingPolicy = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkspaceModelSelectionsCompanion.insert({
@@ -1896,6 +1950,7 @@ class WorkspaceModelSelectionsCompanion
     this.updatedAt = const Value.absent(),
     required String modelId,
     required String modelConnectionId,
+    this.toolSamplingPolicy = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : modelId = Value(modelId),
        modelConnectionId = Value(modelConnectionId);
@@ -1905,6 +1960,7 @@ class WorkspaceModelSelectionsCompanion
     Expression<DateTime>? updatedAt,
     Expression<String>? modelId,
     Expression<String>? modelConnectionId,
+    Expression<String>? toolSamplingPolicy,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1913,6 +1969,8 @@ class WorkspaceModelSelectionsCompanion
       if (updatedAt != null) 'updated_at': updatedAt,
       if (modelId != null) 'model_id': modelId,
       if (modelConnectionId != null) 'model_connection_id': modelConnectionId,
+      if (toolSamplingPolicy != null)
+        'tool_sampling_policy': toolSamplingPolicy,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1923,6 +1981,7 @@ class WorkspaceModelSelectionsCompanion
     Value<DateTime>? updatedAt,
     Value<String>? modelId,
     Value<String>? modelConnectionId,
+    Value<String?>? toolSamplingPolicy,
     Value<int>? rowid,
   }) {
     return WorkspaceModelSelectionsCompanion(
@@ -1931,6 +1990,7 @@ class WorkspaceModelSelectionsCompanion
       updatedAt: updatedAt ?? this.updatedAt,
       modelId: modelId ?? this.modelId,
       modelConnectionId: modelConnectionId ?? this.modelConnectionId,
+      toolSamplingPolicy: toolSamplingPolicy ?? this.toolSamplingPolicy,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1953,6 +2013,9 @@ class WorkspaceModelSelectionsCompanion
     if (modelConnectionId.present) {
       map['model_connection_id'] = Variable<String>(modelConnectionId.value);
     }
+    if (toolSamplingPolicy.present) {
+      map['tool_sampling_policy'] = Variable<String>(toolSamplingPolicy.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1967,6 +2030,7 @@ class WorkspaceModelSelectionsCompanion
           ..write('updatedAt: $updatedAt, ')
           ..write('modelId: $modelId, ')
           ..write('modelConnectionId: $modelConnectionId, ')
+          ..write('toolSamplingPolicy: $toolSamplingPolicy, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4444,6 +4508,18 @@ class $ConversationsTable extends Conversations
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _toolAccessModeMeta = const VerificationMeta(
+    'toolAccessMode',
+  );
+  @override
+  late final GeneratedColumn<String> toolAccessMode = GeneratedColumn<String>(
+    'tool_access_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('default'),
+  );
   static const VerificationMeta _isPinnedMeta = const VerificationMeta(
     'isPinned',
   );
@@ -4475,6 +4551,7 @@ class $ConversationsTable extends Conversations
     forkThroughMessageId,
     forkMaterializedAt,
     activeCompactionCheckpointId,
+    toolAccessMode,
     isPinned,
   ];
   @override
@@ -4598,6 +4675,15 @@ class $ConversationsTable extends Conversations
         ),
       );
     }
+    if (data.containsKey('tool_access_mode')) {
+      context.handle(
+        _toolAccessModeMeta,
+        toolAccessMode.isAcceptableOrUnknown(
+          data['tool_access_mode']!,
+          _toolAccessModeMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_pinned')) {
       context.handle(
         _isPinnedMeta,
@@ -4669,6 +4755,10 @@ class $ConversationsTable extends Conversations
         DriftSqlType.string,
         data['${effectivePrefix}active_compaction_checkpoint_id'],
       ),
+      toolAccessMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_access_mode'],
+      )!,
       isPinned: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_pinned'],
@@ -4717,6 +4807,7 @@ class ConversationsTable extends DataClass
   /// Non-null after the source history has been materialized into this fork.
   final DateTime? forkMaterializedAt;
   final String? activeCompactionCheckpointId;
+  final String toolAccessMode;
   final bool isPinned;
   const ConversationsTable({
     required this.id,
@@ -4733,6 +4824,7 @@ class ConversationsTable extends DataClass
     this.forkThroughMessageId,
     this.forkMaterializedAt,
     this.activeCompactionCheckpointId,
+    required this.toolAccessMode,
     required this.isPinned,
   });
   @override
@@ -4774,6 +4866,7 @@ class ConversationsTable extends DataClass
         activeCompactionCheckpointId,
       );
     }
+    map['tool_access_mode'] = Variable<String>(toolAccessMode);
     map['is_pinned'] = Variable<bool>(isPinned);
     return map;
   }
@@ -4813,6 +4906,7 @@ class ConversationsTable extends DataClass
           activeCompactionCheckpointId == null && nullToAbsent
           ? const Value.absent()
           : Value(activeCompactionCheckpointId),
+      toolAccessMode: Value(toolAccessMode),
       isPinned: Value(isPinned),
     );
   }
@@ -4849,6 +4943,7 @@ class ConversationsTable extends DataClass
       activeCompactionCheckpointId: serializer.fromJson<String?>(
         json['activeCompactionCheckpointId'],
       ),
+      toolAccessMode: serializer.fromJson<String>(json['toolAccessMode']),
       isPinned: serializer.fromJson<bool>(json['isPinned']),
     );
   }
@@ -4874,6 +4969,7 @@ class ConversationsTable extends DataClass
       'activeCompactionCheckpointId': serializer.toJson<String?>(
         activeCompactionCheckpointId,
       ),
+      'toolAccessMode': serializer.toJson<String>(toolAccessMode),
       'isPinned': serializer.toJson<bool>(isPinned),
     };
   }
@@ -4893,6 +4989,7 @@ class ConversationsTable extends DataClass
     Value<String?> forkThroughMessageId = const Value.absent(),
     Value<DateTime?> forkMaterializedAt = const Value.absent(),
     Value<String?> activeCompactionCheckpointId = const Value.absent(),
+    String? toolAccessMode,
     bool? isPinned,
   }) => ConversationsTable(
     id: id ?? this.id,
@@ -4923,6 +5020,7 @@ class ConversationsTable extends DataClass
     activeCompactionCheckpointId: activeCompactionCheckpointId.present
         ? activeCompactionCheckpointId.value
         : this.activeCompactionCheckpointId,
+    toolAccessMode: toolAccessMode ?? this.toolAccessMode,
     isPinned: isPinned ?? this.isPinned,
   );
   ConversationsTable copyWithCompanion(ConversationsCompanion data) {
@@ -4957,6 +5055,9 @@ class ConversationsTable extends DataClass
       activeCompactionCheckpointId: data.activeCompactionCheckpointId.present
           ? data.activeCompactionCheckpointId.value
           : this.activeCompactionCheckpointId,
+      toolAccessMode: data.toolAccessMode.present
+          ? data.toolAccessMode.value
+          : this.toolAccessMode,
       isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
     );
   }
@@ -4980,6 +5081,7 @@ class ConversationsTable extends DataClass
           ..write(
             'activeCompactionCheckpointId: $activeCompactionCheckpointId, ',
           )
+          ..write('toolAccessMode: $toolAccessMode, ')
           ..write('isPinned: $isPinned')
           ..write(')'))
         .toString();
@@ -5001,6 +5103,7 @@ class ConversationsTable extends DataClass
     forkThroughMessageId,
     forkMaterializedAt,
     activeCompactionCheckpointId,
+    toolAccessMode,
     isPinned,
   );
   @override
@@ -5022,6 +5125,7 @@ class ConversationsTable extends DataClass
           other.forkMaterializedAt == this.forkMaterializedAt &&
           other.activeCompactionCheckpointId ==
               this.activeCompactionCheckpointId &&
+          other.toolAccessMode == this.toolAccessMode &&
           other.isPinned == this.isPinned);
 }
 
@@ -5040,6 +5144,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   final Value<String?> forkThroughMessageId;
   final Value<DateTime?> forkMaterializedAt;
   final Value<String?> activeCompactionCheckpointId;
+  final Value<String> toolAccessMode;
   final Value<bool> isPinned;
   final Value<int> rowid;
   const ConversationsCompanion({
@@ -5057,6 +5162,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.forkThroughMessageId = const Value.absent(),
     this.forkMaterializedAt = const Value.absent(),
     this.activeCompactionCheckpointId = const Value.absent(),
+    this.toolAccessMode = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -5075,6 +5181,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.forkThroughMessageId = const Value.absent(),
     this.forkMaterializedAt = const Value.absent(),
     this.activeCompactionCheckpointId = const Value.absent(),
+    this.toolAccessMode = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -5094,6 +5201,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Expression<String>? forkThroughMessageId,
     Expression<DateTime>? forkMaterializedAt,
     Expression<String>? activeCompactionCheckpointId,
+    Expression<String>? toolAccessMode,
     Expression<bool>? isPinned,
     Expression<int>? rowid,
   }) {
@@ -5118,6 +5226,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
         'fork_materialized_at': forkMaterializedAt,
       if (activeCompactionCheckpointId != null)
         'active_compaction_checkpoint_id': activeCompactionCheckpointId,
+      if (toolAccessMode != null) 'tool_access_mode': toolAccessMode,
       if (isPinned != null) 'is_pinned': isPinned,
       if (rowid != null) 'rowid': rowid,
     });
@@ -5138,6 +5247,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Value<String?>? forkThroughMessageId,
     Value<DateTime?>? forkMaterializedAt,
     Value<String?>? activeCompactionCheckpointId,
+    Value<String>? toolAccessMode,
     Value<bool>? isPinned,
     Value<int>? rowid,
   }) {
@@ -5158,6 +5268,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       forkMaterializedAt: forkMaterializedAt ?? this.forkMaterializedAt,
       activeCompactionCheckpointId:
           activeCompactionCheckpointId ?? this.activeCompactionCheckpointId,
+      toolAccessMode: toolAccessMode ?? this.toolAccessMode,
       isPinned: isPinned ?? this.isPinned,
       rowid: rowid ?? this.rowid,
     );
@@ -5220,6 +5331,9 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
         activeCompactionCheckpointId.value,
       );
     }
+    if (toolAccessMode.present) {
+      map['tool_access_mode'] = Variable<String>(toolAccessMode.value);
+    }
     if (isPinned.present) {
       map['is_pinned'] = Variable<bool>(isPinned.value);
     }
@@ -5248,6 +5362,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
           ..write(
             'activeCompactionCheckpointId: $activeCompactionCheckpointId, ',
           )
+          ..write('toolAccessMode: $toolAccessMode, ')
           ..write('isPinned: $isPinned, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -9583,6 +9698,21 @@ class $MessagesTable extends Messages
       'CHECK ("is_user" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _isBookmarkedMeta = const VerificationMeta(
+    'isBookmarked',
+  );
+  @override
+  late final GeneratedColumn<bool> isBookmarked = GeneratedColumn<bool>(
+    'is_bookmarked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_bookmarked" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   late final GeneratedColumnWithTypeConverter<MessageTableStatus, String>
   status = GeneratedColumn<String>(
@@ -9612,6 +9742,7 @@ class $MessagesTable extends Messages
     content,
     messageType,
     isUser,
+    isBookmarked,
     status,
     metadata,
   ];
@@ -9669,6 +9800,15 @@ class $MessagesTable extends Messages
     } else if (isInserting) {
       context.missing(_isUserMeta);
     }
+    if (data.containsKey('is_bookmarked')) {
+      context.handle(
+        _isBookmarkedMeta,
+        isBookmarked.isAcceptableOrUnknown(
+          data['is_bookmarked']!,
+          _isBookmarkedMeta,
+        ),
+      );
+    }
     if (data.containsKey('metadata')) {
       context.handle(
         _metadataMeta,
@@ -9714,6 +9854,10 @@ class $MessagesTable extends Messages
         DriftSqlType.bool,
         data['${effectivePrefix}is_user'],
       )!,
+      isBookmarked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_bookmarked'],
+      )!,
       status: $MessagesTable.$converterstatus.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -9755,6 +9899,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
   final String content;
   final MessagesTableType messageType;
   final bool isUser;
+  final bool isBookmarked;
   final MessageTableStatus status;
   final String? metadata;
   const MessagesTable({
@@ -9765,6 +9910,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     required this.content,
     required this.messageType,
     required this.isUser,
+    required this.isBookmarked,
     required this.status,
     this.metadata,
   });
@@ -9782,6 +9928,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
       );
     }
     map['is_user'] = Variable<bool>(isUser);
+    map['is_bookmarked'] = Variable<bool>(isBookmarked);
     {
       map['status'] = Variable<String>(
         $MessagesTable.$converterstatus.toSql(status),
@@ -9802,6 +9949,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
       content: Value(content),
       messageType: Value(messageType),
       isUser: Value(isUser),
+      isBookmarked: Value(isBookmarked),
       status: Value(status),
       metadata: metadata == null && nullToAbsent
           ? const Value.absent()
@@ -9824,6 +9972,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
         serializer.fromJson<String>(json['messageType']),
       ),
       isUser: serializer.fromJson<bool>(json['isUser']),
+      isBookmarked: serializer.fromJson<bool>(json['isBookmarked']),
       status: $MessagesTable.$converterstatus.fromJson(
         serializer.fromJson<String>(json['status']),
       ),
@@ -9843,6 +9992,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
         $MessagesTable.$convertermessageType.toJson(messageType),
       ),
       'isUser': serializer.toJson<bool>(isUser),
+      'isBookmarked': serializer.toJson<bool>(isBookmarked),
       'status': serializer.toJson<String>(
         $MessagesTable.$converterstatus.toJson(status),
       ),
@@ -9858,6 +10008,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     String? content,
     MessagesTableType? messageType,
     bool? isUser,
+    bool? isBookmarked,
     MessageTableStatus? status,
     Value<String?> metadata = const Value.absent(),
   }) => MessagesTable(
@@ -9868,6 +10019,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     content: content ?? this.content,
     messageType: messageType ?? this.messageType,
     isUser: isUser ?? this.isUser,
+    isBookmarked: isBookmarked ?? this.isBookmarked,
     status: status ?? this.status,
     metadata: metadata.present ? metadata.value : this.metadata,
   );
@@ -9884,6 +10036,9 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
           ? data.messageType.value
           : this.messageType,
       isUser: data.isUser.present ? data.isUser.value : this.isUser,
+      isBookmarked: data.isBookmarked.present
+          ? data.isBookmarked.value
+          : this.isBookmarked,
       status: data.status.present ? data.status.value : this.status,
       metadata: data.metadata.present ? data.metadata.value : this.metadata,
     );
@@ -9899,6 +10054,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
           ..write('content: $content, ')
           ..write('messageType: $messageType, ')
           ..write('isUser: $isUser, ')
+          ..write('isBookmarked: $isBookmarked, ')
           ..write('status: $status, ')
           ..write('metadata: $metadata')
           ..write(')'))
@@ -9914,6 +10070,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     content,
     messageType,
     isUser,
+    isBookmarked,
     status,
     metadata,
   );
@@ -9928,6 +10085,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
           other.content == this.content &&
           other.messageType == this.messageType &&
           other.isUser == this.isUser &&
+          other.isBookmarked == this.isBookmarked &&
           other.status == this.status &&
           other.metadata == this.metadata);
 }
@@ -9940,6 +10098,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
   final Value<String> content;
   final Value<MessagesTableType> messageType;
   final Value<bool> isUser;
+  final Value<bool> isBookmarked;
   final Value<MessageTableStatus> status;
   final Value<String?> metadata;
   final Value<int> rowid;
@@ -9951,6 +10110,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     this.content = const Value.absent(),
     this.messageType = const Value.absent(),
     this.isUser = const Value.absent(),
+    this.isBookmarked = const Value.absent(),
     this.status = const Value.absent(),
     this.metadata = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -9963,6 +10123,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     required String content,
     required MessagesTableType messageType,
     required bool isUser,
+    this.isBookmarked = const Value.absent(),
     required MessageTableStatus status,
     this.metadata = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -9979,6 +10140,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     Expression<String>? content,
     Expression<String>? messageType,
     Expression<bool>? isUser,
+    Expression<bool>? isBookmarked,
     Expression<String>? status,
     Expression<String>? metadata,
     Expression<int>? rowid,
@@ -9991,6 +10153,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
       if (content != null) 'content': content,
       if (messageType != null) 'message_type': messageType,
       if (isUser != null) 'is_user': isUser,
+      if (isBookmarked != null) 'is_bookmarked': isBookmarked,
       if (status != null) 'status': status,
       if (metadata != null) 'metadata': metadata,
       if (rowid != null) 'rowid': rowid,
@@ -10005,6 +10168,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     Value<String>? content,
     Value<MessagesTableType>? messageType,
     Value<bool>? isUser,
+    Value<bool>? isBookmarked,
     Value<MessageTableStatus>? status,
     Value<String?>? metadata,
     Value<int>? rowid,
@@ -10017,6 +10181,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
       content: content ?? this.content,
       messageType: messageType ?? this.messageType,
       isUser: isUser ?? this.isUser,
+      isBookmarked: isBookmarked ?? this.isBookmarked,
       status: status ?? this.status,
       metadata: metadata ?? this.metadata,
       rowid: rowid ?? this.rowid,
@@ -10049,6 +10214,9 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     if (isUser.present) {
       map['is_user'] = Variable<bool>(isUser.value);
     }
+    if (isBookmarked.present) {
+      map['is_bookmarked'] = Variable<bool>(isBookmarked.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(
         $MessagesTable.$converterstatus.toSql(status.value),
@@ -10073,6 +10241,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
           ..write('content: $content, ')
           ..write('messageType: $messageType, ')
           ..write('isUser: $isUser, ')
+          ..write('isBookmarked: $isBookmarked, ')
           ..write('status: $status, ')
           ..write('metadata: $metadata, ')
           ..write('rowid: $rowid')
@@ -10134,6 +10303,17 @@ class $MessageAttachmentsTable extends MessageAttachments
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'REFERENCES messages (id) ON DELETE CASCADE',
     ),
+  );
+  static const VerificationMeta _toolCallIdMeta = const VerificationMeta(
+    'toolCallId',
+  );
+  @override
+  late final GeneratedColumn<String> toolCallId = GeneratedColumn<String>(
+    'tool_call_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _localPathMeta = const VerificationMeta(
     'localPath',
@@ -10208,6 +10388,7 @@ class $MessageAttachmentsTable extends MessageAttachments
     createdAt,
     updatedAt,
     messageId,
+    toolCallId,
     localPath,
     fileName,
     displayName,
@@ -10249,6 +10430,15 @@ class $MessageAttachmentsTable extends MessageAttachments
       );
     } else if (isInserting) {
       context.missing(_messageIdMeta);
+    }
+    if (data.containsKey('tool_call_id')) {
+      context.handle(
+        _toolCallIdMeta,
+        toolCallId.isAcceptableOrUnknown(
+          data['tool_call_id']!,
+          _toolCallIdMeta,
+        ),
+      );
     }
     if (data.containsKey('local_path')) {
       context.handle(
@@ -10327,6 +10517,10 @@ class $MessageAttachmentsTable extends MessageAttachments
         DriftSqlType.string,
         data['${effectivePrefix}message_id'],
       )!,
+      toolCallId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_call_id'],
+      ),
       localPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}local_path'],
@@ -10371,6 +10565,7 @@ class MessageAttachmentsTable extends DataClass
   /// When was last updated timestamp.
   final DateTime updatedAt;
   final String messageId;
+  final String? toolCallId;
   final String localPath;
   final String fileName;
   final String displayName;
@@ -10382,6 +10577,7 @@ class MessageAttachmentsTable extends DataClass
     required this.createdAt,
     required this.updatedAt,
     required this.messageId,
+    this.toolCallId,
     required this.localPath,
     required this.fileName,
     required this.displayName,
@@ -10396,6 +10592,9 @@ class MessageAttachmentsTable extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['message_id'] = Variable<String>(messageId);
+    if (!nullToAbsent || toolCallId != null) {
+      map['tool_call_id'] = Variable<String>(toolCallId);
+    }
     map['local_path'] = Variable<String>(localPath);
     map['file_name'] = Variable<String>(fileName);
     map['display_name'] = Variable<String>(displayName);
@@ -10411,6 +10610,9 @@ class MessageAttachmentsTable extends DataClass
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       messageId: Value(messageId),
+      toolCallId: toolCallId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolCallId),
       localPath: Value(localPath),
       fileName: Value(fileName),
       displayName: Value(displayName),
@@ -10430,6 +10632,7 @@ class MessageAttachmentsTable extends DataClass
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       messageId: serializer.fromJson<String>(json['messageId']),
+      toolCallId: serializer.fromJson<String?>(json['toolCallId']),
       localPath: serializer.fromJson<String>(json['localPath']),
       fileName: serializer.fromJson<String>(json['fileName']),
       displayName: serializer.fromJson<String>(json['displayName']),
@@ -10446,6 +10649,7 @@ class MessageAttachmentsTable extends DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'messageId': serializer.toJson<String>(messageId),
+      'toolCallId': serializer.toJson<String?>(toolCallId),
       'localPath': serializer.toJson<String>(localPath),
       'fileName': serializer.toJson<String>(fileName),
       'displayName': serializer.toJson<String>(displayName),
@@ -10460,6 +10664,7 @@ class MessageAttachmentsTable extends DataClass
     DateTime? createdAt,
     DateTime? updatedAt,
     String? messageId,
+    Value<String?> toolCallId = const Value.absent(),
     String? localPath,
     String? fileName,
     String? displayName,
@@ -10471,6 +10676,7 @@ class MessageAttachmentsTable extends DataClass
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     messageId: messageId ?? this.messageId,
+    toolCallId: toolCallId.present ? toolCallId.value : this.toolCallId,
     localPath: localPath ?? this.localPath,
     fileName: fileName ?? this.fileName,
     displayName: displayName ?? this.displayName,
@@ -10484,6 +10690,9 @@ class MessageAttachmentsTable extends DataClass
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       messageId: data.messageId.present ? data.messageId.value : this.messageId,
+      toolCallId: data.toolCallId.present
+          ? data.toolCallId.value
+          : this.toolCallId,
       localPath: data.localPath.present ? data.localPath.value : this.localPath,
       fileName: data.fileName.present ? data.fileName.value : this.fileName,
       displayName: data.displayName.present
@@ -10502,6 +10711,7 @@ class MessageAttachmentsTable extends DataClass
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('messageId: $messageId, ')
+          ..write('toolCallId: $toolCallId, ')
           ..write('localPath: $localPath, ')
           ..write('fileName: $fileName, ')
           ..write('displayName: $displayName, ')
@@ -10518,6 +10728,7 @@ class MessageAttachmentsTable extends DataClass
     createdAt,
     updatedAt,
     messageId,
+    toolCallId,
     localPath,
     fileName,
     displayName,
@@ -10533,6 +10744,7 @@ class MessageAttachmentsTable extends DataClass
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.messageId == this.messageId &&
+          other.toolCallId == this.toolCallId &&
           other.localPath == this.localPath &&
           other.fileName == this.fileName &&
           other.displayName == this.displayName &&
@@ -10547,6 +10759,7 @@ class MessageAttachmentsCompanion
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String> messageId;
+  final Value<String?> toolCallId;
   final Value<String> localPath;
   final Value<String> fileName;
   final Value<String> displayName;
@@ -10559,6 +10772,7 @@ class MessageAttachmentsCompanion
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.messageId = const Value.absent(),
+    this.toolCallId = const Value.absent(),
     this.localPath = const Value.absent(),
     this.fileName = const Value.absent(),
     this.displayName = const Value.absent(),
@@ -10572,6 +10786,7 @@ class MessageAttachmentsCompanion
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     required String messageId,
+    this.toolCallId = const Value.absent(),
     required String localPath,
     required String fileName,
     this.displayName = const Value.absent(),
@@ -10590,6 +10805,7 @@ class MessageAttachmentsCompanion
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? messageId,
+    Expression<String>? toolCallId,
     Expression<String>? localPath,
     Expression<String>? fileName,
     Expression<String>? displayName,
@@ -10603,6 +10819,7 @@ class MessageAttachmentsCompanion
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (messageId != null) 'message_id': messageId,
+      if (toolCallId != null) 'tool_call_id': toolCallId,
       if (localPath != null) 'local_path': localPath,
       if (fileName != null) 'file_name': fileName,
       if (displayName != null) 'display_name': displayName,
@@ -10618,6 +10835,7 @@ class MessageAttachmentsCompanion
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String>? messageId,
+    Value<String?>? toolCallId,
     Value<String>? localPath,
     Value<String>? fileName,
     Value<String>? displayName,
@@ -10631,6 +10849,7 @@ class MessageAttachmentsCompanion
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       messageId: messageId ?? this.messageId,
+      toolCallId: toolCallId ?? this.toolCallId,
       localPath: localPath ?? this.localPath,
       fileName: fileName ?? this.fileName,
       displayName: displayName ?? this.displayName,
@@ -10655,6 +10874,9 @@ class MessageAttachmentsCompanion
     }
     if (messageId.present) {
       map['message_id'] = Variable<String>(messageId.value);
+    }
+    if (toolCallId.present) {
+      map['tool_call_id'] = Variable<String>(toolCallId.value);
     }
     if (localPath.present) {
       map['local_path'] = Variable<String>(localPath.value);
@@ -10687,6 +10909,7 @@ class MessageAttachmentsCompanion
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('messageId: $messageId, ')
+          ..write('toolCallId: $toolCallId, ')
           ..write('localPath: $localPath, ')
           ..write('fileName: $fileName, ')
           ..write('displayName: $displayName, ')
@@ -15371,6 +15594,879 @@ class ModelUsageRecordsCompanion
   }
 }
 
+class $BackgroundWorksTable extends BackgroundWorks
+    with TableInfo<$BackgroundWorksTable, BackgroundWorkTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BackgroundWorksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES conversations (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _childConversationIdMeta =
+      const VerificationMeta('childConversationId');
+  @override
+  late final GeneratedColumn<String> childConversationId =
+      GeneratedColumn<String>(
+        'child_conversation_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES conversations (id) ON DELETE SET NULL',
+        ),
+      );
+  static const VerificationMeta _originatingMessageIdMeta =
+      const VerificationMeta('originatingMessageId');
+  @override
+  late final GeneratedColumn<String> originatingMessageId =
+      GeneratedColumn<String>(
+        'originating_message_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES messages (id) ON DELETE SET NULL',
+        ),
+      );
+  static const VerificationMeta _toolCallIdMeta = const VerificationMeta(
+    'toolCallId',
+  );
+  @override
+  late final GeneratedColumn<String> toolCallId = GeneratedColumn<String>(
+    'tool_call_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _toolKindMeta = const VerificationMeta(
+    'toolKind',
+  );
+  @override
+  late final GeneratedColumn<String> toolKind = GeneratedColumn<String>(
+    'tool_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusPreviewMeta = const VerificationMeta(
+    'statusPreview',
+  );
+  @override
+  late final GeneratedColumn<String> statusPreview = GeneratedColumn<String>(
+    'status_preview',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '    CHECK(status_preview IS NULL OR\n      length(CAST(status_preview AS BLOB)) <= 512)\n  ',
+  );
+  static const VerificationMeta _resultContentMeta = const VerificationMeta(
+    'resultContent',
+  );
+  @override
+  late final GeneratedColumn<String> resultContent = GeneratedColumn<String>(
+    'result_content',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '    CHECK(result_content IS NULL OR\n      length(CAST(result_content AS BLOB)) <= 262144)\n  ',
+  );
+  static const VerificationMeta _resultByteLengthMeta = const VerificationMeta(
+    'resultByteLength',
+  );
+  @override
+  late final GeneratedColumn<int> resultByteLength = GeneratedColumn<int>(
+    'result_byte_length',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _errorCodeMeta = const VerificationMeta(
+    'errorCode',
+  );
+  @override
+  late final GeneratedColumn<String> errorCode = GeneratedColumn<String>(
+    'error_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    conversationId,
+    childConversationId,
+    originatingMessageId,
+    toolCallId,
+    toolKind,
+    status,
+    statusPreview,
+    resultContent,
+    resultByteLength,
+    errorCode,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'background_works';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BackgroundWorkTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('child_conversation_id')) {
+      context.handle(
+        _childConversationIdMeta,
+        childConversationId.isAcceptableOrUnknown(
+          data['child_conversation_id']!,
+          _childConversationIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('originating_message_id')) {
+      context.handle(
+        _originatingMessageIdMeta,
+        originatingMessageId.isAcceptableOrUnknown(
+          data['originating_message_id']!,
+          _originatingMessageIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tool_call_id')) {
+      context.handle(
+        _toolCallIdMeta,
+        toolCallId.isAcceptableOrUnknown(
+          data['tool_call_id']!,
+          _toolCallIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_toolCallIdMeta);
+    }
+    if (data.containsKey('tool_kind')) {
+      context.handle(
+        _toolKindMeta,
+        toolKind.isAcceptableOrUnknown(data['tool_kind']!, _toolKindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_toolKindMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('status_preview')) {
+      context.handle(
+        _statusPreviewMeta,
+        statusPreview.isAcceptableOrUnknown(
+          data['status_preview']!,
+          _statusPreviewMeta,
+        ),
+      );
+    }
+    if (data.containsKey('result_content')) {
+      context.handle(
+        _resultContentMeta,
+        resultContent.isAcceptableOrUnknown(
+          data['result_content']!,
+          _resultContentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('result_byte_length')) {
+      context.handle(
+        _resultByteLengthMeta,
+        resultByteLength.isAcceptableOrUnknown(
+          data['result_byte_length']!,
+          _resultByteLengthMeta,
+        ),
+      );
+    }
+    if (data.containsKey('error_code')) {
+      context.handle(
+        _errorCodeMeta,
+        errorCode.isAcceptableOrUnknown(data['error_code']!, _errorCodeMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BackgroundWorkTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BackgroundWorkTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      )!,
+      childConversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}child_conversation_id'],
+      ),
+      originatingMessageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}originating_message_id'],
+      ),
+      toolCallId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_call_id'],
+      )!,
+      toolKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_kind'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      statusPreview: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status_preview'],
+      ),
+      resultContent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}result_content'],
+      ),
+      resultByteLength: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}result_byte_length'],
+      )!,
+      errorCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error_code'],
+      ),
+    );
+  }
+
+  @override
+  $BackgroundWorksTable createAlias(String alias) {
+    return $BackgroundWorksTable(attachedDatabase, alias);
+  }
+}
+
+class BackgroundWorkTable extends DataClass
+    implements Insertable<BackgroundWorkTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String workspaceId;
+  final String conversationId;
+  final String? childConversationId;
+  final String? originatingMessageId;
+  final String toolCallId;
+  final String toolKind;
+  final String status;
+  final String? statusPreview;
+  final String? resultContent;
+  final int resultByteLength;
+  final String? errorCode;
+  const BackgroundWorkTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.workspaceId,
+    required this.conversationId,
+    this.childConversationId,
+    this.originatingMessageId,
+    required this.toolCallId,
+    required this.toolKind,
+    required this.status,
+    this.statusPreview,
+    this.resultContent,
+    required this.resultByteLength,
+    this.errorCode,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['conversation_id'] = Variable<String>(conversationId);
+    if (!nullToAbsent || childConversationId != null) {
+      map['child_conversation_id'] = Variable<String>(childConversationId);
+    }
+    if (!nullToAbsent || originatingMessageId != null) {
+      map['originating_message_id'] = Variable<String>(originatingMessageId);
+    }
+    map['tool_call_id'] = Variable<String>(toolCallId);
+    map['tool_kind'] = Variable<String>(toolKind);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || statusPreview != null) {
+      map['status_preview'] = Variable<String>(statusPreview);
+    }
+    if (!nullToAbsent || resultContent != null) {
+      map['result_content'] = Variable<String>(resultContent);
+    }
+    map['result_byte_length'] = Variable<int>(resultByteLength);
+    if (!nullToAbsent || errorCode != null) {
+      map['error_code'] = Variable<String>(errorCode);
+    }
+    return map;
+  }
+
+  BackgroundWorksCompanion toCompanion(bool nullToAbsent) {
+    return BackgroundWorksCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      workspaceId: Value(workspaceId),
+      conversationId: Value(conversationId),
+      childConversationId: childConversationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(childConversationId),
+      originatingMessageId: originatingMessageId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originatingMessageId),
+      toolCallId: Value(toolCallId),
+      toolKind: Value(toolKind),
+      status: Value(status),
+      statusPreview: statusPreview == null && nullToAbsent
+          ? const Value.absent()
+          : Value(statusPreview),
+      resultContent: resultContent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(resultContent),
+      resultByteLength: Value(resultByteLength),
+      errorCode: errorCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(errorCode),
+    );
+  }
+
+  factory BackgroundWorkTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BackgroundWorkTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      conversationId: serializer.fromJson<String>(json['conversationId']),
+      childConversationId: serializer.fromJson<String?>(
+        json['childConversationId'],
+      ),
+      originatingMessageId: serializer.fromJson<String?>(
+        json['originatingMessageId'],
+      ),
+      toolCallId: serializer.fromJson<String>(json['toolCallId']),
+      toolKind: serializer.fromJson<String>(json['toolKind']),
+      status: serializer.fromJson<String>(json['status']),
+      statusPreview: serializer.fromJson<String?>(json['statusPreview']),
+      resultContent: serializer.fromJson<String?>(json['resultContent']),
+      resultByteLength: serializer.fromJson<int>(json['resultByteLength']),
+      errorCode: serializer.fromJson<String?>(json['errorCode']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'conversationId': serializer.toJson<String>(conversationId),
+      'childConversationId': serializer.toJson<String?>(childConversationId),
+      'originatingMessageId': serializer.toJson<String?>(originatingMessageId),
+      'toolCallId': serializer.toJson<String>(toolCallId),
+      'toolKind': serializer.toJson<String>(toolKind),
+      'status': serializer.toJson<String>(status),
+      'statusPreview': serializer.toJson<String?>(statusPreview),
+      'resultContent': serializer.toJson<String?>(resultContent),
+      'resultByteLength': serializer.toJson<int>(resultByteLength),
+      'errorCode': serializer.toJson<String?>(errorCode),
+    };
+  }
+
+  BackgroundWorkTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? workspaceId,
+    String? conversationId,
+    Value<String?> childConversationId = const Value.absent(),
+    Value<String?> originatingMessageId = const Value.absent(),
+    String? toolCallId,
+    String? toolKind,
+    String? status,
+    Value<String?> statusPreview = const Value.absent(),
+    Value<String?> resultContent = const Value.absent(),
+    int? resultByteLength,
+    Value<String?> errorCode = const Value.absent(),
+  }) => BackgroundWorkTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    workspaceId: workspaceId ?? this.workspaceId,
+    conversationId: conversationId ?? this.conversationId,
+    childConversationId: childConversationId.present
+        ? childConversationId.value
+        : this.childConversationId,
+    originatingMessageId: originatingMessageId.present
+        ? originatingMessageId.value
+        : this.originatingMessageId,
+    toolCallId: toolCallId ?? this.toolCallId,
+    toolKind: toolKind ?? this.toolKind,
+    status: status ?? this.status,
+    statusPreview: statusPreview.present
+        ? statusPreview.value
+        : this.statusPreview,
+    resultContent: resultContent.present
+        ? resultContent.value
+        : this.resultContent,
+    resultByteLength: resultByteLength ?? this.resultByteLength,
+    errorCode: errorCode.present ? errorCode.value : this.errorCode,
+  );
+  BackgroundWorkTable copyWithCompanion(BackgroundWorksCompanion data) {
+    return BackgroundWorkTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      childConversationId: data.childConversationId.present
+          ? data.childConversationId.value
+          : this.childConversationId,
+      originatingMessageId: data.originatingMessageId.present
+          ? data.originatingMessageId.value
+          : this.originatingMessageId,
+      toolCallId: data.toolCallId.present
+          ? data.toolCallId.value
+          : this.toolCallId,
+      toolKind: data.toolKind.present ? data.toolKind.value : this.toolKind,
+      status: data.status.present ? data.status.value : this.status,
+      statusPreview: data.statusPreview.present
+          ? data.statusPreview.value
+          : this.statusPreview,
+      resultContent: data.resultContent.present
+          ? data.resultContent.value
+          : this.resultContent,
+      resultByteLength: data.resultByteLength.present
+          ? data.resultByteLength.value
+          : this.resultByteLength,
+      errorCode: data.errorCode.present ? data.errorCode.value : this.errorCode,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BackgroundWorkTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('childConversationId: $childConversationId, ')
+          ..write('originatingMessageId: $originatingMessageId, ')
+          ..write('toolCallId: $toolCallId, ')
+          ..write('toolKind: $toolKind, ')
+          ..write('status: $status, ')
+          ..write('statusPreview: $statusPreview, ')
+          ..write('resultContent: $resultContent, ')
+          ..write('resultByteLength: $resultByteLength, ')
+          ..write('errorCode: $errorCode')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    conversationId,
+    childConversationId,
+    originatingMessageId,
+    toolCallId,
+    toolKind,
+    status,
+    statusPreview,
+    resultContent,
+    resultByteLength,
+    errorCode,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BackgroundWorkTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.workspaceId == this.workspaceId &&
+          other.conversationId == this.conversationId &&
+          other.childConversationId == this.childConversationId &&
+          other.originatingMessageId == this.originatingMessageId &&
+          other.toolCallId == this.toolCallId &&
+          other.toolKind == this.toolKind &&
+          other.status == this.status &&
+          other.statusPreview == this.statusPreview &&
+          other.resultContent == this.resultContent &&
+          other.resultByteLength == this.resultByteLength &&
+          other.errorCode == this.errorCode);
+}
+
+class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> workspaceId;
+  final Value<String> conversationId;
+  final Value<String?> childConversationId;
+  final Value<String?> originatingMessageId;
+  final Value<String> toolCallId;
+  final Value<String> toolKind;
+  final Value<String> status;
+  final Value<String?> statusPreview;
+  final Value<String?> resultContent;
+  final Value<int> resultByteLength;
+  final Value<String?> errorCode;
+  final Value<int> rowid;
+  const BackgroundWorksCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.childConversationId = const Value.absent(),
+    this.originatingMessageId = const Value.absent(),
+    this.toolCallId = const Value.absent(),
+    this.toolKind = const Value.absent(),
+    this.status = const Value.absent(),
+    this.statusPreview = const Value.absent(),
+    this.resultContent = const Value.absent(),
+    this.resultByteLength = const Value.absent(),
+    this.errorCode = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BackgroundWorksCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String workspaceId,
+    required String conversationId,
+    this.childConversationId = const Value.absent(),
+    this.originatingMessageId = const Value.absent(),
+    required String toolCallId,
+    required String toolKind,
+    required String status,
+    this.statusPreview = const Value.absent(),
+    this.resultContent = const Value.absent(),
+    this.resultByteLength = const Value.absent(),
+    this.errorCode = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       conversationId = Value(conversationId),
+       toolCallId = Value(toolCallId),
+       toolKind = Value(toolKind),
+       status = Value(status);
+  static Insertable<BackgroundWorkTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? workspaceId,
+    Expression<String>? conversationId,
+    Expression<String>? childConversationId,
+    Expression<String>? originatingMessageId,
+    Expression<String>? toolCallId,
+    Expression<String>? toolKind,
+    Expression<String>? status,
+    Expression<String>? statusPreview,
+    Expression<String>? resultContent,
+    Expression<int>? resultByteLength,
+    Expression<String>? errorCode,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (childConversationId != null)
+        'child_conversation_id': childConversationId,
+      if (originatingMessageId != null)
+        'originating_message_id': originatingMessageId,
+      if (toolCallId != null) 'tool_call_id': toolCallId,
+      if (toolKind != null) 'tool_kind': toolKind,
+      if (status != null) 'status': status,
+      if (statusPreview != null) 'status_preview': statusPreview,
+      if (resultContent != null) 'result_content': resultContent,
+      if (resultByteLength != null) 'result_byte_length': resultByteLength,
+      if (errorCode != null) 'error_code': errorCode,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BackgroundWorksCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? workspaceId,
+    Value<String>? conversationId,
+    Value<String?>? childConversationId,
+    Value<String?>? originatingMessageId,
+    Value<String>? toolCallId,
+    Value<String>? toolKind,
+    Value<String>? status,
+    Value<String?>? statusPreview,
+    Value<String?>? resultContent,
+    Value<int>? resultByteLength,
+    Value<String?>? errorCode,
+    Value<int>? rowid,
+  }) {
+    return BackgroundWorksCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      workspaceId: workspaceId ?? this.workspaceId,
+      conversationId: conversationId ?? this.conversationId,
+      childConversationId: childConversationId ?? this.childConversationId,
+      originatingMessageId: originatingMessageId ?? this.originatingMessageId,
+      toolCallId: toolCallId ?? this.toolCallId,
+      toolKind: toolKind ?? this.toolKind,
+      status: status ?? this.status,
+      statusPreview: statusPreview ?? this.statusPreview,
+      resultContent: resultContent ?? this.resultContent,
+      resultByteLength: resultByteLength ?? this.resultByteLength,
+      errorCode: errorCode ?? this.errorCode,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (childConversationId.present) {
+      map['child_conversation_id'] = Variable<String>(
+        childConversationId.value,
+      );
+    }
+    if (originatingMessageId.present) {
+      map['originating_message_id'] = Variable<String>(
+        originatingMessageId.value,
+      );
+    }
+    if (toolCallId.present) {
+      map['tool_call_id'] = Variable<String>(toolCallId.value);
+    }
+    if (toolKind.present) {
+      map['tool_kind'] = Variable<String>(toolKind.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (statusPreview.present) {
+      map['status_preview'] = Variable<String>(statusPreview.value);
+    }
+    if (resultContent.present) {
+      map['result_content'] = Variable<String>(resultContent.value);
+    }
+    if (resultByteLength.present) {
+      map['result_byte_length'] = Variable<int>(resultByteLength.value);
+    }
+    if (errorCode.present) {
+      map['error_code'] = Variable<String>(errorCode.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BackgroundWorksCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('childConversationId: $childConversationId, ')
+          ..write('originatingMessageId: $originatingMessageId, ')
+          ..write('toolCallId: $toolCallId, ')
+          ..write('toolKind: $toolKind, ')
+          ..write('status: $status, ')
+          ..write('statusPreview: $statusPreview, ')
+          ..write('resultContent: $resultContent, ')
+          ..write('resultByteLength: $resultByteLength, ')
+          ..write('errorCode: $errorCode, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -15410,6 +16506,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $RecentModelSelectionsTable(this);
   late final $ModelUsageRecordsTable modelUsageRecords =
       $ModelUsageRecordsTable(this);
+  late final $BackgroundWorksTable backgroundWorks = $BackgroundWorksTable(
+    this,
+  );
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
@@ -15466,7 +16565,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'model_usage_records_conversation_created_idx',
     'CREATE INDEX model_usage_records_conversation_created_idx ON model_usage_records (conversation_id, created_at)',
   );
+  late final Index backgroundWorksConversationCreatedIdx = Index(
+    'background_works_conversation_created_idx',
+    'CREATE INDEX background_works_conversation_created_idx ON background_works (conversation_id, created_at, id)',
+  );
   late final WorkspaceDao workspaceDao = WorkspaceDao(this as AppDatabase);
+  late final BackgroundWorksDao backgroundWorksDao = BackgroundWorksDao(
+    this as AppDatabase,
+  );
   late final ModelConnectionsDao modelConnectionsDao = ModelConnectionsDao(
     this as AppDatabase,
   );
@@ -15543,6 +16649,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     appSkillWorkspaceSettings,
     recentModelSelections,
     modelUsageRecords,
+    backgroundWorks,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
     conversationsForkSourceIdx,
@@ -15557,6 +16664,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     conversationSkillsAppSkill,
     appSkillWorkspaceSettingsWorkspaceAppSkill,
     modelUsageRecordsConversationCreatedIdx,
+    backgroundWorksConversationCreatedIdx,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -15799,6 +16907,34 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ),
       result: [TableUpdate('model_usage_records', kind: UpdateKind.delete)],
     ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('background_works', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('background_works', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('background_works', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'messages',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('background_works', kind: UpdateKind.update)],
+    ),
   ]);
 }
 
@@ -16034,6 +17170,26 @@ final class $$WorkspacesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _appSkillWorkspaceSettingsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$BackgroundWorksTable, List<BackgroundWorkTable>>
+  _backgroundWorksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.backgroundWorks,
+    aliasName: 'workspaces__id__background_works__workspace_id',
+  );
+
+  $$BackgroundWorksTableProcessedTableManager get backgroundWorksRefs {
+    final manager = $$BackgroundWorksTableTableManager(
+      $_db,
+      $_db.backgroundWorks,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _backgroundWorksRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -16346,6 +17502,31 @@ class $$WorkspacesTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> backgroundWorksRefs(
+    Expression<bool> Function($$BackgroundWorksTableFilterComposer f) f,
+  ) {
+    final $$BackgroundWorksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableFilterComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -16697,6 +17878,31 @@ class $$WorkspacesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> backgroundWorksRefs<T extends Object>(
+    Expression<T> Function($$BackgroundWorksTableAnnotationComposer a) f,
+  ) {
+    final $$BackgroundWorksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$WorkspacesTableTableManager
@@ -16723,6 +17929,7 @@ class $$WorkspacesTableTableManager
             bool toolsRefs,
             bool workspaceCompactionSettingsRefs,
             bool appSkillWorkspaceSettingsRefs,
+            bool backgroundWorksRefs,
           })
         > {
   $$WorkspacesTableTableManager(_$AppDatabase db, $WorkspacesTable table)
@@ -16800,6 +18007,7 @@ class $$WorkspacesTableTableManager
                 toolsRefs = false,
                 workspaceCompactionSettingsRefs = false,
                 appSkillWorkspaceSettingsRefs = false,
+                backgroundWorksRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -16817,6 +18025,7 @@ class $$WorkspacesTableTableManager
                       db.workspaceCompactionSettings,
                     if (appSkillWorkspaceSettingsRefs)
                       db.appSkillWorkspaceSettings,
+                    if (backgroundWorksRefs) db.backgroundWorks,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -17031,6 +18240,27 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (backgroundWorksRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          BackgroundWorkTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._backgroundWorksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).backgroundWorksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -17062,6 +18292,7 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool toolsRefs,
         bool workspaceCompactionSettingsRefs,
         bool appSkillWorkspaceSettingsRefs,
+        bool backgroundWorksRefs,
       })
     >;
 typedef $$ServiceConnectionsTableCreateCompanionBuilder =
@@ -17873,6 +19104,7 @@ typedef $$WorkspaceModelSelectionsTableCreateCompanionBuilder =
       Value<DateTime> updatedAt,
       required String modelId,
       required String modelConnectionId,
+      Value<String?> toolSamplingPolicy,
       Value<int> rowid,
     });
 typedef $$WorkspaceModelSelectionsTableUpdateCompanionBuilder =
@@ -17882,6 +19114,7 @@ typedef $$WorkspaceModelSelectionsTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<String> modelId,
       Value<String> modelConnectionId,
+      Value<String?> toolSamplingPolicy,
       Value<int> rowid,
     });
 
@@ -17966,6 +19199,11 @@ class $$WorkspaceModelSelectionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get toolSamplingPolicy => $composableBuilder(
+    column: $table.toolSamplingPolicy,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ServiceConnectionsTableFilterComposer get modelConnectionId {
     final $$ServiceConnectionsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -18044,6 +19282,11 @@ class $$WorkspaceModelSelectionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get toolSamplingPolicy => $composableBuilder(
+    column: $table.toolSamplingPolicy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ServiceConnectionsTableOrderingComposer get modelConnectionId {
     final $$ServiceConnectionsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -18088,6 +19331,11 @@ class $$WorkspaceModelSelectionsTableAnnotationComposer
 
   GeneratedColumn<String> get modelId =>
       $composableBuilder(column: $table.modelId, builder: (column) => column);
+
+  GeneratedColumn<String> get toolSamplingPolicy => $composableBuilder(
+    column: $table.toolSamplingPolicy,
+    builder: (column) => column,
+  );
 
   $$ServiceConnectionsTableAnnotationComposer get modelConnectionId {
     final $$ServiceConnectionsTableAnnotationComposer composer =
@@ -18189,6 +19437,7 @@ class $$WorkspaceModelSelectionsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> modelId = const Value.absent(),
                 Value<String> modelConnectionId = const Value.absent(),
+                Value<String?> toolSamplingPolicy = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceModelSelectionsCompanion(
                 id: id,
@@ -18196,6 +19445,7 @@ class $$WorkspaceModelSelectionsTableTableManager
                 updatedAt: updatedAt,
                 modelId: modelId,
                 modelConnectionId: modelConnectionId,
+                toolSamplingPolicy: toolSamplingPolicy,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -18205,6 +19455,7 @@ class $$WorkspaceModelSelectionsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 required String modelId,
                 required String modelConnectionId,
+                Value<String?> toolSamplingPolicy = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceModelSelectionsCompanion.insert(
                 id: id,
@@ -18212,6 +19463,7 @@ class $$WorkspaceModelSelectionsTableTableManager
                 updatedAt: updatedAt,
                 modelId: modelId,
                 modelConnectionId: modelConnectionId,
+                toolSamplingPolicy: toolSamplingPolicy,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -20014,6 +21266,7 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       Value<String?> forkThroughMessageId,
       Value<DateTime?> forkMaterializedAt,
       Value<String?> activeCompactionCheckpointId,
+      Value<String> toolAccessMode,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -20033,6 +21286,7 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String?> forkThroughMessageId,
       Value<DateTime?> forkMaterializedAt,
       Value<String?> activeCompactionCheckpointId,
+      Value<String> toolAccessMode,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -20207,6 +21461,49 @@ final class $$ConversationsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$BackgroundWorksTable, List<BackgroundWorkTable>>
+  _backgroundWorksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.backgroundWorks,
+    aliasName: 'conversations__id__background_works__conversation_id',
+  );
+
+  $$BackgroundWorksTableProcessedTableManager get backgroundWorksRefs {
+    final manager = $$BackgroundWorksTableTableManager(
+      $_db,
+      $_db.backgroundWorks,
+    ).filter((f) => f.conversationId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _backgroundWorksRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$BackgroundWorksTable, List<BackgroundWorkTable>>
+  _backgroundWorksByChildConversationTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.backgroundWorks,
+        aliasName: 'conversations__id__background_works__child_conversation_id',
+      );
+
+  $$BackgroundWorksTableProcessedTableManager
+  get backgroundWorksByChildConversation {
+    final manager =
+        $$BackgroundWorksTableTableManager($_db, $_db.backgroundWorks).filter(
+          (f) =>
+              f.childConversationId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _backgroundWorksByChildConversationTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ConversationsTableFilterComposer
@@ -20265,6 +21562,11 @@ class $$ConversationsTableFilterComposer
 
   ColumnFilters<String> get activeCompactionCheckpointId => $composableBuilder(
     column: $table.activeCompactionCheckpointId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolAccessMode => $composableBuilder(
+    column: $table.toolAccessMode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -20465,6 +21767,56 @@ class $$ConversationsTableFilterComposer
     );
     return f(composer);
   }
+
+  Expression<bool> backgroundWorksRefs(
+    Expression<bool> Function($$BackgroundWorksTableFilterComposer f) f,
+  ) {
+    final $$BackgroundWorksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.conversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableFilterComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> backgroundWorksByChildConversation(
+    Expression<bool> Function($$BackgroundWorksTableFilterComposer f) f,
+  ) {
+    final $$BackgroundWorksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.childConversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableFilterComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ConversationsTableOrderingComposer
@@ -20526,6 +21878,11 @@ class $$ConversationsTableOrderingComposer
         column: $table.activeCompactionCheckpointId,
         builder: (column) => ColumnOrderings(column),
       );
+
+  ColumnOrderings<String> get toolAccessMode => $composableBuilder(
+    column: $table.toolAccessMode,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<bool> get isPinned => $composableBuilder(
     column: $table.isPinned,
@@ -20677,6 +22034,11 @@ class $$ConversationsTableAnnotationComposer
         column: $table.activeCompactionCheckpointId,
         builder: (column) => column,
       );
+
+  GeneratedColumn<String> get toolAccessMode => $composableBuilder(
+    column: $table.toolAccessMode,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isPinned =>
       $composableBuilder(column: $table.isPinned, builder: (column) => column);
@@ -20876,6 +22238,56 @@ class $$ConversationsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> backgroundWorksRefs<T extends Object>(
+    Expression<T> Function($$BackgroundWorksTableAnnotationComposer a) f,
+  ) {
+    final $$BackgroundWorksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.conversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> backgroundWorksByChildConversation<T extends Object>(
+    Expression<T> Function($$BackgroundWorksTableAnnotationComposer a) f,
+  ) {
+    final $$BackgroundWorksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.childConversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ConversationsTableTableManager
@@ -20900,6 +22312,8 @@ class $$ConversationsTableTableManager
             bool conversationToolsRefs,
             bool conversationSkillsRefs,
             bool modelUsageRecordsRefs,
+            bool backgroundWorksRefs,
+            bool backgroundWorksByChildConversation,
           })
         > {
   $$ConversationsTableTableManager(_$AppDatabase db, $ConversationsTable table)
@@ -20930,6 +22344,7 @@ class $$ConversationsTableTableManager
                 Value<DateTime?> forkMaterializedAt = const Value.absent(),
                 Value<String?> activeCompactionCheckpointId =
                     const Value.absent(),
+                Value<String> toolAccessMode = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion(
@@ -20947,6 +22362,7 @@ class $$ConversationsTableTableManager
                 forkThroughMessageId: forkThroughMessageId,
                 forkMaterializedAt: forkMaterializedAt,
                 activeCompactionCheckpointId: activeCompactionCheckpointId,
+                toolAccessMode: toolAccessMode,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -20967,6 +22383,7 @@ class $$ConversationsTableTableManager
                 Value<DateTime?> forkMaterializedAt = const Value.absent(),
                 Value<String?> activeCompactionCheckpointId =
                     const Value.absent(),
+                Value<String> toolAccessMode = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion.insert(
@@ -20984,6 +22401,7 @@ class $$ConversationsTableTableManager
                 forkThroughMessageId: forkThroughMessageId,
                 forkMaterializedAt: forkMaterializedAt,
                 activeCompactionCheckpointId: activeCompactionCheckpointId,
+                toolAccessMode: toolAccessMode,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -21005,6 +22423,8 @@ class $$ConversationsTableTableManager
                 conversationToolsRefs = false,
                 conversationSkillsRefs = false,
                 modelUsageRecordsRefs = false,
+                backgroundWorksRefs = false,
+                backgroundWorksByChildConversation = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -21013,6 +22433,8 @@ class $$ConversationsTableTableManager
                     if (conversationToolsRefs) db.conversationTools,
                     if (conversationSkillsRefs) db.conversationSkills,
                     if (modelUsageRecordsRefs) db.modelUsageRecords,
+                    if (backgroundWorksRefs) db.backgroundWorks,
+                    if (backgroundWorksByChildConversation) db.backgroundWorks,
                   ],
                   addJoins:
                       <
@@ -21163,6 +22585,48 @@ class $$ConversationsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (backgroundWorksRefs)
+                        await $_getPrefetchedData<
+                          ConversationsTable,
+                          $ConversationsTable,
+                          BackgroundWorkTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ConversationsTableReferences
+                              ._backgroundWorksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ConversationsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).backgroundWorksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.conversationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (backgroundWorksByChildConversation)
+                        await $_getPrefetchedData<
+                          ConversationsTable,
+                          $ConversationsTable,
+                          BackgroundWorkTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ConversationsTableReferences
+                              ._backgroundWorksByChildConversationTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ConversationsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).backgroundWorksByChildConversation,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.childConversationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -21192,6 +22656,8 @@ typedef $$ConversationsTableProcessedTableManager =
         bool conversationToolsRefs,
         bool conversationSkillsRefs,
         bool modelUsageRecordsRefs,
+        bool backgroundWorksRefs,
+        bool backgroundWorksByChildConversation,
       })
     >;
 typedef $$SkillCredentialDefinitionsTableCreateCompanionBuilder =
@@ -25557,6 +27023,7 @@ typedef $$MessagesTableCreateCompanionBuilder = MessagesCompanion Function({
   required String content,
   required MessagesTableType messageType,
   required bool isUser,
+  Value<bool> isBookmarked,
   required MessageTableStatus status,
   Value<String?> metadata,
   Value<int> rowid,
@@ -25569,6 +27036,7 @@ typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
   Value<String> content,
   Value<MessagesTableType> messageType,
   Value<bool> isUser,
+  Value<bool> isBookmarked,
   Value<MessageTableStatus> status,
   Value<String?> metadata,
   Value<int> rowid,
@@ -25619,6 +27087,27 @@ final class $$MessagesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$BackgroundWorksTable, List<BackgroundWorkTable>>
+  _backgroundWorksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.backgroundWorks,
+    aliasName: 'messages__id__background_works__originating_message_id',
+  );
+
+  $$BackgroundWorksTableProcessedTableManager get backgroundWorksRefs {
+    final manager =
+        $$BackgroundWorksTableTableManager($_db, $_db.backgroundWorks).filter(
+          (f) =>
+              f.originatingMessageId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _backgroundWorksRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$MessagesTableFilterComposer
@@ -25658,6 +27147,11 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<bool> get isUser => $composableBuilder(
     column: $table.isUser,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -25719,6 +27213,31 @@ class $$MessagesTableFilterComposer
     );
     return f(composer);
   }
+
+  Expression<bool> backgroundWorksRefs(
+    Expression<bool> Function($$BackgroundWorksTableFilterComposer f) f,
+  ) {
+    final $$BackgroundWorksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.originatingMessageId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableFilterComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$MessagesTableOrderingComposer
@@ -25757,6 +27276,11 @@ class $$MessagesTableOrderingComposer
 
   ColumnOrderings<bool> get isUser => $composableBuilder(
     column: $table.isUser,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -25824,6 +27348,11 @@ class $$MessagesTableAnnotationComposer
   GeneratedColumn<bool> get isUser =>
       $composableBuilder(column: $table.isUser, builder: (column) => column);
 
+  GeneratedColumn<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
+    builder: (column) => column,
+  );
+
   GeneratedColumnWithTypeConverter<MessageTableStatus, String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
@@ -25878,6 +27407,31 @@ class $$MessagesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> backgroundWorksRefs<T extends Object>(
+    Expression<T> Function($$BackgroundWorksTableAnnotationComposer a) f,
+  ) {
+    final $$BackgroundWorksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.originatingMessageId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$MessagesTableTableManager
@@ -25896,6 +27450,7 @@ class $$MessagesTableTableManager
           PrefetchHooks Function({
             bool conversationId,
             bool messageAttachmentsRefs,
+            bool backgroundWorksRefs,
           })
         > {
   $$MessagesTableTableManager(_$AppDatabase db, $MessagesTable table)
@@ -25918,6 +27473,7 @@ class $$MessagesTableTableManager
                 Value<String> content = const Value.absent(),
                 Value<MessagesTableType> messageType = const Value.absent(),
                 Value<bool> isUser = const Value.absent(),
+                Value<bool> isBookmarked = const Value.absent(),
                 Value<MessageTableStatus> status = const Value.absent(),
                 Value<String?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -25929,6 +27485,7 @@ class $$MessagesTableTableManager
                 content: content,
                 messageType: messageType,
                 isUser: isUser,
+                isBookmarked: isBookmarked,
                 status: status,
                 metadata: metadata,
                 rowid: rowid,
@@ -25942,6 +27499,7 @@ class $$MessagesTableTableManager
                 required String content,
                 required MessagesTableType messageType,
                 required bool isUser,
+                Value<bool> isBookmarked = const Value.absent(),
                 required MessageTableStatus status,
                 Value<String?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -25953,6 +27511,7 @@ class $$MessagesTableTableManager
                 content: content,
                 messageType: messageType,
                 isUser: isUser,
+                isBookmarked: isBookmarked,
                 status: status,
                 metadata: metadata,
                 rowid: rowid,
@@ -25966,11 +27525,16 @@ class $$MessagesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({conversationId = false, messageAttachmentsRefs = false}) {
+              ({
+                conversationId = false,
+                messageAttachmentsRefs = false,
+                backgroundWorksRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (messageAttachmentsRefs) db.messageAttachments,
+                    if (backgroundWorksRefs) db.backgroundWorks,
                   ],
                   addJoins:
                       <
@@ -26025,6 +27589,27 @@ class $$MessagesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (backgroundWorksRefs)
+                        await $_getPrefetchedData<
+                          MessagesTable,
+                          $MessagesTable,
+                          BackgroundWorkTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$MessagesTableReferences
+                              ._backgroundWorksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MessagesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).backgroundWorksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.originatingMessageId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -26045,7 +27630,11 @@ typedef $$MessagesTableProcessedTableManager =
       $$MessagesTableUpdateCompanionBuilder,
       (MessagesTable, $$MessagesTableReferences),
       MessagesTable,
-      PrefetchHooks Function({bool conversationId, bool messageAttachmentsRefs})
+      PrefetchHooks Function({
+        bool conversationId,
+        bool messageAttachmentsRefs,
+        bool backgroundWorksRefs,
+      })
     >;
 typedef $$MessageAttachmentsTableCreateCompanionBuilder =
     MessageAttachmentsCompanion Function({
@@ -26053,6 +27642,7 @@ typedef $$MessageAttachmentsTableCreateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       required String messageId,
+      Value<String?> toolCallId,
       required String localPath,
       required String fileName,
       Value<String> displayName,
@@ -26067,6 +27657,7 @@ typedef $$MessageAttachmentsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String> messageId,
+      Value<String?> toolCallId,
       Value<String> localPath,
       Value<String> fileName,
       Value<String> displayName,
@@ -26128,6 +27719,11 @@ class $$MessageAttachmentsTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -26209,6 +27805,11 @@ class $$MessageAttachmentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get localPath => $composableBuilder(
     column: $table.localPath,
     builder: (column) => ColumnOrderings(column),
@@ -26280,6 +27881,11 @@ class $$MessageAttachmentsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get localPath =>
       $composableBuilder(column: $table.localPath, builder: (column) => column);
@@ -26362,6 +27968,7 @@ class $$MessageAttachmentsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> messageId = const Value.absent(),
+                Value<String?> toolCallId = const Value.absent(),
                 Value<String> localPath = const Value.absent(),
                 Value<String> fileName = const Value.absent(),
                 Value<String> displayName = const Value.absent(),
@@ -26374,6 +27981,7 @@ class $$MessageAttachmentsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 messageId: messageId,
+                toolCallId: toolCallId,
                 localPath: localPath,
                 fileName: fileName,
                 displayName: displayName,
@@ -26388,6 +27996,7 @@ class $$MessageAttachmentsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 required String messageId,
+                Value<String?> toolCallId = const Value.absent(),
                 required String localPath,
                 required String fileName,
                 Value<String> displayName = const Value.absent(),
@@ -26400,6 +28009,7 @@ class $$MessageAttachmentsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 messageId: messageId,
+                toolCallId: toolCallId,
                 localPath: localPath,
                 fileName: fileName,
                 displayName: displayName,
@@ -29938,6 +31548,787 @@ typedef $$ModelUsageRecordsTableProcessedTableManager =
       ModelUsageRecordsTable,
       PrefetchHooks Function({bool conversationId})
     >;
+typedef $$BackgroundWorksTableCreateCompanionBuilder =
+    BackgroundWorksCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String workspaceId,
+      required String conversationId,
+      Value<String?> childConversationId,
+      Value<String?> originatingMessageId,
+      required String toolCallId,
+      required String toolKind,
+      required String status,
+      Value<String?> statusPreview,
+      Value<String?> resultContent,
+      Value<int> resultByteLength,
+      Value<String?> errorCode,
+      Value<int> rowid,
+    });
+typedef $$BackgroundWorksTableUpdateCompanionBuilder =
+    BackgroundWorksCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> workspaceId,
+      Value<String> conversationId,
+      Value<String?> childConversationId,
+      Value<String?> originatingMessageId,
+      Value<String> toolCallId,
+      Value<String> toolKind,
+      Value<String> status,
+      Value<String?> statusPreview,
+      Value<String?> resultContent,
+      Value<int> resultByteLength,
+      Value<String?> errorCode,
+      Value<int> rowid,
+    });
+
+final class $$BackgroundWorksTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $BackgroundWorksTable,
+          BackgroundWorkTable
+        > {
+  $$BackgroundWorksTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) => db.workspaces
+      .createAlias('background_works__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) => db
+      .conversations
+      .createAlias('background_works__conversation_id__conversations__id');
+
+  $$ConversationsTableProcessedTableManager get conversationId {
+    final $_column = $_itemColumn<String>('conversation_id')!;
+
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ConversationsTable _childConversationIdTable(_$AppDatabase db) =>
+      db.conversations.createAlias(
+        'background_works__child_conversation_id__conversations__id',
+      );
+
+  $$ConversationsTableProcessedTableManager? get childConversationId {
+    final $_column = $_itemColumn<String>('child_conversation_id');
+    if ($_column == null) return null;
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_childConversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $MessagesTable _originatingMessageIdTable(_$AppDatabase db) => db
+      .messages
+      .createAlias('background_works__originating_message_id__messages__id');
+
+  $$MessagesTableProcessedTableManager? get originatingMessageId {
+    final $_column = $_itemColumn<String>('originating_message_id');
+    if ($_column == null) return null;
+    final manager = $$MessagesTableTableManager(
+      $_db,
+      $_db.messages,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(
+      _originatingMessageIdTable($_db),
+    );
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$BackgroundWorksTableFilterComposer
+    extends Composer<_$AppDatabase, $BackgroundWorksTable> {
+  $$BackgroundWorksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolKind => $composableBuilder(
+    column: $table.toolKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get statusPreview => $composableBuilder(
+    column: $table.statusPreview,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get resultContent => $composableBuilder(
+    column: $table.resultContent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get resultByteLength => $composableBuilder(
+    column: $table.resultByteLength,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get errorCode => $composableBuilder(
+    column: $table.errorCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableFilterComposer get conversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableFilterComposer get childConversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.childConversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MessagesTableFilterComposer get originatingMessageId {
+    final $$MessagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.originatingMessageId,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableFilterComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BackgroundWorksTableOrderingComposer
+    extends Composer<_$AppDatabase, $BackgroundWorksTable> {
+  $$BackgroundWorksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toolKind => $composableBuilder(
+    column: $table.toolKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get statusPreview => $composableBuilder(
+    column: $table.statusPreview,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get resultContent => $composableBuilder(
+    column: $table.resultContent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get resultByteLength => $composableBuilder(
+    column: $table.resultByteLength,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get errorCode => $composableBuilder(
+    column: $table.errorCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableOrderingComposer get conversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableOrderingComposer get childConversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.childConversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MessagesTableOrderingComposer get originatingMessageId {
+    final $$MessagesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.originatingMessageId,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableOrderingComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BackgroundWorksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BackgroundWorksTable> {
+  $$BackgroundWorksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get toolKind =>
+      $composableBuilder(column: $table.toolKind, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get statusPreview => $composableBuilder(
+    column: $table.statusPreview,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get resultContent => $composableBuilder(
+    column: $table.resultContent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get resultByteLength => $composableBuilder(
+    column: $table.resultByteLength,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get errorCode =>
+      $composableBuilder(column: $table.errorCode, builder: (column) => column);
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableAnnotationComposer get conversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableAnnotationComposer get childConversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.childConversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MessagesTableAnnotationComposer get originatingMessageId {
+    final $$MessagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.originatingMessageId,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BackgroundWorksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BackgroundWorksTable,
+          BackgroundWorkTable,
+          $$BackgroundWorksTableFilterComposer,
+          $$BackgroundWorksTableOrderingComposer,
+          $$BackgroundWorksTableAnnotationComposer,
+          $$BackgroundWorksTableCreateCompanionBuilder,
+          $$BackgroundWorksTableUpdateCompanionBuilder,
+          (BackgroundWorkTable, $$BackgroundWorksTableReferences),
+          BackgroundWorkTable,
+          PrefetchHooks Function({
+            bool workspaceId,
+            bool conversationId,
+            bool childConversationId,
+            bool originatingMessageId,
+          })
+        > {
+  $$BackgroundWorksTableTableManager(
+    _$AppDatabase db,
+    $BackgroundWorksTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BackgroundWorksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BackgroundWorksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BackgroundWorksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> conversationId = const Value.absent(),
+                Value<String?> childConversationId = const Value.absent(),
+                Value<String?> originatingMessageId = const Value.absent(),
+                Value<String> toolCallId = const Value.absent(),
+                Value<String> toolKind = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> statusPreview = const Value.absent(),
+                Value<String?> resultContent = const Value.absent(),
+                Value<int> resultByteLength = const Value.absent(),
+                Value<String?> errorCode = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BackgroundWorksCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                conversationId: conversationId,
+                childConversationId: childConversationId,
+                originatingMessageId: originatingMessageId,
+                toolCallId: toolCallId,
+                toolKind: toolKind,
+                status: status,
+                statusPreview: statusPreview,
+                resultContent: resultContent,
+                resultByteLength: resultByteLength,
+                errorCode: errorCode,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                required String conversationId,
+                Value<String?> childConversationId = const Value.absent(),
+                Value<String?> originatingMessageId = const Value.absent(),
+                required String toolCallId,
+                required String toolKind,
+                required String status,
+                Value<String?> statusPreview = const Value.absent(),
+                Value<String?> resultContent = const Value.absent(),
+                Value<int> resultByteLength = const Value.absent(),
+                Value<String?> errorCode = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BackgroundWorksCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                conversationId: conversationId,
+                childConversationId: childConversationId,
+                originatingMessageId: originatingMessageId,
+                toolCallId: toolCallId,
+                toolKind: toolKind,
+                status: status,
+                statusPreview: statusPreview,
+                resultContent: resultContent,
+                resultByteLength: resultByteLength,
+                errorCode: errorCode,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$BackgroundWorksTable, BackgroundWorkTable>(
+                    table,
+                  ),
+                  $$BackgroundWorksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                workspaceId = false,
+                conversationId = false,
+                childConversationId = false,
+                originatingMessageId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workspaceId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable: $$BackgroundWorksTableReferences
+                                ._workspaceIdTable(db),
+                            referencedColumn: $$BackgroundWorksTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (conversationId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.conversationId,
+                            referencedTable: $$BackgroundWorksTableReferences
+                                ._conversationIdTable(db),
+                            referencedColumn: $$BackgroundWorksTableReferences
+                                ._conversationIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (childConversationId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.childConversationId,
+                            referencedTable: $$BackgroundWorksTableReferences
+                                ._childConversationIdTable(db),
+                            referencedColumn: $$BackgroundWorksTableReferences
+                                ._childConversationIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (originatingMessageId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.originatingMessageId,
+                            referencedTable: $$BackgroundWorksTableReferences
+                                ._originatingMessageIdTable(db),
+                            referencedColumn: $$BackgroundWorksTableReferences
+                                ._originatingMessageIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$BackgroundWorksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BackgroundWorksTable,
+      BackgroundWorkTable,
+      $$BackgroundWorksTableFilterComposer,
+      $$BackgroundWorksTableOrderingComposer,
+      $$BackgroundWorksTableAnnotationComposer,
+      $$BackgroundWorksTableCreateCompanionBuilder,
+      $$BackgroundWorksTableUpdateCompanionBuilder,
+      (BackgroundWorkTable, $$BackgroundWorksTableReferences),
+      BackgroundWorkTable,
+      PrefetchHooks Function({
+        bool workspaceId,
+        bool conversationId,
+        bool childConversationId,
+        bool originatingMessageId,
+      })
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -30004,4 +32395,6 @@ class $AppDatabaseManager {
       $$RecentModelSelectionsTableTableManager(_db, _db.recentModelSelections);
   $$ModelUsageRecordsTableTableManager get modelUsageRecords =>
       $$ModelUsageRecordsTableTableManager(_db, _db.modelUsageRecords);
+  $$BackgroundWorksTableTableManager get backgroundWorks =>
+      $$BackgroundWorksTableTableManager(_db, _db.backgroundWorks);
 }

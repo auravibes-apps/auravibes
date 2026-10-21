@@ -62,7 +62,7 @@ void main() {
     });
 
     test('forwards the created user message id as the ack target', () async {
-      await fixture.usecase.call(
+      final _ = await fixture.usecase.call(
         conversationId: 'conversation-1',
         draft: const ChatDraft(text: 'Hello'),
       );
@@ -79,6 +79,23 @@ void main() {
         ).called(1),
         returnsNormally,
       );
+    });
+
+    test('returns iteration limit decision from foreground send', () async {
+      when(
+        () => fixture.runAgentIterationUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          context: any(named: 'context'),
+        ),
+      ).thenAnswer((_) async => AgentIterationDecision.iterationLimitReached);
+
+      final result = await fixture.usecase.call(
+        conversationId: 'conversation-1',
+        draft: const ChatDraft(text: 'Hello'),
+      );
+
+      expect(result, AgentIterationDecision.iterationLimitReached);
+      verify(() => fixture.messageRepository.createMessage(any())).called(1);
     });
 
     test(
@@ -150,7 +167,7 @@ void main() {
         when(() => fixture.messageRepository.getMessageById('failed-user'))
             .thenAnswer((_) async => message);
 
-        await fixture.usecase.retryUserMessage(
+        final _ = await fixture.usecase.retryUserMessage(
           conversationId: 'conversation-1',
           messageId: 'failed-user',
         );
@@ -171,6 +188,47 @@ void main() {
     }
 
     test(
+      'does not dispatch a retry for a persisted non-retryable failure',
+      () async {
+        final message = MessageEntity(
+          id: 'auth-failure',
+          conversationId: 'conversation-1',
+          content: 'Original prompt',
+          messageType: .text,
+          isUser: true,
+          status: .error,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
+          metadata: const MessageMetadataEntity(
+            modelMetadata: {
+              'providerError': true,
+              'providerRecovery': {
+                'classification': 'authentication',
+                'retryable': false,
+              },
+            },
+          ),
+        );
+        when(() => fixture.messageRepository.getMessageById(message.id))
+            .thenAnswer((_) async => message);
+
+        await expectLater(
+          fixture.usecase.retryUserMessage(
+            conversationId: 'conversation-1',
+            messageId: message.id,
+          ),
+          throwsA(isA<StateError>()),
+        );
+        final _ = verifyNever(
+          () => fixture.runAgentIterationUsecase.call(
+            conversationId: any(named: 'conversationId'),
+            context: any(named: 'context'),
+          ),
+        );
+      },
+    );
+
+    test(
       'queues the draft instead of persisting when the conversation is busy',
       () async {
         when(
@@ -184,7 +242,7 @@ void main() {
           ),
         );
 
-        await fixture.usecase.call(
+        final _ = await fixture.usecase.call(
           conversationId: 'conversation-1',
           draft: const ChatDraft(text: 'Queued hello'),
         );
@@ -238,7 +296,7 @@ void main() {
             hasPendingTools: false,
           ),
         );
-        await sendFuture;
+        final _ = await sendFuture;
       },
     );
 
@@ -275,6 +333,28 @@ void main() {
       expect(errors, isEmpty);
 
       completer.complete();
+    });
+
+    test('reports an iteration limit from a first message', () async {
+      final iterationLimitReported = Completer<void>();
+      when(
+        () => fixture.runAgentIterationUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          context: any(named: 'context'),
+        ),
+      ).thenAnswer((_) async => AgentIterationDecision.iterationLimitReached);
+
+      await fixture.usecase.sendFirstMessage(
+        conversationId: 'conversation-1',
+        draft: const ChatDraft(text: 'Hello'),
+        onContinueError: (error, stackTrace) =>
+            fail('Unexpected continuation error: $error'),
+        onIterationLimit: (conversationId) {
+          expect(conversationId, 'conversation-1');
+          iterationLimitReported.complete();
+        },
+      );
+      await iterationLimitReported.future;
     });
   });
 }

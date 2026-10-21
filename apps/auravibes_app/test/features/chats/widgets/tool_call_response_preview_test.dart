@@ -1,5 +1,4 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
-import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -9,9 +8,9 @@ import 'package:material_ui/material_ui.dart';
 
 void main() {
   Widget buildSubject({
-    required String toolName,
     required String content,
     TextScaler? textScaler,
+    VoidCallback? onShowMore,
   }) {
     return EasyLocalization(
       child: Builder(
@@ -25,8 +24,8 @@ void main() {
                   data: .new(textScaler: textScaler ?? TextScaler.noScaling),
                   child: Scaffold(
                     body: ToolCallResponsePreview(
-                      toolName: toolName,
                       content: content,
+                      onShowMore: onShowMore ?? _noop,
                     ),
                   ),
                 ),
@@ -57,26 +56,23 @@ void main() {
 
   group('ToolCallResponsePreview', () {
     testWidgets('renders content text', (tester) async {
-      await pumpAndInit(
-        tester,
-        buildSubject(toolName: 'test_tool', content: 'Hello world'),
-      );
+      await pumpAndInit(tester, buildSubject(content: 'Hello world'));
 
       expect(find.text('Hello world'), findsOneWidget);
     });
 
     testWidgets('renders with empty content', (tester) async {
-      await pumpAndInit(
-        tester,
-        buildSubject(toolName: 'test_tool', content: ''),
-      );
+      await pumpAndInit(tester, buildSubject(content: ''));
 
       expect(find.byType(ToolCallResponsePreview), findsOneWidget);
       expect(find.byIcon(Icons.copy_outlined), findsNothing);
     });
 
-    testWidgets('copies the full response content', (tester) async {
+    testWidgets('copies full response and opens its overflow tab', (
+      tester,
+    ) async {
       const content = 'First line\nSecond line\nThird line\nFourth line';
+      var opened = false;
       String? copiedContent;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
@@ -96,7 +92,13 @@ void main() {
       );
       await pumpAndInit(
         tester,
-        buildSubject(toolName: 'test_tool', content: content),
+        buildSubject(content: content, onShowMore: () => opened = true),
+      );
+
+      expect(find.text('Show more'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byIcon(Icons.copy_outlined)).dx,
+        lessThan(tester.getTopLeft(find.text('Show more')).dx),
       );
 
       await tester.tap(find.byIcon(Icons.copy_outlined));
@@ -104,6 +106,12 @@ void main() {
 
       expect(copiedContent, content);
       expect(find.byIcon(Icons.check), findsOneWidget);
+
+      await tester.tap(find.text('Show more'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(opened, isTrue);
+      expect(find.byType(Dialog), findsNothing);
     });
 
     test('static maxPreviewLines is 3', () {
@@ -113,37 +121,33 @@ void main() {
     testWidgets('renders short content without show more button', (
       tester,
     ) async {
-      await pumpAndInit(
-        tester,
-        buildSubject(toolName: 'test_tool', content: 'Short text'),
-      );
+      await pumpAndInit(tester, buildSubject(content: 'Short text'));
 
       expect(find.byType(ToolCallResponsePreview), findsOneWidget);
       expect(find.text('Short text'), findsOneWidget);
     });
 
-    testWidgets('opens the full result modal for overflowing content', (
+    testWidgets('keeps Markdown and HTML literal when opening the tab', (
       tester,
     ) async {
+      var opened = false;
+      const content =
+          '**markdown stays literal**\n'
+          '<b>HTML stays literal</b>\n'
+          '[link stays literal](https://example.test)\n'
+          'Fourth line';
       await pumpAndInit(
         tester,
-        buildSubject(
-          toolName: 'test_tool',
-          content: 'First line\nSecond line\nThird line\nFourth line',
-        ),
-      );
-
-      expect(find.text('Show more'), findsOneWidget);
-      expect(
-        tester.getTopLeft(find.byIcon(Icons.copy_outlined)).dx,
-        lessThan(tester.getTopLeft(find.text('Show more')).dx),
+        buildSubject(content: content, onShowMore: () => opened = true),
       );
 
       await tester.tap(find.text('Show more'));
       final _ = await tester.pumpAndSettle();
 
-      expect(find.byType(ToolCallResponseModal), findsOneWidget);
-      expect(find.text('test_tool'), findsOneWidget);
+      expect(opened, isTrue);
+      expect(find.byType(Dialog), findsNothing);
+      expect(find.byType(GptMarkdown), findsNothing);
+      expect(find.text(content), findsOneWidget);
     });
 
     testWidgets('uses inherited text scaling when detecting overflow', (
@@ -155,21 +159,18 @@ void main() {
           'abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij '
           'abcdefghij';
 
-      await pumpAndInit(
-        tester,
-        buildSubject(toolName: 'test_tool', content: content),
-      );
+      await pumpAndInit(tester, buildSubject(content: content));
       expect(find.text('Show more'), findsNothing);
 
       await pumpAndInit(
         tester,
-        buildSubject(
-          toolName: 'test_tool',
-          content: content,
-          textScaler: const .linear(2),
-        ),
+        buildSubject(content: content, textScaler: const .linear(2)),
       );
       expect(find.text('Show more'), findsOneWidget);
     });
   });
+}
+
+void _noop() {
+  final _ = Object();
 }

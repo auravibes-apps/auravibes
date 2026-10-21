@@ -32,18 +32,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  var isFirstTest = true;
+  setUp(() async {
+    if (isFirstTest) {
+      isFirstTest = false;
+
+      return;
+    }
+    await clearAppDatabase(database);
+  });
+  tearDownAll(database.close);
 
   Future<({AppDatabase database, WorkspaceEntity workspace})>
   createFixture() async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
-
     final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );
@@ -109,7 +118,7 @@ void main() {
           ),
         ),
         GoRoute(
-          path: '/workspaces/:workspaceId/more/agents',
+          path: '/workspaces/:workspaceId/agents',
           builder: (_, _) => const Text('Agents return'),
         ),
       ],
@@ -122,11 +131,11 @@ void main() {
       router: router,
       skills: [
         WorkspaceSkill(
-          source: .user,
           id: skill.id,
           slug: skill.slug,
           title: skill.title,
           description: skill.description,
+          source: .user,
           kind: .template,
           isEnabled: false,
         ),
@@ -170,7 +179,7 @@ void main() {
       routes: [
         GoRoute(path: '/agent', builder: route.build, onExit: route.onExit),
         GoRoute(
-          path: '/workspaces/:workspaceId/more/skills/:skillId',
+          path: '/workspaces/:workspaceId/skills/:skillId',
           builder: (_, state) =>
               Text('Selected skill ${state.pathParameters['skillId']}'),
         ),
@@ -413,11 +422,11 @@ Future<void> _pumpAgentScreen(
                 skills ??
                 [
                   WorkspaceSkill(
-                    source: SkillSource.user,
                     id: 'summarizer',
                     slug: 'summarizer',
                     title: skillTitle?.call() ?? 'Summarizer',
                     description: 'Summarize things.',
+                    source: .user,
                     kind: .template,
                     isEnabled: true,
                   ),

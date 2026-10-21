@@ -38,8 +38,14 @@ void _registerIntroJourneyCaptures() {
         final login = Completer<CloudAuthResult>();
         when(() => journey.protocol.login(any(), any()))
             .thenAnswer((_) => login.future);
-        await journey.tapText('workspace_management.cloud_login');
+        final loginButton = find.widgetWithText(
+          AuraButton,
+          'workspace_management.cloud_login'.tr(),
+        );
+        expect(tester.widget<AuraButton>(loginButton).disabled, isFalse);
+        await journey.tap(loginButton);
         await journey.capture('SignInWaiting');
+        verify(() => journey.protocol.login(any(), any())).called(1);
         final cancel = find.widgetWithText(
           AuraButton,
           'cloud_accounts.cancel_auth'.tr(),

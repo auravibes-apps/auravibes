@@ -11,10 +11,16 @@
 // ignore_for_file: dead_code, unnecessary_type_check
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/background_work_view.dart'
+    as _ii9na0oj;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_search_result.dart'
+    as _id2d4bnf;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_view.dart'
     as _isubclmd;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_summary.dart'
     as _i54dvwkh;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/message_bookmark_view.dart'
+    as _iricssvi;
 import 'package:auravibes_server_client/src/protocol/features/mcp_catalog/models/mcp_catalog_listing.dart'
     as _i9ncq2qy;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/api_model.dart'
@@ -59,6 +65,10 @@ import 'features/codex_oauth/models/complete_codex_oauth_result.dart'
 import 'features/codex_oauth/models/start_codex_oauth_request.dart'
     as _iv7ukgnj;
 import 'features/codex_oauth/models/start_codex_oauth_result.dart' as _itptq7z5;
+import 'features/conversations/models/background_work_record.dart' as _i76zqh14;
+import 'features/conversations/models/background_work_view.dart' as _ikckz8j1;
+import 'features/conversations/models/bookmark_message_request.dart'
+    as _ihrj16d1;
 import 'features/conversations/models/cancel_turn_request.dart' as _iarqshx6;
 import 'features/conversations/models/compact_conversation_request.dart'
     as _isyd7s84;
@@ -77,6 +87,8 @@ import 'features/conversations/models/conversation_execution_view.dart'
     as _ij9w9f8d;
 import 'features/conversations/models/conversation_job.dart' as _iq1eovrr;
 import 'features/conversations/models/conversation_message.dart' as _ibea51bx;
+import 'features/conversations/models/conversation_message_search_result.dart'
+    as _iz9vdf0f;
 import 'features/conversations/models/conversation_message_view.dart'
     as _iutotoh6;
 import 'features/conversations/models/conversation_mutation_result.dart'
@@ -100,6 +112,8 @@ import 'features/conversations/models/create_conversation_request.dart'
     as _i4shnjby;
 import 'features/conversations/models/delete_conversation_request.dart'
     as _iqsppx3t;
+import 'features/conversations/models/detach_tool_call_request.dart'
+    as _iibrmzly;
 import 'features/conversations/models/edit_pending_conversation_message_request.dart'
     as _iybdpw96;
 import 'features/conversations/models/fork_conversation_request.dart'
@@ -107,10 +121,16 @@ import 'features/conversations/models/fork_conversation_request.dart'
 import 'features/conversations/models/get_conversation_request.dart'
     as _ixb0z1tn;
 import 'features/conversations/models/get_turn_request.dart' as _ilyvwvdb;
+import 'features/conversations/models/list_background_works_request.dart'
+    as _i8d22946;
 import 'features/conversations/models/list_conversation_messages_request.dart'
     as _it91nt4l;
 import 'features/conversations/models/list_conversations_request.dart'
     as _itcpel99;
+import 'features/conversations/models/list_message_bookmarks_request.dart'
+    as _ii5kz2rj;
+import 'features/conversations/models/message_bookmark.dart' as _i7h0nodu;
+import 'features/conversations/models/message_bookmark_view.dart' as _i3vkah52;
 import 'features/conversations/models/provider_admission.dart' as _i32k4voa;
 import 'features/conversations/models/provider_admission_lock.dart'
     as _ih2np1vh;
@@ -124,8 +144,12 @@ import 'features/conversations/models/reorder_pending_conversation_message_reque
     as _infbxzxr;
 import 'features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _ia1pnkb0;
+import 'features/conversations/models/search_conversation_messages_request.dart'
+    as _iajm9iqs;
 import 'features/conversations/models/start_turn_request.dart' as _iocu6u94;
 import 'features/conversations/models/start_turn_result.dart' as _iw8le0j7;
+import 'features/conversations/models/stop_background_work_request.dart'
+    as _i4yes7gs;
 import 'features/conversations/models/stop_conversation_request.dart'
     as _i4cgq7zt;
 import 'features/conversations/models/submit_tool_decision_batch_call.dart'
@@ -137,6 +161,8 @@ import 'features/conversations/models/submit_tool_decision_batch_result.dart'
 import 'features/conversations/models/submit_tool_decision_request.dart'
     as _inla43mu;
 import 'features/conversations/models/turn_snapshot.dart' as _ih4jnnah;
+import 'features/conversations/models/unbookmark_message_request.dart'
+    as _ity1hrw2;
 import 'features/conversations/models/update_conversation_request.dart'
     as _ihs4d7mz;
 import 'features/conversations/models/update_conversation_settings_request.dart'
@@ -184,12 +210,16 @@ import 'features/model_connections/models/test_and_sync_model_connection_request
     as _ixyi2mo6;
 import 'features/model_connections/models/update_model_connection_request.dart'
     as _iw5yf4pd;
+import 'features/model_connections/models/update_workspace_model_selection_policy_request.dart'
+    as _izwfsoeu;
 import 'features/model_connections/models/verify_model_connection_request.dart'
     as _ic2lxbsg;
 import 'features/model_connections/models/verify_model_connection_result.dart'
     as _ibj3h7po;
 import 'features/model_connections/models/workspace_model_connection.dart'
     as _ihf3aqrg;
+import 'features/model_connections/models/workspace_model_selection_tool_sampling_policy.dart'
+    as _i8rogqzm;
 import 'features/model_connections/models/workspace_model_selection_view.dart'
     as _i2zocl9o;
 import 'features/objects/models/begin_upload_request.dart' as _ii7xucwd;
@@ -317,6 +347,9 @@ export 'features/codex_oauth/models/complete_codex_oauth_request.dart';
 export 'features/codex_oauth/models/complete_codex_oauth_result.dart';
 export 'features/codex_oauth/models/start_codex_oauth_request.dart';
 export 'features/codex_oauth/models/start_codex_oauth_result.dart';
+export 'features/conversations/models/background_work_record.dart';
+export 'features/conversations/models/background_work_view.dart';
+export 'features/conversations/models/bookmark_message_request.dart';
 export 'features/conversations/models/cancel_turn_request.dart';
 export 'features/conversations/models/compact_conversation_request.dart';
 export 'features/conversations/models/continue_conversation_request.dart';
@@ -330,6 +363,7 @@ export 'features/conversations/models/conversation_execution.dart';
 export 'features/conversations/models/conversation_execution_view.dart';
 export 'features/conversations/models/conversation_job.dart';
 export 'features/conversations/models/conversation_message.dart';
+export 'features/conversations/models/conversation_message_search_result.dart';
 export 'features/conversations/models/conversation_message_view.dart';
 export 'features/conversations/models/conversation_mutation_result.dart';
 export 'features/conversations/models/conversation_page.dart';
@@ -345,12 +379,17 @@ export 'features/conversations/models/conversation_turn_view.dart';
 export 'features/conversations/models/conversation_usage.dart';
 export 'features/conversations/models/create_conversation_request.dart';
 export 'features/conversations/models/delete_conversation_request.dart';
+export 'features/conversations/models/detach_tool_call_request.dart';
 export 'features/conversations/models/edit_pending_conversation_message_request.dart';
 export 'features/conversations/models/fork_conversation_request.dart';
 export 'features/conversations/models/get_conversation_request.dart';
 export 'features/conversations/models/get_turn_request.dart';
+export 'features/conversations/models/list_background_works_request.dart';
 export 'features/conversations/models/list_conversation_messages_request.dart';
 export 'features/conversations/models/list_conversations_request.dart';
+export 'features/conversations/models/list_message_bookmarks_request.dart';
+export 'features/conversations/models/message_bookmark.dart';
+export 'features/conversations/models/message_bookmark_view.dart';
 export 'features/conversations/models/provider_admission.dart';
 export 'features/conversations/models/provider_admission_lock.dart';
 export 'features/conversations/models/provider_admission_reservation.dart';
@@ -358,14 +397,17 @@ export 'features/conversations/models/queue_conversation_message_request.dart';
 export 'features/conversations/models/remove_pending_conversation_message_request.dart';
 export 'features/conversations/models/reorder_pending_conversation_message_request.dart';
 export 'features/conversations/models/restore_conversation_checkpoint_request.dart';
+export 'features/conversations/models/search_conversation_messages_request.dart';
 export 'features/conversations/models/start_turn_request.dart';
 export 'features/conversations/models/start_turn_result.dart';
+export 'features/conversations/models/stop_background_work_request.dart';
 export 'features/conversations/models/stop_conversation_request.dart';
 export 'features/conversations/models/submit_tool_decision_batch_call.dart';
 export 'features/conversations/models/submit_tool_decision_batch_request.dart';
 export 'features/conversations/models/submit_tool_decision_batch_result.dart';
 export 'features/conversations/models/submit_tool_decision_request.dart';
 export 'features/conversations/models/turn_snapshot.dart';
+export 'features/conversations/models/unbookmark_message_request.dart';
 export 'features/conversations/models/update_conversation_request.dart';
 export 'features/conversations/models/update_conversation_settings_request.dart';
 export 'features/mcp_catalog/models/mcp_catalog_connection_option.dart';
@@ -394,9 +436,11 @@ export 'features/model_connections/models/recent_model_selection.dart';
 export 'features/model_connections/models/record_recent_model_selection_request.dart';
 export 'features/model_connections/models/test_and_sync_model_connection_request.dart';
 export 'features/model_connections/models/update_model_connection_request.dart';
+export 'features/model_connections/models/update_workspace_model_selection_policy_request.dart';
 export 'features/model_connections/models/verify_model_connection_request.dart';
 export 'features/model_connections/models/verify_model_connection_result.dart';
 export 'features/model_connections/models/workspace_model_connection.dart';
+export 'features/model_connections/models/workspace_model_selection_tool_sampling_policy.dart';
 export 'features/model_connections/models/workspace_model_selection_view.dart';
 export 'features/objects/models/begin_upload_request.dart';
 export 'features/objects/models/begin_upload_result.dart';
@@ -545,6 +589,15 @@ class Protocol extends _isc.SerializationManager {
     if (t == _itptq7z5.StartCodexOAuthResult) {
       return _itptq7z5.StartCodexOAuthResult.fromJson(data) as T;
     }
+    if (t == _i76zqh14.BackgroundWorkRecord) {
+      return _i76zqh14.BackgroundWorkRecord.fromJson(data) as T;
+    }
+    if (t == _ikckz8j1.BackgroundWorkView) {
+      return _ikckz8j1.BackgroundWorkView.fromJson(data) as T;
+    }
+    if (t == _ihrj16d1.BookmarkMessageRequest) {
+      return _ihrj16d1.BookmarkMessageRequest.fromJson(data) as T;
+    }
     if (t == _iarqshx6.CancelTurnRequest) {
       return _iarqshx6.CancelTurnRequest.fromJson(data) as T;
     }
@@ -583,6 +636,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _ibea51bx.ConversationMessage) {
       return _ibea51bx.ConversationMessage.fromJson(data) as T;
+    }
+    if (t == _iz9vdf0f.ConversationMessageSearchResult) {
+      return _iz9vdf0f.ConversationMessageSearchResult.fromJson(data) as T;
     }
     if (t == _iutotoh6.ConversationMessageView) {
       return _iutotoh6.ConversationMessageView.fromJson(data) as T;
@@ -629,6 +685,9 @@ class Protocol extends _isc.SerializationManager {
     if (t == _iqsppx3t.DeleteConversationRequest) {
       return _iqsppx3t.DeleteConversationRequest.fromJson(data) as T;
     }
+    if (t == _iibrmzly.DetachToolCallRequest) {
+      return _iibrmzly.DetachToolCallRequest.fromJson(data) as T;
+    }
     if (t == _iybdpw96.EditPendingConversationMessageRequest) {
       return _iybdpw96.EditPendingConversationMessageRequest.fromJson(data)
           as T;
@@ -642,11 +701,23 @@ class Protocol extends _isc.SerializationManager {
     if (t == _ilyvwvdb.GetTurnRequest) {
       return _ilyvwvdb.GetTurnRequest.fromJson(data) as T;
     }
+    if (t == _i8d22946.ListBackgroundWorksRequest) {
+      return _i8d22946.ListBackgroundWorksRequest.fromJson(data) as T;
+    }
     if (t == _it91nt4l.ListConversationMessagesRequest) {
       return _it91nt4l.ListConversationMessagesRequest.fromJson(data) as T;
     }
     if (t == _itcpel99.ListConversationsRequest) {
       return _itcpel99.ListConversationsRequest.fromJson(data) as T;
+    }
+    if (t == _ii5kz2rj.ListMessageBookmarksRequest) {
+      return _ii5kz2rj.ListMessageBookmarksRequest.fromJson(data) as T;
+    }
+    if (t == _i7h0nodu.MessageBookmark) {
+      return _i7h0nodu.MessageBookmark.fromJson(data) as T;
+    }
+    if (t == _i3vkah52.MessageBookmarkView) {
+      return _i3vkah52.MessageBookmarkView.fromJson(data) as T;
     }
     if (t == _i32k4voa.ProviderAdmission) {
       return _i32k4voa.ProviderAdmission.fromJson(data) as T;
@@ -671,11 +742,17 @@ class Protocol extends _isc.SerializationManager {
     if (t == _ia1pnkb0.RestoreConversationCheckpointRequest) {
       return _ia1pnkb0.RestoreConversationCheckpointRequest.fromJson(data) as T;
     }
+    if (t == _iajm9iqs.SearchConversationMessagesRequest) {
+      return _iajm9iqs.SearchConversationMessagesRequest.fromJson(data) as T;
+    }
     if (t == _iocu6u94.StartTurnRequest) {
       return _iocu6u94.StartTurnRequest.fromJson(data) as T;
     }
     if (t == _iw8le0j7.StartTurnResult) {
       return _iw8le0j7.StartTurnResult.fromJson(data) as T;
+    }
+    if (t == _i4yes7gs.StopBackgroundWorkRequest) {
+      return _i4yes7gs.StopBackgroundWorkRequest.fromJson(data) as T;
     }
     if (t == _i4cgq7zt.StopConversationRequest) {
       return _i4cgq7zt.StopConversationRequest.fromJson(data) as T;
@@ -694,6 +771,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _ih4jnnah.TurnSnapshot) {
       return _ih4jnnah.TurnSnapshot.fromJson(data) as T;
+    }
+    if (t == _ity1hrw2.UnbookmarkMessageRequest) {
+      return _ity1hrw2.UnbookmarkMessageRequest.fromJson(data) as T;
     }
     if (t == _ihs4d7mz.UpdateConversationRequest) {
       return _ihs4d7mz.UpdateConversationRequest.fromJson(data) as T;
@@ -779,6 +859,10 @@ class Protocol extends _isc.SerializationManager {
     if (t == _iw5yf4pd.UpdateModelConnectionRequest) {
       return _iw5yf4pd.UpdateModelConnectionRequest.fromJson(data) as T;
     }
+    if (t == _izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest) {
+      return _izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest.fromJson(data)
+          as T;
+    }
     if (t == _ic2lxbsg.VerifyModelConnectionRequest) {
       return _ic2lxbsg.VerifyModelConnectionRequest.fromJson(data) as T;
     }
@@ -787,6 +871,10 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _ihf3aqrg.WorkspaceModelConnection) {
       return _ihf3aqrg.WorkspaceModelConnection.fromJson(data) as T;
+    }
+    if (t == _i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy) {
+      return _i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy.fromJson(data)
+          as T;
     }
     if (t == _i2zocl9o.WorkspaceModelSelectionView) {
       return _i2zocl9o.WorkspaceModelSelectionView.fromJson(data) as T;
@@ -1074,6 +1162,22 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_i76zqh14.BackgroundWorkRecord?>()) {
+      return (data != null
+              ? _i76zqh14.BackgroundWorkRecord.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_ikckz8j1.BackgroundWorkView?>()) {
+      return (data != null ? _ikckz8j1.BackgroundWorkView.fromJson(data) : null)
+          as T;
+    }
+    if (t == _isc.getType<_ihrj16d1.BookmarkMessageRequest?>()) {
+      return (data != null
+              ? _ihrj16d1.BookmarkMessageRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_iarqshx6.CancelTurnRequest?>()) {
       return (data != null ? _iarqshx6.CancelTurnRequest.fromJson(data) : null)
           as T;
@@ -1140,6 +1244,12 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_ibea51bx.ConversationMessage?>()) {
       return (data != null
               ? _ibea51bx.ConversationMessage.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_iz9vdf0f.ConversationMessageSearchResult?>()) {
+      return (data != null
+              ? _iz9vdf0f.ConversationMessageSearchResult.fromJson(data)
               : null)
           as T;
     }
@@ -1227,6 +1337,12 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_iibrmzly.DetachToolCallRequest?>()) {
+      return (data != null
+              ? _iibrmzly.DetachToolCallRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_iybdpw96.EditPendingConversationMessageRequest?>()) {
       return (data != null
               ? _iybdpw96.EditPendingConversationMessageRequest.fromJson(data)
@@ -1249,6 +1365,12 @@ class Protocol extends _isc.SerializationManager {
       return (data != null ? _ilyvwvdb.GetTurnRequest.fromJson(data) : null)
           as T;
     }
+    if (t == _isc.getType<_i8d22946.ListBackgroundWorksRequest?>()) {
+      return (data != null
+              ? _i8d22946.ListBackgroundWorksRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_it91nt4l.ListConversationMessagesRequest?>()) {
       return (data != null
               ? _it91nt4l.ListConversationMessagesRequest.fromJson(data)
@@ -1258,6 +1380,22 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_itcpel99.ListConversationsRequest?>()) {
       return (data != null
               ? _itcpel99.ListConversationsRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_ii5kz2rj.ListMessageBookmarksRequest?>()) {
+      return (data != null
+              ? _ii5kz2rj.ListMessageBookmarksRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_i7h0nodu.MessageBookmark?>()) {
+      return (data != null ? _i7h0nodu.MessageBookmark.fromJson(data) : null)
+          as T;
+    }
+    if (t == _isc.getType<_i3vkah52.MessageBookmarkView?>()) {
+      return (data != null
+              ? _i3vkah52.MessageBookmarkView.fromJson(data)
               : null)
           as T;
     }
@@ -1305,12 +1443,24 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_iajm9iqs.SearchConversationMessagesRequest?>()) {
+      return (data != null
+              ? _iajm9iqs.SearchConversationMessagesRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_iocu6u94.StartTurnRequest?>()) {
       return (data != null ? _iocu6u94.StartTurnRequest.fromJson(data) : null)
           as T;
     }
     if (t == _isc.getType<_iw8le0j7.StartTurnResult?>()) {
       return (data != null ? _iw8le0j7.StartTurnResult.fromJson(data) : null)
+          as T;
+    }
+    if (t == _isc.getType<_i4yes7gs.StopBackgroundWorkRequest?>()) {
+      return (data != null
+              ? _i4yes7gs.StopBackgroundWorkRequest.fromJson(data)
+              : null)
           as T;
     }
     if (t == _isc.getType<_i4cgq7zt.StopConversationRequest?>()) {
@@ -1345,6 +1495,12 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _isc.getType<_ih4jnnah.TurnSnapshot?>()) {
       return (data != null ? _ih4jnnah.TurnSnapshot.fromJson(data) : null) as T;
+    }
+    if (t == _isc.getType<_ity1hrw2.UnbookmarkMessageRequest?>()) {
+      return (data != null
+              ? _ity1hrw2.UnbookmarkMessageRequest.fromJson(data)
+              : null)
+          as T;
     }
     if (t == _isc.getType<_ihs4d7mz.UpdateConversationRequest?>()) {
       return (data != null
@@ -1499,6 +1655,15 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t ==
+        _isc.getType<_izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest?>()) {
+      return (data != null
+              ? _izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest.fromJson(
+                  data,
+                )
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_ic2lxbsg.VerifyModelConnectionRequest?>()) {
       return (data != null
               ? _ic2lxbsg.VerifyModelConnectionRequest.fromJson(data)
@@ -1514,6 +1679,15 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_ihf3aqrg.WorkspaceModelConnection?>()) {
       return (data != null
               ? _ihf3aqrg.WorkspaceModelConnection.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t ==
+        _isc.getType<_i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy?>()) {
+      return (data != null
+              ? _i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy.fromJson(
+                  data,
+                )
               : null)
           as T;
     }
@@ -2028,6 +2202,27 @@ class Protocol extends _isc.SerializationManager {
               .toList()
           as T;
     }
+    if (t == List<_iricssvi.MessageBookmarkView>) {
+      return (data as List)
+              .map((e) => deserialize<_iricssvi.MessageBookmarkView>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_id2d4bnf.ConversationMessageSearchResult>) {
+      return (data as List)
+              .map(
+                (e) =>
+                    deserialize<_id2d4bnf.ConversationMessageSearchResult>(e),
+              )
+              .toList()
+          as T;
+    }
+    if (t == List<_ii9na0oj.BackgroundWorkView>) {
+      return (data as List)
+              .map((e) => deserialize<_ii9na0oj.BackgroundWorkView>(e))
+              .toList()
+          as T;
+    }
     if (t == List<_i9ncq2qy.McpCatalogListing>) {
       return (data as List)
               .map((e) => deserialize<_i9ncq2qy.McpCatalogListing>(e))
@@ -2117,6 +2312,9 @@ class Protocol extends _isc.SerializationManager {
       _ibhl6ekj.CompleteCodexOAuthResult => 'CompleteCodexOAuthResult',
       _iv7ukgnj.StartCodexOAuthRequest => 'StartCodexOAuthRequest',
       _itptq7z5.StartCodexOAuthResult => 'StartCodexOAuthResult',
+      _i76zqh14.BackgroundWorkRecord => 'BackgroundWorkRecord',
+      _ikckz8j1.BackgroundWorkView => 'BackgroundWorkView',
+      _ihrj16d1.BookmarkMessageRequest => 'BookmarkMessageRequest',
       _iarqshx6.CancelTurnRequest => 'CancelTurnRequest',
       _isyd7s84.CompactConversationRequest => 'CompactConversationRequest',
       _ialxa16r.ContinueConversationRequest => 'ContinueConversationRequest',
@@ -2130,6 +2328,8 @@ class Protocol extends _isc.SerializationManager {
       _ij9w9f8d.ConversationExecutionView => 'ConversationExecutionView',
       _iq1eovrr.ConversationJob => 'ConversationJob',
       _ibea51bx.ConversationMessage => 'ConversationMessage',
+      _iz9vdf0f.ConversationMessageSearchResult =>
+        'ConversationMessageSearchResult',
       _iutotoh6.ConversationMessageView => 'ConversationMessageView',
       _iz02ruas.ConversationMutationResult => 'ConversationMutationResult',
       _icl1rfiv.ConversationPage => 'ConversationPage',
@@ -2145,14 +2345,19 @@ class Protocol extends _isc.SerializationManager {
       _iii6xlqw.ConversationUsage => 'ConversationUsage',
       _i4shnjby.CreateConversationRequest => 'CreateConversationRequest',
       _iqsppx3t.DeleteConversationRequest => 'DeleteConversationRequest',
+      _iibrmzly.DetachToolCallRequest => 'DetachToolCallRequest',
       _iybdpw96.EditPendingConversationMessageRequest =>
         'EditPendingConversationMessageRequest',
       _i4amghcc.ForkConversationRequest => 'ForkConversationRequest',
       _ixb0z1tn.GetConversationRequest => 'GetConversationRequest',
       _ilyvwvdb.GetTurnRequest => 'GetTurnRequest',
+      _i8d22946.ListBackgroundWorksRequest => 'ListBackgroundWorksRequest',
       _it91nt4l.ListConversationMessagesRequest =>
         'ListConversationMessagesRequest',
       _itcpel99.ListConversationsRequest => 'ListConversationsRequest',
+      _ii5kz2rj.ListMessageBookmarksRequest => 'ListMessageBookmarksRequest',
+      _i7h0nodu.MessageBookmark => 'MessageBookmark',
+      _i3vkah52.MessageBookmarkView => 'MessageBookmarkView',
       _i32k4voa.ProviderAdmission => 'ProviderAdmission',
       _ih2np1vh.ProviderAdmissionLock => 'ProviderAdmissionLock',
       _i7moywui.ProviderAdmissionReservation => 'ProviderAdmissionReservation',
@@ -2164,8 +2369,11 @@ class Protocol extends _isc.SerializationManager {
         'ReorderPendingConversationMessageRequest',
       _ia1pnkb0.RestoreConversationCheckpointRequest =>
         'RestoreConversationCheckpointRequest',
+      _iajm9iqs.SearchConversationMessagesRequest =>
+        'SearchConversationMessagesRequest',
       _iocu6u94.StartTurnRequest => 'StartTurnRequest',
       _iw8le0j7.StartTurnResult => 'StartTurnResult',
+      _i4yes7gs.StopBackgroundWorkRequest => 'StopBackgroundWorkRequest',
       _i4cgq7zt.StopConversationRequest => 'StopConversationRequest',
       _ir42bm8f.SubmitToolDecisionBatchCall => 'SubmitToolDecisionBatchCall',
       _itvwh93k.SubmitToolDecisionBatchRequest =>
@@ -2174,6 +2382,7 @@ class Protocol extends _isc.SerializationManager {
         'SubmitToolDecisionBatchResult',
       _inla43mu.SubmitToolDecisionRequest => 'SubmitToolDecisionRequest',
       _ih4jnnah.TurnSnapshot => 'TurnSnapshot',
+      _ity1hrw2.UnbookmarkMessageRequest => 'UnbookmarkMessageRequest',
       _ihs4d7mz.UpdateConversationRequest => 'UpdateConversationRequest',
       _i8unm495.UpdateConversationSettingsRequest =>
         'UpdateConversationSettingsRequest',
@@ -2207,9 +2416,13 @@ class Protocol extends _isc.SerializationManager {
       _ixyi2mo6.TestAndSyncModelConnectionRequest =>
         'TestAndSyncModelConnectionRequest',
       _iw5yf4pd.UpdateModelConnectionRequest => 'UpdateModelConnectionRequest',
+      _izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest =>
+        'UpdateWorkspaceModelSelectionPolicyRequest',
       _ic2lxbsg.VerifyModelConnectionRequest => 'VerifyModelConnectionRequest',
       _ibj3h7po.VerifyModelConnectionResult => 'VerifyModelConnectionResult',
       _ihf3aqrg.WorkspaceModelConnection => 'WorkspaceModelConnection',
+      _i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy =>
+        'WorkspaceModelSelectionToolSamplingPolicy',
       _i2zocl9o.WorkspaceModelSelectionView => 'WorkspaceModelSelectionView',
       _ii7xucwd.BeginUploadRequest => 'BeginUploadRequest',
       _iy4az4cb.BeginUploadResult => 'BeginUploadResult',
@@ -2332,6 +2545,12 @@ class Protocol extends _isc.SerializationManager {
         return 'StartCodexOAuthRequest';
       case _itptq7z5.StartCodexOAuthResult():
         return 'StartCodexOAuthResult';
+      case _i76zqh14.BackgroundWorkRecord():
+        return 'BackgroundWorkRecord';
+      case _ikckz8j1.BackgroundWorkView():
+        return 'BackgroundWorkView';
+      case _ihrj16d1.BookmarkMessageRequest():
+        return 'BookmarkMessageRequest';
       case _iarqshx6.CancelTurnRequest():
         return 'CancelTurnRequest';
       case _isyd7s84.CompactConversationRequest():
@@ -2358,6 +2577,8 @@ class Protocol extends _isc.SerializationManager {
         return 'ConversationJob';
       case _ibea51bx.ConversationMessage():
         return 'ConversationMessage';
+      case _iz9vdf0f.ConversationMessageSearchResult():
+        return 'ConversationMessageSearchResult';
       case _iutotoh6.ConversationMessageView():
         return 'ConversationMessageView';
       case _iz02ruas.ConversationMutationResult():
@@ -2388,6 +2609,8 @@ class Protocol extends _isc.SerializationManager {
         return 'CreateConversationRequest';
       case _iqsppx3t.DeleteConversationRequest():
         return 'DeleteConversationRequest';
+      case _iibrmzly.DetachToolCallRequest():
+        return 'DetachToolCallRequest';
       case _iybdpw96.EditPendingConversationMessageRequest():
         return 'EditPendingConversationMessageRequest';
       case _i4amghcc.ForkConversationRequest():
@@ -2396,10 +2619,18 @@ class Protocol extends _isc.SerializationManager {
         return 'GetConversationRequest';
       case _ilyvwvdb.GetTurnRequest():
         return 'GetTurnRequest';
+      case _i8d22946.ListBackgroundWorksRequest():
+        return 'ListBackgroundWorksRequest';
       case _it91nt4l.ListConversationMessagesRequest():
         return 'ListConversationMessagesRequest';
       case _itcpel99.ListConversationsRequest():
         return 'ListConversationsRequest';
+      case _ii5kz2rj.ListMessageBookmarksRequest():
+        return 'ListMessageBookmarksRequest';
+      case _i7h0nodu.MessageBookmark():
+        return 'MessageBookmark';
+      case _i3vkah52.MessageBookmarkView():
+        return 'MessageBookmarkView';
       case _i32k4voa.ProviderAdmission():
         return 'ProviderAdmission';
       case _ih2np1vh.ProviderAdmissionLock():
@@ -2414,10 +2645,14 @@ class Protocol extends _isc.SerializationManager {
         return 'ReorderPendingConversationMessageRequest';
       case _ia1pnkb0.RestoreConversationCheckpointRequest():
         return 'RestoreConversationCheckpointRequest';
+      case _iajm9iqs.SearchConversationMessagesRequest():
+        return 'SearchConversationMessagesRequest';
       case _iocu6u94.StartTurnRequest():
         return 'StartTurnRequest';
       case _iw8le0j7.StartTurnResult():
         return 'StartTurnResult';
+      case _i4yes7gs.StopBackgroundWorkRequest():
+        return 'StopBackgroundWorkRequest';
       case _i4cgq7zt.StopConversationRequest():
         return 'StopConversationRequest';
       case _ir42bm8f.SubmitToolDecisionBatchCall():
@@ -2430,6 +2665,8 @@ class Protocol extends _isc.SerializationManager {
         return 'SubmitToolDecisionRequest';
       case _ih4jnnah.TurnSnapshot():
         return 'TurnSnapshot';
+      case _ity1hrw2.UnbookmarkMessageRequest():
+        return 'UnbookmarkMessageRequest';
       case _ihs4d7mz.UpdateConversationRequest():
         return 'UpdateConversationRequest';
       case _i8unm495.UpdateConversationSettingsRequest():
@@ -2486,12 +2723,16 @@ class Protocol extends _isc.SerializationManager {
         return 'TestAndSyncModelConnectionRequest';
       case _iw5yf4pd.UpdateModelConnectionRequest():
         return 'UpdateModelConnectionRequest';
+      case _izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest():
+        return 'UpdateWorkspaceModelSelectionPolicyRequest';
       case _ic2lxbsg.VerifyModelConnectionRequest():
         return 'VerifyModelConnectionRequest';
       case _ibj3h7po.VerifyModelConnectionResult():
         return 'VerifyModelConnectionResult';
       case _ihf3aqrg.WorkspaceModelConnection():
         return 'WorkspaceModelConnection';
+      case _i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy():
+        return 'WorkspaceModelSelectionToolSamplingPolicy';
       case _i2zocl9o.WorkspaceModelSelectionView():
         return 'WorkspaceModelSelectionView';
       case _ii7xucwd.BeginUploadRequest():
@@ -2699,6 +2940,15 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName == 'StartCodexOAuthResult') {
       return deserialize<_itptq7z5.StartCodexOAuthResult>(data['data']);
     }
+    if (dataClassName == 'BackgroundWorkRecord') {
+      return deserialize<_i76zqh14.BackgroundWorkRecord>(data['data']);
+    }
+    if (dataClassName == 'BackgroundWorkView') {
+      return deserialize<_ikckz8j1.BackgroundWorkView>(data['data']);
+    }
+    if (dataClassName == 'BookmarkMessageRequest') {
+      return deserialize<_ihrj16d1.BookmarkMessageRequest>(data['data']);
+    }
     if (dataClassName == 'CancelTurnRequest') {
       return deserialize<_iarqshx6.CancelTurnRequest>(data['data']);
     }
@@ -2737,6 +2987,11 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'ConversationMessage') {
       return deserialize<_ibea51bx.ConversationMessage>(data['data']);
+    }
+    if (dataClassName == 'ConversationMessageSearchResult') {
+      return deserialize<_iz9vdf0f.ConversationMessageSearchResult>(
+        data['data'],
+      );
     }
     if (dataClassName == 'ConversationMessageView') {
       return deserialize<_iutotoh6.ConversationMessageView>(data['data']);
@@ -2783,6 +3038,9 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName == 'DeleteConversationRequest') {
       return deserialize<_iqsppx3t.DeleteConversationRequest>(data['data']);
     }
+    if (dataClassName == 'DetachToolCallRequest') {
+      return deserialize<_iibrmzly.DetachToolCallRequest>(data['data']);
+    }
     if (dataClassName == 'EditPendingConversationMessageRequest') {
       return deserialize<_iybdpw96.EditPendingConversationMessageRequest>(
         data['data'],
@@ -2797,6 +3055,9 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName == 'GetTurnRequest') {
       return deserialize<_ilyvwvdb.GetTurnRequest>(data['data']);
     }
+    if (dataClassName == 'ListBackgroundWorksRequest') {
+      return deserialize<_i8d22946.ListBackgroundWorksRequest>(data['data']);
+    }
     if (dataClassName == 'ListConversationMessagesRequest') {
       return deserialize<_it91nt4l.ListConversationMessagesRequest>(
         data['data'],
@@ -2804,6 +3065,15 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'ListConversationsRequest') {
       return deserialize<_itcpel99.ListConversationsRequest>(data['data']);
+    }
+    if (dataClassName == 'ListMessageBookmarksRequest') {
+      return deserialize<_ii5kz2rj.ListMessageBookmarksRequest>(data['data']);
+    }
+    if (dataClassName == 'MessageBookmark') {
+      return deserialize<_i7h0nodu.MessageBookmark>(data['data']);
+    }
+    if (dataClassName == 'MessageBookmarkView') {
+      return deserialize<_i3vkah52.MessageBookmarkView>(data['data']);
     }
     if (dataClassName == 'ProviderAdmission') {
       return deserialize<_i32k4voa.ProviderAdmission>(data['data']);
@@ -2834,11 +3104,19 @@ class Protocol extends _isc.SerializationManager {
         data['data'],
       );
     }
+    if (dataClassName == 'SearchConversationMessagesRequest') {
+      return deserialize<_iajm9iqs.SearchConversationMessagesRequest>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'StartTurnRequest') {
       return deserialize<_iocu6u94.StartTurnRequest>(data['data']);
     }
     if (dataClassName == 'StartTurnResult') {
       return deserialize<_iw8le0j7.StartTurnResult>(data['data']);
+    }
+    if (dataClassName == 'StopBackgroundWorkRequest') {
+      return deserialize<_i4yes7gs.StopBackgroundWorkRequest>(data['data']);
     }
     if (dataClassName == 'StopConversationRequest') {
       return deserialize<_i4cgq7zt.StopConversationRequest>(data['data']);
@@ -2859,6 +3137,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'TurnSnapshot') {
       return deserialize<_ih4jnnah.TurnSnapshot>(data['data']);
+    }
+    if (dataClassName == 'UnbookmarkMessageRequest') {
+      return deserialize<_ity1hrw2.UnbookmarkMessageRequest>(data['data']);
     }
     if (dataClassName == 'UpdateConversationRequest') {
       return deserialize<_ihs4d7mz.UpdateConversationRequest>(data['data']);
@@ -2954,6 +3235,11 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName == 'UpdateModelConnectionRequest') {
       return deserialize<_iw5yf4pd.UpdateModelConnectionRequest>(data['data']);
     }
+    if (dataClassName == 'UpdateWorkspaceModelSelectionPolicyRequest') {
+      return deserialize<_izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'VerifyModelConnectionRequest') {
       return deserialize<_ic2lxbsg.VerifyModelConnectionRequest>(data['data']);
     }
@@ -2962,6 +3248,11 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'WorkspaceModelConnection') {
       return deserialize<_ihf3aqrg.WorkspaceModelConnection>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceModelSelectionToolSamplingPolicy') {
+      return deserialize<_i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy>(
+        data['data'],
+      );
     }
     if (dataClassName == 'WorkspaceModelSelectionView') {
       return deserialize<_i2zocl9o.WorkspaceModelSelectionView>(data['data']);

@@ -4,9 +4,15 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/data/repositories/browser_session_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/browser/models/browser_session_state.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/notifiers/agent_run_activity_notifier.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
@@ -15,7 +21,10 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -188,6 +197,209 @@ void main() {
       equals([const _WorkspaceWatchCall(workspaceId: 'workspace-1', limit: 5)]),
     );
   });
+
+  testWidgets('keeps an active recent conversation visible only once', (
+    tester,
+  ) async {
+    final conversations = List.generate(
+      10,
+      (index) => _conversation('chat-$index', title: 'Recent Chat $index'),
+    );
+    final activeConversation = conversations[3];
+    final repository = _SeededConversationRepository(conversations);
+    addTearDown(repository.close);
+
+    await _pumpSidebarAtConversation(
+      tester,
+      conversationId: activeConversation.id,
+      repository: repository,
+    );
+
+    expect(find.text(activeConversation.title), findsOneWidget);
+    final activeTile = tester.widget<AuraTile>(
+      find
+          .ancestor(
+            of: find.text(activeConversation.title),
+            matching: find.byType(AuraTile),
+          )
+          .first,
+    );
+    expect(activeTile.variant, AuraTileVariant.selected);
+    expect(activeTile.onTap, isNotNull);
+    expect(activeTile.trailing, isNotNull);
+    expect(repository.byIdWatchCalls, isEmpty);
+  });
+
+  testWidgets('keeps an active conversation outside the first ten visible', (
+    tester,
+  ) async {
+    final recentConversations = List.generate(
+      10,
+      (index) => _conversation('recent-$index', title: 'Recent Chat $index'),
+    );
+    final activeConversation = _conversation(
+      'active-chat',
+      title: 'Active Conversation',
+    );
+    final repository = _SeededConversationRepository(
+      recentConversations,
+      lookupConversations: [activeConversation],
+    );
+    addTearDown(repository.close);
+
+    await _pumpSidebarAtConversation(
+      tester,
+      conversationId: activeConversation.id,
+      repository: repository,
+    );
+
+    expect(repository.byIdWatchCalls, equals([activeConversation.id]));
+    expect(find.text(activeConversation.title), findsOneWidget);
+    final activeTile = tester.widget<AuraTile>(
+      find
+          .ancestor(
+            of: find.text(activeConversation.title),
+            matching: find.byType(AuraTile),
+          )
+          .first,
+    );
+    expect(activeTile.variant, AuraTileVariant.selected);
+    expect(activeTile.onTap, isNotNull);
+    expect(activeTile.trailing, isNotNull);
+  });
+
+  testWidgets(
+    'updates per-conversation activity indicators without changing selection',
+    (tester) async {
+      final semanticHandle = tester.ensureSemantics();
+
+      final selectedConversation = _conversation(
+        'chat-1',
+        title: 'Selected Chat',
+        isPinned: true,
+      );
+      final otherConversation = _conversation('chat-2', title: 'Other Chat');
+      final repository = _SeededConversationRepository([
+        selectedConversation,
+        otherConversation,
+      ]);
+      addTearDown(repository.close);
+
+      ProviderContainer? providerContainer;
+      await _pumpSidebarAtConversation(
+        tester,
+        conversationId: selectedConversation.id,
+        repository: repository,
+        onProviderContainer: (container) => providerContainer = container,
+      );
+
+      final container = providerContainer;
+      if (container == null) {
+        throw StateError(
+          'Provider container was not available in the sidebar.',
+        );
+      }
+
+      final activityNotifier = container.read(
+        agentRunActivityProvider.notifier,
+      );
+      final streamingNotifier = container.read(
+        conversationStreamingProvider.notifier,
+      );
+      container
+          .read(
+            conversationDraftProvider(
+              selectedConversation.workspaceId,
+              selectedConversation.id,
+            ).notifier,
+          )
+          .save(const ChatDraft(text: 'Unsent message'));
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('conversation-draft-marker-chat-1')),
+        findsOneWidget,
+      );
+      expect(find.text('Draft'), findsOneWidget);
+      expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
+      final startAgent = activityNotifier.startAgentRun;
+      final stopAgent = activityNotifier.endAgentRun;
+      final startStreaming = streamingNotifier.start;
+      final stopStreaming = streamingNotifier.remove;
+
+      startAgent(otherConversation.id);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
+        findsNothing,
+      );
+      expect(find.bySemanticsLabel(RegExp('Agent working')), findsOneWidget);
+
+      startStreaming(selectedConversation.id);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
+        findsOneWidget,
+      );
+      final selectedTile = tester.widget<AuraTile>(
+        find
+            .ancestor(
+              of: find.text(selectedConversation.title),
+              matching: find.byType(AuraTile),
+            )
+            .first,
+      );
+      expect(selectedTile.variant, AuraTileVariant.selected);
+      expect(
+        tester
+            .getSemantics(
+              find
+                  .ancestor(
+                    of: find.text(selectedConversation.title),
+                    matching: find.byType(AuraTile),
+                  )
+                  .first,
+            )
+            .label,
+        contains('Draft'),
+      );
+
+      stopAgent(otherConversation.id);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
+        findsNothing,
+      );
+
+      stopStreaming(selectedConversation.id);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
+        findsNothing,
+      );
+      semanticHandle.dispose();
+    },
+  );
 
   test('SidebarConversationsWidget stores properties', () {
     const widget = SidebarConversationsWidget(workspaceId: 'ws-1', limit: 5);
@@ -430,11 +642,73 @@ void main() {
     expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
     expect(find.text('Test Chat'), findsOneWidget);
   });
+
+  testWidgets('shows browser icon and manages tabs from conversation menu', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final browserRepository = BrowserSessionRepository(preferences);
+    await browserRepository.save(
+      'browser-chat',
+      const BrowserSessionState(
+        tabs: [
+          BrowserTab(id: 'tab-1', url: 'https://one.example'),
+          BrowserTab(id: 'tab-2', url: 'https://two.example'),
+        ],
+        activeTabId: 'tab-2',
+      ),
+    );
+    final repository = _SeededConversationRepository([
+      _conversation('browser-chat', title: 'Browser Chat'),
+    ]);
+    addTearDown(repository.close);
+
+    await _pumpSidebarAtConversation(
+      tester,
+      conversationId: 'browser-chat',
+      repository: repository,
+    );
+
+    const browserIconKey = ValueKey('sidebar-browser-status-browser-chat');
+    expect(find.byKey(browserIconKey), findsOneWidget);
+    expect(find.text('2 tabs'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Suspend browser'));
+    final _ = await tester.pumpAndSettle();
+
+    var session = await browserRepository.load('browser-chat');
+    expect(session.isSuspended, isTrue);
+    expect(session.tabs, hasLength(2));
+    expect(find.byKey(browserIconKey), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Resume browser'));
+    final _ = await tester.pumpAndSettle();
+
+    session = await browserRepository.load('browser-chat');
+    expect(session.isSuspended, isFalse);
+    expect(find.byKey(browserIconKey), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Close all browser tabs'));
+    final _ = await tester.pumpAndSettle();
+
+    session = await browserRepository.load('browser-chat');
+    expect(session.tabs, isEmpty);
+    expect(find.byKey(browserIconKey), findsNothing);
+  });
 }
 
 class _SeededConversationRepository(
-  final List<ConversationEntity> _conversations,
-) extends _RecordingConversationRepository {
+  final List<ConversationEntity> _conversations, {
+  final List<ConversationEntity> lookupConversations = const [],
+}) extends _RecordingConversationRepository {
+  final byIdWatchCalls = <String>[];
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
@@ -462,6 +736,16 @@ class _SeededConversationRepository(
 
     return activeController.stream;
   }
+
+  @override
+  Stream<ConversationEntity?> watchConversationById(String id) {
+    byIdWatchCalls.add(id);
+    for (final conversation in [..._conversations, ...lookupConversations]) {
+      if (conversation.id == id) return Stream.value(conversation);
+    }
+
+    return Stream.value(null);
+  }
 }
 
 class _TestCompactionExecution(
@@ -471,6 +755,92 @@ class _TestCompactionExecution(
   Map<String, CompactionExecutionState> build() {
     return Map.unmodifiable(_initialState);
   }
+}
+
+ConversationEntity _conversation(
+  String id, {
+  required String title,
+  bool isPinned = false,
+}) => ConversationEntity(
+  id: id,
+  title: title,
+  workspaceId: 'workspace-1',
+  isPinned: isPinned,
+  createdAt: .new(2025),
+  updatedAt: .new(2025),
+);
+
+Future<void> _pumpSidebarAtConversation(
+  WidgetTester tester, {
+  required String conversationId,
+  required _SeededConversationRepository repository,
+  void Function(ProviderContainer container)? onProviderContainer,
+}) async {
+  final router = GoRouter(
+    routes: [
+      GoRoute(
+        path: '/workspaces/:workspaceId/chats/:chatId',
+        builder: (_, _) => AuraThemeScope(
+          theme: .light,
+          child: Theme(
+            data: .new(),
+            child: Material(
+              child: SizedBox(
+                width: 300,
+                child: ListView(
+                  children: const [
+                    SidebarConversationsWidget(workspaceId: 'workspace-1'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+    initialLocation: '/workspaces/workspace-1/chats/$conversationId',
+  );
+  addTearDown(router.dispose);
+
+  await tester.runAsync(() async {
+    await tester.pumpWidget(
+      EasyLocalization(
+        child: Builder(
+          builder: (context) => Portal(
+            child: TestProviderScope(
+              overrides: [
+                workspaceSessionForRouteProvider.overrideWith(
+                  (_, workspaceId) async => WorkspaceSession(
+                    LocalWorkspaceRef(localWorkspaceId: workspaceId),
+                  ),
+                ),
+                conversationRepositoryProvider.overrideWithValue(repository),
+              ],
+              child: Builder(
+                builder: (context) {
+                  onProviderContainer?.call(ProviderScope.containerOf(context));
+
+                  return MaterialApp.router(
+                    routerConfig: router,
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+      ),
+    );
+  });
+  final _ = await tester.pumpAndSettle();
 }
 
 class const _SidebarWorkspaceHost() extends StatefulWidget {

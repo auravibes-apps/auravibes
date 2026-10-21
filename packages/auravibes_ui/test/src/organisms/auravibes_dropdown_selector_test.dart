@@ -91,6 +91,58 @@ void main() {
       );
     });
 
+    testWidgets(
+      'menu keeps inherited primary scroll controller attached only to page',
+      (tester) async {
+        final controller = ScrollController(initialScrollOffset: 40);
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: PrimaryScrollController(
+                controller: controller,
+                child: Portal(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: ListView(
+                          children: const [SizedBox(height: 1000)],
+                        ),
+                      ),
+                      const AuraDropdownSelector<String>(
+                        options: [
+                          AuraDropdownOption(
+                            value: 'one',
+                            child: Text('Option 1'),
+                          ),
+                        ],
+                        placeholder: Text('Select'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(controller.positions, hasLength(1));
+        expect(controller.offset, 40);
+
+        await tester.tap(find.text('Select'));
+        await tester.pump();
+
+        expect(find.text('Option 1'), findsOneWidget);
+        expect(controller.positions, hasLength(1));
+        expect(controller.offset, 40);
+      },
+      variant: const TargetPlatformVariant({
+        TargetPlatform.android,
+        TargetPlatform.iOS,
+      }),
+    );
+
     testWidgets('highlights selected option in dropdown', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -192,6 +244,47 @@ void main() {
       expect(find.text('Option 1'), findsNothing);
     });
 
+    testWidgets('opens with Space and closes with Escape', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: AuraDropdownSelector<String>(
+                options: const [
+                  AuraDropdownOption(
+                    value: 'Option 1',
+                    child: Text('Option 1'),
+                  ),
+                ],
+                onChanged: (_) => fail('Unexpected selection'),
+                placeholder: const Text('Select'),
+                focusNode: focusNode,
+              ),
+            ),
+          ),
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+
+      expect(await tester.sendKeyEvent(.space), isTrue);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Option 1'), findsOneWidget);
+
+      expect(await tester.sendKeyEvent(.escape), isTrue);
+      await tester.pump();
+      expect(find.text('Option 1'), findsNothing);
+      expect(focusNode.hasFocus, isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Option 1'), findsOneWidget);
+    });
+
     testWidgets('tab from closed dropdown moves to next visible button', (
       tester,
     ) async {
@@ -241,6 +334,8 @@ void main() {
     });
 
     testWidgets('tab loops inside open dropdown menu', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
       var buttonPressed = false;
       String? selectedValue;
 
@@ -265,6 +360,7 @@ void main() {
                       ],
                       onChanged: (value) => selectedValue = value,
                       placeholder: const Text('Select'),
+                      focusNode: focusNode,
                     ),
                   ),
                   TextButton(
@@ -298,6 +394,53 @@ void main() {
 
       expect(selectedValue, isNotNull);
       expect(buttonPressed, isFalse);
+      expect(focusNode.hasFocus, isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      await tester.pump();
+      expect(await tester.sendKeyEvent(.enter), isTrue);
+      await tester.pump();
+      expect(buttonPressed, isTrue);
+    });
+
+    testWidgets('outside tap closes without stealing target focus', (
+      tester,
+    ) async {
+      final triggerFocus = FocusNode();
+      final outsideFocus = FocusNode();
+      addTearDown(triggerFocus.dispose);
+      addTearDown(outsideFocus.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: Column(
+                children: [
+                  AuraDropdownSelector<String>(
+                    options: const [
+                      AuraDropdownOption(value: 'one', child: Text('Option')),
+                    ],
+                    placeholder: const Text('Select'),
+                    focusNode: triggerFocus,
+                  ),
+                  const SizedBox(height: 200),
+                  TextField(key: const Key('outside'), focusNode: outsideFocus),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      triggerFocus.requestFocus();
+      await tester.pump();
+      final _ = await tester.sendKeyEvent(.enter);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Option'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('outside')));
+      await tester.pump();
+      expect(find.text('Option'), findsNothing);
+      expect(outsideFocus.hasFocus, isTrue);
+      expect(triggerFocus.hasFocus, isFalse);
     });
 
     testWidgets('keeps dropdown open when header input gets focus', (
@@ -414,6 +557,79 @@ void main() {
 
       expect(optionTop, greaterThanOrEqualTo(0));
       expect(optionBottom, lessThanOrEqualTo(400));
+    });
+
+    testWidgets('fits menu height to a short option list', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: AuraDropdownSelector<String>(
+                options: const [
+                  AuraDropdownOption(value: 'One', child: Text('One')),
+                  AuraDropdownOption(value: 'Two', child: Text('Two')),
+                ],
+                onChanged: (_) => fail('Unexpected selection'),
+                placeholder: const Text('Select'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Select'));
+      await tester.pump();
+
+      expect(tester.getSize(find.byType(ListView)).height, lessThan(200));
+    });
+
+    testWidgets('scrolls long menu within a short viewport', (tester) async {
+      tester.view.physicalSize = const Size(400, 220);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: SizedBox(
+                  width: 200,
+                  child: AuraDropdownSelector<int>(
+                    options: .generate(
+                      20,
+                      (index) => AuraDropdownOption(
+                        value: index,
+                        child: Text('Option $index'),
+                      ),
+                    ),
+                    onChanged: (_) => fail('Unexpected selection'),
+                    placeholder: const Text('Select'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Select'));
+      await tester.pump();
+
+      final optionsList = find.byType(ListView);
+      expect(tester.getSize(optionsList).height, lessThanOrEqualTo(220));
+      expect(find.text('Option 19'), findsNothing);
+
+      await tester.drag(optionsList, const Offset(0, -1000));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Option 19'), findsOneWidget);
+      expect(
+        tester.getBottomLeft(find.text('Option 19')).dy,
+        lessThanOrEqualTo(220),
+      );
     });
 
     testWidgets('selects option while outside barrier is active', (

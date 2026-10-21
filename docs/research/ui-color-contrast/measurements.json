@@ -1,0 +1,3965 @@
+{
+  "observed": "2026-10-08",
+  "rgb_assumption": "sRGB, no embedded ICC profiles in downloaded images",
+  "shots": [
+    {
+      "key": "courier",
+      "file": "courier.png",
+      "title": "Courier Dashboard - Logistics Delivery App",
+      "author": "Ronas IT | UI/UX Team",
+      "displayed_likes": "315",
+      "feed": "month",
+      "shot_url": "https://dribbble.com/shots/27703402-Courier-Dashboard-Logistics-Delivery-App",
+      "source_url": "https://cdn.dribbble.com/userupload/48919554/file/aca2a51f08e36ac4833cb1e849ccfb1c.png?resize=1164x873&vertical=center",
+      "kind": "app",
+      "patches": [
+        {
+          "id": "canvas",
+          "theme": "light",
+          "roi": [
+            228,
+            570,
+            240,
+            582
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "hex": "#FFFFFF",
+          "L": 0.9999999934735462,
+          "C": 3.727399553519285e-08,
+          "h": null,
+          "a": 8.095285553011422e-11,
+          "b": 3.727390762708893e-08,
+          "Y": 1.0,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9999999934735462,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "neutral-card",
+          "theme": "light",
+          "roi": [
+            251,
+            335,
+            263,
+            347
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            243,
+            243,
+            243
+          ],
+          "hex": "#F3F3F3",
+          "L": 0.9641534938583236,
+          "C": 3.593785329592367e-08,
+          "h": null,
+          "a": 7.805106561065145e-11,
+          "b": 3.593776853882957e-08,
+          "Y": 0.8962693533742664,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9641534938583236,
+            0.9641534938583236
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                243,
+                243,
+                243
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "dark-header",
+          "theme": "light",
+          "roi": [
+            332,
+            81,
+            344,
+            93
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            0,
+            0,
+            0
+          ],
+          "hex": "#000000",
+          "L": 0.0,
+          "C": 0.0,
+          "h": null,
+          "a": 0.0,
+          "b": 0.0,
+          "Y": 0.0,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.0,
+            0.0
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                0,
+                0,
+                0
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-lime-card",
+          "theme": "light",
+          "roi": [
+            390,
+            190,
+            402,
+            202
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            213,
+            234,
+            115
+          ],
+          "hex": "#D5EA73",
+          "L": 0.8971455898568113,
+          "C": 0.14638448289651837,
+          "h": 117.73991023781826,
+          "a": -0.06813592630238535,
+          "b": 0.12956045839605923,
+          "Y": 0.7422957586319427,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.8971455898568113,
+            0.8971455898568113
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                213,
+                234,
+                115
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "main-text",
+          "theme": "light",
+          "roi": [
+            241,
+            197,
+            400,
+            220
+          ],
+          "selection": "dark",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            0,
+            0,
+            0
+          ],
+          "hex": "#000000",
+          "L": 0.0,
+          "C": 0.0,
+          "h": null,
+          "a": 0.0,
+          "b": 0.0,
+          "Y": 0.0,
+          "pixel_count": 3657,
+          "selected_count": 961,
+          "mode_fraction": 0.5681581685744017,
+          "L_range": [
+            0.0,
+            0.6115840786696672
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                0,
+                0,
+                0
+              ],
+              "count": 546
+            },
+            {
+              "rgb": [
+                112,
+                121,
+                59
+              ],
+              "count": 8
+            },
+            {
+              "rgb": [
+                27,
+                30,
+                15
+              ],
+              "count": 6
+            }
+          ]
+        },
+        {
+          "id": "secondary-text",
+          "theme": "light",
+          "roi": [
+            629,
+            617,
+            717,
+            633
+          ],
+          "selection": "dark",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            120,
+            120,
+            121
+          ],
+          "hex": "#787879",
+          "L": 0.5730044253555208,
+          "C": 0.0015118776402429576,
+          "h": 286.35203728741976,
+          "a": 0.0004256514747414397,
+          "b": -0.0014507221722704355,
+          "Y": 0.18806487403445407,
+          "pixel_count": 1408,
+          "selected_count": 107,
+          "mode_fraction": 0.037383177570093455,
+          "L_range": [
+            0.32872910634190955,
+            0.6270673190411971
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                120,
+                120,
+                121
+              ],
+              "count": 4
+            },
+            {
+              "rgb": [
+                110,
+                110,
+                111
+              ],
+              "count": 3
+            },
+            {
+              "rgb": [
+                128,
+                129,
+                130
+              ],
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "decorative-tile-border",
+          "theme": "light",
+          "roi": [
+            242,
+            640,
+            243,
+            672
+          ],
+          "selection": "all",
+          "notes": "Rendered central column of thin antialiased product-card border. Authored stroke cannot be recovered; decorative grouping only.",
+          "rgb": [
+            235,
+            235,
+            235
+          ],
+          "hex": "#EBEBEB",
+          "L": 0.9400701096450296,
+          "C": 3.5040169249310105e-08,
+          "h": null,
+          "a": 7.610112540135106e-11,
+          "b": 3.5040086610038657e-08,
+          "Y": 0.8307698767746545,
+          "pixel_count": 32,
+          "selected_count": 32,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9400701096450296,
+            0.9400701096450296
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                235,
+                235,
+                235
+              ],
+              "count": 32
+            }
+          ]
+        }
+      ],
+      "pairs": [
+        {
+          "foreground": "main-text",
+          "background": "accent-lime-card",
+          "kind": "text",
+          "ratio": 15.845915172638856,
+          "delta_L": -0.8971455898568113,
+          "delta_C": -0.14638448289651837,
+          "delta_E": 0.9090096953456586
+        },
+        {
+          "foreground": "secondary-text",
+          "background": "canvas",
+          "kind": "text",
+          "ratio": 4.4105624748657295,
+          "delta_L": -0.4269955681180254,
+          "delta_C": 0.0015118403662474223,
+          "delta_E": 0.42699824481432586
+        },
+        {
+          "foreground": "neutral-card",
+          "background": "canvas",
+          "kind": "surface",
+          "ratio": 1.1096206341839607,
+          "delta_L": -0.03584649961522257,
+          "delta_C": -1.3361422392691838e-09,
+          "delta_E": 0.03584649961522259
+        },
+        {
+          "foreground": "accent-lime-card",
+          "background": "canvas",
+          "kind": "surface",
+          "ratio": 1.3252626794481839,
+          "delta_L": -0.10285440361673492,
+          "delta_C": 0.14638444562252284,
+          "delta_E": 0.17890621992770167
+        },
+        {
+          "foreground": "decorative-tile-border",
+          "background": "canvas",
+          "kind": "border",
+          "ratio": 1.192138863609936,
+          "delta_L": -0.059929883828516606,
+          "delta_C": -2.233826285882748e-09,
+          "delta_E": 0.05992988382851665
+        }
+      ],
+      "expected_sha256": "5fd25d133280c3caa70c12f09786ed02e8b24fca0b35241a1ab08e540a6dd00e",
+      "expected_dimensions": [
+        1164,
+        873
+      ],
+      "sha256": "5fd25d133280c3caa70c12f09786ed02e8b24fca0b35241a1ab08e540a6dd00e",
+      "dimensions": [
+        1164,
+        873
+      ]
+    },
+    {
+      "key": "ama",
+      "file": "ama.png",
+      "title": "AMA. \u2013 Learning App User Interface",
+      "author": "Tran Mau Tri Tam",
+      "displayed_likes": "2.4k",
+      "feed": "ever",
+      "shot_url": "https://dribbble.com/shots/17575451-AMA-Learning-App-User-Interface",
+      "source_url": "https://cdn.dribbble.com/userupload/37450341/file/original-a912c3e46ca56a70ee2423c0947e0db0.png?resize=1100x825&vertical=center",
+      "kind": "app",
+      "patches": [
+        {
+          "id": "canvas-upper",
+          "theme": "light",
+          "roi": [
+            654,
+            159,
+            666,
+            171
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            249,
+            249,
+            249
+          ],
+          "hex": "#F9F9F9",
+          "L": 0.9821176331531957,
+          "C": 3.660744858851494e-08,
+          "h": null,
+          "a": 7.950512470600302e-11,
+          "b": 3.660736225263861e-08,
+          "Y": 0.9473065367331998,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.7638888888888888,
+          "L_range": [
+            0.9081404528214102,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                249,
+                249,
+                249
+              ],
+              "count": 110
+            },
+            {
+              "rgb": [
+                245,
+                245,
+                247
+              ],
+              "count": 9
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                253
+              ],
+              "count": 8
+            }
+          ]
+        },
+        {
+          "id": "canvas-lower",
+          "theme": "light",
+          "roi": [
+            665,
+            736,
+            677,
+            748
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "hex": "#FFFFFF",
+          "L": 0.9999999934735462,
+          "C": 3.727399553519285e-08,
+          "h": null,
+          "a": 8.095285553011422e-11,
+          "b": 3.727390762708893e-08,
+          "Y": 1.0,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9999999934735462,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "white-card",
+          "theme": "light",
+          "roi": [
+            425,
+            276,
+            437,
+            288
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "hex": "#FFFFFF",
+          "L": 0.9999999934735462,
+          "C": 3.727399553519285e-08,
+          "h": null,
+          "a": 8.095285553011422e-11,
+          "b": 3.727390762708893e-08,
+          "Y": 1.0,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9999999934735462,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "neutral-button",
+          "theme": "light",
+          "roi": [
+            1016,
+            324,
+            1028,
+            336
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            231,
+            232,
+            233
+          ],
+          "hex": "#E7E8E9",
+          "L": 0.9305141774974619,
+          "C": 0.0017303287307706252,
+          "h": 247.84030179515457,
+          "a": -0.00065266171967715,
+          "b": -0.0016025199518877598,
+          "Y": 0.8058534193009146,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.5763888888888888,
+          "L_range": [
+            0.9153445629278812,
+            0.9970251851547624
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                231,
+                232,
+                233
+              ],
+              "count": 83
+            },
+            {
+              "rgb": [
+                252,
+                252,
+                252
+              ],
+              "count": 16
+            },
+            {
+              "rgb": [
+                250,
+                250,
+                250
+              ],
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "accent-blue-button",
+          "theme": "light",
+          "roi": [
+            874,
+            324,
+            886,
+            336
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            30,
+            86,
+            195
+          ],
+          "hex": "#1E56C3",
+          "L": 0.48549661402825206,
+          "C": 0.18057904934379124,
+          "h": 261.87069941084684,
+          "a": -0.025535232538653085,
+          "b": -0.17876449580692555,
+          "Y": 0.10871726901482433,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.75,
+          "L_range": [
+            0.4823607279661755,
+            0.49279552019066614
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                30,
+                86,
+                195
+              ],
+              "count": 108
+            },
+            {
+              "rgb": [
+                29,
+                85,
+                195
+              ],
+              "count": 18
+            },
+            {
+              "rgb": [
+                34,
+                89,
+                195
+              ],
+              "count": 12
+            }
+          ]
+        },
+        {
+          "id": "accent-lilac-card",
+          "theme": "light",
+          "roi": [
+            597,
+            550,
+            609,
+            562
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            236,
+            220,
+            244
+          ],
+          "hex": "#ECDCF4",
+          "L": 0.9144561631493244,
+          "C": 0.03641607919393743,
+          "h": 314.633742148828,
+          "a": 0.025584926753917936,
+          "b": -0.025914134113563914,
+          "Y": 0.7555091982493572,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9144561631493244,
+            0.9144561631493244
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                236,
+                220,
+                244
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-peach-card",
+          "theme": "light",
+          "roi": [
+            600,
+            667,
+            612,
+            679
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            243,
+            236,
+            222
+          ],
+          "hex": "#F3ECDE",
+          "L": 0.9447680821138089,
+          "C": 0.02007217617273879,
+          "h": 84.59047356901519,
+          "a": 0.0018922811591265964,
+          "b": 0.01998278079558191,
+          "Y": 0.8431951831588698,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9447680821138089,
+            0.9447680821138089
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                243,
+                236,
+                222
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "dark-timeline-card",
+          "theme": "light",
+          "roi": [
+            670,
+            613,
+            682,
+            625
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            39,
+            41,
+            50
+          ],
+          "hex": "#272932",
+          "L": 0.2827384978816959,
+          "C": 0.016752092709032114,
+          "h": 275.4102456571695,
+          "a": 0.0015794934863114507,
+          "b": -0.01667746414952545,
+          "Y": 0.022475004497946385,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.9166666666666666,
+          "L_range": [
+            0.27866130594823213,
+            0.2827384978816959
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                39,
+                41,
+                50
+              ],
+              "count": 132
+            },
+            {
+              "rgb": [
+                38,
+                40,
+                49
+              ],
+              "count": 12
+            }
+          ]
+        },
+        {
+          "id": "onboarding-canvas",
+          "theme": "dark",
+          "roi": [
+            328,
+            572,
+            340,
+            584
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            25,
+            27,
+            34
+          ],
+          "hex": "#191B22",
+          "L": 0.22317070252135088,
+          "C": 0.013980708512532223,
+          "h": 272.6784090146795,
+          "a": 0.0006533189551098106,
+          "b": -0.01396543536218206,
+          "Y": 0.011060322416712755,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.22317070252135088,
+            0.22317070252135088
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                25,
+                27,
+                34
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "main-text",
+          "theme": "light",
+          "roi": [
+            418,
+            172,
+            583,
+            205
+          ],
+          "selection": "dark",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            0,
+            0,
+            0
+          ],
+          "hex": "#000000",
+          "L": 0.0,
+          "C": 0.0,
+          "h": null,
+          "a": 0.0,
+          "b": 0.0,
+          "Y": 0.0,
+          "pixel_count": 5445,
+          "selected_count": 1426,
+          "mode_fraction": 0.06451612903225806,
+          "L_range": [
+            0.0,
+            0.6238359481471579
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                0,
+                0,
+                0
+              ],
+              "count": 92
+            },
+            {
+              "rgb": [
+                26,
+                28,
+                35
+              ],
+              "count": 81
+            },
+            {
+              "rgb": [
+                24,
+                26,
+                33
+              ],
+              "count": 80
+            }
+          ]
+        },
+        {
+          "id": "on-blue-text",
+          "theme": "light",
+          "roi": [
+            782,
+            334,
+            904,
+            352
+          ],
+          "selection": "light",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "hex": "#FFFFFF",
+          "L": 0.9999999934735462,
+          "C": 3.727399553519285e-08,
+          "h": null,
+          "a": 8.095285553011422e-11,
+          "b": 3.727390762708893e-08,
+          "Y": 1.0,
+          "pixel_count": 2196,
+          "selected_count": 403,
+          "mode_fraction": 0.456575682382134,
+          "L_range": [
+            0.7547471102729476,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 184
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                254
+              ],
+              "count": 6
+            },
+            {
+              "rgb": [
+                228,
+                235,
+                247
+              ],
+              "count": 4
+            }
+          ]
+        }
+      ],
+      "pairs": [
+        {
+          "foreground": "main-text",
+          "background": "canvas-upper",
+          "kind": "text",
+          "ratio": 19.946130734663996,
+          "delta_L": -0.9821176331531957,
+          "delta_C": -3.660744858851494e-08,
+          "delta_E": 0.9821176331531963
+        },
+        {
+          "foreground": "on-blue-text",
+          "background": "accent-blue-button",
+          "kind": "text",
+          "ratio": 6.615537216066445,
+          "delta_L": 0.5145033794452941,
+          "delta_C": -0.1805790120697957,
+          "delta_E": 0.5452728985133719
+        },
+        {
+          "foreground": "white-card",
+          "background": "canvas-upper",
+          "kind": "surface",
+          "ratio": 1.0528357744845473,
+          "delta_L": 0.01788236032035051,
+          "delta_C": 6.665469466779126e-10,
+          "delta_E": 0.017882360320350524
+        },
+        {
+          "foreground": "accent-lilac-card",
+          "background": "canvas-upper",
+          "kind": "surface",
+          "ratio": 1.2381069501138942,
+          "delta_L": -0.06766147000387124,
+          "delta_C": 0.036416042586488846,
+          "delta_E": 0.07683883939892086
+        },
+        {
+          "foreground": "accent-peach-card",
+          "background": "canvas-upper",
+          "kind": "surface",
+          "ratio": 1.1165605855666734,
+          "delta_L": -0.03734955103938675,
+          "delta_C": 0.0200721395652902,
+          "delta_E": 0.04240141219133953
+        },
+        {
+          "foreground": "accent-blue-button",
+          "background": "canvas-upper",
+          "kind": "surface",
+          "ratio": 6.283541437699829,
+          "delta_L": -0.4966210191249436,
+          "delta_C": 0.18057901273634264,
+          "delta_E": 0.5284328176701936
+        }
+      ],
+      "expected_sha256": "c21114baa7a037cc7402f89269582d9debe49ee5dc9b54b90c1832a12f8ca11f",
+      "expected_dimensions": [
+        1100,
+        825
+      ],
+      "sha256": "c21114baa7a037cc7402f89269582d9debe49ee5dc9b54b90c1832a12f8ca11f",
+      "dimensions": [
+        1100,
+        825
+      ]
+    },
+    {
+      "key": "bank",
+      "file": "bank.jpg",
+      "title": "Bank App UI UX Design",
+      "author": "theosm / Lalit Kumar",
+      "displayed_likes": "151",
+      "feed": "month",
+      "shot_url": "https://dribbble.com/shots/27732877-Bank-App-UI-UX-Design",
+      "source_url": "https://cdn.dribbble.com/userupload/49028141/file/ca84cd8c352735aa9b694bb6bf6126e1.jpg?resize=2400x1800&vertical=center",
+      "kind": "app",
+      "patches": [
+        {
+          "id": "canvas-light",
+          "theme": "light",
+          "roi": [
+            282,
+            696,
+            294,
+            708
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "hex": "#FFFFFF",
+          "L": 0.9999999934735462,
+          "C": 3.727399553519285e-08,
+          "h": null,
+          "a": 8.095285553011422e-11,
+          "b": 3.727390762708893e-08,
+          "Y": 1.0,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9999999934735462,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "button-dark",
+          "theme": "light",
+          "roi": [
+            474,
+            1515,
+            486,
+            1527
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            22,
+            22,
+            22
+          ],
+          "hex": "#161616",
+          "L": 0.20019308709601014,
+          "C": 7.46199627244733e-09,
+          "h": null,
+          "a": 1.6206203046209566e-11,
+          "b": 7.461978673850567e-09,
+          "Y": 0.008023192985384994,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.20019308709601014,
+            0.20019308709601014
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                22,
+                22,
+                22
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "canvas-dark",
+          "theme": "dark",
+          "roi": [
+            978,
+            732,
+            990,
+            744
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            22,
+            22,
+            22
+          ],
+          "hex": "#161616",
+          "L": 0.20019308709601014,
+          "C": 7.46199627244733e-09,
+          "h": null,
+          "a": 1.6206203046209566e-11,
+          "b": 7.461978673850567e-09,
+          "Y": 0.008023192985384994,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.20019308709601014,
+            0.20019308709601014
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                22,
+                22,
+                22
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "tile-dark",
+          "theme": "dark",
+          "roi": [
+            1698,
+            1150,
+            1710,
+            1162
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            17,
+            17,
+            17
+          ],
+          "hex": "#111111",
+          "L": 0.17763777191722593,
+          "C": 6.621269577527897e-09,
+          "h": null,
+          "a": 1.4380260870971995e-11,
+          "b": 6.621253961780482e-09,
+          "Y": 0.005605391624202723,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.17763777191722593,
+            0.17763777191722593
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                17,
+                17,
+                17
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "button-light",
+          "theme": "dark",
+          "roi": [
+            1074,
+            1524,
+            1086,
+            1536
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "hex": "#FFFFFF",
+          "L": 0.9999999934735462,
+          "C": 3.727399553519285e-08,
+          "h": null,
+          "a": 8.095285553011422e-11,
+          "b": 3.727390762708893e-08,
+          "Y": 1.0,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.6319444444444444,
+          "L_range": [
+            0.0,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 91
+            },
+            {
+              "rgb": [
+                254,
+                254,
+                254
+              ],
+              "count": 10
+            },
+            {
+              "rgb": [
+                252,
+                252,
+                252
+              ],
+              "count": 6
+            }
+          ]
+        },
+        {
+          "id": "main-text-light",
+          "theme": "light",
+          "roi": [
+            166,
+            392,
+            660,
+            567
+          ],
+          "selection": "dark",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            22,
+            22,
+            22
+          ],
+          "hex": "#161616",
+          "L": 0.20019308709601014,
+          "C": 7.46199627244733e-09,
+          "h": null,
+          "a": 1.6206203046209566e-11,
+          "b": 7.461978673850567e-09,
+          "Y": 0.008023192985384994,
+          "pixel_count": 86450,
+          "selected_count": 14358,
+          "mode_fraction": 0.16046803175929794,
+          "L_range": [
+            0.0,
+            0.6367600316401532
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                22,
+                22,
+                22
+              ],
+              "count": 2304
+            },
+            {
+              "rgb": [
+                21,
+                21,
+                21
+              ],
+              "count": 1781
+            },
+            {
+              "rgb": [
+                0,
+                0,
+                0
+              ],
+              "count": 1346
+            }
+          ]
+        },
+        {
+          "id": "muted-text-light",
+          "theme": "light",
+          "roi": [
+            166,
+            596,
+            574,
+            628
+          ],
+          "selection": "mid",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            162,
+            162,
+            162
+          ],
+          "hex": "#A2A2A2",
+          "L": 0.7122383717110093,
+          "C": 2.6547969928658264e-08,
+          "h": null,
+          "a": 5.76578229605218e-11,
+          "b": 2.6547907316931685e-08,
+          "Y": 0.36130677978350945,
+          "pixel_count": 13056,
+          "selected_count": 1557,
+          "mode_fraction": 0.03275529865125241,
+          "L_range": [
+            0.650041264979764,
+            0.8914313398856534
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                162,
+                162,
+                162
+              ],
+              "count": 51
+            },
+            {
+              "rgb": [
+                164,
+                164,
+                164
+              ],
+              "count": 49
+            },
+            {
+              "rgb": [
+                160,
+                160,
+                160
+              ],
+              "count": 45
+            }
+          ]
+        },
+        {
+          "id": "main-text-dark",
+          "theme": "dark",
+          "roi": [
+            917,
+            392,
+            1308,
+            567
+          ],
+          "selection": "light",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "hex": "#FFFFFF",
+          "L": 0.9999999934735462,
+          "C": 3.727399553519285e-08,
+          "h": null,
+          "a": 8.095285553011422e-11,
+          "b": 3.727390762708893e-08,
+          "Y": 1.0,
+          "pixel_count": 68425,
+          "selected_count": 11524,
+          "mode_fraction": 0.5069420340159667,
+          "L_range": [
+            0.6731222126359498,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 5842
+            },
+            {
+              "rgb": [
+                254,
+                254,
+                254
+              ],
+              "count": 1679
+            },
+            {
+              "rgb": [
+                253,
+                253,
+                253
+              ],
+              "count": 1217
+            }
+          ]
+        },
+        {
+          "id": "secondary-text-dark",
+          "theme": "dark",
+          "roi": [
+            917,
+            596,
+            1368,
+            648
+          ],
+          "selection": "light",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            198,
+            198,
+            198
+          ],
+          "hex": "#C6C6C6",
+          "L": 0.8265622041716898,
+          "C": 3.080927607285076e-08,
+          "h": null,
+          "a": 6.691286413840203e-11,
+          "b": 3.0809203410697705e-08,
+          "Y": 0.5647115057049292,
+          "pixel_count": 23452,
+          "selected_count": 1976,
+          "mode_fraction": 0.0298582995951417,
+          "L_range": [
+            0.6731222126359498,
+            0.9430889012181793
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                198,
+                198,
+                198
+              ],
+              "count": 59
+            },
+            {
+              "rgb": [
+                196,
+                196,
+                196
+              ],
+              "count": 59
+            },
+            {
+              "rgb": [
+                199,
+                199,
+                199
+              ],
+              "count": 58
+            }
+          ]
+        }
+      ],
+      "pairs": [
+        {
+          "foreground": "main-text-light",
+          "background": "canvas-light",
+          "kind": "text",
+          "ratio": 18.096211979655724,
+          "delta_L": -0.799806906377536,
+          "delta_C": -2.981199926274552e-08,
+          "delta_E": 0.7998069063775366
+        },
+        {
+          "foreground": "muted-text-light",
+          "background": "canvas-light",
+          "kind": "text",
+          "ratio": 2.5528390282131155,
+          "delta_L": -0.28776162176253683,
+          "delta_C": -1.0726025606534589e-08,
+          "delta_E": 0.28776162176253706
+        },
+        {
+          "foreground": "main-text-dark",
+          "background": "canvas-dark",
+          "kind": "text",
+          "ratio": 18.096211979655724,
+          "delta_L": 0.799806906377536,
+          "delta_C": 2.981199926274552e-08,
+          "delta_E": 0.7998069063775366
+        },
+        {
+          "foreground": "secondary-text-dark",
+          "background": "canvas-dark",
+          "kind": "text",
+          "ratio": 10.594237822447381,
+          "delta_L": 0.6263691170756797,
+          "delta_C": 2.334727980040343e-08,
+          "delta_E": 0.6263691170756801
+        },
+        {
+          "foreground": "tile-dark",
+          "background": "canvas-dark",
+          "kind": "surface",
+          "ratio": 1.0434814195271291,
+          "delta_L": -0.022555315178784202,
+          "delta_C": -8.407266949194331e-10,
+          "delta_E": 0.02255531517878422
+        },
+        {
+          "foreground": "button-light",
+          "background": "canvas-dark",
+          "kind": "surface",
+          "ratio": 18.096211979655724,
+          "delta_L": 0.799806906377536,
+          "delta_C": 2.981199926274552e-08,
+          "delta_E": 0.7998069063775366
+        }
+      ],
+      "expected_sha256": "61d6f6ccbcc74c048d44b0d74ca44a92168eef687f818507db10bd6e34c39ee3",
+      "expected_dimensions": [
+        2400,
+        1800
+      ],
+      "sha256": "61d6f6ccbcc74c048d44b0d74ca44a92168eef687f818507db10bd6e34c39ee3",
+      "dimensions": [
+        2400,
+        1800
+      ]
+    },
+    {
+      "key": "football",
+      "file": "football.jpg",
+      "title": "Football Mobile App - Sports UI Design",
+      "author": "Nixtio",
+      "displayed_likes": "460",
+      "feed": "month",
+      "shot_url": "https://dribbble.com/shots/27759882-Football-Mobile-App-Sports-UI-Design",
+      "source_url": "https://cdn.dribbble.com/userupload/49129616/file/68844c7a546c245894fb3f29a3224156.jpg?resize=2400x1800&vertical=center",
+      "kind": "app",
+      "patches": [
+        {
+          "id": "canvas",
+          "theme": "dark",
+          "roi": [
+            2192,
+            516,
+            2204,
+            528
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            14,
+            14,
+            14
+          ],
+          "hex": "#0E0E0E",
+          "L": 0.16375794590570902,
+          "C": 6.103912949068526e-09,
+          "h": null,
+          "a": 1.3256742925626952e-11,
+          "b": 6.103898553266873e-09,
+          "Y": 0.004391442037410293,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.16375794590570902,
+            0.16375794590570902
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                14,
+                14,
+                14
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "neutral-pill",
+          "theme": "dark",
+          "roi": [
+            1986,
+            1466,
+            1998,
+            1478
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            40,
+            40,
+            40
+          ],
+          "hex": "#282828",
+          "L": 0.2768482008772679,
+          "C": 1.0319238653616773e-08,
+          "h": null,
+          "a": 2.241166974226161e-11,
+          "b": 1.0319214316378833e-08,
+          "Y": 0.02121901037600355,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.2768482008772679,
+            0.2768482008772679
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                40,
+                40,
+                40
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-lime-pill",
+          "theme": "dark",
+          "roi": [
+            1842,
+            1461,
+            1854,
+            1473
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            180,
+            255,
+            0
+          ],
+          "hex": "#B4FF00",
+          "L": 0.9159551853519186,
+          "C": 0.2396758638385219,
+          "h": 128.05164213307455,
+          "a": -0.14772936670953268,
+          "b": 0.1887340825562307,
+          "Y": 0.812232983528154,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9159551853519186,
+            0.9159551853519186
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                180,
+                255,
+                0
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-pale-lime-card",
+          "theme": "dark",
+          "roi": [
+            1393,
+            1263,
+            1405,
+            1275
+          ],
+          "selection": "all",
+          "notes": "Solid interior of middle-screen result card; surrounding photography excluded.",
+          "rgb": [
+            207,
+            255,
+            93
+          ],
+          "hex": "#CFFF5D",
+          "L": 0.9365138232751106,
+          "C": 0.1927030096239262,
+          "h": 124.18765879256149,
+          "a": -0.10828082625420732,
+          "b": 0.15940424267824604,
+          "Y": 0.8557571147883143,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9365138232751106,
+            0.9365138232751106
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                207,
+                255,
+                93
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "main-text",
+          "theme": "dark",
+          "roi": [
+            1627,
+            517,
+            1985,
+            612
+          ],
+          "selection": "light",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "hex": "#FFFFFF",
+          "L": 0.9999999934735462,
+          "C": 3.727399553519285e-08,
+          "h": null,
+          "a": 8.095285553011422e-11,
+          "b": 3.727390762708893e-08,
+          "Y": 1.0,
+          "pixel_count": 34010,
+          "selected_count": 15119,
+          "mode_fraction": 0.6562603346782194,
+          "L_range": [
+            0.6731222126359498,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 9922
+            },
+            {
+              "rgb": [
+                254,
+                254,
+                254
+              ],
+              "count": 1602
+            },
+            {
+              "rgb": [
+                253,
+                253,
+                253
+              ],
+              "count": 1172
+            }
+          ]
+        },
+        {
+          "id": "secondary-text",
+          "theme": "dark",
+          "roi": [
+            1630,
+            459,
+            1790,
+            504
+          ],
+          "selection": "mid",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            170,
+            170,
+            170
+          ],
+          "hex": "#AAAAAA",
+          "L": 0.73801866613195,
+          "C": 2.750890475011992e-08,
+          "h": null,
+          "a": 5.974454264645601e-11,
+          "b": 2.7508839872680824e-08,
+          "Y": 0.4019777798321958,
+          "pixel_count": 7200,
+          "selected_count": 1706,
+          "mode_fraction": 0.04806565064478312,
+          "L_range": [
+            0.39417829080418526,
+            0.8327938123094923
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                170,
+                170,
+                170
+              ],
+              "count": 82
+            },
+            {
+              "rgb": [
+                175,
+                175,
+                175
+              ],
+              "count": 81
+            },
+            {
+              "rgb": [
+                171,
+                171,
+                171
+              ],
+              "count": 69
+            }
+          ]
+        },
+        {
+          "id": "on-lime-text",
+          "theme": "dark",
+          "roi": [
+            1790,
+            1476,
+            1910,
+            1515
+          ],
+          "selection": "dark",
+          "notes": "Core glyph mode in selected Tactics pill; JPEG estimate.",
+          "rgb": [
+            0,
+            0,
+            0
+          ],
+          "hex": "#000000",
+          "L": 0.0,
+          "C": 0.0,
+          "h": null,
+          "a": 0.0,
+          "b": 0.0,
+          "Y": 0.0,
+          "pixel_count": 4680,
+          "selected_count": 556,
+          "mode_fraction": 0.04136690647482014,
+          "L_range": [
+            0.0,
+            0.587266574126977
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                0,
+                0,
+                0
+              ],
+              "count": 23
+            },
+            {
+              "rgb": [
+                0,
+                1,
+                0
+              ],
+              "count": 19
+            },
+            {
+              "rgb": [
+                14,
+                14,
+                14
+              ],
+              "count": 18
+            }
+          ]
+        }
+      ],
+      "pairs": [
+        {
+          "foreground": "main-text",
+          "background": "canvas",
+          "kind": "text",
+          "ratio": 19.30450748626618,
+          "delta_L": 0.8362420475678372,
+          "delta_C": 3.117008258612433e-08,
+          "delta_E": 0.8362420475678377
+        },
+        {
+          "foreground": "secondary-text",
+          "background": "canvas",
+          "kind": "text",
+          "ratio": 8.309722318472943,
+          "delta_L": 0.574260720226241,
+          "delta_C": 2.1404991801051396e-08,
+          "delta_E": 0.5742607202262413
+        },
+        {
+          "foreground": "neutral-pill",
+          "background": "canvas",
+          "kind": "surface",
+          "ratio": 1.3093789704457424,
+          "delta_L": 0.11309025497155889,
+          "delta_C": 4.215325704548247e-09,
+          "delta_E": 0.11309025497155897
+        },
+        {
+          "foreground": "accent-lime-pill",
+          "background": "canvas",
+          "kind": "surface",
+          "ratio": 15.852364843261784,
+          "delta_L": 0.7521972394462095,
+          "delta_C": 0.23967585773460895,
+          "delta_E": 0.7894588047752267
+        },
+        {
+          "foreground": "accent-pale-lime-card",
+          "background": "accent-lime-pill",
+          "kind": "accent-family",
+          "ratio": 1.0504783881985873,
+          "delta_L": 0.020558637923192014,
+          "delta_C": -0.04697285421459571,
+          "delta_E": 0.05328305963981957
+        },
+        {
+          "foreground": "on-lime-text",
+          "background": "accent-lime-pill",
+          "kind": "text",
+          "ratio": 17.24465967056308,
+          "delta_L": -0.9159551853519186,
+          "delta_C": -0.2396758638385219,
+          "delta_E": 0.9467937585767078
+        }
+      ],
+      "expected_sha256": "ca11a3b6bc15f76d62f3474298fb294a97947d883784dd8658c4783944d7512f",
+      "expected_dimensions": [
+        2400,
+        1800
+      ],
+      "sha256": "ca11a3b6bc15f76d62f3474298fb294a97947d883784dd8658c4783944d7512f",
+      "dimensions": [
+        2400,
+        1800
+      ]
+    },
+    {
+      "key": "team",
+      "file": "team.png",
+      "title": "Team Management & Employee Analytics Mobile App",
+      "author": "Nixtio",
+      "displayed_likes": "245",
+      "feed": "month",
+      "shot_url": "https://dribbble.com/shots/27744927-Team-Management-Employee-Analytics-Mobile-App",
+      "source_url": "https://cdn.dribbble.com/userupload/49072461/file/d685aeae5e1f05a3551e7ab2daff8011.png?resize=2400x1800&vertical=center",
+      "kind": "app",
+      "patches": [
+        {
+          "id": "canvas",
+          "theme": "dark",
+          "roi": [
+            1962,
+            570,
+            1974,
+            582
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            1,
+            1,
+            1
+          ],
+          "hex": "#010101",
+          "L": 0.06720461525885704,
+          "C": 2.5049845489589324e-09,
+          "h": null,
+          "a": 5.440380784760279e-12,
+          "b": 2.504978641182376e-09,
+          "Y": 0.0003035269835488375,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.06720461525885704,
+            0.06720461525885704
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                1,
+                1,
+                1
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "surface",
+          "theme": "dark",
+          "roi": [
+            426,
+            1002,
+            438,
+            1014
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            17,
+            17,
+            17
+          ],
+          "hex": "#111111",
+          "L": 0.17763777191722593,
+          "C": 6.621269577527897e-09,
+          "h": null,
+          "a": 1.4380260870971995e-11,
+          "b": 6.621253961780482e-09,
+          "Y": 0.005605391624202723,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.17763777191722593,
+            0.17763777191722593
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                17,
+                17,
+                17
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "nested-card",
+          "theme": "dark",
+          "roi": [
+            354,
+            1056,
+            366,
+            1068
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            36,
+            36,
+            36
+          ],
+          "hex": "#242424",
+          "L": 0.26032481171907373,
+          "C": 9.703345946304335e-09,
+          "h": null,
+          "a": 2.107400365325418e-11,
+          "b": 9.703323061716063e-09,
+          "Y": 0.017641954488384078,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.26032481171907373,
+            0.26032481171907373
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                36,
+                36,
+                36
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-green-legend",
+          "theme": "dark",
+          "roi": [
+            1363,
+            1399,
+            1369,
+            1405
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            96,
+            145,
+            104
+          ],
+          "hex": "#609168",
+          "L": 0.6101707103547507,
+          "C": 0.08136829233676354,
+          "h": 148.69551888449845,
+          "a": -0.0695225495349816,
+          "b": 0.04227782047311618,
+          "Y": 0.23737070572633276,
+          "pixel_count": 36,
+          "selected_count": 36,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.6101707103547507,
+            0.6101707103547507
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                96,
+                145,
+                104
+              ],
+              "count": 36
+            }
+          ]
+        },
+        {
+          "id": "accent-brown-legend",
+          "theme": "dark",
+          "roi": [
+            1363,
+            1523,
+            1369,
+            1529
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            145,
+            119,
+            96
+          ],
+          "hex": "#917760",
+          "L": 0.5878656161082092,
+          "C": 0.0467250777747993,
+          "h": 63.21949687812311,
+          "a": 0.021053094973508324,
+          "b": 0.0417133082492564,
+          "Y": 0.2005792204942962,
+          "pixel_count": 36,
+          "selected_count": 36,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.5878656161082092,
+            0.5878656161082092
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                145,
+                119,
+                96
+              ],
+              "count": 36
+            }
+          ]
+        },
+        {
+          "id": "main-text",
+          "theme": "dark",
+          "roi": [
+            1344,
+            455,
+            1896,
+            518
+          ],
+          "selection": "light",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "hex": "#FFFFFF",
+          "L": 0.9999999934735462,
+          "C": 3.727399553519285e-08,
+          "h": null,
+          "a": 8.095285553011422e-11,
+          "b": 3.727390762708893e-08,
+          "Y": 1.0,
+          "pixel_count": 34776,
+          "selected_count": 11187,
+          "mode_fraction": 0.6817734870832216,
+          "L_range": [
+            0.6731222126359498,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 7627
+            },
+            {
+              "rgb": [
+                253,
+                253,
+                253
+              ],
+              "count": 982
+            },
+            {
+              "rgb": [
+                252,
+                252,
+                252
+              ],
+              "count": 642
+            }
+          ]
+        },
+        {
+          "id": "secondary-text",
+          "theme": "dark",
+          "roi": [
+            1344,
+            535,
+            1632,
+            567
+          ],
+          "selection": "light",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            176,
+            171,
+            167
+          ],
+          "hex": "#B0ABA7",
+          "L": 0.7441866379235562,
+          "C": 0.008099366180637215,
+          "h": 61.412091713567705,
+          "a": 0.0038755998295713634,
+          "b": 0.007111923684143151,
+          "Y": 0.41145946772229863,
+          "pixel_count": 9216,
+          "selected_count": 1144,
+          "mode_fraction": 0.015734265734265736,
+          "L_range": [
+            0.6883944083594491,
+            0.9997226225033082
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                176,
+                171,
+                167
+              ],
+              "count": 18
+            },
+            {
+              "rgb": [
+                179,
+                174,
+                168
+              ],
+              "count": 16
+            },
+            {
+              "rgb": [
+                233,
+                225,
+                219
+              ],
+              "count": 16
+            }
+          ]
+        }
+      ],
+      "pairs": [
+        {
+          "foreground": "main-text",
+          "background": "canvas",
+          "kind": "text",
+          "ratio": 20.87328787787365,
+          "delta_L": 0.9327953782146892,
+          "delta_C": 3.476901098623392e-08,
+          "delta_E": 0.9327953782146898
+        },
+        {
+          "foreground": "secondary-text",
+          "background": "canvas",
+          "kind": "text",
+          "ratio": 9.173501251178935,
+          "delta_L": 0.6769820226646992,
+          "delta_C": 0.008099363675652666,
+          "delta_E": 0.6770304710336476
+        },
+        {
+          "foreground": "surface",
+          "background": "canvas",
+          "kind": "surface",
+          "ratio": 1.1053974732703693,
+          "delta_L": 0.11043315665836889,
+          "delta_C": 4.116285028568964e-09,
+          "delta_E": 0.11043315665836897
+        },
+        {
+          "foreground": "nested-card",
+          "background": "surface",
+          "kind": "surface",
+          "ratio": 1.2164639527319208,
+          "delta_L": 0.0826870398018478,
+          "delta_C": 3.0820763687764385e-09,
+          "delta_E": 0.08268703980184786
+        },
+        {
+          "foreground": "accent-green-legend",
+          "background": "surface",
+          "kind": "graphic",
+          "ratio": 5.16803671968479,
+          "delta_L": 0.4325329384375247,
+          "delta_C": 0.08136828571549397,
+          "delta_E": 0.4401199169241671
+        },
+        {
+          "foreground": "accent-brown-legend",
+          "background": "surface",
+          "kind": "graphic",
+          "ratio": 4.506383521004273,
+          "delta_L": 0.41022784419098324,
+          "delta_C": 0.046725071153529724,
+          "delta_E": 0.4128802689517246
+        }
+      ],
+      "expected_sha256": "8eca84311b8e0089a1a3685447682e2308a43c0c6780711cf1f320253a8e7af5",
+      "expected_dimensions": [
+        2400,
+        1800
+      ],
+      "sha256": "8eca84311b8e0089a1a3685447682e2308a43c0c6780711cf1f320253a8e7af5",
+      "dimensions": [
+        2400,
+        1800
+      ]
+    },
+    {
+      "key": "finance",
+      "file": "finance.jpg",
+      "title": "Finance Dark theme Design",
+      "author": "Ghulam",
+      "displayed_likes": "2.9k",
+      "feed": "ever",
+      "shot_url": "https://dribbble.com/shots/18427655-Finance-Dark-theme-Design",
+      "source_url": "https://cdn.dribbble.com/userupload/2837891/file/original-6ed6c526b8a927655a338ccff93cb7f9.jpg?resize=2400x1800&vertical=center",
+      "kind": "app",
+      "patches": [
+        {
+          "id": "canvas-local",
+          "theme": "dark",
+          "roi": [
+            594,
+            1020,
+            606,
+            1032
+          ],
+          "selection": "all",
+          "notes": "Local interior of perspective-rendered UI; canvas has shading, so not exact uniform token.",
+          "rgb": [
+            43,
+            38,
+            42
+          ],
+          "hex": "#2B262A",
+          "L": 0.27566969212063935,
+          "C": 0.010262149244997193,
+          "h": 332.5479892943785,
+          "a": 0.009106603217563236,
+          "b": -0.0047309074144886165,
+          "Y": 0.02066985025301211,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.5625,
+          "L_range": [
+            0.26744137482532715,
+            0.2838377985980982
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                43,
+                38,
+                42
+              ],
+              "count": 81
+            },
+            {
+              "rgb": [
+                44,
+                39,
+                43
+              ],
+              "count": 36
+            },
+            {
+              "rgb": [
+                42,
+                37,
+                41
+              ],
+              "count": 19
+            }
+          ]
+        },
+        {
+          "id": "accent-cyan-card",
+          "theme": "dark",
+          "roi": [
+            834,
+            1344,
+            846,
+            1356
+          ],
+          "selection": "all",
+          "notes": "Local cyan card interior; nearby glass and lighting excluded.",
+          "rgb": [
+            38,
+            234,
+            230
+          ],
+          "hex": "#26EAE6",
+          "L": 0.849411593278938,
+          "C": 0.14072687060818084,
+          "h": 192.56311653183687,
+          "a": -0.1373574452882888,
+          "b": -0.0306101998530951,
+          "Y": 0.6497087727756824,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.849411593278938,
+            0.849411593278938
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                38,
+                234,
+                230
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-lilac-card",
+          "theme": "dark",
+          "roi": [
+            954,
+            1146,
+            966,
+            1158
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            212,
+            185,
+            254
+          ],
+          "hex": "#D4B9FE",
+          "L": 0.832350705516424,
+          "C": 0.09888885072497962,
+          "h": 302.21941185761676,
+          "a": 0.05272387003255424,
+          "b": -0.08366121160070317,
+          "Y": 0.5585072946933308,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.832350705516424,
+            0.832350705516424
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                212,
+                185,
+                254
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-peach-card",
+          "theme": "dark",
+          "roi": [
+            1002,
+            1578,
+            1014,
+            1590
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            237,
+            202,
+            170
+          ],
+          "hex": "#EDCAAA",
+          "L": 0.8608493091037558,
+          "C": 0.05827995899756871,
+          "h": 64.37359786130972,
+          "a": 0.025206156350376818,
+          "b": 0.05254715313695546,
+          "Y": 0.63147863974839,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.8608493091037558,
+            0.8608493091037558
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                237,
+                202,
+                170
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-coral-card",
+          "theme": "dark",
+          "roi": [
+            1290,
+            1416,
+            1302,
+            1428
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            255,
+            174,
+            173
+          ],
+          "hex": "#FFAEAD",
+          "L": 0.8283461316717745,
+          "C": 0.09551749260214251,
+          "h": 20.09232965669855,
+          "a": 0.08970432191481514,
+          "b": 0.032813503665466204,
+          "Y": 0.545492339689274,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.8283461316717745,
+            0.8283461316717745
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                174,
+                173
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "main-text",
+          "theme": "dark",
+          "roi": [
+            401,
+            1084,
+            619,
+            1220
+          ],
+          "selection": "light",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            255,
+            254,
+            255
+          ],
+          "hex": "#FFFEFF",
+          "L": 0.9980625790142971,
+          "C": 0.0016784811497709206,
+          "h": 325.5899055311492,
+          "a": 0.0013847703610499473,
+          "b": -0.0009485304514320614,
+          "Y": 0.9936362198558111,
+          "pixel_count": 29648,
+          "selected_count": 2827,
+          "mode_fraction": 0.19596745666784576,
+          "L_range": [
+            0.6731222126359498,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                254,
+                255
+              ],
+              "count": 554
+            },
+            {
+              "rgb": [
+                255,
+                253,
+                254
+              ],
+              "count": 174
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 147
+            }
+          ]
+        },
+        {
+          "id": "on-lilac-text",
+          "theme": "dark",
+          "roi": [
+            898,
+            1163,
+            1051,
+            1219
+          ],
+          "selection": "dark",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            0,
+            1,
+            0
+          ],
+          "hex": "#000100",
+          "L": 0.05822874111831542,
+          "C": 0.019813751383993314,
+          "h": 142.49533888780994,
+          "a": -0.015718324539710664,
+          "b": 0.012063126359738857,
+          "Y": 0.00021708249863412857,
+          "pixel_count": 8568,
+          "selected_count": 1290,
+          "mode_fraction": 0.047286821705426356,
+          "L_range": [
+            0.0,
+            0.55583759504913
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                0,
+                1,
+                0
+              ],
+              "count": 61
+            },
+            {
+              "rgb": [
+                1,
+                0,
+                0
+              ],
+              "count": 49
+            },
+            {
+              "rgb": [
+                0,
+                0,
+                0
+              ],
+              "count": 34
+            }
+          ]
+        }
+      ],
+      "pairs": [
+        {
+          "foreground": "main-text",
+          "background": "canvas-local",
+          "kind": "text",
+          "ratio": 14.767771774234498,
+          "delta_L": 0.7223928868936578,
+          "delta_C": -0.008583668095226272,
+          "delta_E": 0.722444057427776
+        },
+        {
+          "foreground": "on-lilac-text",
+          "background": "accent-lilac-card",
+          "kind": "text",
+          "ratio": 12.11753579491365,
+          "delta_L": -0.7741219643981085,
+          "delta_C": -0.0790750993409863,
+          "delta_E": 0.7830148776616056
+        },
+        {
+          "foreground": "accent-cyan-card",
+          "background": "canvas-local",
+          "kind": "surface",
+          "ratio": 9.9010931857162,
+          "delta_L": 0.5737419011582987,
+          "delta_C": 0.13046472136318366,
+          "delta_E": 0.5927066934214481
+        },
+        {
+          "foreground": "accent-lilac-card",
+          "background": "canvas-local",
+          "kind": "surface",
+          "ratio": 8.610564371011877,
+          "delta_L": 0.5566810133957847,
+          "delta_C": 0.08862670147998243,
+          "delta_E": 0.5639381256473943
+        },
+        {
+          "foreground": "accent-peach-card",
+          "background": "canvas-local",
+          "kind": "surface",
+          "ratio": 9.643131226521083,
+          "delta_L": 0.5851796169831165,
+          "delta_C": 0.048017809752571514,
+          "delta_E": 0.5881965283509569
+        },
+        {
+          "foreground": "accent-coral-card",
+          "background": "canvas-local",
+          "kind": "surface",
+          "ratio": 8.426398776243236,
+          "delta_L": 0.5526764395511352,
+          "delta_C": 0.08525534335714532,
+          "delta_E": 0.5597828345862899
+        }
+      ],
+      "expected_sha256": "94580d0d205dc37b2d6503f7fe94799e825837dd2b9d9fe4d5bf5ce739b5fc70",
+      "expected_dimensions": [
+        2400,
+        1800
+      ],
+      "sha256": "94580d0d205dc37b2d6503f7fe94799e825837dd2b9d9fe4d5bf5ce739b5fc70",
+      "dimensions": [
+        2400,
+        1800
+      ]
+    },
+    {
+      "key": "finance-muted",
+      "file": "finance-flat.jpg",
+      "title": "Finance Dark theme Design",
+      "author": "Ghulam",
+      "displayed_likes": "2.9k",
+      "feed": "ever",
+      "shot_url": "https://dribbble.com/shots/18427655-Finance-Dark-theme-Design",
+      "source_url": "https://cdn.dribbble.com/userupload/2837890/file/original-6134556e97ba5c0fe9ddd25d3030a572.jpg?resize=1164x873&vertical=center",
+      "kind": "alternate",
+      "patches": [
+        {
+          "id": "canvas-local",
+          "theme": "dark",
+          "roi": [
+            153,
+            274,
+            165,
+            286
+          ],
+          "selection": "all",
+          "notes": "Alternate low-chroma palette attached to same shot; not an independent popularity observation.",
+          "rgb": [
+            29,
+            28,
+            33
+          ],
+          "hex": "#1D1C21",
+          "L": 0.22970619538168566,
+          "C": 0.009647083783776387,
+          "h": 294.7996736969969,
+          "a": 0.00404643950860753,
+          "b": -0.008757428437297182,
+          "Y": 0.012015239918567438,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.22970619538168566,
+            0.22970619538168566
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                29,
+                28,
+                33
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-cyan-card",
+          "theme": "dark",
+          "roi": [
+            134,
+            474,
+            146,
+            486
+          ],
+          "selection": "all",
+          "notes": "Alternate low-chroma palette attached to same shot; not an independent popularity observation.",
+          "rgb": [
+            192,
+            222,
+            220
+          ],
+          "hex": "#C0DEDC",
+          "L": 0.8781503418488595,
+          "C": 0.031835630752685244,
+          "h": 191.66831478190966,
+          "a": -0.031177741221363686,
+          "b": -0.006438620796024419,
+          "Y": 0.6861632677742446,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.8781503418488595,
+            0.8781503418488595
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                192,
+                222,
+                220
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-lilac-card",
+          "theme": "dark",
+          "roi": [
+            297,
+            368,
+            309,
+            380
+          ],
+          "selection": "all",
+          "notes": "Alternate low-chroma palette attached to same shot; not an independent popularity observation.",
+          "rgb": [
+            230,
+            223,
+            241
+          ],
+          "hex": "#E6DFF1",
+          "L": 0.9144806661610281,
+          "C": 0.025307700240224947,
+          "h": 303.47031495383465,
+          "a": 0.013957320019883812,
+          "b": -0.021110966565073053,
+          "Y": 0.7594922035242757,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9144806661610281,
+            0.9144806661610281
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                230,
+                223,
+                241
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-peach-card",
+          "theme": "dark",
+          "roi": [
+            287,
+            681,
+            299,
+            693
+          ],
+          "selection": "all",
+          "notes": "Alternate low-chroma palette attached to same shot; not an independent popularity observation.",
+          "rgb": [
+            241,
+            238,
+            233
+          ],
+          "hex": "#F1EEE9",
+          "L": 0.9500486710023711,
+          "C": 0.007417643441076464,
+          "h": 80.72083500993992,
+          "a": 0.0011960575508509486,
+          "b": 0.007320579249895265,
+          "Y": 0.8573303574228076,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9500486710023711,
+            0.9500486710023711
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                241,
+                238,
+                233
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "accent-coral-card",
+          "theme": "dark",
+          "roi": [
+            415,
+            590,
+            427,
+            602
+          ],
+          "selection": "all",
+          "notes": "Alternate low-chroma palette attached to same shot; not an independent popularity observation.",
+          "rgb": [
+            241,
+            223,
+            223
+          ],
+          "hex": "#F1DFDF",
+          "L": 0.9181220201342938,
+          "C": 0.019807135273559876,
+          "h": 17.51917854934547,
+          "a": 0.018888405912682205,
+          "b": 0.005962443276279594,
+          "Y": 0.7680383774460012,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.9305555555555556,
+          "L_range": [
+            0.9066209337357596,
+            0.9197808725651943
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                241,
+                223,
+                223
+              ],
+              "count": 134
+            },
+            {
+              "rgb": [
+                239,
+                219,
+                218
+              ],
+              "count": 2
+            },
+            {
+              "rgb": [
+                242,
+                217,
+                220
+              ],
+              "count": 1
+            }
+          ]
+        }
+      ],
+      "pairs": [
+        {
+          "foreground": "accent-cyan-card",
+          "background": "canvas-local",
+          "kind": "surface",
+          "ratio": 11.870683218204183,
+          "delta_L": 0.6484441464671739,
+          "delta_C": 0.02218854696890886,
+          "delta_E": 0.6494042892255305
+        },
+        {
+          "foreground": "accent-lilac-card",
+          "background": "canvas-local",
+          "kind": "surface",
+          "ratio": 13.053117339983276,
+          "delta_L": 0.6847744707793424,
+          "delta_C": 0.01566061645644856,
+          "delta_E": 0.6849575981678805
+        },
+        {
+          "foreground": "accent-peach-card",
+          "background": "canvas-local",
+          "kind": "surface",
+          "ratio": 14.630764286556468,
+          "delta_L": 0.7203424756206854,
+          "delta_C": -0.0022294403426999223,
+          "delta_E": 0.7205275214673151
+        },
+        {
+          "foreground": "accent-coral-card",
+          "background": "canvas-local",
+          "kind": "surface",
+          "ratio": 13.190924981023567,
+          "delta_L": 0.6884158247526081,
+          "delta_C": 0.01016005148978349,
+          "delta_E": 0.6887331169326893
+        }
+      ],
+      "expected_sha256": "4d3249140382a64aa898398dc4076423c9b6a189b50804b29fabad791e8d6246",
+      "expected_dimensions": [
+        1164,
+        873
+      ],
+      "sha256": "4d3249140382a64aa898398dc4076423c9b6a189b50804b29fabad791e8d6246",
+      "dimensions": [
+        1164,
+        873
+      ]
+    },
+    {
+      "key": "chart",
+      "file": "chart.png",
+      "title": "Chart Cards",
+      "author": "Michal Parulski / widelab",
+      "displayed_likes": "2.2k",
+      "feed": "ever",
+      "shot_url": "https://dribbble.com/shots/20454370-Chart-Cards",
+      "source_url": "https://cdn.dribbble.com/userupload/4383080/file/original-c0d69b0a22e540a098b9be67ad414e44.png?resize=2400x1801&vertical=center",
+      "kind": "components",
+      "patches": [
+        {
+          "id": "white-card",
+          "theme": "light",
+          "roi": [
+            954,
+            372,
+            966,
+            384
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "hex": "#FFFFFF",
+          "L": 0.9999999934735462,
+          "C": 3.727399553519285e-08,
+          "h": null,
+          "a": 8.095285553011422e-11,
+          "b": 3.727390762708893e-08,
+          "Y": 1.0,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9999999934735462,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "neutral-skeleton",
+          "theme": "light",
+          "roi": [
+            553,
+            1428,
+            565,
+            1440
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            240,
+            240,
+            240
+          ],
+          "hex": "#F0F0F0",
+          "L": 0.9551400440214245,
+          "C": 3.560188591477716e-08,
+          "h": null,
+          "a": 7.732098294965795e-11,
+          "b": 3.560180195094631e-08,
+          "Y": 0.8713671191987972,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 1.0,
+          "L_range": [
+            0.9551400440214245,
+            0.9551400440214245
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "count": 144
+            }
+          ]
+        },
+        {
+          "id": "red-bar-upper",
+          "theme": "light",
+          "roi": [
+            714,
+            747,
+            726,
+            759
+          ],
+          "selection": "all",
+          "notes": "Gradient endpoint sample, not solid original token.",
+          "rgb": [
+            249,
+            78,
+            101
+          ],
+          "hex": "#F94E65",
+          "L": 0.6682644062550753,
+          "C": 0.20615013126391993,
+          "h": 17.192556494279586,
+          "a": 0.19693867765423495,
+          "b": 0.06093466881778187,
+          "Y": 0.265281008161954,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.1875,
+          "L_range": [
+            0.6672793086987926,
+            0.6706646466937243
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                249,
+                78,
+                101
+              ],
+              "count": 27
+            },
+            {
+              "rgb": [
+                249,
+                79,
+                102
+              ],
+              "count": 24
+            },
+            {
+              "rgb": [
+                249,
+                78,
+                102
+              ],
+              "count": 18
+            }
+          ]
+        },
+        {
+          "id": "red-bar-lower",
+          "theme": "light",
+          "roi": [
+            714,
+            949,
+            726,
+            961
+          ],
+          "selection": "all",
+          "notes": "Gradient endpoint sample, not solid original token.",
+          "rgb": [
+            251,
+            121,
+            138
+          ],
+          "hex": "#FB798A",
+          "L": 0.7313177109564125,
+          "C": 0.15898933532110637,
+          "h": 13.716830562962949,
+          "a": 0.154454881123877,
+          "b": 0.03770011197405421,
+          "Y": 0.36018952100926294,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.3125,
+          "L_range": [
+            0.7285322964516607,
+            0.732963281493864
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                251,
+                121,
+                138
+              ],
+              "count": 45
+            },
+            {
+              "rgb": [
+                251,
+                122,
+                139
+              ],
+              "count": 36
+            },
+            {
+              "rgb": [
+                251,
+                120,
+                136
+              ],
+              "count": 14
+            }
+          ]
+        },
+        {
+          "id": "purple-bar-strong",
+          "theme": "light",
+          "roi": [
+            2070,
+            803,
+            2082,
+            815
+          ],
+          "selection": "all",
+          "notes": "Local near-end gradient sample.",
+          "rgb": [
+            78,
+            63,
+            254
+          ],
+          "hex": "#4E3FFE",
+          "L": 0.5246335665556101,
+          "C": 0.2658627311696631,
+          "h": 275.57249213985517,
+          "a": 0.025816621018810715,
+          "b": -0.2646062998194934,
+          "Y": 0.12330471950639237,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.16666666666666666,
+          "L_range": [
+            0.5203482903711301,
+            0.5246335665556101
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                78,
+                63,
+                254
+              ],
+              "count": 24
+            },
+            {
+              "rgb": [
+                76,
+                61,
+                254
+              ],
+              "count": 24
+            },
+            {
+              "rgb": [
+                77,
+                61,
+                254
+              ],
+              "count": 23
+            }
+          ]
+        },
+        {
+          "id": "purple-bar-pale",
+          "theme": "light",
+          "roi": [
+            2231,
+            803,
+            2243,
+            815
+          ],
+          "selection": "all",
+          "notes": "Resting-calories segment, local interior.",
+          "rgb": [
+            199,
+            194,
+            255
+          ],
+          "hex": "#C7C2FF",
+          "L": 0.8390356894532317,
+          "C": 0.08476847771244203,
+          "h": 288.1796857191086,
+          "a": 0.026447602737093567,
+          "b": -0.08053706676522099,
+          "Y": 0.5794568692856911,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.5833333333333334,
+          "L_range": [
+            0.8371190954978394,
+            0.8417320370374757
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                199,
+                194,
+                255
+              ],
+              "count": 84
+            },
+            {
+              "rgb": [
+                199,
+                195,
+                255
+              ],
+              "count": 18
+            },
+            {
+              "rgb": [
+                199,
+                193,
+                255
+              ],
+              "count": 18
+            }
+          ]
+        },
+        {
+          "id": "main-text",
+          "theme": "light",
+          "roi": [
+            470,
+            457,
+            828,
+            549
+          ],
+          "selection": "dark",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            20,
+            20,
+            20
+          ],
+          "hex": "#141414",
+          "L": 0.19125129838342514,
+          "C": 7.128700095101065e-09,
+          "h": null,
+          "a": 1.5482337634153964e-11,
+          "b": 7.128683282564552e-09,
+          "Y": 0.006995410187265387,
+          "pixel_count": 32936,
+          "selected_count": 11847,
+          "mode_fraction": 0.42314510002532285,
+          "L_range": [
+            0.0,
+            0.6367600316401532
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                20,
+                20,
+                20
+              ],
+              "count": 5013
+            },
+            {
+              "rgb": [
+                19,
+                19,
+                19
+              ],
+              "count": 2010
+            },
+            {
+              "rgb": [
+                0,
+                0,
+                0
+              ],
+              "count": 1186
+            }
+          ]
+        },
+        {
+          "id": "muted-text",
+          "theme": "light",
+          "roi": [
+            840,
+            492,
+            984,
+            549
+          ],
+          "selection": "mid",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            152,
+            152,
+            152
+          ],
+          "hex": "#989898",
+          "L": 0.679680290328416,
+          "C": 2.533440026393446e-08,
+          "h": null,
+          "a": 5.502215350006168e-11,
+          "b": 2.5334340514326925e-08,
+          "Y": 0.31398871337571754,
+          "pixel_count": 8208,
+          "selected_count": 2365,
+          "mode_fraction": 0.1704016913319239,
+          "L_range": [
+            0.5829156746719829,
+            0.8914313398856534
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                152,
+                152,
+                152
+              ],
+              "count": 403
+            },
+            {
+              "rgb": [
+                153,
+                153,
+                153
+              ],
+              "count": 399
+            },
+            {
+              "rgb": [
+                154,
+                154,
+                154
+              ],
+              "count": 263
+            }
+          ]
+        }
+      ],
+      "pairs": [
+        {
+          "foreground": "main-text",
+          "background": "white-card",
+          "kind": "text",
+          "ratio": 18.422536070011546,
+          "delta_L": -0.808748695090121,
+          "delta_C": -3.014529544009179e-08,
+          "delta_E": 0.8087486950901216
+        },
+        {
+          "foreground": "muted-text",
+          "background": "white-card",
+          "kind": "text",
+          "ratio": 2.8847048312626273,
+          "delta_L": -0.32031970314513014,
+          "delta_C": -1.1939595271258393e-08,
+          "delta_E": 0.32031970314513036
+        },
+        {
+          "foreground": "red-bar-upper",
+          "background": "white-card",
+          "kind": "graphic",
+          "ratio": 3.3303623523705386,
+          "delta_L": -0.33173558721847085,
+          "delta_C": 0.2061500939899244,
+          "delta_E": 0.3905718523817155
+        },
+        {
+          "foreground": "purple-bar-strong",
+          "background": "white-card",
+          "kind": "graphic",
+          "ratio": 6.058692475257551,
+          "delta_L": -0.47536642691793607,
+          "delta_C": 0.2658626938956675,
+          "delta_E": 0.5446615934572229
+        },
+        {
+          "foreground": "purple-bar-pale",
+          "background": "white-card",
+          "kind": "graphic",
+          "ratio": 1.6681047602062744,
+          "delta_L": -0.16096430402031447,
+          "delta_C": 0.0847684404384465,
+          "delta_E": 0.18192088385342337
+        },
+        {
+          "foreground": "red-bar-lower",
+          "background": "red-bar-upper",
+          "kind": "accent-family",
+          "ratio": 1.3010283220058603,
+          "delta_L": 0.06305330470133719,
+          "delta_C": -0.047160795942813555,
+          "delta_E": 0.0795011750423661
+        },
+        {
+          "foreground": "purple-bar-pale",
+          "background": "purple-bar-strong",
+          "kind": "accent-family",
+          "ratio": 3.6320815213718025,
+          "delta_L": 0.3144021228976216,
+          "delta_C": -0.18109425345722105,
+          "delta_E": 0.36432207670912287
+        }
+      ],
+      "expected_sha256": "b13313118c3c63f93070618a56c3c4718410c78064638352555eda18f1bd9478",
+      "expected_dimensions": [
+        2400,
+        1801
+      ],
+      "sha256": "b13313118c3c63f93070618a56c3c4718410c78064638352555eda18f1bd9478",
+      "dimensions": [
+        2400,
+        1801
+      ]
+    },
+    {
+      "key": "cuberto",
+      "file": "cuberto.jpg",
+      "title": "UI Components Dark Theme",
+      "author": "Ghulam / Cuberto",
+      "displayed_likes": "2k",
+      "feed": "ever",
+      "shot_url": "https://dribbble.com/shots/17578107-UI-Components-Dark-Theme",
+      "source_url": "https://cdn.dribbble.com/userupload/37386194/file/original-657d46e5011dbdfdefae76e45fb90522.jpg?resize=1100x825&vertical=center",
+      "kind": "components",
+      "patches": [
+        {
+          "id": "dark-card-local",
+          "theme": "dark",
+          "roi": [
+            729,
+            555,
+            741,
+            567
+          ],
+          "selection": "all",
+          "notes": "Local card interior with presentation lighting; black surrounding backdrop excluded.",
+          "rgb": [
+            33,
+            32,
+            38
+          ],
+          "hex": "#212026",
+          "L": 0.24717179753387694,
+          "C": 0.011336457110540873,
+          "h": 293.19918983880143,
+          "a": 0.004465758226779998,
+          "b": -0.0104198014990248,
+          "Y": 0.014962973567327389,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.5763888888888888,
+          "L_range": [
+            0.0938576655755975,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                33,
+                32,
+                38
+              ],
+              "count": 83
+            },
+            {
+              "rgb": [
+                32,
+                31,
+                37
+              ],
+              "count": 20
+            },
+            {
+              "rgb": [
+                34,
+                33,
+                39
+              ],
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "calendar-card-local",
+          "theme": "dark",
+          "roi": [
+            467,
+            225,
+            479,
+            237
+          ],
+          "selection": "all",
+          "notes": "Different local interior of gradient-lit card; not a separate authored token assertion.",
+          "rgb": [
+            26,
+            25,
+            30
+          ],
+          "hex": "#1A191E",
+          "L": 0.2167385110116725,
+          "C": 0.009790399205024048,
+          "h": 294.74000726359736,
+          "a": 0.004097295239452237,
+          "b": -0.008891798935788953,
+          "Y": 0.010086109938637688,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.4930555555555556,
+          "L_range": [
+            0.0938576655755975,
+            0.6770210641227978
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                26,
+                25,
+                30
+              ],
+              "count": 71
+            },
+            {
+              "rgb": [
+                25,
+                24,
+                29
+              ],
+              "count": 39
+            },
+            {
+              "rgb": [
+                27,
+                26,
+                31
+              ],
+              "count": 12
+            }
+          ]
+        },
+        {
+          "id": "accent-mint-card",
+          "theme": "dark",
+          "roi": [
+            665,
+            167,
+            677,
+            179
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            202,
+            231,
+            235
+          ],
+          "hex": "#CAE7EB",
+          "L": 0.9080966840432221,
+          "C": 0.031000829422809947,
+          "h": 206.70305840699962,
+          "a": -0.02769451044746829,
+          "b": -0.013930739965171579,
+          "Y": 0.7570654289104863,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.4930555555555556,
+          "L_range": [
+            0.21787075251888893,
+            0.9798821251561833
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                202,
+                231,
+                235
+              ],
+              "count": 71
+            },
+            {
+              "rgb": [
+                203,
+                232,
+                236
+              ],
+              "count": 6
+            },
+            {
+              "rgb": [
+                200,
+                229,
+                233
+              ],
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "accent-mint-label",
+          "theme": "dark",
+          "roi": [
+            284,
+            568,
+            296,
+            580
+          ],
+          "selection": "all",
+          "notes": "",
+          "rgb": [
+            202,
+            231,
+            235
+          ],
+          "hex": "#CAE7EB",
+          "L": 0.9080966840432221,
+          "C": 0.031000829422809947,
+          "h": 206.70305840699962,
+          "a": -0.02769451044746829,
+          "b": -0.013930739965171579,
+          "Y": 0.7570654289104863,
+          "pixel_count": 144,
+          "selected_count": 144,
+          "mode_fraction": 0.11805555555555555,
+          "L_range": [
+            0.1097974907236868,
+            0.9903881321629344
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                202,
+                231,
+                235
+              ],
+              "count": 17
+            },
+            {
+              "rgb": [
+                201,
+                230,
+                234
+              ],
+              "count": 9
+            },
+            {
+              "rgb": [
+                203,
+                232,
+                236
+              ],
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "main-text",
+          "theme": "dark",
+          "roi": [
+            813,
+            291,
+            900,
+            314
+          ],
+          "selection": "light",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "hex": "#FFFFFF",
+          "L": 0.9999999934735462,
+          "C": 3.727399553519285e-08,
+          "h": null,
+          "a": 8.095285553011422e-11,
+          "b": 3.727390762708893e-08,
+          "Y": 1.0,
+          "pixel_count": 2001,
+          "selected_count": 131,
+          "mode_fraction": 0.0916030534351145,
+          "L_range": [
+            0.6731222126359498,
+            0.9999999934735462
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "count": 12
+            },
+            {
+              "rgb": [
+                199,
+                199,
+                199
+              ],
+              "count": 4
+            },
+            {
+              "rgb": [
+                252,
+                252,
+                252
+              ],
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "on-mint-text",
+          "theme": "dark",
+          "roi": [
+            620,
+            225,
+            714,
+            263
+          ],
+          "selection": "dark",
+          "notes": "Dominant core glyph RGB after excluding background; screenshot estimate, not authored token.",
+          "rgb": [
+            0,
+            1,
+            0
+          ],
+          "hex": "#000100",
+          "L": 0.05822874111831542,
+          "C": 0.019813751383993314,
+          "h": 142.49533888780994,
+          "a": -0.015718324539710664,
+          "b": 0.012063126359738857,
+          "Y": 0.00021708249863412857,
+          "pixel_count": 3572,
+          "selected_count": 499,
+          "mode_fraction": 0.050100200400801605,
+          "L_range": [
+            0.0,
+            0.616256656119275
+          ],
+          "top_rgb": [
+            {
+              "rgb": [
+                0,
+                1,
+                0
+              ],
+              "count": 25
+            },
+            {
+              "rgb": [
+                1,
+                0,
+                0
+              ],
+              "count": 24
+            },
+            {
+              "rgb": [
+                0,
+                0,
+                2
+              ],
+              "count": 13
+            }
+          ]
+        }
+      ],
+      "pairs": [
+        {
+          "foreground": "main-text",
+          "background": "dark-card-local",
+          "kind": "text",
+          "ratio": 16.16305323388228,
+          "delta_L": 0.7528281959396692,
+          "delta_C": -0.011336419836545337,
+          "delta_E": 0.75291354658928
+        },
+        {
+          "foreground": "on-mint-text",
+          "background": "accent-mint-card",
+          "kind": "text",
+          "ratio": 16.071531613419356,
+          "delta_L": -0.8498679429249066,
+          "delta_C": -0.011187078038816634,
+          "delta_E": 0.8503497107230806
+        },
+        {
+          "foreground": "accent-mint-card",
+          "background": "dark-card-local",
+          "kind": "surface",
+          "ratio": 12.423468086386881,
+          "delta_L": 0.6609248865093451,
+          "delta_C": 0.019664372312269075,
+          "delta_E": 0.661716189296819
+        },
+        {
+          "foreground": "accent-mint-label",
+          "background": "accent-mint-card",
+          "kind": "accent-family",
+          "ratio": 1.0,
+          "delta_L": 0.0,
+          "delta_C": 0.0,
+          "delta_E": 0.0
+        }
+      ],
+      "expected_sha256": "2e430a7e41bab65321f2142c8f4d496e1e309a913b237b7ff10cc3622686fe65",
+      "expected_dimensions": [
+        1100,
+        825
+      ],
+      "sha256": "2e430a7e41bab65321f2142c8f4d496e1e309a913b237b7ff10cc3622686fe65",
+      "dimensions": [
+        1100,
+        825
+      ]
+    }
+  ],
+  "method": "Mode of opaque RGB pixels in recorded ROI, filtered for glyph core where specified. Untagged source assumed sRGB."
+}

@@ -55,7 +55,7 @@ class const _PickerButtonThemedSurface({
     selected: selected,
     width: width,
     colors: context.auraColors,
-    borderRadius: context.auraTheme.fromBorderRadius(.md),
+    borderRadius: AuraCornerRadiusScope.resolve(context, fallback: .md),
   );
 }
 

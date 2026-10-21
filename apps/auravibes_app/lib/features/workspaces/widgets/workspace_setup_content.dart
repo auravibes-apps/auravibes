@@ -274,7 +274,7 @@ extension _WorkspaceSetupDraftActions on _WorkspaceSetupContentState {
         isDirty: () => !_completedTask && _draftHasChanges(draft),
         isSaving: _isSaving,
       ),
-      onReturn: (_) => widget.onReturn?.call(),
+      callbacks: .new(onReturn: (_) => widget.onReturn?.call()),
     );
   }
 
@@ -795,7 +795,11 @@ class const _WorkspaceIntentButton({
   @override
   Widget build(BuildContext context) => AuraButton(
     onPressed: onPressed,
-    child: TextLocale('workspace_setup.${intent.name}'),
+    child: TextLocale(switch (intent) {
+      .local => LocaleKeys.workspace_setup_local,
+      .cloud => LocaleKeys.workspace_setup_cloud,
+      .connect => LocaleKeys.workspace_setup_connect,
+    }),
     key: ValueKey('workspace_intent_${intent.name}'),
     variant: isSelected ? .primary : .outlined,
     disabled: isPending,

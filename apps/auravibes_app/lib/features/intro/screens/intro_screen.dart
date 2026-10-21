@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/workspaces/notifiers/workspace_creation_d
 import 'package:auravibes_app/features/workspaces/widgets/workspace_setup_content.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/setup_page_frame.dart';
 import 'package:auravibes_app/widgets/setup_page_transition.dart';
@@ -125,7 +126,7 @@ void _watchIntroState(WidgetRef ref, WorkspaceSetupResult? result) {
 class const _IntroJourneyFrame({required final Widget child})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: SafeArea(
       child: Center(
         child: ConstrainedBox(
@@ -306,8 +307,8 @@ void _bindIntroProviderGuard(
           .hasUnsavedChanges,
       isSaving: () => _readIntroProviderSaving(ref, workspaceId),
     ),
+    callbacks: .new(onReturn: (_) => state._leaveProvider(workspaceId)),
     preferReturn: true,
-    onReturn: (_) => state._leaveProvider(workspaceId),
   );
 }
 

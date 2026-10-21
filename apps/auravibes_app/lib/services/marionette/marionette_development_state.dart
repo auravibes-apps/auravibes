@@ -26,6 +26,7 @@ class MarionetteDevelopmentState({
   static const allowedRouteValues = <String>[
     'new_chat',
     'chats',
+    'demo_conversation',
     'tools',
     'models',
     'service_connections',
@@ -43,12 +44,23 @@ class MarionetteDevelopmentState({
   static const allowedFeatureFlags = <String>{...allowedFeatureFlagValues};
   static const maxIdentifierLength = 128;
   static const allowedSubAgentSmokeCountValues = <String>['1', '2'];
+  static const allowedChatSmokeScenarioValues = <String>[
+    'complete',
+    'stop',
+    'retry',
+  ];
+  static const allowedChatSmokeScenarios = <String>{
+    ...allowedChatSmokeScenarioValues,
+  };
 
   static const demoWorkspaceId = 'marionette-demo-workspace';
   static const demoConnectionId = 'marionette-demo-connection';
+  static const demoServiceId = 'marionette-demo';
   static const demoModelSelectionId = 'marionette-demo-model-selection';
+  static const demoModelId = 'marionette-demo-model';
   static const demoConversationId = 'marionette-demo-conversation';
   static const demoMessageId = 'marionette-demo-message';
+  static const smokeWorkspaceId = 'marionette-smoke-workspace';
   static const _featureFlagPrefix = 'auravibes.marionette.feature.';
   static final _demoTimestamp = DateTime.utc(2026);
 
@@ -62,7 +74,9 @@ class MarionetteDevelopmentState({
     }
 
     await _requireLocalWorkspace(workspaceId);
-    final location = _routeLocation(route, workspaceId);
+    final location = route == 'demo_conversation'
+        ? await _demoConversationLocation(database, workspaceId)
+        : _routeLocation(route, workspaceId);
     navigateTo(location);
 
     return {'route': route, 'workspaceId': workspaceId, 'location': location};
@@ -149,16 +163,18 @@ class MarionetteDevelopmentState({
 
   @override
   Future<Map<String, dynamic>> clearDevelopmentState() async {
+    final deletedSmokeWorkspace = await workspaceRepository.deleteWorkspace(
+      smokeWorkspaceId,
+    );
     final deletedWorkspace = await workspaceRepository.deleteWorkspace(
       demoWorkspaceId,
     );
-    final deletedRecentSelections = await (database.delete(
-      database.recentModelSelections,
-    )..where((table) => table.workspaceId.equals(demoWorkspaceId))).go();
+    final deletedRecentSelections = await _deleteRecentDemoSelections(database);
     final clearedFeatureFlags = await _clearFeatureFlags();
 
     return {
       'deletedWorkspace': deletedWorkspace,
+      'deletedSmokeWorkspace': deletedSmokeWorkspace,
       'deletedRecentSelections': deletedRecentSelections,
       'clearedFeatureFlags': clearedFeatureFlags,
     };
@@ -209,6 +225,14 @@ class MarionetteDevelopmentState({
   }
 }
 
+Future<int> _deleteRecentDemoSelections(AppDatabase database) =>
+    (database.delete(database.recentModelSelections)..where(
+          (table) => table.workspaceId.equals(
+            MarionetteDevelopmentState.demoWorkspaceId,
+          ),
+        ))
+        .go();
+
 void _requireStableIdentifier(String value, String parameter) {
   if (value.isEmpty ||
       value.length > MarionetteDevelopmentState.maxIdentifierLength ||
@@ -236,12 +260,108 @@ String _routeLocation(String route, String workspaceId) => switch (route) {
 Never _throwMarionetteNotAllowlisted(Object value, String parameter) =>
     throw ArgumentError.value(value, parameter, 'is not allowlisted');
 
+Future<String> _demoConversationLocation(
+  AppDatabase database,
+  String workspaceId,
+) async {
+  _requireDemoWorkspace(workspaceId);
+
+  final conversation = await database.conversationDao.getConversationById(
+    MarionetteDevelopmentState.demoConversationId,
+  );
+  _requireDemoConversation(conversation?.workspaceId, conversation?.modelId);
+
+  return ConversationRoute(
+    workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
+    chatId: MarionetteDevelopmentState.demoConversationId,
+  ).location;
+}
+
+void _requireDemoWorkspace(String workspaceId) {
+  if (workspaceId != MarionetteDevelopmentState.demoWorkspaceId) {
+    throw ArgumentError.value(
+      workspaceId,
+      'workspaceId',
+      'must identify the Marionette demo workspace',
+    );
+  }
+}
+
+void _requireDemoConversation(String? workspaceId, String? modelId) {
+  if (workspaceId != MarionetteDevelopmentState.demoWorkspaceId ||
+      modelId != MarionetteDevelopmentState.demoModelSelectionId) {
+    throw ArgumentError.value(
+      MarionetteDevelopmentState.demoConversationId,
+      'conversationId',
+      'must identify the local Marionette demo conversation',
+    );
+  }
+}
+
 Future<void> _seedMarionetteDemoData(AppDatabase database) async {
-  await _seedMarionetteWorkspace(database);
+  await _seedMarionetteLocalWorkspace(
+    database,
+    workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
+    workspaceName: 'Marionette Demo',
+  );
+  await _seedMarionetteLocalWorkspace(
+    database,
+    workspaceId: MarionetteDevelopmentState.smokeWorkspaceId,
+    workspaceName: 'Marionette Smoke Workspace',
+  );
   await _seedMarionetteConnection(database);
   await _seedMarionetteModelSelection(database);
   await _seedMarionetteConversation(database);
   await _seedMarionetteMessage(database);
+}
+
+Future<void> _seedMarionetteLocalWorkspace(
+  AppDatabase database, {
+  required String workspaceId,
+  required String workspaceName,
+}) async {
+  final existing = await _findMarionetteWorkspace(database, workspaceId);
+  if (existing == null) {
+    await _insertMarionetteLocalWorkspace(database, workspaceId, workspaceName);
+
+    return;
+  }
+
+  _requireLocalMarionetteWorkspace(existing, workspaceId);
+}
+
+Future<WorkspacesTable?> _findMarionetteWorkspace(
+  AppDatabase database,
+  String workspaceId,
+) => (database.select(
+  database.workspaces,
+)..where((table) => table.id.equals(workspaceId))).getSingleOrNull();
+
+void _requireLocalMarionetteWorkspace(
+  WorkspacesTable workspace,
+  String workspaceId,
+) {
+  if (workspace.type != .local) {
+    throw StateError('Reserved Marionette workspace $workspaceId is not local');
+  }
+}
+
+Future<void> _insertMarionetteLocalWorkspace(
+  AppDatabase database,
+  String workspaceId,
+  String workspaceName,
+) async {
+  final _ = await database
+      .into(database.workspaces)
+      .insert(
+        WorkspacesCompanion.insert(
+          id: .new(workspaceId),
+          createdAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          updatedAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          name: workspaceName,
+          type: .local,
+        ),
+      );
 }
 
 Future<void> _requireMarionetteModelSelection(
@@ -260,38 +380,6 @@ Future<void> _requireMarionetteModelSelection(
       'does not identify a model in the selected workspace',
     );
   }
-}
-
-Future<void> _seedMarionetteWorkspace(AppDatabase database) async {
-  final existing =
-      await (database.select(database.workspaces)..where(
-            (table) =>
-                table.id.equals(MarionetteDevelopmentState.demoWorkspaceId),
-          ))
-          .getSingleOrNull();
-  if (existing != null) {
-    if (existing.type != .local) {
-      throw StateError('Reserved Marionette workspace is not local');
-    }
-
-    return;
-  }
-
-  await _insertMarionetteWorkspace(database);
-}
-
-Future<void> _insertMarionetteWorkspace(AppDatabase database) async {
-  final _ = await database
-      .into(database.workspaces)
-      .insert(
-        WorkspacesCompanion.insert(
-          id: const Value(MarionetteDevelopmentState.demoWorkspaceId),
-          createdAt: .new(MarionetteDevelopmentState._demoTimestamp),
-          updatedAt: .new(MarionetteDevelopmentState._demoTimestamp),
-          name: 'Marionette Demo',
-          type: .local,
-        ),
-      );
 }
 
 Future<void> _seedMarionetteConnection(AppDatabase database) async {
@@ -342,7 +430,7 @@ Future<void> _seedMarionetteModelSelection(AppDatabase database) async {
       isDemoConnection:
           existing.modelConnectionId ==
           MarionetteDevelopmentState.demoConnectionId,
-      isDemoModel: existing.modelId == 'marionette-demo-model',
+      isDemoModel: existing.modelId == MarionetteDevelopmentState.demoModelId,
     );
 
     return;
@@ -368,7 +456,7 @@ Future<void> _insertMarionetteModelSelection(AppDatabase database) async {
           id: const Value(MarionetteDevelopmentState.demoModelSelectionId),
           createdAt: .new(MarionetteDevelopmentState._demoTimestamp),
           updatedAt: .new(MarionetteDevelopmentState._demoTimestamp),
-          modelId: 'marionette-demo-model',
+          modelId: MarionetteDevelopmentState.demoModelId,
           modelConnectionId: MarionetteDevelopmentState.demoConnectionId,
         ),
       );

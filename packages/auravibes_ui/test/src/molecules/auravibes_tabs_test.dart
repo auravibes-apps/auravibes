@@ -1,5 +1,6 @@
 import 'dart:ui' show SemanticsRole, Tristate;
 
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_container.dart';
@@ -11,6 +12,29 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraTabs', () {
+    testWidgets('uses scoped radius for tab surfaces', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          AuraCornerRadiusScope.select(
+            level: .xl,
+            child: const AuraTabs<void>(items: _items),
+          ),
+        ),
+      );
+
+      final pressable = tester.widget<AuraPressable>(
+        find.byType(AuraPressable).first,
+      );
+      expect(
+        pressable.decoration,
+        isA<BoxDecoration>().having(
+          (decoration) => decoration.borderRadius,
+          'borderRadius',
+          BorderRadius.circular(AuraTheme.light.fromBorderRadius(.xl)),
+        ),
+      );
+    });
+
     testWidgets('reveals an initially selected edge tab after route uncover', (
       tester,
     ) async {
@@ -390,6 +414,31 @@ void main() {
       expect(horizontal.position.maxScrollExtent, 0);
     });
 
+    testWidgets('scrolls an overflowing tab strip with a horizontal drag', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          const SizedBox(width: 160, child: AuraTabs<void>(items: _wideItems)),
+        ),
+      );
+
+      final tabs = find.byType(AuraTabs<void>);
+      final horizontal = tester.state<ScrollableState>(
+        find.descendant(of: tabs, matching: find.byType(Scrollable)),
+      );
+      expect(horizontal.position.maxScrollExtent, greaterThan(0));
+
+      final scrollView = find.descendant(
+        of: tabs,
+        matching: find.byType(SingleChildScrollView),
+      );
+      await tester.drag(scrollView, const Offset(-120, 0), kind: .mouse);
+      final _ = await tester.pumpAndSettle();
+
+      expect(horizontal.position.pixels, greaterThan(0));
+    });
+
     testWidgets('keeps a selected tab visible when items shrink in RTL', (
       tester,
     ) async {
@@ -470,6 +519,16 @@ void main() {
       );
       expect(
         pressables.every((tab) => tab.color == AuraTheme.light.colors.primary),
+        isTrue,
+      );
+      expect(
+        pressables.every((tab) {
+          final decoration = tab.decoration;
+
+          return decoration is BoxDecoration &&
+              decoration.borderRadius ==
+                  BorderRadius.circular(AuraTheme.light.fromBorderRadius(.md));
+        }),
         isTrue,
       );
 

@@ -237,12 +237,12 @@ void main() {
         const workspaceId = 'workspace-1';
         const conversationId = 'conversation-1';
         final persistedAppSkill = _skill(
-          source: SkillSource.app,
           id: 'duckduckgo',
           workspaceId: workspaceId,
           title: 'Persisted DuckDuckGo',
           slug: 'duckduckgo',
           now: now,
+          source: .app,
         );
         final usecase = ListAvailableSkillsUsecase(
           _FakeSkillsRepository([persistedAppSkill]),
@@ -654,9 +654,9 @@ SkillEntity _skill({
   SkillSource source = SkillSource.user,
 }) {
   return SkillEntity(
-    source: source,
     id: id,
     workspaceId: workspaceId,
+    source: source,
     kind: .template,
     title: title,
     slug: slug,

@@ -16,44 +16,46 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
 
   group('ModelConnectionRepository', () {
-    var mockProvidersDao = MockApiModelProvidersDao();
-    var mockConnectionsDao = MockModelConnectionsDao();
-    var mockSelectionsDao = MockWorkspaceModelSelectionsDao();
-    var mockEncryptionService = MockEncryptionService();
-    var mockLegacyApiKeyStorage = MockLegacyApiKeyStorage();
-    var mockModelProviderServices = MockModelProviderServices();
-    var database = _TestAppDatabase(
-      MockApiModelProvidersDao(),
-      MockModelConnectionsDao(),
-      MockWorkspaceModelSelectionsDao(),
+    final mockProvidersDao = MockApiModelProvidersDao();
+    final mockConnectionsDao = MockModelConnectionsDao();
+    final mockSelectionsDao = MockWorkspaceModelSelectionsDao();
+    final mockEncryptionService = MockEncryptionService();
+    final mockLegacyApiKeyStorage = MockLegacyApiKeyStorage();
+    final mockModelProviderServices = MockModelProviderServices();
+    final database = _TestAppDatabase(
+      mockProvidersDao,
+      mockConnectionsDao,
+      mockSelectionsDao,
     );
     var repository = ModelConnectionRepository(
       database: database,
       encryptionService: mockEncryptionService,
       modelProviderServices: mockModelProviderServices,
     );
+    var isFirstTest = true;
 
     tearDownAll(() async {
       await database.close();
     });
 
-    setUp(() {
-      mockProvidersDao = MockApiModelProvidersDao();
-      mockConnectionsDao = MockModelConnectionsDao();
-      mockSelectionsDao = MockWorkspaceModelSelectionsDao();
-      mockEncryptionService = MockEncryptionService();
-      mockLegacyApiKeyStorage = MockLegacyApiKeyStorage();
-      mockModelProviderServices = MockModelProviderServices();
-      database = _TestAppDatabase(
-        mockProvidersDao,
-        mockConnectionsDao,
-        mockSelectionsDao,
-      );
+    setUp(() async {
+      reset(mockProvidersDao);
+      reset(mockConnectionsDao);
+      reset(mockSelectionsDao);
+      reset(mockEncryptionService);
+      reset(mockLegacyApiKeyStorage);
+      reset(mockModelProviderServices);
+      if (isFirstTest) {
+        isFirstTest = false;
+      } else {
+        await clearAppDatabase(database);
+      }
       repository = ModelConnectionRepository(
         database: database,
         encryptionService: mockEncryptionService,
@@ -70,10 +72,6 @@ void main() {
           });
       when(() => mockLegacyApiKeyStorage.isLegacyReference(any()))
           .thenReturn(false);
-    });
-
-    tearDown(() async {
-      await database.close();
     });
 
     final now = DateTime(2026);
@@ -692,7 +690,7 @@ void main() {
         },
       );
 
-      test('preserves existing selection ids for unchanged models', () async {
+      test('preserves selection policy for unchanged catalog models', () async {
         final existingRow = connectionRow.copyWith(
           url: const Value('https://old.proxy.example.com'),
         );
@@ -706,6 +704,7 @@ void main() {
           updatedAt: now,
           modelId: 'gpt-4',
           modelConnectionId: 'conn-1',
+          toolSamplingPolicy: 'prefer',
         );
         final removedSelection = WorkspaceModelSelectionTable(
           id: 'selection-removed',

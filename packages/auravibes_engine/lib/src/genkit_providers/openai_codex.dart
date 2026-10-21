@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/src/genkit_providers/chat_completions_provider.dart';
 import 'package:auravibes_engine/src/genkit_providers/media_input.dart';
+import 'package:auravibes_engine/src/provider_failure_recovery.dart';
 import 'package:auravibes_engine/src/reasoning_configuration.dart';
 import 'package:genkit/plugin.dart';
 
@@ -16,7 +17,7 @@ class const OpenAICodexCodec() {
   ) async {
     final response = await transport(body);
     final responseBody = await response.body.transform(utf8.decoder).join();
-    throwIfRawError(response.statusCode, responseBody);
+    throwIfRawError(response.statusCode, responseBody, response.retryAfter);
     final json = jsonDecode(responseBody) as Map<String, dynamic>;
 
     return _modelResponseFromJson(json);
@@ -32,7 +33,7 @@ class const OpenAICodexCodec() {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final responseBody = await response.body.transform(utf8.decoder).join();
-      throwIfRawError(response.statusCode, responseBody);
+      throwIfRawError(response.statusCode, responseBody, response.retryAfter);
     }
 
     await for (final line
@@ -75,13 +76,14 @@ class const OpenAICodexCodec() {
     };
   }
 
-  void throwIfRawError(int statusCode, String body) {
+  void throwIfRawError(int statusCode, String body, Duration? retryAfter) {
     if (statusCode >= 200 && statusCode < 300) return;
 
-    throw GenkitException(
+    throw ProviderHttpFailureException(
+      statusCode,
       'OpenAI Codex API request failed (HTTP $statusCode).',
-      status: .fromHttpStatus(statusCode),
       details: _retryableErrorDetail(body),
+      retryAfter: retryAfter,
     );
   }
 }
@@ -93,7 +95,7 @@ Map<String, dynamic> _decodeStreamEvent(String data) {
     Error.throwWithStackTrace(
       GenkitException(
         'OpenAI Codex stream parse error.',
-        status: .INTERNAL,
+        status: .internal,
         stackTrace: stackTrace,
       ),
       stackTrace,
@@ -180,7 +182,7 @@ Map<String, dynamic> _mediaToInput(Part part, Media media) {
   if (data == null) {
     throw GenkitException(
       'OpenAI Responses media inputs require a data URL for files and audio.',
-      status: .INVALID_ARGUMENT,
+      status: .invalidArgument,
     );
   }
   if (contentType.startsWith('audio/')) {
@@ -271,9 +273,9 @@ GenerationUsage? _usageFromJson(Map<String, dynamic>? usage) {
   if (usage == null) return null;
 
   return GenerationUsage(
-    inputTokens: (usage['input_tokens'] as num?)?.toDouble(),
-    outputTokens: (usage['output_tokens'] as num?)?.toDouble(),
-    totalTokens: (usage['total_tokens'] as num?)?.toDouble(),
+    inputTokens: (usage['input_tokens'] as num?)?.toInt(),
+    outputTokens: (usage['output_tokens'] as num?)?.toInt(),
+    totalTokens: (usage['total_tokens'] as num?)?.toInt(),
   );
 }
 
@@ -317,7 +319,7 @@ class _CodexStreamAccumulator {
     final details = _failedEventDetails(event);
     throw GenkitException(
       'OpenAI Codex API request failed while streaming.',
-      status: .INTERNAL,
+      status: .internal,
       details: _retryableErrorDetail(jsonEncode(details['error'])),
       stackTrace: .current,
     );
@@ -402,8 +404,9 @@ Map<String, dynamic> _failedEventDetails(Map<String, dynamic> event) {
 }
 
 bool isRetryableCodexError(GenkitException error) {
-  return error.status == StatusCodes.INTERNAL &&
-      '${error.details}'.contains('server_error');
+  return error.status == StatusCode.internal &&
+      error.details != null &&
+      ProviderFailureRecovery.fromError(error).retryable;
 }
 
 String? _retryableErrorDetail(String body) {

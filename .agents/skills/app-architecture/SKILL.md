@@ -18,7 +18,7 @@ Before editing, decide the owner:
 | Route-level UI                          | `lib/features/<feature>/screens/`                  |
 | Feature-only UI                         | `lib/features/<feature>/widgets/`                  |
 | Mutable UI/runtime state                | `lib/features/<feature>/notifiers/`                |
-| Dependency wiring or read-only state    | `lib/features/<feature>/providers/`                |
+| Repository/service/runtime wiring or read-only state | `lib/features/<feature>/providers/` |
 | Business rule or workflow               | `lib/features/<feature>/usecases/`                 |
 | App-to-engine translation               | `lib/features/<feature>/agent_adapters/`           |
 | Feature-only state/model                | `lib/features/<feature>/models/`                   |
@@ -27,6 +27,8 @@ Before editing, decide the owner:
 | External API, SDK, platform side effect | `lib/services/`                                    |
 | Navigation                              | `lib/router/`                                      |
 | App-wide provider/notifier/widget       | `lib/providers/`, `lib/notifiers/`, `lib/widgets/` |
+
+Usecase provider placement follows [canonical use-case guidance](../../../doc/architecture/usecases-pattern.md#provider-placement).
 
 If one feature owns the behavior, keep it in that feature. Root folders are for
 code used by multiple features or app bootstrap.
@@ -141,18 +143,23 @@ Agent adapters:
 - Avoid provider-to-provider business chains. Put workflow in a usecase.
 - Do not add new `.when()` for `AsyncValue`; use Dart switch patterns.
 
-Canonical provider file:
+Canonical repository provider file:
 
 ```dart
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'send_message_usecase_provider.g.dart';
+part 'conversation_repository_provider.g.dart';
 
-@riverpod
-SendMessageUsecase sendMessageUsecase(Ref ref) {
-  return SendMessageUsecase(
-    conversationRepository: ref.watch(conversationRepositoryProvider),
-    agentService: ref.watch(auraAgentServiceProvider),
+@Riverpod(keepAlive: true)
+ConversationRepository conversationRepository(Ref ref) {
+  final appDatabase = ref.watch(appDatabaseProvider);
+  final attachmentFileStore = ref.watch(attachmentFileStoreProvider);
+
+  return ConversationRepository(
+    appDatabase,
+    attachmentFileStore: attachmentFileStore,
   );
 }
 ```
@@ -184,7 +191,7 @@ class NewChatNotifier extends _$NewChatNotifier {
 
 - Feature `models/`: feature-only state, DTOs, view models, small value objects.
 - `domain/entities/`: app concepts shared across features.
-- `domain/exceptions/`: typed user-facing failures carrying localization keys.
+- `domain/exceptions/`: shared typed exceptions. Follow [root exception guidance](../../../AGENTS.md) for user-facing errors.
 - Database row/data classes stay behind repositories.
 - Engine protocol models stay in `auravibes_engine`; app maps to/from them at
   adapters.
@@ -196,7 +203,7 @@ class NewChatNotifier extends _$NewChatNotifier {
 - New usecases: `<verb>_<object>_usecase.dart`, class `VerbObjectUsecase`.
 - Existing `UseCase` spelling may stay until touched for nearby work.
 - Notifiers: `<name>_notifier.dart`, class `<Name>Notifier`.
-- Providers: `<dependency>_provider.dart` for repositories/services/usecases and
+- Providers: `<dependency>_provider.dart` for repository/service wiring and
   `<thing>_runtime_provider.dart` for runtime adapters.
 - Screens: `<feature>_screen.dart` or `<action>_<feature>_screen.dart`.
 - Widgets: noun-based names ending in the rendered thing, not `Helper`.

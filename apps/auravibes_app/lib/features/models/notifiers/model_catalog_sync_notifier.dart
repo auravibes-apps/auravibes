@@ -2,11 +2,15 @@ import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_failu
 import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_state.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 
 final _logger = Logger('notifier:model_catalog_sync');
-const _retryDelays = [Duration(milliseconds: 250), Duration(milliseconds: 500)];
+const _defaultRetryDelays = [
+  Duration(milliseconds: 250),
+  Duration(milliseconds: 500),
+];
 const _firstServerErrorStatusCode = 500;
 const _firstNonServerErrorStatusCode = 600;
 
@@ -15,7 +19,9 @@ final modelCatalogSyncNotifierProvider =
       ModelCatalogSyncNotifier.new,
     );
 
-class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
+class ModelCatalogSyncNotifier({
+  @visibleForTesting final List<Duration> retryDelays = _defaultRetryDelays,
+}) extends Notifier<ModelCatalogSyncState> {
   Future<void>? _syncInFlight;
 
   @override
@@ -83,9 +89,9 @@ class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
     int retries,
   ) async {
     if (retryTransientErrors &&
-        retries < _retryDelays.length &&
+        retries < retryDelays.length &&
         _isTransient(error)) {
-      await Future<void>.delayed(_retryDelays[retries]);
+      await Future<void>.delayed(retryDelays[retries]);
 
       return;
     }

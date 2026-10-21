@@ -159,6 +159,9 @@ extension on BuildLoadedSkillManifestsUsecase {
       description: spec.description,
       inputJsonSchema: spec.inputJsonSchema,
       credentialRequired: spec.requiresCredential,
+      optionalNullMeansOmission:
+          resolved.kind == AgentResolvedToolKind.skillTemplate ||
+          resolved.kind == AgentResolvedToolKind.skillAppTemplate,
     ),
   );
 

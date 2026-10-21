@@ -4,18 +4,24 @@ import 'package:auravibes_app/data/repositories/conversation_tools_repository.da
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  tearDownAll(database.close);
 
   group('ConversationToolsRepository - checkToolPermission', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     const testConversationId = 'test-conversation-id';
     const testWorkspaceId = 'test-workspace-id';
@@ -46,6 +52,139 @@ void main() {
     setUp(fixture.setUp);
 
     tearDown(fixture.tearDown);
+
+    test('auto approval follows root and rejects invalid ancestry', () async {
+      await insertConversationToolParents();
+      final root =
+          await database.conversationDao.getConversationById(
+            testConversationId,
+          ) ??
+          fail('Expected root conversation');
+      final repository = fixture.repository;
+      expect(
+        await repository.getToolAccessMode(root.id),
+        ConversationToolAccessMode.defaultMode,
+      );
+      final child = await database.conversationDao.insertConversation(
+        .insert(
+          id: const Value('mode-child'),
+          workspaceId: root.workspaceId,
+          title: 'Child',
+          parentConversationId: Value(root.id),
+          toolAccessMode: const Value('allow_all'),
+        ),
+      );
+      expect(
+        await repository.getToolAccessMode(child.id),
+        ConversationToolAccessMode.defaultMode,
+      );
+      final _ = await database.conversationDao.patchConversation(
+        root.id,
+        const .new(toolAccessMode: Value('allow_all')),
+      );
+      expect(
+        await repository.getToolAccessMode(child.id),
+        ConversationToolAccessMode.allowAll,
+      );
+      expect(
+        await repository.getToolAccessMode('missing'),
+        ConversationToolAccessMode.defaultMode,
+      );
+      final _ = await database.conversationDao.patchConversation(
+        root.id,
+        .new(parentConversationId: Value(child.id)),
+      );
+      expect(
+        await repository.getToolAccessMode(child.id),
+        ConversationToolAccessMode.defaultMode,
+      );
+      await database.customStatement('PRAGMA foreign_keys = OFF');
+      final _ = await database.conversationDao.patchConversation(
+        root.id,
+        const .new(parentConversationId: Value('missing')),
+      );
+      expect(
+        await repository.getToolAccessMode(child.id),
+        ConversationToolAccessMode.defaultMode,
+      );
+      await database.customStatement('PRAGMA foreign_keys = ON');
+    });
+
+    for (final mode in ConversationToolAccessMode.values) {
+      for (final agentDenies in [false, true]) {
+        for (final override in PermissionAccess.values) {
+          test('deny $override, agent $agentDenies, mode $mode', () async {
+            await insertConversationToolParents();
+            final root =
+                await database.conversationDao.getConversationById(
+                  testConversationId,
+                ) ??
+                fail('Expected root');
+            final _ = await database.agentsDao.createAgent(
+              .insert(
+                id: const Value('deny-agent'),
+                workspaceId: root.workspaceId,
+                name: 'Deny agent',
+                content: 'Prompt',
+              ),
+              const [],
+            );
+            final _ = await database.conversationDao.patchConversation(
+              root.id,
+              .new(
+                agentId: const Value('deny-agent'),
+                toolAccessMode: Value(
+                  mode == ConversationToolAccessMode.allowAll
+                      ? 'allow_all'
+                      : 'default',
+                ),
+              ),
+            );
+            final _ = await database.agentToolsDao.setAgentToolPermission(
+              'deny-agent',
+              'workspace-tool-id',
+              permission: agentDenies ? .denied : .granted,
+            );
+            final _ = await database.conversationToolsDao
+                .upsertConversationTool(
+                  root.id,
+                  'workspace-tool-id',
+                  isEnabled: true,
+                  permission: override,
+                );
+            when(
+              () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+                testWorkspaceId,
+                testToolId,
+              ),
+            ).thenAnswer(
+              (_) async => WorkspaceToolEntity(
+                id: 'workspace-tool-id',
+                workspaceId: root.workspaceId,
+                toolId: testToolId,
+                isEnabled: true,
+                permissionMode: agentDenies ? .alwaysAllow : .alwaysDeny,
+                createdAt: .utc(2026),
+                updatedAt: .utc(2026),
+              ),
+            );
+            final result = await fixture.repository.checkToolPermission(
+              conversationId: root.id,
+              workspaceId: testWorkspaceId,
+              toolId: testToolId,
+            );
+            expect(result, switch (override) {
+              .granted => ToolPermissionResult.granted,
+              .denied => ToolPermissionResult.disabledInConversation,
+              .ask =>
+                agentDenies
+                    ? ToolPermissionResult.disabledByAgent
+                    : ToolPermissionResult.disabledInWorkspace,
+            });
+          });
+        }
+      }
+    }
 
     test('returns notConfigured when tool is not in workspace', () async {
       // Arrange.
@@ -584,7 +723,7 @@ void main() {
   });
 
   group('getConversationTools', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -614,7 +753,7 @@ void main() {
   });
 
   group('getConversationTool', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -649,7 +788,7 @@ void main() {
   });
 
   group('setConversationToolEnabled', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -675,7 +814,7 @@ void main() {
   });
 
   group('setConversationToolPermission', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -701,7 +840,7 @@ void main() {
   });
 
   group('toggleConversationTool', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -739,7 +878,7 @@ void main() {
   });
 
   group('isConversationToolEnabled', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -771,7 +910,7 @@ void main() {
   });
 
   group('removeConversationTool', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -809,7 +948,7 @@ void main() {
   });
 
   group('getConversationToolsCount', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -823,6 +962,7 @@ void main() {
     });
 
     test('returns correct count', () async {
+      await fixture.insertWorkspaceTool('tool-2');
       final _ = await fixture.database.conversationToolsDao
           .upsertConversationTool(
             'conv-1',
@@ -846,7 +986,7 @@ void main() {
   });
 
   group('getEnabledConversationToolsCount', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -861,13 +1001,20 @@ void main() {
   });
 
   group('copyConversationTools', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
     tearDown(fixture.tearDown);
 
     test('copies tools from source to target conversation', () async {
+      final _ = await fixture.database.conversationDao.insertConversation(
+        .insert(
+          id: const Value('conv-2'),
+          workspaceId: fixture.workspaceId,
+          title: 'Test Conversation',
+        ),
+      );
       final _ = await fixture.database.conversationToolsDao
           .upsertConversationTool(
             'conv-1',
@@ -888,7 +1035,7 @@ void main() {
   });
 
   group('isToolAvailableForConversation', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -990,7 +1137,7 @@ void main() {
   });
 
   group('getAvailableToolsForConversation', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -1114,7 +1261,7 @@ void main() {
   });
 
   group('getAvailableToolEntitiesForConversation', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -1223,13 +1370,14 @@ void main() {
   });
 
   group('setConversationToolsDisabled', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
     tearDown(fixture.tearDown);
 
     test('completes without error', () async {
+      await fixture.insertWorkspaceTool('tool-2');
       await expectLater(
         fixture.repository.setConversationToolsDisabled('conv-1', [
           'tool-1',
@@ -1241,7 +1389,7 @@ void main() {
   });
 
   group('validateConversationToolSetting', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -1269,7 +1417,7 @@ void main() {
   });
 
   group('getEnabledConversationTools', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -1339,12 +1487,14 @@ void main() {
 }
 
 final class _ConversationToolsRepositoryFixture {
-  AppDatabase? _database;
+  new(this._database);
+
+  String workspaceId = '';
+  final AppDatabase _database;
   ConversationToolsRepository? _repository;
   MockWorkspaceToolsRepository? _mockWorkspaceToolsRepository;
 
-  AppDatabase get database =>
-      _database ?? fail('Expected database fixture to be initialized.');
+  AppDatabase get database => _database;
 
   ConversationToolsRepository get repository =>
       _repository ?? fail('Expected repository fixture to be initialized.');
@@ -1353,43 +1503,40 @@ final class _ConversationToolsRepositoryFixture {
       _mockWorkspaceToolsRepository ??
       fail('Expected workspace tools repository fixture to be initialized.');
 
+  Future<void> insertWorkspaceTool(String toolId) async {
+    final _ = await _database
+        .into(_database.tools)
+        .insert(
+          ToolsCompanion.insert(
+            id: .new(toolId),
+            workspaceId: workspaceId,
+            toolId: toolId,
+          ),
+        );
+  }
+
   Future<void> setUp() async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
+    final database = _database;
+    await clearAppDatabase(database);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Test Workspace', type: .local),
     );
-    for (final conversationId in ['conv-1', 'conv-2']) {
-      final _ = await database.conversationDao.insertConversation(
-        .insert(
-          id: Value(conversationId),
-          workspaceId: workspace.id,
-          title: 'Test Conversation',
-        ),
-      );
-    }
-    for (final toolId in ['tool-1', 'tool-2']) {
-      final _ = await database
-          .into(database.tools)
-          .insert(
-            ToolsCompanion.insert(
-              id: .new(toolId),
-              workspaceId: workspace.id,
-              toolId: toolId,
-            ),
-          );
-    }
+    workspaceId = workspace.id;
+    final _ = await database.conversationDao.insertConversation(
+      .insert(
+        id: const Value('conv-1'),
+        workspaceId: workspace.id,
+        title: 'Test Conversation',
+      ),
+    );
+    await insertWorkspaceTool('tool-1');
     final mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
 
-    _database = database;
     _mockWorkspaceToolsRepository = mockWorkspaceToolsRepository;
     _repository = .new(database, mockWorkspaceToolsRepository);
   }
 
-  Future<void> tearDown() async {
-    await database.close();
-    _database = null;
+  void tearDown() {
     _mockWorkspaceToolsRepository = null;
     _repository = null;
   }

@@ -1,7 +1,6 @@
 // Required: Existing thresholds and limits use numeric values.
 import 'dart:async';
 
-import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -12,38 +11,53 @@ import 'package:material_ui/material_ui.dart';
 /// A preview widget for tool call responses that shows a collapsed view.
 ///
 /// Displays up to 3 lines of the response text. If the content exceeds
-/// 3 lines (considering line wraps), a "Show more" button appears that
-/// opens a modal with the full markdown-rendered content.
+/// 3 lines (considering line wraps), a "Show more" button appears that opens
+/// the stored content in the sidebar.
 class const ToolCallResponsePreview({
-  /// The name of the tool that generated the response.
-  required final String toolName,
-
   /// The raw response content to display.
   required final String content,
+  required final VoidCallback onShowMore,
   super.key,
   final bool showExpandButton = true,
+  final String? inspectionStatus,
 }) extends StatelessWidget {
   /// Maximum number of lines to show in the preview.
   static const int maxPreviewLines = 3;
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final textStyle = _toolCallResponsePreviewTextStyle(context);
+  Widget build(BuildContext context) => _ToolCallResponsePreviewLayout(
+    content: content,
+    showExpandButton: showExpandButton,
+    inspectionStatus: inspectionStatus,
+    onShowMore: onShowMore,
+  );
+}
 
-        return _ToolCallResponsePreviewContent(
-          content: content,
-          hasOverflow: _toolCallResponsePreviewHasOverflow(
-            context,
-            constraints,
-            content,
-          ),
-          showExpandButton: showExpandButton,
-          textStyle: textStyle,
-          toolName: toolName,
-        );
-      },
+class const _ToolCallResponsePreviewLayout({
+  required final String content,
+  required final bool showExpandButton,
+  required final String? inspectionStatus,
+  required final VoidCallback onShowMore,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      LayoutBuilder(builder: _buildPreviewContent);
+
+  Widget _buildPreviewContent(
+    BuildContext context,
+    BoxConstraints constraints,
+  ) {
+    return _ToolCallResponsePreviewContent(
+      content: content,
+      hasOverflow: _toolCallResponsePreviewHasOverflow(
+        context,
+        constraints,
+        content,
+      ),
+      showExpandButton: showExpandButton,
+      inspectionStatus: inspectionStatus,
+      textStyle: _toolCallResponsePreviewTextStyle(context),
+      onShowMore: onShowMore,
     );
   }
 }
@@ -89,20 +103,23 @@ class const _ToolCallResponsePreviewContent({
   required final String content,
   required final bool hasOverflow,
   required final bool showExpandButton,
+  required final String? inspectionStatus,
   required final TextStyle textStyle,
-  required final String toolName,
+  required final VoidCallback onShowMore,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .start,
     children: [
       _ToolCallResponsePreviewText(content: content, textStyle: textStyle),
-      if (content.isNotEmpty || (hasOverflow && showExpandButton))
+      if (content.isNotEmpty ||
+          (showExpandButton && (hasOverflow || inspectionStatus != null)))
         _ToolCallResponseActions(
           content: content,
           hasOverflow: hasOverflow,
           showExpandButton: showExpandButton,
-          toolName: toolName,
+          inspectionStatus: inspectionStatus,
+          onShowMore: onShowMore,
         ),
     ],
   );
@@ -112,7 +129,8 @@ class const _ToolCallResponseActions({
   required final String content,
   required final bool hasOverflow,
   required final bool showExpandButton,
-  required final String toolName,
+  required final String? inspectionStatus,
+  required final VoidCallback onShowMore,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Wrap(
@@ -120,8 +138,8 @@ class const _ToolCallResponseActions({
     runSpacing: context.auraTheme.fromSpacing(.xs),
     children: [
       if (content.isNotEmpty) _ToolCallResponseCopyButton(content: content),
-      if (hasOverflow && showExpandButton)
-        _ToolCallResponseExpandButton(content: content, toolName: toolName),
+      if ((hasOverflow || inspectionStatus != null) && showExpandButton)
+        _ToolCallResponseExpandButton(onShowMore: onShowMore),
     ],
   );
 }
@@ -142,19 +160,12 @@ class const _ToolCallResponsePreviewText({
 }
 
 class const _ToolCallResponseExpandButton({
-  required final String content,
-  required final String toolName,
+  required final VoidCallback onShowMore,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
-    child: _ToolCallResponseExpandAction(
-      onPressed: () => ToolCallResponseModal.show(
-        context,
-        toolName: toolName,
-        content: content,
-      ),
-    ),
+    child: _ToolCallResponseExpandAction(onPressed: onShowMore),
   );
 }
 

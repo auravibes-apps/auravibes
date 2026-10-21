@@ -20,6 +20,7 @@ abstract class Conversation
     required this.stableId,
     this.title,
     required this.isPinned,
+    String? toolAccessMode,
     this.modelId,
     this.agentId,
     this.reasoningConfigJson,
@@ -37,7 +38,8 @@ abstract class Conversation
     this.forkSourceTitle,
     this.forkThroughMessageId,
     this.forkMaterializedAt,
-  }) : projectionRevision = projectionRevision ?? 1,
+  }) : toolAccessMode = toolAccessMode ?? 'default',
+       projectionRevision = projectionRevision ?? 1,
        eventSequence = eventSequence ?? 0,
        executionState = executionState ?? 'idle';
 
@@ -47,6 +49,7 @@ abstract class Conversation
     required String stableId,
     String? title,
     required bool isPinned,
+    String? toolAccessMode,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -73,6 +76,7 @@ abstract class Conversation
       stableId: jsonSerialization['stableId'] as String,
       title: jsonSerialization['title'] as String?,
       isPinned: _isc.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
+      toolAccessMode: jsonSerialization['toolAccessMode'] as String?,
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
@@ -120,6 +124,8 @@ abstract class Conversation
 
   bool isPinned;
 
+  String toolAccessMode;
+
   String? modelId;
 
   String? agentId;
@@ -163,6 +169,7 @@ abstract class Conversation
     String? stableId,
     String? title,
     bool? isPinned,
+    String? toolAccessMode,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -190,6 +197,7 @@ abstract class Conversation
       'stableId': stableId,
       if (title != null) 'title': title,
       'isPinned': isPinned,
+      'toolAccessMode': toolAccessMode,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
@@ -225,6 +233,7 @@ abstract class Conversation
       'stableId': stableId,
       if (title != null) 'title': title,
       'isPinned': isPinned,
+      'toolAccessMode': toolAccessMode,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
@@ -266,6 +275,7 @@ class _ConversationImpl extends Conversation {
     required String stableId,
     String? title,
     required bool isPinned,
+    String? toolAccessMode,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -289,6 +299,7 @@ class _ConversationImpl extends Conversation {
          stableId: stableId,
          title: title,
          isPinned: isPinned,
+         toolAccessMode: toolAccessMode,
          modelId: modelId,
          agentId: agentId,
          reasoningConfigJson: reasoningConfigJson,
@@ -318,6 +329,7 @@ class _ConversationImpl extends Conversation {
     String? stableId,
     Object? title = _Undefined,
     bool? isPinned,
+    String? toolAccessMode,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
     Object? reasoningConfigJson = _Undefined,
@@ -342,6 +354,7 @@ class _ConversationImpl extends Conversation {
       stableId: stableId ?? this.stableId,
       title: title is String? ? title : this.title,
       isPinned: isPinned ?? this.isPinned,
+      toolAccessMode: toolAccessMode ?? this.toolAccessMode,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
       reasoningConfigJson: reasoningConfigJson is String?

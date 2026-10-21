@@ -8,6 +8,8 @@ import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
+import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
@@ -358,6 +360,57 @@ void main() {
       expect(limit, 2500);
     });
 
+    test(
+      'resolves Codex context limit from the OpenAI model catalog',
+      () async {
+        final fakeCredentialsRepo = _FakeWorkspaceModelSelectionRepository(
+          selectedModel: _workspaceModelSelectionWithProvider(
+            credentialModelId: 'cm-codex',
+            modelId: 'gpt-5.3-codex',
+            providerId: 'openai-codex',
+          ),
+        );
+        final fakeApiRepo = _FakeApiModelRepository(
+          models: [
+            _apiModel(
+              id: 'gpt-5.3-codex',
+              providerId: 'openai',
+              limit: 400000,
+            ).copyWith(supportsPriorityMode: true),
+          ],
+        );
+
+        final container = ProviderContainer(
+          overrides: [
+            workspaceSessionProvider(
+              const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ).overrideWithValue(
+              const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ),
+            workspaceModelSelectionRepositoryProvider.overrideWithValue(
+              fakeCredentialsRepo,
+            ),
+            apiModelRepositoryProvider.overrideWithValue(fakeApiRepo),
+            modelSelectionStoreProvider.overrideWith(
+              (_, _) async => fakeCredentialsRepo,
+            ),
+            modelCatalogStoreProvider.overrideWith((_, _) async => fakeApiRepo),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final limit = await container.read(
+          modelContextLimitProvider('workspace-1', 'cm-codex').future,
+        );
+
+        expect(limit, 400000);
+      },
+    );
+
     test('does not normalize model IDs when resolving context limit', () async {
       final fakeCredentialsRepo = _FakeWorkspaceModelSelectionRepository(
         selectedModel: _workspaceModelSelectionWithProvider(
@@ -493,6 +546,14 @@ class _FakeMessageRepository implements MessageRepository {
   }
 
   @override
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    int offset = 0,
+  }) async => const [];
+
+  @override
   Future<MessageEntity> createMessage(MessageToCreate message) {
     throw UnimplementedError();
   }
@@ -522,9 +583,33 @@ class _FakeMessageRepository implements MessageRepository {
   }
 
   @override
+  Future<bool> bookmarkMessage({
+    required String workspaceId,
+    required String conversationId,
+    required String messageId,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<bool> unbookmarkMessage({
+    required String workspaceId,
+    required String conversationId,
+    required String messageId,
+  }) => throw UnimplementedError();
+
+  @override
+  Stream<List<MessageBookmarkEntity>> watchBookmarkedMessages([
+    String? workspaceId,
+  ]) => throw UnimplementedError();
+
+  @override
   Future<List<MessageEntity>> getTranscriptMessagesByConversation(
     String conversationId,
   ) async => const [];
+
+  @override
+  Stream<List<MessageEntity>> watchTranscriptMessagesByConversation(
+    String conversationId,
+  ) => Stream.value(const []);
 
   @override
   Future<List<MessageEntity>> getLatestAssistantMessagesByConversations(
@@ -651,6 +736,12 @@ class _FakeWorkspaceModelSelectionRepository({
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
       getWorkspaceModelSelectionById(id);
+
+  @override
+  Future<void> updateToolSamplingPolicy(
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  ) => throw UnimplementedError();
 
   @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>

@@ -101,30 +101,39 @@ void main() {
     final router = GoRouter(
       routes: [
         GoRoute(
-          path: '/workspaces/:workspaceId/more/skills/:skillId',
-          builder: (context, state) => const Text('Skill detail'),
+          path: '/workspaces/:workspaceId/skills/:skillId',
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: const Text('Skill detail'),
+            key: state.pageKey,
+          ),
         ),
         GoRoute(
-          path: '/workspaces/:workspaceId/more/skills/:skillId/tools/new',
-          builder: (context, state) => SkillToolEditScreen(
-            workspaceId: state.pathParameters['workspaceId']!,
-            skillId: state.pathParameters['skillId']!,
-            routeExitGuard: createRouteGuard,
+          path: '/workspaces/:workspaceId/skills/:skillId/tools/new',
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: SkillToolEditScreen(
+              workspaceId: state.pathParameters['workspaceId']!,
+              skillId: state.pathParameters['skillId']!,
+              routeExitGuard: createRouteGuard,
+            ),
+            key: state.pageKey,
           ),
           onExit: (context, _) => createRouteGuard.canExit(context),
         ),
         GoRoute(
-          path: '/workspaces/:workspaceId/more/skills/:skillId/tools/:toolId/edit',
-          builder: (context, state) => SkillToolEditScreen(
-            workspaceId: state.pathParameters['workspaceId']!,
-            skillId: state.pathParameters['skillId']!,
-            toolId: state.pathParameters['toolId'],
-            routeExitGuard: editRouteGuard,
+          path: '/workspaces/:workspaceId/skills/:skillId/tools/:toolId/edit',
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: SkillToolEditScreen(
+              workspaceId: state.pathParameters['workspaceId']!,
+              skillId: state.pathParameters['skillId']!,
+              toolId: state.pathParameters['toolId'],
+              routeExitGuard: editRouteGuard,
+            ),
+            key: state.pageKey,
           ),
           onExit: (context, _) => editRouteGuard.canExit(context),
         ),
       ],
-      initialLocation: '/workspaces/${workspace.id}/more/skills/${skill.id}',
+      initialLocation: '/workspaces/${workspace.id}/skills/${skill.id}',
     );
     addTearDown(router.dispose);
 
@@ -160,7 +169,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
     final _ = router.push(
-      '/workspaces/${workspace.id}/more/skills/${skill.id}/tools/new',
+      '/workspaces/${workspace.id}/skills/${skill.id}/tools/new',
     );
     final _ = await tester.pumpAndSettle();
 
@@ -285,7 +294,7 @@ void main() {
     expect(tool.requiresCredential, isTrue);
 
     final editorLocation =
-        '/workspaces/${workspace.id}/more/skills/${skill.id}/tools/${tool.id}/edit';
+        '/workspaces/${workspace.id}/skills/${skill.id}/tools/${tool.id}/edit';
     Future<void> openToolEditor() async {
       final _ = router.push(editorLocation);
       final _ = await tester.pumpAndSettle();
@@ -344,7 +353,7 @@ void main() {
 
     await openToolEditor();
     await enterLabeledField('Description', 'Company identifier');
-    router.go('/workspaces/${workspace.id}/more/skills/${skill.id}');
+    router.go('/workspaces/${workspace.id}/skills/${skill.id}');
     final _ = await tester.pumpAndSettle();
     expect(find.byType(AuraConfirmDialog), findsOneWidget);
     await tester.tap(find.text('Keep editing'));
@@ -357,7 +366,7 @@ void main() {
 
     await openToolEditor();
     await enterLabeledField('Description', 'Company identifier');
-    router.go('/workspaces/${workspace.id}/more/skills/${skill.id}');
+    router.go('/workspaces/${workspace.id}/skills/${skill.id}');
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Discard changes'));
     final _ = await tester.pumpAndSettle();

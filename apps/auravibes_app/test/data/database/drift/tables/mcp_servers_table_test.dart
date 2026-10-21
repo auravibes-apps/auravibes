@@ -4,6 +4,8 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database_test_utils.dart';
+
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(() {
@@ -18,11 +20,9 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ?? fail('Database fixture not initialized');
+      _database ??= .new(connection: createConnection());
 
-  void reset() {
-    _database = .new(connection: createConnection());
-  }
+  Future<void> reset() => clearAppDatabase(database);
 
   Future<void> close() async {
     await _database?.close();
@@ -31,6 +31,10 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
 }
 
 void main() {
+  final fixture = _DatabaseFixture(_testConnection);
+
+  tearDownAll(fixture.close);
+
   group('McpServers table converters', () {
     group('transportTypeConverter', () {
       test('converts SSE from JSON', () {
@@ -96,11 +100,7 @@ void main() {
   });
 
   group('McpServers table insert', () {
-    final fixture = _DatabaseFixture(_testConnection);
-
     setUp(fixture.reset);
-
-    tearDown(fixture.close);
 
     test('inserts and reads a row', () async {
       final _ = await fixture.database.workspaceDao.insertWorkspace(
@@ -126,19 +126,16 @@ void main() {
   });
 
   group('McpServers table schema', () {
-    final fixture = _DatabaseFixture(_testConnection);
     var columns = <QueryRow>[];
 
     setUp(() async {
-      fixture.reset();
+      await fixture.reset();
       columns = await fixture.database
           .customSelect('PRAGMA table_info(mcp_servers)')
           .get();
     });
 
-    tearDown(fixture.close);
-
-    test('has expected columns', () {
+    test('has expected columns and constraints', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();
       expect(names, {
         'id',
@@ -154,33 +151,20 @@ void main() {
         'created_at',
         'updated_at',
       });
-    });
-
-    test('id is primary key', () {
       final col = columns.firstWhere((r) => r.read<String>('name') == 'id');
       expect(col.read<int>('pk'), greaterThan(0));
-    });
-
-    test('description is nullable', () {
-      final col = columns.firstWhere(
+      final description = columns.firstWhere(
         (r) => r.read<String>('name') == 'description',
       );
-      expect(col.read<int>('notnull'), 0);
-    });
-
-    test('is_enabled column exists', () {
-      final col = columns.where((r) => r.read<String>('name') == 'is_enabled');
-      expect(col, isNotEmpty);
-    });
-
-    test('name is not nullable', () {
-      final col = columns.firstWhere((r) => r.read<String>('name') == 'name');
-      expect(col.read<int>('notnull'), 1);
-    });
-
-    test('url is not nullable', () {
-      final col = columns.firstWhere((r) => r.read<String>('name') == 'url');
-      expect(col.read<int>('notnull'), 1);
+      expect(description.read<int>('notnull'), 0);
+      expect(
+        columns.where((r) => r.read<String>('name') == 'is_enabled'),
+        isNotEmpty,
+      );
+      final name = columns.firstWhere((r) => r.read<String>('name') == 'name');
+      expect(name.read<int>('notnull'), 1);
+      final url = columns.firstWhere((r) => r.read<String>('name') == 'url');
+      expect(url.read<int>('notnull'), 1);
     });
   });
 

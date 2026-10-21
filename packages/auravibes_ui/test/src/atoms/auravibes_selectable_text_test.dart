@@ -9,231 +9,105 @@ final AuraTypographyScale typography = AuraTheme.light.typography;
 
 void main() {
   group('AuraSelectableText', () {
-    testWidgets('renders text correctly', (tester) async {
+    testWidgets('renders text with configured styles and properties', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         AuraThemeScope(
           theme: .light,
           child: MaterialApp(
-            home: const Scaffold(body: AuraSelectableText('Selectable text')),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
-      );
-
-      expect(find.text('Selectable text'), findsOneWidget);
-      expect(find.byType(SelectableText), findsOneWidget);
-    });
-
-    testWidgets('has default style as body', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: Scaffold(
-              body: Builder(
-                builder: (context) {
-                  const widget = AuraSelectableText('Test');
-                  expect(widget.style, AuraTextStyle.body);
-
-                  return widget;
-                },
+            home: const Scaffold(
+              body: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: .min,
+                  children: [
+                    AuraSelectableText('Selectable text'),
+                    AuraSelectableText('Test'),
+                    AuraSelectableText('Heading 1', style: .heading1),
+                    AuraSelectableText('Heading 2', style: .heading2),
+                    AuraSelectableText('Heading 3', style: .heading3),
+                    AuraSelectableText('Body Large', style: .bodyLarge),
+                    AuraSelectableText('Body Small', style: .bodySmall),
+                    AuraSelectableText('Caption', style: .caption),
+                    AuraSelectableText('Code text', style: .code),
+                    AuraSelectableText('Error text', tint: .error),
+                    AuraSelectableText('Centered text', textAlign: .center),
+                    AuraSelectableText('Limited lines', maxLines: 2),
+                    AuraSelectableText('Cursor test'),
+                    AuraSelectableText('Custom cursor', cursorTint: .secondary),
+                    AuraSelectableText('Wide cursor', cursorWidth: 4),
+                    AuraSelectableText('Min lines', minLines: 2),
+                  ],
+                ),
               ),
             ),
             theme: ThemeData.light().copyWith(),
           ),
         ),
       );
-    });
 
-    testWidgets('applies heading1 style', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Heading 1', style: .heading1),
+      expect(find.text('Selectable text'), findsOneWidget);
+      expect(find.byType(SelectableText), findsNWidgets(16));
+
+      SelectableText selectableText(String text) =>
+          tester.widget<SelectableText>(
+            find.ancestor(
+              of: find.text(text),
+              matching: find.byType(SelectableText),
             ),
-            theme: ThemeData.light().copyWith(),
-          ),
+          );
+
+      final defaultStyle = tester.widget<AuraSelectableText>(
+        find.byWidgetPredicate(
+          (widget) => widget is AuraSelectableText && widget.data == 'Test',
         ),
       );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
+      expect(defaultStyle.style, AuraTextStyle.body);
+      expect(
+        selectableText('Heading 1').style?.fontSize,
+        typography.fontSize5Xl,
       );
-      expect(selectableText.style?.fontSize, typography.fontSize5Xl);
-      expect(selectableText.style?.fontWeight, typography.fontWeightBold);
-    });
-
-    testWidgets('applies heading2 style', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Heading 2', style: .heading2),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
+      expect(
+        selectableText('Heading 1').style?.fontWeight,
+        typography.fontWeightBold,
       );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
+      expect(
+        selectableText('Heading 2').style?.fontSize,
+        typography.fontSize4Xl,
       );
-      expect(selectableText.style?.fontSize, typography.fontSize4Xl);
-    });
-
-    testWidgets('applies heading3 style', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Heading 3', style: .heading3),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
+      expect(
+        selectableText('Heading 3').style?.fontSize,
+        typography.fontSize3Xl,
       );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
+      expect(
+        selectableText('Body Large').style?.fontSize,
+        typography.fontSizeLg,
       );
-      expect(selectableText.style?.fontSize, typography.fontSize3Xl);
-    });
-
-    testWidgets('applies bodyLarge style', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Body Large', style: .bodyLarge),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
+      expect(
+        selectableText('Body Small').style?.fontSize,
+        typography.fontSizeSm,
       );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
+      expect(selectableText('Caption').style?.fontSize, typography.fontSizeXs);
+      expect(
+        selectableText('Code text').style?.fontFamily,
+        typography.monoFontFamily,
       );
-      expect(selectableText.style?.fontSize, typography.fontSizeLg);
-    });
-
-    testWidgets('applies bodySmall style', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Body Small', style: .bodySmall),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
+      expect(
+        selectableText('Error text').style?.color,
+        AuraTheme.light.colors.error,
       );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
+      expect(selectableText('Centered text').textAlign, TextAlign.center);
+      expect(selectableText('Limited lines').maxLines, 2);
+      expect(
+        selectableText('Cursor test').cursorColor,
+        AuraTheme.light.colors.primary,
       );
-      expect(selectableText.style?.fontSize, typography.fontSizeSm);
-    });
-
-    testWidgets('applies caption style', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Caption', style: .caption),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
+      expect(
+        selectableText('Custom cursor').cursorColor,
+        AuraTheme.light.colors.secondary,
       );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
-      );
-      expect(selectableText.style?.fontSize, typography.fontSizeXs);
-    });
-
-    testWidgets('applies code style', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Code text', style: .code),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
-      );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
-      );
-      expect(selectableText.style?.fontFamily, typography.monoFontFamily);
-    });
-
-    testWidgets('applies tint', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Error text', tint: .error),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
-      );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
-      );
-      expect(selectableText.style?.color, AuraTheme.light.colors.error);
-    });
-
-    testWidgets('respects textAlign', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Centered text', textAlign: .center),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
-      );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
-      );
-      expect(selectableText.textAlign, TextAlign.center);
-    });
-
-    testWidgets('respects maxLines', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Limited lines', maxLines: 2),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
-      );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
-      );
-      expect(selectableText.maxLines, 2);
+      expect(selectableText('Wide cursor').cursorWidth, 4);
+      expect(selectableText('Min lines').minLines, 2);
     });
 
     testWidgets('handles onTap callback', (tester) async {
@@ -289,82 +163,6 @@ void main() {
       expect(tester.getSize(selectableText).height, 64);
       await tester.tap(selectableText);
       expect(tapped, isTrue);
-    });
-
-    testWidgets('uses default cursor color from theme', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(body: AuraSelectableText('Cursor test')),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
-      );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
-      );
-      expect(selectableText.cursorColor, AuraTheme.light.colors.primary);
-    });
-
-    testWidgets('respects custom cursorTint', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Custom cursor', cursorTint: .secondary),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
-      );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
-      );
-      expect(selectableText.cursorColor, AuraTheme.light.colors.secondary);
-    });
-
-    testWidgets('respects cursorWidth', (tester) async {
-      const customWidth = 4.0;
-
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Wide cursor', cursorWidth: customWidth),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
-      );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
-      );
-      expect(selectableText.cursorWidth, customWidth);
-    });
-
-    testWidgets('respects minLines', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraSelectableText('Min lines', minLines: 2),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
-      );
-
-      final selectableText = tester.widget<SelectableText>(
-        find.byType(SelectableText),
-      );
-      expect(selectableText.minLines, 2);
     });
   });
 }

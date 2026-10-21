@@ -552,11 +552,7 @@ void main() {
                 'details',
                 providerError.details,
               )
-              .having(
-                (error) => error.underlyingException,
-                'underlying exception',
-                same(providerError),
-              ),
+              .having((error) => error.cause, 'cause', same(providerError)),
         ),
       );
     });

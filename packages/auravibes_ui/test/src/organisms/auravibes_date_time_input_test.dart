@@ -30,11 +30,11 @@ void main() {
       expect(focusNode.hasFocus, isTrue);
 
       await tester.tap(find.byType(AuraDateTimeInput));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(focusNode.hasFocus, isFalse);
 
       await tester.tap(find.text('Cancel'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(focusNode.hasFocus, isFalse);
     });
 
@@ -55,7 +55,7 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraDateTimeInput));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(
         find.byKey(const ValueKey<String>('auraDateTimeInputPicker')),
         findsOneWidget,
@@ -63,7 +63,7 @@ void main() {
       expect(find.text('2024-01'), findsOneWidget);
       await tester.tap(find.text('20'));
       await tester.tap(find.text('Done'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(changedValue, DateTime(2024, 1, 20));
     });
@@ -85,10 +85,10 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraDateTimeInput));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('Select time'), findsOneWidget);
       await tester.tap(find.text('Done'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(changedValue, initialValue);
     });
@@ -103,7 +103,7 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraDateTimeInput));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('2026-08'), findsOneWidget);
       expect(find.text('14').last, findsOneWidget);
@@ -125,9 +125,9 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraDateTimeInput));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.tap(find.text('Cancel'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(changedValue, isNull);
     });
@@ -166,7 +166,7 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraDateTimeInput));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.tapAt(const Offset(10, 10));
       await tester.pump();
 
@@ -188,7 +188,7 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraDateTimeInput));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(
         find.descendant(
@@ -216,7 +216,7 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraDateTimeInput));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       final title = tester.renderObject<RenderParagraph>(
         find.text('Select date and time'),
@@ -242,7 +242,7 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraDateTimeInput));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(nestedNavigatorKey.currentState?.canPop(), isTrue);
       expect(rootNavigatorKey.currentState?.canPop(), isFalse);
@@ -256,7 +256,7 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraDateTimeInput));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(
         find.byWidgetPredicate(

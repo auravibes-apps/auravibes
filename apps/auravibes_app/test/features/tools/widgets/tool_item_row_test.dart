@@ -74,7 +74,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
   }
 
-  testWidgets('renders tool name and toggle', (tester) async {
+  testWidgets('renders enabled tool row controls', (tester) async {
     final tool = _tool();
 
     await pumpSubject(
@@ -84,102 +84,8 @@ void main() {
 
     expect(find.text('custom_tool'), findsOneWidget);
     expect(find.byType(AuraSwitch), findsOneWidget);
-  });
-
-  testWidgets('renders expand icon button', (tester) async {
-    final tool = _tool();
-
-    await pumpSubject(
-      tester,
-      ToolItemRow(tool: tool, workspaceId: _workspaceId),
-    );
-
     expect(find.byType(AuraIconButton), findsWidgets);
-  });
-
-  testWidgets('renders disabled tool with correct toggle state', (
-    tester,
-  ) async {
-    final tool = _tool(isEnabled: false);
-
-    await pumpSubject(
-      tester,
-      ToolItemRow(tool: tool, workspaceId: _workspaceId),
-    );
-
-    expect(find.text('custom_tool'), findsOneWidget);
-    expect(find.byType(AuraSwitch), findsOneWidget);
-  });
-
-  testWidgets('expands to show options on chevron tap', (tester) async {
-    final tool = _tool(isEnabled: false);
-
-    await pumpSubject(
-      tester,
-      ToolItemRow(tool: tool, workspaceId: _workspaceId),
-    );
-
-    await tester.tap(find.byType(AuraIconButton).last);
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.byIcon(Icons.delete_outline), findsOneWidget);
-  });
-
-  testWidgets('does not show options when collapsed', (tester) async {
-    final tool = _tool();
-
-    await pumpSubject(
-      tester,
-      ToolItemRow(tool: tool, workspaceId: _workspaceId),
-    );
-
     expect(find.byType(AuraButtonGroup<ToolPermissionMode>), findsNothing);
-  });
-
-  testWidgets('hides delete button when showDeleteButton is false', (
-    tester,
-  ) async {
-    final tool = _tool(isEnabled: false);
-
-    await pumpSubject(
-      tester,
-      ToolItemRow(
-        tool: tool,
-        workspaceId: _workspaceId,
-        showDeleteButton: false,
-      ),
-    );
-
-    await tester.tap(find.byType(AuraIconButton).last);
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.byIcon(Icons.delete_outline), findsNothing);
-  });
-
-  testWidgets('shows delete button for non-native tool when expanded', (
-    tester,
-  ) async {
-    final tool = _tool(isEnabled: false);
-
-    await pumpSubject(
-      tester,
-      ToolItemRow(tool: tool, workspaceId: _workspaceId),
-    );
-
-    await tester.tap(find.byType(AuraIconButton).last);
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.byIcon(Icons.delete_outline), findsOneWidget);
-  });
-
-  testWidgets('renders tool icon container', (tester) async {
-    final tool = _tool();
-
-    await pumpSubject(
-      tester,
-      ToolItemRow(tool: tool, workspaceId: _workspaceId),
-    );
-
     final container = tester.widget<Container>(
       find.ancestor(
         of: find.byIcon(Icons.extension),
@@ -189,7 +95,9 @@ void main() {
     expect((container.constraints?.maxWidth ?? 0) > 0, isTrue);
   });
 
-  testWidgets('permission selector only shows when enabled', (tester) async {
+  testWidgets('disabled tool expands without permission selector', (
+    tester,
+  ) async {
     final tool = _tool(isEnabled: false);
 
     await pumpSubject(
@@ -197,9 +105,31 @@ void main() {
       ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
 
+    expect(find.text('custom_tool'), findsOneWidget);
+    expect(find.byType(AuraSwitch), findsOneWidget);
+    expect(find.byType(AuraButtonGroup<ToolPermissionMode>), findsNothing);
     await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
+    expect(find.byIcon(Icons.delete_outline), findsOneWidget);
     expect(find.byType(AuraButtonGroup<ToolPermissionMode>), findsNothing);
+  });
+
+  testWidgets('hides delete button when showDeleteButton is false', (
+    tester,
+  ) async {
+    await pumpSubject(
+      tester,
+      ToolItemRow(
+        tool: _tool(isEnabled: false),
+        workspaceId: _workspaceId,
+        showDeleteButton: false,
+      ),
+    );
+
+    await tester.tap(find.byType(AuraIconButton).last);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.delete_outline), findsNothing);
   });
 }

@@ -1,0 +1,83 @@
+{
+  "equal_LC_counterexamples": [
+    {
+      "h": 30,
+      "Y": 0.1767979594710013,
+      "contrast_white": 4.6296712829740185,
+      "Cmax_at_L_065": 0.23643306501133465
+    },
+    {
+      "h": 90,
+      "Y": 0.18498845529433466,
+      "contrast_white": 4.468304618134637,
+      "Cmax_at_L_065": 0.13283221970989229
+    },
+    {
+      "h": 140,
+      "Y": 0.19299890793773342,
+      "contrast_white": 4.321007073287154,
+      "Cmax_at_L_065": 0.20925162702982233
+    },
+    {
+      "h": 200,
+      "Y": 0.19404089546800546,
+      "contrast_white": 4.3025575610447575,
+      "Cmax_at_L_065": 0.11050364356423799
+    },
+    {
+      "h": 270,
+      "Y": 0.18283701513920816,
+      "contrast_white": 4.509592254359677,
+      "Cmax_at_L_065": 0.1860421584967997
+    },
+    {
+      "h": 330,
+      "Y": 0.17586401574135313,
+      "contrast_white": 4.648814892242071,
+      "Cmax_at_L_065": 0.2962796090310555
+    }
+  ],
+  "hue_grid_step_degrees": 1,
+  "sampled_srgb_chroma_ceilings": [
+    {
+      "L": 0.4,
+      "minimum_Cmax": 0.06800224219337725,
+      "limiting_hue_sample": 200
+    },
+    {
+      "L": 0.5,
+      "minimum_Cmax": 0.0850028027417215,
+      "limiting_hue_sample": 200
+    },
+    {
+      "L": 0.6,
+      "minimum_Cmax": 0.1020033632900657,
+      "limiting_hue_sample": 200
+    },
+    {
+      "L": 0.65,
+      "minimum_Cmax": 0.11050364356423799,
+      "limiting_hue_sample": 200
+    },
+    {
+      "L": 0.78,
+      "minimum_Cmax": 0.11097601103541427,
+      "limiting_hue_sample": 267
+    },
+    {
+      "L": 0.85,
+      "minimum_Cmax": 0.07358804497419624,
+      "limiting_hue_sample": 268
+    },
+    {
+      "L": 0.9,
+      "minimum_Cmax": 0.0480925656076516,
+      "limiting_hue_sample": 268
+    },
+    {
+      "L": 0.95,
+      "minimum_Cmax": 0.023575337010413262,
+      "limiting_hue_sample": 268
+    }
+  ]
+}

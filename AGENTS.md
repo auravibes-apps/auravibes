@@ -1,5 +1,7 @@
 # AuraVibes Agent Instructions
-<!-- Managed by agent: AuraVibes | Last updated: 2026-10-01 -->
+<!-- Managed by agent: AuraVibes | Last updated: 2026-10-20 -->
+
+AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace management across mobile, desktop, and web.
 
 ## Entrypoint
 
@@ -8,6 +10,7 @@
 - Check `git status --short` before and after edits.
 - Do not revert unrelated changes.
 - Precedence: closest `AGENTS.md` to changed file wins; root rules apply otherwise.
+- Before returning a local file link, resolve its path from the current workspace and verify the target exists.
 
 ## Index of scoped AGENTS.md
 
@@ -24,68 +27,69 @@
 - Required CI gates live in `.github/workflows/ci.yml`.
 - Canonical architecture docs live under `doc/architecture/`.
 
+## Product context
+
+- For product ideation, feature discovery, or user-facing UX changes, read [target users](docs/product/target-users.md) for intended users and product direction.
+
 ## Commands
 
 | Task                    | Command                                                                      |
 | ----------------------- | ---------------------------------------------------------------------------- |
-| Workspace bootstrap     | `fvm dart run melos bootstrap`                                               |
-| App/UI focused test     | `fvm flutter test test/path/to/file_test.dart --no-pub` from target package  |
-| App fatal analyzer      | `fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
-| Engine focused test     | `fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
-| Validation              | Prefix `fvm dart run melos run`: `validate:quick` (quick), `validate` (full), `test:ci` (CI) |
-| Asset/clean scripts      | `fvm dart run melos run clean`, `fvm dart run melos run generate:flavors`, `fvm dart run melos run generate:icons` |
-| DCL metrics check       | `fvm dart run melos run dcl:analyze`                                         |
-| Code generation         | Prefix `fvm dart run melos run`: `generate`, `generate:localization`, `generate:serverpod` |
+| Worktree setup          | `fvm use "$(python3 -c 'import json; print(json.load(open(".fvmrc"))["flutter"])')" --skip-pub-get`, then `python3 tool/validation_lease.py -- fvm dart run melos bootstrap` |
+| Workspace bootstrap     | `python3 tool/validation_lease.py -- fvm dart run melos bootstrap` |
+| App/UI focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm flutter test test/path/to/file_test.dart --no-pub` from target package |
+| App fatal analyzer      | `python3 tool/validation_lease.py -- fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
+| Engine focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
+| Changed Dart preflight  | `python3 tool/validation_lease.py -- fvm dart run melos run validate:changed` |
+| Validation              | `python3 tool/validation_lease.py -- fvm dart run melos run validate:quick` (same form for `validate` and `validate:ci`) |
+| Asset/clean scripts     | `python3 tool/validation_lease.py -- fvm dart run melos run generate:icons` (same form for `clean` and `generate:flavors`) |
+| Code generation         | `python3 tool/validation_lease.py -- fvm dart run melos run generate` (same form for `generate:localization` and `generate:serverpod`) |
+| Generated drift check    | `python3 tool/validation_lease.py -- fvm dart run melos run validate:generated` (clean worktree) |
+
+- Script definitions and package filters live in root `pubspec.yaml`.
+- For a new checkout or worktree, use the `fvm use` command above, then bootstrap before running `--no-pub` checks.
+- Run local test, analyzer, code generation, bootstrap, and workspace validation commands through `tool/validation_lease.py`. From a package directory, use its absolute path via `$(git rev-parse --show-toplevel)`.
+- The lease serializes validation only within the current worktree. Other worktrees and clones run independently. `python3 tool/agent_worktree.py status` reports worktrees and the current worktree's active lease owner.
+- Temp-volume stats are advisory; quotas and container limits may still reject writes.
+
+## Git context
+
+- For routine context, use `git status --short --branch` and `git log -1 --oneline --decorate`; inspect named refs only when the task needs them.
+- Before claiming a ticket or creating a worktree, run `python3 tool/agent_worktree.py preflight --issue <number>`; stop on reported conflicts until ownership is clear.
+- Avoid `git branch -avv` for routine context; linked worktrees and remote refs can produce large output.
 
 ## DCL and lint compliance
 
-- `analysis_options.yaml` is source of truth for Dart analyzer, DCL diagnostics and metrics, Riverpod lints, and scoped exceptions. Consult the applicable rules before introducing a Dart pattern or resolving a lint; routine edits can reuse an established pattern and verify with the targeted analyzer.
-- During iteration, run the smallest focused analyzer or test. Use `fvm dart run melos run analyze` for root Dart analysis, `fvm dart run melos run analyze:workspace` for built-in Melos workspace analysis, `fvm dart run melos run dcl:analyze` for DCL metrics, and `fvm dart run melos run validate:quick` for root analysis + format. Formatter runs are allowed; bare host `dart format` does not verify pinned-toolchain output.
-- Run `dcl:analyze` when changing DCL or architecture boundaries, or when CI reports a relevant failure. Run full `validate` only when explicitly requested or when a multi-package behavior change needs full-workspace coverage beyond focused checks. Never run it solely because a PR is being opened or updated.
-- CI also runs DCL unused-code, unused-file, and unnecessary-nullable checks. Remove orphaned declarations after refactors; do not hide findings with broad excludes or ignores.
+- `analysis_options.yaml` is source of truth for Dart analyzer, DCL diagnostics and metrics, Riverpod lints, and scoped exceptions.
+- For DCL checks, ignores, or architecture-boundary changes, read [DCL and lint rules](docs/agents/task-policies.md#dcl-and-lint-rules).
 
 ## Operations
 
-- For CI failure triage, scoped database queries, or native Flutter driver control, read the relevant section of [operations.md](docs/agents/operations.md).
+- For `.fvmrc` changes, FVM drift, or CI failure triage, read [CI failure triage](docs/agents/operations.md#ci-failure-triage).
+- For PR-check monitoring, read [PR check monitoring](docs/agents/operations.md#pr-check-monitoring).
+- For GitHub CLI PR merges, follow [PR merge preflight](docs/agents/operations.md#github-cli-merge-preflight).
+- For release tags or Codemagic build triage, read [Codemagic release triage](docs/agents/operations.md#codemagic-release-triage).
+- For scoped database queries or native Flutter driver control, read the relevant section of [operations.md](docs/agents/operations.md).
 
 ## Verification
 
-- Run the smallest focused check; invoke root scripts via `fvm dart run melos run <script>`. Quiet wrappers buffer child output until exit, print `Command succeeded.` on success, and replay both streams plus exit code on failure; keep tests/watch/start/fix/upgrade/result scripts visible.
-- Assign one owner per validation command.
-- Do not rerun completed checks or suites already covered by an aggregate gate unless relevant files or configuration changed.
-- Announce commands expected to exceed two minutes with their purpose and expected duration.
-- In handoffs, include each command, result, duration, and relevant failures.
-- Report decision blockers immediately. Before retrying or replacing delegated work, inspect its current state and preserved output.
-
-| Scope | Local validation |
-| --- | --- |
-| Focused file/bug | Focused test or analyzer; format changed Dart when relevant |
-| Shared app logic/broad refactor | Focused tests and `validate:quick` once after stabilization |
-| CI reproduction/explicit request | Requested CI command, such as `test:ci` |
-| Documentation/skill-only | Relevant documentation checks and diff; no Dart suites |
-| Workflow/config-only | Syntax/action checks for changed files; no unrelated Dart suites |
-
-- When focused validation passes and a wider gate reports only unrelated diagnostics, report those diagnostics; do not escalate to broader local suites.
-- A timeout or background job is incomplete: wait for its exit status; do not duplicate or retry it.
-- Distinguish known baseline test failures from failures caused by the change.
-- Before interpreting slow CI scope selection, verify CI head, base, and run attempt.
-- Use `git diff --check` only for docs/patch-heavy edits, generated-code reviews, or final whitespace checks when relevant; do not run it in every code-edit loop.
-- If verification cannot run, say why and name the next command to run.
-- Generated-code changes require generator output review.
+- Run the smallest scope-appropriate check with pinned FVM through the validation lease.
+- For Dart syntax checks, use `fvm dart analyze <path>` when generic syntax parsing reports unsupported language.
+- For generator-input changes, follow the generated-artifact check in [validation policy](docs/agents/task-policies.md#validation).
+- For scope-specific checks, read [validation policy](docs/agents/task-policies.md#validation).
+- For GitHub CI coverage, read the [local CI parity matrix](docs/agents/ci-local-parity.md); `validate:ci` covers the Melos validation subset only.
+- For shared result or status contract changes, follow [behavior-path review](docs/agents/task-policies.md#behavior-path-review).
+- If a check cannot run, say why and name the next command.
 
 ## Analyzer-only migrations
 
-- For provider scope/dependency cleanup, fix every machine diagnostic including infos; run only the app fatal analyzer, not tests or broader gates.
+- For provider scope or dependency cleanup, follow [analyzer-only migration rules](docs/agents/task-policies.md#analyzer-only-migrations).
 
 ## Project Rules
 
-- Add dependencies with `fvm flutter pub add ...` from the target package; never use `any` constraints.
-- Do not hand-edit generated files: `*.g.dart`, `*.freezed.dart`, `locale_keys.dart`, plugin registrants, Drift worker output.
-- Drift schema changes require `schemaVersion` bump and migration logic.
-- User-facing strings must be localized; user-facing errors use typed exceptions carrying localization keys.
-- If `.fvmrc` changes, run `fvm use` and commit the resulting `.vscode/settings.json` sync.
-- Freezed 4 classes must not declare abstract `hashCode`, `toString`, or `==`; those declarations suppress generated implementations. Run build runner after model changes and review generated output.
-- DCL metric/rule ignores are allowed only for generated-backed Freezed declarations, Drift schema DSL, or symbols required by generated Drift output, with a reason; keep checks enabled for handwritten behavior.
+- Add dependencies with `fvm flutter pub add ...` from the target package. Never use `any` constraints.
+- Do not hand-edit generated files: `*.g.dart`, `*.freezed.dart`, `locale_keys.dart`, plugin registrants, or Drift worker output.
+- For app localization, user-facing errors, model changes, Drift schemas, or Freezed 4 rules, read [model and Drift rules](docs/agents/task-policies.md#model-and-drift-rules).
 
 ## Architecture
 
@@ -96,16 +100,20 @@
 ## Skill routing
 - When verified feedback exposes a reusable guidance gap, use `.agents/skills/agent-instructions-maintenance/SKILL.md` before changing instructions, skills, or harness checks. Routine tasks need no guidance audit.
 - UX clarity: for new views, changed task flows, or visual regression work, load `.agents/skills/ux-view-clarity/SKILL.md`; for an existing-flow audit, load `.agents/skills/ux-task-audit/SKILL.md`. For local spacing or copy edits, check purpose, next action, recovery, and localization directly without loading a flow skill.
+- UI automation: use only browser/desktop controls the user named or approved. If unavailable or unclear, ask or give manual steps instead of substituting another tool.
 - Marionette app control: load `.agents/skills/marionette-mcp/SKILL.md` before Marionette launches, connections, interaction, logs, or multi-agent routing; MCP runs from the repository-root FVM command, CLI only when MCP is unavailable. Follow its [repeatable smoke runbook](./.agents/skills/marionette-mcp/SKILL.md#repeatable-agent-smoke-runbook) for isolated validation.
 - Riverpod work: prefer `.agents/skills/flutter-riverpod-expert/` over generic Flutter guidance.
+- Localization: for translation keys or localization behavior, load `.agents/skills/localization/SKILL.md`.
 - Melos configuration, bootstrap, or version troubleshooting: read `.agents/skills/melos-7/SKILL.md`; ordinary documented script runs need no skill load.
 - Version conflicts: trust `.fvmrc` and package `pubspec.yaml` over skill examples.
 
 ## PR Gates
 
 - PR titles use Conventional Commits. Keep each PR to one coherent change with its related tests; describe purpose, behavior, validation, and requested reviewer focus.
-- An authorized PR creation request completes after push, PR creation, and one current-head status snapshot. Wait for all checks or fix CI when requested; pending CI is reported as pending. Use `.agents/skills/pr-delivery/SKILL.md` for delivery.
-- Before opening or updating a code PR, run only scope-appropriate local checks above. Full `validate`, `dependency_validator`, and `import_sorter` are not default local PR gates. Run dependency validation when dependency or package metadata changes, and import sorting when imports change. GitHub's required checks own repository-wide gates.
+- Use each contributor's configured tools and workflow for PR delivery and review. Do not install tools or prepare a full local environment solely for these tasks.
+- Local commits do not publish changes and need no separate user authorization; `git push` and `gh pr merge` require explicit user authorization.
+- If a requested Codex review rejects its configured model as unsupported, retry once with a model supported by the current host. Report a blocker if none is available.
+- Before pushing code changes for review, run `python3 tool/validation_lease.py -- fvm dart run melos run validate:pr`. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
 
 ## Agent skills
 
@@ -114,5 +122,4 @@
 
 ## Harness feedback
 
-- For instruction, skill, or harness changes, run `python3 tool/verify_agent_harness.py`. Repair findings in the affected guidance and rerun that check.
-- On a verified recurring failure, use the maintenance skill to fix its cause, add a regression scenario to the affected skill's `evals/evals.json`, and compare outcome, time, and rework. Do not turn every task into a harness audit.
+- For instruction, skill, or harness changes, follow [agent-instructions-maintenance](.agents/skills/agent-instructions-maintenance/SKILL.md).

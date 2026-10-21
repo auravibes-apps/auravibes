@@ -84,6 +84,19 @@ class ModelConnectionEndpoint extends Endpoint {
     );
   }
 
+  Future<void> updateToolSamplingPolicy(
+    Session session,
+    UpdateWorkspaceModelSelectionPolicyRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    await _useCases.updateToolSamplingPolicy(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+    await SyncWakeups.publishWorkspace(session, request.workspaceId);
+  }
+
   Future<List<String>> listRecentSelections(
     Session session,
     ListRecentModelSelectionsRequest request,

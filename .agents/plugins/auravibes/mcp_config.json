@@ -26,16 +26,10 @@
     "serverpod": {
       "command": "serverpod",
       "args": [
+        "-q",
         "mcp-server",
         "--server-dir",
         "apps/auravibes_server"
-      ]
-    },
-    "sonarqube": {
-      "command": "sonar",
-      "args": [
-        "run",
-        "mcp"
       ]
     }
   }

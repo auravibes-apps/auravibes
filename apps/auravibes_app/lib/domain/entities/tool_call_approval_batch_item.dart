@@ -20,6 +20,7 @@ typedef ToolCallExecutionIdentity = ({
 typedef ToolCallExecutionOutput = ({
   String? responseRaw,
   String? responseContextRaw,
+  Map<String, Object?>? appData,
   bool outputTruncated,
   int? originalResponseBytes,
   bool fullOutputForContext,
@@ -38,6 +39,7 @@ class const ToolCallExecutionBatchUpdate({
   required final ToolCallResultStatus resultStatus,
   final String? responseRaw,
   final String? responseContextRaw,
+  final Map<String, Object?>? appData,
   final bool outputTruncated = false,
   final int? originalResponseBytes,
   final bool fullOutputForContext = false,
@@ -54,6 +56,7 @@ class const ToolCallExecutionBatchUpdate({
     resultStatus: resultStatus,
     responseRaw: output.responseRaw,
     responseContextRaw: output.responseContextRaw,
+    appData: output.appData,
     outputTruncated: output.outputTruncated,
     originalResponseBytes: output.originalResponseBytes,
     fullOutputForContext: output.fullOutputForContext,
@@ -63,6 +66,7 @@ class const ToolCallExecutionBatchUpdate({
       toolCall.copyWith(
         resultStatus: resultStatus,
         responseRaw: responseRaw,
+        appData: appData,
         responseContextRaw: responseContextRaw,
         outputTruncated: outputTruncated,
         originalResponseBytes: originalResponseBytes,

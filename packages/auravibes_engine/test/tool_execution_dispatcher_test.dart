@@ -13,6 +13,7 @@ void main() {
     return AgentToolExecutionDispatcher<String>(
       runResolvedTool: ({
         required conversationId,
+        required toolCallId,
         required tool,
         required arguments,
       }) async => result,
@@ -141,6 +142,7 @@ void main() {
         AgentToolExecutionDispatcher<String>(
           runResolvedTool: ({
             required conversationId,
+            required toolCallId,
             required tool,
             required arguments,
           }) async => 'x' * 1000,
@@ -170,6 +172,123 @@ void main() {
     expect(full.outputTruncated, isFalse);
   });
 
+  for (final policy in [
+    null,
+    const AgentToolOutputPolicy(maxBytes: 512),
+    AgentToolOutputPolicy.full(justification: 'test fixture'),
+  ]) {
+    final policyName = policy == null ? 'default' : policy.maxBytes ?? 'full';
+    for (final size in [
+      511,
+      512,
+      513,
+      defaultToolOutputBytes + 1,
+      maxPersistedToolOutputBytes + 1,
+    ]) {
+      test(
+        'failure policy $policyName matches success at $size bytes',
+        () async {
+          final source = '${'😀' * (size ~/ 4)}${'x' * (size % 4)}';
+          final error = StateError('provider failed');
+          final stackTrace = StackTrace.current;
+          AgentToolExecutionErrorRequest<String>? logged;
+          Future<AgentToolExecutionResult> dispatch({required bool fails}) =>
+              AgentToolExecutionDispatcher<String>(
+                runResolvedTool:
+                    ({
+                      required conversationId,
+                      required toolCallId,
+                      required tool,
+                      required arguments,
+                    }) async {
+                      if (fails) {
+                        throw AgentToolExecutionFailure(
+                          responseRaw: source,
+                          error: error,
+                          stackTrace: stackTrace,
+                          failurePhase: 'execute',
+                        );
+                      }
+                      return source;
+                    },
+                isCancellationRequested: (_) => false,
+                logToolExecutionError: (request) => logged = request,
+                outputPolicyForTool: policy == null ? null : (_) => policy,
+              ).call(
+                conversationId: 'conversation-1',
+                toolCallId: 'call-1',
+                tool: 'tool',
+                argumentsRaw: '{}',
+              );
+
+          final success = await dispatch(fails: false);
+          final failure = await dispatch(fails: true);
+          expect(utf8.encode(source), hasLength(size));
+          expect(failure.resultStatus, AgentToolResultStatus.executionError);
+          expect(failure.responseRaw, success.responseRaw);
+          expect(failure.responseContextRaw, success.responseContextRaw);
+          expect(failure.outputTruncated, success.outputTruncated);
+          expect(failure.originalResponseBytes, success.originalResponseBytes);
+          expect(failure.fullOutputForContext, success.fullOutputForContext);
+          expect(logged?.error, same(error));
+          expect(logged?.stackTrace, same(stackTrace));
+          expect(logged?.failurePhase, 'execute');
+          final limit = policy?.maxBytes ?? defaultToolOutputBytes;
+          if (failure.outputTruncated) {
+            final context = failure.responseContextRaw ?? failure.responseRaw!;
+            expect(utf8.encode(context).length, lessThanOrEqualTo(limit));
+            final metadata = (jsonDecode(context) as Map)['_toolOutput'] as Map;
+            expect(metadata['originalBytes'], size);
+            expect(failure.originalResponseBytes, size);
+          }
+        },
+      );
+    }
+  }
+
+  for (final fails in [false, true]) {
+    for (final throwsPolicy in [false, true]) {
+      test(
+        'contains policy errors: failure=$fails resolver=$throwsPolicy',
+        () async {
+          final dispatcher = AgentToolExecutionDispatcher<String>(
+            runResolvedTool:
+                ({
+                  required conversationId,
+                  required toolCallId,
+                  required tool,
+                  required arguments,
+                }) async {
+                  if (fails) {
+                    throw AgentToolExecutionFailure(
+                      responseRaw: 'unbounded response',
+                      error: StateError('tool failed'),
+                      stackTrace: StackTrace.current,
+                      failurePhase: 'execute',
+                    );
+                  }
+                  return 'unbounded response';
+                },
+            isCancellationRequested: (_) => false,
+            logToolExecutionError: (_) {},
+            outputPolicyForTool: (_) {
+              if (throwsPolicy) throw StateError('resolver failed');
+              return const AgentToolOutputPolicy(maxBytes: 128);
+            },
+          );
+          final result = await dispatcher.call(
+            conversationId: 'conversation-1',
+            toolCallId: 'call-1',
+            tool: 'tool',
+            argumentsRaw: '{}',
+          );
+          expect(result.resultStatus, AgentToolResultStatus.executionError);
+          expect(result.responseRaw, isNull);
+        },
+      );
+    }
+  }
+
   test(
     'caps persisted output even with an explicit full-output policy',
     () async {
@@ -178,6 +297,7 @@ void main() {
           await AgentToolExecutionDispatcher<String>(
             runResolvedTool: ({
               required conversationId,
+              required toolCallId,
               required tool,
               required arguments,
             }) async => source,
@@ -208,6 +328,7 @@ void main() {
         await AgentToolBatchExecutor<String>(
           runResolvedTool: ({
             required conversationId,
+            required toolCallId,
             required tool,
             required arguments,
           }) async => tool * (defaultToolOutputBytes + 1),
@@ -244,6 +365,7 @@ void main() {
             runResolvedTool:
                 ({
                   required conversationId,
+                  required toolCallId,
                   required tool,
                   required arguments,
                 }) async {
@@ -272,6 +394,7 @@ void main() {
         await AgentToolExecutionDispatcher<String>(
           runResolvedTool: ({
             required conversationId,
+            required toolCallId,
             required tool,
             required arguments,
           }) async => '{"conversationId":"child-1","status":"stopped"}',
@@ -294,6 +417,7 @@ void main() {
         await AgentToolExecutionDispatcher<String>(
           runResolvedTool: ({
             required conversationId,
+            required toolCallId,
             required tool,
             required arguments,
           }) async => 'x' * (defaultToolOutputBytes + 1),
@@ -321,6 +445,7 @@ void main() {
           runResolvedTool:
               ({
                 required conversationId,
+                required toolCallId,
                 required tool,
                 required arguments,
               }) async {
@@ -351,6 +476,7 @@ void main() {
             runResolvedTool:
                 ({
                   required conversationId,
+                  required toolCallId,
                   required tool,
                   required arguments,
                 }) async {

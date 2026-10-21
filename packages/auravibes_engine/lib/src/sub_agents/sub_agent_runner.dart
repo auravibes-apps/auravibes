@@ -70,6 +70,7 @@ class const SubAgentRunner({
     required String parentConversationId,
     required String workspaceId,
     required Map<String, dynamic> arguments,
+    SubAgentChildStarted? onChildStarted,
   }) async {
     final request = _SubAgentRunRequest.from(arguments);
     if (request.error != null) {
@@ -126,6 +127,10 @@ class const SubAgentRunner({
         childId: child.id,
       );
       failurePhase = 'run.childStarted';
+      this.onChildStarted?.call(
+        parentId: parentConversationId,
+        childId: child.id,
+      );
       onChildStarted?.call(parentId: parentConversationId, childId: child.id);
 
       failurePhase = 'run.createPrompt';
@@ -145,6 +150,11 @@ class const SubAgentRunner({
         completionStatus = SubAgentCompletionStatus.stopped;
 
         return await _result(child.id, 'stopped', agentId: request.agentId);
+      }
+      if (decision == AgentIterationDecision.iterationLimitReached) {
+        completionStatus = SubAgentCompletionStatus.partial;
+
+        return await _result(child.id, 'partial', agentId: request.agentId);
       }
       if (decision == AgentIterationDecision.waitForToolApproval) {
         failurePhase = 'run.waitForApproval';
@@ -229,6 +239,12 @@ class const SubAgentRunner({
       return _SubAgentWaitResult(
         .stopped,
         await _result(conversationId, 'stopped', agentId: agentId),
+      );
+    }
+    if (status == SubAgentCompletionStatus.partial) {
+      return _SubAgentWaitResult(
+        .partial,
+        await _result(conversationId, 'partial', agentId: agentId),
       );
     }
     if (status == SubAgentCompletionStatus.error) {
@@ -424,7 +440,7 @@ abstract interface class SubAgentRequestHandle {
   });
 }
 
-enum SubAgentCompletionStatus { done, stopped, error }
+enum SubAgentCompletionStatus { done, partial, stopped, error }
 
 class const SubAgentCompletionFailure({
   required final Object error,

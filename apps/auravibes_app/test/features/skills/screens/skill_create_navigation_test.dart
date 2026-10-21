@@ -22,8 +22,15 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
 
   for (final completion in ['primary', 'keyboard', 'configure']) {
     final configure = completion == 'configure';
@@ -32,10 +39,6 @@ void main() {
     ) async {
       await tester.binding.setSurfaceSize(const Size(1000, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await WorkspaceRepository(database).createWorkspace(
         const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
@@ -62,32 +65,45 @@ void main() {
       final router = GoRouter(
         routes: [
           GoRoute(
-            path: '/workspaces/:workspaceId/more/skills/new',
-            builder: (context, state) => SkillCreateRoute(
-              workspaceId: state.pathParameters['workspaceId']!,
-            ).build(context, state),
-          ),
-          GoRoute(
-            path: '/workspaces/:workspaceId/more/skills/:skillId/resources/new',
-            builder: (_, state) => SkillResourceEditScreen(
-              workspaceId: state.pathParameters['workspaceId']!,
-              skillId: state.pathParameters['skillId']!,
+            path: '/workspaces/:workspaceId/skills/new',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: SkillCreateRoute(
+                workspaceId: state.pathParameters['workspaceId']!,
+              ).build(context, state),
+              key: state.pageKey,
             ),
           ),
           GoRoute(
-            path: '/workspaces/:workspaceId/more/skills/:skillId',
-            builder: (context, state) => SkillDetailRoute(
-              workspaceId: state.pathParameters['workspaceId']!,
-              skillId: state.pathParameters['skillId']!,
-            ).build(context, state),
+            path: '/workspaces/:workspaceId/skills/:skillId/resources/new',
+            pageBuilder: (_, state) => NoTransitionPage(
+              child: SkillResourceEditScreen(
+                workspaceId: state.pathParameters['workspaceId']!,
+                skillId: state.pathParameters['skillId']!,
+              ),
+              key: state.pageKey,
+            ),
           ),
           GoRoute(
-            path: '/workspaces/:workspaceId/more/skills',
-            builder: (context, state) =>
-                SkillsScreen(workspaceId: state.pathParameters['workspaceId']!),
+            path: '/workspaces/:workspaceId/skills/:skillId',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: SkillDetailRoute(
+                workspaceId: state.pathParameters['workspaceId']!,
+                skillId: state.pathParameters['skillId']!,
+              ).build(context, state),
+              key: state.pageKey,
+            ),
+          ),
+          GoRoute(
+            path: '/workspaces/:workspaceId/skills',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: SkillsScreen(
+                workspaceId: state.pathParameters['workspaceId']!,
+              ),
+              key: state.pageKey,
+            ),
           ),
         ],
-        initialLocation: '/workspaces/${workspace.id}/more/skills',
+        initialLocation: '/workspaces/${workspace.id}/skills',
       );
       addTearDown(router.dispose);
 
@@ -98,16 +114,18 @@ void main() {
               builder: (context) {
                 return UncontrolledProviderScope(
                   container: container,
-                  child: MaterialApp.router(
-                    routerConfig: router,
-                    builder: (_, child) => AuraLegacyMaterialBridge(
-                      child: AuraSnackBarHost(
-                        child: child ?? const SizedBox.shrink(),
+                  child: Portal(
+                    child: MaterialApp.router(
+                      routerConfig: router,
+                      builder: (_, child) => AuraLegacyMaterialBridge(
+                        child: AuraSnackBarHost(
+                          child: child ?? const SizedBox.shrink(),
+                        ),
                       ),
+                      locale: context.locale,
+                      localizationsDelegates: context.localizationDelegates,
+                      supportedLocales: context.supportedLocales,
                     ),
-                    locale: context.locale,
-                    localizationsDelegates: context.localizationDelegates,
-                    supportedLocales: context.supportedLocales,
                   ),
                 );
               },
@@ -164,10 +182,7 @@ void main() {
         await tester.tap(find.text('Create and configure'));
         final _ = await tester.pumpAndSettle();
         expect(find.text('Unable to save skill'), findsOneWidget);
-        expect(
-          router.state.uri.path,
-          '/workspaces/${workspace.id}/more/skills/new',
-        );
+        expect(router.state.uri.path, '/workspaces/${workspace.id}/skills/new');
         expect(
           await SkillsRepository(database).getWorkspaceSkills(workspace.id),
           isEmpty,
@@ -197,8 +212,8 @@ void main() {
       expect(
         router.state.uri.path,
         configure
-            ? '/workspaces/${workspace.id}/more/skills/${skill.id}'
-            : '/workspaces/${workspace.id}/more/skills',
+            ? '/workspaces/${workspace.id}/skills/${skill.id}'
+            : '/workspaces/${workspace.id}/skills',
       );
       if (configure) {
         await tester.enterText(
@@ -216,7 +231,7 @@ void main() {
         expect(find.byType(SkillResourceEditScreen), findsOneWidget);
         expect(
           router.state.uri.path,
-          '/workspaces/${workspace.id}/more/skills/${skill.id}/resources/new',
+          '/workspaces/${workspace.id}/skills/${skill.id}/resources/new',
         );
         await tester.enterText(find.byType(AuraInput).first, 'Reference');
         await tester.tap(find.text('Edit content'));
@@ -249,7 +264,7 @@ void main() {
           'Write Summary',
         );
       } else {
-        expect(find.text('Workspace Skills'), findsOneWidget);
+        expect(find.text('Skills'), findsWidgets);
       }
     });
   }

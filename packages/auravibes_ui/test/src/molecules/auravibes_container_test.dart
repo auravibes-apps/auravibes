@@ -5,304 +5,173 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('AuraContainer', () {
-    testWidgets('renders container with child correctly', (tester) async {
-      const testText = 'Container Content';
+  testWidgets('renders container options and shadows', (tester) async {
+    const customPadding = AuraEdgeInsetsGeometry.all(.xl);
+    const customMargin = AuraEdgeInsetsGeometry.all(.xl);
+    const customBorder = Border.fromBorderSide(
+      .new(color: Colors.blue, width: 2),
+    );
+    const customWidth = 200.0;
+    const customHeight = 100.0;
+    const customRadius = 12.0;
+    const customAlignment = Alignment.topRight;
+    const semanticLabel = 'Content container';
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraContainer(child: Text(testText))),
-        ),
-      );
-
-      expect(find.text(testText), findsOneWidget);
-      expect(find.byType(Container), findsOneWidget);
-    });
-
-    testWidgets('applies custom padding correctly', (tester) async {
-      const customPadding = AuraEdgeInsetsGeometry.all(.xl);
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(child: Text('Content'), padding: customPadding),
-          ),
-        ),
-      );
-
-      final container = tester.widget<AuraPadding>(find.byType(AuraPadding));
-      expect(container.padding, customPadding);
-    });
-
-    testWidgets('applies custom margin correctly', (tester) async {
-      const customMargin = AuraEdgeInsetsGeometry.all(.xl);
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(child: Text('Content'), margin: customMargin),
-          ),
-        ),
-      );
-
-      final container = tester.widget<AuraPadding>(find.byType(AuraPadding));
-      expect(container.padding, customMargin);
-    });
-
-    testWidgets('applies surface variant correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              variant: .surfaceVariant,
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: .min,
+              children: [
+                AuraContainer(
+                  child: Text('Container Content'),
+                  key: ValueKey('default'),
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('padding'),
+                  padding: customPadding,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('margin'),
+                  margin: customMargin,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('variant'),
+                  variant: .surfaceVariant,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('radius'),
+                  borderRadius: customRadius,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('border'),
+                  border: customBorder,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('dimensions'),
+                  width: customWidth,
+                  height: customHeight,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('alignment'),
+                  alignment: customAlignment,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('small-shadow'),
+                  shadow: .sm,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('medium-shadow'),
+                  shadow: .md,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('large-shadow'),
+                  shadow: .lg,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('extra-large-shadow'),
+                  shadow: .xl,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('inner-shadow'),
+                  shadow: .inner,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('glass-shadow'),
+                  shadow: .glass,
+                ),
+                AuraContainer(
+                  child: Text('Content'),
+                  key: ValueKey('semantic'),
+                  semanticLabel: semanticLabel,
+                ),
+              ],
             ),
           ),
         ),
-      );
+      ),
+    );
 
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration =
-          (container.decoration ??
-                  fail('Expected container.decoration to be non-null'))
-              as BoxDecoration;
-      expect(decoration.color, isNotNull);
-    });
+    Finder containerFinder(String key) => find.descendant(
+      of: find.byKey(ValueKey<String>(key)),
+      matching: find.byType(Container),
+    );
+    Container container(String key) =>
+        tester.widget<Container>(containerFinder(key));
+    BoxDecoration decoration(String key) =>
+        (container(key).decoration ?? fail('Expected container decoration'))
+            as BoxDecoration;
 
-    testWidgets('applies custom border radius correctly', (tester) async {
-      const customRadius = 12.0;
+    expect(find.text('Container Content'), findsOneWidget);
+    expect(containerFinder('default'), findsOneWidget);
+    expect(decoration('default').boxShadow, isEmpty);
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              borderRadius: customRadius,
-            ),
-          ),
-        ),
-      );
+    final padding = tester.widget<AuraPadding>(
+      find.descendant(
+        of: find.byKey(const ValueKey('padding')),
+        matching: find.byType(AuraPadding),
+      ),
+    );
+    expect(padding.padding, customPadding);
 
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration =
-          (container.decoration ??
-                  fail('Expected container.decoration to be non-null'))
-              as BoxDecoration;
-      expect(decoration.borderRadius, BorderRadius.circular(customRadius));
-    });
+    final margin = tester.widget<AuraPadding>(
+      find.descendant(
+        of: find.byKey(const ValueKey('margin')),
+        matching: find.byType(AuraPadding),
+      ),
+    );
+    expect(margin.padding, customMargin);
 
-    testWidgets('applies custom border correctly', (tester) async {
-      const customBorder = Border.fromBorderSide(
-        .new(color: Colors.blue, width: 2),
-      );
+    expect(decoration('variant').color, isNotNull);
+    expect(
+      decoration('radius').borderRadius,
+      BorderRadius.circular(customRadius),
+    );
+    expect(decoration('border').border, customBorder);
+    expect(container('dimensions').constraints?.maxWidth, customWidth);
+    expect(container('dimensions').constraints?.maxHeight, customHeight);
+    expect(container('alignment').alignment, customAlignment);
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(child: Text('Content'), border: customBorder),
-          ),
-        ),
-      );
+    expect(decoration('small-shadow').boxShadow, [DesignShadows.sm]);
+    expect(decoration('medium-shadow').boxShadow, [DesignShadows.md]);
+    expect(decoration('large-shadow').boxShadow, [DesignShadows.lg]);
+    expect(decoration('extra-large-shadow').boxShadow, [DesignShadows.xl]);
+    expect(decoration('inner-shadow').boxShadow, [DesignShadows.inner]);
+    expect(decoration('glass-shadow').boxShadow, [DesignShadows.glass]);
 
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration =
-          (container.decoration ??
-                  fail('Expected container.decoration to be non-null'))
-              as BoxDecoration;
-      expect(decoration.border, customBorder);
-    });
+    final semantics = tester.widget<Semantics>(
+      find.descendant(
+        of: find.byKey(const ValueKey('semantic')),
+        matching: find.byType(Semantics),
+      ),
+    );
+    expect(semantics.properties.label, semanticLabel);
+  });
 
-    testWidgets('applies custom width and height correctly', (tester) async {
-      const customWidth = 200.0;
-      const customHeight = 100.0;
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              width: customWidth,
-              height: customHeight,
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      expect(container.constraints?.maxWidth, customWidth);
-      expect(container.constraints?.maxHeight, customHeight);
-    });
-
-    testWidgets('applies custom alignment correctly', (tester) async {
-      const customAlignment = Alignment.topRight;
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              alignment: customAlignment,
-            ),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      expect(container.alignment, customAlignment);
-    });
-
-    testWidgets('applies no shadow correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraContainer(child: Text('Content'))),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration =
-          (container.decoration ??
-                  fail('Expected container.decoration to be non-null'))
-              as BoxDecoration;
-      expect(decoration.boxShadow, isEmpty);
-    });
-
-    testWidgets('applies small shadow correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(child: Text('Content'), shadow: .sm),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration =
-          (container.decoration ??
-                  fail('Expected container.decoration to be non-null'))
-              as BoxDecoration;
-      expect(decoration.boxShadow, [DesignShadows.sm]);
-    });
-
-    testWidgets('applies medium shadow correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(child: Text('Content'), shadow: .md),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration =
-          (container.decoration ??
-                  fail('Expected container.decoration to be non-null'))
-              as BoxDecoration;
-      expect(decoration.boxShadow, [DesignShadows.md]);
-    });
-
-    testWidgets('applies large shadow correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(child: Text('Content'), shadow: .lg),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration =
-          (container.decoration ??
-                  fail('Expected container.decoration to be non-null'))
-              as BoxDecoration;
-      expect(decoration.boxShadow, [DesignShadows.lg]);
-    });
-
-    testWidgets('applies extra large shadow correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(child: Text('Content'), shadow: .xl),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration =
-          (container.decoration ??
-                  fail('Expected container.decoration to be non-null'))
-              as BoxDecoration;
-      expect(decoration.boxShadow, [DesignShadows.xl]);
-    });
-
-    testWidgets('applies inner shadow correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(child: Text('Content'), shadow: .inner),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration =
-          (container.decoration ??
-                  fail('Expected container.decoration to be non-null'))
-              as BoxDecoration;
-      expect(decoration.boxShadow, [DesignShadows.inner]);
-    });
-
-    testWidgets('applies glass shadow correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(child: Text('Content'), shadow: .glass),
-          ),
-        ),
-      );
-
-      final container = tester.widget<Container>(find.byType(Container));
-      final decoration =
-          (container.decoration ??
-                  fail('Expected container.decoration to be non-null'))
-              as BoxDecoration;
-      expect(decoration.boxShadow, [DesignShadows.glass]);
-    });
-
-    testWidgets('applies semantic label correctly', (tester) async {
-      const semanticLabel = 'Content container';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              semanticLabel: semanticLabel,
-            ),
-          ),
-        ),
-      );
-
-      final semantics = tester.widget<Semantics>(
-        find.descendant(
-          of: find.byType(AuraContainer),
-          matching: find.byType(Semantics),
-        ),
-      );
-
-      expect(semantics.properties.label, semanticLabel);
-    });
-
-    group('AuraContainerShadow enum', () {
-      test('has all expected values', () {
-        expect(AuraContainerShadow.values, hasLength(7));
-        expect(AuraContainerShadow.values, contains(AuraContainerShadow.none));
-        expect(AuraContainerShadow.values, contains(AuraContainerShadow.sm));
-        expect(AuraContainerShadow.values, contains(AuraContainerShadow.md));
-        expect(AuraContainerShadow.values, contains(AuraContainerShadow.lg));
-        expect(AuraContainerShadow.values, contains(AuraContainerShadow.xl));
-        expect(AuraContainerShadow.values, contains(AuraContainerShadow.inner));
-        expect(AuraContainerShadow.values, contains(AuraContainerShadow.glass));
-      });
+  group('AuraContainerShadow enum', () {
+    test('has all expected values', () {
+      expect(AuraContainerShadow.values, hasLength(7));
+      expect(AuraContainerShadow.values, contains(AuraContainerShadow.none));
+      expect(AuraContainerShadow.values, contains(AuraContainerShadow.sm));
+      expect(AuraContainerShadow.values, contains(AuraContainerShadow.md));
+      expect(AuraContainerShadow.values, contains(AuraContainerShadow.lg));
+      expect(AuraContainerShadow.values, contains(AuraContainerShadow.xl));
+      expect(AuraContainerShadow.values, contains(AuraContainerShadow.inner));
+      expect(AuraContainerShadow.values, contains(AuraContainerShadow.glass));
     });
   });
 }

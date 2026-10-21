@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
@@ -10,6 +11,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_ma
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/persist_tool_call_results_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
@@ -59,6 +61,15 @@ typedef _ToolResultsRequest = ({
   String conversationId,
   String messageId,
   List<agent.AgentToolResultUpdate> updates,
+  Map<String, Map<String, Object?>> appDataByToolCallId,
+});
+
+typedef _PersistToolResultsRequest = ({
+  MessageRepository messageRepository,
+  PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
+  _ToolResultsRequest request,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> toolCalls,
 });
 
 typedef _StoppedToolCallsRequest = ({
@@ -81,6 +92,7 @@ class AgentToolExecutionService({
   resolveToolApprovalDecisionForWorkspace,
   ResolveEffectiveToolApprovalUsecase? effectiveToolApprovalUsecase,
   ResolveSkillCommandTarget? resolveSkillCommandTarget,
+  PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
   super.outputPolicyForTool,
 }) extends agent.AgentToolExecutionRunner<ResolvedTool> {
   this
@@ -96,6 +108,7 @@ class AgentToolExecutionService({
               resolveToolApprovalDecisionForWorkspace,
           effectiveToolApprovalUsecase: effectiveToolApprovalUsecase,
           resolveSkillCommandTarget: resolveSkillCommandTarget,
+          persistToolCallResultsUsecase: persistToolCallResultsUsecase,
         ),
       );
 }
@@ -111,6 +124,7 @@ class const AppAllowedToolsDataProvider({
   resolveToolApprovalDecisionUsecaseForWorkspace,
   final ResolveEffectiveToolApprovalUsecase? effectiveToolApprovalUsecase,
   final ResolveSkillCommandTarget? resolveSkillCommandTarget,
+  final PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
 }) implements agent.AgentToolExecutionProvider<ResolvedTool> {
   @override
   Future<agent.AgentToolApprovalDecision> resolveToolApprovalDecision(
@@ -142,11 +156,13 @@ class const AppAllowedToolsDataProvider({
   @override
   Future<Object?> runResolvedTool({
     required String conversationId,
+    required String toolCallId,
     required ResolvedTool tool,
     required Map<String, dynamic> arguments,
   }) {
     return resolvedToolService(
       conversationId: conversationId,
+      toolCallId: toolCallId,
       tool: tool,
       arguments: arguments,
     );
@@ -187,13 +203,40 @@ class const AppAllowedToolsDataProvider({
     required String messageId,
     required List<agent.AgentToolResultUpdate> updates,
   }) async {
-    await _updateToolResults(messageRepository, (
+    final appDataByToolCallId = _takeSuccessfulAppResults(
+      resolvedToolService,
+      conversationId,
+      updates,
+    );
+    await _updateToolResults(messageRepository, persistToolCallResultsUsecase, (
       conversationId: conversationId,
       messageId: messageId,
       updates: updates,
+      appDataByToolCallId: appDataByToolCallId,
     ));
   }
 }
+
+Map<String, Map<String, Object?>> _takeSuccessfulAppResults(
+  ResolvedToolService resolvedToolService,
+  String conversationId,
+  List<agent.AgentToolResultUpdate> updates,
+) {
+  final appDataByToolCallId = <String, Map<String, Object?>>{};
+  for (final update in updates) {
+    final appData = resolvedToolService.takeMcpAppResultData(
+      conversationId: conversationId,
+      toolCallId: update.toolCallId,
+    );
+    if (appData == null || !_hasSuccessfulAppResult(update)) continue;
+    appDataByToolCallId[update.toolCallId] = appData;
+  }
+
+  return appDataByToolCallId;
+}
+
+bool _hasSuccessfulAppResult(agent.AgentToolResultUpdate update) =>
+    update.resultStatus == .success;
 
 Future<agent.AgentToolApprovalDecision> _resolveToolApprovalDecision(
   _ToolApprovalRequest request,
@@ -381,60 +424,152 @@ Future<void> _persistStoppedToolCalls(_StoppedToolCallsRequest request) async {
 
 Future<void> _updateToolResults(
   MessageRepository messageRepository,
+  PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
   _ToolResultsRequest request,
 ) async {
   final message = await messageRepository.getMessageById(request.messageId);
   if (message == null) return;
 
-  final metadata = message.metadata ?? const MessageMetadataEntity();
-  final updatedToolCalls = _toolCallsWithResults(
-    metadata.toolCalls,
-    request.updates,
-  );
-  await _persistToolResults(
+  await _persistUpdatedToolResults(
     messageRepository,
+    persistToolCallResultsUsecase,
     request,
-    metadata,
-    updatedToolCalls,
+    message.metadata ?? const MessageMetadataEntity(),
   );
 }
 
-Future<void> _persistToolResults(
+Future<void> _persistUpdatedToolResults(
   MessageRepository messageRepository,
+  PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
   _ToolResultsRequest request,
   MessageMetadataEntity metadata,
-  List<MessageToolCallEntity> toolCalls,
 ) async {
-  final updatedMetadata = metadata.copyWith(toolCalls: toolCalls);
-  final _ = await messageRepository.patchMessage(
-    request.messageId,
-    .new(
-      metadata: updatedMetadata,
-      status: updatedMetadata.hasPendingToolCalls ? null : .sent,
-    ),
-    conversationId: request.conversationId,
+  final updatedToolCalls = _toolCallsWithResults(
+    metadata.toolCalls,
+    request.updates,
+    request.appDataByToolCallId,
+  );
+  await _persistToolResults((
+    messageRepository: messageRepository,
+    persistToolCallResultsUsecase: persistToolCallResultsUsecase,
+    request: request,
+    metadata: metadata,
+    toolCalls: updatedToolCalls,
+  ));
+}
+
+Future<void> _persistToolResults(_PersistToolResultsRequest request) async {
+  final patch = _toolResultsPatch(request);
+  final media = _toolResultMedia(request.request.updates);
+  await _persistToolResultsByMedia(request, patch, media);
+}
+
+MessagePatch _toolResultsPatch(_PersistToolResultsRequest request) {
+  final metadata = request.metadata.copyWith(toolCalls: request.toolCalls);
+
+  return MessagePatch(
+    metadata: metadata,
+    status: metadata.hasPendingToolCalls ? null : .sent,
   );
 }
+
+Future<void> _persistToolResultsByMedia(
+  _PersistToolResultsRequest request,
+  MessagePatch patch,
+  List<ToolCallResultMedia> media,
+) async {
+  final usecase = request.persistToolCallResultsUsecase;
+  if (media.isNotEmpty && usecase == null) {
+    throw StateError('Tool result media persistence is not configured.');
+  }
+  if (usecase == null) {
+    await _persistToolResultsWithoutMedia(request, patch);
+
+    return;
+  }
+
+  await _persistToolResultsWithMedia(usecase, request.request, patch, media);
+}
+
+Future<void> _persistToolResultsWithoutMedia(
+  _PersistToolResultsRequest request,
+  MessagePatch patch,
+) async {
+  final repository = request.messageRepository;
+  final persistenceRequest = request.request;
+  final _ = await repository.patchMessage(
+    persistenceRequest.messageId,
+    patch,
+    conversationId: persistenceRequest.conversationId,
+  );
+}
+
+Future<void> _persistToolResultsWithMedia(
+  PersistToolCallResultsUsecase usecase,
+  _ToolResultsRequest request,
+  MessagePatch patch,
+  List<ToolCallResultMedia> media,
+) => usecase.call((
+  messageId: request.messageId,
+  conversationId: request.conversationId,
+  patch: patch,
+  media: media,
+));
+
+List<ToolCallResultMedia> _toolResultMedia(
+  List<agent.AgentToolResultUpdate> updates,
+) => [
+  for (final update in updates)
+    if (update.media.isNotEmpty)
+      (toolCallId: update.toolCallId, media: update.media),
+];
 
 List<MessageToolCallEntity> _toolCallsWithResults(
   List<MessageToolCallEntity> toolCalls,
   List<agent.AgentToolResultUpdate> updates,
-) => [for (final toolCall in toolCalls) _toolCallWithResult(toolCall, updates)];
+  Map<String, Map<String, Object?>> appDataByToolCallId,
+) => [
+  for (final toolCall in toolCalls)
+    _toolCallWithResult(toolCall, updates, appDataByToolCallId),
+];
 
 MessageToolCallEntity _toolCallWithResult(
   MessageToolCallEntity toolCall,
   List<agent.AgentToolResultUpdate> updates,
+  Map<String, Map<String, Object?>> appDataByToolCallId,
 ) {
   final update = updates
       .where((candidate) => candidate.toolCallId == toolCall.id)
       .firstOrNull;
   if (update == null) return toolCall;
 
+  if (update.approvalRequested) {
+    return _markToolCallApprovalRequested(toolCall);
+  }
+
+  return _toolCallWithResultStatus(toolCall, update, appDataByToolCallId);
+}
+
+MessageToolCallEntity _markToolCallApprovalRequested(
+  MessageToolCallEntity toolCall,
+) => toolCall.copyWith(approvalRequested: true);
+
+MessageToolCallEntity _toolCallWithResultStatus(
+  MessageToolCallEntity toolCall,
+  agent.AgentToolResultUpdate update,
+  Map<String, Map<String, Object?>> appDataByToolCallId,
+) {
+  final status = update.resultStatus;
+  if (status == null) return toolCall;
+
   final withStatus = toolCall.copyWith(
-    resultStatus: AgentToolStatusMapper.toResultStatus(update.resultStatus),
+    resultStatus: AgentToolStatusMapper.toResultStatus(status),
   );
 
-  return _applyToolExecutionOutput(withStatus, update);
+  return _applyToolExecutionOutput(
+    withStatus,
+    update,
+  ).copyWith(appData: appDataByToolCallId[update.toolCallId]);
 }
 
 MessageToolCallEntity _applyToolExecutionOutput(
@@ -456,9 +591,22 @@ void _logToolExecutionError(_ToolExecutionErrorRequest request) {
     'toolType=${request.tool.type.name} '
     'toolIdentifier=${request.tool.toolIdentifier} '
     'failurePhase=${request.failurePhase ?? 'unknown'} '
-    'error=${LogRedaction.redact(request.error)} '
+    'errorType=${request.error.runtimeType} '
+    'errorMessage=${_toolExecutionErrorMessage(request.error)} '
     'stackTrace=${LogRedaction.redact(request.stackTrace)}',
   );
+}
+
+String _toolExecutionErrorMessage(Object error) {
+  const redact = LogRedaction.redact;
+
+  return switch (error) {
+    UnsupportedError(:final message) => redact(message),
+    StateError(:final message) => redact(message),
+    TimeoutException(:final message, :final duration) =>
+      '${redact(message)} duration=${duration?.inSeconds}s',
+    _ => redact(error),
+  };
 }
 
 final Provider<AgentToolExecutionService> agentToolExecutionServiceProvider =
@@ -477,6 +625,9 @@ final Provider<AgentToolExecutionService> agentToolExecutionServiceProvider =
             ref.read(resolveToolApprovalDecisionUsecaseProvider(workspaceId)),
         effectiveToolApprovalUsecase: ref.watch(
           resolveEffectiveToolApprovalUsecaseProvider,
+        ),
+        persistToolCallResultsUsecase: ref.watch(
+          persistToolCallResultsUsecaseProvider,
         ),
       );
     });

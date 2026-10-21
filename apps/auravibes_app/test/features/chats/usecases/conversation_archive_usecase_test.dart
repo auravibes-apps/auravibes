@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/background_work_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
@@ -10,27 +11,71 @@ import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_codec.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_archive_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show foldAgentTranscriptContext;
+    show
+        AgentBackgroundWorkStatus,
+        ConversationToolAccessMode,
+        foldAgentTranscriptContext;
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  var isFirstTest = true;
+  setUp(() async {
+    if (isFirstTest) {
+      isFirstTest = false;
+
+      return;
+    }
+
+    await clearAppDatabase(database);
+  });
+  tearDownAll(database.close);
+  test('archive import and re-export preserve auto approval', () async {
+    final workspace = await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Mode archive', type: .local),
+    );
+    final usecase = _usecase(database);
+    final json = ConversationArchiveCodec.encode(
+      .new(
+        title: 'Mode',
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+        messages: const [],
+        toolAccessMode: .allowAll,
+      ),
+    );
+    final imported = await usecase.importConversation(
+      workspaceId: workspace.id,
+      archiveJson: json,
+    );
+    expect(imported.toolAccessMode, ConversationToolAccessMode.allowAll);
+    final exported = await usecase.exportConversation(
+      conversationId: imported.id,
+    );
+    expect(
+      ConversationArchiveCodec.decode(exported).toolAccessMode,
+      ConversationToolAccessMode.allowAll,
+    );
+  });
+
   test(
     'rejects malformed input and unknown versions before creating rows',
     () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'Archive test', type: .local),
       );
@@ -62,10 +107,6 @@ void main() {
   test(
     'imports repeated archive with fresh IDs and original timestamps',
     () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'Archive test', type: .local),
       );
@@ -120,11 +161,195 @@ void main() {
     },
   );
 
+  test(
+    'archive import keeps delivered transcript but never revives detached work',
+    () async {
+      final workspace = await database.workspaceDao.insertWorkspace(
+        .insert(name: 'Archive test', type: .local),
+      );
+      final conversations = ConversationRepository(database);
+      final source = await conversations.createConversation(
+        .new(title: 'Active tool', workspaceId: workspace.id),
+      );
+      const workId = 'active-background-work-secret';
+      const toolCallId = 'active-tool-call-secret';
+      final backgroundWork = BackgroundWorkRepository(database);
+      final _ = await backgroundWork.create(
+        .new(
+          id: workId,
+          workspaceId: workspace.id,
+          conversationId: source.id,
+          toolCallId: toolCallId,
+          toolKind: 'skill.native',
+        ),
+      );
+      final messages = MessageRepository(database);
+      final _ = await messages.createMessage(
+        .new(
+          conversationId: source.id,
+          content: 'Running a search',
+          messageType: .text,
+          isUser: false,
+          status: .unfinished,
+          createdAt: DateTime.utc(2026, 1, 2),
+          metadata: jsonEncode(
+            const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: toolCallId,
+                  name: 'research-search',
+                  argumentsRaw: '{"query":"private query"}',
+                  userFacingDescription: 'Search',
+                  resultStatus: .running,
+                ),
+              ],
+            ).toJson(),
+          ),
+        ),
+      );
+
+      final usecase = _usecase(database);
+      final archiveJson = await usecase.exportConversation(
+        conversationId: source.id,
+      );
+      final imported = await usecase.importConversation(
+        workspaceId: workspace.id,
+        archiveJson: archiveJson,
+      );
+      final importedMessages = await messages.getMessagesByConversation(
+        imported.id,
+      );
+      expect(importedMessages.single.status.name, 'error');
+      final restoredMetadata = importedMessages.single.metadata;
+      if (restoredMetadata == null) fail('Imported call metadata is missing.');
+      final restoredCall = restoredMetadata.toolCalls.single;
+
+      expect(archiveJson, isNot(contains(workId)));
+      expect(archiveJson, isNot(contains(toolCallId)));
+      expect(archiveJson, isNot(contains('private query')));
+      expect(restoredCall.id, isNot(toolCallId));
+      expect(restoredCall.argumentsRaw, isEmpty);
+      const expectedResultStatus = ToolCallResultStatus.skippedByUser;
+      expect(restoredCall.resultStatus, expectedResultStatus);
+      expect(
+        await backgroundWork.find(conversationId: imported.id, workId: workId),
+        isNull,
+      );
+      expect(
+        (await backgroundWork.watchConversation(source.id).first)
+            .single
+            .identity
+            .id,
+        workId,
+      );
+    },
+  );
+
+  test(
+    'archive keeps delivered completion but excludes completed work records',
+    () async {
+      final workspace = await database.workspaceDao.insertWorkspace(
+        .insert(name: 'Archive test', type: .local),
+      );
+      final source = await ConversationRepository(database).createConversation(
+        .new(title: 'Completed tool', workspaceId: workspace.id),
+      );
+      const workId = 'completed-background-work-secret';
+      const toolCallId = 'completed-tool-call-secret';
+      const storedResult = 'private raw result not delivered to transcript';
+      final backgroundWork = BackgroundWorkRepository(database);
+      final _ = await backgroundWork.create(
+        .new(
+          id: workId,
+          workspaceId: workspace.id,
+          conversationId: source.id,
+          toolCallId: toolCallId,
+          toolKind: 'skill.native',
+        ),
+      );
+      final _ = await backgroundWork.finish(
+        .new(
+          conversationId: source.id,
+          workId: workId,
+          status: .completed,
+          resultContent: storedResult,
+          resultByteLength: utf8.encode(storedResult).length,
+          statusPreview: 'Completed',
+        ),
+      );
+      final messages = MessageRepository(database);
+      final createdAt = DateTime.utc(2026, 1, 2);
+      final _ = await messages.createMessage(
+        .new(
+          conversationId: source.id,
+          content: 'Search started in the source conversation.',
+          messageType: .text,
+          isUser: false,
+          status: .sent,
+          createdAt: createdAt,
+          metadata: jsonEncode(
+            const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: toolCallId,
+                  name: 'research-search',
+                  argumentsRaw: '{"query":"private query"}',
+                  userFacingDescription: 'Search',
+                  resultStatus: .running,
+                ),
+              ],
+            ).toJson(),
+          ),
+        ),
+      );
+      const deliveredMessage = 'Delivered completion summary';
+      final _ = await messages.createMessage(
+        .new(
+          conversationId: source.id,
+          content: deliveredMessage,
+          messageType: .text,
+          isUser: false,
+          status: .sent,
+          createdAt: createdAt.add(const Duration(seconds: 1)),
+        ),
+      );
+
+      final usecase = _usecase(database);
+      final archiveJson = await usecase.exportConversation(
+        conversationId: source.id,
+      );
+      final imported = await usecase.importConversation(
+        workspaceId: workspace.id,
+        archiveJson: archiveJson,
+      );
+      final importedMessages = await messages.getMessagesByConversation(
+        imported.id,
+      );
+
+      expect(archiveJson, contains(deliveredMessage));
+      expect(archiveJson, isNot(contains(workId)));
+      expect(archiveJson, isNot(contains(toolCallId)));
+      expect(archiveJson, isNot(contains('private query')));
+      expect(archiveJson, isNot(contains(storedResult)));
+      expect(
+        importedMessages.map((message) => message.content),
+        contains(deliveredMessage),
+      );
+      expect(
+        await backgroundWork.watchConversation(imported.id).first,
+        isEmpty,
+      );
+      expect(
+        (await backgroundWork.watchConversation(source.id).first)
+            .single
+            .state
+            .status,
+        AgentBackgroundWorkStatus.completed,
+      );
+    },
+  );
+
   test('imports a legacy single archive through the archive usecase', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Archive test', type: .local),
     );
@@ -174,10 +399,6 @@ void main() {
       final _ = await tempDirectory.delete(recursive: true);
       final _ = await supportDirectory.delete(recursive: true);
     });
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Archive test', type: .local),
     );
@@ -202,13 +423,20 @@ void main() {
             status: .sent,
             createdAt: createdAt,
             metadata: const .new(
-              toolCalls: [],
+              toolCalls: [
+                ConversationArchiveToolCall(
+                  id: 'tool-call-0',
+                  displayName: 'Browser capture',
+                  resultStatus: .success,
+                ),
+              ],
               a2uiMessages: [],
               isCompactionSummary: false,
               compactedMessageIndexes: [],
             ),
             attachments: [
               .new(
+                toolCallId: 'tool-call-0',
                 fileName: 'report.txt',
                 displayName: 'Report',
                 mimeType: 'text/plain',
@@ -232,6 +460,11 @@ void main() {
     final importedAttachment = File(
       importedMessage.attachments.single.localPath,
     );
+    expect(
+      importedMessage.attachments.single.toolCallId,
+      importedMessage.metadata?.toolCalls.single.id,
+    );
+    expect(importedMessage.attachments.single.toolCallId, isNot('tool-call-0'));
     expect(importedAttachment.existsSync(), isTrue);
     expect(importedAttachment.readAsBytesSync(), [1, 2, 3]);
     expect(attachmentDirectory.listSync(), isEmpty);
@@ -240,10 +473,6 @@ void main() {
   test(
     'restores hidden trusted context and remaps compacted message IDs',
     () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'Archive test', type: .local),
       );
@@ -347,10 +576,6 @@ void main() {
   );
 
   test('remaps conversation tool settings by safe tool descriptor', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final sourceWorkspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Source', type: .local),
     );
@@ -409,10 +634,6 @@ void main() {
   });
 
   test('imports conversation when destination lacks archived tool', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Archive test', type: .local),
     );
@@ -447,10 +668,6 @@ void main() {
   });
 
   test('rejects malformed later bundle entry before inserting rows', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Archive test', type: .local),
     );
@@ -491,10 +708,6 @@ void main() {
   test(
     'rejects invalid context state before importing any conversation',
     () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'Archive test', type: .local),
       );
@@ -558,10 +771,6 @@ void main() {
         final _ = await tempDirectory.delete(recursive: true);
         final _ = await supportDirectory.delete(recursive: true);
       });
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'Archive test', type: .local),
       );
@@ -749,6 +958,7 @@ class _FakeArchiveAttachmentService extends LocalChatAttachmentService {
       mimeType: attachment.mimeType,
       modality: attachment.modality,
       sizeBytes: attachment.bytes.length,
+      toolCallId: attachment.toolCallId,
     );
   }
 

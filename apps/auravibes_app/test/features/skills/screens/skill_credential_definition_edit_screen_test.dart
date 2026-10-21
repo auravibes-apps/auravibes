@@ -24,22 +24,22 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 class _CredentialDefinitionEditHarness({
   required final AppDatabase database,
   required final String workspaceId,
   required final ProviderContainer container,
   required final SkillCredentialDefinitionsRepository repository,
 }) {
-  Future<void> dispose() async {
+  void dispose() {
     container.dispose();
-    await database.close();
   }
 }
 
-Future<_CredentialDefinitionEditHarness> _createHarness() async {
-  final database = AppDatabase(
-    connection: DatabaseConnection(NativeDatabase.memory()),
-  );
+Future<_CredentialDefinitionEditHarness> _createHarness(
+  AppDatabase database,
+) async {
   final workspace = await WorkspaceRepository(database)
       .createWorkspace(const .new(name: 'Test Workspace', type: .local));
   final session = WorkspaceSession(
@@ -77,6 +77,19 @@ Finder _editableInputAt(int index) => find.descendant(
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  var isFirstTest = true;
+  setUp(() async {
+    if (isFirstTest) {
+      isFirstTest = false;
+
+      return;
+    }
+    await clearAppDatabase(database);
+  });
+  tearDownAll(database.close);
 
   Widget buildScreen({
     required ProviderContainer container,
@@ -131,11 +144,13 @@ void main() {
       builder: (context) => TextButton(
         onPressed: () {
           Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(
-              builder: (_) => SkillCredentialDefinitionEditScreen(
+            PageRouteBuilder<void>(
+              pageBuilder: (_, _, _) => SkillCredentialDefinitionEditScreen(
                 workspaceId: workspaceId,
                 definitionId: definitionId,
               ),
+              transitionDuration: .zero,
+              reverseTransitionDuration: .zero,
             ),
           );
         },
@@ -148,7 +163,7 @@ void main() {
     tester,
   ) async {
     await _setSurfaceSize(tester);
-    final harness = await _createHarness();
+    final harness = await _createHarness(database);
     addTearDown(harness.dispose);
     final definition = await harness.repository.createDefinition(
       harness.workspaceId,
@@ -200,7 +215,7 @@ void main() {
     tester,
   ) async {
     await _setSurfaceSize(tester, size: const Size(1000, 1600));
-    final harness = await _createHarness();
+    final harness = await _createHarness(database);
     addTearDown(harness.dispose);
     final definition = await harness.repository.createDefinition(
       harness.workspaceId,
@@ -275,22 +290,28 @@ void main() {
       routes: [
         GoRoute(
           path: parent,
-          builder: (_, _) => SkillCredentialDefinitionEditScreen(
-            workspaceId: harness.workspaceId,
-            definitionId: definition.id,
+          pageBuilder: (_, state) => NoTransitionPage(
+            child: SkillCredentialDefinitionEditScreen(
+              workspaceId: harness.workspaceId,
+              definitionId: definition.id,
+            ),
+            key: state.pageKey,
           ),
         ),
         for (final target in targets)
           GoRoute(
             path: target,
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               visited = state.uri.path;
 
-              return Scaffold(
-                body: TextButton(
-                  onPressed: () => context.pop(),
-                  child: const Text('Return to type'),
+              return NoTransitionPage(
+                child: Scaffold(
+                  body: TextButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('Return to type'),
+                  ),
                 ),
+                key: state.pageKey,
               );
             },
           ),
@@ -354,7 +375,7 @@ void main() {
     'new required fields show impact before save and reject the write',
     (tester) async {
       await _setSurfaceSize(tester, size: const Size(1000, 1600));
-      final harness = await _createHarness();
+      final harness = await _createHarness(database);
       addTearDown(harness.dispose);
       final definition = await harness.repository.createDefinition(
         harness.workspaceId,
@@ -413,7 +434,7 @@ void main() {
     tester,
   ) async {
     await _setSurfaceSize(tester);
-    final harness = await _createHarness();
+    final harness = await _createHarness(database);
     addTearDown(harness.dispose);
 
     final _ = await tester.runAsync(
@@ -472,7 +493,7 @@ void main() {
     tester,
   ) async {
     await _setSurfaceSize(tester);
-    final harness = await _createHarness();
+    final harness = await _createHarness(database);
     addTearDown(harness.dispose);
     final definition = await harness.repository.createDefinition(
       harness.workspaceId,
@@ -522,7 +543,7 @@ void main() {
     tester,
   ) async {
     await _setSurfaceSize(tester);
-    final harness = await _createHarness();
+    final harness = await _createHarness(database);
     addTearDown(harness.dispose);
     final definition = await harness.repository.createDefinition(
       harness.workspaceId,
@@ -578,7 +599,7 @@ void main() {
 
   testWidgets('persists credential attribute order', (tester) async {
     await _setSurfaceSize(tester);
-    final harness = await _createHarness();
+    final harness = await _createHarness(database);
     addTearDown(harness.dispose);
     final definition = await harness.repository.createDefinition(
       harness.workspaceId,
@@ -626,7 +647,7 @@ void main() {
     tester,
   ) async {
     await _setSurfaceSize(tester, size: const Size(1000, 1200));
-    final harness = await _createHarness();
+    final harness = await _createHarness(database);
     addTearDown(harness.dispose);
 
     final _ = await tester.runAsync(
@@ -669,7 +690,7 @@ void main() {
 
   testWidgets('copies the exact credential definition slug', (tester) async {
     await _setSurfaceSize(tester);
-    final harness = await _createHarness();
+    final harness = await _createHarness(database);
     addTearDown(harness.dispose);
     final definition = await harness.repository.createDefinition(
       harness.workspaceId,
@@ -724,7 +745,7 @@ void main() {
     'keeps definition and explains linked-credential deletion conflict',
     (tester) async {
       await _setSurfaceSize(tester);
-      final harness = await _createHarness();
+      final harness = await _createHarness(database);
       addTearDown(harness.dispose);
       final definition = await harness.repository.createDefinition(
         harness.workspaceId,

@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/skills/usecases/resolved_skill_resource.d
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
@@ -157,10 +158,12 @@ extension on _SkillResourceEditScreenState {
 
   void _bindExitGuard() => _exitGuard.bind(
     readers: (isDirty: () => _isDirty, isSaving: () => _isSaving),
-    onReturn: (context) => SkillDetailRoute(
-      workspaceId: widget.workspaceId,
-      skillId: widget.skillId,
-    ).go(context),
+    callbacks: .new(
+      onReturn: (context) => SkillDetailRoute(
+        workspaceId: widget.workspaceId,
+        skillId: widget.skillId,
+      ).go(context),
+    ),
   );
 }
 
@@ -186,7 +189,7 @@ class const _SkillResourceScreenView({
   required final _SkillResourceRenderData renderData,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: _SkillResourceScreenContent(
       state: state,
       viewData: renderData.viewData,

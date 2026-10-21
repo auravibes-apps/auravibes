@@ -23,6 +23,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 final _server = McpServerEntity(
   id: 'server-1',
   workspaceId: 'workspace-1',
@@ -79,28 +81,19 @@ void main() {
         expect(result.toolIdentifier, 'read_file');
       });
 
-      test('returns null for non-mcp prefix', () {
-        expect(McpToolIdComponents.fromComposite('built_in_123_tool'), isNull);
-      });
-
-      test('returns null when no underscores after prefix', () {
-        expect(McpToolIdComponents.fromComposite('mcp_nounderscore'), isNull);
-      });
-
-      test('returns null when only one underscore after prefix', () {
-        expect(McpToolIdComponents.fromComposite('mcp_id_onlyslug'), isNull);
-      });
-
-      test('returns null for empty parts', () {
-        expect(McpToolIdComponents.fromComposite('mcp__slug_tool'), isNull);
-      });
-
-      test('returns null for empty slug', () {
-        expect(McpToolIdComponents.fromComposite('mcp_id__tool'), isNull);
-      });
-
-      test('returns null for empty tool identifier', () {
-        expect(McpToolIdComponents.fromComposite('mcp_id_slug_'), isNull);
+      test('returns null for malformed composite IDs', () {
+        for (final id in [
+          'built_in_123_tool',
+          'mcp_nounderscore',
+          'mcp_id_onlyslug',
+          'mcp__slug_tool',
+          'mcp_id__tool',
+          'mcp_id_slug_',
+          'mcp_',
+          'mcp_abc_',
+        ]) {
+          expect(McpToolIdComponents.fromComposite(id), isNull, reason: id);
+        }
       });
 
       test('parses composite ID with underscores in tool name', () {
@@ -161,12 +154,13 @@ void main() {
   group('McpConnectionNotifier', () {
     var mcpServersRepository = _FakeMcpServersRepository();
     var mcpManagerService = McpManagerService();
-    AppDatabase? database;
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
     var container = ProviderContainer();
     ProviderSubscription<List<McpConnectionState>>? subscription;
 
-    AppDatabase getDatabase() =>
-        database ?? fail('Expected test database to be initialized');
+    AppDatabase getDatabase() => database;
 
     Future<ProviderContainer> createInitializedContainer(
       McpManagerService manager, {
@@ -199,12 +193,8 @@ void main() {
     setUp(() async {
       mcpServersRepository = _FakeMcpServersRepository();
       mcpManagerService = McpManagerService();
-      final testDatabase = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      database = testDatabase;
-      addTearDown(testDatabase.close);
-      final _ = await testDatabase.workspaceDao.insertWorkspace(
+      await clearAppDatabase(database);
+      final _ = await database.workspaceDao.insertWorkspace(
         .insert(
           id: const Value('workspace-1'),
           name: 'Test Workspace',
@@ -236,6 +226,8 @@ void main() {
       subscription?.close();
       container.dispose();
     });
+
+    tearDownAll(database.close);
 
     test('initial state is empty list', () {
       final state = container.read(mcpConnectionProvider);
@@ -367,18 +359,6 @@ void main() {
       expect(connecting, isEmpty);
     });
 
-    test('callTool throws when server not found', () async {
-      final notifier = container.read(mcpConnectionProvider.notifier);
-      await expectLater(
-        notifier.callTool(
-          mcpServerId: 'server-1',
-          toolIdentifier: 'sum',
-          arguments: const {},
-        ),
-        throwsA(isA<Exception>()),
-      );
-    });
-
     test('getToolSpec returns null when server not connected', () {
       final notifier = container.read(mcpConnectionProvider.notifier);
       expect(
@@ -441,6 +421,34 @@ void main() {
       expect(spec?.inputJsonSchema, isEmpty);
     });
 
+    test('getToolSpec hides app-only MCP tools from the model', () {
+      final notifier = container.read(mcpConnectionProvider.notifier)
+        ..state = [
+          McpConnectionState(
+            server: _server,
+            status: .connected,
+            client: _FakeMcpManagerClient(),
+            tools: const [
+              McpToolInfo(
+                toolName: 'refresh',
+                description: 'Refresh view',
+                inputSchema: {},
+                metadata: {
+                  'ui': {
+                    'visibility': ['app'],
+                  },
+                },
+              ),
+            ],
+          ),
+        ];
+
+      expect(
+        notifier.getToolSpec(mcpServerId: 'server-1', toolName: 'refresh'),
+        isNull,
+      );
+    });
+
     test('disconnectMcpServer sets disconnected and clears client', () {
       final notifier = container.read(mcpConnectionProvider.notifier)
         ..state = [_connectedState()];
@@ -501,20 +509,29 @@ void main() {
       },
     );
 
-    test('callTool throws descriptive message for missing server', () async {
-      final notifier = container.read(mcpConnectionProvider.notifier);
+    test(
+      'callTool reports missing server IDs with descriptive exceptions',
+      () async {
+        final notifier = container.read(mcpConnectionProvider.notifier);
 
-      try {
-        final _ = await notifier.callTool(
-          mcpServerId: 'missing',
-          toolIdentifier: 'sum',
-          arguments: const {},
-        );
-        fail('Should have thrown');
-      } on Exception catch (e) {
-        expect(e.toString(), contains('MCP server not found'));
-      }
-    });
+        for (final serverId in ['server-1', 'missing']) {
+          await expectLater(
+            notifier.callTool(
+              mcpServerId: serverId,
+              toolIdentifier: 'sum',
+              arguments: const {},
+            ),
+            throwsA(
+              isA<Exception>().having(
+                (error) => error.toString(),
+                'message',
+                contains('MCP server not found'),
+              ),
+            ),
+          );
+        }
+      },
+    );
 
     test('callTool throws descriptive message for not connected', () async {
       final notifier = container.read(mcpConnectionProvider.notifier)
@@ -614,14 +631,6 @@ void main() {
         ),
         throwsA(isA<Exception>()),
       );
-    });
-
-    test('McpToolIdComponents handles first underscore at position 0', () {
-      expect(McpToolIdComponents.fromComposite('mcp_'), isNull);
-    });
-
-    test('McpToolIdComponents handles second underscore at position 0', () {
-      expect(McpToolIdComponents.fromComposite('mcp_abc_'), isNull);
     });
 
     test('reconnectMcpServer with server not in db returns empty', () async {
@@ -1082,6 +1091,51 @@ void main() {
       expect(fakeService.calledToolIdentifiers, ['sum']);
     });
 
+    test(
+      'only returns raw result data for tools with an MCP App resource',
+      () async {
+        final fakeService = _SuccessfulMcpManagerService();
+        final testContainer = await createInitializedContainer(fakeService);
+        addTearDown(testContainer.dispose);
+        final notifier = testContainer.read(mcpConnectionProvider.notifier)
+          ..state = [
+            McpConnectionState(
+              server: _server,
+              status: .connected,
+              client: _FakeMcpManagerClient(),
+              tools: const [
+                _toolInfo,
+                McpToolInfo(
+                  toolName: 'weather',
+                  description: 'Weather app',
+                  inputSchema: {},
+                  metadata: {
+                    'ui': {'resourceUri': 'ui://weather/view'},
+                  },
+                ),
+              ],
+            ),
+          ];
+
+        final ordinaryTool = await notifier.callToolWithAppData(
+          mcpServerId: 'server-1',
+          toolIdentifier: 'sum',
+          arguments: const {},
+        );
+        final appTool = await notifier.callToolWithAppData(
+          mcpServerId: 'server-1',
+          toolIdentifier: 'weather',
+          arguments: const {},
+        );
+
+        expect(ordinaryTool.modelText, 'tool result');
+        expect(ordinaryTool.appData, isEmpty);
+        expect(appTool.modelText, 'tool result');
+        expect(appTool.appData, contains('_meta'));
+        expect(fakeService.includeAppDataCalls, [false, true]);
+      },
+    );
+
     test('token updates are persisted for added MCP credential', () async {
       final tokenController = StreamController<OAuthTokenEntity>();
       addTearDown(tokenController.close);
@@ -1241,6 +1295,7 @@ class _SuccessfulMcpManagerService extends McpManagerService {
 
   final connectedServers = <McpServerToCreate>[];
   final calledToolIdentifiers = <String>[];
+  final includeAppDataCalls = <bool>[];
   int disconnectCount = 0;
   int getToolsCount = 0;
   List<McpToolInfo> discoveredTools = const [_toolInfo];
@@ -1291,10 +1346,32 @@ class _SuccessfulMcpManagerService extends McpManagerService {
     McpManagerClient client, {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    required McpToolElicitationContext elicitation,
   }) async {
     calledToolIdentifiers.add(toolIdentifier);
 
     return 'tool result';
+  }
+
+  @override
+  Future<({String modelText, Map<String, Object?> appData})> callToolOutput(
+    McpToolOutputRequest request,
+  ) async {
+    includeAppDataCalls.add(request.includeAppData);
+
+    return (
+      modelText: 'tool result',
+      appData: request.includeAppData
+          ? const {
+              'content': [
+                {'type': 'text', 'text': 'tool result'},
+              ],
+              '_meta': {
+                'ui': {'resourceUri': 'ui://weather/view'},
+              },
+            }
+          : const <String, Object?>{},
+    );
   }
 }
 

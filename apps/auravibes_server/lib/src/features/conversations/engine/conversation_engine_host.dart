@@ -60,6 +60,13 @@ String _toolResultForContext(ConversationToolCall call) {
   return projectToolOutput(result).text;
 }
 
+bool _isDetachedBackgroundToolCall(
+  ConversationToolCall call,
+  Map<int, Set<String>> detachedToolCallIdsByMessageId,
+) =>
+    detachedToolCallIdsByMessageId[call.messageId]?.contains(call.stableId) ??
+    false;
+
 typedef ConversationProviderTransport =
     Future<ProviderTransportResponse> Function(Map<String, dynamic> body);
 
@@ -510,6 +517,7 @@ final class const ServerConversationEngineHost({
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
       supportsStrictToolSampling: config.providerSupportsStrictToolSampling,
+      strictToolSamplingProfile: config.strictToolSamplingProfile,
       customize: (modelName, _) => (
         model: modelName,
         extraBody: reasoningRequestBody(
@@ -654,10 +662,22 @@ final class const ServerConversationEngineHost({
             ) &
             table.status.notEquals('running'),
       );
+      final inheritedDetachedToolCallIdsByMessageId =
+          await _inheritedDetachedBackgroundToolCallIds(
+            session,
+            workspaceId: job.workspaceId,
+            conversationId: job.conversationId,
+            messages: messages,
+          );
       toolExchanges.addAll(
         persistedProviderToolExchanges(
           messages: messages,
-          calls: resolvedCalls,
+          calls: resolvedCalls.where(
+            (call) => !_isDetachedBackgroundToolCall(
+              call,
+              inheritedDetachedToolCallIdsByMessageId,
+            ),
+          ),
         ),
       );
       requestMessages = await _refreshedRequestMessages(
@@ -1296,8 +1316,20 @@ final class const ServerConversationEngineHost({
             messages.map((message) => message.id).whereType<int>().toSet(),
           ),
     );
+    final inheritedDetachedToolCallIdsByMessageId =
+        await _inheritedDetachedBackgroundToolCallIds(
+          session,
+          workspaceId: job.workspaceId,
+          conversationId: job.conversationId,
+          messages: messages,
+        );
     final toolCallsByMessageId = <int, List<ConversationToolCall>>{};
-    for (final toolCall in toolCalls) {
+    for (final toolCall in toolCalls.where(
+      (call) => !_isDetachedBackgroundToolCall(
+        call,
+        inheritedDetachedToolCallIdsByMessageId,
+      ),
+    )) {
       (toolCallsByMessageId[toolCall.messageId] ??= []).add(toolCall);
     }
     final range = selectConversationCompactionRange(
@@ -1354,7 +1386,13 @@ final class const ServerConversationEngineHost({
     return ConversationCompactionResult(
       summary: appendDurableSkillActivations(
         summary,
-        await _durableSkillActivations(session, job.workspaceId, range),
+        await _durableSkillActivations(
+          session,
+          job.workspaceId,
+          range,
+          excludedToolCallIdsByMessageId:
+              inheritedDetachedToolCallIdsByMessageId,
+        ),
       ),
       range: range,
       providerId: config.providerId,
@@ -1365,8 +1403,9 @@ final class const ServerConversationEngineHost({
   Future<List<String>> _durableSkillActivations(
     Session session,
     int workspaceId,
-    AgentCompactionRangeSelected range,
-  ) async {
+    AgentCompactionRangeSelected range, {
+    required Map<int, Set<String>> excludedToolCallIdsByMessageId,
+  }) async {
     final messageIds = range.messageIds.map(int.parse).toSet();
     if (messageIds.isEmpty) return const [];
     final calls = await ConversationToolCall.db.find(
@@ -1378,13 +1417,45 @@ final class const ServerConversationEngineHost({
       orderBy: (table) => table.id,
     );
     final latestBySkill = <String, String>{};
-    for (final call in calls) {
+    for (final call in calls.where(
+      (call) => !_isDetachedBackgroundToolCall(
+        call,
+        excludedToolCallIdsByMessageId,
+      ),
+    )) {
       final result = call.resultJson;
       if (result == null || !result.startsWith('<skill_content ')) continue;
       latestBySkill[_activationSkillKey(call)] = result;
     }
 
     return latestBySkill.values.toList(growable: false);
+  }
+
+  Future<Map<int, Set<String>>> _inheritedDetachedBackgroundToolCallIds(
+    Session session, {
+    required int workspaceId,
+    required int conversationId,
+    required Iterable<ConversationMessage> messages,
+  }) async {
+    final inheritedMessageIds = messages
+        .where((message) => message.conversationId != conversationId)
+        .map((message) => message.id)
+        .whereType<int>()
+        .toSet();
+    if (inheritedMessageIds.isEmpty) return const {};
+    final workRecords = await BackgroundWorkRecord.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.originatingMessageId.inSet(inheritedMessageIds),
+    );
+    final toolCallIdsByMessageId = <int, Set<String>>{};
+    for (final work in workRecords) {
+      final messageId = work.originatingMessageId;
+      if (messageId == null) continue;
+      (toolCallIdsByMessageId[messageId] ??= <String>{}).add(work.toolCallId);
+    }
+    return toolCallIdsByMessageId;
   }
 
   Future<_ProviderConfig> _loadConfig(
@@ -1433,6 +1504,14 @@ final class const ServerConversationEngineHost({
     if (selection == null) {
       throw const ConversationEngineConfigurationException('model');
     }
+    final selectionPolicy = await WorkspaceModelSelectionToolSamplingPolicy.db
+        .findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(job.workspaceId) &
+              table.connectionId.equals(selection.connection.connectionId) &
+              table.modelId.equals(selection.model.modelId),
+        );
     final reasoningOptions = _reasoningOptions(
       selection.model.reasoningOptionsJson,
       selection.model.supportsReasoning,
@@ -1506,25 +1585,28 @@ final class const ServerConversationEngineHost({
       'Conversation provider request: job=${job.id}, '
       'provider=${connection.providerId}, model=${selection.model.modelId}.',
     );
-    final providerSupportsStrict =
-        connection.providerId == 'openai' && connection.url == null;
+    final profile = strictToolSamplingProfile(
+      connection.providerId,
+      selection.model.modelId,
+      validated.uri.toString(),
+    );
+    final providerSupportsStrict = profile != null;
     final modelSupportsStrict =
-        providerSupportsStrict &&
-        selection.model.supportsToolCalls &&
-        verifiedStrictToolSampling(
-          connection.providerId,
-          selection.model.modelId,
-        );
+        providerSupportsStrict && selection.model.supportsToolCalls;
+    final toolSamplingPolicy = selectionPolicy != null
+        ? ToolSamplingPolicy.fromJson(selectionPolicy.toolSamplingPolicy)
+        : payloadObject.containsKey('toolSamplingPolicy')
+        ? ToolSamplingPolicy.fromJson(payloadObject['toolSamplingPolicy'])
+        : modelSupportsStrict
+        ? ToolSamplingPolicy.prefer
+        : ToolSamplingPolicy.off;
     return _ProviderConfig(
       providerId: connection.providerId,
       modelId: selection.model.modelId,
       providerSupportsStrictToolSampling: providerSupportsStrict,
       modelSupportsStrictToolSampling: modelSupportsStrict,
-      toolSamplingPolicy: payloadObject.containsKey('toolSamplingPolicy')
-          ? ToolSamplingPolicy.fromJson(payloadObject['toolSamplingPolicy'])
-          : modelSupportsStrict
-          ? ToolSamplingPolicy.prefer
-          : ToolSamplingPolicy.off,
+      strictToolSamplingProfile: profile,
+      toolSamplingPolicy: toolSamplingPolicy,
       uri: uri,
       address: validated.address,
       headers: providerHeaders(
@@ -1564,28 +1646,80 @@ final class const ServerConversationEngineHost({
       final response = await request.close().timeout(
         const Duration(seconds: 90),
       );
+      final responseBody = response.timeout(const Duration(seconds: 90));
+      final providerStream = session == null || turnId == null
+          ? _closeClientAfter(responseBody, client, transportDone)
+          : cancellationCheckedStream(
+              _closeClientAfter(responseBody, client, transportDone),
+              () => cancellationProbe.isCancelled(session, turnId),
+            );
       return ProviderTransportResponse(
         statusCode: response.statusCode,
-        body: session == null || turnId == null
-            ? _closeClientAfter(
-                response.timeout(const Duration(seconds: 90)),
-                client,
-                transportDone,
-              )
-            : cancellationCheckedStream(
-                _closeClientAfter(
-                  response.timeout(const Duration(seconds: 90)),
-                  client,
-                  transportDone,
-                ),
-                () => cancellationProbe.isCancelled(session, turnId),
-              ),
+        retryAfter: _providerRetryAfter(response.headers.value('retry-after')),
+        body: _classifyProviderTransportStream(providerStream),
+      );
+    } on SocketException catch (error, stackTrace) {
+      client.close(force: true);
+      if (!transportDone.isCompleted) transportDone.complete();
+      Error.throwWithStackTrace(
+        ProviderTransientFailureException(error),
+        stackTrace,
+      );
+    } on HttpException catch (error, stackTrace) {
+      client.close(force: true);
+      if (!transportDone.isCompleted) transportDone.complete();
+      Error.throwWithStackTrace(
+        ProviderTransientFailureException(error),
+        stackTrace,
       );
     } on Object {
       client.close(force: true);
       if (!transportDone.isCompleted) transportDone.complete();
       rethrow;
     }
+  }
+}
+
+Stream<List<int>> _classifyProviderTransportStream(
+  Stream<List<int>> stream,
+) async* {
+  try {
+    yield* stream;
+  } on SocketException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      ProviderTransientFailureException(error),
+      stackTrace,
+    );
+  } on HttpException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      ProviderTransientFailureException(error),
+      stackTrace,
+    );
+  }
+}
+
+Duration? _providerRetryAfter(String? value) {
+  final header = value?.trim();
+  if (header == null || header.isEmpty) return null;
+
+  const maximumDelay = Duration(seconds: 60);
+  final seconds = int.tryParse(header);
+  if (seconds != null) {
+    if (seconds <= 0) return .zero;
+    if (seconds > 60) return maximumDelay;
+    final delay = Duration(seconds: seconds);
+
+    return delay > maximumDelay ? maximumDelay : delay;
+  }
+
+  try {
+    final difference = HttpDate.parse(header)
+        .difference(DateTime.now().toUtc());
+    if (difference <= Duration.zero) return .zero;
+
+    return difference > maximumDelay ? maximumDelay : difference;
+  } on FormatException {
+    return null;
   }
 }
 
@@ -1826,6 +1960,7 @@ class const _ProviderConfig({
   required final String modelId,
   required final bool providerSupportsStrictToolSampling,
   required final bool modelSupportsStrictToolSampling,
+  required final StrictToolSamplingProfile? strictToolSamplingProfile,
   required final ToolSamplingPolicy toolSamplingPolicy,
   required final Uri uri,
   required final InternetAddress address,

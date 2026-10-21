@@ -129,6 +129,63 @@ void main() {
       );
     });
 
+    testWidgets('uses a neutral outline when unchecked', (tester) async {
+      await tester.pumpWidget(
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCheckbox(
+                value: false,
+                onChanged: (_) {
+                  return;
+                },
+              ),
+            ),
+            theme: .new(),
+          ),
+        ),
+      );
+
+      final box = tester.widget<AnimatedContainer>(
+        find.descendant(
+          of: find.byType(AuraCheckbox),
+          matching: find.byType(AnimatedContainer),
+        ),
+      );
+      final decoration = box.decoration as BoxDecoration?;
+      final border = decoration?.border as Border?;
+      expect(border?.top.color, AuraTheme.light.colors.outlineVariant);
+    });
+
+    testWidgets('uses primary fill when checked', (tester) async {
+      await tester.pumpWidget(
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCheckbox(
+                value: true,
+                onChanged: (_) {
+                  return;
+                },
+              ),
+            ),
+            theme: .new(),
+          ),
+        ),
+      );
+
+      final box = tester.widget<AnimatedContainer>(
+        find.descendant(
+          of: find.byType(AuraCheckbox),
+          matching: find.byType(AnimatedContainer),
+        ),
+      );
+      final decoration = box.decoration as BoxDecoration?;
+      expect(decoration?.color, AuraTheme.light.colors.fillFor(.primary));
+    });
+
     testWidgets(
       'calls onChanged with toggled value when activated by keyboard',
       (tester) async {

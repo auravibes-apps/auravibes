@@ -10,17 +10,18 @@ This skill documents existing controllers only. New Riverpod state follows
 new controller naming or migrate providers into controllers.
 
 ## Overview
-Use controllers as application orchestrators: widgets dispatch intent, controllers coordinate use cases, and domain logic stays in use cases.
+Existing controllers coordinate application flows. They call use cases. Use cases own business logic.
 
 In this repo, the reference pattern is:
 - a state holder exposes query and intent APIs
 - stream/message orchestration delegates tool lifecycle to that state holder
 - widgets render state and call intent methods.
 
-## When to Use
-- A provider/notifier is mixing state + business rules + side effects.
-- Widgets contain permission/execution branching.
-- A feature needs reusable intent methods (`run`, `grant`, `skip`, `stop`) across multiple widgets.
+## When to Maintain an Existing Controller
+
+- Keep state and orchestration in existing controllers.
+- Keep permission/execution branching in existing controllers, not widgets.
+- Keep reusable intent methods (`run`, `grant`, `skip`, `stop`) in existing controllers.
 
 ## When NOT to Use
 - Pure computed read-only value providers.
@@ -44,11 +45,9 @@ In this repo, the reference pattern is:
 - Trigger controller intents from user actions.
 - Avoid embedding business flow (permission checks, execution order, metadata updates) in widgets.
 
-## Migration Pattern (old provider -> controller)
-1. Extract orchestration logic from old provider into a `@Riverpod(keepAlive: true)` controller.
-2. Keep domain rules in use cases and call them from controller methods.
-3. Keep only rendering decisions in widgets.
-4. Update existing managers/notifiers to delegate specialized flow to controller.
+## Riverpod Migration
+
+Use [flutter-notifier-pattern](../flutter-notifier-pattern/SKILL.md) for legacy Riverpod `*Controller` migrations.
 
 ## Testing Guidance
 - Controller unit tests:

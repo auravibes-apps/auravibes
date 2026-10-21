@@ -93,7 +93,7 @@ class _TestTranslations extends AssetLoader {
 }
 
 void main() {
-  testWidgets('renders group name for named group', (tester) async {
+  testWidgets('renders non-MCP group controls and status', (tester) async {
     final groupWithTools = ToolsGroupWithTools(
       group: _group(name: 'My MCP Server'),
       tools: [_tool()],
@@ -107,26 +107,10 @@ void main() {
           onToggleExpand: () {
             final _ = Object();
           },
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('My MCP Server'), findsOneWidget);
-  });
-
-  testWidgets('shows a placeholder for an unusable group name', (tester) async {
-    final groupWithTools = ToolsGroupWithTools(
-      group: _group(name: ' null '),
-      tools: [_tool()],
-    );
-
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolsGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: false,
-          onToggleExpand: () {
+          onToggleEnabled: (_) {
+            final _ = Object();
+          },
+          onDelete: () {
             final _ = Object();
           },
         ),
@@ -134,7 +118,19 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('-'), findsOneWidget);
+    expect(find.text('My MCP Server'), findsOneWidget);
+    expect(find.byType(AuraSwitch), findsOneWidget);
+    expect(
+      find.ancestor(
+        of: find.byIcon(Icons.keyboard_arrow_down),
+        matching: find.byType(AuraIconButton),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.delete_outline), findsNothing);
+    expect(find.byType(AuraBadge), findsNothing);
+    expect(find.byType(AuraSpinner), findsNothing);
   });
 
   testWidgets('uses a placeholder in unusable group selection semantics', (
@@ -162,34 +158,10 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
+    expect(find.text('-'), findsOneWidget);
     final semanticsLabel = tester.getSemantics(find.byType(AuraCheckbox)).label;
     expect(semanticsLabel, 'Select group -');
     semantics.dispose();
-  });
-
-  testWidgets('shows toggle for non-default group', (tester) async {
-    final groupWithTools = ToolsGroupWithTools(
-      group: _group(),
-      tools: [_tool()],
-    );
-
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolsGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: false,
-          onToggleExpand: () {
-            final _ = Object();
-          },
-          onToggleEnabled: (_) {
-            final _ = Object();
-          },
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.byType(AuraSwitch), findsOneWidget);
   });
 
   testWidgets('hides toggle for default group', (tester) async {
@@ -215,37 +187,7 @@ void main() {
     expect(find.byType(AuraSwitch), findsNothing);
   });
 
-  testWidgets('renders expand chevron', (tester) async {
-    final groupWithTools = ToolsGroupWithTools(
-      group: _group(),
-      tools: [_tool()],
-    );
-
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolsGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: false,
-          onToggleExpand: () {
-            final _ = Object();
-          },
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(
-      find.ancestor(
-        of: find.byIcon(Icons.keyboard_arrow_down),
-        matching: find.byType(AuraIconButton),
-      ),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('shows delete button for MCP group when onDelete provided', (
-    tester,
-  ) async {
+  testWidgets('shows MCP delete button and extension icon', (tester) async {
     final mcpGroup = ToolsGroupEntity(
       id: 'g-mcp',
       workspaceId: _workspaceId,
@@ -278,31 +220,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_outline), findsOneWidget);
-  });
-
-  testWidgets('hides delete button for non-MCP group', (tester) async {
-    final groupWithTools = ToolsGroupWithTools(
-      group: _group(),
-      tools: [_tool()],
-    );
-
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolsGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: false,
-          onToggleExpand: () {
-            final _ = Object();
-          },
-          onDelete: () {
-            final _ = Object();
-          },
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.byIcon(Icons.delete_outline), findsNothing);
+    expect(find.byIcon(Icons.extension), findsOneWidget);
   });
 
   testWidgets('shows MCP connecting spinner', (tester) async {
@@ -454,82 +372,5 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraBadge), findsOneWidget);
-  });
-
-  testWidgets('renders extension icon for MCP group', (tester) async {
-    final mcpGroup = ToolsGroupEntity(
-      id: 'g-mcp',
-      workspaceId: _workspaceId,
-      name: 'MCP',
-      isEnabled: true,
-      permissions: .ask,
-      createdAt: .new(2026),
-      updatedAt: .new(2026),
-      mcpServerId: 'mcp-1',
-    );
-    final groupWithTools = ToolsGroupWithTools(
-      group: mcpGroup,
-      tools: [_tool()],
-    );
-
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolsGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: false,
-          onToggleExpand: () {
-            final _ = Object();
-          },
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.byIcon(Icons.extension), findsOneWidget);
-  });
-
-  testWidgets('renders build_circle icon for default group', (tester) async {
-    final groupWithTools = ToolsGroupWithTools(
-      group: _group(),
-      tools: [_tool()],
-    );
-
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolsGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: false,
-          onToggleExpand: () {
-            final _ = Object();
-          },
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
-  });
-
-  testWidgets('does not show MCP badge for non-MCP group', (tester) async {
-    final groupWithTools = ToolsGroupWithTools(
-      group: _group(),
-      tools: [_tool()],
-    );
-
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolsGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: false,
-          onToggleExpand: () {
-            final _ = Object();
-          },
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.byType(AuraBadge), findsNothing);
-    expect(find.byType(AuraSpinner), findsNothing);
   });
 }

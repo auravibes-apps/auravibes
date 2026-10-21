@@ -8,12 +8,15 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
   test('round-trips local configuration without credential values', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final exporter = LocalWorkspaceConfigurationRepository(database);
     final importer = LocalWorkspaceConfigurationImporter(database);
     final source = await WorkspaceRepository(database)
@@ -32,9 +35,9 @@ void main() {
         .into(database.skills)
         .insert(
           SkillsCompanion.insert(
-            source: .user,
             id: const Value('skill-1'),
             workspaceId: source.id,
+            source: .user,
             kind: .template,
             title: 'Research',
             slug: 'research',
@@ -134,17 +137,13 @@ void main() {
   });
 
   test('unknown version and malformed archive write nothing', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final importer = LocalWorkspaceConfigurationImporter(database);
     final valid = WorkspaceConfigurationArchiveCodec.encode(
       const WorkspaceConfigurationArchive(workspaceName: 'Import', entries: []),
     );
     final countBefore = await database.workspaceDao.getWorkspaceCount();
     for (final invalid in [
-      valid.replaceFirst('"version":1', '"version":2'),
+      valid.replaceFirst('"version":2', '"version":3'),
       valid.replaceFirst('"workspaceName":"Import"', '"workspaceName":null'),
     ]) {
       await expectLater(
@@ -154,4 +153,73 @@ void main() {
     }
     expect(await database.workspaceDao.getWorkspaceCount(), countBefore);
   });
+
+  test(
+    'exports explicit selection policies and closes selected kinds',
+    () async {
+      final workspace = await WorkspaceRepository(database).createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace', type: .local),
+      );
+      final _ = await database
+          .into(database.serviceConnections)
+          .insert(
+            ServiceConnectionsCompanion.insert(
+              id: const Value('connection-1'),
+              name: 'Provider',
+              serviceId: 'openai',
+              kind: .modelProvider,
+              authenticationType: .apiKey,
+              workspaceId: workspace.id,
+            ),
+          );
+      final _ = await database
+          .into(database.workspaceModelSelections)
+          .insert(
+            WorkspaceModelSelectionsCompanion.insert(
+              id: const Value('selection-1'),
+              modelId: 'gpt-4o',
+              modelConnectionId: 'connection-1',
+              toolSamplingPolicy: const Value('prefer'),
+            ),
+          );
+      final _ = await database
+          .into(database.workspaceModelSelections)
+          .insert(
+            WorkspaceModelSelectionsCompanion.insert(
+              id: const Value('selection-2'),
+              modelId: 'gpt-4.1',
+              modelConnectionId: 'connection-1',
+            ),
+          );
+      final exporter = LocalWorkspaceConfigurationRepository(database);
+
+      final fullArchive = await exporter.export(workspace.id);
+      final selections = fullArchive.entries
+          .where((entry) => entry.kind == .modelSelection)
+          .toList();
+      expect(selections, hasLength(1));
+      expect(selections.single.id, 'selection-1');
+      expect(selections.single.data, {
+        'modelConnectionId': 'connection-1',
+        'modelId': 'gpt-4o',
+        'toolSamplingPolicy': 'prefer',
+      });
+
+      final selectedArchive = await exporter.export(
+        workspace.id,
+        selectedKinds: const {.modelSelection},
+      );
+      expect(
+        selectedArchive.entries.map((entry) => entry.kind),
+        unorderedEquals([
+          WorkspaceConfigurationKind.modelConnection,
+          WorkspaceConfigurationKind.modelSelection,
+        ]),
+      );
+      expect(
+        (await exporter.export(workspace.id, selectedKinds: const {})).entries,
+        isEmpty,
+      );
+    },
+  );
 }

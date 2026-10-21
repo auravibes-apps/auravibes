@@ -404,7 +404,7 @@ class const _ToolsManagementControls({
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => _ToolsManagementLayout(
-      compact: constraints.maxWidth < 600,
+      compact: constraints.maxWidth < 520,
       filter: filter,
       selection: selection,
       onSelectAll: onSelectAll,
@@ -920,6 +920,36 @@ Future<void> _runToolsBulkDelete(_ToolsBulkDeleteRequest request) async {
   if (!request.context.mounted) return;
 
   _applyToolsBulkDeleteResult(request, failed);
+  if (failed.isEmpty) return;
+
+  await _showToolsBulkDeleteFailures(request, failed);
+}
+
+Future<void> _showToolsBulkDeleteFailures(
+  _ToolsBulkDeleteRequest request,
+  List<_ToolsDeleteTarget> failed,
+) async {
+  await ManagementListFeedback.showFailuresDialog(
+    context: request.context,
+    failedItems: failed,
+    nameOf: (target) => target.label,
+    onRetry: (targets) => _retryToolsBulkDelete(request, targets),
+  );
+}
+
+Future<List<_ToolsDeleteTarget>> _retryToolsBulkDelete(
+  _ToolsBulkDeleteRequest request,
+  List<_ToolsDeleteTarget> targets,
+) async {
+  request.isDeleting.value = true;
+  final failed = await _deleteSelectedTools(
+    request.ref,
+    request.workspaceId,
+    targets,
+  );
+  if (request.context.mounted) _applyToolsBulkDeleteResult(request, failed);
+
+  return failed;
 }
 
 void _applyToolsBulkDeleteResult(
@@ -928,26 +958,6 @@ void _applyToolsBulkDeleteResult(
 ) {
   request.isDeleting.value = false;
   request.selectedKeys.value = failed.map((target) => target.key).toSet();
-  if (failed.isEmpty) return;
-
-  _showToolsDeleteFailures(request.context, failed);
-}
-
-void _showToolsDeleteFailures(
-  BuildContext context,
-  List<_ToolsDeleteTarget> failed,
-) {
-  final _ = AuraSnackBars.show(
-    context: context,
-    content: Text(
-      ManagementListFeedback.failureText(
-        context,
-        LocaleKeys.tools_screen_bulk_delete_failures,
-        failed.map((target) => target.label).toList(),
-      ),
-    ),
-    variant: .error,
-  );
 }
 
 Future<List<_ToolsDeleteTarget>> _deleteSelectedTools(

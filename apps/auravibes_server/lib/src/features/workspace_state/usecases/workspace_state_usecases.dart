@@ -453,6 +453,9 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final isServiceCredential =
         operation.resourceKind == WorkspaceResourceKind.serviceConnection &&
         request.secretKind == WorkspaceSecretKind.skillCredential;
+    final deletesServiceCredential =
+        isServiceCredential &&
+        operation.operation == WorkspacePatchOperationKind.delete;
     final isMcpCredential =
         operation.resourceKind == WorkspaceResourceKind.mcpServer &&
         request.secretKind == WorkspaceSecretKind.mcp &&
@@ -521,9 +524,10 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         resourceId: operation.resourceId,
         transaction: transaction,
       );
-      final writesSecret =
-          request.secret != null ||
-          (request.clearSecret && existing?.deletedAt == null);
+      final writesSecret = deletesServiceCredential
+          ? existing != null && existing.deletedAt == null
+          : request.secret != null ||
+                (request.clearSecret && existing?.deletedAt == null);
       var expectedSecretRevision = request.expectedSecretRevision;
       if (writesSecret && expectedSecretRevision != existing?.revision) {
         if (!await _isLegacyMcpSecretUpdate(
@@ -557,7 +561,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
                     ),
                     existing: existing,
                   )
-                : request.clearSecret
+                : request.clearSecret || deletesServiceCredential
                 ? null
                 : request.secret
           : existing != null && existing.deletedAt == null

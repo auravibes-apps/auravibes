@@ -1,0 +1,11 @@
+class: WorkspaceModelSelectionToolSamplingPolicy
+table: workspace_model_selection_tool_sampling_policy
+fields:
+  workspaceId: int
+  connectionId: String
+  modelId: String
+  toolSamplingPolicy: String
+indexes:
+  workspace_model_selection_tool_sampling_policy_identity_idx:
+    fields: workspaceId, connectionId, modelId
+    unique: true

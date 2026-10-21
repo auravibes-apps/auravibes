@@ -190,6 +190,17 @@ void main() {
     final server = _resource('mcp-summary', serverData, kind: .mcpServer);
     WorkspacePatchOperation? savedOperation;
     final repository = CloudToolsRepository.forTesting(
+      read: ({required pages}) async => ReadWorkspaceStateResponse(
+        pages: [
+          WorkspaceResourcePage(
+            resourceKind: pages.single.resourceKind,
+            resources: [server],
+          ),
+        ],
+        currentSequence: 1,
+        events: const [],
+        requiresSnapshot: false,
+      ),
       patch: ({required requestId, required operations}) async {
         savedOperation = operations.single;
         final operation = operations.single;
@@ -209,17 +220,6 @@ void main() {
           sequence: 2,
         );
       },
-      read: ({required pages}) async => ReadWorkspaceStateResponse(
-        pages: [
-          WorkspaceResourcePage(
-            resourceKind: pages.single.resourceKind,
-            resources: [server],
-          ),
-        ],
-        currentSequence: 1,
-        events: const [],
-        requiresSnapshot: false,
-      ),
       create: ({
         required requestId,
         required name,

@@ -5,14 +5,26 @@ import 'dart:async';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
+import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
+import 'package:characters/characters.dart';
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart';
 
 const _messageContentCannotBeEmpty = 'Message content cannot be empty';
+const _messageBookmarkExcerptLength = 160;
+const _maxConversationMessageSearchQueryLength = 256;
+const _maxConversationMessageSearchPageSize = 50;
+const _maxConversationMessageSearchOffset = 10000;
+const _conversationMessageSearchContextBefore = 50;
+const _conversationMessageSearchContextLength = 100;
+const _minConversationMessageSearchExcerptLength = 120;
+const _maxConversationMessageSearchExcerptLength = 356;
 
 bool _isTerminalStatus(MessageTableStatus status) =>
     status == MessageTableStatus.sent || status == MessageTableStatus.error;
@@ -36,13 +48,25 @@ typedef _MessageMapping = ({
   List<MessageAttachmentEntity> attachments,
   String? conversationIdOverride,
   bool isForkReference,
+  MessageMetadataEntity? metadataOverride,
+});
+
+typedef _EffectiveMessageMappingContext = ({
+  String conversationId,
+  Map<String, List<MessageAttachmentEntity>> attachmentsByMessage,
+  Map<String, Set<String>> detachedToolCallIds,
 });
 
 class _MessageWatchController {
-  new(this._repository, this._conversationId);
+  new(
+    this._repository,
+    this._conversationId, {
+    this._includeTranscriptContext = false,
+  });
 
   final MessageRepository _repository;
   final String _conversationId;
+  final bool _includeTranscriptContext;
   final _controller = StreamController<List<MessageEntity>>();
   final _subscriptions = <StreamSubscription<dynamic>>[];
   var _pending = false;
@@ -86,7 +110,9 @@ class _MessageWatchController {
 
   Future<void> _emitOnce() async {
     try {
-      final messages = await _repository._getEffectiveMessages(_conversationId);
+      final messages = _includeTranscriptContext
+          ? await _repository._getEffectiveTranscriptMessages(_conversationId)
+          : await _repository._getEffectiveMessages(_conversationId);
       if (!_controller.isClosed) _controller.add(messages);
     } on Object catch (error, stackTrace) {
       if (!_controller.isClosed) _controller.addError(error, stackTrace);
@@ -112,10 +138,182 @@ class MessageRepository(
     String conversationId,
   ) => _getEffectiveMessages(conversationId);
 
+  Future<bool> bookmarkMessage({
+    required String workspaceId,
+    required String conversationId,
+    required String messageId,
+  }) => _setMessageBookmarked(
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+    messageId: messageId,
+    isBookmarked: true,
+  );
+
+  Future<bool> unbookmarkMessage({
+    required String workspaceId,
+    required String conversationId,
+    required String messageId,
+  }) => _setMessageBookmarked(
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+    messageId: messageId,
+    isBookmarked: false,
+  );
+
+  Stream<List<MessageBookmarkEntity>> watchBookmarkedMessages([
+    String? workspaceId,
+  ]) => _watchBookmarkedMessageRows(
+    _database,
+    workspaceId,
+  ).map(_messageBookmarksFromRows);
+
   /// Includes trusted context entries for continuation replay and fork history.
   Future<List<MessageEntity>> getTranscriptMessagesByConversation(
     String conversationId,
   ) => _getEffectiveTranscriptMessages(conversationId);
+
+  /// Watches the full transcript, including internal agent context entries.
+  Stream<List<MessageEntity>> watchTranscriptMessagesByConversation(
+    String conversationId,
+  ) => _watchTranscriptMessages(conversationId);
+}
+
+Stream<List<QueryRow>> _watchBookmarkedMessageRows(
+  AppDatabase database,
+  String? workspaceId,
+) {
+  final workspaceFilter = workspaceId == null
+      ? ''
+      : 'AND conversations.workspace_id = ?';
+
+  return database
+      .customSelect(
+        '''
+        SELECT conversations.workspace_id AS workspace_id,
+               messages.id AS message_id,
+               messages.conversation_id AS conversation_id,
+               messages.content AS content,
+               messages.created_at AS created_at,
+               conversations.title AS conversation_title,
+               workspaces.name AS workspace_name
+        FROM messages
+        INNER JOIN conversations
+          ON conversations.id = messages.conversation_id
+        INNER JOIN workspaces
+          ON workspaces.id = conversations.workspace_id
+        WHERE messages.is_bookmarked = 1
+          AND workspaces.type = 'local'
+          $workspaceFilter
+        ORDER BY messages.created_at DESC, messages.id DESC
+        ''',
+        variables: [if (workspaceId != null) Variable<String>(workspaceId)],
+        readsFrom: {
+          database.messages,
+          database.conversations,
+          database.workspaces,
+        },
+      )
+      .watch();
+}
+
+List<MessageBookmarkEntity> _messageBookmarksFromRows(List<QueryRow> rows) =>
+    rows.map(_messageBookmarkFromRow).toList(growable: false);
+
+MessageBookmarkEntity _messageBookmarkFromRow(QueryRow row) =>
+    MessageBookmarkEntity(
+      details: _messageBookmarkDetailsFromRow(row),
+      workspace: _messageBookmarkWorkspaceFromRow(row),
+    );
+
+MessageBookmarkDetails _messageBookmarkDetailsFromRow(QueryRow row) =>
+    MessageBookmarkDetails(
+      messageId: row.read<String>('message_id'),
+      conversationId: row.read<String>('conversation_id'),
+      excerpt: _messageBookmarkExcerpt(row.read<String>('content')),
+      workspaceName: row.read<String>('workspace_name'),
+      createdAt: row.read<DateTime>('created_at'),
+      conversationTitle: row.read<String>('conversation_title'),
+    );
+
+MessageBookmarkWorkspace _messageBookmarkWorkspaceFromRow(QueryRow row) =>
+    MessageBookmarkWorkspace(workspaceId: row.read<String>('workspace_id'));
+
+String _messageBookmarkExcerpt(String content) {
+  final trimmed = content.trim();
+  final runes = trimmed.runes;
+  if (runes.length <= _messageBookmarkExcerptLength) return trimmed;
+
+  final excerpt = String.fromCharCodes(
+    runes.take(_messageBookmarkExcerptLength),
+  );
+
+  return '$excerpt...';
+}
+
+extension on MessageRepository {
+  Future<bool> _setMessageBookmarked({
+    required String workspaceId,
+    required String conversationId,
+    required String messageId,
+    required bool isBookmarked,
+  }) async {
+    if (!await _isBookmarkableMessage(workspaceId, conversationId, messageId)) {
+      return false;
+    }
+
+    return await _database.messageDao.setBookmarked(
+      messageId,
+      isBookmarked: isBookmarked,
+    );
+  }
+
+  Future<bool> _isBookmarkableMessage(
+    String workspaceId,
+    String conversationId,
+    String messageId,
+  ) async {
+    if (!await _isVisibleBookmarkableMessage(
+      workspaceId,
+      conversationId,
+      messageId,
+    )) {
+      return false;
+    }
+
+    final sourceMessage = await _database.messageDao.getMessageById(messageId);
+    if (sourceMessage == null) return false;
+
+    return await _sourceConversationBelongsToWorkspace(
+      workspaceId,
+      sourceMessage.conversationId,
+    );
+  }
+
+  Future<bool> _isVisibleBookmarkableMessage(
+    String workspaceId,
+    String conversationId,
+    String messageId,
+  ) async {
+    final conversation = await _database.conversationDao.getConversationById(
+      conversationId,
+    );
+    if (conversation?.workspaceId != workspaceId) return false;
+
+    final visibleMessage = (await _getEffectiveMessages(conversationId))
+        .firstWhereOrNull((message) => message.id == messageId);
+
+    return visibleMessage != null && visibleMessage.isBookmarkEligible;
+  }
+
+  Future<bool> _sourceConversationBelongsToWorkspace(
+    String workspaceId,
+    String conversationId,
+  ) async {
+    final sourceConversation = await _database.conversationDao
+        .getConversationById(conversationId);
+
+    return sourceConversation?.workspaceId == workspaceId;
+  }
 }
 
 mixin _MessageRepositoryReadApi {
@@ -146,6 +344,19 @@ mixin _MessageRepositoryQueryApi {
   ) =>
       MessageRepositoryQueryOperations(this as MessageRepository)
           .getMessagesByConversationPaginated(conversationId, limit, offset);
+
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    int offset = 0,
+  }) => MessageRepositorySearchOperations(this as MessageRepository)
+      .searchMessages(
+        query: query,
+        workspaceIds: workspaceIds,
+        limit: limit,
+        offset: offset,
+      );
 
   Future<List<MessageEntity>> getMessagesByType(
     String conversationId,
@@ -267,6 +478,19 @@ extension on MessageRepository {
     return watcher.stream.transform(_messageWatchTransformer(conversationId));
   }
 
+  Stream<List<MessageEntity>> _watchTranscriptMessages(String conversationId) {
+    final watcher = _MessageWatchController(
+      this,
+      conversationId,
+      includeTranscriptContext: true,
+    );
+    watcher
+      .._controller.onListen = watcher.listen
+      .._controller.onCancel = watcher.cancel;
+
+    return watcher.stream.transform(_messageWatchTransformer(conversationId));
+  }
+
   Future<List<({MessagesTable table, bool isForkReference})>>
   _effectiveMessageRows(String conversationId) async {
     final conversation = await _database.conversationDao.getConversationById(
@@ -350,20 +574,99 @@ extension on MessageRepository {
     String conversationId,
   ) async {
     if (rows.isEmpty) return [];
+    final detachedToolCallIds = await _detachedForkToolCallIds(rows);
+    final attachmentsByMessage = await _attachmentsByMessageForRows(rows);
+    final context = (
+      conversationId: conversationId,
+      attachmentsByMessage: attachmentsByMessage,
+      detachedToolCallIds: detachedToolCallIds,
+    );
+
+    return [for (final row in rows) _mapEffectiveRow(row, context)];
+  }
+
+  Future<Map<String, List<MessageAttachmentEntity>>>
+  _attachmentsByMessageForRows(
+    List<({MessagesTable table, bool isForkReference})> rows,
+  ) async {
     final attachments = await _messageAttachmentRows(
       rows.map((row) => row.table).toList(),
     );
-    final attachmentsByMessage = _attachmentsByMessage(attachments);
 
-    return [
-      for (final row in rows)
-        _mapToMessage((
-          table: row.table,
-          attachments: attachmentsByMessage[row.table.id] ?? [],
-          conversationIdOverride: conversationId,
-          isForkReference: row.isForkReference,
-        )),
-    ];
+    return _attachmentsByMessage(attachments);
+  }
+
+  MessageEntity _mapEffectiveRow(
+    ({MessagesTable table, bool isForkReference}) row,
+    _EffectiveMessageMappingContext context,
+  ) => _mapToMessage((
+    table: row.table,
+    attachments: context.attachmentsByMessage[row.table.id] ?? [],
+    conversationIdOverride: context.conversationId,
+    isForkReference: row.isForkReference,
+    metadataOverride: _forkSafeMetadata(row, context.detachedToolCallIds),
+  ));
+
+  Future<Map<String, Set<String>>> _detachedForkToolCallIds(
+    List<({MessagesTable table, bool isForkReference})> rows,
+  ) async {
+    final sourceConversationIds = _forkSourceConversationIds(rows);
+    if (sourceConversationIds.isEmpty) return const {};
+    final activeWork = await _activeBackgroundWorkForConversations(
+      sourceConversationIds,
+    );
+
+    return _groupToolCallIdsByConversation(activeWork);
+  }
+
+  Set<String> _forkSourceConversationIds(
+    List<({MessagesTable table, bool isForkReference})> rows,
+  ) => rows
+      .where((row) => row.isForkReference)
+      .map((row) => row.table.conversationId)
+      .toSet();
+
+  Future<List<BackgroundWorkTable>> _activeBackgroundWorkForConversations(
+    Set<String> conversationIds,
+  ) => (_database.select(
+    _database.backgroundWorks,
+  )..where((table) => table.conversationId.isIn(conversationIds))).get();
+
+  Map<String, Set<String>> _groupToolCallIdsByConversation(
+    List<BackgroundWorkTable> activeWork,
+  ) {
+    final activeIdsByConversation = <String, Set<String>>{};
+    for (final work in activeWork) {
+      final _ = activeIdsByConversation
+          .putIfAbsent(work.conversationId, () => <String>{})
+          .add(work.toolCallId);
+    }
+
+    return activeIdsByConversation;
+  }
+
+  MessageMetadataEntity? _forkSafeMetadata(
+    ({MessagesTable table, bool isForkReference}) row,
+    Map<String, Set<String>> detachedToolCallIds,
+  ) {
+    if (!row.isForkReference) return null;
+    final metadata = MessageMetadataEntity.fromJsonString(row.table.metadata);
+    final detachedIds = detachedToolCallIds[row.table.conversationId];
+    if (metadata == null || detachedIds == null) return null;
+
+    return _metadataWithoutDetachedCalls(metadata, detachedIds);
+  }
+
+  MessageMetadataEntity? _metadataWithoutDetachedCalls(
+    MessageMetadataEntity metadata,
+    Set<String> detachedIds,
+  ) {
+    final toolCalls = metadata.toolCalls
+        .where((toolCall) => !detachedIds.contains(toolCall.id))
+        .toList();
+    if (toolCalls.length == metadata.toolCalls.length) return null;
+
+    return metadata.copyWith(toolCalls: toolCalls);
   }
 
   StreamTransformer<List<MessageEntity>, List<MessageEntity>>
@@ -503,6 +806,83 @@ extension MessageRepositoryQueryOperations on MessageRepository {
   }
 }
 
+extension MessageRepositorySearchOperations on MessageRepository {
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required Set<String> workspaceIds,
+    required int limit,
+    int offset = 0,
+  }) async {
+    final normalizedQuery = query.trim();
+    if (!_isValidSearchRequest(normalizedQuery, workspaceIds, limit, offset)) {
+      return const [];
+    }
+
+    final rows = await _database.messageDao.searchMessages(
+      query: normalizedQuery,
+      workspaceIds: workspaceIds,
+      limit: limit,
+      offset: offset,
+    );
+
+    return [for (final row in rows) _searchResultFromRow(row, normalizedQuery)];
+  }
+
+  bool _isValidSearchRequest(
+    String query,
+    Set<String> workspaceIds,
+    int limit,
+    int offset,
+  ) =>
+      query.isNotEmpty &&
+      query.length <= _maxConversationMessageSearchQueryLength &&
+      workspaceIds.isNotEmpty &&
+      limit >= 1 &&
+      limit <= _maxConversationMessageSearchPageSize &&
+      offset >= 0 &&
+      offset <= _maxConversationMessageSearchOffset;
+
+  ConversationMessageSearchResult _searchResultFromRow(
+    QueryRow row,
+    String query,
+  ) {
+    final conversation = _searchConversationFields(row);
+    final message = _searchMessageFields(row, query);
+
+    return ConversationMessageSearchResult(
+      workspaceId: conversation.workspaceId,
+      workspaceName: conversation.workspaceName,
+      conversationId: conversation.conversationId,
+      conversationTitle: conversation.conversationTitle,
+      messageId: message.messageId,
+      role: message.role,
+      createdAt: message.createdAt,
+      excerpt: message.excerpt,
+    );
+  }
+
+  ({
+    String workspaceId,
+    String workspaceName,
+    String conversationId,
+    String conversationTitle,
+  })
+  _searchConversationFields(QueryRow row) => (
+    workspaceId: row.read<String>('workspace_id'),
+    workspaceName: row.read<String>('workspace_name'),
+    conversationId: row.read<String>('conversation_id'),
+    conversationTitle: row.read<String>('conversation_title'),
+  );
+
+  ({String messageId, String role, DateTime createdAt, String excerpt})
+  _searchMessageFields(QueryRow row, String query) => (
+    messageId: row.read<String>('message_id'),
+    role: row.read<bool>('is_user') ? 'user' : 'assistant',
+    createdAt: row.read<DateTime>('created_at'),
+    excerpt: _searchExcerpt(row.read<String>('content'), query),
+  );
+}
+
 extension on MessageRepository {
   Future<void> _promoteAttachments(
     Iterable<MessageAttachmentToCreate> attachments,
@@ -553,6 +933,106 @@ extension MessageRepositoryMutationOperations on MessageRepository {
     if (updatedMessage == null) throw MessageNotFoundException(id);
 
     return await _mapToMessageWithAttachments(updatedMessage);
+  }
+
+  Future<MessageEntity> patchMessageWithAttachments(
+    MessagePatchWithAttachmentsRequest request,
+  ) => _patchMessageWithAttachments(this, request);
+}
+
+typedef MessagePatchWithAttachmentsRequest = ({
+  String id,
+  MessagePatch patch,
+  String conversationId,
+  List<MessageAttachmentToCreate> attachments,
+});
+
+Future<MessageEntity> _patchMessageWithAttachments(
+  MessageRepository repository,
+  MessagePatchWithAttachmentsRequest request,
+) async {
+  _validateToolResultAttachments(request.attachments);
+  repository._validateMessagePatch(request.patch);
+  final promotedAttachments = <MessageAttachmentToCreate>[];
+  final updatedMessage = await repository._promoteAndPatchToolCallAttachments(
+    request,
+    promotedAttachments,
+  );
+  await repository._deleteDraftAttachmentFiles(request.attachments);
+
+  return await repository._mapToMessageWithAttachments(updatedMessage);
+}
+
+void _validateToolResultAttachments(
+  List<MessageAttachmentToCreate> attachments,
+) {
+  final invalid =
+      attachments.isEmpty ||
+      attachments.any(
+        (attachment) => attachment.toolCallId?.isNotEmpty != true,
+      );
+  if (invalid) {
+    throw const MessageValidationException(
+      'Tool result attachments require a matching tool call ID.',
+    );
+  }
+}
+
+extension on MessageRepository {
+  Future<MessagesTable> _promoteAndPatchToolCallAttachments(
+    MessagePatchWithAttachmentsRequest request,
+    List<MessageAttachmentToCreate> promotedAttachments,
+  ) async {
+    try {
+      await _promoteAttachments(request.attachments, promotedAttachments);
+
+      return await _database.transaction(
+        () => _patchAndInsertToolCallAttachments(request, promotedAttachments),
+      );
+    } on Exception {
+      await _deleteDraftAttachmentFiles(promotedAttachments);
+      rethrow;
+    }
+  }
+
+  Future<MessagesTable> _patchAndInsertToolCallAttachments(
+    MessagePatchWithAttachmentsRequest request,
+    List<MessageAttachmentToCreate> promotedAttachments,
+  ) async {
+    final updated = await _patchMessageInTransaction(
+      request.id,
+      request.patch,
+      request.conversationId,
+    );
+    if (updated == null) throw MessageNotFoundException(request.id);
+    _validateAttachmentToolCallReferences(request.attachments, updated);
+    await _insertAttachments(updated.id, promotedAttachments);
+
+    return updated;
+  }
+
+  void _validateAttachmentToolCallReferences(
+    List<MessageAttachmentToCreate> attachments,
+    MessagesTable updated,
+  ) {
+    final metadata = MessageMetadataEntity.fromJsonString(updated.metadata);
+    if (metadata == null ||
+        !_allAttachmentToolCallsExist(attachments, metadata.toolCalls)) {
+      throw const MessageValidationException(
+        'Tool result attachment references an unknown tool call.',
+      );
+    }
+  }
+
+  bool _allAttachmentToolCallsExist(
+    List<MessageAttachmentToCreate> attachments,
+    List<MessageToolCallEntity> toolCalls,
+  ) {
+    final toolCallIds = toolCalls.map((toolCall) => toolCall.id).toSet();
+
+    return attachments.every(
+      (attachment) => toolCallIds.contains(attachment.toolCallId),
+    );
   }
 }
 
@@ -1016,25 +1496,35 @@ MessageToolCallEntity _mergeToolCallOutput(
   MessageToolCallEntity current,
   MessageToolCallEntity incoming,
 ) {
-  if (incoming.responseRaw == null) {
-    return merged.copyWith(
-      responseRaw: current.responseRaw,
-      responseContextRaw:
-          incoming.responseContextRaw ?? current.responseContextRaw,
-      outputTruncated: current.outputTruncated,
-      originalResponseBytes: current.originalResponseBytes,
-      fullOutputForContext: current.fullOutputForContext,
-    );
-  }
-
-  return merged.copyWith(
-    responseRaw: incoming.responseRaw,
-    responseContextRaw: incoming.responseContextRaw,
-    outputTruncated: incoming.outputTruncated,
-    originalResponseBytes: incoming.originalResponseBytes,
-    fullOutputForContext: incoming.fullOutputForContext,
-  );
+  return incoming.responseRaw == null
+      ? _mergeMissingToolCallOutput(merged, current, incoming)
+      : _replaceToolCallOutput(merged, incoming);
 }
+
+MessageToolCallEntity _mergeMissingToolCallOutput(
+  MessageToolCallEntity merged,
+  MessageToolCallEntity current,
+  MessageToolCallEntity incoming,
+) => merged.copyWith(
+  responseRaw: current.responseRaw,
+  appData: incoming.appData ?? current.appData,
+  responseContextRaw: incoming.responseContextRaw ?? current.responseContextRaw,
+  outputTruncated: current.outputTruncated,
+  originalResponseBytes: current.originalResponseBytes,
+  fullOutputForContext: current.fullOutputForContext,
+);
+
+MessageToolCallEntity _replaceToolCallOutput(
+  MessageToolCallEntity merged,
+  MessageToolCallEntity incoming,
+) => merged.copyWith(
+  responseRaw: incoming.responseRaw,
+  appData: incoming.appData,
+  responseContextRaw: incoming.responseContextRaw,
+  outputTruncated: incoming.outputTruncated,
+  originalResponseBytes: incoming.originalResponseBytes,
+  fullOutputForContext: incoming.fullOutputForContext,
+);
 
 ToolCallResultStatus? _mergeToolCallResultStatus(
   ToolCallResultStatus? current,
@@ -1170,6 +1660,7 @@ extension on MessageRepository {
           attachments: attachmentsByMessage[message.id] ?? [],
           conversationIdOverride: null,
           isForkReference: false,
+          metadataOverride: null,
         )),
       )
       .toList();
@@ -1253,7 +1744,9 @@ extension on MessageRepository {
     MessageEntity message,
     _MessageMapping mapping,
   ) => message.copyWith(
-    metadata: .fromJsonString(mapping.table.metadata),
+    metadata:
+        mapping.metadataOverride ??
+        MessageMetadataEntity.fromJsonString(mapping.table.metadata),
     attachments: mapping.attachments,
     isForkReference: mapping.isForkReference,
   );
@@ -1272,6 +1765,7 @@ extension on MessageRepository {
       sizeBytes: row.sizeBytes,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      toolCallId: row.toolCallId,
     );
   }
 
@@ -1313,6 +1807,7 @@ extension MessageRepositoryCompanionMappings on MessageRepository {
   ) {
     return MessageAttachmentsCompanion(
       messageId: .new(messageId),
+      toolCallId: .absentIfNull(attachment.toolCallId),
       localPath: .new(attachment.localPath),
       fileName: .new(attachment.fileName),
       displayName: .new(attachment.displayName),
@@ -1435,4 +1930,56 @@ class MessageNotFoundException extends MessageException {
 
   /// ID of the message that was not found.
   final String messageId;
+}
+
+String _searchExcerpt(String content, String query) {
+  final contentCharacters = content.characters;
+  final start = _searchExcerptStart(contentCharacters, content, query);
+  final excerptLength = _searchExcerptLength(query);
+  final end = _searchExcerptEnd(contentCharacters, start, excerptLength);
+
+  return _composeSearchExcerpt(contentCharacters, start, end);
+}
+
+int _searchExcerptLength(String query) =>
+    (query.characters.length + _conversationMessageSearchContextLength).clamp(
+      _minConversationMessageSearchExcerptLength,
+      _maxConversationMessageSearchExcerptLength,
+    );
+
+int _searchExcerptEnd(
+  Characters contentCharacters,
+  int start,
+  int excerptLength,
+) {
+  final end = start + excerptLength;
+
+  return end < contentCharacters.length ? end : contentCharacters.length;
+}
+
+String _composeSearchExcerpt(Characters contentCharacters, int start, int end) {
+  final excerpt = contentCharacters.skip(start).take(end - start);
+  final prefix = start > 0 ? '...' : '';
+  final suffix = end < contentCharacters.length ? '...' : '';
+
+  return '$prefix$excerpt$suffix';
+}
+
+int _searchExcerptStart(
+  Characters contentCharacters,
+  String content,
+  String query,
+) {
+  final matchOffset = content.toLowerCase().indexOf(query.toLowerCase());
+  var lowerOffset = 0;
+  var matchCharacterIndex = 0;
+  for (final character in contentCharacters) {
+    if (lowerOffset >= matchOffset) break;
+    lowerOffset += character.toLowerCase().length;
+    matchCharacterIndex++;
+  }
+
+  return matchCharacterIndex > _conversationMessageSearchContextBefore
+      ? matchCharacterIndex - _conversationMessageSearchContextBefore
+      : 0;
 }

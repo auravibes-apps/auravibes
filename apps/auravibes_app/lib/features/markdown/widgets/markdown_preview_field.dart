@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/markdown/widgets/empty_markdown_preview.dart';
+import 'package:auravibes_app/features/markdown/widgets/markdown_preview.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:material_ui/material_ui.dart';
@@ -76,7 +77,9 @@ class const _MarkdownPreviewHeader({
       Expanded(
         child: AuraRow(
           children: [
-            AuraText(child: TextLocale(titleKey), style: .heading6),
+            Flexible(
+              child: AuraText(child: TextLocale(titleKey), style: .heading6),
+            ),
             if (isRequired) const AuraText(child: Text('*'), tint: .error),
           ],
           spacing: .xs,
@@ -124,6 +127,6 @@ class const _MarkdownPreviewValue({
   Widget build(BuildContext context) {
     if (text.trim().isEmpty) return EmptyMarkdownPreview(label: emptyKey);
 
-    return GptMarkdown(text);
+    return MarkdownPreview(text: text);
   }
 }

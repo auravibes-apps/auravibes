@@ -606,11 +606,25 @@ void main() {
         serverUrl: 'https://example.com/sse',
         redirectUrl: 'https://example.com/callback',
       );
+      var metadataRequests = 0;
+      final metadataClient = MockClient((_) async {
+        metadataRequests++;
+
+        return Response('{}', 404);
+      });
+      addTearDown(metadataClient.close);
 
       await runWithClient(
         () async {
-          final result = await OAuthDiscoveryService.discoverOAuth(registrer);
+          final result = await OAuthDiscoveryService.discoverOAuth(
+            registrer,
+            metadataOptions: (
+              client: metadataClient,
+              lookup: (_) async => [InternetAddress('8.8.8.8')],
+            ),
+          );
           expect(result, isNotNull);
+          expect(metadataRequests, greaterThan(0));
           expect(
             (result ?? fail('Expected result to be non-null')).authorizationUrl,
             'https://auth.example.com/auth',

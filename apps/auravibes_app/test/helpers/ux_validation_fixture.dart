@@ -26,6 +26,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 /// Local persisted objects and production routes; no remote credential calls.
 class UxValidationFixture {
   new _(
@@ -50,9 +52,17 @@ class UxValidationFixture {
   final String chatId;
   final String childId;
 
+  static AppDatabase? _database;
+
+  static Future<void> closeDatabase() async {
+    await _database?.close();
+    _database = null;
+  }
+
   static Future<UxValidationFixture> create({bool empty = false}) async {
-    final database = AppDatabase(connection: NativeDatabase.memory());
-    addTearDown(database.close);
+    final isNewDatabase = _database == null;
+    final database = _database ??= .new(connection: NativeDatabase.memory());
+    if (!isNewDatabase) await clearAppDatabase(database);
     if (empty) {
       return UxValidationFixture._(database, '', '', '', '', '', '', '', '');
     }
@@ -187,6 +197,7 @@ class UxValidationFixture {
     tester.view.physicalSize = size;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    GoRouter.optionURLReflectsImperativeAPIs = true;
     final router = GoRouter(routes: $appRoutes, initialLocation: location);
     addTearDown(router.dispose);
     final session =
@@ -218,6 +229,7 @@ class UxValidationFixture {
               .overrideWith((ref) => Stream.value({})),
         ...overrides.cast(),
       ],
+      retry: (_, _) => null,
     );
     addTearDown(container.dispose);
     final effectiveRouter = useProductionRouter
@@ -252,13 +264,22 @@ class UxValidationFixture {
   }
 
   Future<void> settle(WidgetTester tester) async {
+    // Preserve the prior minimum wait while collapsing five virtual frames.
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    if (find.byType(AuraSpinner).evaluate().isEmpty &&
+        !tester.binding.hasScheduledFrame) {
+      return;
+    }
+
     for (var attempt = 0; attempt < 100; attempt++) {
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 10)),
       );
       await tester.pump(const Duration(milliseconds: 100));
-      if (attempt >= 4 &&
-          find.byType(AuraSpinner).evaluate().isEmpty &&
+      if (find.byType(AuraSpinner).evaluate().isEmpty &&
           !tester.binding.hasScheduledFrame) {
         return;
       }

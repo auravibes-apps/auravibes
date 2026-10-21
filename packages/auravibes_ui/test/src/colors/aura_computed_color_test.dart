@@ -18,6 +18,96 @@ void main() {
       expect(c.hue, 200);
     });
 
+    test('gamut mapping preserves an in-gamut request', () {
+      final color = AuraComputedColor.gamutMapped(
+        hue: 180,
+        lightness: 0.5,
+        chroma: 0.03,
+      );
+      expect(color.chroma, 0.03);
+      expect(color.toOklab().toLrgb().isValid, isTrue);
+    });
+
+    test('gamut search remains bounded for oversized finite chroma', () {
+      final color = AuraComputedColor.gamutMapped(
+        hue: 180,
+        lightness: 0.5,
+        chroma: 1e100,
+      );
+      expect(color.chroma, greaterThan(0));
+      expect(color.toOklab().toLrgb().isValid, isTrue);
+    });
+
+    test('gamut mapping preserves L/hue and caps C per hue', () {
+      final teal = AuraComputedColor.gamutMapped(
+        hue: 180,
+        lightness: 0.9,
+        chroma: 0.2,
+      );
+      final red = AuraComputedColor.gamutMapped(
+        hue: 30,
+        lightness: 0.9,
+        chroma: 0.2,
+      );
+      expect(teal.lightness, 0.9);
+      expect(teal.hue, 180);
+      expect(teal.chroma, lessThan(0.2));
+      expect(teal.chroma, isNot(closeTo(red.chroma, 0.001)));
+      expect(teal.toOklab().toLrgb().isValid, isTrue);
+      expect(red.toOklab().toLrgb().isValid, isTrue);
+    });
+
+    test('gamut mapping normalizes hue and handles black/white', () {
+      expect(
+        AuraComputedColor.gamutMapped(
+          hue: -60,
+          lightness: 0.5,
+          chroma: 0.1,
+        ).hue,
+        300,
+      );
+      expect(
+        AuraComputedColor.gamutMapped(
+          hue: 360,
+          lightness: 0.5,
+          chroma: 0.1,
+        ).hue,
+        0,
+      );
+      for (final lightness in [0.0, 1.0]) {
+        expect(
+          AuraComputedColor.gamutMapped(
+            hue: 180,
+            lightness: lightness,
+            chroma: 0.2,
+          ).chroma,
+          0,
+        );
+      }
+    });
+
+    test('gamut mapping rejects invalid components', () {
+      const invalid = [
+        (hue: double.nan, lightness: 0.5, chroma: 0.1),
+        (hue: double.infinity, lightness: 0.5, chroma: 0.1),
+        (hue: 0.0, lightness: -0.1, chroma: 0.1),
+        (hue: 0.0, lightness: 1.1, chroma: 0.1),
+        (hue: 0.0, lightness: double.nan, chroma: 0.1),
+        (hue: 0.0, lightness: 0.5, chroma: -0.1),
+        (hue: 0.0, lightness: 0.5, chroma: double.infinity),
+      ];
+      for (final color in invalid) {
+        expect(
+          () => AuraComputedColor.gamutMapped(
+            hue: color.hue,
+            lightness: color.lightness,
+            chroma: color.chroma,
+          ),
+          throwsArgumentError,
+        );
+      }
+    });
+
     test('inherits OKLCHColor.toColor round-trip', () {
       final c = AuraComputedColor(hue: 180, brightness: .dark);
       expect(c.toColor(), isA<Color>());

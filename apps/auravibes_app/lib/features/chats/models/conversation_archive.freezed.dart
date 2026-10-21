@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ConversationArchive {
 
- String get title; DateTime get createdAt; DateTime get updatedAt; List<ConversationArchiveMessage> get messages; String? get modelLabel; ConversationArchiveAgentContext? get agentContext;
+ String get title; DateTime get createdAt; DateTime get updatedAt; List<ConversationArchiveMessage> get messages; String? get modelLabel; ConversationToolAccessMode get toolAccessMode; ConversationArchiveAgentContext? get agentContext;
 /// Create a copy of ConversationArchive
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $ConversationArchiveCopyWith<ConversationArchive> get copyWith => _$Conversation
 @override
 bool operator ==(Object other) {
   final _this = this as ConversationArchive;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchive&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&const DeepCollectionEquality().equals(other.messages, _this.messages)&&(identical(other.modelLabel, _this.modelLabel) || other.modelLabel == _this.modelLabel)&&(identical(other.agentContext, _this.agentContext) || other.agentContext == _this.agentContext));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchive&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&const DeepCollectionEquality().equals(other.messages, _this.messages)&&(identical(other.modelLabel, _this.modelLabel) || other.modelLabel == _this.modelLabel)&&(identical(other.toolAccessMode, _this.toolAccessMode) || other.toolAccessMode == _this.toolAccessMode)&&(identical(other.agentContext, _this.agentContext) || other.agentContext == _this.agentContext));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ConversationArchive;
-  return Object.hash(runtimeType,_this.title,_this.createdAt,_this.updatedAt,const DeepCollectionEquality().hash(_this.messages),_this.modelLabel,_this.agentContext);
+  return Object.hash(runtimeType,_this.title,_this.createdAt,_this.updatedAt,const DeepCollectionEquality().hash(_this.messages),_this.modelLabel,_this.toolAccessMode,_this.agentContext);
 }
 
 @override
 String toString() {
   final _this = this as ConversationArchive;
-  return 'ConversationArchive(title: ${_this.title}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, messages: ${_this.messages}, modelLabel: ${_this.modelLabel}, agentContext: ${_this.agentContext})';
+  return 'ConversationArchive(title: ${_this.title}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, messages: ${_this.messages}, modelLabel: ${_this.modelLabel}, toolAccessMode: ${_this.toolAccessMode}, agentContext: ${_this.agentContext})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $ConversationArchiveCopyWith<$Res>  {
   factory $ConversationArchiveCopyWith(ConversationArchive value, $Res Function(ConversationArchive) _then) = _$ConversationArchiveCopyWithImpl;
 @useResult
 $Res call({
- String title, DateTime createdAt, DateTime updatedAt, List<ConversationArchiveMessage> messages, String? modelLabel, ConversationArchiveAgentContext? agentContext
+ String title, DateTime createdAt, DateTime updatedAt, List<ConversationArchiveMessage> messages, String? modelLabel, ConversationToolAccessMode toolAccessMode, ConversationArchiveAgentContext? agentContext
 });
 
 
@@ -68,14 +68,15 @@ class _$ConversationArchiveCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchive
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? messages = null,Object? modelLabel = freezed,Object? agentContext = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? messages = null,Object? modelLabel = freezed,Object? toolAccessMode = null,Object? agentContext = freezed,}) {
   return _then(ConversationArchive(
 title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,messages: null == messages ? _self.messages : messages // ignore: cast_nullable_to_non_nullable
 as List<ConversationArchiveMessage>,modelLabel: freezed == modelLabel ? _self.modelLabel : modelLabel // ignore: cast_nullable_to_non_nullable
-as String?,agentContext: freezed == agentContext ? _self.agentContext : agentContext // ignore: cast_nullable_to_non_nullable
+as String?,toolAccessMode: null == toolAccessMode ? _self.toolAccessMode : toolAccessMode // ignore: cast_nullable_to_non_nullable
+as ConversationToolAccessMode,agentContext: freezed == agentContext ? _self.agentContext : agentContext // ignore: cast_nullable_to_non_nullable
 as ConversationArchiveAgentContext?,
   ));
 }
@@ -161,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel,  ConversationArchiveAgentContext? agentContext)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel,  ConversationToolAccessMode toolAccessMode,  ConversationArchiveAgentContext? agentContext)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationArchive() when $default != null:
-return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel,_that.agentContext);case _:
+return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel,_that.toolAccessMode,_that.agentContext);case _:
   return orElse();
 
 }
@@ -182,10 +183,10 @@ return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel,  ConversationArchiveAgentContext? agentContext)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel,  ConversationToolAccessMode toolAccessMode,  ConversationArchiveAgentContext? agentContext)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchive():
-return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel,_that.agentContext);case _:
+return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel,_that.toolAccessMode,_that.agentContext);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +203,10 @@ return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel,  ConversationArchiveAgentContext? agentContext)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel,  ConversationToolAccessMode toolAccessMode,  ConversationArchiveAgentContext? agentContext)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchive() when $default != null:
-return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel,_that.agentContext);case _:
+return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel,_that.toolAccessMode,_that.agentContext);case _:
   return null;
 
 }
@@ -217,7 +218,7 @@ return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that
 
 
 class _ConversationArchive implements ConversationArchive {
-  const _ConversationArchive({required this.title, required this.createdAt, required this.updatedAt, required  List<ConversationArchiveMessage> messages, this.modelLabel, this.agentContext}): _messages = messages;
+  const _ConversationArchive({required this.title, required this.createdAt, required this.updatedAt, required  List<ConversationArchiveMessage> messages, this.modelLabel, this.toolAccessMode = ConversationToolAccessMode.defaultMode, this.agentContext}): _messages = messages;
   
 
 @override final  String title;
@@ -231,6 +232,7 @@ class _ConversationArchive implements ConversationArchive {
 }
 
 @override final  String? modelLabel;
+@override@JsonKey() final  ConversationToolAccessMode toolAccessMode;
 @override final  ConversationArchiveAgentContext? agentContext;
 
 /// Create a copy of ConversationArchive
@@ -243,18 +245,18 @@ _$ConversationArchiveCopyWith<_ConversationArchive> get copyWith => __$Conversat
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchive&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.messages, _messages)&&(identical(other.modelLabel, modelLabel) || other.modelLabel == modelLabel)&&(identical(other.agentContext, agentContext) || other.agentContext == agentContext));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchive&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.messages, _messages)&&(identical(other.modelLabel, modelLabel) || other.modelLabel == modelLabel)&&(identical(other.toolAccessMode, toolAccessMode) || other.toolAccessMode == toolAccessMode)&&(identical(other.agentContext, agentContext) || other.agentContext == agentContext));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,title,createdAt,updatedAt,const DeepCollectionEquality().hash(_messages),modelLabel,agentContext);
+    return Object.hash(runtimeType,title,createdAt,updatedAt,const DeepCollectionEquality().hash(_messages),modelLabel,toolAccessMode,agentContext);
 }
 
 @override
 String toString() {
-    return 'ConversationArchive(title: $title, createdAt: $createdAt, updatedAt: $updatedAt, messages: $messages, modelLabel: $modelLabel, agentContext: $agentContext)';
+    return 'ConversationArchive(title: $title, createdAt: $createdAt, updatedAt: $updatedAt, messages: $messages, modelLabel: $modelLabel, toolAccessMode: $toolAccessMode, agentContext: $agentContext)';
 }
 
 
@@ -265,7 +267,7 @@ abstract mixin class _$ConversationArchiveCopyWith<$Res> implements $Conversatio
   factory _$ConversationArchiveCopyWith(_ConversationArchive value, $Res Function(_ConversationArchive) _then) = __$ConversationArchiveCopyWithImpl;
 @override @useResult
 $Res call({
- String title, DateTime createdAt, DateTime updatedAt, List<ConversationArchiveMessage> messages, String? modelLabel, ConversationArchiveAgentContext? agentContext
+ String title, DateTime createdAt, DateTime updatedAt, List<ConversationArchiveMessage> messages, String? modelLabel, ConversationToolAccessMode toolAccessMode, ConversationArchiveAgentContext? agentContext
 });
 
 
@@ -282,15 +284,283 @@ class __$ConversationArchiveCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchive
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? messages = null,Object? modelLabel = freezed,Object? agentContext = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? messages = null,Object? modelLabel = freezed,Object? toolAccessMode = null,Object? agentContext = freezed,}) {
   return _then(_ConversationArchive(
 title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,messages: null == messages ? _self._messages : messages // ignore: cast_nullable_to_non_nullable
 as List<ConversationArchiveMessage>,modelLabel: freezed == modelLabel ? _self.modelLabel : modelLabel // ignore: cast_nullable_to_non_nullable
-as String?,agentContext: freezed == agentContext ? _self.agentContext : agentContext // ignore: cast_nullable_to_non_nullable
+as String?,toolAccessMode: null == toolAccessMode ? _self.toolAccessMode : toolAccessMode // ignore: cast_nullable_to_non_nullable
+as ConversationToolAccessMode,agentContext: freezed == agentContext ? _self.agentContext : agentContext // ignore: cast_nullable_to_non_nullable
 as ConversationArchiveAgentContext?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+mixin _$ConversationArchiveImportPreview {
+
+ String get title; bool get hasIncompleteAgentContext;
+/// Create a copy of ConversationArchiveImportPreview
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationArchiveImportPreviewCopyWith<ConversationArchiveImportPreview> get copyWith => _$ConversationArchiveImportPreviewCopyWithImpl<ConversationArchiveImportPreview>(this as ConversationArchiveImportPreview, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as ConversationArchiveImportPreview;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchiveImportPreview&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.hasIncompleteAgentContext, _this.hasIncompleteAgentContext) || other.hasIncompleteAgentContext == _this.hasIncompleteAgentContext));
+}
+
+
+@override
+int get hashCode {
+  final _this = this as ConversationArchiveImportPreview;
+  return Object.hash(runtimeType,_this.title,_this.hasIncompleteAgentContext);
+}
+
+@override
+String toString() {
+  final _this = this as ConversationArchiveImportPreview;
+  return 'ConversationArchiveImportPreview(title: ${_this.title}, hasIncompleteAgentContext: ${_this.hasIncompleteAgentContext})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $ConversationArchiveImportPreviewCopyWith<$Res>  {
+  factory $ConversationArchiveImportPreviewCopyWith(ConversationArchiveImportPreview value, $Res Function(ConversationArchiveImportPreview) _then) = _$ConversationArchiveImportPreviewCopyWithImpl;
+@useResult
+$Res call({
+ String title, bool hasIncompleteAgentContext
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationArchiveImportPreviewCopyWithImpl<$Res>
+    implements $ConversationArchiveImportPreviewCopyWith<$Res> {
+  _$ConversationArchiveImportPreviewCopyWithImpl(this._self, this._then);
+
+  final ConversationArchiveImportPreview _self;
+  final $Res Function(ConversationArchiveImportPreview) _then;
+
+/// Create a copy of ConversationArchiveImportPreview
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? hasIncompleteAgentContext = null,}) {
+  return _then(ConversationArchiveImportPreview(
+title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String,hasIncompleteAgentContext: null == hasIncompleteAgentContext ? _self.hasIncompleteAgentContext : hasIncompleteAgentContext // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [ConversationArchiveImportPreview].
+extension ConversationArchiveImportPreviewPatterns on ConversationArchiveImportPreview {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ConversationArchiveImportPreview value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ConversationArchiveImportPreview value)  $default,){
+final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ConversationArchiveImportPreview value)?  $default,){
+final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  bool hasIncompleteAgentContext)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview() when $default != null:
+return $default(_that.title,_that.hasIncompleteAgentContext);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  bool hasIncompleteAgentContext)  $default,) {final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview():
+return $default(_that.title,_that.hasIncompleteAgentContext);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  bool hasIncompleteAgentContext)?  $default,) {final _that = this;
+switch (_that) {
+case _ConversationArchiveImportPreview() when $default != null:
+return $default(_that.title,_that.hasIncompleteAgentContext);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _ConversationArchiveImportPreview implements ConversationArchiveImportPreview {
+  const _ConversationArchiveImportPreview({required this.title, required this.hasIncompleteAgentContext});
+  
+
+@override final  String title;
+@override final  bool hasIncompleteAgentContext;
+
+/// Create a copy of ConversationArchiveImportPreview
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$ConversationArchiveImportPreviewCopyWith<_ConversationArchiveImportPreview> get copyWith => __$ConversationArchiveImportPreviewCopyWithImpl<_ConversationArchiveImportPreview>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchiveImportPreview&&(identical(other.title, title) || other.title == title)&&(identical(other.hasIncompleteAgentContext, hasIncompleteAgentContext) || other.hasIncompleteAgentContext == hasIncompleteAgentContext));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,title,hasIncompleteAgentContext);
+}
+
+@override
+String toString() {
+    return 'ConversationArchiveImportPreview(title: $title, hasIncompleteAgentContext: $hasIncompleteAgentContext)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$ConversationArchiveImportPreviewCopyWith<$Res> implements $ConversationArchiveImportPreviewCopyWith<$Res> {
+  factory _$ConversationArchiveImportPreviewCopyWith(_ConversationArchiveImportPreview value, $Res Function(_ConversationArchiveImportPreview) _then) = __$ConversationArchiveImportPreviewCopyWithImpl;
+@override @useResult
+$Res call({
+ String title, bool hasIncompleteAgentContext
+});
+
+
+
+
+}
+/// @nodoc
+class __$ConversationArchiveImportPreviewCopyWithImpl<$Res>
+    implements _$ConversationArchiveImportPreviewCopyWith<$Res> {
+  __$ConversationArchiveImportPreviewCopyWithImpl(this._self, this._then);
+
+  final _ConversationArchiveImportPreview _self;
+  final $Res Function(_ConversationArchiveImportPreview) _then;
+
+/// Create a copy of ConversationArchiveImportPreview
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? hasIncompleteAgentContext = null,}) {
+  return _then(_ConversationArchiveImportPreview(
+title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String,hasIncompleteAgentContext: null == hasIncompleteAgentContext ? _self.hasIncompleteAgentContext : hasIncompleteAgentContext // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -924,7 +1194,7 @@ as DateTime?,
 /// @nodoc
 mixin _$ConversationArchiveToolCall {
 
- String? get displayName; ToolCallResultStatus? get resultStatus;
+ String? get id; String? get displayName; ToolCallResultStatus? get resultStatus;
 /// Create a copy of ConversationArchiveToolCall
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -936,20 +1206,20 @@ $ConversationArchiveToolCallCopyWith<ConversationArchiveToolCall> get copyWith =
 @override
 bool operator ==(Object other) {
   final _this = this as ConversationArchiveToolCall;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchiveToolCall&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.resultStatus, _this.resultStatus) || other.resultStatus == _this.resultStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchiveToolCall&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.resultStatus, _this.resultStatus) || other.resultStatus == _this.resultStatus));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ConversationArchiveToolCall;
-  return Object.hash(runtimeType,_this.displayName,_this.resultStatus);
+  return Object.hash(runtimeType,_this.id,_this.displayName,_this.resultStatus);
 }
 
 @override
 String toString() {
   final _this = this as ConversationArchiveToolCall;
-  return 'ConversationArchiveToolCall(displayName: ${_this.displayName}, resultStatus: ${_this.resultStatus})';
+  return 'ConversationArchiveToolCall(id: ${_this.id}, displayName: ${_this.displayName}, resultStatus: ${_this.resultStatus})';
 }
 
 
@@ -960,7 +1230,7 @@ abstract mixin class $ConversationArchiveToolCallCopyWith<$Res>  {
   factory $ConversationArchiveToolCallCopyWith(ConversationArchiveToolCall value, $Res Function(ConversationArchiveToolCall) _then) = _$ConversationArchiveToolCallCopyWithImpl;
 @useResult
 $Res call({
- String? displayName, ToolCallResultStatus? resultStatus
+ String? id, String? displayName, ToolCallResultStatus? resultStatus
 });
 
 
@@ -977,9 +1247,10 @@ class _$ConversationArchiveToolCallCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchiveToolCall
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? displayName = freezed,Object? resultStatus = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? displayName = freezed,Object? resultStatus = freezed,}) {
   return _then(ConversationArchiveToolCall(
-displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String?,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String?,resultStatus: freezed == resultStatus ? _self.resultStatus : resultStatus // ignore: cast_nullable_to_non_nullable
 as ToolCallResultStatus?,
   ));
@@ -1066,10 +1337,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? displayName,  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? id,  String? displayName,  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationArchiveToolCall() when $default != null:
-return $default(_that.displayName,_that.resultStatus);case _:
+return $default(_that.id,_that.displayName,_that.resultStatus);case _:
   return orElse();
 
 }
@@ -1087,10 +1358,10 @@ return $default(_that.displayName,_that.resultStatus);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? displayName,  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? id,  String? displayName,  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchiveToolCall():
-return $default(_that.displayName,_that.resultStatus);case _:
+return $default(_that.id,_that.displayName,_that.resultStatus);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1107,10 +1378,10 @@ return $default(_that.displayName,_that.resultStatus);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? displayName,  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? id,  String? displayName,  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchiveToolCall() when $default != null:
-return $default(_that.displayName,_that.resultStatus);case _:
+return $default(_that.id,_that.displayName,_that.resultStatus);case _:
   return null;
 
 }
@@ -1122,9 +1393,10 @@ return $default(_that.displayName,_that.resultStatus);case _:
 
 
 class _ConversationArchiveToolCall implements ConversationArchiveToolCall {
-  const _ConversationArchiveToolCall({this.displayName, this.resultStatus});
+  const _ConversationArchiveToolCall({this.id, this.displayName, this.resultStatus});
   
 
+@override final  String? id;
 @override final  String? displayName;
 @override final  ToolCallResultStatus? resultStatus;
 
@@ -1138,18 +1410,18 @@ _$ConversationArchiveToolCallCopyWith<_ConversationArchiveToolCall> get copyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchiveToolCall&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchiveToolCall&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,displayName,resultStatus);
+    return Object.hash(runtimeType,id,displayName,resultStatus);
 }
 
 @override
 String toString() {
-    return 'ConversationArchiveToolCall(displayName: $displayName, resultStatus: $resultStatus)';
+    return 'ConversationArchiveToolCall(id: $id, displayName: $displayName, resultStatus: $resultStatus)';
 }
 
 
@@ -1160,7 +1432,7 @@ abstract mixin class _$ConversationArchiveToolCallCopyWith<$Res> implements $Con
   factory _$ConversationArchiveToolCallCopyWith(_ConversationArchiveToolCall value, $Res Function(_ConversationArchiveToolCall) _then) = __$ConversationArchiveToolCallCopyWithImpl;
 @override @useResult
 $Res call({
- String? displayName, ToolCallResultStatus? resultStatus
+ String? id, String? displayName, ToolCallResultStatus? resultStatus
 });
 
 
@@ -1177,9 +1449,10 @@ class __$ConversationArchiveToolCallCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchiveToolCall
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? displayName = freezed,Object? resultStatus = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? displayName = freezed,Object? resultStatus = freezed,}) {
   return _then(_ConversationArchiveToolCall(
-displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String?,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String?,resultStatus: freezed == resultStatus ? _self.resultStatus : resultStatus // ignore: cast_nullable_to_non_nullable
 as ToolCallResultStatus?,
   ));
@@ -1191,7 +1464,7 @@ as ToolCallResultStatus?,
 /// @nodoc
 mixin _$ConversationArchiveAttachment {
 
- String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; Uint8List get bytes;
+ String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; Uint8List get bytes; String? get toolCallId;
 /// Create a copy of ConversationArchiveAttachment
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1203,20 +1476,20 @@ $ConversationArchiveAttachmentCopyWith<ConversationArchiveAttachment> get copyWi
 @override
 bool operator ==(Object other) {
   final _this = this as ConversationArchiveAttachment;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchiveAttachment&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&const DeepCollectionEquality().equals(other.bytes, _this.bytes));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchiveAttachment&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&const DeepCollectionEquality().equals(other.bytes, _this.bytes)&&(identical(other.toolCallId, _this.toolCallId) || other.toolCallId == _this.toolCallId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ConversationArchiveAttachment;
-  return Object.hash(runtimeType,_this.fileName,_this.displayName,_this.mimeType,_this.modality,const DeepCollectionEquality().hash(_this.bytes));
+  return Object.hash(runtimeType,_this.fileName,_this.displayName,_this.mimeType,_this.modality,const DeepCollectionEquality().hash(_this.bytes),_this.toolCallId);
 }
 
 @override
 String toString() {
   final _this = this as ConversationArchiveAttachment;
-  return 'ConversationArchiveAttachment(fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, bytes: ${_this.bytes})';
+  return 'ConversationArchiveAttachment(fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, bytes: ${_this.bytes}, toolCallId: ${_this.toolCallId})';
 }
 
 
@@ -1227,7 +1500,7 @@ abstract mixin class $ConversationArchiveAttachmentCopyWith<$Res>  {
   factory $ConversationArchiveAttachmentCopyWith(ConversationArchiveAttachment value, $Res Function(ConversationArchiveAttachment) _then) = _$ConversationArchiveAttachmentCopyWithImpl;
 @useResult
 $Res call({
- String fileName, String displayName, String mimeType, MessageAttachmentModality modality, Uint8List bytes
+ String fileName, String displayName, String mimeType, MessageAttachmentModality modality, Uint8List bytes, String? toolCallId
 });
 
 
@@ -1244,14 +1517,15 @@ class _$ConversationArchiveAttachmentCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchiveAttachment
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? bytes = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? bytes = null,Object? toolCallId = freezed,}) {
   return _then(ConversationArchiveAttachment(
 fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
 as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
 as MessageAttachmentModality,bytes: null == bytes ? _self.bytes : bytes // ignore: cast_nullable_to_non_nullable
-as Uint8List,
+as Uint8List,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -1336,10 +1610,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes,  String? toolCallId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationArchiveAttachment() when $default != null:
-return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes);case _:
+return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes,_that.toolCallId);case _:
   return orElse();
 
 }
@@ -1357,10 +1631,10 @@ return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes,  String? toolCallId)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchiveAttachment():
-return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes);case _:
+return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes,_that.toolCallId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1377,10 +1651,10 @@ return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  Uint8List bytes,  String? toolCallId)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchiveAttachment() when $default != null:
-return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes);case _:
+return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.bytes,_that.toolCallId);case _:
   return null;
 
 }
@@ -1392,7 +1666,7 @@ return $default(_that.fileName,_that.displayName,_that.mimeType,_that.modality,_
 
 
 class _ConversationArchiveAttachment implements ConversationArchiveAttachment {
-  const _ConversationArchiveAttachment({required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.bytes});
+  const _ConversationArchiveAttachment({required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.bytes, this.toolCallId});
   
 
 @override final  String fileName;
@@ -1400,6 +1674,7 @@ class _ConversationArchiveAttachment implements ConversationArchiveAttachment {
 @override final  String mimeType;
 @override final  MessageAttachmentModality modality;
 @override final  Uint8List bytes;
+@override final  String? toolCallId;
 
 /// Create a copy of ConversationArchiveAttachment
 /// with the given fields replaced by the non-null parameter values.
@@ -1411,18 +1686,18 @@ _$ConversationArchiveAttachmentCopyWith<_ConversationArchiveAttachment> get copy
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchiveAttachment&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&const DeepCollectionEquality().equals(other.bytes, bytes));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchiveAttachment&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&const DeepCollectionEquality().equals(other.bytes, bytes)&&(identical(other.toolCallId, toolCallId) || other.toolCallId == toolCallId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,fileName,displayName,mimeType,modality,const DeepCollectionEquality().hash(bytes));
+    return Object.hash(runtimeType,fileName,displayName,mimeType,modality,const DeepCollectionEquality().hash(bytes),toolCallId);
 }
 
 @override
 String toString() {
-    return 'ConversationArchiveAttachment(fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, bytes: $bytes)';
+    return 'ConversationArchiveAttachment(fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, bytes: $bytes, toolCallId: $toolCallId)';
 }
 
 
@@ -1433,7 +1708,7 @@ abstract mixin class _$ConversationArchiveAttachmentCopyWith<$Res> implements $C
   factory _$ConversationArchiveAttachmentCopyWith(_ConversationArchiveAttachment value, $Res Function(_ConversationArchiveAttachment) _then) = __$ConversationArchiveAttachmentCopyWithImpl;
 @override @useResult
 $Res call({
- String fileName, String displayName, String mimeType, MessageAttachmentModality modality, Uint8List bytes
+ String fileName, String displayName, String mimeType, MessageAttachmentModality modality, Uint8List bytes, String? toolCallId
 });
 
 
@@ -1450,14 +1725,15 @@ class __$ConversationArchiveAttachmentCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchiveAttachment
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? bytes = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? bytes = null,Object? toolCallId = freezed,}) {
   return _then(_ConversationArchiveAttachment(
 fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
 as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
 as MessageAttachmentModality,bytes: null == bytes ? _self.bytes : bytes // ignore: cast_nullable_to_non_nullable
-as Uint8List,
+as Uint8List,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

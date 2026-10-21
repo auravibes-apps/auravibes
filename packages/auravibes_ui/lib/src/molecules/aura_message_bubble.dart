@@ -1,3 +1,7 @@
+import 'dart:math' as math;
+
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
+import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
@@ -7,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 
 const _messageIconSize = 20.0;
+const AuraBorderRadius _messageBorderRadius = .xl;
 
 /// A message bubble component for chat interfaces.
 ///
@@ -30,6 +35,7 @@ class AuraMessageBubble extends StatelessWidget {
     this.imageProvider,
     this.imageSemanticLabel = 'Image message',
     this.imageErrorLabel = 'Failed to load image',
+    this.contentPadding,
   });
 
   /// The content of the message.
@@ -76,6 +82,9 @@ class AuraMessageBubble extends StatelessWidget {
 
   /// Semantic label shown when image content fails to load.
   final String imageErrorLabel;
+
+  /// Optional content inset. Defaults to the current inset for [contentType].
+  final AuraEdgeInsetsGeometry? contentPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -171,20 +180,21 @@ class const _AuraMessageBubbleCardSurface({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final contentPadding = _messagePaddingFor(message);
+
     return Container(
       decoration: _messageDecorationFor(context, message, auraColors),
-      child: _AuraMessageBubbleCardPadding(message: message, child: child),
+      child: AuraCornerRadiusScope.select(
+        level: _messageBorderRadius,
+        child: AuraCornerRadiusScope.adjust(
+          delta: _maxMessageInset(context, contentPadding),
+          child: Padding(
+            padding: contentPadding.toEdgeInsets(context),
+            child: child,
+          ),
+        ),
+      ),
     );
-  }
-}
-
-class const _AuraMessageBubbleCardPadding({
-  required final AuraMessageBubble message,
-  required final Widget child,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(padding: _messagePaddingFor(context, message), child: child);
   }
 }
 
@@ -210,7 +220,6 @@ class const _AuraOptionalMessageTimestamp({
     final timestamp => _AuraMessageBubbleTimestamp(
       timestamp: timestamp,
       label: message.timestampLabel,
-      isUser: message.isUser,
       now: message.now,
     ),
   };
@@ -222,7 +231,7 @@ class const _AuraMessageBubbleContent({
   @override
   Widget build(BuildContext context) => _AuraMessageTypeContent(
     message: message,
-    textColor: _messageContentTextColor(context, message),
+    textColor: context.auraColors.onSurface,
   );
 }
 
@@ -261,12 +270,14 @@ class const _AuraImageMessage({
   required final Color textColor,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.all(
-      .circular(context.auraTheme.fromBorderRadius(.md)),
-    ),
-    child: _AuraImageView(message: message, textColor: textColor),
-  );
+  Widget build(BuildContext context) {
+    final radius = AuraCornerRadiusScope.resolve(context, fallback: .md);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.all(.circular(radius)),
+      child: _AuraImageView(message: message, textColor: textColor),
+    );
+  }
 }
 
 class const _AuraImageView({
@@ -352,7 +363,6 @@ class const _AuraFileName({
 class const _AuraMessageBubbleTimestamp({
   required final DateTime timestamp,
   required final String? label,
-  required final bool isUser,
   required final DateTime Function()? now,
 }) extends StatelessWidget {
   @override
@@ -361,7 +371,6 @@ class const _AuraMessageBubbleTimestamp({
     child: _AuraMessageBubbleTimestampText(
       timestamp: timestamp,
       label: label,
-      isUser: isUser,
       now: now,
     ),
   );
@@ -370,16 +379,12 @@ class const _AuraMessageBubbleTimestamp({
 class const _AuraMessageBubbleTimestampText({
   required final DateTime timestamp,
   required final String? label,
-  required final bool isUser,
   required final DateTime Function()? now,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     label ?? _formatMessageTimestamp(timestamp, now: now?.call()),
-    style: _messageTimestampStyle(
-      context,
-      _messageTimestampColor(context, isUser),
-    ),
+    style: _messageTimestampStyle(context, context.auraColors.onSurfaceVariant),
   );
 }
 
@@ -408,23 +413,6 @@ TextStyle _messageFileStyle(BuildContext context, Color color) {
     fontSize: typography.fontSizeBase,
     fontFamily: typography.bodyFontFamily,
   );
-}
-
-Color _messageTimestampColor(BuildContext context, bool isUser) {
-  final colors = context.auraColors;
-
-  return isUser
-      ? colors.onPrimary.withValues(alpha: 0.7)
-      : colors.onSurfaceVariant;
-}
-
-Color _messageContentTextColor(
-  BuildContext context,
-  AuraMessageBubble message,
-) {
-  final colors = context.auraColors;
-
-  return message.isUser ? colors.onPrimary : colors.onSurface;
 }
 
 TextStyle _messageTimestampStyle(BuildContext context, Color color) {
@@ -461,22 +449,16 @@ AuraSpacing _messageStartSpacing(bool isUser) => isUser ? .xl : .md;
 
 AuraSpacing _messageEndSpacing(bool isUser) => isUser ? .md : .xl;
 
-EdgeInsets _messagePadding({
-  required AuraMessageContentType contentType,
-  required AuraSpacingScale spacing,
-}) => switch (contentType) {
-  .text => EdgeInsets.symmetric(vertical: spacing.sm, horizontal: spacing.md),
-  .image => EdgeInsets.all(spacing.xs),
-  .file => EdgeInsets.all(spacing.sm),
-};
-
-EdgeInsets _messagePaddingFor(
-  BuildContext context,
-  AuraMessageBubble message,
-) => _messagePadding(
-  contentType: message.contentType,
-  spacing: context.auraTheme.spacing,
-);
+AuraEdgeInsetsGeometry _messagePaddingFor(AuraMessageBubble message) =>
+    message.contentPadding ??
+    switch (message.contentType) {
+      .text => const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: .md,
+        vertical: .sm,
+      ),
+      .image => const AuraEdgeInsetsGeometry.all(.xs),
+      .file => AuraEdgeInsetsGeometry.small,
+    };
 
 typedef _MessageDecorationValues = ({
   Color color,
@@ -499,8 +481,19 @@ BoxDecoration _messageDecorationFor(
   AuraColorScheme auraColors,
 ) => _messageDecoration(
   _messageDecorationValues(message, auraColors),
-  context.auraTheme.fromBorderRadius(.xl),
+  AuraCornerRadiusScope.resolve(context, fallback: _messageBorderRadius),
 );
+
+double _maxMessageInset(BuildContext context, AuraEdgeInsetsGeometry padding) {
+  final insets = padding
+      .toEdgeInsets(context)
+      .resolve(Directionality.of(context));
+
+  return math.max(
+    math.max(insets.left, insets.right),
+    math.max(insets.top, insets.bottom),
+  );
+}
 
 BoxDecoration _messageDecoration(
   _MessageDecorationValues decoration,
@@ -522,7 +515,7 @@ Color _messageBackground(
 Color _messageBaseColor(
   AuraMessageBubble message,
   AuraColorScheme auraColors,
-) => message.isUser ? auraColors.primary : auraColors.surfaceVariant;
+) => message.isUser ? auraColors.surface : auraColors.surfaceVariant;
 
 Border? _messageBorder(AuraMessageBubble message, AuraColorScheme auraColors) =>
     message.status == AuraMessageDeliveryStatus.error

@@ -3,6 +3,8 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database_test_utils.dart';
+
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(() {
@@ -19,11 +21,9 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ?? fail('Database fixture not initialized');
+      _database ??= .new(connection: createConnection());
 
-  void reset() {
-    _database = .new(connection: createConnection());
-  }
+  Future<void> reset() => clearAppDatabase(database);
 
   Future<void> close() async {
     await _database?.close();
@@ -37,13 +37,13 @@ void main() {
     var columns = <QueryRow>[];
 
     setUp(() async {
-      fixture.reset();
+      await fixture.reset();
       columns = await fixture.database
           .customSelect('PRAGMA table_info(workspace_model_selections)')
           .get();
     });
 
-    tearDown(fixture.close);
+    tearDownAll(fixture.close);
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();
@@ -55,12 +55,13 @@ void main() {
           'updated_at',
           'model_id',
           'model_connection_id',
+          'tool_sampling_policy',
         ]),
       );
     });
 
-    test('has 5 columns', () {
-      expect(columns.length, 5);
+    test('has 6 columns', () {
+      expect(columns.length, 6);
     });
 
     test('model_id is not null', () {
@@ -75,6 +76,13 @@ void main() {
         (r) => r.read<String>('name') == 'model_connection_id',
       );
       expect(col.read<int>('notnull'), 1);
+    });
+
+    test('tool_sampling_policy is nullable', () {
+      final col = columns.firstWhere(
+        (r) => r.read<String>('name') == 'tool_sampling_policy',
+      );
+      expect(col.read<int>('notnull'), 0);
     });
 
     test('primary key on id', () {

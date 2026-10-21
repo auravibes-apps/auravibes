@@ -1,4 +1,5 @@
 import 'package:auravibes_app/flavor.dart';
+import 'package:auravibes_app/services/marionette/marionette_chat_smoke_fixture.dart';
 import 'package:auravibes_app/services/marionette/marionette_development_state.dart';
 import 'package:auravibes_app/services/marionette/marionette_extensions.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,13 +9,16 @@ void main() {
   group('MarionetteExtensions', () {
     var actions = _FakeActions();
     var dispatcher = MarionetteExtensions(actions);
+    var chatSmokeFixture = MarionetteChatSmokeFixture();
 
     setUp(() {
       actions = _FakeActions();
       dispatcher = MarionetteExtensions(actions);
+      chatSmokeFixture = .new();
     });
 
     test('rejects invalid values before invoking actions', () async {
+      final invalidSmokeParams = {'scenario': 'unknown'};
       final results = [
         await dispatcher.navigate({
           'route': '/arbitrary',
@@ -33,6 +37,10 @@ void main() {
           'flag': 'a2ui',
           'enabled': 'yes',
         }),
+        await dispatcher.configureSmokeFixture(
+          invalidSmokeParams,
+          chatSmokeFixture,
+        ),
         await dispatcher.seedDemoData({'unexpected': 'value'}),
         await dispatcher.startSubAgentSmokeFixture({'count': '3'}),
         await dispatcher.finishSubAgentSmokeFixture({
@@ -50,7 +58,7 @@ void main() {
 
     test('dispatches allowlisted values and schema defaults', () async {
       final navigation = await dispatcher.navigate({
-        'route': 'settings',
+        'route': 'demo_conversation',
         'workspaceId': 'local-workspace',
       });
       final workspace = await dispatcher.selectWorkspace({
@@ -63,6 +71,11 @@ void main() {
       final seed = await dispatcher.seedDemoData({});
       final clear = await dispatcher.clearDevelopmentState({});
       final flag = await dispatcher.setDevelopmentFeatureFlag({'flag': 'a2ui'});
+      final retrySmokeParams = {'scenario': 'retry'};
+      final chatSmoke = await dispatcher.configureSmokeFixture(
+        retrySmokeParams,
+        chatSmokeFixture,
+      );
 
       final smokeStart = await dispatcher.startSubAgentSmokeFixture({
         'count': '2',
@@ -80,6 +93,7 @@ void main() {
       expect(seed, isA<MarionetteExtensionSuccess>());
       expect(clear, isA<MarionetteExtensionSuccess>());
       expect(flag, isA<MarionetteExtensionSuccess>());
+      expect(chatSmoke, isA<MarionetteExtensionSuccess>());
       expect(smokeStart, isA<MarionetteExtensionSuccess>());
       expect(smokeFinish, isA<MarionetteExtensionSuccess>());
       expect(smokeParentStop, isA<MarionetteExtensionSuccess>());
@@ -98,7 +112,10 @@ void main() {
   });
 
   test('registration exposes only schema-backed allowlisted tools', () {
-    MarionetteExtensionRegistration.register(_FakeActions());
+    MarionetteExtensionRegistration.register(
+      _FakeActions(),
+      chatSmokeFixture: .new(),
+    );
 
     final details = {
       for (final extension in customExtensionRegistry)
@@ -114,6 +131,7 @@ void main() {
       'auravibes.stopSubAgentSmokeFixtureParent',
       'auravibes.clearDevelopmentState',
       'auravibes.setDevelopmentFeatureFlag',
+      'auravibes.configureChatSmokeFixture',
     ];
 
     expect(details.keys, containsAll(names));
@@ -145,6 +163,21 @@ void main() {
       containsPair('enum', MarionetteDevelopmentState.allowedFeatureFlagValues),
     );
     expect(flagProperties['enabled'], containsPair('default', true));
+
+    final chatSmokeInputSchema =
+        details['auravibes.configureChatSmokeFixture']?.inputSchema;
+    if (chatSmokeInputSchema == null) {
+      fail('auravibes.configureChatSmokeFixture schema was not registered');
+    }
+    final chatSmokeSchema = chatSmokeInputSchema.toJson();
+    expect(chatSmokeSchema['required'], ['scenario']);
+    expect(
+      (chatSmokeSchema['properties'] as Map<String, dynamic>)['scenario'],
+      containsPair(
+        'enum',
+        MarionetteDevelopmentState.allowedChatSmokeScenarioValues,
+      ),
+    );
 
     final startInputSchema =
         details['auravibes.startSubAgentSmokeFixture']?.inputSchema;

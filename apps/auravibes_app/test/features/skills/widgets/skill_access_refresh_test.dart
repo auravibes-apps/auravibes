@@ -89,9 +89,9 @@ void main() {
           overrides: [
             skillDetailProvider.overrideWith(
               (_, _) async => const SkillDetail(
-                source: .user,
                 id: 'saved-skill',
                 workspaceId: 'owned-workspace',
+                source: .user,
                 kind: .template,
                 title: 'Saved skill',
                 slug: 'saved-skill',
@@ -128,10 +128,6 @@ void main() {
           ],
         ),
       );
-    });
-    final _ = await tester.pumpAndSettle();
-    final _ = await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
     });
     final _ = await tester.pumpAndSettle();
     expect(find.text('Tool needs access'), findsOneWidget);

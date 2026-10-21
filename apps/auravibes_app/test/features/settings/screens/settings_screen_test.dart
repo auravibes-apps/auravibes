@@ -34,6 +34,7 @@ void main() {
 
   group('render', () {
     testWidgets('renders SettingsScreen', (tester) async {
+      final semantics = tester.ensureSemantics();
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
@@ -60,6 +61,14 @@ void main() {
       expect(find.byType(CompactionSettingsSection), findsNothing);
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(AppVersionIndicator), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('settings_privacy')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('settings_terms')),
+        findsOneWidget,
+      );
       expect(find.byType(AuraAppBarWithDrawer), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('app_drawer_menu')),
@@ -68,6 +77,11 @@ void main() {
       expect(
         find.byKey(const ValueKey<String>('settings_theme')),
         findsOneWidget,
+      );
+      expect(find.bySemanticsIdentifier('settings_theme'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('settings_theme')).evaluate().single,
+        find.bySemanticsIdentifier('settings_theme').evaluate().single,
       );
       expect(
         find.byKey(const ValueKey<String>('settings_accent_color')),
@@ -89,11 +103,13 @@ void main() {
         find.byKey(const ValueKey<String>('settings_compaction_save')),
         findsNothing,
       );
+      semantics.dispose();
     });
 
     testWidgets('reset actions restore theme and accent defaults', (
       tester,
     ) async {
+      final semantics = tester.ensureSemantics();
       SharedPreferences.setMockInitialValues({
         'app_theme': AppTheme.dark.index,
         'app_accent_hue': 42.0,
@@ -121,11 +137,9 @@ void main() {
       });
       final _ = await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const ValueKey<String>('settings_theme_reset')),
-      );
-      final accentReset = find.byKey(
-        const ValueKey<String>('settings_accent_color_reset'),
+      await tester.tap(find.bySemanticsIdentifier('settings_theme_reset'));
+      final accentReset = find.bySemanticsIdentifier(
+        'settings_accent_color_reset',
       );
       await tester.ensureVisible(accentReset);
       await tester.tap(accentReset);
@@ -137,40 +151,7 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getInt('app_theme'), AppTheme.system.index);
       expect(prefs.getDouble('app_accent_hue'), AccentHue.defaultValue);
-    });
-
-    testWidgets('tapping theme tile shows radio group dialog', (tester) async {
-      await tester.runAsync(() async {
-        await tester.pumpWidget(
-          TestableApp(
-            child: AuraThemeScope(
-              theme: .light,
-              child: Theme(
-                data: .new(),
-                child: const SettingsScreen(workspaceId: 'test-ws'),
-              ),
-            ),
-            overrides: [
-              themeProvider.overrideWith(_MockThemeNotifier.new),
-              compactionSettingsProvider('test-ws').overrideWith(
-                (ref) => Stream.value(CompactionSettings.defaults),
-              ),
-              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
-                  .overrideWith((ref) => Stream.value(const [])),
-            ],
-          ),
-        );
-      });
-      final _ = await tester.pumpAndSettle();
-
-      final themeTiles = find.descendant(
-        of: find.byType(SettingsScreen),
-        matching: find.byType(AuraTile),
-      );
-      await tester.tap(themeTiles.first);
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.byType(AuraChoicePicker<AppTheme>), findsOneWidget);
+      semantics.dispose();
     });
 
     testWidgets('changing theme keeps settings screen visible', (tester) async {
@@ -209,6 +190,7 @@ void main() {
       );
       await tester.tap(themeTiles.first);
       final _ = await tester.pumpAndSettle();
+      expect(find.byType(AuraChoicePicker<AppTheme>), findsOneWidget);
 
       await tester.tap(find.text('Dark'));
       final _ = await tester.pumpAndSettle();

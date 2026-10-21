@@ -32,9 +32,11 @@ import 'package:auravibes_app/features/skills/widgets/skill_access_status_view.d
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AppSkillResourceDefinition, AppSkillToolDefinition;
@@ -107,9 +109,11 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   Widget build(BuildContext context) {
     _exitGuard.bind(
       readers: (isDirty: () => _isDirty, isSaving: () => _isSaving),
-      confirm: _confirmDiscard,
-      onReturn: (context) =>
-          SkillsRoute(workspaceId: widget.workspaceId).go(context),
+      callbacks: .new(
+        confirm: _confirmDiscard,
+        onReturn: (context) =>
+            SkillsRoute(workspaceId: widget.workspaceId).go(context),
+      ),
     );
 
     return DraftExitScope(
@@ -388,7 +392,7 @@ extension on _SkillDetailScreenState {
       return;
     }
 
-    context.go('/workspaces/${widget.workspaceId}/more/skills');
+    context.go('/workspaces/${widget.workspaceId}/skills');
   }
 
   Future<void> _duplicateSkill(BuildContext context, SkillDetail detail) async {
@@ -547,7 +551,7 @@ class const _SkillDetailScreenContent({
   Widget build(BuildContext context) {
     final viewData = state._detailViewData();
 
-    return AuraScreen(
+    return AppScreen(
       child: _SkillDetailBody(state: state, detailAsync: viewData.detailAsync),
       appBar: _SkillDetailAppBar(
         state: state,
@@ -1096,8 +1100,12 @@ class const _SkillDetailRelatedContent({
   );
 
   Widget _agentsButton(BuildContext context) => AuraButton(
-    onPressed: () =>
-        unawaited(AgentsRoute(workspaceId: workspaceId).push<void>(context)),
+    onPressed: () => unawaited(
+      FeatureDestinations.push<void>(
+        context,
+        AgentsRoute(workspaceId: workspaceId).location,
+      ),
+    ),
     child: const TextLocale(LocaleKeys.related_lists_workspace_agents),
     variant: .text,
   );
@@ -1230,7 +1238,7 @@ class _SkillResourcesActions {
 
   Future<void> _open([String? resourceId]) async {
     final result = await context.push<bool>(
-      '/workspaces/$workspaceId/more/skills/$skillId/resources/'
+      '/workspaces/$workspaceId/skills/$skillId/resources/'
       '${resourceId ?? 'new'}',
     );
     if (result == true && context.mounted) {
@@ -1376,7 +1384,7 @@ class const _SkillResourcesAppTile({
     description: resource.description,
     onOpen: () => unawaited(
       context.push<bool>(
-        '/workspaces/$workspaceId/more/skills/$skillId/resources/'
+        '/workspaces/$workspaceId/skills/$skillId/resources/'
         '${resource.slug}',
       ),
     ),
@@ -1485,7 +1493,7 @@ class _SkillToolsCardActions {
   Future<void> _openTool([String? toolId]) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final result = await context.push<bool>(
-      '/workspaces/$workspaceId/more/skills/$skillId/tools/${toolId ?? 'new'}',
+      '/workspaces/$workspaceId/skills/$skillId/tools/${toolId ?? 'new'}',
     );
     if (result == true) {
       _scheduleToolsRefresh(container);
@@ -2074,11 +2082,14 @@ class const _SkillCredentialsHint({
   }
 
   Future<bool?> _pushCredentialCreate(BuildContext context) {
-    return ServiceConnectionCreateRoute(
-      workspaceId: workspaceId,
-      type: 'skillCredential',
-      credentialDefinitionId: credentialDefinitionId,
-    ).push<bool>(context);
+    return FeatureDestinations.push<bool>(
+      context,
+      ServiceConnectionCreateRoute(
+        workspaceId: workspaceId,
+        type: 'skillCredential',
+        credentialDefinitionId: credentialDefinitionId,
+      ).location,
+    );
   }
 }
 
@@ -2190,15 +2201,19 @@ class const _AppSkillCredentialsHint({
   }
 
   Future<bool?> _pushModelProviderCreate(BuildContext context) {
-    return ServiceConnectionCreateRoute(
-      workspaceId: workspaceId,
-      type: 'modelProvider',
-    ).push<bool>(context);
+    return FeatureDestinations.push<bool>(
+      context,
+      ServiceConnectionCreateRoute(
+        workspaceId: workspaceId,
+        type: 'modelProvider',
+      ).location,
+    );
   }
 
   Future<bool?> _pushAppSkillCredentialCreate(BuildContext context) {
-    return context.push<bool>(
-      '/workspaces/$workspaceId/more/service-connections/new'
+    return FeatureDestinations.push<bool>(
+      context,
+      '/workspaces/$workspaceId/service-connections/new'
       '?type=appSkillCredential&appSkillId=$appSkillId',
     );
   }

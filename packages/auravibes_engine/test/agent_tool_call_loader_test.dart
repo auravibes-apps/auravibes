@@ -2,6 +2,34 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test(
+    'pending approval stays pending even when its target no longer resolves',
+    () async {
+      const loader = AgentToolCallLoader<String>(
+        provider: _FakeAgentToolCallProvider(
+          messages: [
+            AgentToolMessage(
+              id: 'assistant-1',
+              isUser: false,
+              toolCalls: [
+                AgentMessageToolCall(
+                  id: 'pending',
+                  name: 'missing',
+                  argumentsRaw: '{}',
+                  approvalRequested: true,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      final result = await loader(conversationId: 'conversation-1');
+      expect(result.pendingApprovalToolCallIds, ['pending']);
+      expect(result.toolsToRun, isEmpty);
+      expect(result.notFoundToolCallIds, isEmpty);
+    },
+  );
+
   test('pending is unresolved and every result is resolved', () {
     const pending = AgentMessageToolCall(
       id: 'pending',

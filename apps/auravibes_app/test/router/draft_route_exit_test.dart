@@ -24,7 +24,23 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  var isFirstTest = true;
+  setUp(() async {
+    if (isFirstTest) {
+      isFirstTest = false;
+
+      return;
+    }
+    await clearAppDatabase(database);
+  });
+  tearDownAll(database.close);
+
   for (final editor in [
     'skill',
     'resource',
@@ -34,10 +50,6 @@ void main() {
     'workspace',
   ]) {
     testWidgets('$editor replacement retains draft on cancel', (tester) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await WorkspaceRepository(database).createWorkspace(
         const WorkspaceToCreate(name: 'Draft test', type: .local),
       );
@@ -98,14 +110,27 @@ void main() {
           : 'Discard changes';
       final router = GoRouter(
         routes: [
-          GoRoute(path: '/draft', builder: route.build, onExit: route.onExit),
           GoRoute(
-            path: '/workspaces/:workspaceId/more/agents',
-            builder: (_, _) => const Text('Workspace agents destination'),
+            path: '/draft',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: route.build(context, state),
+              key: state.pageKey,
+            ),
+            onExit: route.onExit,
+          ),
+          GoRoute(
+            path: '/workspaces/:workspaceId/agents',
+            pageBuilder: (_, state) => NoTransitionPage(
+              child: const Text('Workspace agents destination'),
+              key: state.pageKey,
+            ),
           ),
           GoRoute(
             path: '/destination',
-            builder: (_, _) => const Text('Destination'),
+            pageBuilder: (_, state) => NoTransitionPage(
+              child: const Text('Destination'),
+              key: state.pageKey,
+            ),
           ),
         ],
         initialLocation: '/draft',

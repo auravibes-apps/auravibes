@@ -1,12 +1,14 @@
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/repositories/recent_skill_usage_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/skills/providers/recent_skill_usage_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -16,15 +18,66 @@ class _BuildManifests extends Mock implements BuildLoadedSkillManifestsUsecase;
 
 void main() {
   const skill = AvailableSkill(
-    source: SkillSource.user,
     id: 'skill-1',
     slug: 'research',
     title: 'Research',
     description: 'Find sources',
     content: 'Use primary sources',
+    source: .user,
     kind: .template,
     credentialReadiness: .ready,
   );
+
+  for (final failRead in [false, true]) {
+    test('recent history fallback with read failure=$failRead', () async {
+      final records = <LogRecord>[];
+      final subscription = Logger.root.onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      final list = _ListSkills();
+      final manifests = _BuildManifests();
+      _stubSkills(list, skill);
+      when(
+        () => manifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => const []);
+      final repository = _RecentSkillUsageRepository(
+        const [],
+        failRead: failRead,
+      );
+      final container = _container(
+        list,
+        manifests,
+        recentRepository: repository,
+      );
+      addTearDown(container.dispose);
+
+      final state = await container.read(
+        conversationSkillSelectorProvider('workspace', 'conversation').future,
+      );
+
+      expect(state.loaded, [skill]);
+      expect(state.recentSkills, isEmpty);
+      expect(repository.readWorkspaces, ['workspace']);
+      final diagnostics = records
+          .where((record) => record.loggerName == 'conversation_skill_selector')
+          .toList();
+      if (!failRead) {
+        expect(diagnostics, isEmpty);
+
+        return;
+      }
+      expect(diagnostics, hasLength(1));
+      expect(diagnostics.single.level, Level.WARNING);
+      expect(
+        diagnostics.single.message,
+        'Recent skill history read failed. Selector uses empty history.',
+      );
+      expect(diagnostics.single.error, isNull);
+      expect(diagnostics.single.stackTrace, isNull);
+    });
+  }
 
   test('selection survives stale context and revision changes', () async {
     var revision = 'r1';
@@ -114,15 +167,72 @@ void main() {
   });
 
   test(
-    'new selection stays added while existing context stays ready',
+    'orders recent skills and ignores duplicates or missing catalog entries',
     () async {
-      const added = AvailableSkill(
-        source: SkillSource.user,
+      const writing = AvailableSkill(
         id: 'skill-2',
         slug: 'writing',
         title: 'Writing',
         description: 'Write clearly',
         content: 'Use plain language',
+        source: .user,
+        kind: .template,
+        credentialReadiness: .ready,
+      );
+      final list = _ListSkills();
+      final manifests = _BuildManifests();
+      when(
+        () => list.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .loaded,
+        ),
+      ).thenAnswer((_) async => [skill]);
+      when(
+        () => list.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .selector,
+        ),
+      ).thenAnswer((_) async => [skill, writing]);
+      when(
+        () => manifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => const []);
+      final recentRepository = _RecentSkillUsageRepository([
+        'writing',
+        'research',
+        'removed-skill',
+        'writing',
+      ]);
+      final container = _container(
+        list,
+        manifests,
+        recentRepository: recentRepository,
+      );
+      addTearDown(container.dispose);
+
+      final state = await container.read(
+        conversationSkillSelectorProvider('workspace', 'conversation').future,
+      );
+
+      expect(state.recentSkills, [writing, skill]);
+      expect(recentRepository.readWorkspaces, ['workspace']);
+    },
+  );
+
+  test(
+    'new selection stays added while existing context stays ready',
+    () async {
+      const added = AvailableSkill(
+        id: 'skill-2',
+        slug: 'writing',
+        title: 'Writing',
+        description: 'Write clearly',
+        content: 'Use plain language',
+        source: .user,
         kind: .template,
         credentialReadiness: .ready,
       );
@@ -195,12 +305,12 @@ void main() {
 
   test('missing credentials remain selected and show error', () async {
     const missing = AvailableSkill(
-      source: SkillSource.user,
       id: 'skill-1',
       slug: 'research',
       title: 'Research',
       description: '',
       content: '',
+      source: .user,
       kind: .template,
       credentialReadiness: .missing,
     );
@@ -232,12 +342,12 @@ void main() {
 
   test('maps unknown credentials to preparation failure', () async {
     const unknown = AvailableSkill(
-      source: SkillSource.user,
       id: 'skill-1',
       slug: 'research',
       title: 'Research',
       description: '',
       content: '',
+      source: .user,
       kind: .template,
     );
     final list = _ListSkills();
@@ -287,16 +397,42 @@ void main() {
   });
 }
 
-ProviderContainer _container(_ListSkills list, _BuildManifests manifests) =>
-    ProviderContainer(
-      overrides: [
-        listAvailableSkillsUsecaseProvider('workspace')
-            .overrideWith((ref) => list),
-        buildLoadedSkillManifestsUsecaseProvider.overrideWith(
-          (ref) => manifests,
-        ),
-      ],
-    );
+ProviderContainer _container(
+  _ListSkills list,
+  _BuildManifests manifests, {
+  _RecentSkillUsageRepository? recentRepository,
+}) => ProviderContainer(
+  overrides: [
+    listAvailableSkillsUsecaseProvider('workspace').overrideWith((ref) => list),
+    buildLoadedSkillManifestsUsecaseProvider.overrideWith((ref) => manifests),
+    recentSkillUsageRepositoryProvider.overrideWith(
+      (ref) => recentRepository ?? _RecentSkillUsageRepository(const []),
+    ),
+  ],
+);
+
+class _RecentSkillUsageRepository(
+  final List<String> _slugs, {
+  final bool failRead = false,
+}) implements RecentSkillUsageRepository {
+  final List<String> readWorkspaces = [];
+
+  @override
+  Future<List<String>> readRecentSkillSlugs(String workspaceId) async {
+    readWorkspaces.add(workspaceId);
+    if (failRead) {
+      throw StateError('research Research secret-prompt credential-token');
+    }
+
+    return _slugs;
+  }
+
+  @override
+  Future<void> recordUseNow({
+    required String workspaceId,
+    required String skillSlug,
+  }) => Future<void>.value();
+}
 
 void _stubSkills(_ListSkills list, AvailableSkill skill) {
   when(

@@ -40,12 +40,14 @@ class const ListAppSkillCredentialCandidatesUsecase(
     required String workspaceId,
     required AppSkillDefinition skill,
   }) async {
-    if (skill.identifier == agentsSkillSlug) return true;
+    // Browser tools dispatch locally and have no URL templates or credentials.
+    if (skill.identifier == agentsSkillSlug || skill.identifier == 'browser') {
+      return true;
+    }
 
     final usableNativeTools = _usableNativeTools(skill);
     if (usableNativeTools.isEmpty) return false;
-
-    if (_hasCredentiallessTool(usableNativeTools)) return true;
+    if (usableNativeTools.any((tool) => !tool.requiresCredential)) return true;
 
     return (await call(workspaceId: workspaceId, skill: skill)).isNotEmpty;
   }
@@ -85,9 +87,6 @@ class const ListAppSkillCredentialCandidatesUsecase(
   List<AppSkillToolDefinition> _usableNativeTools(AppSkillDefinition skill) {
     return skill.tools.where(_isUsableNativeTool).toList(growable: false);
   }
-
-  bool _hasCredentiallessTool(List<AppSkillToolDefinition> tools) =>
-      tools.any((tool) => !tool.requiresCredential);
 
   String _prefixedId(ServiceConnectionCandidate candidate) {
     if (candidate.kind == ServiceConnectionKindTable.modelProvider) {

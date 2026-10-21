@@ -11,6 +11,7 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -18,12 +19,14 @@ import 'package:auravibes_app/features/agents/providers/agent_repository_provide
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/recent_model_selections_notifier.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -35,6 +38,7 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
@@ -49,6 +53,7 @@ import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -64,9 +69,10 @@ const _modelId = 'demo-model';
 const _toolName = 'mcp_demo_notion_update-page';
 const _capture = bool.fromEnvironment('MARKETING_SCREENSHOT_CAPTURE');
 const _output = String.fromEnvironment('MARKETING_SCREENSHOT_OUTPUT');
+const _dark = bool.fromEnvironment('MARKETING_SCREENSHOT_DARK');
 final _marketingColors = AuraComputedColorScheme(
   primaryHue: AccentHue.defaultValue,
-  brightness: .light,
+  brightness: _dark ? .dark : .light,
 );
 const ValueKey<String> _appKey = .new('marketing-app-capture');
 const ValueKey<String> _storeKey = .new('marketing-store-capture');
@@ -120,6 +126,11 @@ const _webScenes = [
 ];
 
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  tearDownAll(database.close);
+
   setUpAll(() async {
     await (FontLoader(
       'Inter',
@@ -133,6 +144,16 @@ void main() {
     await (FontLoader(
       'MaterialIcons',
     )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    for (final id in const ['openai', 'anthropic']) {
+      final loader = SvgNetworkLoader('https://models.dev/logos/$id.svg');
+      final bytes = await SvgStringLoader(
+        File('test/marketing_screenshots/logos/$id.svg').readAsStringSync(),
+      ).loadBytes(null);
+      final _ = await svg.cache.putIfAbsent(
+        loader.cacheKey(null),
+        () async => bytes,
+      );
+    }
   });
 
   for (final locale in const ['en', 'es']) {
@@ -157,11 +178,9 @@ void main() {
 
           final fixture = _NotionFixture(locale, scene);
           final colors = _marketingColors;
-          final auraTheme = AuraTheme.light.copyWith(colors: colors);
-          final database = AppDatabase(
-            connection: DatabaseConnection(NativeDatabase.memory()),
+          final auraTheme = (_dark ? AuraTheme.dark : AuraTheme.light).copyWith(
+            colors: colors,
           );
-          addTearDown(database.close);
           final router = GoRouter(
             routes: $appRoutes,
             initialLocation: _location(scene),
@@ -194,7 +213,7 @@ void main() {
                             ),
                             theme: .new(
                               colorScheme: ColorScheme(
-                                brightness: .light,
+                                brightness: _dark ? .dark : .light,
                                 primary: colors.primary,
                                 onPrimary: colors.onPrimary,
                                 secondary: colors.secondary,
@@ -209,7 +228,7 @@ void main() {
                                   ? .android
                                   : .iOS,
                               useMaterial3: true,
-                              brightness: .light,
+                              brightness: _dark ? .dark : .light,
                               fontFamily:
                                   AuraTheme.light.typography.bodyFontFamily,
                             ),
@@ -250,6 +269,18 @@ void main() {
           if (scene == 'workspaces') {
             if (!ResponsiveShellLayout.isDesktop(screen.width)) {
               await tester.tap(find.byKey(const ValueKey('app_drawer_menu')));
+              final _ = await tester.pumpAndSettle();
+            } else if (ResponsiveShellLayout.isCompactDesktop(screen.width)) {
+              final shell = tester.element(
+                find.byType(AppWithResponsiveDrawer),
+              );
+              await tester.tap(
+                find.byTooltip(
+                  LocaleKeys.navigation_drawer_expand_sidebar_tooltip.tr(
+                    context: shell,
+                  ),
+                ),
+              );
               final _ = await tester.pumpAndSettle();
             }
             await tester.tap(find.byKey(const ValueKey('workspace_actions')));
@@ -301,10 +332,13 @@ void main() {
               findsWidgets,
             );
           } else if (scene == 'setup-ai') {
+            final _ = await tester.pumpAndSettle();
             expect(
               find.text(locale == 'es' ? 'Conectar IA' : 'Connect AI'),
               findsWidgets,
             );
+            expect(find.text('OpenAI'), findsWidgets);
+            expect(find.text('Anthropic'), findsWidgets);
           } else if (scene == 'setup-notion') {
             expect(
               find.text(
@@ -500,11 +534,10 @@ String _location(String scene) => switch (scene) {
   'workspaces' => '/workspaces/$_workspaceId/chat/new',
   'model' => '/workspaces/$_workspaceId/chat/new',
   'setup-ai' =>
-    '/workspaces/$_workspaceId/more/service-connections/new?type=modelProvider',
-  'setup-workspace' =>
-    '/workspaces/$_workspaceId/more/manage-workspaces/create',
-  'setup-notion' => '/workspaces/$_workspaceId/more/tools',
-  'setup-connected' => '/workspaces/$_workspaceId/more/tools',
+    '/workspaces/$_workspaceId/service-connections/new?type=modelProvider',
+  'setup-workspace' => '/workspaces/$_workspaceId/manage-workspaces/create',
+  'setup-notion' => '/workspaces/$_workspaceId/tools',
+  'setup-connected' => '/workspaces/$_workspaceId/tools',
   _ => '/workspaces/$_workspaceId/chats/$_chatId',
 };
 
@@ -681,7 +714,7 @@ class _SystemBarsPainter extends CustomPainter {
           drawing.size.width,
           drawing.size.height,
         ),
-        currentColor: const Color(0xFF101828),
+        currentColor: _marketingColors.onBackground,
       );
     }
   }
@@ -706,7 +739,7 @@ class _SystemBarsPainter extends CustomPainter {
         drawing.size.width,
         drawing.size.height,
       ),
-      currentColor: const Color(0xFF101828),
+      currentColor: _marketingColors.onBackground,
     );
   }
 }
@@ -1082,6 +1115,10 @@ List<Override> _overrides(_NotionFixture fixture, AppDatabase database) {
 
   return [
     appDatabaseProvider.overrideWithValue(database),
+    conversationArchiveIncompleteContextProvider((
+      workspaceId: _workspaceId,
+      conversationId: _chatId,
+    )).overrideWith((ref) => Stream.value(false)),
     cloudAccountsProvider.overrideWith((ref) async => const []),
     workspaceSessionForRouteProvider(_workspaceId).overrideWithValue(
       const AsyncData(
@@ -1135,6 +1172,12 @@ List<Override> _overrides(_NotionFixture fixture, AppDatabase database) {
     ),
     listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
         .overrideWith((ref) => Stream.value(_demoModels())),
+    apiModelProvidersProvider(workspaceId: _workspaceId).overrideWith(
+      (ref) async => const <ApiModelProviderEntity>[
+        .new(id: 'openai', name: 'OpenAI', type: .openai),
+        .new(id: 'anthropic', name: 'Anthropic', type: .anthropic),
+      ],
+    ),
     workspaceModelSelectionByIdProvider(
       _workspaceId,
       _modelId,

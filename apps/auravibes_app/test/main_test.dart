@@ -1,11 +1,66 @@
-// Required: Tests keep helper functions top-level.
-
 import 'package:auravibes_app/flavor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/main.dart' as app_main;
+import 'package:auravibes_app/widgets/android_desktop_caption_backdrop.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker_android/image_picker_android.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 
 void main() {
+  test('reserves caption backdrop for wide Android windows', () {
+    expect(
+      AndroidDesktopCaptionBackdrop.shouldShow(
+        platform: .android,
+        width: 1280,
+        topInset: 42,
+      ),
+      isTrue,
+    );
+    expect(
+      AndroidDesktopCaptionBackdrop.shouldShow(
+        platform: .android,
+        width: 899,
+        topInset: 42,
+      ),
+      isFalse,
+    );
+    expect(
+      AndroidDesktopCaptionBackdrop.shouldShow(
+        platform: .android,
+        width: 900,
+        topInset: 42,
+      ),
+      isTrue,
+    );
+    expect(
+      AndroidDesktopCaptionBackdrop.shouldShow(
+        platform: .android,
+        width: 1280,
+        topInset: 24,
+      ),
+      isFalse,
+    );
+    expect(
+      AndroidDesktopCaptionBackdrop.shouldShow(
+        platform: .macOS,
+        width: 1280,
+        topInset: 42,
+      ),
+      isFalse,
+    );
+  });
+
+  test('enables Android Photo Picker before gallery selection', () {
+    final previousImagePicker = ImagePickerPlatform.instance;
+    final imagePicker = ImagePickerAndroid();
+    ImagePickerPlatform.instance = imagePicker;
+    addTearDown(() => ImagePickerPlatform.instance = previousImagePicker);
+
+    app_main.AndroidPhotoPickerSetup.configure();
+
+    expect(imagePicker.useAndroidPhotoPicker, isTrue);
+  });
+
   group('resolveAppFlavor', () {
     test('resolves flavor by name', () {
       expect(app_main.AppFlavorResolver.resolve('dev'), Flavor.dev);
@@ -47,53 +102,47 @@ void main() {
       );
     });
 
-    test('titles the More screen and its feature routes', () {
-      expect(
-        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/more'),
-        LocaleKeys.more_screen_title,
-      );
+    test('titles feature routes without a more prefix', () {
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/manage-workspaces',
+          '/workspaces/ws-1/manage-workspaces',
         ),
         LocaleKeys.workspace_management_title,
       );
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/cloud-accounts/login',
+          '/workspaces/ws-1/cloud-accounts/login',
         ),
         LocaleKeys.cloud_accounts_login_existing,
       );
       expect(
-        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/more/tools'),
+        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/tools'),
         LocaleKeys.tools_screen_title,
       );
       expect(
-        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/more/models'),
+        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/models'),
         LocaleKeys.models_screens_title,
       );
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/service-connections/1',
+          '/workspaces/ws-1/service-connections/1',
         ),
         LocaleKeys.service_connections_title,
       );
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/skills/skill-1/tools/1',
+          '/workspaces/ws-1/skills/skill-1/tools/1',
         ),
         LocaleKeys.skills_screen_title,
       );
       expect(
         app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/skill-credential-definitions/1',
+          '/workspaces/ws-1/skill-credential-definitions/1',
         ),
         LocaleKeys.skill_credentials_definitions_title,
       );
       expect(
-        app_main.RouteTitles.titleKeyForPath(
-          '/workspaces/ws-1/more/agents/agent-1',
-        ),
+        app_main.RouteTitles.titleKeyForPath('/workspaces/ws-1/agents/agent-1'),
         LocaleKeys.agents_title,
       );
     });

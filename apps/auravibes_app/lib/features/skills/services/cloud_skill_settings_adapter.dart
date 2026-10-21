@@ -220,11 +220,11 @@ WorkspaceSkill _workspaceSkillFromData(
   Map<String, bool> settings,
   Map<String, dynamic> data,
 ) => WorkspaceSkill(
-  source: _skillSource(data),
   id: resource.resourceId,
   slug: data['slug'] as String,
   title: data['title'] as String,
   description: data['description'] as String,
+  source: _skillSource(data),
   kind: _skillKind(data),
   isEnabled: _skillEnabled(resource, settings, data),
 );
