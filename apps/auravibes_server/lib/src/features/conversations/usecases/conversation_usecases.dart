@@ -1714,6 +1714,11 @@ class ConversationUseCases {
           conversationId: conversation.stableId,
           messageId: message.stableId,
           excerpt: _messageBookmarkExcerpt(message.content),
+          isUser: switch (message.role) {
+            'user' => true,
+            'assistant' => false,
+            _ => null,
+          },
           conversationTitle: conversation.title,
           workspaceName: workspace.name,
           createdAt: message.createdAt,

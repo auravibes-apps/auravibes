@@ -10,6 +10,7 @@ class const MessageBookmarkDetails({
   required final String workspaceName,
   required final DateTime createdAt,
   final String? conversationTitle,
+  final bool? isUser,
 });
 
 class const MessageBookmarkWorkspace({

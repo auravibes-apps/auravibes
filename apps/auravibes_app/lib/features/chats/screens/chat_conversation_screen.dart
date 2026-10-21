@@ -1655,6 +1655,10 @@ class const _ChatConversationAppBar({
         workspaceId: data.workspaceId,
         conversationId: data.conversation.id,
       ),
+      _ConversationBookmarksButton(
+        workspaceId: data.workspaceId,
+        conversationId: data.conversation.id,
+      ),
       ConversationSidebarToggleButton(
         isPanelVisible: sidePanelVisible,
         tabCount: tabCount,
@@ -1662,6 +1666,21 @@ class const _ChatConversationAppBar({
       ),
     ],
     leading: data.leading,
+  );
+}
+
+class const _ConversationBookmarksButton({
+  required final String workspaceId,
+  required final String conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.bookmark_border,
+    onPressed: () => MessageBookmarksRoute(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ).go(context),
+    tooltip: LocaleKeys.chats_screens_chats_list_saved_messages.tr(),
   );
 }
 

@@ -65,6 +65,23 @@ void main() {
       expect(bookmarks.single.details.conversationTitle, 'Conversation source');
       expect(bookmarks.single.details.workspaceName, 'Workspace');
       expect(bookmarks.single.details.excerpt, message.content);
+      expect(bookmarks.single.details.isUser, isTrue);
+    });
+
+    test('lists assistant role for assistant bookmarks', () async {
+      final message = await _createMessage(messages, 'source', isUser: false);
+      expect(
+        await messages.bookmarkMessage(
+          workspaceId: 'ws-1',
+          conversationId: 'source',
+          messageId: message.id,
+        ),
+        isTrue,
+      );
+
+      final bookmarks = await messages.watchBookmarkedMessages('ws-1').first;
+
+      expect(bookmarks.single.details.isUser, isFalse);
     });
 
     test('truncates long excerpts with ellipsis', () async {
@@ -216,13 +233,14 @@ void main() {
 
 Future<MessageEntity> _createMessage(
   MessageRepository repository,
-  String conversationId,
-) => repository.createMessage(
+  String conversationId, {
+  bool isUser = true,
+}) => repository.createMessage(
   .new(
     conversationId: conversationId,
     content: 'Saved response',
     messageType: .text,
-    isUser: true,
+    isUser: isUser,
     status: .sent,
   ),
 );

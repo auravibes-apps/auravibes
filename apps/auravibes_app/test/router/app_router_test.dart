@@ -111,6 +111,20 @@ void main() {
     });
   });
 
+  group('MessageBookmarksRoute', () {
+    test('location includes the selected conversation query', () {
+      final route = MessageBookmarksRoute(
+        workspaceId: 'ws-1',
+        conversationId: 'conversation-1',
+      );
+
+      expect(
+        route.location,
+        '/workspaces/ws-1/bookmarks?conversation-id=conversation-1',
+      );
+    });
+  });
+
   group('SubAgentConversationRoute', () {
     test('location is full correct path', () {
       final route = SubAgentConversationRoute(

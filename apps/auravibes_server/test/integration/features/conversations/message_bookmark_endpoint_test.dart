@@ -73,7 +73,7 @@ void main() {
             updatedAt: now,
           ),
         );
-        await ConversationMessage.db.insertRow(
+        final assistantMessage = await ConversationMessage.db.insertRow(
           database,
           ConversationMessage(
             workspaceId: workspace.id!,
@@ -139,6 +139,16 @@ void main() {
           session,
           BookmarkMessageRequest(
             workspaceId: workspace.id!,
+            requestId: 'bookmark-assistant',
+            conversationId: created.id,
+            sourceConversationId: created.id,
+            messageId: assistantMessage.stableId,
+          ),
+        );
+        await endpoints.conversation.bookmarkMessage(
+          session,
+          BookmarkMessageRequest(
+            workspaceId: workspace.id!,
             requestId: 'bookmark-from-fork',
             conversationId: 'fork',
             sourceConversationId: created.id,
@@ -150,12 +160,20 @@ void main() {
           session,
           ListMessageBookmarksRequest(workspaceId: workspace.id!),
         );
-        expect(bookmarks, hasLength(1));
-        expect(bookmarks.single.conversationId, created.id);
-        expect(bookmarks.single.messageId, message.stableId);
-        expect(bookmarks.single.conversationTitle, 'Source');
-        expect(bookmarks.single.workspaceName, 'Bookmarks');
-        expect(bookmarks.single.excerpt, '${List.filled(160, 'x').join()}...');
+        expect(bookmarks, hasLength(2));
+        final userBookmark = bookmarks.singleWhere(
+          (bookmark) => bookmark.messageId == message.stableId,
+        );
+        expect(userBookmark.conversationId, created.id);
+        expect(userBookmark.isUser, isTrue);
+        expect(userBookmark.conversationTitle, 'Source');
+        expect(userBookmark.workspaceName, 'Bookmarks');
+        expect(userBookmark.excerpt, '${List.filled(160, 'x').join()}...');
+        final assistantBookmark = bookmarks.singleWhere(
+          (bookmark) => bookmark.messageId == assistantMessage.stableId,
+        );
+        expect(assistantBookmark.conversationId, created.id);
+        expect(assistantBookmark.isUser, isFalse);
 
         final nonMemberId = const Uuid().v4().toString();
         await AuthUser.db.insertRow(
@@ -219,6 +237,24 @@ void main() {
             conversationId: 'fork',
             sourceConversationId: created.id,
             messageId: message.stableId,
+          ),
+        );
+        final remainingBookmarks = await endpoints.conversation
+            .listMessageBookmarks(
+              session,
+              ListMessageBookmarksRequest(workspaceId: workspace.id!),
+            );
+        expect(remainingBookmarks, hasLength(1));
+        expect(remainingBookmarks.single.messageId, assistantMessage.stableId);
+        expect(remainingBookmarks.single.isUser, isFalse);
+        await endpoints.conversation.unbookmarkMessage(
+          session,
+          UnbookmarkMessageRequest(
+            workspaceId: workspace.id!,
+            requestId: 'unbookmark-assistant',
+            conversationId: created.id,
+            sourceConversationId: created.id,
+            messageId: assistantMessage.stableId,
           ),
         );
         expect(
