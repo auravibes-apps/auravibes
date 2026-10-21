@@ -19,14 +19,14 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_file_drop/flutter_file_drop.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:super_clipboard/super_clipboard.dart';
-import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -197,13 +197,19 @@ void main() {
     );
   }
 
-  Future<void> pumpAndInit(WidgetTester tester, Widget widget) async {
+  Future<_TestFlutterFileDropChannel> pumpAndInit(
+    WidgetTester tester,
+    Widget widget,
+  ) async {
+    final dropChannel = _TestFlutterFileDropChannel();
     await tester.runAsync(() async {
       await tester.pumpWidget(widget);
     });
     await tester.pump();
     await tester.pump();
     await tester.pump();
+
+    return dropChannel;
   }
 
   void overridePlatform(TargetPlatform platform) {
@@ -675,11 +681,11 @@ void main() {
     );
 
     expect(find.byType(ChatInputWidget), findsOneWidget);
-    expect(find.byType(DropRegion), findsOneWidget);
+    expect(find.byType(DropTarget), findsOneWidget);
     expect(find.byType(AuraInput), findsOneWidget);
   });
 
-  testWidgets('shows hint outside and highlights inside drop target', (
+  testWidgets('shows and clears the drop overlay for file previews', (
     tester,
   ) async {
     await pumpAndInit(
@@ -691,20 +697,23 @@ void main() {
       ),
     );
 
-    final dropMonitor = tester.widget<DropMonitor>(find.byType(DropMonitor));
-    expect(
-      tester.getRect(find.byType(DropRegion)),
-      tester.getRect(find.byType(AuraInput)),
-    );
-    final session = _TestFileDropSession();
-    dropMonitor.onDropOver?.call(
+    final dropTarget = tester.widget<DropTarget>(find.byType(DropTarget));
+    dropTarget.onEnter?.call(
       .new(
-        session: session,
-        position: .new(
-          local: const Offset(-10, -10),
-          global: const Offset(10, 10),
-        ),
-        isInside: false,
+        globalPosition: .zero,
+        localPosition: .zero,
+        items: const [.new(kind: .string)],
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Drop files to attach'), findsNothing);
+
+    dropTarget.onMove?.call(
+      .new(
+        globalPosition: .zero,
+        localPosition: .zero,
+        items: const [.new(kind: .file)],
       ),
     );
     await tester.pump();
@@ -713,47 +722,13 @@ void main() {
     expect(find.text('Drop files to attach'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('chat_input_drop_highlight')),
-      findsNothing,
-    );
-
-    dropMonitor.onDropOver?.call(
-      .new(
-        session: session,
-        position: .new(
-          local: .zero,
-          global: tester.getCenter(find.byType(AuraInput)),
-        ),
-        isInside: true,
-      ),
-    );
-    await tester.pump();
-
-    expect(
-      find.byKey(const ValueKey('chat_input_drop_highlight')),
       findsOneWidget,
     );
 
-    dropMonitor.onDropOver?.call(
-      .new(
-        session: session,
-        position: .new(
-          local: const Offset(-10, -10),
-          global: const Offset(10, 10),
-        ),
-        isInside: false,
-      ),
-    );
+    dropTarget.onLeave?.call();
     await tester.pump();
 
-    expect(
-      find.byKey(const ValueKey('chat_input_drop_highlight')),
-      findsNothing,
-    );
-    expect(find.text('Drop files to attach'), findsOneWidget);
-
-    dropMonitor.onDropLeave?.call(.new(session: session));
-    await tester.pump();
-
+    expect(find.byIcon(Icons.file_upload_outlined), findsNothing);
     expect(find.text('Drop files to attach'), findsNothing);
   });
 
@@ -768,9 +743,8 @@ void main() {
     );
     final attachmentService = _FakeLocalChatAttachmentService(attachment);
     final bytes = Uint8List.fromList('report!!'.codeUnits);
-    final dropFile = _TestDataReaderFile('report.pdf', bytes);
 
-    await pumpAndInit(
+    final dropChannel = await pumpAndInit(
       tester,
       buildSubject(
         disabled: true,
@@ -780,21 +754,52 @@ void main() {
       ),
     );
 
-    final dropRegion = tester.widget<DropRegion>(find.byType(DropRegion));
-    final session = _TestFileDropSession(dataReader: _TestDataReader(dropFile));
-    final _ = await dropRegion.onPerformDrop(
-      .new(
-        session: session,
-        position: .new(local: .zero, global: .zero),
-        acceptedOperation: .copy,
-      ),
+    dropChannel.dropFile(
+      position: tester.getCenter(find.byType(AuraInput)),
+      fileName: 'report.pdf',
+      mimeType: 'application/pdf',
+      bytes: bytes,
     );
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('report.pdf'), findsOneWidget);
     expect(attachmentService.copiedBytes, bytes);
     expect(attachmentService.copiedFileName, 'report.pdf');
-    expect(dropFile.wasClosed, isTrue);
+  });
+
+  testWidgets('rejects a dropped file after the streamed byte limit', (
+    tester,
+  ) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 8,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(attachment);
+    final dropChannel = await pumpAndInit(
+      tester,
+      buildSubject(
+        disabled: true,
+        acceptDroppedFilesWhenDisabled: true,
+        attachmentService: attachmentService,
+        onSendMessage: (_) => _noop(),
+      ),
+    );
+
+    dropChannel.dropFile(
+      position: tester.getCenter(find.byType(AuraInput)),
+      fileName: 'report.pdf',
+      mimeType: 'application/pdf',
+      bytes: Uint8List(0),
+      fileSize: ChatAttachmentModality.maxChatAttachmentBytes + 1,
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Attachment must be 25 MB or smaller.'), findsOneWidget);
+    expect(attachmentService.copiedBytes, isNull);
   });
 
   testWidgets('blocks send when draft attachment is unsupported', (
@@ -2176,85 +2181,98 @@ void _noop() {
   final _ = Object();
 }
 
-class _TestFileDropSession({final DataReader? dataReader}) extends DropSession {
-  @override
-  final List<DropItem> items = [_TestFileDropItem(dataReader)];
+class _TestFlutterFileDropChannel {
+  static const _readFileChunkChannel =
+      'dev.flutter.pigeon.flutter_file_drop_platform_interface.'
+      'DropFileHostApi.readFileChunk';
+  static const _releaseFileReadStreamChannel =
+      'dev.flutter.pigeon.flutter_file_drop_platform_interface.'
+      'DropFileHostApi.releaseFileReadStream';
+  static const _releaseSessionChannel =
+      'dev.flutter.pigeon.flutter_file_drop_platform_interface.'
+      'DropFileHostApi.releaseSession';
 
-  @override
-  Listenable get onDisposed => const _TestListenable();
-
-  @override
-  Set<DropOperation> get allowedOperations => {DropOperation.copy};
-}
-
-class _TestFileDropItem(final DataReader? _dataReader) extends DropItem {
-  @override
-  DataReader? get dataReader => _dataReader;
-
-  @override
-  Null get localData => null;
-
-  @override
-  List<PlatformFormat> get platformFormats => const [];
-
-  @override
-  bool canProvide(DataFormat format) => true;
-}
-
-class const _TestListenable() implements Listenable {
-  @override
-  void addListener(VoidCallback listener) {
-    final _ = listener;
+  _TestFlutterFileDropChannel() {
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockStreamHandler(
+      const EventChannel('flutter_file_drop/events'),
+      MockStreamHandler.inline(
+        onListen: (_, events) {
+          _eventSink = events;
+        },
+        onCancel: (_) => _eventSink = null,
+      ),
+    );
+    messenger.setMockMessageHandler(_readFileChunkChannel, _readFileChunk);
+    messenger.setMockMessageHandler(_releaseFileReadStreamChannel, _emptyReply);
+    messenger.setMockMessageHandler(_releaseSessionChannel, _emptyReply);
   }
 
-  @override
-  void removeListener(VoidCallback listener) {
-    final _ = listener;
-  }
-}
+  final StandardMessageCodec _codec = const .new();
+  final _files = <String, ({Uint8List bytes, int size})>{};
+  MockStreamHandlerEventSink? _eventSink;
+  var _nextHandle = 0;
 
-class _TestDataReader(final DataReaderFile file) implements DataReader {
-  @override
-  ReadProgress? getFile(
-    FileFormat? format,
-    AsyncValueChanged<DataReaderFile> onFile, {
-    ValueChanged<Object>? onError,
-    bool allowVirtualFiles = true,
-    bool synthesizeFilesFromURIs = true,
+  void dropFile({
+    required Offset position,
+    required String fileName,
+    required String mimeType,
+    required Uint8List bytes,
+    int? fileSize,
   }) {
-    unawaited(Future<void>.sync(() => onFile(file)).whenComplete(file.close));
+    final handle = 'file-${_nextHandle++}';
+    final size = fileSize ?? bytes.length;
+    _files[handle] = (bytes: bytes, size: size);
+    final eventSink = _eventSink;
+    if (eventSink == null) throw StateError('Drop event channel is not ready.');
 
-    return _TestReadProgress();
+    eventSink.success({
+      'type': 'drop',
+      'sessionId': 'chat-input-test',
+      'globalX': position.dx,
+      'globalY': position.dy,
+      'items': [
+        {
+          'type': 'file',
+          'handle': handle,
+          'name': fileName,
+          'mimeType': mimeType,
+          'size': size,
+        },
+      ],
+    });
   }
 
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
+  Future<ByteData?> _readFileChunk(ByteData? message) async {
+    if (message == null) throw FormatException('Missing file chunk request.');
+    final decoded = _codec.decodeMessage(message);
+    if (decoded is! List<Object?> || decoded.length < 5) {
+      throw FormatException('Invalid file chunk request.');
+    }
+    final handle = decoded[1];
+    final offset = decoded[3];
+    final maxBytes = decoded[4];
+    if (handle is! String || offset is! int || maxBytes is! int) {
+      throw FormatException('Invalid file chunk request fields.');
+    }
+    final file = _files[handle];
+    if (file == null) throw StateError('Unknown dropped file handle.');
+    final start = offset < file.size ? offset : file.size;
+    final remaining = file.size - start;
+    final length = remaining < maxBytes ? remaining : maxBytes;
+    final chunk = Uint8List(length);
+    final availableBytes = file.bytes.length - start;
+    final copyLength = availableBytes < length ? availableBytes : length;
+    if (copyLength > 0) {
+      chunk.setRange(0, copyLength, file.bytes, start);
+    }
 
-class _TestReadProgress implements ReadProgress {
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
-
-class _TestDataReaderFile(
-  @override final String? fileName,
-  final Uint8List bytes,
-) implements DataReaderFile {
-  bool wasClosed = false;
-
-  @override
-  int get fileSize => bytes.length;
-
-  @override
-  void close() {
-    wasClosed = true;
+    return _codec.encodeMessage(<Object?>[chunk]);
   }
 
-  @override
-  Stream<Uint8List> getStream() => Stream.value(bytes);
-
-  @override
-  Future<Uint8List> readAll() async => bytes;
+  Future<ByteData?> _emptyReply(ByteData? _) async =>
+      _codec.encodeMessage(<Object?>[null]);
 }
 
 class _FakeLocalChatAttachmentService(
