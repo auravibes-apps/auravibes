@@ -1,11 +1,8 @@
-import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -14,7 +11,7 @@ part 'delete_service_connection_usecase.g.dart';
 
 class DeleteServiceConnectionUsecase({
   required ModelConnectionStore modelConnectionRepository,
-  required final Future<void> Function(String id) deleteSkillCredential,
+  required final Future<void> Function(String id) deleteConnectorConnection,
 }) {
   final ModelConnectionStore modelConnectionStore = modelConnectionRepository;
   Future<void> call({
@@ -25,7 +22,7 @@ class DeleteServiceConnectionUsecase({
       .modelProvider => modelConnectionStore.deleteModelConnection(
         connectionId,
       ),
-      .skillCredential => deleteSkillCredential(connectionId),
+      .connector => deleteConnectorConnection(connectionId),
       .mcpServer => throw StateError(
         'MCP server service connections cannot be deleted by this action.',
       ),
@@ -44,14 +41,17 @@ Future<DeleteServiceConnectionUsecase> deleteServiceConnectionUsecase(
       modelConnectionRepository: await ref.watch(
         modelConnectionStoreProvider(workspaceId).future,
       ),
-      deleteSkillCredential: await _deleteSkillCredential(ref, workspaceId),
+      deleteConnectorConnection: await _deleteConnectorConnection(
+        ref,
+        workspaceId,
+      ),
     );
   } finally {
     link.close();
   }
 }
 
-Future<Future<void> Function(String id)> _deleteSkillCredential(
+Future<Future<void> Function(String id)> _deleteConnectorConnection(
   Ref ref,
   String workspaceId,
 ) async {
@@ -79,29 +79,11 @@ Future<void> Function(String id) _localDeleteOperation(
   Ref ref,
   String workspaceId,
 ) {
-  final skillCredentials = ref.watch(skillCredentialsRepositoryProvider);
   final serviceConnections = ref.watch(serviceConnectionRepositoryProvider);
 
-  Future<void> deleteLocalCredential(String id) => _deleteLocalCredential(
-    serviceConnections,
-    skillCredentials,
-    workspaceId,
-    id,
-  );
+  Future<void> deleteLocalConnectorConnection(String id) => serviceConnections
+      .deleteConnectorConnection(id, workspaceId: workspaceId);
 
-  return deleteLocalCredential;
-}
-
-Future<void> _deleteLocalCredential(
-  ServiceConnectionRepository serviceConnections,
-  SkillCredentialsRepository skillCredentials,
-  String workspaceId,
-  String id,
-) async {
-  await serviceConnections.deleteAppSkillCredential(
-    id,
-    workspaceId: workspaceId,
-  );
-  await skillCredentials.deleteCredential(id);
+  return deleteLocalConnectorConnection;
 }
 // Top-level API/provider declarations are required by their consumers.

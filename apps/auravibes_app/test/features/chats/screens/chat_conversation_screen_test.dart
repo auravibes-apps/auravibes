@@ -1426,7 +1426,7 @@ void main() {
         workspaceId: 7,
         conversationId: _chatId,
         toolCallId: 'tool-call-1',
-        toolKind: 'skillTemplate',
+        toolKind: 'skillNative',
         status: 'completed',
         statusPreview: BackgroundWorkContinuationPreview.queued,
         resultContent: result,

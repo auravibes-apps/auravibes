@@ -1,5 +1,4 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:drift/drift.dart';
 
@@ -26,21 +25,12 @@ class SkillsDao(super.attachedDatabase)
       _getUserSkill(workspaceId, (tbl) => tbl.title.equals(title));
 
   Future<SkillsTable> createSkill(SkillsCompanion skill) =>
-      transaction(() async {
-        await attachedDatabase.skillCredentialDefinitionsDao
-            .requireOwnedReference(
-              skill.workspaceId.value,
-              skill.credentialDefinitionId.value,
-            );
-
-        return await into(skills).insertReturning(skill);
-      });
+      into(skills).insertReturning(skill);
 
   Future<SkillsTable> updateSkill(String skillId, SkillsCompanion skill) =>
       transaction(() async {
         final current = await getSkillById(skillId);
         if (current == null) throw StateError('Skill was not found');
-        await _requireUpdatedOwnership(current, skill);
 
         return await _writeSkill(skillId, skill);
       });
@@ -65,33 +55,6 @@ extension SkillsDaoQueries on SkillsDao {
     }
 
     return updated;
-  }
-
-  Future<void> _requireUpdatedOwnership(
-    SkillsTable current,
-    SkillsCompanion update,
-  ) async {
-    final workspaceId = update.workspaceId.present
-        ? update.workspaceId.value
-        : current.workspaceId;
-    await attachedDatabase.skillCredentialDefinitionsDao.requireOwnedReference(
-      workspaceId,
-      update.credentialDefinitionId.present
-          ? update.credentialDefinitionId.value
-          : current.credentialDefinitionId,
-    );
-    if (workspaceId == current.workspaceId) return;
-    await _requireToolOwnership(current.id, workspaceId);
-  }
-
-  Future<void> _requireToolOwnership(String skillId, String workspaceId) async {
-    final tools = await attachedDatabase.skillTemplateToolsDao.getSkillTools(
-      skillId,
-    );
-    for (final tool in tools) {
-      await attachedDatabase.skillCredentialDefinitionsDao
-          .requireOwnedReference(workspaceId, tool.credentialDefinitionId);
-    }
   }
 
   Future<SkillsTable?> _getUserSkill(

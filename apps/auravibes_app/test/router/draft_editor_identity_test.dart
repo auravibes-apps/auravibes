@@ -1,9 +1,6 @@
-import 'dart:convert';
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/agents_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -39,7 +36,7 @@ void main() {
       final _ = await rootBundle.loadString('assets/i18n/es.json');
     });
   });
-  for (final action in ['agent', 'type', 'connection']) {
+  for (final action in ['agent', 'connection']) {
     final testName =
         '$action identity replacement keeps A on cancel '
         'and saves only B after discard';
@@ -65,28 +62,13 @@ void main() {
           content: 'Second instructions',
         ),
       );
-      final definitions = SkillCredentialDefinitionsRepository(database);
-      final definition = await definitions.createDefinition(
-        workspace.id,
-        const .new(
-          title: 'Saved type',
-          attributesJson: '{"key":{"description":"Original key"}}',
-        ),
-      );
-      final secondDefinition = await definitions.createDefinition(
-        workspace.id,
-        const .new(
-          title: 'Second type',
-          attributesJson: '{"other":{"description":"Second key"}}',
-        ),
-      );
       final connection = await database
           .into(database.serviceConnections)
           .insertReturning(
             ServiceConnectionsCompanion(
               name: const .new('Saved connection'),
               serviceId: const .new('custom'),
-              kind: const .new(ServiceConnectionKindTable.appSkillCredential),
+              kind: const .new(ServiceConnectionKindTable.customHttp),
               authenticationType: const .new(
                 ServiceAuthenticationTypeTable.apiKey,
               ),
@@ -100,7 +82,7 @@ void main() {
             ServiceConnectionsCompanion(
               name: const .new('Second connection'),
               serviceId: const .new('custom'),
-              kind: const .new(ServiceConnectionKindTable.appSkillCredential),
+              kind: const .new(ServiceConnectionKindTable.customHttp),
               authenticationType: const .new(
                 ServiceAuthenticationTypeTable.apiKey,
               ),
@@ -110,25 +92,18 @@ void main() {
           );
       final firstId = switch (action) {
         'agent' => agent.id,
-        'type' => definition.id,
         _ => connection.id,
       };
       final secondId = switch (action) {
         'agent' => second.id,
-        'type' => secondDefinition.id,
         _ => secondConnection.id,
       };
       final secondTitle = switch (action) {
         'agent' => 'Second agent',
-        'type' => 'Second type',
         _ => 'Second connection',
       };
       GoRouteData routeFor(String id) => switch (action) {
         'agent' => AgentDetailRoute(workspaceId: workspace.id, agentId: id),
-        'type' => SkillCredentialDefinitionEditRoute(
-          workspaceId: workspace.id,
-          definitionId: id,
-        ),
         _ => ServiceConnectionEditRoute(
           workspaceId: workspace.id,
           connectionId: id,
@@ -137,9 +112,6 @@ void main() {
       final route = routeFor(firstId);
       final destination = switch (action) {
         'agent' => AgentsRoute(workspaceId: workspace.id).location,
-        'type' => SkillCredentialDefinitionsRoute(
-          workspaceId: workspace.id,
-        ).location,
         _ => ServiceConnectionsRoute(workspaceId: workspace.id).location,
       };
       final router = GoRouter(
@@ -236,12 +208,8 @@ void main() {
         ),
         'Second revision',
       );
-      if (action == 'type') {
-        await tester.tap(find.byIcon(Icons.save_outlined));
-      } else {
-        await tester.ensureVisible(find.text('Save'));
-        await tester.tap(find.text('Save'));
-      }
+      await tester.ensureVisible(find.text('Save'));
+      await tester.tap(find.text('Save'));
       final _ = await tester.pumpAndSettle();
       expect(router.state.uri.path, destination);
       switch (action) {
@@ -254,21 +222,6 @@ void main() {
           expect(saved?.name, 'Second revision');
           expect(saved?.description, 'Second description');
           expect(saved?.content, 'Second instructions');
-        case 'type':
-          final original = await definitions.getDefinitionById(definition.id);
-          final saved = await definitions.getDefinitionById(
-            secondDefinition.id,
-          );
-          expect(original?.title, 'Saved type');
-          expect(
-            jsonDecode(original?.attributesJson ?? '{}'),
-            containsPair('key', containsPair('description', 'Original key')),
-          );
-          expect(saved?.title, 'Second revision');
-          expect(
-            jsonDecode(saved?.attributesJson ?? '{}'),
-            containsPair('other', containsPair('description', 'Second key')),
-          );
         case 'connection':
           final firstQuery = database.select(database.serviceConnections)
             ..where((table) => table.id.equals(connection.id));

@@ -37,7 +37,7 @@ void main() {
                 content: '',
                 source: .user,
                 kind: .template,
-                credentialReadiness: .ready,
+                connectorReadiness: .ready,
               ),
             ],
             loadable: [],
@@ -84,14 +84,14 @@ void main() {
     expect(find.text('Research'), findsOneWidget);
     expect(find.text('Recent skills'), findsNothing);
     expect(find.text('Needs context'), findsOneWidget);
-    expect(find.text('Instruction requirements met'), findsOneWidget);
+    expect(find.text('Required Connections are ready'), findsOneWidget);
     expect(find.text('Use now'), findsOneWidget);
     expect(find.byIcon(Icons.remove_circle_outline), findsNothing);
     final semantics = tester
         .getSemantics(find.byKey(const ValueKey('skill-row-research')))
         .getSemanticsData();
     expect(semantics.label, contains('Needs context'));
-    expect(semantics.label, contains('Instruction requirements met'));
+    expect(semantics.label, contains('Required Connections are ready'));
     expect(semantics.flagsCollection.isSelected, ui.Tristate.isTrue);
   });
 
@@ -112,7 +112,7 @@ void main() {
       final reason = 'access $access';
       expect(find.text('Ready in context'), findsOneWidget, reason: reason);
       expect(
-        find.text('Instruction requirements met'),
+        find.text('Required Connections are ready'),
         findsOneWidget,
         reason: reason,
       );
@@ -301,7 +301,7 @@ void main() {
         loaded: [_research],
         loadable: [],
         contextStatusBySlug: {'research': .error},
-        failureBySlug: {'research': .missingCredentials},
+        failureBySlug: {'research': .missingConnection},
       ),
       access: const SkillAccessSummary(
         status: .partial,
@@ -319,15 +319,15 @@ void main() {
         .getSemanticsData();
     expect(semantics.label, contains('Research'));
     expect(semantics.label, contains('Added to this conversation'));
-    expect(semantics.label, contains('Instruction requirements met'));
+    expect(semantics.label, contains('Required Connections are ready'));
     expect(semantics.label, contains('Context error'));
     expect(
       semantics.label,
-      contains('Set up skill credentials before using it.'),
+      contains('Connect the required Connector before using this Skill.'),
     );
     expect(semantics.flagsCollection.isSelected, ui.Tristate.isTrue);
     expect(semantics.flagsCollection.isButton, isTrue);
-    expect(find.text('Set up credentials'), findsNWidgets(2));
+    expect(find.text('Manage Connections'), findsNWidgets(2));
   });
 
   testWidgets('retryable context errors label their recovery action', (
@@ -380,7 +380,7 @@ void main() {
     await tester.ensureVisible(find.text('Add'));
     final _ = await tester.tap(find.text('Add'));
     await tester.pump();
-    final setup = find.widgetWithText(AuraButton, 'Set up credentials');
+    final setup = find.widgetWithText(AuraButton, 'Manage Connections');
     expect(tester.widget<AuraButton>(setup).disabled, isTrue);
 
     expect(find.textContaining('Adding'), findsOneWidget);
@@ -450,7 +450,6 @@ void main() {
             title: 'Search sources',
             status: .missing,
             description: 'Search public sources for a topic.',
-            credentialDefinitionId: 'private-credential-id',
           ),
         ],
       ),
@@ -694,7 +693,7 @@ const _research = AvailableSkill(
   content: 'Use research',
   source: .user,
   kind: .template,
-  credentialReadiness: .ready,
+  connectorReadiness: .ready,
 );
 
 const _weather = AvailableSkill(
@@ -705,5 +704,5 @@ const _weather = AvailableSkill(
   content: 'Use weather',
   source: .user,
   kind: .template,
-  credentialReadiness: .ready,
+  connectorReadiness: .ready,
 );

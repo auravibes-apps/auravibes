@@ -237,12 +237,12 @@ void main() {
       final credentialCases =
           <
             ({
-              SkillCredentialReadiness readiness,
+              ConnectorConnectionReadiness readiness,
               ConversationSkillActionResult expected,
             })
           >[
-            (readiness: .missing, expected: .credentialsMissing),
-            (readiness: .unknown, expected: .credentialsUnknown),
+            (readiness: .missing, expected: .connectionMissing),
+            (readiness: .unknown, expected: .connectionUnknown),
           ];
       for (final (:readiness, :expected) in credentialCases) {
         var loads = 0;
@@ -431,10 +431,10 @@ const _skill = AvailableSkill(
   content: 'Research carefully.',
   source: .user,
   kind: .template,
-  credentialReadiness: .ready,
+  connectorReadiness: .ready,
 );
 
-AvailableSkill _skillWithReadiness(SkillCredentialReadiness readiness) =>
+AvailableSkill _skillWithReadiness(ConnectorConnectionReadiness readiness) =>
     AvailableSkill(
       id: _skill.id,
       slug: _skill.slug,
@@ -443,5 +443,5 @@ AvailableSkill _skillWithReadiness(SkillCredentialReadiness readiness) =>
       content: _skill.content,
       source: _skill.source,
       kind: _skill.kind,
-      credentialReadiness: readiness,
+      connectorReadiness: readiness,
     );

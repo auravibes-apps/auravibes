@@ -69,20 +69,6 @@ extension CloudSkillSettingsAdapterMutations on CloudSkillSettingsAdapter {
     CloudConversationSkillSelection selection,
   ) => _patchConversationSkill(_store, selection);
 
-  Future<void> putCredentialSecret({
-    required String credentialId,
-    required String? secret,
-    int? expectedRevision,
-  }) async {
-    final _ = await _store.putSecret(
-      kind: .skillCredential,
-      scope: .workspace,
-      resourceId: credentialId,
-      secret: secret,
-      revision: expectedRevision,
-    );
-  }
-
   Future<ConversationMutationResult> compactConversation({
     required String conversationId,
     required int expectedRevision,

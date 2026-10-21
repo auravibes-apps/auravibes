@@ -59,19 +59,14 @@ abstract final class FeatureDestinations {
   static List<FeatureNavigationDestination> connections(String workspaceId) => [
     for (final destination in const [
       ConnectionDestination.overview,
+      ConnectionDestination.connectors,
       ConnectionDestination.providers,
       ConnectionDestination.services,
       ConnectionDestination.tools,
       ConnectionDestination.credentials,
     ])
       (
-        labelKey: switch (destination) {
-          .overview => LocaleKeys.related_lists_overview,
-          .providers => LocaleKeys.related_lists_providers,
-          .services => LocaleKeys.related_lists_services,
-          .tools => LocaleKeys.related_lists_tools,
-          .credentials => LocaleKeys.related_lists_credentials,
-        },
+        labelKey: _connectionLabelKey(destination),
         location: connectionLocation(workspaceId, destination),
       ),
   ];
@@ -101,6 +96,16 @@ abstract final class FeatureDestinations {
 
   static Future<void> navigate(FeatureDestinationNavigationRequest request) =>
       _FeatureDestinationNavigation.navigate(request);
+
+  static String _connectionLabelKey(ConnectionDestination destination) =>
+      switch (destination) {
+        .overview => LocaleKeys.related_lists_overview,
+        .connectors => LocaleKeys.related_lists_connectors,
+        .providers => LocaleKeys.related_lists_providers,
+        .services => LocaleKeys.related_lists_services,
+        .tools => LocaleKeys.related_lists_tools,
+        .credentials => LocaleKeys.related_lists_credentials,
+      };
 }
 
 abstract final class _FeatureDestinationNavigation {

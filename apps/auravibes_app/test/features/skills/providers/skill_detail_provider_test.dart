@@ -15,7 +15,7 @@ void main() {
   const workspaceId = 'workspace-1';
 
   test(
-    'uses registry metadata for a cloud template skill without a resource',
+    'uses registry metadata for a cloud native skill without a resource',
     () async {
       final container = ProviderContainer(
         overrides: [
@@ -32,15 +32,15 @@ void main() {
       expect(detail, isNotNull);
       if (detail == null) fail('Expected an app skill detail.');
       expect(detail.source, SkillSource.app);
-      expect(detail.kind, SkillKind.template);
+      expect(detail.kind, SkillKind.native);
       expect(detail.title, 'DuckDuckGo Search');
       expect(detail.description, isNotEmpty);
-      expect(detail.appTools, isNotEmpty);
-      expect(detail.appTools.map((tool) => tool.slug), contains('search'));
+      expect(detail.connectorToolIds, ['connector/duckduckgo/search']);
+      expect(detail.appTools, isEmpty);
     },
   );
 
-  test('keeps cloud-native metadata while exposing registry tools', () async {
+  test('keeps cloud-native metadata and Connector tool references', () async {
     final container = ProviderContainer(
       overrides: [
         cloudSkillStoreProvider(workspaceId).overrideWithValue(
@@ -73,7 +73,8 @@ void main() {
     expect(detail.content, 'Workspace instructions.');
     expect(detail.isEnabled, isFalse);
     expect(detail.titleKey, isNull);
-    expect(detail.appTools.map((tool) => tool.slug), contains('search'));
+    expect(detail.connectorToolIds, ['connector/duckduckgo/search']);
+    expect(detail.appTools, isEmpty);
   });
 
   test(
@@ -134,7 +135,8 @@ void main() {
     if (detail == null) fail('Expected a native skill detail.');
     expect(detail.source, SkillSource.app);
     expect(detail.isEnabled, isFalse);
-    expect(detail.appTools, isNotEmpty);
+    expect(detail.connectorToolIds, ['connector/duckduckgo/search']);
+    expect(detail.appTools, isEmpty);
   });
 
   test('returns null for an unknown cloud skill id', () async {
@@ -170,7 +172,6 @@ void main() {
               description: 'Another workspace skill.',
               content: 'Do not expose these instructions.',
               isEnabled: true,
-              isCredentialOptional: false,
               createdAt: now,
               updatedAt: now,
             ),

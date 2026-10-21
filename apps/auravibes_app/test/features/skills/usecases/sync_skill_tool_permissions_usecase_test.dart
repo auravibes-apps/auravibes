@@ -5,10 +5,9 @@ import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show ToolSpec, activateSkillToolName, listSkillCredentialsToolName;
+    show ToolSpec, activateSkillToolName, loadSkillResourceToolName;
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,9 +15,6 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockBuildDynamicSkillToolSpecsUsecase extends Mock
     implements BuildDynamicSkillToolSpecsUsecase;
-
-class _MockBuildSkillTemplateToolSpecsUsecase extends Mock
-    implements BuildSkillTemplateToolSpecsUsecase;
 
 class _MockBuildAppSkillNativeToolSpecsUsecase extends Mock
     implements BuildAppSkillNativeToolSpecsUsecase;
@@ -35,17 +31,14 @@ void main() {
         .insert(name: 'Workspace', type: WorkspaceType.local),
       );
       final dynamicSpecs = _MockBuildDynamicSkillToolSpecsUsecase();
-      final templateSpecs = _MockBuildSkillTemplateToolSpecsUsecase();
       final nativeSpecs = _MockBuildAppSkillNativeToolSpecsUsecase();
       fixture
         ..workspaceId = workspace.id
         ..dynamicSpecs = dynamicSpecs
-        ..templateSpecs = templateSpecs
         ..nativeSpecs = nativeSpecs
         ..usecase = .new(
           database: fixture.database,
           buildDynamicSkillToolSpecs: dynamicSpecs,
-          buildSkillTemplateToolSpecs: templateSpecs,
           buildAppSkillNativeToolSpecs: nativeSpecs,
         );
     });
@@ -57,7 +50,6 @@ void main() {
 
     void stubSpecs({
       List<ToolSpec> dynamic = const [],
-      List<ToolSpec> template = const [],
       List<ToolSpec> native = const [],
     }) {
       when(
@@ -66,12 +58,6 @@ void main() {
           workspaceId: any(named: 'workspaceId'),
         ),
       ).thenAnswer((_) async => dynamic);
-      when(
-        () => fixture.templateSpecs.call(
-          conversationId: any(named: 'conversationId'),
-          workspaceId: any(named: 'workspaceId'),
-        ),
-      ).thenAnswer((_) async => template);
       when(
         () => fixture.nativeSpecs.call(
           conversationId: any(named: 'conversationId'),
@@ -149,7 +135,7 @@ void main() {
         description: 'Search records',
         inputJsonSchema: {'type': 'object'},
       );
-      stubSpecs(template: [initialSpec]);
+      stubSpecs(dynamic: [initialSpec]);
       await fixture.usecase.call(
         conversationId: 'conversation-id',
         workspaceId: fixture.workspaceId,
@@ -177,7 +163,7 @@ void main() {
           },
         },
       );
-      stubSpecs(template: [updatedSpec]);
+      stubSpecs(dynamic: [updatedSpec]);
 
       await fixture.usecase.call(
         conversationId: 'conversation-id',
@@ -199,7 +185,7 @@ void main() {
         description: 'Search records',
         inputJsonSchema: {'type': 'object'},
       );
-      stubSpecs(template: [spec]);
+      stubSpecs(dynamic: [spec]);
       await fixture.usecase.call(
         conversationId: 'conversation-id',
         workspaceId: fixture.workspaceId,
@@ -272,8 +258,8 @@ void main() {
 
     test('permissionTableIdFor returns matching row id', () async {
       final spec = ToolSpec(
-        name: 'list_skill_credentials',
-        description: 'List credentials',
+        name: loadSkillResourceToolName,
+        description: 'Load a Skill resource',
         inputJsonSchema: {'type': 'object'},
       );
       stubSpecs(dynamic: [spec]);
@@ -312,7 +298,7 @@ void main() {
         description: 'Search records',
         inputJsonSchema: {'type': 'object'},
       );
-      stubSpecs(template: [staleSpec]);
+      stubSpecs(dynamic: [staleSpec]);
       final loadedPermissionId = await fixture.usecase.permissionTableIdFor(
         conversationId: 'conversation-id',
         workspaceId: fixture.workspaceId,
@@ -345,16 +331,14 @@ void main() {
       isTrue,
     );
     expect(
-      SkillPermissionTools.isSkillPermissionToolName(
-        listSkillCredentialsToolName,
-      ),
+      SkillPermissionTools.isSkillPermissionToolName(loadSkillResourceToolName),
       isTrue,
     );
     expect(
       SkillPermissionTools.isSkillPermissionToolName(
         'skill__user__example__search',
       ),
-      isTrue,
+      isFalse,
     );
     expect(
       SkillPermissionTools.isSkillPermissionToolName(
@@ -373,7 +357,6 @@ class _Fixture {
   AppDatabase? _database;
   String? _workspaceId;
   _MockBuildDynamicSkillToolSpecsUsecase? _dynamicSpecs;
-  _MockBuildSkillTemplateToolSpecsUsecase? _templateSpecs;
   _MockBuildAppSkillNativeToolSpecsUsecase? _nativeSpecs;
   SyncSkillToolPermissionsUsecase? _usecase;
 
@@ -383,8 +366,6 @@ class _Fixture {
       _workspaceId ?? fail('Workspace fixture not initialized');
   _MockBuildDynamicSkillToolSpecsUsecase get dynamicSpecs =>
       _dynamicSpecs ?? fail('Dynamic specs fixture not initialized');
-  _MockBuildSkillTemplateToolSpecsUsecase get templateSpecs =>
-      _templateSpecs ?? fail('Template specs fixture not initialized');
   _MockBuildAppSkillNativeToolSpecsUsecase get nativeSpecs =>
       _nativeSpecs ?? fail('Native specs fixture not initialized');
   SyncSkillToolPermissionsUsecase get usecase =>
@@ -394,8 +375,6 @@ class _Fixture {
   set workspaceId(String value) => _workspaceId = value;
   set dynamicSpecs(_MockBuildDynamicSkillToolSpecsUsecase value) =>
       _dynamicSpecs = value;
-  set templateSpecs(_MockBuildSkillTemplateToolSpecsUsecase value) =>
-      _templateSpecs = value;
   set nativeSpecs(_MockBuildAppSkillNativeToolSpecsUsecase value) =>
       _nativeSpecs = value;
   set usecase(SyncSkillToolPermissionsUsecase value) => _usecase = value;
@@ -404,7 +383,6 @@ class _Fixture {
     _database = null;
     _workspaceId = null;
     _dynamicSpecs = null;
-    _templateSpecs = null;
     _nativeSpecs = null;
     _usecase = null;
   }

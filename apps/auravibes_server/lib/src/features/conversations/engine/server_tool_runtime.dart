@@ -44,39 +44,19 @@ String serverToolExecutionFailureCode(Object error) => switch (error) {
 };
 
 bool serverToolIsReplayableSkillKind(AgentResolvedToolKind? kind) =>
-    kind == AgentResolvedToolKind.skillTemplate ||
-    kind == AgentResolvedToolKind.skillNative ||
-    kind == AgentResolvedToolKind.skillAppTemplate;
+    kind == AgentResolvedToolKind.skillNative;
 
 bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
     (descriptor.kind == AgentResolvedToolKind.builtIn &&
         descriptor.tableId == backgroundWorkResultReaderTableId &&
         descriptor.toolIdentifier == backgroundWorkResultReaderToolName) ||
     descriptor.kind == AgentResolvedToolKind.mcp ||
-    descriptor.kind == AgentResolvedToolKind.skillTemplate ||
-    (descriptor.kind == AgentResolvedToolKind.skillAppTemplate &&
-        serviceSkillDefinitions.any(
-          (skill) =>
-              skill.kind == AppSkillDefinitionKind.template &&
-              skill.slug == descriptor.skillSlug &&
-              skill.tools.any(
-                (tool) =>
-                    tool.slug == descriptor.toolIdentifier &&
-                    tool.urlTemplate != null,
-              ),
-        )) ||
+    (descriptor.kind == AgentResolvedToolKind.connectorCommand &&
+        connectorToolCommandNames.contains(descriptor.toolIdentifier)) ||
     (descriptor.kind == AgentResolvedToolKind.skillControl &&
         skillCommandToolNames.contains(descriptor.toolIdentifier)) ||
     (descriptor.kind == AgentResolvedToolKind.skillNative &&
-        (descriptor.skillSlug == agentsSkillSlug ||
-            serviceSkillDefinitions.any(
-              (skill) =>
-                  skill.slug == descriptor.skillSlug &&
-                  skill.kind == AppSkillDefinitionKind.native &&
-                  skill.tools.any(
-                    (tool) => tool.slug == descriptor.toolIdentifier,
-                  ),
-            )));
+        descriptor.skillSlug == agentsSkillSlug);
 
 bool serverToolCanRunInBackground(
   ServerResolvedTool tool, {
@@ -84,11 +64,9 @@ bool serverToolCanRunInBackground(
 }) {
   if (!isTopLevelConversation) return false;
   final descriptor = tool.descriptor;
-  return descriptor.kind == AgentResolvedToolKind.skillTemplate ||
-      descriptor.kind == AgentResolvedToolKind.skillAppTemplate ||
-      (descriptor.kind == AgentResolvedToolKind.skillNative &&
-          descriptor.skillSlug == agentsSkillSlug &&
-          descriptor.toolIdentifier == runSubAgentToolName);
+  return descriptor.kind == AgentResolvedToolKind.skillNative &&
+      descriptor.skillSlug == agentsSkillSlug &&
+      descriptor.toolIdentifier == runSubAgentToolName;
 }
 
 bool isCloudToolEnabled({
@@ -146,7 +124,6 @@ Set<String> cloudAuthorizedSkillIds({
 List<ServerResolvedTool> materializeCloudSkillControlTools({
   required Set<String> selectedSkillIds,
   required Iterable<Map<String, dynamic>> userSkills,
-  Iterable<Map<String, dynamic>> templateTools = const [],
   required Iterable<Map<String, dynamic>> appSkillSettings,
   Iterable<Map<String, dynamic>> serviceConnections = const [],
   required bool isChildConversation,
@@ -154,30 +131,39 @@ List<ServerResolvedTool> materializeCloudSkillControlTools({
 }) => _materializeCloudSkillControlToolsBody(
   selectedSkillIds: selectedSkillIds,
   userSkills: userSkills,
-  templateTools: templateTools,
   appSkillSettings: appSkillSettings,
   serviceConnections: serviceConnections,
   isChildConversation: isChildConversation,
   a2uiSupportedComponents: a2uiSupportedComponents,
 );
 
-List<ServerResolvedTool> fixedCloudSkillCommandTools({
-  Iterable<SkillManifest> manifests = const [],
-}) => buildSkillCommandToolSpecs(manifests: manifests)
-    .map(
-      (spec) => ServerResolvedTool(
-        descriptor: AgentResolvedToolName.skillControl(
-          toolIdentifier: spec.name,
-        ),
-        spec: spec,
-      ),
-    )
-    .toList(growable: false);
+List<ServerResolvedTool> fixedCloudSkillCommandTools() =>
+    buildSkillCommandToolSpecs()
+        .map(
+          (spec) => ServerResolvedTool(
+            descriptor: AgentResolvedToolName.skillControl(
+              toolIdentifier: spec.name,
+            ),
+            spec: spec,
+          ),
+        )
+        .toList(growable: false);
+
+List<ServerResolvedTool> fixedCloudConnectorCommandTools() =>
+    buildConnectorCommandToolSpecs()
+        .map(
+          (spec) => ServerResolvedTool(
+            descriptor: AgentResolvedToolName.connectorCommand(
+              toolIdentifier: spec.name,
+            ),
+            spec: spec,
+          ),
+        )
+        .toList(growable: false);
 
 Future<SkillManifest?> buildCloudSkillManifest({
   required String slug,
   required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<ServerResolvedTool> tools,
 }) async {
   final userSkill = userSkills
       .where((skill) => skill['slug'] == slug && skill['isEnabled'] != false)
@@ -198,28 +184,7 @@ Future<SkillManifest?> buildCloudSkillManifest({
     _ => null,
   };
   if (title == null || instructions == null) return null;
-  final manifestTools =
-      tools
-          .where(
-            (tool) =>
-                tool.descriptor.skillSlug == slug &&
-                !(slug == agentsSkillSlug &&
-                    tool.descriptor.toolIdentifier == runSubAgentToolName),
-          )
-          .map(
-            (tool) => SkillManifestTool(
-              name: tool.descriptor.toolIdentifier,
-              description: tool.spec.description,
-              credentialRequired: tool.spec.requiresCredential,
-              inputJsonSchema: tool.spec.inputJsonSchema,
-              optionalNullMeansOmission:
-                  tool.descriptor.kind == AgentResolvedToolKind.skillTemplate ||
-                  tool.descriptor.kind ==
-                      AgentResolvedToolKind.skillAppTemplate,
-            ),
-          )
-          .toList()
-        ..sort((left, right) => left.name.compareTo(right.name));
+  final connectorToolIds = _cloudSkillConnectorToolIds(userSkill, appSkill);
   final revision = buildSkillRevision(
     identity: userSkill?['id'] as String? ?? appSkill?.identifier ?? slug,
     slug: slug,
@@ -227,7 +192,7 @@ Future<SkillManifest?> buildCloudSkillManifest({
     description:
         userSkill?['description'] as String? ?? appSkill?.description ?? '',
     instructions: instructions,
-    tools: manifestTools,
+    connectorToolIds: connectorToolIds,
   );
   return SkillManifest(
     slug: slug,
@@ -235,77 +200,33 @@ Future<SkillManifest?> buildCloudSkillManifest({
     description:
         userSkill?['description'] as String? ?? appSkill?.description ?? '',
     revision: revision,
-    tools: manifestTools,
+    connectorToolIds: connectorToolIds,
   );
 }
 
-Future<List<SkillManifest>> _cloudSkillManifests({
-  required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<ServerResolvedTool> tools,
-}) async {
-  final slugs =
-      tools
-          .map((tool) => tool.descriptor.skillSlug)
-          .whereType<String>()
-          .toSet()
-          .toList()
-        ..sort();
-  final manifests = <SkillManifest>[];
-  for (final slug in slugs) {
-    final manifest = await buildCloudSkillManifest(
-      slug: slug,
-      userSkills: userSkills,
-      tools: tools,
-    );
-    if (manifest != null) manifests.add(manifest);
-  }
-  return manifests;
-}
-
-Future<ServerResolvedTool> resolveCloudSkillCommandTarget({
-  required SkillCommandTarget command,
-  required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<ServerResolvedTool> tools,
-}) async {
-  final target = tools
-      .where(
-        (candidate) =>
-            candidate.descriptor.skillSlug == command.skill &&
-            candidate.descriptor.toolIdentifier == command.tool,
-      )
-      .singleOrNull;
-  if (target == null) {
-    throw StateError('Skill tool is not loaded or configured.');
-  }
-
-  final manifest = await buildCloudSkillManifest(
-    slug: command.skill,
-    userSkills: userSkills,
-    tools: tools,
-  );
-  if (manifest == null ||
-      manifest.revision != command.revision ||
-      !manifest.tools.any((tool) => tool.name == command.tool)) {
-    throw FormatException(
-      'Skill manifest changed; use the current skill catalog to refresh: '
-      '${command.skill}',
+List<String> _cloudSkillConnectorToolIds(
+  Map<String, dynamic>? userSkill,
+  AppSkillDefinition? appSkill,
+) {
+  final storedToolIds = userSkill?['connectorToolIds'];
+  if (storedToolIds is List) {
+    return _normalizedCloudSkillConnectorToolIds(
+      storedToolIds.whereType<String>(),
     );
   }
-  final normalized = normalizeSkillToolArguments(
-    target.spec.inputJsonSchema,
-    command.args,
-    optionalNullMeansOmission:
-        target.descriptor.kind == AgentResolvedToolKind.skillTemplate ||
-        target.descriptor.kind == AgentResolvedToolKind.skillAppTemplate,
+
+  return _normalizedCloudSkillConnectorToolIds(
+    appSkill?.connectorToolIds ?? const [],
   );
-  validateToolArguments(target.spec.inputJsonSchema, normalized);
-  return target;
 }
+
+List<String> _normalizedCloudSkillConnectorToolIds(Iterable<String> values) =>
+    values.map((id) => id.trim()).where((id) => id.isNotEmpty).toSet().toList()
+      ..sort();
 
 List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
   required Set<String> selectedSkillIds,
   required Iterable<Map<String, dynamic>> userSkills,
-  Iterable<Map<String, dynamic>> templateTools = const [],
   required Iterable<Map<String, dynamic>> appSkillSettings,
   Iterable<Map<String, dynamic>> serviceConnections = const [],
   required bool isChildConversation,
@@ -314,7 +235,6 @@ List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
   final slugs = _selectableCloudSkillSlugs(
     appSkillSettings: appSkillSettings,
     userSkills: userSkills,
-    templateTools: templateTools,
     serviceConnections: serviceConnections,
     isChildConversation: isChildConversation,
     a2uiSupportedComponents: a2uiSupportedComponents,
@@ -344,7 +264,6 @@ List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
 
 List<String> _selectableCloudSkillSlugs({
   required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<Map<String, dynamic>> templateTools,
   required Iterable<Map<String, dynamic>> appSkillSettings,
   required Iterable<Map<String, dynamic>> serviceConnections,
   required bool isChildConversation,
@@ -356,11 +275,9 @@ List<String> _selectableCloudSkillSlugs({
       agentsSkillSlug,
     ..._selectableCloudUserSkillSlugs(
       userSkills: userSkills,
-      templateTools: templateTools,
       serviceConnections: serviceConnections,
     ),
     ..._selectableCloudServiceSkillSlugs(
-      appSkillSettings: appSkillSettings,
       serviceConnections: serviceConnections,
     ),
     if (!isChildConversation &&
@@ -372,13 +289,11 @@ List<String> _selectableCloudSkillSlugs({
 
 Iterable<String> _selectableCloudUserSkillSlugs({
   required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<Map<String, dynamic>> templateTools,
   required Iterable<Map<String, dynamic>> serviceConnections,
 }) => userSkills
     .where(
       (skill) => cloudUserSkillReady(
         skill,
-        templateTools,
         serviceConnections,
       ),
     )
@@ -386,13 +301,10 @@ Iterable<String> _selectableCloudUserSkillSlugs({
     .whereType<String>();
 
 Iterable<String> _selectableCloudServiceSkillSlugs({
-  required Iterable<Map<String, dynamic>> appSkillSettings,
   required Iterable<Map<String, dynamic>> serviceConnections,
 }) => serviceSkillDefinitions
     .where(
-      (skill) =>
-          cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
-          cloudServiceSkillReady(skill, serviceConnections),
+      (skill) => cloudServiceSkillReady(skill, serviceConnections),
     )
     .map((skill) => skill.slug);
 
@@ -403,86 +315,24 @@ Iterable<String> _selectableContentOnlyCloudSkillSlugs() =>
 
 bool cloudUserSkillReady(
   Map<String, dynamic> skill,
-  Iterable<Map<String, dynamic>> templateTools,
   Iterable<Map<String, dynamic>> serviceConnections,
 ) {
-  final skillId = skill['id'];
-  if (skillId is! String || skill['isEnabled'] == false) return false;
-  return templateTools.any(
-    (tool) {
-      if (tool['skillId'] != skillId || tool['isEnabled'] == false) {
-        return false;
-      }
-      final credentialIds = _templateCredentialIds(
-        skill,
-        serviceConnections,
-        tool['credentialDefinitionId'],
-      );
-      return tool['requiresCredential'] != true || credentialIds.isNotEmpty;
-    },
+  if (skill['id'] is! String || skill['isEnabled'] == false) return false;
+  final connectorToolIds = skill['connectorToolIds'] as List? ?? const [];
+  return connectorToolIds.every(
+    (id) =>
+        id is String &&
+        id.trim().isNotEmpty &&
+        _cloudConnectorToolReferenceReady(id, serviceConnections),
   );
 }
 
 List<ServerResolvedTool> materializeCloudSkillTools({
   required Set<String> selectedSkillIds,
-  required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<Map<String, dynamic>> templateTools,
   required Iterable<Map<String, dynamic>> appSkillSettings,
-  Iterable<Map<String, dynamic>> serviceConnections = const [],
   required bool isChildConversation,
 }) {
-  final enabledUserSkills = {
-    for (final skill in userSkills)
-      if (skill['id'] case final String id when skill['isEnabled'] != false)
-        id: skill,
-  };
   final tools = <ServerResolvedTool>[];
-  for (final tool in templateTools) {
-    final skillId = tool['skillId'];
-    final skillSlug = tool['skillSlug'];
-    final toolSlug = tool['toolSlug'] ?? tool['slug'];
-    if (skillId is! String ||
-        skillSlug is! String ||
-        toolSlug is! String ||
-        tool['isEnabled'] == false ||
-        !selectedSkillIds.contains(skillId) ||
-        !enabledUserSkills.containsKey(skillId)) {
-      continue;
-    }
-    final credentialIds = _templateCredentialIds(
-      enabledUserSkills[skillId],
-      serviceConnections,
-      tool['credentialDefinitionId'],
-    );
-    if (tool['requiresCredential'] == true && credentialIds.isEmpty) {
-      continue;
-    }
-    final descriptor = AgentResolvedToolName.skillTemplate(
-      tableId: tool['id'] is String
-          ? tool['id']! as String
-          : 'skill__user__${skillSlug}__$toolSlug',
-      skillSlug: skillSlug,
-      toolIdentifier: toolSlug,
-    );
-    if (!serverToolIsExecutable(descriptor)) continue;
-    tools.add(
-      ServerResolvedTool(
-        descriptor: descriptor,
-        spec: ToolSpec(
-          name: descriptor.fullName,
-          description: tool['description'] is String
-              ? tool['description']! as String
-              : '',
-          inputJsonSchema: cloudTemplateInputSchema(
-            _cloudTemplateDefinitionSource(tool),
-            requiresCredential: tool['requiresCredential'] == true,
-            credentialIds: credentialIds,
-          ),
-          requiresCredential: tool['requiresCredential'] == true,
-        ),
-      ),
-    );
-  }
   if (!isChildConversation &&
       cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)) {
     tools.addAll(
@@ -495,43 +345,11 @@ List<ServerResolvedTool> materializeCloudSkillTools({
           toolIdentifier: spec.name,
           description: spec.description,
           inputJsonSchema: spec.inputJsonSchema,
-          requiresCredential: spec.requiresCredential,
         ),
       ),
     );
   }
-  for (final skill in serviceSkillDefinitions) {
-    if (!selectedSkillIds.contains(skill.identifier) &&
-        !selectedSkillIds.contains(skill.slug)) {
-      continue;
-    }
-    if (!cloudAppSkillEnabled(skill.identifier, appSkillSettings) ||
-        !cloudServiceSkillReady(skill, serviceConnections)) {
-      continue;
-    }
-    final credentialIds = _serviceCredentialIds(skill, serviceConnections);
-    for (final tool in skill.tools) {
-      if (skill.kind != AppSkillDefinitionKind.template ||
-          tool.urlTemplate == null ||
-          (tool.requiresCredential && credentialIds.isEmpty)) {
-        continue;
-      }
-      tools.add(
-        _appTemplateTool(
-          skillSlug: skill.slug,
-          toolIdentifier: tool.slug,
-          description: tool.description,
-          inputJsonSchema: cloudNativeInputSchema(
-            tool.inputJsonSchema,
-            requiresCredential: tool.requiresCredential,
-            credentialIds: credentialIds,
-            strictProviderSchema: tool.urlTemplate != null,
-          ),
-          requiresCredential: tool.requiresCredential,
-        ),
-      );
-    }
-  }
+
   return tools
       .where((tool) => serverToolIsExecutable(tool.descriptor))
       .fold(<String, ServerResolvedTool>{}, (unique, tool) {
@@ -542,110 +360,11 @@ List<ServerResolvedTool> materializeCloudSkillTools({
       .toList(growable: false);
 }
 
-Map<String, Object?> cloudTemplateInputSchema(
-  Object? definitionJson, {
-  required bool requiresCredential,
-  Iterable<String> credentialIds = const [],
-}) {
-  final schema = _templateDefinitionSchema(definitionJson);
-  if (schema != null) {
-    return materializeSkillToolSchema(
-      schema,
-      requiresCredential: requiresCredential,
-      credentialIds: credentialIds,
-    );
-  }
-  return templateInputSchema(
-    definitionJson,
-    requiresCredential: requiresCredential,
-    credentialIds: credentialIds,
-  );
-}
-
-Object? _cloudTemplateDefinitionSource(Map<String, dynamic> tool) {
-  final definition = tool['definitionJson'];
-  if (definition is! String ||
-      (definition.trim().isNotEmpty && definition != '{}')) {
-    return definition ?? tool['inputsJson'];
-  }
-
-  return tool['inputsJson'];
-}
-
-Map<String, Object?> cloudNativeInputSchema(
-  Map<String, Object?> inputJsonSchema, {
-  required bool requiresCredential,
-  Iterable<String> credentialIds = const [],
-  bool strictProviderSchema = false,
-}) {
-  return materializeSkillToolSchema(
-    inputJsonSchema,
-    requiresCredential: requiresCredential,
-    credentialIds: credentialIds,
-    strictProviderSchema: strictProviderSchema,
-  );
-}
-
-List<String> _templateCredentialIds(
-  Map<String, dynamic>? skill,
-  Iterable<Map<String, dynamic>> connections,
-  Object? toolDefinitionId,
-) {
-  final definitionId = toolDefinitionId is String
-      ? toolDefinitionId
-      : skill?['credentialDefinitionId'];
-  if (definitionId is! String) return const [];
-  return connections
-      .where(
-        (connection) =>
-            connection['kind'] == 'skillCredential' &&
-            connection['credentialDefinitionId'] == definitionId &&
-            connection['isEnabled'] == true &&
-            connection['hasSecret'] == true,
-      )
-      .map((connection) => connection['id'])
-      .whereType<String>()
-      .toList(growable: false);
-}
-
-Map<String, Object?>? _templateDefinitionSchema(Object? value) {
-  try {
-    final definition = switch (value) {
-      final String source
-          when source.trim().isNotEmpty && source.trim() != '{}' =>
-        SkillTemplateDefinition.fromJsonString(source),
-      final Map<Object?, Object?> source => SkillTemplateDefinition.fromJsonMap(
-        source,
-      ),
-      _ => null,
-    };
-    return definition?.inputSchema;
-  } on FormatException {
-    return null;
-  }
-}
-
-List<String> _serviceCredentialIds(
-  AppSkillDefinition skill,
-  Iterable<Map<String, dynamic>> connections,
-) => connections
-    .where(
-      (connection) =>
-          connection['kind'] == 'appSkillCredential' &&
-          connection['serviceId'] == skill.identifier &&
-          connection['isEnabled'] != false &&
-          connection['hasSecret'] == true,
-    )
-    .map((connection) => connection['id'])
-    .whereType<String>()
-    .toList(growable: false);
-
 ServerResolvedTool _nativeTool({
   required String skillSlug,
   required String toolIdentifier,
   required String description,
   required Map<String, Object?> inputJsonSchema,
-  required bool requiresCredential,
 }) {
   final descriptor = AgentResolvedToolName.skillNative(
     tableId: 'skill__app_native__${skillSlug}__$toolIdentifier',
@@ -657,29 +376,6 @@ ServerResolvedTool _nativeTool({
     spec: ToolSpec(
       name: descriptor.fullName,
       description: description,
-      inputJsonSchema: inputJsonSchema,
-    ),
-  );
-}
-
-ServerResolvedTool _appTemplateTool({
-  required String skillSlug,
-  required String toolIdentifier,
-  required String description,
-  required Map<String, Object?> inputJsonSchema,
-  required bool requiresCredential,
-}) {
-  final descriptor = AgentResolvedToolName.skillAppTemplate(
-    tableId: 'skill__app_template__${skillSlug}__$toolIdentifier',
-    skillSlug: skillSlug,
-    toolIdentifier: toolIdentifier,
-  );
-  return ServerResolvedTool(
-    descriptor: descriptor,
-    spec: ToolSpec(
-      name: descriptor.fullName,
-      description: description,
-      requiresCredential: requiresCredential,
       inputJsonSchema: inputJsonSchema,
     ),
   );
@@ -701,19 +397,49 @@ bool cloudServiceSkillReady(
   Iterable<Map<String, dynamic>> serviceConnections,
 ) =>
     skill.contentOnly ||
-    skill.tools.any(
-      (tool) =>
-          skill.kind == AppSkillDefinitionKind.template &&
-          tool.urlTemplate != null &&
-          (!tool.requiresCredential ||
-              serviceConnections.any(
-                (connection) =>
-                    connection['kind'] == 'appSkillCredential' &&
-                    connection['serviceId'] == skill.identifier &&
-                    connection['isEnabled'] != false &&
-                    connection['hasSecret'] == true,
-              )),
-    );
+    (skill.connectorToolIds.isNotEmpty &&
+        skill.connectorToolIds.every(
+          (toolId) => _cloudConnectorToolReferenceReady(
+            toolId,
+            serviceConnections,
+          ),
+        ));
+
+bool _cloudConnectorToolReferenceReady(
+  String toolId,
+  Iterable<Map<String, dynamic>> serviceConnections,
+) {
+  for (final connector in connectorDefinitions) {
+    final tool = connector.tools
+        .where(
+          (candidate) =>
+              candidate.urlTemplate != null &&
+              connectorToolId(connector, candidate) == toolId,
+        )
+        .firstOrNull;
+    if (tool == null) continue;
+
+    return !tool.requiresConnection ||
+        _cloudConnectorHasConnection(connector, serviceConnections);
+  }
+
+  return false;
+}
+
+bool _cloudConnectorHasConnection(
+  ConnectorDefinition connector,
+  Iterable<Map<String, dynamic>> connections,
+) => connections.any(
+  (connection) =>
+      connection['hasSecret'] == true &&
+      connection['isEnabled'] != false &&
+      ((connection['kind'] == 'customHttp' &&
+              connection['serviceId'] == connector.identifier) ||
+          (connection['kind'] == 'modelProvider' &&
+              connector.compatibleModelProviderIds.contains(
+                connection['providerId'],
+              ))),
+);
 
 AgentToolPermissionResult resolveCloudToolPermission({
   required AgentToolPermissionResult workspacePermission,
@@ -748,6 +474,7 @@ AgentToolPermissionResult defaultCloudToolPermission(
   AgentResolvedToolName descriptor,
 ) {
   if ((descriptor.isSkill ||
+          descriptor.kind == AgentResolvedToolKind.connectorCommand ||
           descriptor.kind == AgentResolvedToolKind.skillControl) &&
       serverToolIsExecutable(descriptor)) {
     return AgentToolPermissionResult.needsConfirmation;
@@ -831,59 +558,6 @@ class ServerToolRuntime({
   final ConversationCancellationProbe cancellationProbe =
       const DatabaseConversationCancellationProbe(),
 }) {
-  ({
-    List<ServerResolvedTool> tools,
-    List<Map<String, dynamic>> userSkills,
-  })
-  _materializeCloudSkillTargets({
-    required Conversation? conversation,
-    required Iterable<WorkspaceResource> resources,
-  }) {
-    final selectedSkillIds = conversation == null
-        ? <String>{}
-        : cloudAuthorizedSkillIds(
-            conversation: conversation,
-            resources: resources,
-          );
-    final userSkills = resources
-        .where(
-          (resource) =>
-              resource.resourceKind == WorkspaceResourceKind.skill &&
-              _data(resource)['source'] != 'app',
-        )
-        .map((resource) => {'id': resource.resourceId, ..._data(resource)})
-        .toList(growable: false);
-
-    return (
-      userSkills: userSkills,
-      tools: materializeCloudSkillTools(
-        selectedSkillIds: selectedSkillIds,
-        userSkills: userSkills,
-        templateTools: resources
-            .where(
-              (resource) =>
-                  resource.resourceKind ==
-                  WorkspaceResourceKind.skillTemplateTool,
-            )
-            .map((resource) => {'id': resource.resourceId, ..._data(resource)}),
-        appSkillSettings: resources
-            .where(
-              (resource) =>
-                  resource.resourceKind == WorkspaceResourceKind.skillSetting,
-            )
-            .map(_data),
-        serviceConnections: resources
-            .where(
-              (resource) =>
-                  resource.resourceKind ==
-                  WorkspaceResourceKind.serviceConnection,
-            )
-            .map((resource) => {'id': resource.resourceId, ..._data(resource)}),
-        isChildConversation: conversation?.parentConversationStableId != null,
-      ),
-    );
-  }
-
   Future<List<ServerResolvedTool>> loadTools(
     Session session, {
     required int workspaceId,
@@ -940,14 +614,6 @@ class ServerToolRuntime({
           table.stableId.equals(conversationStableId) &
           table.deletedAt.equals(null),
     );
-    final skillTargets = _materializeCloudSkillTargets(
-      conversation: conversation,
-      resources: resources,
-    );
-    final skillManifests = await _cloudSkillManifests(
-      userSkills: skillTargets.userSkills,
-      tools: skillTargets.tools,
-    );
     final appSkillSettings = resources
         .where(
           (resource) =>
@@ -964,14 +630,14 @@ class ServerToolRuntime({
               toolIdentifier: runSubAgentToolName,
               description: runSubAgentToolSpec.description,
               inputJsonSchema: runSubAgentToolSpec.inputJsonSchema,
-              requiresCredential: runSubAgentToolSpec.requiresCredential,
             ),
           ]
         : const <ServerResolvedTool>[];
 
     return [
       ...genericTools,
-      ...fixedCloudSkillCommandTools(manifests: skillManifests),
+      ...fixedCloudConnectorCommandTools(),
+      ...fixedCloudSkillCommandTools(),
       ...agentTools,
       ServerResolvedTool(
         descriptor: AgentResolvedToolName.builtIn(
@@ -983,10 +649,7 @@ class ServerToolRuntime({
     ];
   }
 
-  Future<
-    ({List<ServerResolvedTool> tools, List<Map<String, dynamic>> userSkills})
-  >
-  _skillTargets(
+  Future<List<ServerResolvedTool>> _skillTargets(
     Session session, {
     required int workspaceId,
     required String conversationStableId,
@@ -1002,9 +665,22 @@ class ServerToolRuntime({
           table.workspaceId.equals(workspaceId) &
           table.stableId.equals(conversationStableId),
     );
-    return _materializeCloudSkillTargets(
-      conversation: conversation,
-      resources: resources,
+    final selectedSkillIds = conversation == null
+        ? <String>{}
+        : cloudAuthorizedSkillIds(
+            conversation: conversation,
+            resources: resources,
+          );
+    final appSkillSettings = resources
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.skillSetting,
+        )
+        .map(_data);
+    return materializeCloudSkillTools(
+      selectedSkillIds: selectedSkillIds,
+      appSkillSettings: appSkillSettings,
+      isChildConversation: conversation?.parentConversationStableId != null,
     );
   }
 
@@ -1037,16 +713,8 @@ class ServerToolRuntime({
           table.stableId.equals(request.id),
     );
     if (existing != null) {
-      final persistedDescriptor = _resolver.resolve(existing.name);
       final storedArguments = _jsonMap(existing.argumentsJson);
-      final storedCommand = _skillCommandOrNull(storedArguments);
-      final isNestedSkillCall =
-          serverToolIsReplayableSkillKind(persistedDescriptor?.kind) &&
-          storedCommand != null;
-      if ((!isNestedSkillCall && existing.name != request.name) ||
-          (isNestedSkillCall &&
-              request.name != callSkillToolName &&
-              request.name != existing.name) ||
+      if (existing.name != request.name ||
           (existing.decision == null && existing.argumentsDigest != digest)) {
         throw const FormatException('Tool call identity changed.');
       }
@@ -1069,16 +737,11 @@ class ServerToolRuntime({
       }
       request = ServerToolRequest(
         id: request.id,
-        name: isNestedSkillCall ? callSkillToolName : request.name,
+        name: request.name,
         arguments: storedArguments,
         userFacingDescription:
             existing.userFacingDescription ?? request.userFacingDescription,
       );
-      if (isNestedSkillCall) {
-        tool = currentTools
-            .where((candidate) => candidate.spec.name == callSkillToolName)
-            .singleOrNull;
-      }
     }
 
     final legacyDescriptor = _resolver.resolve(request.name);
@@ -1091,7 +754,7 @@ class ServerToolRuntime({
           workspaceId: turn.workspaceId,
           conversationStableId: conversation!.stableId,
         );
-        tool = state.tools
+        tool = state
             .where((candidate) => candidate.spec.name == request.name)
             .singleOrNull;
         if (tool == null) {
@@ -1132,87 +795,6 @@ class ServerToolRuntime({
     }
     var executionRequest = request;
     var permissionDescriptor = tool.descriptor;
-    if (request.name == callSkillToolName) {
-      try {
-        final state = await _skillTargets(
-          session,
-          workspaceId: turn.workspaceId,
-          conversationStableId: conversation!.stableId,
-        );
-        final command = _skillCommandOrNull(request.arguments);
-        final resolvedTarget = await resolveEffectiveToolApprovalTarget(
-          requestedTarget: tool.descriptor,
-          arguments: request.arguments,
-          resolveSkillTarget: (command) async =>
-              (await resolveCloudSkillCommandTarget(
-                command: command,
-                userSkills: state.userSkills,
-                tools: state.tools,
-              )).descriptor,
-        );
-        if (resolvedTarget == null || command == null) {
-          await _insertResolved(
-            session,
-            turn: turn,
-            messageId: messageId,
-            request: request,
-            argumentsJson: argumentsJson,
-            digest: digest,
-            status: AgentToolPermissionResult.notConfigured.name,
-          );
-          return ServerToolDisposition.completed;
-        }
-        permissionDescriptor = resolvedTarget;
-        if (existing != null &&
-            existing.name != permissionDescriptor.fullName) {
-          throw const FormatException('Tool call identity changed.');
-        }
-        tool = state.tools
-            .where(
-              (candidate) =>
-                  candidate.descriptor.fullName ==
-                  permissionDescriptor.fullName,
-            )
-            .singleOrNull;
-        if (tool == null) {
-          throw const FormatException('Tool is no longer available.');
-        }
-        final normalizedCommand = command.copyWithArguments(
-          normalizeSkillToolArguments(
-            tool.spec.inputJsonSchema,
-            command.args,
-            optionalNullMeansOmission:
-                tool.descriptor.kind == AgentResolvedToolKind.skillTemplate ||
-                tool.descriptor.kind == AgentResolvedToolKind.skillAppTemplate,
-          ),
-        );
-        executionRequest = ServerToolRequest(
-          id: request.id,
-          name: permissionDescriptor.fullName,
-          arguments: Map<String, dynamic>.from(normalizedCommand.args),
-          userFacingDescription: request.userFacingDescription,
-        );
-      } on Object catch (error) {
-        final call =
-            existing ??
-            await _insertResolved(
-              session,
-              turn: turn,
-              messageId: messageId,
-              request: request,
-              argumentsJson: argumentsJson,
-              digest: digest,
-              status: 'executionError',
-            );
-        await _finish(
-          session,
-          call,
-          'executionError',
-          _boundedJson({'error': '$error'}),
-        );
-        return ServerToolDisposition.completed;
-      }
-    }
     if (!serverToolIsExecutable(permissionDescriptor)) {
       if (existing != null) {
         await _finish(
@@ -1251,14 +833,7 @@ class ServerToolRuntime({
                 .effectiveToolAccessMode(session, conversation: conversation)
           : ConversationToolAccessMode.defaultMode,
     );
-    final persistedRequest = request.name == callSkillToolName
-        ? ServerToolRequest(
-            id: request.id,
-            name: permissionDescriptor.fullName,
-            arguments: request.arguments,
-            userFacingDescription: request.userFacingDescription,
-          )
-        : request;
+    final persistedRequest = request;
     if (existing == null &&
         permission == AgentToolPermissionResult.needsConfirmation) {
       await _insertResolved(
@@ -2283,7 +1858,7 @@ class ServerToolRuntime({
         descriptor?.toolIdentifier == runSubAgentToolName) {
       return true;
     }
-    return name == callSkillToolName;
+    return false;
   }
 
   Future<ServerToolDisposition?> _recoverRunningSubAgent(
@@ -2462,14 +2037,6 @@ class ServerToolRuntime({
     final decoded = jsonDecode(value);
     if (decoded is! Map<String, dynamic>) throw const FormatException();
     return decoded;
-  }
-
-  SkillCommandTarget? _skillCommandOrNull(Map<String, dynamic> arguments) {
-    try {
-      return SkillCommandTarget.fromArguments(arguments);
-    } on FormatException {
-      return null;
-    }
   }
 
   String _boundedJson(Object? value) {

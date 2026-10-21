@@ -845,7 +845,7 @@ void main() {
             title: 'Research',
             description: 'Search sources.',
             revision: 'r1',
-            tools: const [],
+            connectorToolIds: const [],
           ),
           content: 'Use research instructions.',
         ).value;

@@ -10,9 +10,6 @@ import 'package:auravibes_app/features/agents/usecases/list_agent_tool_overrides
 import 'package:auravibes_app/features/agents/usecases/save_agent_tool_overrides_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_usecase.dart';
 import 'package:auravibes_app/features/agents/widgets/agent_availability_summary.dart';
-import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
-import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart'
-    show SkillToolCallTarget;
 import 'package:auravibes_app/features/markdown/markdown_editor_launcher.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
@@ -32,7 +29,7 @@ import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show activateSkillToolName;
+    show activateSkillToolName, loadSkillResourceToolName;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -2199,7 +2196,7 @@ extension on _AgentToolPermissionsDialogState {
       skill?.source == .app ? skill?.titleKey : null;
 
   bool _isSkillControlTool(String toolId) =>
-      toolId == activateSkillToolName || toolId == 'list_skill_credentials';
+      toolId == activateSkillToolName || toolId == loadSkillResourceToolName;
 
   AgentToolPermissionMode _value(String toolId) =>
       widget.values[toolId] ?? AgentToolPermissionMode.workspaceDefault;
@@ -2983,48 +2980,7 @@ class const _AgentToolPermissionTileContent({
 class const _AgentToolName({required final WorkspaceToolEntity tool})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final parsedTarget = ToolNameFormatter.parseSkillToolName(tool.toolId);
-    if (parsedTarget == null) return tool.getNameWidget();
-    final target = (
-      skillSlug: parsedTarget.skillSlug,
-      toolSlug: parsedTarget.toolSlug,
-    );
-
-    return _AgentSkillToolName(workspaceId: tool.workspaceId, target: target);
-  }
-}
-
-class const _AgentSkillToolName({
-  required final String workspaceId,
-  required final SkillToolCallTarget target,
-}) extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final titles = ref
-        .watch(
-          skillToolCallDisplayTitlesProvider(
-            workspaceId,
-            target.skillSlug,
-            target.toolSlug,
-          ),
-        )
-        .maybeWhen(data: (value) => value, orElse: () => null);
-
-    return _AgentSkillToolNameLabel(titles: titles, target: target);
-  }
-}
-
-class const _AgentSkillToolNameLabel({
-  required final SkillToolCallDisplayTitles? titles,
-  required final SkillToolCallTarget target,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Text(
-    titles?.tool.titleKey?.tr(context: context) ??
-        titles?.tool.title ??
-        target.toolSlug.toHumanReadable(),
-  );
+  Widget build(BuildContext context) => tool.getNameWidget();
 }
 
 class const _AgentToolDescription({required final WorkspaceToolEntity tool})

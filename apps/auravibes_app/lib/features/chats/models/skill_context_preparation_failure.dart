@@ -1,5 +1,5 @@
 enum SkillContextPreparationFailure {
-  missingCredentials,
+  missingConnection,
   unavailableMetadata,
   preparationFailed,
 }
