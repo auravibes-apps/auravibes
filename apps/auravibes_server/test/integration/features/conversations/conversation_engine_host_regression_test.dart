@@ -937,7 +937,15 @@ void main() {
         languageCode: languageCode,
       );
       expect(spanishManifest, isNotNull);
-      final runtime = ServerToolRuntime();
+      final runtime = ServerToolRuntime(
+        executor: (session, turn, tool, request) =>
+            const ServerToolExecutorService().call(
+              session,
+              turn,
+              tool,
+              request,
+            ),
+      );
       final controls = await runtime.loadTools(
         fixture.database,
         workspaceId: fixture.workspaceId,
@@ -985,11 +993,35 @@ void main() {
       final callSkill = selectedTools.singleWhere(
         (tool) => tool.spec.name == callSkillToolName,
       );
-      final dispatchedListAgents = await const ServerToolExecutorService().call(
+      final listAgents = selectedTools.singleWhere(
+        (tool) => tool.descriptor.toolIdentifier == listAgentsToolName,
+      );
+      final now = DateTime.now().toUtc();
+      await WorkspaceResource.db.insertRow(
         fixture.database,
-        fixture.turn,
-        callSkill,
-        ServerToolRequest(
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: WorkspaceResourceKind.toolPermission,
+          resourceId: 'agents-list-agents-permission',
+          data: jsonEncode({
+            'toolId': listAgents.descriptor.tableId,
+            'permissionMode': 'alwaysAllow',
+            'isEnabled': true,
+          }),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final disposition = await runtime.handle(
+        fixture.database,
+        turn: fixture.turn,
+        messageId: fixture.messages
+            .singleWhere(
+              (message) => message.id == fixture.turn.assistantMessageId,
+            )
+            .id!,
+        request: ServerToolRequest(
           id: 'list-agents-through-call-skill',
           name: callSkillToolName,
           arguments: {
@@ -1001,14 +1033,18 @@ void main() {
           languageCode: languageCode,
         ),
       );
-      final dispatchedResult = Map<String, Object?>.from(
-        dispatchedListAgents! as Map,
+      final dispatchedCall = await ConversationToolCall.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.stableId.equals('list-agents-through-call-skill'),
       );
-      final listAgentsResult = Map<String, Object?>.from(
-        dispatchedResult['result']! as Map,
+      expect(disposition, ServerToolDisposition.completed);
+      expect(dispatchedCall?.status, 'success');
+      expect(dispatchedCall?.resultJson, contains('agentes configurados'));
+      expect(
+        dispatchedCall?.resultJson,
+        isNot(contains('Configured agents')),
       );
-      expect(listAgentsResult['hint'], contains('agentes configurados'));
-      expect(listAgentsResult['hint'], isNot(contains('Configured agents')));
     });
 
     test(

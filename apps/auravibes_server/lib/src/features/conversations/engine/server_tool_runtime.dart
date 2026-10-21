@@ -1171,6 +1171,7 @@ class ServerToolRuntime({
                 command: command,
                 userSkills: state.userSkills,
                 tools: state.tools,
+                languageCode: request.languageCode,
               )).descriptor,
         );
         if (resolvedTarget == null || command == null) {
