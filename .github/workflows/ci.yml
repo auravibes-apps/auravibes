@@ -69,6 +69,7 @@ jobs:
           python3 tool/classify_ci_changes_test.py
           python3 tool/ci_summary_test.py
           python3 tool/validation_lease_test.py
+          python3 tool/agent_worktree_test.py
 
       - name: Audit first-party tool schemas
         working-directory: apps/auravibes_app
