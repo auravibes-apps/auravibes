@@ -15,10 +15,9 @@ abstract final class MarionetteDemoModelIdentity {
   static bool matchesDemoModelSelection(
     String workspaceId,
     String selectionId,
-    WorkspaceModelSelectionWithConnectionEntity? selection,
+    WorkspaceModelSelectionWithConnectionEntity selection,
   ) {
-    if (selection == null ||
-        workspaceId != MarionetteDevelopmentState.demoWorkspaceId) {
+    if (workspaceId != MarionetteDevelopmentState.demoWorkspaceId) {
       return false;
     }
 

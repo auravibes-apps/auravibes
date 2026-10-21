@@ -53,12 +53,13 @@ abstract final class MarionetteChatSmokeProviderOverrides {
     String selectionId,
     WorkspaceModelSelectionWithConnectionEntity? selection,
   ) {
-    if (selection == null ||
-        !MarionetteDemoModelIdentity.matchesDemoModelSelection(
-          workspaceId,
-          selectionId,
-          selection,
-        )) {
+    if (selection == null) return null;
+
+    if (!MarionetteDemoModelIdentity.matchesDemoModelSelection(
+      workspaceId,
+      selectionId,
+      selection,
+    )) {
       return selection;
     }
 
