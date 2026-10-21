@@ -462,6 +462,8 @@ class const _NewChatInput({required final Widget child})
                  )
                : null,
            disabled: data.state.isLoading || !modelAvailable,
+           acceptDroppedFilesWhenDisabled:
+               data.state.modelId == null && !data.state.isLoading,
          ),
        );
 
