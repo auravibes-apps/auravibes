@@ -1,27 +1,19 @@
 #!/usr/bin/env python3
-"""Serialize validation commands across linked worktrees and same-origin clones."""
+"""Serialize validation commands within one worktree."""
 
-# ponytail: same-user clones sharing origin/cache coordinate; other hosts need a distributed lock.
+# shortcut: shared caches remain unlocked, add scoped locks if races recur.
 from datetime import datetime, timezone
 import fcntl
-import hashlib
 import json
 import os
-import re
 from pathlib import Path
 import socket
-import stat
 import subprocess
 import sys
 import tempfile
-import time
-from urllib.parse import unquote, urlsplit
 
 
 LOCK_NAME = "codex-validation.lock"
-LOCK_DIRECTORY_NAME = "validation-leases"
-REPORT_INTERVAL_SECONDS = 30
-POLL_INTERVAL_SECONDS = 1
 # Keep headroom for compiler temp growth; prior run hit ENOSPC with 7 GiB free.
 MINIMUM_AVAILABLE_BYTES = 20 * 1024**3
 TEMP_DIRECTORY_SCAN_TIMEOUT_SECONDS = 10
@@ -237,150 +229,36 @@ def read_active_owner(lock_path):
         os.close(fd)
 
 
-def _common_git_dir():
-    repo_root = subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"],
+def _worktree_git_dir():
+    result = subprocess.run(
+        ["git", "rev-parse", "--absolute-git-dir"],
         check=True,
         capture_output=True,
         text=True,
     )
-    result = subprocess.run(
-        ["git", "rev-parse", "--git-common-dir"],
-        cwd=repo_root.stdout.strip(),
-        check=True,
-        capture_output=True,
-        text=True,
+    return Path(result.stdout.strip()).resolve()
+
+
+def _validation_lock_path():
+    return _worktree_git_dir() / LOCK_NAME
+
+
+def _close_lock_fd(fd, *, release=False):
+    if release:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+    os.close(fd)
+
+
+def _wait_for_lease(fd):
+    if try_acquire(fd):
+        return
+    owner = _read_owner(fd)
+    print(
+        f"Validation lease occupied by {_owner_summary(owner)}; waiting.",
+        file=sys.stderr,
+        flush=True,
     )
-    common_dir = Path(result.stdout.strip())
-    if not common_dir.is_absolute():
-        common_dir = Path(repo_root.stdout.strip()) / common_dir
-    return common_dir.resolve()
-
-
-def _normalize_remote_url(remote_url):
-    if not remote_url:
-        return None
-    remote_url = remote_url.strip()
-    if not remote_url:
-        return None
-
-    if "://" in remote_url:
-        try:
-            parsed = urlsplit(remote_url)
-            host = parsed.hostname
-            port = parsed.port
-        except ValueError:
-            return None
-        if parsed.scheme == "file":
-            return f"local:{Path(unquote(parsed.path)).expanduser().resolve()}"
-        if host and parsed.path.strip("/"):
-            host = f"{host.lower()}:{port}" if port else host.lower()
-            path = unquote(parsed.path.strip("/")).removesuffix(".git")
-            return f"{host}/{path}"
-        return None
-
-    scp_url = re.fullmatch(r"(?:[^@/]+@)?([^:/]+):(.+)", remote_url)
-    if scp_url:
-        host, path = scp_url.groups()
-        return f"{host.lower()}/{path.strip('/').removesuffix('.git')}"
-
-    local_path = Path(remote_url).expanduser()
-    if local_path.is_absolute() or remote_url.startswith(("./", "../")):
-        return f"local:{local_path.resolve()}"
-    return None
-
-
-def _shared_lock_directory():
-    cache_home = os.environ.get("XDG_CACHE_HOME")
-    if cache_home:
-        base = Path(cache_home).expanduser()
-        if not base.is_absolute():
-            base = Path.home() / ".cache"
-    elif sys.platform == "darwin":
-        base = Path.home() / "Library" / "Caches"
-    else:
-        base = Path.home() / ".cache"
-    return base / "auravibes" / LOCK_DIRECTORY_NAME
-
-
-def _lock_path_for_remote(remote_url, common_git_dir, shared_lock_dir):
-    identity = _normalize_remote_url(remote_url)
-    if identity is None:
-        return Path(common_git_dir) / LOCK_NAME
-    digest = hashlib.sha256(identity.encode()).hexdigest()[:24]
-    return Path(shared_lock_dir) / f"{digest}-{LOCK_NAME}"
-
-
-def _ensure_private_lock_directory(directory):
-    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if directory.is_symlink():
-        raise PermissionError(f"validation lease directory is a symlink: {directory}")
-    metadata = directory.stat()
-    if hasattr(os, "getuid") and metadata.st_uid != os.getuid():
-        raise PermissionError(f"validation lease directory has a different owner: {directory}")
-    if stat.S_IMODE(metadata.st_mode) != 0o700:
-        directory.chmod(0o700)
-
-
-def _origin_remote_url():
-    result = subprocess.run(
-        ["git", "remote", "get-url", "origin"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return result.stdout.strip() if result.returncode == 0 else None
-
-
-def _validation_lock_paths(create_directories=True):
-    common_git_dir = _common_git_dir()
-    legacy_path = common_git_dir / LOCK_NAME
-    remote_path = _lock_path_for_remote(
-        _origin_remote_url(), common_git_dir, _shared_lock_directory()
-    )
-    if remote_path != legacy_path and create_directories:
-        _ensure_private_lock_directory(remote_path.parent)
-    return sorted({legacy_path, remote_path}, key=str)
-
-
-def _close_lock_fds(fds, *, release=False):
-    for fd in reversed(fds):
-        if release:
-            fcntl.flock(fd, fcntl.LOCK_UN)
-        os.close(fd)
-
-
-def _wait_for_leases(fds):
-    last_report = 0.0
-    while True:
-        acquired = []
-        blocked_fd = None
-        try:
-            for fd in fds:
-                if not try_acquire(fd):
-                    blocked_fd = fd
-                    break
-                acquired.append(fd)
-        except OSError:
-            for acquired_fd in reversed(acquired):
-                fcntl.flock(acquired_fd, fcntl.LOCK_UN)
-            raise
-        if blocked_fd is None:
-            return
-        for acquired_fd in reversed(acquired):
-            fcntl.flock(acquired_fd, fcntl.LOCK_UN)
-
-        now = time.monotonic()
-        if now - last_report >= REPORT_INTERVAL_SECONDS:
-            owner = _read_owner(blocked_fd)
-            print(
-                f"Validation lease occupied by {_owner_summary(owner)}; waiting.",
-                file=sys.stderr,
-                flush=True,
-            )
-            print(_format_temp_usage(_temp_volume_usage()), file=sys.stderr, flush=True)
-            last_report = now
-        time.sleep(POLL_INTERVAL_SECONDS)
+    fcntl.flock(fd, fcntl.LOCK_EX)
 
 
 def _is_safe_label(label):
@@ -429,28 +307,26 @@ def main(argv=None):
         )
         return 2
 
-    lock_fds = []
     try:
-        for lock_path in _validation_lock_paths():
-            flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
-            lock_fds.append(os.open(lock_path, flags, 0o600))
+        lock_path = _validation_lock_path()
+        flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
+        lock_fd = os.open(lock_path, flags, 0o600)
     except (OSError, subprocess.CalledProcessError) as error:
-        _close_lock_fds(lock_fds)
         print(f"Cannot open repository validation lease: {error}", file=sys.stderr)
         return 2
 
     try:
-        _wait_for_leases(lock_fds)
+        _wait_for_lease(lock_fd)
     except KeyboardInterrupt:
-        _close_lock_fds(lock_fds)
+        _close_lock_fd(lock_fd)
         return 130
     except OSError as error:
-        _close_lock_fds(lock_fds)
+        _close_lock_fd(lock_fd)
         print(f"Cannot acquire repository validation lease: {error}", file=sys.stderr)
         return 2
 
     if not _validation_preflight():
-        _close_lock_fds(lock_fds, release=True)
+        _close_lock_fd(lock_fd, release=True)
         return 3
 
     owner = {
@@ -461,8 +337,7 @@ def main(argv=None):
     }
     if label is not None:
         owner["label"] = label
-    for fd in lock_fds:
-        _write_owner(fd, owner)
+    _write_owner(lock_fd, owner)
     temp_usage = _temp_volume_usage()
     print(
         f"Validation lease acquired by {_owner_summary(owner)}.",
@@ -472,12 +347,11 @@ def main(argv=None):
     print(_format_temp_usage(temp_usage), file=sys.stderr, flush=True)
 
     try:
-        for fd in lock_fds:
-            os.set_inheritable(fd, True)
+        os.set_inheritable(lock_fd, True)
         os.execvp(command[0], command)
     except OSError as error:
         print(f"Cannot start validation command: {error}", file=sys.stderr)
-        _close_lock_fds(lock_fds, release=True)
+        _close_lock_fd(lock_fd, release=True)
         return 127
 
 
