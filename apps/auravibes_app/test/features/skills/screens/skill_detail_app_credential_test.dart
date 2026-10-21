@@ -25,16 +25,8 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  Future<void> pumpUntilFound(WidgetTester tester, Finder finder) async {
-    for (var attempt = 0; attempt < 40; attempt++) {
-      await tester.pump(const Duration(milliseconds: 200));
-      if (finder.evaluate().isNotEmpty) return;
-    }
-    fail('Expected finder to appear: $finder');
-  }
-
   testWidgets(
-    'refreshes an app-skill credential after creation without error',
+    'keeps credential setup separate from app-skill details',
     (tester) async {
       await tester.binding.setSurfaceSize(const ui.Size(960, 1200));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -69,21 +61,6 @@ void main() {
               child: SkillDetailScreen(
                 workspaceId: 'workspace-1',
                 skillId: searxng.identifier,
-              ),
-              key: state.pageKey,
-            ),
-          ),
-          GoRoute(
-            path: '/workspaces/:workspaceId/service-connections/new',
-            pageBuilder: (context, state) => NoTransitionPage(
-              child: Builder(
-                builder: (context) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    context.pop(true);
-                  });
-
-                  return const SizedBox.shrink();
-                },
               ),
               key: state.pageKey,
             ),
@@ -123,26 +100,9 @@ void main() {
       final _ = await tester.pumpAndSettle();
       final _ = router.push('/skills/searxng');
       final _ = await tester.pumpAndSettle();
-      await pumpUntilFound(tester, find.byType(Scrollable));
-      final addCredential = find.text('Add Credential');
-      await tester.scrollUntilVisible(
-        addCredential,
-        300,
-        scrollable: find.byType(Scrollable).first,
-      );
-
-      await expectLater(
-        find.byType(SkillDetailScreen),
-        matchesGoldenFile('goldens/skill_detail_app_missing_credential.png'),
-      );
-      await tester.tap(addCredential);
-      final _ = await tester.pumpAndSettle();
-
+      expect(find.byType(SkillDetailScreen), findsOneWidget);
+      expect(find.text('Add Credential'), findsNothing);
       expect(tester.takeException(), isNull);
-      await tester.tap(find.byIcon(Icons.arrow_back));
-      final _ = await tester.pumpAndSettle();
-      expect(find.text('Unsaved changes'), findsNothing);
     },
-    tags: ['golden'],
   );
 }
