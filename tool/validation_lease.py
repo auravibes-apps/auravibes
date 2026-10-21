@@ -208,8 +208,10 @@ def _read_owner(fd):
 def _owner_summary(owner):
     if owner is None:
         return "owner metadata unavailable"
+    label = owner.get("label")
+    label_summary = f"label={label} " if label else ""
     return (
-        f"pid={owner.get('pid')} host={owner.get('host')} "
+        f"{label_summary}pid={owner.get('pid')} host={owner.get('host')} "
         f"cwd={owner.get('cwd')} started={owner.get('started_at')}"
     )
 
@@ -254,16 +256,48 @@ def _wait_for_lease(fd):
         time.sleep(POLL_INTERVAL_SECONDS)
 
 
+def _is_safe_label(label):
+    return (
+        isinstance(label, str)
+        and 1 <= len(label) <= 48
+        and label[0].isascii()
+        and label[0].islower()
+        and all(
+            character.isascii()
+            and (character.islower() or character.isdigit() or character in "_:-")
+            for character in label
+        )
+    )
+
+
+def _parse_arguments(argv):
+    try:
+        separator = argv.index("--")
+    except ValueError as error:
+        raise ValueError from error
+
+    options = argv[:separator]
+    command = argv[separator + 1 :]
+    label = None
+    if options:
+        if len(options) != 2 or options[0] != "--label" or not _is_safe_label(
+            options[1]
+        ):
+            raise ValueError
+        label = options[1]
+    if not command:
+        raise ValueError
+    return label, command
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     try:
-        separator = argv.index("--")
+        label, command = _parse_arguments(argv)
     except ValueError:
-        separator = -1
-    command = argv[separator + 1 :] if separator >= 0 else []
-    if not command:
         print(
-            "Usage: python3 tool/validation_lease.py -- <command> [args...]",
+            "Usage: python3 tool/validation_lease.py [--label <safe-label>] "
+            "-- <command> [args...]",
             file=sys.stderr,
         )
         return 2
@@ -296,6 +330,8 @@ def main(argv=None):
         "cwd": os.getcwd(),
         "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
+    if label is not None:
+        owner["label"] = label
     _write_owner(fd, owner)
     temp_usage = _temp_volume_usage()
     print(

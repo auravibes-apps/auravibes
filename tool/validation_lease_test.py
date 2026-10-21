@@ -12,11 +12,43 @@ from types import SimpleNamespace
 from unittest.mock import patch
 import unittest
 
-from validation_lease import MINIMUM_AVAILABLE_BYTES, _temp_directory_usage
+from validation_lease import MINIMUM_AVAILABLE_BYTES, _owner_summary
+from validation_lease import _parse_arguments, _temp_directory_usage
 from validation_lease import _validation_preflight, try_acquire
 
 
 class ValidationLeaseTest(unittest.TestCase):
+    def test_arguments_accept_safe_label(self):
+        self.assertEqual(
+            _parse_arguments(
+                ["--label", "validate:pr", "--", "fvm", "dart", "run"]
+            ),
+            ("validate:pr", ["fvm", "dart", "run"]),
+        )
+
+    def test_arguments_reject_unsafe_label(self):
+        with self.assertRaises(ValueError):
+            _parse_arguments(["--label", "run secret", "--", "fvm"])
+
+    def test_arguments_keep_legacy_command_syntax(self):
+        self.assertEqual(
+            _parse_arguments(["--", "fvm", "dart"]),
+            (None, ["fvm", "dart"]),
+        )
+
+    def test_owner_summary_includes_label(self):
+        summary = _owner_summary(
+            {
+                "label": "validate:pr",
+                "pid": 1,
+                "host": "host",
+                "cwd": "/repo",
+                "started_at": "now",
+            }
+        )
+
+        self.assertTrue(summary.startswith("label=validate:pr pid=1"))
+
     def test_preflight_allows_volume_at_reserve(self):
         volume = _volume_usage(Path.cwd(), MINIMUM_AVAILABLE_BYTES)
         temp_usage = {
