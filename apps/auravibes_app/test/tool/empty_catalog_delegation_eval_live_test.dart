@@ -34,8 +34,7 @@ void main() {
       }
 
       final result = await runProviderModelEmptyCatalogDelegationEval(
-        provider: evalCase.provider,
-        model: evalCase.model,
+        evalCase: evalCase,
         apiKey: apiKey,
       );
       expect(result.passed, isTrue, reason: result.toJson().toString());

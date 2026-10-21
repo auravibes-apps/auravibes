@@ -39,8 +39,7 @@ void main() {
         final turns = <({List<ChatMessage> history, List<ToolSpec> tools})>[];
         ({String title, String prompt, String? agentId})? childRequest;
         final result = await runEmptyCatalogDelegationEval(
-          provider: 'openai',
-          model: 'gpt-4o-mini',
+          evalCase: (provider: 'openai', model: 'gpt-4o-mini'),
           generate: (history, tools) async {
             turns.add((history: history, tools: tools));
 
@@ -120,8 +119,7 @@ void main() {
     test('fails when model refuses after empty catalog result', () async {
       var turn = 0;
       final result = await runEmptyCatalogDelegationEval(
-        provider: 'anthropic',
-        model: 'claude-sonnet-4-5',
+        evalCase: (provider: 'anthropic', model: 'claude-sonnet-4-5'),
         generate: (_, _) async {
           turn++;
           if (turn == 1) {
@@ -146,8 +144,7 @@ void main() {
       var turn = 0;
       var childStarted = false;
       final result = await runEmptyCatalogDelegationEval(
-        provider: 'openrouter',
-        model: 'openai/gpt-4o-mini',
+        evalCase: (provider: 'openrouter', model: 'openai/gpt-4o-mini'),
         generate: (_, _) async {
           turn++;
           if (turn == 1) {
@@ -181,8 +178,7 @@ void main() {
       () async {
         var turn = 0;
         final result = await runEmptyCatalogDelegationEval(
-          provider: 'openai',
-          model: 'gpt-4o-mini',
+          evalCase: (provider: 'openai', model: 'gpt-4o-mini'),
           generate: (_, _) async {
             turn++;
             if (turn == 1) {

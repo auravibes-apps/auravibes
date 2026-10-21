@@ -83,11 +83,14 @@ String apiKeyEnvironmentKeyForProvider(String provider) {
 }
 
 class const EmptyCatalogDelegationEval({
-  required final String provider,
-  required final String model,
+  required final EmptyCatalogEvalCase evalCase,
   required final bool passed,
   final String? failureReason,
 }) {
+  String get provider => evalCase.provider;
+
+  String get model => evalCase.model;
+
   String get outcome => passed ? 'passed' : 'failed';
 
   Map<String, Object?> toJson() => {
@@ -99,8 +102,7 @@ class const EmptyCatalogDelegationEval({
 }
 
 Future<EmptyCatalogDelegationEval> runEmptyCatalogDelegationEval({
-  required String provider,
-  required String model,
+  required EmptyCatalogEvalCase evalCase,
   required EmptyCatalogModelGenerator generate,
   required StubSubAgentRunner runStubChild,
 }) async {
@@ -109,8 +111,7 @@ Future<EmptyCatalogDelegationEval> runEmptyCatalogDelegationEval({
   final catalogRequest = _singleToolRequest(catalogCall);
   if (catalogRequest == null || catalogRequest.name != listAgentsToolName) {
     return _failure(
-      provider,
-      model,
+      evalCase,
       'Model did not inspect the configured-agent catalog.',
     );
   }
@@ -132,8 +133,7 @@ Future<EmptyCatalogDelegationEval> runEmptyCatalogDelegationEval({
   final childRequest = _singleToolRequest(childCall);
   if (childRequest == null || childRequest.name != runSubAgentToolName) {
     return _failure(
-      provider,
-      model,
+      evalCase,
       'Model did not call run_sub_agent after the empty catalog result.',
     );
   }
@@ -141,23 +141,21 @@ Future<EmptyCatalogDelegationEval> runEmptyCatalogDelegationEval({
   final input = childRequest.input;
   if (input is! Map<String, Object?>) {
     return _failure(
-      provider,
-      model,
+      evalCase,
       'run_sub_agent did not provide object arguments.',
     );
   }
   final title = input['title'];
   final prompt = input['prompt'];
   if (title is! String || title.trim().isEmpty) {
-    return _failure(provider, model, 'run_sub_agent did not include a title.');
+    return _failure(evalCase, 'run_sub_agent did not include a title.');
   }
   if (prompt is! String || prompt.trim().isEmpty) {
-    return _failure(provider, model, 'run_sub_agent did not include a prompt.');
+    return _failure(evalCase, 'run_sub_agent did not include a prompt.');
   }
   if (!input.containsKey('agentId') || input['agentId'] != null) {
     return _failure(
-      provider,
-      model,
+      evalCase,
       'run_sub_agent must include agentId: null for the current schema.',
     );
   }
@@ -176,14 +174,10 @@ Future<EmptyCatalogDelegationEval> runEmptyCatalogDelegationEval({
     subAgentToolSpecs,
   );
   if (!finalMessage.text.contains(childResult)) {
-    return _failure(
-      provider,
-      model,
-      'Final answer did not include the child result.',
-    );
+    return _failure(evalCase, 'Final answer did not include the child result.');
   }
 
-  return .new(provider: provider, model: model, passed: true);
+  return .new(evalCase: evalCase, passed: true);
 }
 
 ToolRequest? _singleToolRequest(ChatMessage message) {
@@ -206,42 +200,33 @@ ChatMessage _toolResponse(ToolRequest request, String output) => .new(
 );
 
 EmptyCatalogDelegationEval _failure(
-  String provider,
-  String model,
+  EmptyCatalogEvalCase evalCase,
   String reason,
-) => .new(
-  provider: provider,
-  model: model,
-  passed: false,
-  failureReason: reason,
-);
+) => .new(evalCase: evalCase, passed: false, failureReason: reason);
 
 Future<EmptyCatalogDelegationEval> runProviderModelEmptyCatalogDelegationEval({
-  required String provider,
-  required String model,
+  required EmptyCatalogEvalCase evalCase,
   required String apiKey,
 }) async {
-  final providerConfiguration = _providerConfigs[provider];
+  final providerConfiguration = _providerConfigs[evalCase.provider];
   if (providerConfiguration == null) {
     return _failure(
-      provider,
-      model,
+      evalCase,
       'Unsupported provider; expected openai, anthropic, or openrouter.',
     );
   }
   if (apiKey.trim().isEmpty) {
-    return _failure(provider, model, 'Provider API key is empty.');
+    return _failure(evalCase, 'Provider API key is empty.');
   }
 
   try {
-    final config = _modelConfig(provider, model, providerConfiguration.type);
+    final config = _modelConfig(evalCase, providerConfiguration.type);
     final service = ChatbotService(
       serviceConnectionRepository: _EvalServiceConnectionRepository(apiKey),
     );
 
     return await runEmptyCatalogDelegationEval(
-      provider: provider,
-      model: model,
+      evalCase: evalCase,
       generate: (history, tools) async =>
           (await service
                   .sendMessage(config, history, options: .new(tools: tools))
@@ -254,17 +239,12 @@ Future<EmptyCatalogDelegationEval> runProviderModelEmptyCatalogDelegationEval({
       }) async => _stubResult,
     );
   } on Object {
-    return _failure(
-      provider,
-      model,
-      'Model evaluation failed during generation.',
-    );
+    return _failure(evalCase, 'Model evaluation failed during generation.');
   }
 }
 
 WorkspaceModelSelectionWithConnectionEntity _modelConfig(
-  String provider,
-  String model,
+  EmptyCatalogEvalCase evalCase,
   ModelProvidersType providerType,
 ) {
   final now = DateTime.now();
@@ -273,7 +253,7 @@ WorkspaceModelSelectionWithConnectionEntity _modelConfig(
   return .new(
     workspaceModelSelection: .new(
       id: 'empty-catalog-eval-selection',
-      modelId: model,
+      modelId: evalCase.model,
       createdAt: now,
       updatedAt: now,
       modelConnectionId: connectionId,
@@ -281,13 +261,17 @@ WorkspaceModelSelectionWithConnectionEntity _modelConfig(
     modelConnection: .new(
       id: connectionId,
       name: 'Empty catalog evaluation',
-      modelId: model,
+      modelId: evalCase.model,
       createdAt: now,
       updatedAt: now,
       workspaceId: 'empty-catalog-eval',
       hasKey: true,
     ),
-    modelsProvider: .new(id: provider, name: provider, type: providerType),
+    modelsProvider: .new(
+      id: evalCase.provider,
+      name: evalCase.provider,
+      type: providerType,
+    ),
   );
 }
 
