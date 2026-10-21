@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/service_connections/models/mcp_connection
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/notifiers/connections_list_view_notifier.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
+import 'package:auravibes_app/features/service_connections/screens/connector_catalog_screen.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
 import 'package:auravibes_app/features/service_connections/widgets/mcp_catalog_browser.dart';
@@ -120,8 +121,8 @@ const _connectionFilterData = <_ConnectionFilterOptionData>[
     titleKey: LocaleKeys.service_connections_filter_model_providers,
   ),
   (
-    value: .skillCredentials,
-    titleKey: LocaleKeys.service_connections_filter_skill_credentials,
+    value: .connectors,
+    titleKey: LocaleKeys.service_connections_filter_connectors,
   ),
   (
     value: .mcpServers,
@@ -249,7 +250,7 @@ void _openCreateConnection(
         workspaceId: workspaceId,
         type: switch (view) {
           .providers => 'modelProvider',
-          .credentials => 'skillCredential',
+          .credentials => 'connector',
           _ => null,
         },
       ).location,
@@ -295,6 +296,7 @@ class const _ServiceConnectionsView({
       appBar: _ServiceConnectionsAppBar(
         onAddConnection: onAddConnection,
         workspaceId: workspaceId,
+        view: view,
         destinations: _destinations,
         selectedLocation: _selectedLocation,
       ),
@@ -334,6 +336,10 @@ class const _ServiceConnectionsContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    if (view == .connectors) {
+      return ConnectorCatalogScreen(workspaceId: workspaceId);
+    }
+
     final connections = _connectionsValue(connectionsAsync);
     if (connections == null) {
       return _ConnectionsLoadState(
@@ -484,6 +490,7 @@ class const _ConnectionsLoadError() extends StatelessWidget {
 class const _ServiceConnectionsAppBar({
   required final VoidCallback onAddConnection,
   required final String workspaceId,
+  required final ConnectionDestination view,
   required final List<FeatureNavigationDestination> destinations,
   required final String selectedLocation,
 }) extends StatelessWidget implements PreferredSizeWidget {
@@ -497,9 +504,11 @@ class const _ServiceConnectionsAppBar({
       selectedLocation: selectedLocation,
       masterTitleKey: LocaleKeys.navigation_connections,
       actions: [
-        _SyncModelCatalogButton(workspaceId: workspaceId),
-        _BrowseMcpCatalogButton(workspaceId: workspaceId),
-        _ConnectionsAddButton(onPressed: onAddConnection),
+        if (view != .connectors) ...[
+          _SyncModelCatalogButton(workspaceId: workspaceId),
+          _BrowseMcpCatalogButton(workspaceId: workspaceId),
+          _ConnectionsAddButton(onPressed: onAddConnection),
+        ],
       ],
     );
   }
@@ -602,7 +611,6 @@ class const _ConnectionsListLayout({
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      _ConnectionsListControls(layout: this),
       Expanded(
         child: _ConnectionsListResult(
           layout: this,
@@ -611,25 +619,6 @@ class const _ConnectionsListLayout({
       ),
     ],
   );
-}
-
-class const _ConnectionsListControls({
-  required final _ConnectionsListLayout layout,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: .min,
-    children: [_CredentialTypesControl(layout: layout)],
-  );
-}
-
-class const _CredentialTypesControl({
-  required final _ConnectionsListLayout layout,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => layout.view == .credentials
-      ? _CredentialTypesButton(workspaceId: layout.workspaceId)
-      : const SizedBox.shrink();
 }
 
 List<ServiceConnectionListItem> _connectionsForList(
@@ -643,21 +632,6 @@ List<ServiceConnectionListItem> _connectionsForList(
           (!oauthOnly || _isOauthConnection(item)),
     )
     .toList();
-
-class const _CredentialTypesButton({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraButton(
-    onPressed: () => unawaited(
-      FeatureDestinations.push<void>(
-        context,
-        SkillCredentialDefinitionsRoute(workspaceId: workspaceId).location,
-      ),
-    ),
-    child: const TextLocale(LocaleKeys.related_lists_credential_types),
-    variant: .ghost,
-  );
-}
 
 class const _ConnectionListFilters({
   required final ConnectionDestination view,
@@ -751,9 +725,10 @@ bool _matchesView(
   ConnectionDestination view,
 ) => switch (view) {
   .overview => true,
+  .connectors => false,
   .providers => connection.kind == .modelProvider,
   .services => connection.kind == .mcpServer,
-  .credentials => connection.kind == .skillCredential,
+  .credentials => connection.kind == .connector,
   .tools => false,
 };
 
@@ -1012,7 +987,7 @@ bool _matchesConnectionFilter(
 ) => switch (filter) {
   .all => true,
   .modelProviders ||
-  .skillCredentials ||
+  .connectors ||
   .mcpServers => _matchesConnectionKind(connection, filter),
   .oauth => _isOauthConnection(connection),
   .failed ||
@@ -1025,7 +1000,7 @@ bool _matchesConnectionKind(
   ConnectionFilter filter,
 ) => switch (filter) {
   .modelProviders => connection.kind == .modelProvider,
-  .skillCredentials => connection.kind == .skillCredential,
+  .connectors => connection.kind == .connector,
   .mcpServers => connection.kind == .mcpServer,
   _ => false,
 };
@@ -1187,8 +1162,7 @@ String _connectionFilterLabel(BuildContext context, ConnectionFilter filter) {
   final localeKey = switch (filter) {
     .all => LocaleKeys.service_connections_filter_all,
     .modelProviders => LocaleKeys.service_connections_filter_model_providers,
-    .skillCredentials =>
-      LocaleKeys.service_connections_filter_skill_credentials,
+    .connectors => LocaleKeys.service_connections_filter_connectors,
     .mcpServers => LocaleKeys.service_connections_filter_mcp_servers,
     .oauth => LocaleKeys.service_connections_filter_oauth,
     .failed => LocaleKeys.service_connections_filter_failed,
@@ -1799,7 +1773,7 @@ class const _ConnectionTileMenu({
 IconData _connectionIcon(ServiceConnectionListItem connection) {
   return switch (connection.kind) {
     .modelProvider => Icons.memory_outlined,
-    .skillCredential => Icons.key_outlined,
+    .connector => Icons.extension_outlined,
     .mcpServer => Icons.hub_outlined,
   };
 }
@@ -1813,7 +1787,7 @@ String _connectionSubtitle(
     return _mcpConnectionSubtitle(context, connection, kind);
   }
 
-  return _credentialConnectionSubtitle(context, connection, kind);
+  return _serviceConnectionSubtitle(context, connection, kind);
 }
 
 String _connectionTypeLabel(
@@ -1824,7 +1798,7 @@ String _connectionTypeLabel(
     .modelProvider => LocaleKeys.service_connections_type_model_provider.tr(
       context: context,
     ),
-    .skillCredential => LocaleKeys.service_connections_type_skill_credential.tr(
+    .connector => LocaleKeys.service_connections_type_connector.tr(
       context: context,
     ),
     .mcpServer => LocaleKeys.service_connections_type_mcp_server.tr(
@@ -1843,7 +1817,7 @@ String _mcpConnectionSubtitle(
       '${_connectionServiceName(context, connection)}';
 }
 
-String _credentialConnectionSubtitle(
+String _serviceConnectionSubtitle(
   BuildContext context,
   ServiceConnectionListItem connection,
   String kind,
@@ -1857,15 +1831,13 @@ String _credentialConnectionSubtitle(
 }
 
 String _connectionServiceName(
-  BuildContext context,
+  BuildContext _,
   ServiceConnectionListItem connection,
 ) {
   final serviceName = connection.serviceName;
   if (serviceName != null && serviceName.isNotEmpty) return serviceName;
 
-  return LocaleKeys.service_connections_missing_credential_definition.tr(
-    context: context,
-  );
+  return connection.serviceName ?? connection.id;
 }
 
 List<AuraPopupMenuItem> _connectionMenuItems(
@@ -1912,7 +1884,7 @@ Future<void> _showStoredMcpErrorDetails(
 
 bool _canEditConnection(ServiceConnectionListItem connection) {
   return connection.kind == ServiceConnectionListItemKind.modelProvider ||
-      connection.kind == ServiceConnectionListItemKind.skillCredential ||
+      connection.kind == ServiceConnectionListItemKind.connector ||
       connection.kind == ServiceConnectionListItemKind.mcpServer;
 }
 
@@ -1983,9 +1955,9 @@ AuraPopupMenuItem _deleteMenuItem(
       titleKey: LocaleKeys.service_connections_delete_model_provider_title,
       confirmKey: LocaleKeys.service_connections_delete_model_provider_confirm,
     ),
-    .skillCredential => (
-      titleKey: LocaleKeys.service_connections_delete_credential_title,
-      confirmKey: LocaleKeys.service_connections_delete_credential_confirm,
+    .connector => (
+      titleKey: LocaleKeys.service_connections_delete_connector_title,
+      confirmKey: LocaleKeys.service_connections_delete_connector_confirm,
     ),
     .mcpServer => throw StateError(_mcpCredentialsDeleteError),
   };
@@ -2137,7 +2109,7 @@ String _deleteErrorKey(ServiceConnectionListItemKind kind) {
   return switch (kind) {
     .modelProvider =>
       LocaleKeys.service_connections_delete_model_provider_error,
-    .skillCredential => LocaleKeys.service_connections_delete_credential_error,
+    .connector => LocaleKeys.service_connections_delete_connector_error,
     .mcpServer => LocaleKeys.service_connections_action_reconnect_error,
   };
 }

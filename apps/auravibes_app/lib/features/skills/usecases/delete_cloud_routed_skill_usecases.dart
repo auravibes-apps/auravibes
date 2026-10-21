@@ -14,13 +14,3 @@ deleteSkillProvider = Provider.family<Future<void> Function(String), String>((
 
   return (id) => ref.read(skillsRepositoryProvider).deleteSkill(id);
 });
-
-final ProviderFamily<Future<void> Function(String), String>
-deleteSkillTemplateToolProvider =
-    Provider.family<Future<void> Function(String), String>((ref, workspaceId) {
-      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
-      if (cloud != null) return cloud.deleteTool;
-
-      return (id) =>
-          ref.read(skillTemplateToolsRepositoryProvider).deleteTool(id);
-    });

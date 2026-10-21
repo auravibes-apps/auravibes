@@ -5370,494 +5370,6 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   }
 }
 
-class $SkillCredentialDefinitionsTable extends SkillCredentialDefinitions
-    with
-        TableInfo<
-          $SkillCredentialDefinitionsTable,
-          SkillCredentialDefinitionsTable
-        > {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $SkillCredentialDefinitionsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    clientDefault: () => const UuidV7().generate(),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
-    'workspaceId',
-  );
-  @override
-  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
-    'workspace_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspaces (id) ON DELETE CASCADE',
-    ),
-  );
-  static const VerificationMeta _titleMeta = const VerificationMeta('title');
-  @override
-  late final GeneratedColumn<String> title = GeneratedColumn<String>(
-    'title',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
-  @override
-  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
-    'slug',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _attributesJsonMeta = const VerificationMeta(
-    'attributesJson',
-  );
-  @override
-  late final GeneratedColumn<String> attributesJson = GeneratedColumn<String>(
-    'attributes_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    createdAt,
-    updatedAt,
-    workspaceId,
-    title,
-    slug,
-    attributesJson,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'skill_credential_definitions';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<SkillCredentialDefinitionsTable> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    if (data.containsKey('workspace_id')) {
-      context.handle(
-        _workspaceIdMeta,
-        workspaceId.isAcceptableOrUnknown(
-          data['workspace_id']!,
-          _workspaceIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_workspaceIdMeta);
-    }
-    if (data.containsKey('title')) {
-      context.handle(
-        _titleMeta,
-        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_titleMeta);
-    }
-    if (data.containsKey('slug')) {
-      context.handle(
-        _slugMeta,
-        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_slugMeta);
-    }
-    if (data.containsKey('attributes_json')) {
-      context.handle(
-        _attributesJsonMeta,
-        attributesJson.isAcceptableOrUnknown(
-          data['attributes_json']!,
-          _attributesJsonMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_attributesJsonMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {workspaceId, title},
-    {workspaceId, slug},
-  ];
-  @override
-  SkillCredentialDefinitionsTable map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return SkillCredentialDefinitionsTable(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-      workspaceId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}workspace_id'],
-      )!,
-      title: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}title'],
-      )!,
-      slug: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}slug'],
-      )!,
-      attributesJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}attributes_json'],
-      )!,
-    );
-  }
-
-  @override
-  $SkillCredentialDefinitionsTable createAlias(String alias) {
-    return $SkillCredentialDefinitionsTable(attachedDatabase, alias);
-  }
-}
-
-class SkillCredentialDefinitionsTable extends DataClass
-    implements Insertable<SkillCredentialDefinitionsTable> {
-  /// Primary key column as string.
-  final String id;
-
-  /// When was created timestamp.
-  final DateTime createdAt;
-
-  /// When was last updated timestamp.
-  final DateTime updatedAt;
-  final String workspaceId;
-  final String title;
-  final String slug;
-  final String attributesJson;
-  const SkillCredentialDefinitionsTable({
-    required this.id,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.workspaceId,
-    required this.title,
-    required this.slug,
-    required this.attributesJson,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    map['workspace_id'] = Variable<String>(workspaceId);
-    map['title'] = Variable<String>(title);
-    map['slug'] = Variable<String>(slug);
-    map['attributes_json'] = Variable<String>(attributesJson);
-    return map;
-  }
-
-  SkillCredentialDefinitionsCompanion toCompanion(bool nullToAbsent) {
-    return SkillCredentialDefinitionsCompanion(
-      id: Value(id),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      workspaceId: Value(workspaceId),
-      title: Value(title),
-      slug: Value(slug),
-      attributesJson: Value(attributesJson),
-    );
-  }
-
-  factory SkillCredentialDefinitionsTable.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return SkillCredentialDefinitionsTable(
-      id: serializer.fromJson<String>(json['id']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      workspaceId: serializer.fromJson<String>(json['workspaceId']),
-      title: serializer.fromJson<String>(json['title']),
-      slug: serializer.fromJson<String>(json['slug']),
-      attributesJson: serializer.fromJson<String>(json['attributesJson']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'workspaceId': serializer.toJson<String>(workspaceId),
-      'title': serializer.toJson<String>(title),
-      'slug': serializer.toJson<String>(slug),
-      'attributesJson': serializer.toJson<String>(attributesJson),
-    };
-  }
-
-  SkillCredentialDefinitionsTable copyWith({
-    String? id,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    String? workspaceId,
-    String? title,
-    String? slug,
-    String? attributesJson,
-  }) => SkillCredentialDefinitionsTable(
-    id: id ?? this.id,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    workspaceId: workspaceId ?? this.workspaceId,
-    title: title ?? this.title,
-    slug: slug ?? this.slug,
-    attributesJson: attributesJson ?? this.attributesJson,
-  );
-  SkillCredentialDefinitionsTable copyWithCompanion(
-    SkillCredentialDefinitionsCompanion data,
-  ) {
-    return SkillCredentialDefinitionsTable(
-      id: data.id.present ? data.id.value : this.id,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      workspaceId: data.workspaceId.present
-          ? data.workspaceId.value
-          : this.workspaceId,
-      title: data.title.present ? data.title.value : this.title,
-      slug: data.slug.present ? data.slug.value : this.slug,
-      attributesJson: data.attributesJson.present
-          ? data.attributesJson.value
-          : this.attributesJson,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillCredentialDefinitionsTable(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('workspaceId: $workspaceId, ')
-          ..write('title: $title, ')
-          ..write('slug: $slug, ')
-          ..write('attributesJson: $attributesJson')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    createdAt,
-    updatedAt,
-    workspaceId,
-    title,
-    slug,
-    attributesJson,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is SkillCredentialDefinitionsTable &&
-          other.id == this.id &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.workspaceId == this.workspaceId &&
-          other.title == this.title &&
-          other.slug == this.slug &&
-          other.attributesJson == this.attributesJson);
-}
-
-class SkillCredentialDefinitionsCompanion
-    extends UpdateCompanion<SkillCredentialDefinitionsTable> {
-  final Value<String> id;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String> workspaceId;
-  final Value<String> title;
-  final Value<String> slug;
-  final Value<String> attributesJson;
-  final Value<int> rowid;
-  const SkillCredentialDefinitionsCompanion({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.workspaceId = const Value.absent(),
-    this.title = const Value.absent(),
-    this.slug = const Value.absent(),
-    this.attributesJson = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  SkillCredentialDefinitionsCompanion.insert({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    required String workspaceId,
-    required String title,
-    required String slug,
-    required String attributesJson,
-    this.rowid = const Value.absent(),
-  }) : workspaceId = Value(workspaceId),
-       title = Value(title),
-       slug = Value(slug),
-       attributesJson = Value(attributesJson);
-  static Insertable<SkillCredentialDefinitionsTable> custom({
-    Expression<String>? id,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? workspaceId,
-    Expression<String>? title,
-    Expression<String>? slug,
-    Expression<String>? attributesJson,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (workspaceId != null) 'workspace_id': workspaceId,
-      if (title != null) 'title': title,
-      if (slug != null) 'slug': slug,
-      if (attributesJson != null) 'attributes_json': attributesJson,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  SkillCredentialDefinitionsCompanion copyWith({
-    Value<String>? id,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-    Value<String>? workspaceId,
-    Value<String>? title,
-    Value<String>? slug,
-    Value<String>? attributesJson,
-    Value<int>? rowid,
-  }) {
-    return SkillCredentialDefinitionsCompanion(
-      id: id ?? this.id,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      workspaceId: workspaceId ?? this.workspaceId,
-      title: title ?? this.title,
-      slug: slug ?? this.slug,
-      attributesJson: attributesJson ?? this.attributesJson,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (workspaceId.present) {
-      map['workspace_id'] = Variable<String>(workspaceId.value);
-    }
-    if (title.present) {
-      map['title'] = Variable<String>(title.value);
-    }
-    if (slug.present) {
-      map['slug'] = Variable<String>(slug.value);
-    }
-    if (attributesJson.present) {
-      map['attributes_json'] = Variable<String>(attributesJson.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillCredentialDefinitionsCompanion(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('workspaceId: $workspaceId, ')
-          ..write('title: $title, ')
-          ..write('slug: $slug, ')
-          ..write('attributesJson: $attributesJson, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -5969,34 +5481,18 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _credentialDefinitionIdMeta =
-      const VerificationMeta('credentialDefinitionId');
+  static const VerificationMeta _connectorToolIdsJsonMeta =
+      const VerificationMeta('connectorToolIdsJson');
   @override
-  late final GeneratedColumn<String> credentialDefinitionId =
+  late final GeneratedColumn<String> connectorToolIdsJson =
       GeneratedColumn<String>(
-        'credential_definition_id',
+        'connector_tool_ids_json',
         aliasedName,
-        true,
+        false,
         type: DriftSqlType.string,
         requiredDuringInsert: false,
-        defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES skill_credential_definitions (id) ON DELETE SET NULL',
-        ),
+        defaultValue: const Constant('[]'),
       );
-  static const VerificationMeta _isCredentialOptionalMeta =
-      const VerificationMeta('isCredentialOptional');
-  @override
-  late final GeneratedColumn<bool> isCredentialOptional = GeneratedColumn<bool>(
-    'is_credential_optional',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_credential_optional" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
   static const VerificationMeta _isEnabledMeta = const VerificationMeta(
     'isEnabled',
   );
@@ -6024,8 +5520,7 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
     slug,
     description,
     content,
-    credentialDefinitionId,
-    isCredentialOptional,
+    connectorToolIdsJson,
     isEnabled,
   ];
   @override
@@ -6101,21 +5596,12 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
     } else if (isInserting) {
       context.missing(_contentMeta);
     }
-    if (data.containsKey('credential_definition_id')) {
+    if (data.containsKey('connector_tool_ids_json')) {
       context.handle(
-        _credentialDefinitionIdMeta,
-        credentialDefinitionId.isAcceptableOrUnknown(
-          data['credential_definition_id']!,
-          _credentialDefinitionIdMeta,
-        ),
-      );
-    }
-    if (data.containsKey('is_credential_optional')) {
-      context.handle(
-        _isCredentialOptionalMeta,
-        isCredentialOptional.isAcceptableOrUnknown(
-          data['is_credential_optional']!,
-          _isCredentialOptionalMeta,
+        _connectorToolIdsJsonMeta,
+        connectorToolIdsJson.isAcceptableOrUnknown(
+          data['connector_tool_ids_json']!,
+          _connectorToolIdsJsonMeta,
         ),
       );
     }
@@ -6183,13 +5669,9 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
         DriftSqlType.string,
         data['${effectivePrefix}content'],
       )!,
-      credentialDefinitionId: attachedDatabase.typeMapping.read(
+      connectorToolIdsJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}credential_definition_id'],
-      ),
-      isCredentialOptional: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_credential_optional'],
+        data['${effectivePrefix}connector_tool_ids_json'],
       )!,
       isEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
@@ -6225,8 +5707,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
   final String slug;
   final String description;
   final String content;
-  final String? credentialDefinitionId;
-  final bool isCredentialOptional;
+  final String connectorToolIdsJson;
   final bool isEnabled;
   const SkillsTable({
     required this.id,
@@ -6239,8 +5720,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     required this.slug,
     required this.description,
     required this.content,
-    this.credentialDefinitionId,
-    required this.isCredentialOptional,
+    required this.connectorToolIdsJson,
     required this.isEnabled,
   });
   @override
@@ -6262,12 +5742,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     map['slug'] = Variable<String>(slug);
     map['description'] = Variable<String>(description);
     map['content'] = Variable<String>(content);
-    if (!nullToAbsent || credentialDefinitionId != null) {
-      map['credential_definition_id'] = Variable<String>(
-        credentialDefinitionId,
-      );
-    }
-    map['is_credential_optional'] = Variable<bool>(isCredentialOptional);
+    map['connector_tool_ids_json'] = Variable<String>(connectorToolIdsJson);
     map['is_enabled'] = Variable<bool>(isEnabled);
     return map;
   }
@@ -6284,10 +5759,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
       slug: Value(slug),
       description: Value(description),
       content: Value(content),
-      credentialDefinitionId: credentialDefinitionId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(credentialDefinitionId),
-      isCredentialOptional: Value(isCredentialOptional),
+      connectorToolIdsJson: Value(connectorToolIdsJson),
       isEnabled: Value(isEnabled),
     );
   }
@@ -6312,11 +5784,8 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
       slug: serializer.fromJson<String>(json['slug']),
       description: serializer.fromJson<String>(json['description']),
       content: serializer.fromJson<String>(json['content']),
-      credentialDefinitionId: serializer.fromJson<String?>(
-        json['credentialDefinitionId'],
-      ),
-      isCredentialOptional: serializer.fromJson<bool>(
-        json['isCredentialOptional'],
+      connectorToolIdsJson: serializer.fromJson<String>(
+        json['connectorToolIdsJson'],
       ),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
     );
@@ -6339,10 +5808,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
       'slug': serializer.toJson<String>(slug),
       'description': serializer.toJson<String>(description),
       'content': serializer.toJson<String>(content),
-      'credentialDefinitionId': serializer.toJson<String?>(
-        credentialDefinitionId,
-      ),
-      'isCredentialOptional': serializer.toJson<bool>(isCredentialOptional),
+      'connectorToolIdsJson': serializer.toJson<String>(connectorToolIdsJson),
       'isEnabled': serializer.toJson<bool>(isEnabled),
     };
   }
@@ -6358,8 +5824,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     String? slug,
     String? description,
     String? content,
-    Value<String?> credentialDefinitionId = const Value.absent(),
-    bool? isCredentialOptional,
+    String? connectorToolIdsJson,
     bool? isEnabled,
   }) => SkillsTable(
     id: id ?? this.id,
@@ -6372,10 +5837,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     slug: slug ?? this.slug,
     description: description ?? this.description,
     content: content ?? this.content,
-    credentialDefinitionId: credentialDefinitionId.present
-        ? credentialDefinitionId.value
-        : this.credentialDefinitionId,
-    isCredentialOptional: isCredentialOptional ?? this.isCredentialOptional,
+    connectorToolIdsJson: connectorToolIdsJson ?? this.connectorToolIdsJson,
     isEnabled: isEnabled ?? this.isEnabled,
   );
   SkillsTable copyWithCompanion(SkillsCompanion data) {
@@ -6394,12 +5856,9 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
           ? data.description.value
           : this.description,
       content: data.content.present ? data.content.value : this.content,
-      credentialDefinitionId: data.credentialDefinitionId.present
-          ? data.credentialDefinitionId.value
-          : this.credentialDefinitionId,
-      isCredentialOptional: data.isCredentialOptional.present
-          ? data.isCredentialOptional.value
-          : this.isCredentialOptional,
+      connectorToolIdsJson: data.connectorToolIdsJson.present
+          ? data.connectorToolIdsJson.value
+          : this.connectorToolIdsJson,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
     );
   }
@@ -6417,8 +5876,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
           ..write('slug: $slug, ')
           ..write('description: $description, ')
           ..write('content: $content, ')
-          ..write('credentialDefinitionId: $credentialDefinitionId, ')
-          ..write('isCredentialOptional: $isCredentialOptional, ')
+          ..write('connectorToolIdsJson: $connectorToolIdsJson, ')
           ..write('isEnabled: $isEnabled')
           ..write(')'))
         .toString();
@@ -6436,8 +5894,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     slug,
     description,
     content,
-    credentialDefinitionId,
-    isCredentialOptional,
+    connectorToolIdsJson,
     isEnabled,
   );
   @override
@@ -6454,8 +5911,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
           other.slug == this.slug &&
           other.description == this.description &&
           other.content == this.content &&
-          other.credentialDefinitionId == this.credentialDefinitionId &&
-          other.isCredentialOptional == this.isCredentialOptional &&
+          other.connectorToolIdsJson == this.connectorToolIdsJson &&
           other.isEnabled == this.isEnabled);
 }
 
@@ -6470,8 +5926,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
   final Value<String> slug;
   final Value<String> description;
   final Value<String> content;
-  final Value<String?> credentialDefinitionId;
-  final Value<bool> isCredentialOptional;
+  final Value<String> connectorToolIdsJson;
   final Value<bool> isEnabled;
   final Value<int> rowid;
   const SkillsCompanion({
@@ -6485,8 +5940,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     this.slug = const Value.absent(),
     this.description = const Value.absent(),
     this.content = const Value.absent(),
-    this.credentialDefinitionId = const Value.absent(),
-    this.isCredentialOptional = const Value.absent(),
+    this.connectorToolIdsJson = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -6501,8 +5955,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     required String slug,
     required String description,
     required String content,
-    this.credentialDefinitionId = const Value.absent(),
-    this.isCredentialOptional = const Value.absent(),
+    this.connectorToolIdsJson = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -6523,8 +5976,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     Expression<String>? slug,
     Expression<String>? description,
     Expression<String>? content,
-    Expression<String>? credentialDefinitionId,
-    Expression<bool>? isCredentialOptional,
+    Expression<String>? connectorToolIdsJson,
     Expression<bool>? isEnabled,
     Expression<int>? rowid,
   }) {
@@ -6539,10 +5991,8 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
       if (slug != null) 'slug': slug,
       if (description != null) 'description': description,
       if (content != null) 'content': content,
-      if (credentialDefinitionId != null)
-        'credential_definition_id': credentialDefinitionId,
-      if (isCredentialOptional != null)
-        'is_credential_optional': isCredentialOptional,
+      if (connectorToolIdsJson != null)
+        'connector_tool_ids_json': connectorToolIdsJson,
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (rowid != null) 'rowid': rowid,
     });
@@ -6559,8 +6009,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     Value<String>? slug,
     Value<String>? description,
     Value<String>? content,
-    Value<String?>? credentialDefinitionId,
-    Value<bool>? isCredentialOptional,
+    Value<String>? connectorToolIdsJson,
     Value<bool>? isEnabled,
     Value<int>? rowid,
   }) {
@@ -6575,9 +6024,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
       slug: slug ?? this.slug,
       description: description ?? this.description,
       content: content ?? this.content,
-      credentialDefinitionId:
-          credentialDefinitionId ?? this.credentialDefinitionId,
-      isCredentialOptional: isCredentialOptional ?? this.isCredentialOptional,
+      connectorToolIdsJson: connectorToolIdsJson ?? this.connectorToolIdsJson,
       isEnabled: isEnabled ?? this.isEnabled,
       rowid: rowid ?? this.rowid,
     );
@@ -6620,14 +6067,9 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     if (content.present) {
       map['content'] = Variable<String>(content.value);
     }
-    if (credentialDefinitionId.present) {
-      map['credential_definition_id'] = Variable<String>(
-        credentialDefinitionId.value,
-      );
-    }
-    if (isCredentialOptional.present) {
-      map['is_credential_optional'] = Variable<bool>(
-        isCredentialOptional.value,
+    if (connectorToolIdsJson.present) {
+      map['connector_tool_ids_json'] = Variable<String>(
+        connectorToolIdsJson.value,
       );
     }
     if (isEnabled.present) {
@@ -6652,8 +6094,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
           ..write('slug: $slug, ')
           ..write('description: $description, ')
           ..write('content: $content, ')
-          ..write('credentialDefinitionId: $credentialDefinitionId, ')
-          ..write('isCredentialOptional: $isCredentialOptional, ')
+          ..write('connectorToolIdsJson: $connectorToolIdsJson, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -12001,871 +11442,6 @@ class WorkspaceCompactionSettingsCompanion
   }
 }
 
-class $SkillTemplateToolsTable extends SkillTemplateTools
-    with TableInfo<$SkillTemplateToolsTable, SkillTemplateToolsTable> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $SkillTemplateToolsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    clientDefault: () => const UuidV7().generate(),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _skillIdMeta = const VerificationMeta(
-    'skillId',
-  );
-  @override
-  late final GeneratedColumn<String> skillId = GeneratedColumn<String>(
-    'skill_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES skills (id) ON DELETE CASCADE',
-    ),
-  );
-  @override
-  late final GeneratedColumnWithTypeConverter<
-    SkillTemplateToolTypeTable,
-    String
-  >
-  templateType =
-      GeneratedColumn<String>(
-        'template_type',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      ).withConverter<SkillTemplateToolTypeTable>(
-        $SkillTemplateToolsTable.$convertertemplateType,
-      );
-  static const VerificationMeta _titleMeta = const VerificationMeta('title');
-  @override
-  late final GeneratedColumn<String> title = GeneratedColumn<String>(
-    'title',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _descriptionMeta = const VerificationMeta(
-    'description',
-  );
-  @override
-  late final GeneratedColumn<String> description = GeneratedColumn<String>(
-    'description',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(''),
-  );
-  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
-  @override
-  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
-    'slug',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _definitionJsonMeta = const VerificationMeta(
-    'definitionJson',
-  );
-  @override
-  late final GeneratedColumn<String> definitionJson = GeneratedColumn<String>(
-    'definition_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('{}'),
-  );
-  static const VerificationMeta _templateJsonMeta = const VerificationMeta(
-    'templateJson',
-  );
-  @override
-  late final GeneratedColumn<String> templateJson = GeneratedColumn<String>(
-    'template_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _inputsJsonMeta = const VerificationMeta(
-    'inputsJson',
-  );
-  @override
-  late final GeneratedColumn<String> inputsJson = GeneratedColumn<String>(
-    'inputs_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _credentialDefinitionIdMeta =
-      const VerificationMeta('credentialDefinitionId');
-  @override
-  late final GeneratedColumn<String> credentialDefinitionId =
-      GeneratedColumn<String>(
-        'credential_definition_id',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-        defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES skill_credential_definitions (id) ON DELETE SET NULL',
-        ),
-      );
-  static const VerificationMeta _requiresCredentialMeta =
-      const VerificationMeta('requiresCredential');
-  @override
-  late final GeneratedColumn<bool> requiresCredential = GeneratedColumn<bool>(
-    'requires_credential',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("requires_credential" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
-    'isEnabled',
-  );
-  @override
-  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
-    'is_enabled',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_enabled" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    createdAt,
-    updatedAt,
-    skillId,
-    templateType,
-    title,
-    description,
-    slug,
-    definitionJson,
-    templateJson,
-    inputsJson,
-    credentialDefinitionId,
-    requiresCredential,
-    isEnabled,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'skill_template_tools';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<SkillTemplateToolsTable> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    if (data.containsKey('skill_id')) {
-      context.handle(
-        _skillIdMeta,
-        skillId.isAcceptableOrUnknown(data['skill_id']!, _skillIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_skillIdMeta);
-    }
-    if (data.containsKey('title')) {
-      context.handle(
-        _titleMeta,
-        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_titleMeta);
-    }
-    if (data.containsKey('description')) {
-      context.handle(
-        _descriptionMeta,
-        description.isAcceptableOrUnknown(
-          data['description']!,
-          _descriptionMeta,
-        ),
-      );
-    }
-    if (data.containsKey('slug')) {
-      context.handle(
-        _slugMeta,
-        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_slugMeta);
-    }
-    if (data.containsKey('definition_json')) {
-      context.handle(
-        _definitionJsonMeta,
-        definitionJson.isAcceptableOrUnknown(
-          data['definition_json']!,
-          _definitionJsonMeta,
-        ),
-      );
-    }
-    if (data.containsKey('template_json')) {
-      context.handle(
-        _templateJsonMeta,
-        templateJson.isAcceptableOrUnknown(
-          data['template_json']!,
-          _templateJsonMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_templateJsonMeta);
-    }
-    if (data.containsKey('inputs_json')) {
-      context.handle(
-        _inputsJsonMeta,
-        inputsJson.isAcceptableOrUnknown(data['inputs_json']!, _inputsJsonMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_inputsJsonMeta);
-    }
-    if (data.containsKey('credential_definition_id')) {
-      context.handle(
-        _credentialDefinitionIdMeta,
-        credentialDefinitionId.isAcceptableOrUnknown(
-          data['credential_definition_id']!,
-          _credentialDefinitionIdMeta,
-        ),
-      );
-    }
-    if (data.containsKey('requires_credential')) {
-      context.handle(
-        _requiresCredentialMeta,
-        requiresCredential.isAcceptableOrUnknown(
-          data['requires_credential']!,
-          _requiresCredentialMeta,
-        ),
-      );
-    }
-    if (data.containsKey('is_enabled')) {
-      context.handle(
-        _isEnabledMeta,
-        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {skillId, title},
-    {skillId, slug},
-  ];
-  @override
-  SkillTemplateToolsTable map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return SkillTemplateToolsTable(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-      skillId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}skill_id'],
-      )!,
-      templateType: $SkillTemplateToolsTable.$convertertemplateType.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}template_type'],
-        )!,
-      ),
-      title: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}title'],
-      )!,
-      description: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}description'],
-      )!,
-      slug: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}slug'],
-      )!,
-      definitionJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}definition_json'],
-      )!,
-      templateJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}template_json'],
-      )!,
-      inputsJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}inputs_json'],
-      )!,
-      credentialDefinitionId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}credential_definition_id'],
-      ),
-      requiresCredential: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}requires_credential'],
-      )!,
-      isEnabled: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_enabled'],
-      )!,
-    );
-  }
-
-  @override
-  $SkillTemplateToolsTable createAlias(String alias) {
-    return $SkillTemplateToolsTable(attachedDatabase, alias);
-  }
-
-  static JsonTypeConverter2<SkillTemplateToolTypeTable, String, String>
-  $convertertemplateType = const EnumNameConverter<SkillTemplateToolTypeTable>(
-    SkillTemplateToolTypeTable.values,
-  );
-}
-
-class SkillTemplateToolsTable extends DataClass
-    implements Insertable<SkillTemplateToolsTable> {
-  /// Primary key column as string.
-  final String id;
-
-  /// When was created timestamp.
-  final DateTime createdAt;
-
-  /// When was last updated timestamp.
-  final DateTime updatedAt;
-  final String skillId;
-  final SkillTemplateToolTypeTable templateType;
-  final String title;
-  final String description;
-  final String slug;
-  final String definitionJson;
-  final String templateJson;
-  final String inputsJson;
-  final String? credentialDefinitionId;
-  final bool requiresCredential;
-  final bool isEnabled;
-  const SkillTemplateToolsTable({
-    required this.id,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.skillId,
-    required this.templateType,
-    required this.title,
-    required this.description,
-    required this.slug,
-    required this.definitionJson,
-    required this.templateJson,
-    required this.inputsJson,
-    this.credentialDefinitionId,
-    required this.requiresCredential,
-    required this.isEnabled,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    map['skill_id'] = Variable<String>(skillId);
-    {
-      map['template_type'] = Variable<String>(
-        $SkillTemplateToolsTable.$convertertemplateType.toSql(templateType),
-      );
-    }
-    map['title'] = Variable<String>(title);
-    map['description'] = Variable<String>(description);
-    map['slug'] = Variable<String>(slug);
-    map['definition_json'] = Variable<String>(definitionJson);
-    map['template_json'] = Variable<String>(templateJson);
-    map['inputs_json'] = Variable<String>(inputsJson);
-    if (!nullToAbsent || credentialDefinitionId != null) {
-      map['credential_definition_id'] = Variable<String>(
-        credentialDefinitionId,
-      );
-    }
-    map['requires_credential'] = Variable<bool>(requiresCredential);
-    map['is_enabled'] = Variable<bool>(isEnabled);
-    return map;
-  }
-
-  SkillTemplateToolsCompanion toCompanion(bool nullToAbsent) {
-    return SkillTemplateToolsCompanion(
-      id: Value(id),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      skillId: Value(skillId),
-      templateType: Value(templateType),
-      title: Value(title),
-      description: Value(description),
-      slug: Value(slug),
-      definitionJson: Value(definitionJson),
-      templateJson: Value(templateJson),
-      inputsJson: Value(inputsJson),
-      credentialDefinitionId: credentialDefinitionId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(credentialDefinitionId),
-      requiresCredential: Value(requiresCredential),
-      isEnabled: Value(isEnabled),
-    );
-  }
-
-  factory SkillTemplateToolsTable.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return SkillTemplateToolsTable(
-      id: serializer.fromJson<String>(json['id']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      skillId: serializer.fromJson<String>(json['skillId']),
-      templateType: $SkillTemplateToolsTable.$convertertemplateType.fromJson(
-        serializer.fromJson<String>(json['templateType']),
-      ),
-      title: serializer.fromJson<String>(json['title']),
-      description: serializer.fromJson<String>(json['description']),
-      slug: serializer.fromJson<String>(json['slug']),
-      definitionJson: serializer.fromJson<String>(json['definitionJson']),
-      templateJson: serializer.fromJson<String>(json['templateJson']),
-      inputsJson: serializer.fromJson<String>(json['inputsJson']),
-      credentialDefinitionId: serializer.fromJson<String?>(
-        json['credentialDefinitionId'],
-      ),
-      requiresCredential: serializer.fromJson<bool>(json['requiresCredential']),
-      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'skillId': serializer.toJson<String>(skillId),
-      'templateType': serializer.toJson<String>(
-        $SkillTemplateToolsTable.$convertertemplateType.toJson(templateType),
-      ),
-      'title': serializer.toJson<String>(title),
-      'description': serializer.toJson<String>(description),
-      'slug': serializer.toJson<String>(slug),
-      'definitionJson': serializer.toJson<String>(definitionJson),
-      'templateJson': serializer.toJson<String>(templateJson),
-      'inputsJson': serializer.toJson<String>(inputsJson),
-      'credentialDefinitionId': serializer.toJson<String?>(
-        credentialDefinitionId,
-      ),
-      'requiresCredential': serializer.toJson<bool>(requiresCredential),
-      'isEnabled': serializer.toJson<bool>(isEnabled),
-    };
-  }
-
-  SkillTemplateToolsTable copyWith({
-    String? id,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    String? skillId,
-    SkillTemplateToolTypeTable? templateType,
-    String? title,
-    String? description,
-    String? slug,
-    String? definitionJson,
-    String? templateJson,
-    String? inputsJson,
-    Value<String?> credentialDefinitionId = const Value.absent(),
-    bool? requiresCredential,
-    bool? isEnabled,
-  }) => SkillTemplateToolsTable(
-    id: id ?? this.id,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    skillId: skillId ?? this.skillId,
-    templateType: templateType ?? this.templateType,
-    title: title ?? this.title,
-    description: description ?? this.description,
-    slug: slug ?? this.slug,
-    definitionJson: definitionJson ?? this.definitionJson,
-    templateJson: templateJson ?? this.templateJson,
-    inputsJson: inputsJson ?? this.inputsJson,
-    credentialDefinitionId: credentialDefinitionId.present
-        ? credentialDefinitionId.value
-        : this.credentialDefinitionId,
-    requiresCredential: requiresCredential ?? this.requiresCredential,
-    isEnabled: isEnabled ?? this.isEnabled,
-  );
-  SkillTemplateToolsTable copyWithCompanion(SkillTemplateToolsCompanion data) {
-    return SkillTemplateToolsTable(
-      id: data.id.present ? data.id.value : this.id,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      skillId: data.skillId.present ? data.skillId.value : this.skillId,
-      templateType: data.templateType.present
-          ? data.templateType.value
-          : this.templateType,
-      title: data.title.present ? data.title.value : this.title,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
-      slug: data.slug.present ? data.slug.value : this.slug,
-      definitionJson: data.definitionJson.present
-          ? data.definitionJson.value
-          : this.definitionJson,
-      templateJson: data.templateJson.present
-          ? data.templateJson.value
-          : this.templateJson,
-      inputsJson: data.inputsJson.present
-          ? data.inputsJson.value
-          : this.inputsJson,
-      credentialDefinitionId: data.credentialDefinitionId.present
-          ? data.credentialDefinitionId.value
-          : this.credentialDefinitionId,
-      requiresCredential: data.requiresCredential.present
-          ? data.requiresCredential.value
-          : this.requiresCredential,
-      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillTemplateToolsTable(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('skillId: $skillId, ')
-          ..write('templateType: $templateType, ')
-          ..write('title: $title, ')
-          ..write('description: $description, ')
-          ..write('slug: $slug, ')
-          ..write('definitionJson: $definitionJson, ')
-          ..write('templateJson: $templateJson, ')
-          ..write('inputsJson: $inputsJson, ')
-          ..write('credentialDefinitionId: $credentialDefinitionId, ')
-          ..write('requiresCredential: $requiresCredential, ')
-          ..write('isEnabled: $isEnabled')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    createdAt,
-    updatedAt,
-    skillId,
-    templateType,
-    title,
-    description,
-    slug,
-    definitionJson,
-    templateJson,
-    inputsJson,
-    credentialDefinitionId,
-    requiresCredential,
-    isEnabled,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is SkillTemplateToolsTable &&
-          other.id == this.id &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.skillId == this.skillId &&
-          other.templateType == this.templateType &&
-          other.title == this.title &&
-          other.description == this.description &&
-          other.slug == this.slug &&
-          other.definitionJson == this.definitionJson &&
-          other.templateJson == this.templateJson &&
-          other.inputsJson == this.inputsJson &&
-          other.credentialDefinitionId == this.credentialDefinitionId &&
-          other.requiresCredential == this.requiresCredential &&
-          other.isEnabled == this.isEnabled);
-}
-
-class SkillTemplateToolsCompanion
-    extends UpdateCompanion<SkillTemplateToolsTable> {
-  final Value<String> id;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String> skillId;
-  final Value<SkillTemplateToolTypeTable> templateType;
-  final Value<String> title;
-  final Value<String> description;
-  final Value<String> slug;
-  final Value<String> definitionJson;
-  final Value<String> templateJson;
-  final Value<String> inputsJson;
-  final Value<String?> credentialDefinitionId;
-  final Value<bool> requiresCredential;
-  final Value<bool> isEnabled;
-  final Value<int> rowid;
-  const SkillTemplateToolsCompanion({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.skillId = const Value.absent(),
-    this.templateType = const Value.absent(),
-    this.title = const Value.absent(),
-    this.description = const Value.absent(),
-    this.slug = const Value.absent(),
-    this.definitionJson = const Value.absent(),
-    this.templateJson = const Value.absent(),
-    this.inputsJson = const Value.absent(),
-    this.credentialDefinitionId = const Value.absent(),
-    this.requiresCredential = const Value.absent(),
-    this.isEnabled = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  SkillTemplateToolsCompanion.insert({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    required String skillId,
-    required SkillTemplateToolTypeTable templateType,
-    required String title,
-    this.description = const Value.absent(),
-    required String slug,
-    this.definitionJson = const Value.absent(),
-    required String templateJson,
-    required String inputsJson,
-    this.credentialDefinitionId = const Value.absent(),
-    this.requiresCredential = const Value.absent(),
-    this.isEnabled = const Value.absent(),
-    this.rowid = const Value.absent(),
-  }) : skillId = Value(skillId),
-       templateType = Value(templateType),
-       title = Value(title),
-       slug = Value(slug),
-       templateJson = Value(templateJson),
-       inputsJson = Value(inputsJson);
-  static Insertable<SkillTemplateToolsTable> custom({
-    Expression<String>? id,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? skillId,
-    Expression<String>? templateType,
-    Expression<String>? title,
-    Expression<String>? description,
-    Expression<String>? slug,
-    Expression<String>? definitionJson,
-    Expression<String>? templateJson,
-    Expression<String>? inputsJson,
-    Expression<String>? credentialDefinitionId,
-    Expression<bool>? requiresCredential,
-    Expression<bool>? isEnabled,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (skillId != null) 'skill_id': skillId,
-      if (templateType != null) 'template_type': templateType,
-      if (title != null) 'title': title,
-      if (description != null) 'description': description,
-      if (slug != null) 'slug': slug,
-      if (definitionJson != null) 'definition_json': definitionJson,
-      if (templateJson != null) 'template_json': templateJson,
-      if (inputsJson != null) 'inputs_json': inputsJson,
-      if (credentialDefinitionId != null)
-        'credential_definition_id': credentialDefinitionId,
-      if (requiresCredential != null) 'requires_credential': requiresCredential,
-      if (isEnabled != null) 'is_enabled': isEnabled,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  SkillTemplateToolsCompanion copyWith({
-    Value<String>? id,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-    Value<String>? skillId,
-    Value<SkillTemplateToolTypeTable>? templateType,
-    Value<String>? title,
-    Value<String>? description,
-    Value<String>? slug,
-    Value<String>? definitionJson,
-    Value<String>? templateJson,
-    Value<String>? inputsJson,
-    Value<String?>? credentialDefinitionId,
-    Value<bool>? requiresCredential,
-    Value<bool>? isEnabled,
-    Value<int>? rowid,
-  }) {
-    return SkillTemplateToolsCompanion(
-      id: id ?? this.id,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      skillId: skillId ?? this.skillId,
-      templateType: templateType ?? this.templateType,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      slug: slug ?? this.slug,
-      definitionJson: definitionJson ?? this.definitionJson,
-      templateJson: templateJson ?? this.templateJson,
-      inputsJson: inputsJson ?? this.inputsJson,
-      credentialDefinitionId:
-          credentialDefinitionId ?? this.credentialDefinitionId,
-      requiresCredential: requiresCredential ?? this.requiresCredential,
-      isEnabled: isEnabled ?? this.isEnabled,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (skillId.present) {
-      map['skill_id'] = Variable<String>(skillId.value);
-    }
-    if (templateType.present) {
-      map['template_type'] = Variable<String>(
-        $SkillTemplateToolsTable.$convertertemplateType.toSql(
-          templateType.value,
-        ),
-      );
-    }
-    if (title.present) {
-      map['title'] = Variable<String>(title.value);
-    }
-    if (description.present) {
-      map['description'] = Variable<String>(description.value);
-    }
-    if (slug.present) {
-      map['slug'] = Variable<String>(slug.value);
-    }
-    if (definitionJson.present) {
-      map['definition_json'] = Variable<String>(definitionJson.value);
-    }
-    if (templateJson.present) {
-      map['template_json'] = Variable<String>(templateJson.value);
-    }
-    if (inputsJson.present) {
-      map['inputs_json'] = Variable<String>(inputsJson.value);
-    }
-    if (credentialDefinitionId.present) {
-      map['credential_definition_id'] = Variable<String>(
-        credentialDefinitionId.value,
-      );
-    }
-    if (requiresCredential.present) {
-      map['requires_credential'] = Variable<bool>(requiresCredential.value);
-    }
-    if (isEnabled.present) {
-      map['is_enabled'] = Variable<bool>(isEnabled.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillTemplateToolsCompanion(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('skillId: $skillId, ')
-          ..write('templateType: $templateType, ')
-          ..write('title: $title, ')
-          ..write('description: $description, ')
-          ..write('slug: $slug, ')
-          ..write('definitionJson: $definitionJson, ')
-          ..write('templateJson: $templateJson, ')
-          ..write('inputsJson: $inputsJson, ')
-          ..write('credentialDefinitionId: $credentialDefinitionId, ')
-          ..write('requiresCredential: $requiresCredential, ')
-          ..write('isEnabled: $isEnabled, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $SkillResourcesTable extends SkillResources
     with TableInfo<$SkillResourcesTable, SkillResourcesTable> {
   @override
@@ -16480,8 +15056,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ApiModelsTable apiModels = $ApiModelsTable(this);
   late final $AgentsTable agents = $AgentsTable(this);
   late final $ConversationsTable conversations = $ConversationsTable(this);
-  late final $SkillCredentialDefinitionsTable skillCredentialDefinitions =
-      $SkillCredentialDefinitionsTable(this);
   late final $SkillsTable skills = $SkillsTable(this);
   late final $AgentSkillsTable agentSkills = $AgentSkillsTable(this);
   late final $McpServersTable mcpServers = $McpServersTable(this);
@@ -16495,8 +15069,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ConversationToolsTable(this);
   late final $WorkspaceCompactionSettingsTable workspaceCompactionSettings =
       $WorkspaceCompactionSettingsTable(this);
-  late final $SkillTemplateToolsTable skillTemplateTools =
-      $SkillTemplateToolsTable(this);
   late final $SkillResourcesTable skillResources = $SkillResourcesTable(this);
   late final $ConversationSkillsTable conversationSkills =
       $ConversationSkillsTable(this);
@@ -16600,14 +15172,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final McpServersDao mcpServersDao = McpServersDao(this as AppDatabase);
   late final WorkspaceCompactionSettingsDao workspaceCompactionSettingsDao =
       WorkspaceCompactionSettingsDao(this as AppDatabase);
-  late final SkillCredentialsDao skillCredentialsDao = SkillCredentialsDao(
-    this as AppDatabase,
-  );
-  late final SkillCredentialDefinitionsDao skillCredentialDefinitionsDao =
-      SkillCredentialDefinitionsDao(this as AppDatabase);
   late final SkillsDao skillsDao = SkillsDao(this as AppDatabase);
-  late final SkillTemplateToolsDao skillTemplateToolsDao =
-      SkillTemplateToolsDao(this as AppDatabase);
   late final SkillResourcesDao skillResourcesDao = SkillResourcesDao(
     this as AppDatabase,
   );
@@ -16632,7 +15197,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     apiModels,
     agents,
     conversations,
-    skillCredentialDefinitions,
     skills,
     agentSkills,
     mcpServers,
@@ -16643,7 +15207,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     messageAttachments,
     conversationTools,
     workspaceCompactionSettings,
-    skillTemplateTools,
     skillResources,
     conversationSkills,
     appSkillWorkspaceSettings,
@@ -16731,23 +15294,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         'workspaces',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [
-        TableUpdate('skill_credential_definitions', kind: UpdateKind.delete),
-      ],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'workspaces',
-        limitUpdateKind: UpdateKind.delete,
-      ),
       result: [TableUpdate('skills', kind: UpdateKind.delete)],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'skill_credential_definitions',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('skills', kind: UpdateKind.update)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -16855,20 +15402,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       result: [
         TableUpdate('workspace_compaction_settings', kind: UpdateKind.delete),
       ],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'skills',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('skill_template_tools', kind: UpdateKind.delete)],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'skill_credential_definitions',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('skill_template_tools', kind: UpdateKind.update)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -17021,31 +15554,6 @@ final class $$WorkspacesTableReferences
     ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_conversationsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<
-    $SkillCredentialDefinitionsTable,
-    List<SkillCredentialDefinitionsTable>
-  >
-  _skillCredentialDefinitionsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.skillCredentialDefinitions,
-        aliasName: 'workspaces__id__skill_credential_definitions__workspace_id',
-      );
-
-  $$SkillCredentialDefinitionsTableProcessedTableManager
-  get skillCredentialDefinitionsRefs {
-    final manager = $$SkillCredentialDefinitionsTableTableManager(
-      $_db,
-      $_db.skillCredentialDefinitions,
-    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _skillCredentialDefinitionsRefsTable($_db),
-    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -17319,33 +15827,6 @@ class $$WorkspacesTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
-    return f(composer);
-  }
-
-  Expression<bool> skillCredentialDefinitionsRefs(
-    Expression<bool> Function($$SkillCredentialDefinitionsTableFilterComposer f)
-    f,
-  ) {
-    final $$SkillCredentialDefinitionsTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.workspaceId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableFilterComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
     return f(composer);
   }
 
@@ -17694,35 +16175,6 @@ class $$WorkspacesTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> skillCredentialDefinitionsRefs<T extends Object>(
-    Expression<T> Function(
-      $$SkillCredentialDefinitionsTableAnnotationComposer a,
-    )
-    f,
-  ) {
-    final $$SkillCredentialDefinitionsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.workspaceId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
   Expression<T> skillsRefs<T extends Object>(
     Expression<T> Function($$SkillsTableAnnotationComposer a) f,
   ) {
@@ -17922,7 +16374,6 @@ class $$WorkspacesTableTableManager
             bool serviceConnectionsRefs,
             bool agentsRefs,
             bool conversationsRefs,
-            bool skillCredentialDefinitionsRefs,
             bool skillsRefs,
             bool mcpServersRefs,
             bool toolsGroupsRefs,
@@ -18000,7 +16451,6 @@ class $$WorkspacesTableTableManager
                 serviceConnectionsRefs = false,
                 agentsRefs = false,
                 conversationsRefs = false,
-                skillCredentialDefinitionsRefs = false,
                 skillsRefs = false,
                 mcpServersRefs = false,
                 toolsGroupsRefs = false,
@@ -18015,8 +16465,6 @@ class $$WorkspacesTableTableManager
                     if (serviceConnectionsRefs) db.serviceConnections,
                     if (agentsRefs) db.agents,
                     if (conversationsRefs) db.conversations,
-                    if (skillCredentialDefinitionsRefs)
-                      db.skillCredentialDefinitions,
                     if (skillsRefs) db.skills,
                     if (mcpServersRefs) db.mcpServers,
                     if (toolsGroupsRefs) db.toolsGroups,
@@ -18087,27 +16535,6 @@ class $$WorkspacesTableTableManager
                                 table,
                                 p0,
                               ).conversationsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.workspaceId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (skillCredentialDefinitionsRefs)
-                        await $_getPrefetchedData<
-                          WorkspacesTable,
-                          $WorkspacesTable,
-                          SkillCredentialDefinitionsTable
-                        >(
-                          currentTable: table,
-                          referencedTable: $$WorkspacesTableReferences
-                              ._skillCredentialDefinitionsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$WorkspacesTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skillCredentialDefinitionsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.workspaceId == item.id,
@@ -18285,7 +16712,6 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool serviceConnectionsRefs,
         bool agentsRefs,
         bool conversationsRefs,
-        bool skillCredentialDefinitionsRefs,
         bool skillsRefs,
         bool mcpServersRefs,
         bool toolsGroupsRefs,
@@ -22660,604 +21086,6 @@ typedef $$ConversationsTableProcessedTableManager =
         bool backgroundWorksByChildConversation,
       })
     >;
-typedef $$SkillCredentialDefinitionsTableCreateCompanionBuilder =
-    SkillCredentialDefinitionsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String workspaceId,
-      required String title,
-      required String slug,
-      required String attributesJson,
-      Value<int> rowid,
-    });
-typedef $$SkillCredentialDefinitionsTableUpdateCompanionBuilder =
-    SkillCredentialDefinitionsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> workspaceId,
-      Value<String> title,
-      Value<String> slug,
-      Value<String> attributesJson,
-      Value<int> rowid,
-    });
-
-final class $$SkillCredentialDefinitionsTableReferences
-    extends
-        BaseReferences<
-          _$AppDatabase,
-          $SkillCredentialDefinitionsTable,
-          SkillCredentialDefinitionsTable
-        > {
-  $$SkillCredentialDefinitionsTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
-      db.workspaces.createAlias(
-        'skill_credential_definitions__workspace_id__workspaces__id',
-      );
-
-  $$WorkspacesTableProcessedTableManager get workspaceId {
-    final $_column = $_itemColumn<String>('workspace_id')!;
-
-    final manager = $$WorkspacesTableTableManager(
-      $_db,
-      $_db.workspaces,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static MultiTypedResultKey<$SkillsTable, List<SkillsTable>> _skillsRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
-    db.skills,
-    aliasName:
-        'skill_credential_definitions__id__skills__credential_definition_id',
-  );
-
-  $$SkillsTableProcessedTableManager get skillsRefs {
-    final manager = $$SkillsTableTableManager($_db, $_db.skills).filter(
-      (f) => f.credentialDefinitionId.id.sqlEquals($_itemColumn<String>('id')!),
-    );
-
-    final cache = $_typedResult.readTableOrNull(_skillsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<
-    $SkillTemplateToolsTable,
-    List<SkillTemplateToolsTable>
-  >
-  _skillTemplateToolsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.skillTemplateTools,
-        aliasName: 'skill_credential_definitions__id__skill_template_tools__credential_definition_id',
-      );
-
-  $$SkillTemplateToolsTableProcessedTableManager get skillTemplateToolsRefs {
-    final manager =
-        $$SkillTemplateToolsTableTableManager(
-          $_db,
-          $_db.skillTemplateTools,
-        ).filter(
-          (f) => f.credentialDefinitionId.id.sqlEquals(
-            $_itemColumn<String>('id')!,
-          ),
-        );
-
-    final cache = $_typedResult.readTableOrNull(
-      _skillTemplateToolsRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$SkillCredentialDefinitionsTableFilterComposer
-    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
-  $$SkillCredentialDefinitionsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get attributesJson => $composableBuilder(
-    column: $table.attributesJson,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$WorkspacesTableFilterComposer get workspaceId {
-    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableFilterComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<bool> skillsRefs(
-    Expression<bool> Function($$SkillsTableFilterComposer f) f,
-  ) {
-    final $$SkillsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.credentialDefinitionId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableFilterComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> skillTemplateToolsRefs(
-    Expression<bool> Function($$SkillTemplateToolsTableFilterComposer f) f,
-  ) {
-    final $$SkillTemplateToolsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skillTemplateTools,
-      getReferencedColumn: (t) => t.credentialDefinitionId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillTemplateToolsTableFilterComposer(
-            $db: $db,
-            $table: $db.skillTemplateTools,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$SkillCredentialDefinitionsTableOrderingComposer
-    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
-  $$SkillCredentialDefinitionsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get attributesJson => $composableBuilder(
-    column: $table.attributesJson,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$WorkspacesTableOrderingComposer get workspaceId {
-    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableOrderingComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$SkillCredentialDefinitionsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
-  $$SkillCredentialDefinitionsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumn<String> get title =>
-      $composableBuilder(column: $table.title, builder: (column) => column);
-
-  GeneratedColumn<String> get slug =>
-      $composableBuilder(column: $table.slug, builder: (column) => column);
-
-  GeneratedColumn<String> get attributesJson => $composableBuilder(
-    column: $table.attributesJson,
-    builder: (column) => column,
-  );
-
-  $$WorkspacesTableAnnotationComposer get workspaceId {
-    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<T> skillsRefs<T extends Object>(
-    Expression<T> Function($$SkillsTableAnnotationComposer a) f,
-  ) {
-    final $$SkillsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.credentialDefinitionId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<T> skillTemplateToolsRefs<T extends Object>(
-    Expression<T> Function($$SkillTemplateToolsTableAnnotationComposer a) f,
-  ) {
-    final $$SkillTemplateToolsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skillTemplateTools,
-          getReferencedColumn: (t) => t.credentialDefinitionId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillTemplateToolsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillTemplateTools,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-}
-
-class $$SkillCredentialDefinitionsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $SkillCredentialDefinitionsTable,
-          SkillCredentialDefinitionsTable,
-          $$SkillCredentialDefinitionsTableFilterComposer,
-          $$SkillCredentialDefinitionsTableOrderingComposer,
-          $$SkillCredentialDefinitionsTableAnnotationComposer,
-          $$SkillCredentialDefinitionsTableCreateCompanionBuilder,
-          $$SkillCredentialDefinitionsTableUpdateCompanionBuilder,
-          (
-            SkillCredentialDefinitionsTable,
-            $$SkillCredentialDefinitionsTableReferences,
-          ),
-          SkillCredentialDefinitionsTable,
-          PrefetchHooks Function({
-            bool workspaceId,
-            bool skillsRefs,
-            bool skillTemplateToolsRefs,
-          })
-        > {
-  $$SkillCredentialDefinitionsTableTableManager(
-    _$AppDatabase db,
-    $SkillCredentialDefinitionsTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$SkillCredentialDefinitionsTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
-          createOrderingComposer: () =>
-              $$SkillCredentialDefinitionsTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
-          createComputedFieldComposer: () =>
-              $$SkillCredentialDefinitionsTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<String> workspaceId = const Value.absent(),
-                Value<String> title = const Value.absent(),
-                Value<String> slug = const Value.absent(),
-                Value<String> attributesJson = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => SkillCredentialDefinitionsCompanion(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                workspaceId: workspaceId,
-                title: title,
-                slug: slug,
-                attributesJson: attributesJson,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                required String workspaceId,
-                required String title,
-                required String slug,
-                required String attributesJson,
-                Value<int> rowid = const Value.absent(),
-              }) => SkillCredentialDefinitionsCompanion.insert(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                workspaceId: workspaceId,
-                title: title,
-                slug: slug,
-                attributesJson: attributesJson,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable<
-                    $SkillCredentialDefinitionsTable,
-                    SkillCredentialDefinitionsTable
-                  >(table),
-                  $$SkillCredentialDefinitionsTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({
-                workspaceId = false,
-                skillsRefs = false,
-                skillTemplateToolsRefs = false,
-              }) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (skillsRefs) db.skills,
-                    if (skillTemplateToolsRefs) db.skillTemplateTools,
-                  ],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (workspaceId) {
-                          state = state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.workspaceId,
-                            referencedTable:
-                                $$SkillCredentialDefinitionsTableReferences
-                                    ._workspaceIdTable(db),
-                            referencedColumn:
-                                $$SkillCredentialDefinitionsTableReferences
-                                    ._workspaceIdTable(db)
-                                    .id,
-                          ) as T;
-                        }
-
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (skillsRefs)
-                        await $_getPrefetchedData<
-                          SkillCredentialDefinitionsTable,
-                          $SkillCredentialDefinitionsTable,
-                          SkillsTable
-                        >(
-                          currentTable: table,
-                          referencedTable:
-                              $$SkillCredentialDefinitionsTableReferences
-                                  ._skillsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$SkillCredentialDefinitionsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skillsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.credentialDefinitionId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (skillTemplateToolsRefs)
-                        await $_getPrefetchedData<
-                          SkillCredentialDefinitionsTable,
-                          $SkillCredentialDefinitionsTable,
-                          SkillTemplateToolsTable
-                        >(
-                          currentTable: table,
-                          referencedTable:
-                              $$SkillCredentialDefinitionsTableReferences
-                                  ._skillTemplateToolsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$SkillCredentialDefinitionsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skillTemplateToolsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.credentialDefinitionId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$SkillCredentialDefinitionsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $SkillCredentialDefinitionsTable,
-      SkillCredentialDefinitionsTable,
-      $$SkillCredentialDefinitionsTableFilterComposer,
-      $$SkillCredentialDefinitionsTableOrderingComposer,
-      $$SkillCredentialDefinitionsTableAnnotationComposer,
-      $$SkillCredentialDefinitionsTableCreateCompanionBuilder,
-      $$SkillCredentialDefinitionsTableUpdateCompanionBuilder,
-      (
-        SkillCredentialDefinitionsTable,
-        $$SkillCredentialDefinitionsTableReferences,
-      ),
-      SkillCredentialDefinitionsTable,
-      PrefetchHooks Function({
-        bool workspaceId,
-        bool skillsRefs,
-        bool skillTemplateToolsRefs,
-      })
-    >;
 typedef $$SkillsTableCreateCompanionBuilder = SkillsCompanion Function({
   Value<String> id,
   Value<DateTime> createdAt,
@@ -23269,8 +21097,7 @@ typedef $$SkillsTableCreateCompanionBuilder = SkillsCompanion Function({
   required String slug,
   required String description,
   required String content,
-  Value<String?> credentialDefinitionId,
-  Value<bool> isCredentialOptional,
+  Value<String> connectorToolIdsJson,
   Value<bool> isEnabled,
   Value<int> rowid,
 });
@@ -23285,8 +21112,7 @@ typedef $$SkillsTableUpdateCompanionBuilder = SkillsCompanion Function({
   Value<String> slug,
   Value<String> description,
   Value<String> content,
-  Value<String?> credentialDefinitionId,
-  Value<bool> isCredentialOptional,
+  Value<String> connectorToolIdsJson,
   Value<bool> isEnabled,
   Value<int> rowid,
 });
@@ -23312,29 +21138,6 @@ final class $$SkillsTableReferences
     );
   }
 
-  static $SkillCredentialDefinitionsTable _credentialDefinitionIdTable(
-    _$AppDatabase db,
-  ) => db.skillCredentialDefinitions.createAlias(
-    'skills__credential_definition_id__skill_credential_definitions__id',
-  );
-
-  $$SkillCredentialDefinitionsTableProcessedTableManager?
-  get credentialDefinitionId {
-    final $_column = $_itemColumn<String>('credential_definition_id');
-    if ($_column == null) return null;
-    final manager = $$SkillCredentialDefinitionsTableTableManager(
-      $_db,
-      $_db.skillCredentialDefinitions,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(
-      _credentialDefinitionIdTable($_db),
-    );
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
   static MultiTypedResultKey<$AgentSkillsTable, List<AgentSkillsTable>>
   _agentSkillsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.agentSkills,
@@ -23348,30 +21151,6 @@ final class $$SkillsTableReferences
         );
 
     final cache = $_typedResult.readTableOrNull(_agentSkillsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<
-    $SkillTemplateToolsTable,
-    List<SkillTemplateToolsTable>
-  >
-  _skillTemplateToolsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.skillTemplateTools,
-        aliasName: 'skills__id__skill_template_tools__skill_id',
-      );
-
-  $$SkillTemplateToolsTableProcessedTableManager get skillTemplateToolsRefs {
-    final manager = $$SkillTemplateToolsTableTableManager(
-      $_db,
-      $_db.skillTemplateTools,
-    ).filter((f) => f.skillId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _skillTemplateToolsRefsTable($_db),
-    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -23479,8 +21258,8 @@ class $$SkillsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get isCredentialOptional => $composableBuilder(
-    column: $table.isCredentialOptional,
+  ColumnFilters<String> get connectorToolIdsJson => $composableBuilder(
+    column: $table.connectorToolIdsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -23512,30 +21291,6 @@ class $$SkillsTableFilterComposer
     return composer;
   }
 
-  $$SkillCredentialDefinitionsTableFilterComposer get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableFilterComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-
   Expression<bool> agentSkillsRefs(
     Expression<bool> Function($$AgentSkillsTableFilterComposer f) f,
   ) {
@@ -23552,31 +21307,6 @@ class $$SkillsTableFilterComposer
           }) => $$AgentSkillsTableFilterComposer(
             $db: $db,
             $table: $db.agentSkills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> skillTemplateToolsRefs(
-    Expression<bool> Function($$SkillTemplateToolsTableFilterComposer f) f,
-  ) {
-    final $$SkillTemplateToolsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skillTemplateTools,
-      getReferencedColumn: (t) => t.skillId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillTemplateToolsTableFilterComposer(
-            $db: $db,
-            $table: $db.skillTemplateTools,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -23691,8 +21421,8 @@ class $$SkillsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isCredentialOptional => $composableBuilder(
-    column: $table.isCredentialOptional,
+  ColumnOrderings<String> get connectorToolIdsJson => $composableBuilder(
+    column: $table.connectorToolIdsJson,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -23721,30 +21451,6 @@ class $$SkillsTableOrderingComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
-    return composer;
-  }
-
-  $$SkillCredentialDefinitionsTableOrderingComposer get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableOrderingComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableOrderingComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
     return composer;
   }
 }
@@ -23787,8 +21493,8 @@ class $$SkillsTableAnnotationComposer
   GeneratedColumn<String> get content =>
       $composableBuilder(column: $table.content, builder: (column) => column);
 
-  GeneratedColumn<bool> get isCredentialOptional => $composableBuilder(
-    column: $table.isCredentialOptional,
+  GeneratedColumn<String> get connectorToolIdsJson => $composableBuilder(
+    column: $table.connectorToolIdsJson,
     builder: (column) => column,
   );
 
@@ -23818,31 +21524,6 @@ class $$SkillsTableAnnotationComposer
     return composer;
   }
 
-  $$SkillCredentialDefinitionsTableAnnotationComposer
-  get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-
   Expression<T> agentSkillsRefs<T extends Object>(
     Expression<T> Function($$AgentSkillsTableAnnotationComposer a) f,
   ) {
@@ -23865,32 +21546,6 @@ class $$SkillsTableAnnotationComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
-    return f(composer);
-  }
-
-  Expression<T> skillTemplateToolsRefs<T extends Object>(
-    Expression<T> Function($$SkillTemplateToolsTableAnnotationComposer a) f,
-  ) {
-    final $$SkillTemplateToolsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skillTemplateTools,
-          getReferencedColumn: (t) => t.skillId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillTemplateToolsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillTemplateTools,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
     return f(composer);
   }
 
@@ -23961,9 +21616,7 @@ class $$SkillsTableTableManager
           SkillsTable,
           PrefetchHooks Function({
             bool workspaceId,
-            bool credentialDefinitionId,
             bool agentSkillsRefs,
-            bool skillTemplateToolsRefs,
             bool skillResourcesRefs,
             bool conversationSkillsRefs,
           })
@@ -23991,8 +21644,7 @@ class $$SkillsTableTableManager
                 Value<String> slug = const Value.absent(),
                 Value<String> description = const Value.absent(),
                 Value<String> content = const Value.absent(),
-                Value<String?> credentialDefinitionId = const Value.absent(),
-                Value<bool> isCredentialOptional = const Value.absent(),
+                Value<String> connectorToolIdsJson = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SkillsCompanion(
@@ -24006,8 +21658,7 @@ class $$SkillsTableTableManager
                 slug: slug,
                 description: description,
                 content: content,
-                credentialDefinitionId: credentialDefinitionId,
-                isCredentialOptional: isCredentialOptional,
+                connectorToolIdsJson: connectorToolIdsJson,
                 isEnabled: isEnabled,
                 rowid: rowid,
               ),
@@ -24023,8 +21674,7 @@ class $$SkillsTableTableManager
                 required String slug,
                 required String description,
                 required String content,
-                Value<String?> credentialDefinitionId = const Value.absent(),
-                Value<bool> isCredentialOptional = const Value.absent(),
+                Value<String> connectorToolIdsJson = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SkillsCompanion.insert(
@@ -24038,8 +21688,7 @@ class $$SkillsTableTableManager
                 slug: slug,
                 description: description,
                 content: content,
-                credentialDefinitionId: credentialDefinitionId,
-                isCredentialOptional: isCredentialOptional,
+                connectorToolIdsJson: connectorToolIdsJson,
                 isEnabled: isEnabled,
                 rowid: rowid,
               ),
@@ -24054,9 +21703,7 @@ class $$SkillsTableTableManager
           prefetchHooksCallback:
               ({
                 workspaceId = false,
-                credentialDefinitionId = false,
                 agentSkillsRefs = false,
-                skillTemplateToolsRefs = false,
                 skillResourcesRefs = false,
                 conversationSkillsRefs = false,
               }) {
@@ -24064,7 +21711,6 @@ class $$SkillsTableTableManager
                   db: db,
                   explicitlyWatchedTables: [
                     if (agentSkillsRefs) db.agentSkills,
-                    if (skillTemplateToolsRefs) db.skillTemplateTools,
                     if (skillResourcesRefs) db.skillResources,
                     if (conversationSkillsRefs) db.conversationSkills,
                   ],
@@ -24095,17 +21741,6 @@ class $$SkillsTableTableManager
                                 .id,
                           ) as T;
                         }
-                        if (credentialDefinitionId) {
-                          state = state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.credentialDefinitionId,
-                            referencedTable: $$SkillsTableReferences
-                                ._credentialDefinitionIdTable(db),
-                            referencedColumn: $$SkillsTableReferences
-                                ._credentialDefinitionIdTable(db)
-                                .id,
-                          ) as T;
-                        }
 
                         return state;
                       },
@@ -24129,27 +21764,6 @@ class $$SkillsTableTableManager
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.workspaceSkillId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (skillTemplateToolsRefs)
-                        await $_getPrefetchedData<
-                          SkillsTable,
-                          $SkillsTable,
-                          SkillTemplateToolsTable
-                        >(
-                          currentTable: table,
-                          referencedTable: $$SkillsTableReferences
-                              ._skillTemplateToolsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$SkillsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skillTemplateToolsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.skillId == item.id,
                               ),
                           typedResults: items,
                         ),
@@ -24217,9 +21831,7 @@ typedef $$SkillsTableProcessedTableManager =
       SkillsTable,
       PrefetchHooks Function({
         bool workspaceId,
-        bool credentialDefinitionId,
         bool agentSkillsRefs,
-        bool skillTemplateToolsRefs,
         bool skillResourcesRefs,
         bool conversationSkillsRefs,
       })
@@ -28957,625 +26569,6 @@ typedef $$WorkspaceCompactionSettingsTableProcessedTableManager =
       WorkspaceCompactionSettingsTable,
       PrefetchHooks Function({bool workspaceId})
     >;
-typedef $$SkillTemplateToolsTableCreateCompanionBuilder =
-    SkillTemplateToolsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String skillId,
-      required SkillTemplateToolTypeTable templateType,
-      required String title,
-      Value<String> description,
-      required String slug,
-      Value<String> definitionJson,
-      required String templateJson,
-      required String inputsJson,
-      Value<String?> credentialDefinitionId,
-      Value<bool> requiresCredential,
-      Value<bool> isEnabled,
-      Value<int> rowid,
-    });
-typedef $$SkillTemplateToolsTableUpdateCompanionBuilder =
-    SkillTemplateToolsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> skillId,
-      Value<SkillTemplateToolTypeTable> templateType,
-      Value<String> title,
-      Value<String> description,
-      Value<String> slug,
-      Value<String> definitionJson,
-      Value<String> templateJson,
-      Value<String> inputsJson,
-      Value<String?> credentialDefinitionId,
-      Value<bool> requiresCredential,
-      Value<bool> isEnabled,
-      Value<int> rowid,
-    });
-
-final class $$SkillTemplateToolsTableReferences
-    extends
-        BaseReferences<
-          _$AppDatabase,
-          $SkillTemplateToolsTable,
-          SkillTemplateToolsTable
-        > {
-  $$SkillTemplateToolsTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $SkillsTable _skillIdTable(_$AppDatabase db) =>
-      db.skills.createAlias('skill_template_tools__skill_id__skills__id');
-
-  $$SkillsTableProcessedTableManager get skillId {
-    final $_column = $_itemColumn<String>('skill_id')!;
-
-    final manager = $$SkillsTableTableManager(
-      $_db,
-      $_db.skills,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_skillIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $SkillCredentialDefinitionsTable _credentialDefinitionIdTable(
-    _$AppDatabase db,
-  ) => db.skillCredentialDefinitions.createAlias(
-    'skill_template_tools__credential_definition_id__skill_credential_definitions__id',
-  );
-
-  $$SkillCredentialDefinitionsTableProcessedTableManager?
-  get credentialDefinitionId {
-    final $_column = $_itemColumn<String>('credential_definition_id');
-    if ($_column == null) return null;
-    final manager = $$SkillCredentialDefinitionsTableTableManager(
-      $_db,
-      $_db.skillCredentialDefinitions,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(
-      _credentialDefinitionIdTable($_db),
-    );
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
-class $$SkillTemplateToolsTableFilterComposer
-    extends Composer<_$AppDatabase, $SkillTemplateToolsTable> {
-  $$SkillTemplateToolsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnWithTypeConverterFilters<
-    SkillTemplateToolTypeTable,
-    SkillTemplateToolTypeTable,
-    String
-  >
-  get templateType => $composableBuilder(
-    column: $table.templateType,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
-  ColumnFilters<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get definitionJson => $composableBuilder(
-    column: $table.definitionJson,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get templateJson => $composableBuilder(
-    column: $table.templateJson,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get inputsJson => $composableBuilder(
-    column: $table.inputsJson,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get requiresCredential => $composableBuilder(
-    column: $table.requiresCredential,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isEnabled => $composableBuilder(
-    column: $table.isEnabled,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$SkillsTableFilterComposer get skillId {
-    final $$SkillsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.skillId,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableFilterComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$SkillCredentialDefinitionsTableFilterComposer get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableFilterComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-}
-
-class $$SkillTemplateToolsTableOrderingComposer
-    extends Composer<_$AppDatabase, $SkillTemplateToolsTable> {
-  $$SkillTemplateToolsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get templateType => $composableBuilder(
-    column: $table.templateType,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get definitionJson => $composableBuilder(
-    column: $table.definitionJson,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get templateJson => $composableBuilder(
-    column: $table.templateJson,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get inputsJson => $composableBuilder(
-    column: $table.inputsJson,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get requiresCredential => $composableBuilder(
-    column: $table.requiresCredential,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isEnabled => $composableBuilder(
-    column: $table.isEnabled,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$SkillsTableOrderingComposer get skillId {
-    final $$SkillsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.skillId,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableOrderingComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$SkillCredentialDefinitionsTableOrderingComposer get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableOrderingComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableOrderingComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-}
-
-class $$SkillTemplateToolsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $SkillTemplateToolsTable> {
-  $$SkillTemplateToolsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumnWithTypeConverter<SkillTemplateToolTypeTable, String>
-  get templateType => $composableBuilder(
-    column: $table.templateType,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get title =>
-      $composableBuilder(column: $table.title, builder: (column) => column);
-
-  GeneratedColumn<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get slug =>
-      $composableBuilder(column: $table.slug, builder: (column) => column);
-
-  GeneratedColumn<String> get definitionJson => $composableBuilder(
-    column: $table.definitionJson,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get templateJson => $composableBuilder(
-    column: $table.templateJson,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get inputsJson => $composableBuilder(
-    column: $table.inputsJson,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get requiresCredential => $composableBuilder(
-    column: $table.requiresCredential,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isEnabled =>
-      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
-
-  $$SkillsTableAnnotationComposer get skillId {
-    final $$SkillsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.skillId,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$SkillCredentialDefinitionsTableAnnotationComposer
-  get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-}
-
-class $$SkillTemplateToolsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $SkillTemplateToolsTable,
-          SkillTemplateToolsTable,
-          $$SkillTemplateToolsTableFilterComposer,
-          $$SkillTemplateToolsTableOrderingComposer,
-          $$SkillTemplateToolsTableAnnotationComposer,
-          $$SkillTemplateToolsTableCreateCompanionBuilder,
-          $$SkillTemplateToolsTableUpdateCompanionBuilder,
-          (SkillTemplateToolsTable, $$SkillTemplateToolsTableReferences),
-          SkillTemplateToolsTable,
-          PrefetchHooks Function({bool skillId, bool credentialDefinitionId})
-        > {
-  $$SkillTemplateToolsTableTableManager(
-    _$AppDatabase db,
-    $SkillTemplateToolsTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$SkillTemplateToolsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$SkillTemplateToolsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$SkillTemplateToolsTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<String> skillId = const Value.absent(),
-                Value<SkillTemplateToolTypeTable> templateType =
-                    const Value.absent(),
-                Value<String> title = const Value.absent(),
-                Value<String> description = const Value.absent(),
-                Value<String> slug = const Value.absent(),
-                Value<String> definitionJson = const Value.absent(),
-                Value<String> templateJson = const Value.absent(),
-                Value<String> inputsJson = const Value.absent(),
-                Value<String?> credentialDefinitionId = const Value.absent(),
-                Value<bool> requiresCredential = const Value.absent(),
-                Value<bool> isEnabled = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => SkillTemplateToolsCompanion(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                skillId: skillId,
-                templateType: templateType,
-                title: title,
-                description: description,
-                slug: slug,
-                definitionJson: definitionJson,
-                templateJson: templateJson,
-                inputsJson: inputsJson,
-                credentialDefinitionId: credentialDefinitionId,
-                requiresCredential: requiresCredential,
-                isEnabled: isEnabled,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                required String skillId,
-                required SkillTemplateToolTypeTable templateType,
-                required String title,
-                Value<String> description = const Value.absent(),
-                required String slug,
-                Value<String> definitionJson = const Value.absent(),
-                required String templateJson,
-                required String inputsJson,
-                Value<String?> credentialDefinitionId = const Value.absent(),
-                Value<bool> requiresCredential = const Value.absent(),
-                Value<bool> isEnabled = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => SkillTemplateToolsCompanion.insert(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                skillId: skillId,
-                templateType: templateType,
-                title: title,
-                description: description,
-                slug: slug,
-                definitionJson: definitionJson,
-                templateJson: templateJson,
-                inputsJson: inputsJson,
-                credentialDefinitionId: credentialDefinitionId,
-                requiresCredential: requiresCredential,
-                isEnabled: isEnabled,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable<
-                    $SkillTemplateToolsTable,
-                    SkillTemplateToolsTable
-                  >(table),
-                  $$SkillTemplateToolsTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({skillId = false, credentialDefinitionId = false}) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (skillId) {
-                          state = state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.skillId,
-                            referencedTable: $$SkillTemplateToolsTableReferences
-                                ._skillIdTable(db),
-                            referencedColumn:
-                                $$SkillTemplateToolsTableReferences
-                                    ._skillIdTable(db)
-                                    .id,
-                          ) as T;
-                        }
-                        if (credentialDefinitionId) {
-                          state = state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.credentialDefinitionId,
-                            referencedTable: $$SkillTemplateToolsTableReferences
-                                ._credentialDefinitionIdTable(db),
-                            referencedColumn:
-                                $$SkillTemplateToolsTableReferences
-                                    ._credentialDefinitionIdTable(db)
-                                    .id,
-                          ) as T;
-                        }
-
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$SkillTemplateToolsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $SkillTemplateToolsTable,
-      SkillTemplateToolsTable,
-      $$SkillTemplateToolsTableFilterComposer,
-      $$SkillTemplateToolsTableOrderingComposer,
-      $$SkillTemplateToolsTableAnnotationComposer,
-      $$SkillTemplateToolsTableCreateCompanionBuilder,
-      $$SkillTemplateToolsTableUpdateCompanionBuilder,
-      (SkillTemplateToolsTable, $$SkillTemplateToolsTableReferences),
-      SkillTemplateToolsTable,
-      PrefetchHooks Function({bool skillId, bool credentialDefinitionId})
-    >;
 typedef $$SkillResourcesTableCreateCompanionBuilder =
     SkillResourcesCompanion Function({
       Value<String> id,
@@ -32350,12 +29343,6 @@ class $AppDatabaseManager {
       $$AgentsTableTableManager(_db, _db.agents);
   $$ConversationsTableTableManager get conversations =>
       $$ConversationsTableTableManager(_db, _db.conversations);
-  $$SkillCredentialDefinitionsTableTableManager
-  get skillCredentialDefinitions =>
-      $$SkillCredentialDefinitionsTableTableManager(
-        _db,
-        _db.skillCredentialDefinitions,
-      );
   $$SkillsTableTableManager get skills =>
       $$SkillsTableTableManager(_db, _db.skills);
   $$AgentSkillsTableTableManager get agentSkills =>
@@ -32380,8 +29367,6 @@ class $AppDatabaseManager {
         _db,
         _db.workspaceCompactionSettings,
       );
-  $$SkillTemplateToolsTableTableManager get skillTemplateTools =>
-      $$SkillTemplateToolsTableTableManager(_db, _db.skillTemplateTools);
   $$SkillResourcesTableTableManager get skillResources =>
       $$SkillResourcesTableTableManager(_db, _db.skillResources);
   $$ConversationSkillsTableTableManager get conversationSkills =>

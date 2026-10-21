@@ -208,9 +208,7 @@ bool _canPopWorkspaceRoute(int branchIndex, Uri route) {
   final path = WorkspaceNavigation.path(route);
   final navigatorKey = switch (path.firstOrNull) {
     'agents' || 'skills' => agentsSkillsFeatureNavigatorKey,
-    'service-connections' ||
-    'skill-credential-definitions' ||
-    'tools' => connectionsFeatureNavigatorKey,
+    'service-connections' || 'tools' => connectionsFeatureNavigatorKey,
     _ => switch (branchIndex) {
       0 => workspaceChatsNavigatorKey,
       1 => workspaceFeatureNavigatorKey,

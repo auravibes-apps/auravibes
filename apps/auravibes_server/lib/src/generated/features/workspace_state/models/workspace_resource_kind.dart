@@ -27,9 +27,7 @@ enum WorkspaceResourceKind implements _is.SerializableModel {
   toolPermission,
   mcpServer,
   skill,
-  skillDefinition,
   skillSetting,
-  skillTemplateTool,
   conversationToolSelection,
   conversationSkillSelection,
   compactionSetting,
@@ -65,12 +63,8 @@ enum WorkspaceResourceKind implements _is.SerializableModel {
         return WorkspaceResourceKind.mcpServer;
       case 'skill':
         return WorkspaceResourceKind.skill;
-      case 'skillDefinition':
-        return WorkspaceResourceKind.skillDefinition;
       case 'skillSetting':
         return WorkspaceResourceKind.skillSetting;
-      case 'skillTemplateTool':
-        return WorkspaceResourceKind.skillTemplateTool;
       case 'conversationToolSelection':
         return WorkspaceResourceKind.conversationToolSelection;
       case 'conversationSkillSelection':

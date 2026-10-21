@@ -11,8 +11,6 @@ mixin _$ConversationSkillsDaoMixin on DatabaseAccessor<AppDatabase> {
       attachedDatabase.workspaceModelSelections;
   $AgentsTable get agents => attachedDatabase.agents;
   $ConversationsTable get conversations => attachedDatabase.conversations;
-  $SkillCredentialDefinitionsTable get skillCredentialDefinitions =>
-      attachedDatabase.skillCredentialDefinitions;
   $SkillsTable get skills => attachedDatabase.skills;
   $ConversationSkillsTable get conversationSkills =>
       attachedDatabase.conversationSkills;
@@ -39,12 +37,6 @@ class ConversationSkillsDaoManager {
       $$AgentsTableTableManager(_db.attachedDatabase, _db.agents);
   $$ConversationsTableTableManager get conversations =>
       $$ConversationsTableTableManager(_db.attachedDatabase, _db.conversations);
-  $$SkillCredentialDefinitionsTableTableManager
-  get skillCredentialDefinitions =>
-      $$SkillCredentialDefinitionsTableTableManager(
-        _db.attachedDatabase,
-        _db.skillCredentialDefinitions,
-      );
   $$SkillsTableTableManager get skills =>
       $$SkillsTableTableManager(_db.attachedDatabase, _db.skills);
   $$ConversationSkillsTableTableManager get conversationSkills =>

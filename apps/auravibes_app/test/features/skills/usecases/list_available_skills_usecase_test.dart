@@ -2,14 +2,12 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
-import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -19,15 +17,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('ListAvailableSkillsUsecase', () {
     test('lists A2UI only for top-level catalog requests', () async {
-      final usecase = ListAvailableSkillsUsecase(
-        const _FakeSkillsRepository([]),
-        const _FakeConversationSkillsRepository([]),
-        const _FakeAppSkillWorkspaceSettingsRepository(),
-        const AppSkillRegistry(),
-        null,
-        const _FakeAppSkillCandidates(),
-        null,
-        (conversationId) async => conversationId == 'top-level',
+      final usecase = _usecase(
+        isTopLevelConversation: (id) async => id == 'top-level',
       );
 
       final topLevel = await usecase.call(
@@ -51,228 +42,247 @@ void main() {
       expect(child.map((skill) => skill.slug), isNot(contains('a2ui')));
     });
 
-    test(
-      'fails closed when top-level conversation lookup is unavailable',
-      () async {
-        const usecase = ListAvailableSkillsUsecase(
-          _FakeSkillsRepository([]),
-          _FakeConversationSkillsRepository([]),
-          _FakeAppSkillWorkspaceSettingsRepository(),
-          .new(),
-        );
-
-        final skills = await usecase.call(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          filter: .catalog,
-        );
-
-        expect(skills.map((skill) => skill.slug), isNot(contains('a2ui')));
-      },
-    );
-
-    test(
-      'hides unloaded required-credential skills without credentials',
-      () async {
-        final now = DateTime(2026);
-        const workspaceId = 'workspace-1';
-        const conversationId = 'conversation-1';
-        final blockedSkill = _skill(
-          id: 'blocked-skill',
-          workspaceId: workspaceId,
-          title: 'Blocked Skill',
-          slug: 'blocked_skill',
-          now: now,
-          credentialDefinitionId: 'credential-definition-1',
-        );
-
-        final optionalSkill = _skill(
-          id: 'optional-skill',
-          workspaceId: workspaceId,
-          title: 'Optional Skill',
-          slug: 'optional_skill',
-          now: now,
-          isCredentialOptional: true,
-          credentialDefinitionId: 'credential-definition-1',
-        );
-
-        final loadedSkill = _skill(
-          id: 'loaded-skill',
-          workspaceId: workspaceId,
-          title: 'Loaded Skill',
-          slug: 'loaded_skill',
-          now: now,
-          credentialDefinitionId: 'credential-definition-1',
-        );
-        final usecase = ListAvailableSkillsUsecase(
-          _FakeSkillsRepository([blockedSkill, optionalSkill, loadedSkill]),
-          _FakeConversationSkillsRepository([
-            ConversationSkillEntity(
-              id: 'conversation-skill-1',
-              conversationId: conversationId,
-              isLoaded: true,
-              createdAt: now,
-              updatedAt: now,
-              workspaceSkillId: loadedSkill.id,
-            ),
-          ]),
-          const _FakeAppSkillWorkspaceSettingsRepository(),
-          const AppSkillRegistry(),
-          .new(_FakeSkillCredentialsRepository()),
-        );
-
-        final loadable = await usecase.call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          filter: .loadable,
-        );
-        final loaded = await usecase.call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          filter: .loaded,
-        );
-
-        expect(loadable.map((skill) => skill.id), [optionalSkill.id]);
-        expect(loaded.map((skill) => skill.id), [loadedSkill.id]);
-
-        final selectable = await usecase.call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          filter: .selector,
-        );
-        expect(selectable.map((skill) => skill.id), [
-          blockedSkill.id,
-          optionalSkill.id,
-          loadedSkill.id,
-        ]);
-        expect(
-          selectable
-              .singleWhere((skill) => skill.id == blockedSkill.id)
-              .credentialReadiness,
-          SkillCredentialReadiness.missing,
-        );
-        expect(
-          selectable
-              .singleWhere((skill) => skill.id == optionalSkill.id)
-              .credentialReadiness,
-          SkillCredentialReadiness.ready,
-        );
-      },
-    );
-
-    test(
-      'marks credential readiness unknown when the check is unavailable',
-      () async {
-        const workspaceId = 'workspace-1';
-        const conversationId = 'conversation-1';
-        final skill = _skill(
-          id: 'unknown-skill',
-          workspaceId: workspaceId,
-          title: 'Unknown Skill',
-          slug: 'unknown_skill',
-          now: .new(2026),
-          credentialDefinitionId: 'credential-definition-1',
-        );
-        final usecase = ListAvailableSkillsUsecase(
-          _FakeSkillsRepository([skill]),
-          const _FakeConversationSkillsRepository([]),
-          const _FakeAppSkillWorkspaceSettingsRepository(),
-          const AppSkillRegistry(),
-        );
-
-        final selectable = await usecase.call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          filter: .selector,
-        );
-
-        expect(
-          selectable.single.credentialReadiness,
-          SkillCredentialReadiness.unknown,
-        );
-      },
-    );
-
-    test('hides disabled selected user skills', () async {
-      final now = DateTime(2026);
-      const workspaceId = 'workspace-1';
-      const conversationId = 'conversation-1';
-      final disabledSkill = _skill(
-        id: 'disabled-skill',
-        workspaceId: workspaceId,
-        title: 'Disabled Skill',
-        slug: 'disabled_skill',
+    test('gates user Skills by referenced Connector tools', () async {
+      final now = DateTime.utc(2026);
+      final blockedSkill = _skill(
+        id: 'blocked',
+        slug: 'blocked',
         now: now,
-        isEnabled: false,
+        connectorToolIds: const ['connector/openai/web_search'],
       );
-      final usecase = ListAvailableSkillsUsecase(
-        _FakeSkillsRepository([disabledSkill]),
-        _FakeConversationSkillsRepository([
-          ConversationSkillEntity(
-            id: 'conversation-skill-1',
-            conversationId: conversationId,
-            isLoaded: true,
-            createdAt: now,
-            updatedAt: now,
-            workspaceSkillId: disabledSkill.id,
-          ),
-        ]),
-        const _FakeAppSkillWorkspaceSettingsRepository(),
-        const AppSkillRegistry(),
+      final unconnected = _usecase(skills: [blockedSkill]);
+
+      final selector = await unconnected.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        filter: .selector,
+      );
+      expect(
+        selector
+            .singleWhere((skill) => skill.id == blockedSkill.id)
+            .connectorReadiness,
+        ConnectorConnectionReadiness.missing,
+      );
+      final unconnectedLoadable = await unconnected.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        filter: .loadable,
+      );
+      expect(
+        unconnectedLoadable.map((skill) => skill.id),
+        isNot(contains(blockedSkill.id)),
       );
 
-      final skills = await usecase.call(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-        filter: .loaded,
+      final connected = _usecase(
+        skills: [blockedSkill],
+        connectedConnectors: const {'openai'},
       );
-
-      expect(skills, isEmpty);
+      final loadable = await connected.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        filter: .loadable,
+      );
+      final readySkill = loadable.singleWhere(
+        (skill) => skill.id == blockedSkill.id,
+      );
+      expect(readySkill.connectorToolIds, ['connector/openai/web_search']);
+      expect(readySkill.connectorReadiness, ConnectorConnectionReadiness.ready);
     });
 
     test(
-      'does not expose persisted app skills through the user path',
+      'reports unknown when Connector readiness cannot be checked',
       () async {
-        final now = DateTime(2026);
-        const workspaceId = 'workspace-1';
-        const conversationId = 'conversation-1';
-        final persistedAppSkill = _skill(
-          id: 'duckduckgo',
-          workspaceId: workspaceId,
-          title: 'Persisted DuckDuckGo',
-          slug: 'duckduckgo',
-          now: now,
-          source: .app,
+        final skill = _skill(
+          id: 'unknown',
+          slug: 'unknown',
+          now: .utc(2026),
+          connectorToolIds: const ['connector/openai/web_search'],
         );
-        final usecase = ListAvailableSkillsUsecase(
-          _FakeSkillsRepository([persistedAppSkill]),
-          const _FakeConversationSkillsRepository([]),
-          const _FakeAppSkillWorkspaceSettingsRepository({'duckduckgo'}),
-          const AppSkillRegistry(),
-          null,
-          const _FakeAppSkillCandidates(),
+        final usecase = _usecase(
+          skills: [skill],
+          connectorCandidatesUnavailable: true,
         );
 
-        final skills = await usecase.call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          filter: .loadable,
+        final selector = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          filter: .selector,
         );
 
         expect(
-          skills.where((skill) => skill.slug == 'duckduckgo'),
-          hasLength(1),
-        );
-        expect(
-          skills.singleWhere((skill) => skill.slug == 'duckduckgo').source,
-          SkillSource.app,
+          selector.single.connectorReadiness,
+          ConnectorConnectionReadiness.unknown,
         );
       },
     );
 
-    test('cloud app skill is listed once through the app registry', () async {
-      const workspaceId = 'workspace-1';
-      const conversationId = 'conversation-1';
+    test(
+      'keeps loaded Skills visible when their Connection is missing',
+      () async {
+        final now = DateTime.utc(2026);
+        final skill = _skill(
+          id: 'loaded-skill',
+          slug: 'loaded',
+          now: now,
+          connectorToolIds: const ['connector/openai/web_search'],
+        );
+        final usecase = _usecase(
+          skills: [skill],
+          conversationSkills: [
+            ConversationSkillEntity(
+              id: 'conversation-skill',
+              conversationId: 'conversation-1',
+              isLoaded: true,
+              createdAt: now,
+              updatedAt: now,
+              workspaceSkillId: skill.id,
+            ),
+          ],
+        );
+
+        final loaded = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          filter: .loaded,
+        );
+
+        expect(loaded.single.id, skill.id);
+        expect(
+          loaded.single.connectorReadiness,
+          ConnectorConnectionReadiness.missing,
+        );
+      },
+    );
+
+    test('hides disabled selected user Skills', () async {
+      final now = DateTime.utc(2026);
+      final skill = _skill(
+        id: 'disabled',
+        slug: 'disabled',
+        now: now,
+        isEnabled: false,
+      );
+      final usecase = _usecase(
+        skills: [skill],
+        conversationSkills: [
+          ConversationSkillEntity(
+            id: 'conversation-skill',
+            conversationId: 'conversation-1',
+            isLoaded: true,
+            createdAt: now,
+            updatedAt: now,
+            workspaceSkillId: skill.id,
+          ),
+        ],
+      );
+
+      expect(
+        await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          filter: .loaded,
+        ),
+        isEmpty,
+      );
+    });
+
+    test(
+      'Connector Connection makes app Skill available without a toggle',
+      () async {
+        final unavailable = await _usecase().call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          filter: .loadable,
+        );
+        final available = await _usecase(connectedConnectors: const {'openai'})
+            .call(
+              conversationId: 'conversation-1',
+              workspaceId: 'workspace-1',
+              filter: .loadable,
+            );
+
+        expect(
+          unavailable.map((skill) => skill.slug),
+          isNot(contains('openai')),
+        );
+        expect(available.map((skill) => skill.slug), contains('openai'));
+      },
+    );
+
+    test(
+      'enabled Connector-backed app Skill stays un-loadable without Connection',
+      () async {
+        final usecase = _usecase(enabledAppSkills: const {'openai'});
+
+        final loadable = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          filter: .loadable,
+        );
+        final selector = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          filter: .selector,
+        );
+
+        expect(loadable.map((skill) => skill.slug), isNot(contains('openai')));
+        expect(
+          selector
+              .singleWhere((skill) => skill.slug == 'openai')
+              .connectorReadiness,
+          ConnectorConnectionReadiness.missing,
+        );
+      },
+    );
+
+    test(
+      'cloud user Skills keep Connector tool references and readiness',
+      () async {
+        final cloud = _cloudStore([
+          _cloudResource(
+            kind: .skill,
+            id: 'crm',
+            data: {
+              'id': 'crm',
+              'source': 'user',
+              'kind': 'template',
+              'title': 'CRM',
+              'slug': 'crm',
+              'description': 'CRM guidance',
+              'content': 'Use OpenAI web search for CRM research.',
+              'isEnabled': true,
+              'connectorToolIds': ['connector/openai/web_search'],
+            },
+          ),
+        ]);
+        final usecase = _usecase(cloud: cloud);
+
+        final selector = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          filter: .selector,
+        );
+        final loadable =
+            await _usecase(
+              connectedConnectors: const {'openai'},
+              cloud: cloud,
+            ).call(
+              conversationId: 'conversation-1',
+              workspaceId: 'workspace-1',
+              filter: .loadable,
+            );
+
+        final crmSkill = selector.singleWhere((skill) => skill.id == 'crm');
+        expect(
+          crmSkill.connectorReadiness,
+          ConnectorConnectionReadiness.missing,
+        );
+        expect(crmSkill.connectorToolIds, ['connector/openai/web_search']);
+        expect(loadable.singleWhere((skill) => skill.id == 'crm').id, 'crm');
+      },
+    );
+
+    test('cloud app Skill comes from registry once', () async {
       final cloud = _cloudStore([
         _cloudResource(
           kind: .skill,
@@ -286,7 +296,6 @@ void main() {
             'description': 'Persisted description',
             'content': 'Persisted content',
             'isEnabled': true,
-            'isCredentialOptional': true,
           },
         ),
         _cloudResource(
@@ -295,19 +304,14 @@ void main() {
           data: {'id': 'jina', 'skillId': 'jina', 'isEnabled': true},
         ),
       ]);
-      final usecase = ListAvailableSkillsUsecase(
-        null,
-        null,
-        null,
-        const AppSkillRegistry(),
-        null,
-        const _FakeAppSkillCandidates(),
-        cloud,
+      final usecase = _usecase(
+        connectedConnectors: const {'jina'},
+        cloud: cloud,
       );
 
       final skills = await usecase.call(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
         filter: .loadable,
       );
 
@@ -317,296 +321,49 @@ void main() {
         SkillSource.app,
       );
     });
-
-    test('cloud list excludes callback-only app skills', () async {
-      const workspaceId = 'workspace-1';
-      const conversationId = 'conversation-1';
-      final cloud = _cloudStore([
-        _cloudResource(
-          kind: .skillSetting,
-          id: 'anthropic',
-          data: const {
-            'id': 'anthropic',
-            'skillId': 'anthropic',
-            'isEnabled': true,
-          },
-        ),
-      ]);
-      final usecase = ListAvailableSkillsUsecase(
-        null,
-        null,
-        null,
-        const AppSkillRegistry(),
-        null,
-        const _FakeAppSkillCandidates(),
-        cloud,
-      );
-
-      final skills = await usecase.call(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-        filter: .loadable,
-      );
-
-      expect(skills.map((skill) => skill.slug), contains(agentsSkillSlug));
-      expect(skills.map((skill) => skill.slug), isNot(contains('anthropic')));
-      expect(
-        skills.map((skill) => skill.slug),
-        isNot(contains('skills_manager')),
-      );
-    });
-
-    test('cloud user-skill readiness follows enabled tool policy', () async {
-      const workspaceId = 'workspace-1';
-      const conversationId = 'conversation-1';
-      final cloud = _cloudStore([
-        _cloudResource(
-          kind: .skill,
-          id: 'missing-tool-credential',
-          data: {
-            'kind': 'template',
-            'title': 'Missing tool credential',
-            'slug': 'missing_tool_credential',
-            'description': 'Description',
-            'content': 'Content',
-            'isEnabled': true,
-            'isCredentialOptional': true,
-          },
-        ),
-        _cloudResource(
-          kind: .skillTemplateTool,
-          id: 'credential-tool',
-          data: {
-            'skillId': 'missing-tool-credential',
-            'templateType': 'url',
-            'title': 'Credential tool',
-            'description': 'Description',
-            'slug': 'credential_tool',
-            'templateJson': '{"url":"https://example.com"}',
-            'inputsJson': '{}',
-            'isEnabled': true,
-            'requiresCredential': true,
-            'credentialDefinitionId': 'missing-definition',
-          },
-        ),
-        _cloudResource(
-          kind: .skill,
-          id: 'credentialless-tool',
-          data: {
-            'kind': 'template',
-            'title': 'Credentialless tool',
-            'slug': 'credentialless_tool',
-            'description': 'Description',
-            'content': 'Content',
-            'isEnabled': true,
-            'isCredentialOptional': false,
-            'credentialDefinitionId': 'missing-definition',
-          },
-        ),
-        _cloudResource(
-          kind: .skillTemplateTool,
-          id: 'public-tool',
-          data: {
-            'skillId': 'credentialless-tool',
-            'templateType': 'url',
-            'title': 'Public tool',
-            'description': 'Description',
-            'slug': 'public_tool',
-            'templateJson': '{"url":"https://example.com"}',
-            'inputsJson': '{}',
-            'isEnabled': true,
-            'requiresCredential': false,
-          },
-        ),
-      ]);
-      final usecase = ListAvailableSkillsUsecase(
-        null,
-        null,
-        null,
-        const AppSkillRegistry(),
-        null,
-        const _FakeAppSkillCandidates(),
-        cloud,
-      );
-
-      final selectable = await usecase.call(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-        filter: .selector,
-      );
-
-      expect(
-        selectable
-            .singleWhere((skill) => skill.id == 'missing-tool-credential')
-            .credentialReadiness,
-        SkillCredentialReadiness.missing,
-      );
-      expect(
-        selectable
-            .singleWhere((skill) => skill.id == 'credentialless-tool')
-            .credentialReadiness,
-        SkillCredentialReadiness.ready,
-      );
-    });
-
-    test(
-      'hides enabled required-credential app skills without credentials',
-      () async {
-        const workspaceId = 'workspace-1';
-        const conversationId = 'conversation-1';
-        const usecase = ListAvailableSkillsUsecase(
-          _FakeSkillsRepository([]),
-          _FakeConversationSkillsRepository([]),
-          _FakeAppSkillWorkspaceSettingsRepository({'openai'}),
-          .new(),
-          null,
-          _FakeAppSkillCandidates(),
-        );
-
-        final skills = await usecase.call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          filter: .loadable,
-        );
-
-        expect(skills.map((skill) => skill.slug), isNot(contains('openai')));
-
-        final selectable = await usecase.call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          filter: .selector,
-        );
-        expect(
-          selectable
-              .singleWhere((skill) => skill.slug == 'openai')
-              .credentialReadiness,
-          SkillCredentialReadiness.missing,
-        );
-      },
-    );
-
-    test(
-      'keeps loaded app skills visible after their credentials disappear',
-      () async {
-        const workspaceId = 'workspace-1';
-        const conversationId = 'conversation-1';
-        final now = DateTime.utc(2026);
-        final usecase = ListAvailableSkillsUsecase(
-          const _FakeSkillsRepository([]),
-          _FakeConversationSkillsRepository([
-            ConversationSkillEntity(
-              id: 'loaded-openai',
-              conversationId: conversationId,
-              isLoaded: true,
-              createdAt: now,
-              updatedAt: now,
-              appSkillIdentifier: 'openai',
-            ),
-          ]),
-          const _FakeAppSkillWorkspaceSettingsRepository({'openai'}),
-          const AppSkillRegistry(),
-          null,
-          const _FakeAppSkillCandidates(),
-        );
-
-        final loaded = await usecase.call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          filter: .loaded,
-        );
-
-        expect(loaded.map((skill) => skill.slug), contains('openai'));
-      },
-    );
-
-    test('shows enabled app skills without credential requirements', () async {
-      const workspaceId = 'workspace-1';
-      const conversationId = 'conversation-1';
-      const usecase = ListAvailableSkillsUsecase(
-        _FakeSkillsRepository([]),
-        _FakeConversationSkillsRepository([]),
-        _FakeAppSkillWorkspaceSettingsRepository({'duckduckgo'}),
-        .new(),
-        null,
-        _FakeAppSkillCandidates(),
-      );
-
-      final skills = await usecase.call(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-        filter: .loadable,
-      );
-
-      expect(skills.map((skill) => skill.slug), contains('duckduckgo'));
-    });
-
-    test(
-      'shows mixed app skills when at least one tool needs no key',
-      () async {
-        const workspaceId = 'workspace-1';
-        const conversationId = 'conversation-1';
-        const usecase = ListAvailableSkillsUsecase(
-          _FakeSkillsRepository([]),
-          _FakeConversationSkillsRepository([]),
-          _FakeAppSkillWorkspaceSettingsRepository({'jina'}),
-          .new(),
-          null,
-          _FakeAppSkillCandidates(),
-        );
-
-        final skills = await usecase.call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          filter: .loadable,
-        );
-
-        expect(skills.map((skill) => skill.slug), contains('jina'));
-      },
-    );
-
-    test('hides SearXNG until an instance credential exists', () async {
-      const workspaceId = 'workspace-1';
-      const conversationId = 'conversation-1';
-      const usecase = ListAvailableSkillsUsecase(
-        _FakeSkillsRepository([]),
-        _FakeConversationSkillsRepository([]),
-        _FakeAppSkillWorkspaceSettingsRepository({'searxng'}),
-        .new(),
-        null,
-        _FakeAppSkillCandidates(),
-      );
-
-      final skills = await usecase.call(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-        filter: .loadable,
-      );
-
-      expect(skills.map((skill) => skill.slug), isNot(contains('searxng')));
-    });
-
-    test('shows SearXNG when an instance credential exists', () async {
-      const workspaceId = 'workspace-1';
-      const conversationId = 'conversation-1';
-      const usecase = ListAvailableSkillsUsecase(
-        _FakeSkillsRepository([]),
-        _FakeConversationSkillsRepository([]),
-        _FakeAppSkillWorkspaceSettingsRepository({'searxng'}),
-        .new(),
-        null,
-        _FakeAppSkillCandidates({'searxng'}),
-      );
-
-      final skills = await usecase.call(
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-        filter: .loadable,
-      );
-
-      expect(skills.map((skill) => skill.slug), contains('searxng'));
-    });
   });
 }
+
+ListAvailableSkillsUsecase _usecase({
+  List<SkillEntity> skills = const [],
+  List<ConversationSkillEntity> conversationSkills = const [],
+  Set<String> enabledAppSkills = const {},
+  Set<String> connectedConnectors = const {},
+  bool connectorCandidatesUnavailable = false,
+  CloudSkillStore? cloud,
+  Future<bool> Function(String conversationId)? isTopLevelConversation,
+}) => ListAvailableSkillsUsecase(
+  _FakeSkillsRepository(skills),
+  _FakeConversationSkillsRepository(conversationSkills),
+  _FakeAppSkillWorkspaceSettingsRepository(enabledAppSkills),
+  const AppSkillRegistry(),
+  connectorCandidatesUnavailable
+      ? null
+      : _FakeConnectorCandidates(connectedConnectors),
+  cloud,
+  isTopLevelConversation,
+);
+
+SkillEntity _skill({
+  required String id,
+  required String slug,
+  required DateTime now,
+  List<String> connectorToolIds = const [],
+  bool isEnabled = true,
+}) => SkillEntity(
+  id: id,
+  workspaceId: 'workspace-1',
+  source: .user,
+  kind: .template,
+  title: slug,
+  slug: slug,
+  description: '$slug description',
+  content: '$slug content',
+  isEnabled: isEnabled,
+  createdAt: now,
+  updatedAt: now,
+  connectorToolIds: connectorToolIds,
+);
 
 CloudSkillStore _cloudStore(List<WorkspaceResource> resources) =>
     CloudSkillStore(
@@ -642,70 +399,35 @@ WorkspaceResource _cloudResource({
   );
 }
 
-SkillEntity _skill({
-  required String id,
-  required String workspaceId,
-  required String title,
-  required String slug,
-  required DateTime now,
-  bool isCredentialOptional = false,
-  String? credentialDefinitionId,
-  bool isEnabled = true,
-  SkillSource source = SkillSource.user,
-}) {
-  return SkillEntity(
-    id: id,
-    workspaceId: workspaceId,
-    source: source,
-    kind: .template,
-    title: title,
-    slug: slug,
-    description: '$title description',
-    content: '$title content',
-    isEnabled: isEnabled,
-    isCredentialOptional: isCredentialOptional,
-    createdAt: now,
-    updatedAt: now,
-    credentialDefinitionId: credentialDefinitionId,
-  );
-}
-
 class const _FakeSkillsRepository(final List<SkillEntity> skills)
     implements SkillsRepository {
   @override
-  Future<List<SkillEntity>> getWorkspaceSkills(String workspaceId) async {
-    return skills.where((skill) => skill.workspaceId == workspaceId).toList();
-  }
+  Future<List<SkillEntity>> getWorkspaceSkills(String workspaceId) async =>
+      skills.where((skill) => skill.workspaceId == workspaceId).toList();
 
   @override
-  Future<SkillEntity?> getSkillById(String skillId) {
-    throw UnsupportedError('Not needed by this test.');
-  }
+  Future<SkillEntity?> getSkillById(String skillId) =>
+      throw UnsupportedError('Not needed by this test.');
 
   @override
-  Future<SkillEntity?> getSkillBySlug(String workspaceId, String slug) {
-    throw UnsupportedError('Not needed by this test.');
-  }
+  Future<SkillEntity?> getSkillBySlug(String workspaceId, String slug) =>
+      throw UnsupportedError('Not needed by this test.');
 
   @override
-  Future<SkillEntity?> getSkillByTitle(String workspaceId, String title) {
-    throw UnsupportedError('Not needed by this test.');
-  }
+  Future<SkillEntity?> getSkillByTitle(String workspaceId, String title) =>
+      throw UnsupportedError('Not needed by this test.');
 
   @override
-  Future<SkillEntity> createSkill(String workspaceId, SkillToCreate skill) {
-    throw UnsupportedError('Not needed by this test.');
-  }
+  Future<SkillEntity> createSkill(String workspaceId, SkillToCreate skill) =>
+      throw UnsupportedError('Not needed by this test.');
 
   @override
-  Future<SkillEntity> updateSkill(String skillId, SkillToUpdate skill) {
-    throw UnsupportedError('Not needed by this test.');
-  }
+  Future<SkillEntity> updateSkill(String skillId, SkillToUpdate skill) =>
+      throw UnsupportedError('Not needed by this test.');
 
   @override
-  Future<bool> deleteSkill(String skillId) {
-    throw UnsupportedError('Not needed by this test.');
-  }
+  Future<bool> deleteSkill(String skillId) =>
+      throw UnsupportedError('Not needed by this test.');
 }
 
 class const _FakeConversationSkillsRepository(
@@ -714,154 +436,54 @@ class const _FakeConversationSkillsRepository(
   @override
   Future<List<ConversationSkillEntity>> getConversationSkills(
     String conversationId,
-  ) async {
-    return skills
-        .where((skill) => skill.conversationId == conversationId)
-        .toList();
-  }
+  ) async =>
+      skills.where((skill) => skill.conversationId == conversationId).toList();
 
   @override
   Future<ConversationSkillEntity> setWorkspaceSkillLoaded(
     String conversationId,
     String workspaceSkillId, {
     required bool isLoaded,
-  }) {
-    throw UnsupportedError('Not needed by this test.');
-  }
+  }) => throw UnsupportedError('Not needed by this test.');
 
   @override
   Future<ConversationSkillEntity> setAppSkillLoaded(
     String conversationId,
     String appSkillIdentifier, {
     required bool isLoaded,
-  }) {
-    throw UnsupportedError('Not needed by this test.');
-  }
+  }) => throw UnsupportedError('Not needed by this test.');
 }
 
-class const _FakeAppSkillWorkspaceSettingsRepository([
-  final Set<String> enabledIds = const {},
-]) implements AppSkillWorkspaceSettingsRepository {
+class const _FakeAppSkillWorkspaceSettingsRepository(
+  final Set<String> enabledIds,
+) implements AppSkillWorkspaceSettingsRepository {
   @override
   Future<bool> isAppSkillEnabled(
     String workspaceId,
     String appSkillIdentifier,
-  ) async {
-    return enabledIds.contains(appSkillIdentifier);
-  }
+  ) async => enabledIds.contains(appSkillIdentifier);
 
   @override
   Future<void> setAppSkillEnabled(
     String workspaceId,
     String appSkillIdentifier, {
     required bool isEnabled,
-  }) {
-    throw UnsupportedError('Not needed by this test.');
-  }
+  }) => throw UnsupportedError('Not needed by this test.');
 }
 
-class const _FakeAppSkillCandidates([final Set<String> readySlugs = const {}])
-    implements ListAppSkillCredentialCandidatesUsecase {
+class const _FakeConnectorCandidates([
+  final Set<String> readyConnectors = const {},
+]) implements ListConnectorConnectionCandidatesUsecase {
   @override
-  Future<List<AppSkillCredentialCandidate>> call({
+  Future<List<ConnectorConnectionCandidate>> forConnector({
     required String workspaceId,
-    required AppSkillDefinition skill,
-  }) async {
-    if (!readySlugs.contains(skill.slug)) return const [];
-
-    return [
-      AppSkillCredentialCandidate(
-        id: 'service:${skill.slug}-1',
-        name: skill.slug,
-      ),
-    ];
-  }
-
-  @override
-  bool isCredentialRequired(AppSkillDefinition skill) {
-    return skill.requiresCredential ||
-        skill.tools.any((tool) => tool.requiresCredential);
-  }
-
-  @override
-  Future<bool> hasUsableNativeTool({
-    required String workspaceId,
-    required AppSkillDefinition skill,
-  }) async {
-    if (skill.identifier == agentsSkillSlug) return true;
-    final serverNativeTools = skill.tools
-        .where((tool) => tool.urlTemplate != null)
-        .toList(growable: false);
-    if (serverNativeTools.isEmpty) return false;
-    if (serverNativeTools.any((tool) => !tool.requiresCredential)) {
-      return true;
-    }
-
-    return readySlugs.contains(skill.slug);
-  }
-}
-
-class _FakeSkillCredentialsRepository implements SkillCredentialsRepository {
-  @override
-  Future<List<SkillCredentialEntity>> getCredentialsForDefinition({
-    required String workspaceId,
-    required String credentialDefinitionId,
-  }) async {
-    return const [];
-  }
-
-  @override
-  Future<List<SkillCredentialEntity>> getUsableCredentialsForDefinition({
-    required String workspaceId,
-    required String credentialDefinitionId,
-  }) async => const [];
-
-  @override
-  Future<int> countLinkedCredentials({
-    required String workspaceId,
-    required String credentialDefinitionId,
-  }) async => 0;
-
-  @override
-  Stream<List<SkillCredentialEntity>> watchCredentialsForWorkspace(
-    String workspaceId,
-  ) {
-    throw UnsupportedError('Not needed by this test.');
-  }
-
-  @override
-  Future<SkillCredentialEntity?> getCredentialById(String credentialId) {
-    throw UnsupportedError('Not needed by this test.');
-  }
-
-  @override
-  Future<SkillCredentialForEdit?> getCredentialForEdit(String credentialId) {
-    throw UnsupportedError('Not needed by this test.');
-  }
-
-  @override
-  Future<SkillCredentialEntity> createCredential(
-    String workspaceId,
-    SkillCredentialToCreate credential,
-  ) {
-    throw UnsupportedError('Not needed by this test.');
-  }
-
-  @override
-  Future<SkillCredentialEntity> updateCredential(
-    String credentialId,
-    SkillCredentialToUpdate credential,
-  ) {
-    throw UnsupportedError('Not needed by this test.');
-  }
-
-  @override
-  Future<void> deleteCredential(String credentialId) {
-    throw UnsupportedError('Not needed by this test.');
-  }
-
-  @override
-  Future<Map<String, String>> readCredentialAttributes(String credentialId) {
-    throw UnsupportedError('Not needed by this test.');
-  }
+    required ConnectorDefinition connector,
+  }) async => readyConnectors.contains(connector.identifier)
+      ? [
+          ConnectorConnectionCandidate(
+            id: 'service:${connector.identifier}',
+            name: connector.title,
+          ),
+        ]
+      : const [];
 }

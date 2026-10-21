@@ -3,7 +3,7 @@ import 'package:auravibes_app/data/repositories/conversation_skills_repository.d
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
-import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
@@ -19,7 +19,6 @@ void main() {
         conversationSkills,
         const _FakeAppSkillWorkspaceSettingsRepository(),
         const AppSkillRegistry(),
-        null,
         const _FakeAppSkillCandidates(),
         null,
         (conversationId) async => true,
@@ -40,7 +39,6 @@ void main() {
         _FakeConversationSkillsRepository(),
         const _FakeAppSkillWorkspaceSettingsRepository(),
         const AppSkillRegistry(),
-        null,
         const _FakeAppSkillCandidates(),
         null,
         (conversationId) async => false,
@@ -64,7 +62,6 @@ void main() {
           _FakeConversationSkillsRepository(),
           const _FakeAppSkillWorkspaceSettingsRepository(),
           const AppSkillRegistry(),
-          null,
           const _FakeAppSkillCandidates(),
         );
 
@@ -86,7 +83,6 @@ void main() {
         conversationSkills,
         const _FakeAppSkillWorkspaceSettingsRepository(),
         const AppSkillRegistry(),
-        null,
         const _FakeAppSkillCandidates(),
       );
 
@@ -106,6 +102,25 @@ void main() {
       );
     });
 
+    test('loads disabled app skill when its Connector is connected', () async {
+      final conversationSkills = _FakeConversationSkillsRepository();
+      final usecase = LoadConversationSkillUsecase(
+        const _FakeSkillsRepository(),
+        conversationSkills,
+        const _FakeAppSkillWorkspaceSettingsRepository(),
+        const AppSkillRegistry(),
+        const _FakeAppSkillCandidates({'openai'}),
+      );
+
+      await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        slug: 'openai',
+      );
+
+      expect(conversationSkills.loadedAppSkillIdentifier, 'openai');
+    });
+
     test('rejects app skill with no usable native tools', () async {
       final conversationSkills = _FakeConversationSkillsRepository();
       final usecase = LoadConversationSkillUsecase(
@@ -113,7 +128,6 @@ void main() {
         conversationSkills,
         const _FakeAppSkillWorkspaceSettingsRepository({'openai'}),
         const AppSkillRegistry(),
-        null,
         const _FakeAppSkillCandidates(),
       );
 
@@ -127,31 +141,33 @@ void main() {
           isA<LoadConversationSkillException>().having(
             (error) => error.localizationKey,
             'localizationKey',
-            LocaleKeys.skills_screen_error_requires_credential,
+            LocaleKeys.skills_screen_error_requires_connection,
           ),
         ),
       );
     });
 
-    test('loads mixed app skill when a no-key tool is usable', () async {
-      final conversationSkills = _FakeConversationSkillsRepository();
-      final usecase = LoadConversationSkillUsecase(
-        const _FakeSkillsRepository(),
-        conversationSkills,
-        const _FakeAppSkillWorkspaceSettingsRepository({'jina'}),
-        const AppSkillRegistry(),
-        null,
-        const _FakeAppSkillCandidates(),
-      );
+    test(
+      'loads Connector-backed app skill when its Connection is ready',
+      () async {
+        final conversationSkills = _FakeConversationSkillsRepository();
+        final usecase = LoadConversationSkillUsecase(
+          const _FakeSkillsRepository(),
+          conversationSkills,
+          const _FakeAppSkillWorkspaceSettingsRepository({'jina'}),
+          const AppSkillRegistry(),
+          const _FakeAppSkillCandidates({'jina'}),
+        );
 
-      await usecase.call(
-        conversationId: 'conversation-1',
-        workspaceId: 'workspace-1',
-        slug: 'jina',
-      );
+        await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          slug: 'jina',
+        );
 
-      expect(conversationSkills.loadedAppSkillIdentifier, 'jina');
-    });
+        expect(conversationSkills.loadedAppSkillIdentifier, 'jina');
+      },
+    );
 
     test('loads Browser without looking for a credential', () async {
       final conversationSkills = _FakeConversationSkillsRepository();
@@ -160,8 +176,7 @@ void main() {
         conversationSkills,
         const _FakeAppSkillWorkspaceSettingsRepository({'browser'}),
         const AppSkillRegistry(),
-        null,
-        .new(() => throw StateError('Browser must not request credentials.')),
+        const _FakeAppSkillCandidates(),
       );
 
       await usecase.call(
@@ -172,18 +187,80 @@ void main() {
 
       expect(conversationSkills.loadedAppSkillIdentifier, 'browser');
     });
+
+    test(
+      'loads user Skills only when referenced Connector tools are ready',
+      () async {
+        final now = DateTime.utc(2026);
+        final skill = SkillEntity(
+          id: 'crm-skill',
+          workspaceId: 'workspace-1',
+          source: .user,
+          kind: .template,
+          title: 'CRM',
+          slug: 'crm',
+          description: 'Use OpenAI web search.',
+          content: 'Use the shared Connector tool.',
+          isEnabled: true,
+          createdAt: now,
+          updatedAt: now,
+          connectorToolIds: const ['connector/openai/web_search'],
+        );
+        final noConnectionRepository = _FakeConversationSkillsRepository();
+        final noConnectionUsecase = LoadConversationSkillUsecase(
+          _FakeSkillsRepository([skill]),
+          noConnectionRepository,
+          const _FakeAppSkillWorkspaceSettingsRepository(),
+          const AppSkillRegistry(),
+          const _FakeAppSkillCandidates(),
+        );
+
+        await expectLater(
+          noConnectionUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            slug: 'crm',
+          ),
+          throwsA(isA<LoadConversationSkillException>()),
+        );
+        expect(noConnectionRepository.loadedWorkspaceSkillId, isNull);
+
+        final connectedRepository = _FakeConversationSkillsRepository();
+        final connectedUsecase = LoadConversationSkillUsecase(
+          _FakeSkillsRepository([skill]),
+          connectedRepository,
+          const _FakeAppSkillWorkspaceSettingsRepository(),
+          const AppSkillRegistry(),
+          const _FakeAppSkillCandidates({'openai'}),
+        );
+        await connectedUsecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          slug: 'crm',
+        );
+
+        expect(connectedRepository.loadedWorkspaceSkillId, 'crm-skill');
+      },
+    );
   });
 }
 
-class const _FakeSkillsRepository() implements SkillsRepository {
+class const _FakeSkillsRepository([final List<SkillEntity> skills = const []])
+    implements SkillsRepository {
   @override
   Future<SkillEntity?> getSkillBySlug(String workspaceId, String slug) async {
-    return null;
+    return skills
+        .where(
+          (skill) => skill.workspaceId == workspaceId && skill.slug == slug,
+        )
+        .firstOrNull;
   }
 
   @override
   Future<List<SkillEntity>> getWorkspaceSkills(String workspaceId) {
-    throw UnsupportedError('Not needed by this test.');
+    return Future.value(
+      skills.where((skill) => skill.workspaceId == workspaceId).toList(),
+    );
   }
 
   @override
@@ -217,6 +294,7 @@ class _FakeConversationSkillsRepository
   new();
 
   String? loadedAppSkillIdentifier;
+  String? loadedWorkspaceSkillId;
 
   @override
   Future<ConversationSkillEntity> setAppSkillLoaded(
@@ -248,8 +326,17 @@ class _FakeConversationSkillsRepository
     String conversationId,
     String workspaceSkillId, {
     required bool isLoaded,
-  }) {
-    throw UnsupportedError('Not needed by this test.');
+  }) async {
+    loadedWorkspaceSkillId = workspaceSkillId;
+
+    return ConversationSkillEntity(
+      id: 'conversation-skill-2',
+      conversationId: conversationId,
+      isLoaded: isLoaded,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
+      workspaceSkillId: workspaceSkillId,
+    );
   }
 }
 
@@ -274,27 +361,20 @@ class const _FakeAppSkillWorkspaceSettingsRepository([
   }
 }
 
-class const _FakeAppSkillCandidates()
-    implements ListAppSkillCredentialCandidatesUsecase {
+class const _FakeAppSkillCandidates([final Set<String> readySlugs = const {}])
+    implements ListConnectorConnectionCandidatesUsecase {
   @override
-  Future<List<AppSkillCredentialCandidate>> call({
+  Future<List<ConnectorConnectionCandidate>> forConnector({
     required String workspaceId,
-    required AppSkillDefinition skill,
+    required ConnectorDefinition connector,
   }) async {
-    return const [];
-  }
+    if (!readySlugs.contains(connector.identifier)) return const [];
 
-  @override
-  bool isCredentialRequired(AppSkillDefinition skill) {
-    return skill.requiresCredential ||
-        skill.tools.any((tool) => tool.requiresCredential);
-  }
-
-  @override
-  Future<bool> hasUsableNativeTool({
-    required String workspaceId,
-    required AppSkillDefinition skill,
-  }) async {
-    return skill.tools.any((tool) => !tool.requiresCredential);
+    return [
+      ConnectorConnectionCandidate(
+        id: 'service:${connector.identifier}-connection',
+        name: connector.title,
+      ),
+    ];
   }
 }

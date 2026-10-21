@@ -15,10 +15,7 @@ abstract final class WorkspaceNavigation {
   static WorkspaceDestination? classify(Uri uri) => switch (path(uri)) {
     ['chat', 'new'] || ['chats', ...] => .chats,
     ['agents', ...] || ['skills', ...] => .agentsAndSkills,
-    ['service-connections', ...] ||
-    ['skill-credential-definitions', ...] ||
-    ['tools'] ||
-    ['models'] => .connections,
+    ['service-connections', ...] || ['tools'] || ['models'] => .connections,
     ['settings'] => .appSettings,
     ['cloud-accounts', ...] => .cloudAccounts,
     _ => null,
@@ -41,6 +38,7 @@ abstract final class WorkspaceNavigation {
   };
 
   static ConnectionDestination connectionView(String? view) => switch (view) {
+    'connectors' => .connectors,
     'providers' => .providers,
     'services' => .services,
     'credentials' => .credentials,
@@ -59,4 +57,11 @@ enum WorkspaceDestination {
 
 enum AgentDestination { agents, skills }
 
-enum ConnectionDestination { overview, providers, services, credentials, tools }
+enum ConnectionDestination {
+  overview,
+  connectors,
+  providers,
+  services,
+  credentials,
+  tools,
+}

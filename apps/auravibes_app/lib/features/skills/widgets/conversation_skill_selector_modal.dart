@@ -9,7 +9,6 @@ import 'package:auravibes_app/features/skills/models/conversation_skill_action.d
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/skills/providers/skill_access_summary_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
 import 'package:auravibes_app/features/skills/widgets/skill_access_status_view.dart';
 import 'package:auravibes_app/features/skills/widgets/skill_capability_preview_dialog.dart';
@@ -152,23 +151,24 @@ class _ConversationSkillSelectorModalState
     _invalidateSelector();
   }
 
-  Future<void> _openCredentialSetup(AvailableSkill skill) async {
-    if (skill.source == .user) {
-      final definitionId = skill.credentialDefinitionId;
-      if (definitionId == null) return;
-      await _openUserCredentialSetup(definitionId);
-    } else {
-      if (!await _openAppCredentialSetup(skill)) return;
-    }
-
+  Future<void> _openConnectorSetup(AvailableSkill skill) async {
+    if (skill.connectorToolIds.isEmpty) return;
+    final _ = await FeatureDestinations.push<bool>(
+      context,
+      ServiceConnectionsRoute(
+        workspaceId: widget.workspaceId,
+        view: 'connectors',
+      ).location,
+    );
     if (!mounted) return;
+
     _refreshSelector();
   }
 
   ConversationSkillContextFailure _runtimeFailure(
     SkillContextPreparationFailure failure,
   ) => switch (failure) {
-    .missingCredentials => .missingCredentials,
+    .missingConnection => .missingConnection,
     .unavailableMetadata => .unavailableMetadata,
     .preparationFailed => .preparationFailed,
   };
@@ -275,54 +275,8 @@ extension _ConversationSkillSelectorContextHandlers
     );
   }
 
-  void _startCredentialSetup(AvailableSkill skill) {
-    unawaited(_openCredentialSetup(skill));
-  }
-}
-
-extension _ConversationSkillCredentialHandlers
-    on _ConversationSkillSelectorModalState {
-  Future<void> _openUserCredentialSetup(String definitionId) async {
-    final _ = await FeatureDestinations.push<bool>(
-      context,
-      ServiceConnectionCreateRoute(
-        workspaceId: widget.workspaceId,
-        type: 'skillCredential',
-        credentialDefinitionId: definitionId,
-      ).location,
-    );
-  }
-
-  Future<bool> _openAppCredentialSetup(AvailableSkill skill) async {
-    final appSkill = ref
-        .read(appSkillRegistryProvider)
-        .getByIdentifier(skill.id);
-    if (appSkill == null) return false;
-    if (appSkill.compatibleModelProviderIds.isNotEmpty) {
-      await _openModelProviderSetup();
-    } else {
-      await _openAppSkillCredentialSetup(skill);
-    }
-
-    return true;
-  }
-
-  Future<void> _openModelProviderSetup() async {
-    final _ = await FeatureDestinations.push<bool>(
-      context,
-      ServiceConnectionCreateRoute(
-        workspaceId: widget.workspaceId,
-        type: 'modelProvider',
-      ).location,
-    );
-  }
-
-  Future<void> _openAppSkillCredentialSetup(AvailableSkill skill) async {
-    final _ = await FeatureDestinations.push<bool>(
-      context,
-      '/workspaces/${widget.workspaceId}/service-connections/new'
-      '?type=appSkillCredential&appSkillId=${skill.id}',
-    );
+  void _startConnectorSetup(AvailableSkill skill) {
+    unawaited(_openConnectorSetup(skill));
   }
 }
 
@@ -334,7 +288,7 @@ _SelectorActions _selectorActions(_ConversationSkillSelectorModalState state) =>
       onUseNow: _skillActionHandler(state, .useNow),
       onRetry: _contextRetryHandler(state),
       onRefresh: state._refreshSelector,
-      onCredentialSetup: state._startCredentialSetup,
+      onConnectorSetup: state._startConnectorSetup,
       onPreview: state._showPreview,
     );
 
@@ -359,7 +313,7 @@ class const _SelectorActions({
   required final ValueChanged<AvailableSkill> onUseNow,
   required final ValueChanged<AvailableSkill> onRetry,
   required final VoidCallback onRefresh,
-  required final ValueChanged<AvailableSkill> onCredentialSetup,
+  required final ValueChanged<AvailableSkill> onConnectorSetup,
   required final ValueChanged<AvailableSkill> onPreview,
 });
 
@@ -912,8 +866,8 @@ class const _SkillTileAccessStatus({
     isAppSkill: skill.source == .app,
     onChanged: actions.onRefresh,
     recoveryEnabled: !pending,
-    credentialSetupSemanticLabel: LocaleKeys
-        .skills_selector_semantics_credentials
+    connectorSetupSemanticLabel: LocaleKeys
+        .skills_selector_semantics_connector_setup
         .tr(namedArgs: {'skill': skill.title}),
   );
 }
@@ -1009,7 +963,7 @@ class const _SkillTileIdentityLabels({required final _SkillTileIdentity tile})
   Widget build(BuildContext context) => AuraColumn(
     children: [
       AuraText(child: Text(tile.skill.title)),
-      _SkillCredentialBadge(readiness: tile.skill.credentialReadiness),
+      _ConnectorConnectionBadge(readiness: tile.skill.connectorReadiness),
       if (tile.contextStatus case final status?)
         _SkillContextBadge(status: status),
     ],
@@ -1024,7 +978,7 @@ String _skillIdentitySemanticsLabel(
 ) => [
   identity.skill.title,
   _skillIdentityMembershipLabel(context, identity.selected),
-  _skillCredentialReadinessLabel(context, identity.skill),
+  _connectorReadinessLabel(context, identity.skill),
   ..._skillContextSemanticsLabels(context, identity),
   ..._skillActionSemanticsLabels(context, identity),
 ].join(', ');
@@ -1054,10 +1008,8 @@ String _skillIdentityMembershipLabel(BuildContext context, bool selected) =>
             : LocaleKeys.skills_selector_semantics_available)
         .tr(context: context);
 
-String _skillCredentialReadinessLabel(
-  BuildContext context,
-  AvailableSkill skill,
-) => _credentialReadinessKey(skill.credentialReadiness).tr(context: context);
+String _connectorReadinessLabel(BuildContext context, AvailableSkill skill) =>
+    _connectionReadinessKey(skill.connectorReadiness).tr(context: context);
 
 String _skillContextStatusLabel(
   BuildContext context,
@@ -1077,11 +1029,11 @@ String? _skillActionResultLabel(
   ConversationSkillActionResult result,
 ) => _actionResultKey(result)?.tr(context: context);
 
-String _credentialReadinessKey(SkillCredentialReadiness readiness) =>
+String _connectionReadinessKey(ConnectorConnectionReadiness readiness) =>
     switch (readiness) {
-      .ready => LocaleKeys.skills_selector_credentials_ready,
-      .missing => LocaleKeys.skills_selector_credentials_missing,
-      .unknown => LocaleKeys.skills_selector_credentials_unknown,
+      .ready => LocaleKeys.skills_selector_connection_ready,
+      .missing => LocaleKeys.skills_selector_connection_missing,
+      .unknown => LocaleKeys.skills_selector_connection_unknown,
     };
 
 String _contextStatusKey(ConversationSkillContextStatus status) =>
@@ -1172,8 +1124,8 @@ class _AvailableSkillActions extends StatelessWidget {
           pending: data.pending,
           onPressed: data.actions.onAdd,
         ),
-        if (_requiresCredentialSetup(skill, data.actionResult))
-          _AvailableSkillCredentialSetup(
+        if (_requiresConnectorSetup(skill, data.actionResult))
+          _AvailableSkillConnectorSetup(
             skill: skill,
             pending: data.pending,
             actions: data.actions,
@@ -1191,22 +1143,20 @@ class _AvailableSkillActions extends StatelessWidget {
   );
 }
 
-bool _requiresCredentialSetup(
+bool _requiresConnectorSetup(
   AvailableSkill skill,
   ConversationSkillActionResult? actionResult,
-) =>
-    skill.credentialReadiness == .missing ||
-    actionResult == .credentialsMissing;
+) => skill.connectorReadiness == .missing || actionResult == .connectionMissing;
 
-class const _AvailableSkillCredentialSetup({
+class const _AvailableSkillConnectorSetup({
   required final AvailableSkill skill,
   required final bool pending,
   required final _SelectorActions actions,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _CredentialSetupButton(
-    onPressed: pending ? null : () => actions.onCredentialSetup(skill),
-    semanticLabel: LocaleKeys.skills_selector_semantics_credentials.tr(
+  Widget build(BuildContext context) => _ConnectorSetupButton(
+    onPressed: pending ? null : () => actions.onConnectorSetup(skill),
+    semanticLabel: LocaleKeys.skills_selector_semantics_connector_setup.tr(
       namedArgs: {'skill': skill.title},
     ),
   );
@@ -1284,7 +1234,7 @@ class const _RecoveryButton({
   @override
   Widget build(BuildContext context) =>
       switch (_recoveryAction(contextFailure, actionResult)) {
-        .credentials => _CredentialRecoveryButton(
+        .connector => _ConnectorRecoveryButton(
           skill: skill,
           disabled: disabled,
           actions: actions,
@@ -1298,15 +1248,15 @@ class const _RecoveryButton({
       };
 }
 
-class const _CredentialRecoveryButton({
+class const _ConnectorRecoveryButton({
   required final AvailableSkill skill,
   required final bool disabled,
   required final _SelectorActions actions,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _CredentialSetupButton(
-    onPressed: disabled ? null : () => actions.onCredentialSetup(skill),
-    semanticLabel: LocaleKeys.skills_selector_semantics_credentials.tr(
+  Widget build(BuildContext context) => _ConnectorSetupButton(
+    onPressed: disabled ? null : () => actions.onConnectorSetup(skill),
+    semanticLabel: LocaleKeys.skills_selector_semantics_connector_setup.tr(
       context: context,
       namedArgs: {'skill': skill.title},
     ),
@@ -1336,13 +1286,13 @@ String _recoverySemanticLabel(
         .tr(context: context, namedArgs: {'skill': skill.title});
 
 String _recoverySemanticKey(_RecoveryAction action) => switch (action) {
-  .credentials => LocaleKeys.skills_selector_semantics_credentials,
+  .connector => LocaleKeys.skills_selector_semantics_connector_setup,
   .refresh => LocaleKeys.skills_selector_semantics_refresh,
   .retry => LocaleKeys.skills_selector_semantics_retry,
 };
 
 String _recoveryTextKey(_RecoveryAction action) => switch (action) {
-  .credentials => LocaleKeys.skills_selector_credential_setup,
+  .connector => LocaleKeys.skills_selector_connector_setup,
   .refresh => LocaleKeys.skills_selector_refresh,
   .retry => LocaleKeys.skills_selector_retry,
 };
@@ -1353,15 +1303,15 @@ VoidCallback _recoveryCallback(
   _SelectorActions actions,
 ) => action == .refresh ? actions.onRefresh : () => actions.onRetry(skill);
 
-enum _RecoveryAction { credentials, refresh, retry }
+enum _RecoveryAction { connector, refresh, retry }
 
 _RecoveryAction _recoveryAction(
   ConversationSkillContextFailure? contextFailure,
   ConversationSkillActionResult? actionResult,
 ) {
-  if (contextFailure == .missingCredentials ||
-      actionResult == .credentialsMissing) {
-    return .credentials;
+  if (contextFailure == .missingConnection ||
+      actionResult == .connectionMissing) {
+    return .connector;
   }
   if (contextFailure == .unavailableMetadata || actionResult == .stale) {
     return .refresh;
@@ -1386,14 +1336,14 @@ class const _RecoveryActionButton({
   );
 }
 
-class const _CredentialSetupButton({
+class const _ConnectorSetupButton({
   required final VoidCallback? onPressed,
   final String? semanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
     onPressed: () => onPressed?.call(),
-    child: const TextLocale(LocaleKeys.skills_selector_credential_setup),
+    child: const TextLocale(LocaleKeys.skills_selector_connector_setup),
     variant: .outlined,
     size: .small,
     disabled: onPressed == null,
@@ -1429,15 +1379,15 @@ class const _SkillContextLabel({
   });
 }
 
-class const _SkillCredentialBadge({
-  required final SkillCredentialReadiness readiness,
+class const _ConnectorConnectionBadge({
+  required final ConnectorConnectionReadiness readiness,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraBadge.text(
     child: TextLocale(switch (readiness) {
-      .ready => LocaleKeys.skills_selector_credentials_ready,
-      .missing => LocaleKeys.skills_selector_credentials_missing,
-      .unknown => LocaleKeys.skills_selector_credentials_unknown,
+      .ready => LocaleKeys.skills_selector_connection_ready,
+      .missing => LocaleKeys.skills_selector_connection_missing,
+      .unknown => LocaleKeys.skills_selector_connection_unknown,
     }),
     variant: switch (readiness) {
       .ready => .success,
@@ -1458,12 +1408,12 @@ bool _showsRecovery(
     failure != null ||
     result == .stale ||
     result == .unavailable ||
-    result == .credentialsMissing ||
-    result == .credentialsUnknown;
+    result == .connectionMissing ||
+    result == .connectionUnknown;
 
 String _contextFailureKey(ConversationSkillContextFailure failure) =>
     switch (failure) {
-      .missingCredentials => LocaleKeys.skills_selector_error_credentials,
+      .missingConnection => LocaleKeys.skills_selector_error_connection,
       .unavailableMetadata => LocaleKeys.skills_selector_error_metadata,
       .preparationFailed => LocaleKeys.skills_selector_error_preparation,
     };
@@ -1474,7 +1424,6 @@ String? _actionResultKey(ConversationSkillActionResult result) =>
       .stale => LocaleKeys.skills_selector_error_stale,
       .unavailable => LocaleKeys.skills_selector_error_unavailable,
       .unauthorized => LocaleKeys.skills_selector_error_unauthorized,
-      .credentialsMissing => LocaleKeys.skills_selector_error_credentials,
-      .credentialsUnknown =>
-        LocaleKeys.skills_selector_error_credentials_unknown,
+      .connectionMissing => LocaleKeys.skills_selector_error_connection,
+      .connectionUnknown => LocaleKeys.skills_selector_error_connection_unknown,
     };

@@ -61,7 +61,6 @@ void main() {
     cancellationRuntime: .new(),
     toolResolver: const ToolResolverService(),
     loadToolSpecs: (_) => loadToolSpecs,
-    effectiveToolApproval: null,
     resolveCloudTurn: resolveCloudTurn ?? (_) async => null,
     onToolCallChanged: () => changeCount++,
   );

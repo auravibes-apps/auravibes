@@ -14,10 +14,7 @@ import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_usage_records_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/recent_model_selections_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/skill_credentials_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_resources_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/skill_template_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
@@ -40,9 +37,7 @@ import 'package:auravibes_app/data/database/drift/tables/model_providers_table_t
 import 'package:auravibes_app/data/database/drift/tables/model_usage_records.dart';
 import 'package:auravibes_app/data/database/drift/tables/recent_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/data/database/drift/tables/skill_credential_definitions.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_resources.dart';
-import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
@@ -51,7 +46,6 @@ import 'package:auravibes_app/data/database/drift/tables/workspace_model_selecti
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:uuid/v7.dart';
@@ -67,7 +61,6 @@ export 'daos/message_dao.dart';
 export 'daos/model_connections_dao.dart';
 export 'daos/model_usage_records_dao.dart';
 export 'daos/recent_model_selections_dao.dart';
-export 'daos/skill_credentials_dao.dart';
 export 'daos/workspace_compaction_settings_dao.dart';
 export 'daos/workspace_dao.dart';
 export 'daos/workspace_tools_dao.dart';
@@ -96,9 +89,7 @@ part 'app_database.g.dart';
     ConversationTools,
     McpServers,
     WorkspaceCompactionSettings,
-    SkillCredentialDefinitions,
     Skills,
-    SkillTemplateTools,
     SkillResources,
     ConversationSkills,
     AppSkillWorkspaceSettings,
@@ -122,10 +113,7 @@ part 'app_database.g.dart';
     ConversationToolsDao,
     McpServersDao,
     WorkspaceCompactionSettingsDao,
-    SkillCredentialsDao,
-    SkillCredentialDefinitionsDao,
     SkillsDao,
-    SkillTemplateToolsDao,
     SkillResourcesDao,
     ConversationSkillsDao,
     AppSkillWorkspaceSettingsDao,
@@ -145,10 +133,7 @@ class AppDatabase extends _$AppDatabase {
   static const int _recentModelSelectionsSchemaVersion =
       _conversationPinOrderingSchemaVersion + 1;
   static const int _forkSchemaVersion = _recentModelSelectionsSchemaVersion + 1;
-  static const int _skillTemplateDefinitionSchemaVersion =
-      _forkSchemaVersion + 1;
-  static const int _skillResourceSchemaVersion =
-      _skillTemplateDefinitionSchemaVersion + 1;
+  static const int _skillResourceSchemaVersion = _forkSchemaVersion + 2;
   static const int _apiModelModalitiesSchemaVersion =
       _skillResourceSchemaVersion + 1;
   static const int _legacyStreamingStatusSchemaVersion =
@@ -183,7 +168,12 @@ class AppDatabase extends _$AppDatabase {
       _backgroundWorkChildLinkSchemaVersion + 1;
   static const int _messageBookmarkSchemaVersion =
       _toolCallAttachmentSchemaVersion + 1;
-  static const int _currentSchemaVersion = _messageBookmarkSchemaVersion;
+  static const int _connectorSkillToolReferencesSchemaVersion =
+      _messageBookmarkSchemaVersion + 1;
+  static const int _retireSkillOwnedStorageSchemaVersion =
+      _connectorSkillToolReferencesSchemaVersion + 1;
+  static const int _currentSchemaVersion =
+      _retireSkillOwnedStorageSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -231,6 +221,8 @@ extension on AppDatabase {
     await _upgradeToolAccessModeSchema(m);
     await _upgradeToolCallAttachmentSchema(m, from);
     await _upgradeMessageBookmarkSchema(m, from);
+    await _upgradeConnectorSkillToolReferencesSchema(m, from);
+    await _retireSkillOwnedStorage(from);
   }
 
   Future<void> _upgradeMessageBookmarkSchema(Migrator m, int from) async {
@@ -383,10 +375,21 @@ extension on AppDatabase {
   }
 
   Future<void> _runSkillUpgrades(Migrator m, int from) async {
-    await _upgradeSkillTemplateDefinitionSchema(m, from);
     if (from < AppDatabase._skillResourceSchemaVersion) {
       await m.createTable(skillResources);
     }
+  }
+
+  Future<void> _upgradeConnectorSkillToolReferencesSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._connectorSkillToolReferencesSchemaVersion ||
+        !await _tableExists('skills') ||
+        await _columnExists('skills', 'connector_tool_ids_json')) {
+      return;
+    }
+    await m.addColumn(skills, skills.connectorToolIdsJson);
   }
 
   Future<void> _upgradeAgentsSchema(Migrator m, int from) async {
@@ -561,62 +564,16 @@ extension on AppDatabase {
       ''');
   }
 
-  Future<void> _upgradeSkillTemplateDefinitionSchema(
-    Migrator m,
-    int from,
-  ) async {
-    if (from >= AppDatabase._skillTemplateDefinitionSchemaVersion ||
-        !await _tableExists('skill_template_tools')) {
-      return;
-    }
-    await _addSkillTemplateDefinitionColumns(m);
-    await _backfillSkillTemplateDefinitions();
-  }
-
-  Future<void> _addSkillTemplateDefinitionColumns(Migrator m) async {
-    if (!await _columnExists('skill_template_tools', 'definition_json')) {
-      await m.addColumn(skillTemplateTools, skillTemplateTools.definitionJson);
-    }
-    if (await _columnExists(
-      'skill_template_tools',
-      'credential_definition_id',
-    )) {
-      return;
-    }
-
-    await m.addColumn(
-      skillTemplateTools,
-      skillTemplateTools.credentialDefinitionId,
-    );
-  }
-
-  Future<void> _backfillSkillTemplateDefinitions() async {
-    final rows = await select(skillTemplateTools).get();
-    for (final row in rows) {
-      if (row.definitionJson != '{}') continue;
-      await _backfillSkillTemplateDefinition(
-        row.id,
-        row.templateJson,
-        row.inputsJson,
+  Future<void> _retireSkillOwnedStorage(int from) async {
+    if (from >= AppDatabase._retireSkillOwnedStorageSchemaVersion) return;
+    if (await _tableExists('service_connections')) {
+      await customStatement(
+        'DELETE FROM service_connections WHERE kind IN (?, ?)',
+        const ['skillCredential', 'appSkillCredential'],
       );
     }
-  }
-
-  Future<void> _backfillSkillTemplateDefinition(
-    String id,
-    String templateJson,
-    String inputsJson,
-  ) async {
-    final definition = SkillTemplateDefinition.fromLegacyJson(
-      templateJson: templateJson,
-      inputsJson: inputsJson,
-    ).toJsonString();
-    final _ =
-        await (update(
-          skillTemplateTools,
-        )..where((table) => table.id.equals(id))).write(
-          SkillTemplateToolsCompanion(definitionJson: .new(definition)),
-        );
+    await customStatement('DROP TABLE IF EXISTS skill_template_tools');
+    await customStatement('DROP TABLE IF EXISTS skill_credential_definitions');
   }
 }
 

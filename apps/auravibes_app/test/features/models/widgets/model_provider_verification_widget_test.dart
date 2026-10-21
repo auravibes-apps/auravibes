@@ -12,7 +12,6 @@ import 'package:auravibes_app/features/models/providers/model_store_providers.da
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
@@ -160,20 +159,14 @@ void main() {
   ) async {
     final store = _FakeModelConnectionStore(editConnection: _editConnection());
     final serviceOperations = ServiceConnectionOperations(
-      createAppSkillCredential: ({
+      createConnectorConnection: ({
         required workspaceId,
-        required appSkillServiceId,
+        required connectorId,
         required name,
         required apiKey,
       }) => Future<void>.value(),
       getGenericForEdit: (_) async => null,
       updateGeneric: (_, _) => Future<void>.value(),
-    );
-    final skillOperations = SkillCredentialOperations(
-      create: (_, _) async => throw UnimplementedError(),
-      getForEdit: (_) async => null,
-      update: (_, _) async => throw UnimplementedError(),
-      delete: (_) => Future<void>.value(),
     );
 
     await tester.runAsync(() async {
@@ -190,9 +183,6 @@ void main() {
                 .overrideWith((_) async => store),
             serviceConnectionOperationsProvider(_workspaceId)
                 .overrideWith((_) async => serviceOperations),
-            skillCredentialOperationsProvider
-                .call(_workspaceId)
-                .overrideWithValue(skillOperations),
           ],
           key: UniqueKey(),
         ),

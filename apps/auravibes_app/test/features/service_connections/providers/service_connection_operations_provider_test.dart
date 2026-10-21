@@ -138,7 +138,7 @@ void main() {
                 data:
                     '{"id":"connection","name":"GitHub",'
                     '"serviceId":"github","scope":"workspace",'
-                    '"kind":"appSkillCredential","hasSecret":true, '
+                    '"kind":"customHttp","hasSecret":true, '
                     '"secretRevision":2}',
                 revision: 3,
                 createdAt: now,

@@ -23,7 +23,6 @@ void main() {
         'skills',
         'tools',
         'service-connections',
-        'skill-credential-definitions',
         'cloud-accounts',
         'manage-workspaces',
       ]) {
@@ -50,10 +49,8 @@ void main() {
       'chats/chat-a/sub-agents/child': WorkspaceDestination.chats,
       'agents/a': WorkspaceDestination.agentsAndSkills,
       'skills/a/resources/b': WorkspaceDestination.agentsAndSkills,
-      'service-connections/new?credentialDefinitionId=type'
-              '&appSkillId=skill':
+      'service-connections/new?type=connector&connectorId=jina':
           WorkspaceDestination.connections,
-      'skill-credential-definitions/type': WorkspaceDestination.connections,
       'models': WorkspaceDestination.connections,
       'tools': WorkspaceDestination.connections,
       'settings': WorkspaceDestination.appSettings,
@@ -151,8 +148,11 @@ void main() {
     );
     a.remember(.parse('/workspaces/A/tools'));
     expect(a.connectionsLocation(), ToolsRoute(workspaceId: 'A').location);
-    a.remember(.parse('/workspaces/A/skill-credential-definitions'));
-    expect(a.connectionsLocation(), ToolsRoute(workspaceId: 'A').location);
+    a.remember(.parse('/workspaces/A/service-connections?view=connectors'));
+    expect(
+      a.connectionsLocation(),
+      ServiceConnectionsRoute(workspaceId: 'A', view: 'connectors').location,
+    );
     a.remember(.parse('/workspaces/A/service-connections?view=unsafe'));
     expect(
       a.connectionsLocation(),

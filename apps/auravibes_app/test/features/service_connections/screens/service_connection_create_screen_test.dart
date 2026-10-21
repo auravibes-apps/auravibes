@@ -1,10 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/models/models/model_connection_store.dart';
 import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
@@ -119,76 +116,7 @@ void main() {
   test('exposes all supported create types', () {
     expect(ServiceConnectionCreateType.values, [
       ServiceConnectionCreateType.modelProvider,
-      ServiceConnectionCreateType.skillCredential,
-      ServiceConnectionCreateType.appSkillCredential,
-    ]);
-  });
-
-  testWidgets('preselects credential definition from initial params', (
-    tester,
-  ) async {
-    await clearAppDatabase(database);
-    final container = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(database)],
-    );
-    addTearDown(container.dispose);
-    final workspace = await WorkspaceRepository(database).createWorkspace(
-      const WorkspaceToCreate(name: 'Test Workspace', type: .local),
-    );
-    final definition = await SkillCredentialDefinitionsRepository(database)
-        .createDefinition(
-          workspace.id,
-          const SkillCredentialDefinitionToCreate(
-            title: 'TheCatAPI Key',
-            attributesJson: '{"apiKey":{"description":"API key"}}',
-          ),
-        );
-
-    await tester.runAsync(() async {
-      await tester.pumpWidget(
-        EasyLocalization(
-          key: UniqueKey(),
-          child: Builder(
-            builder: (context) {
-              return UncontrolledProviderScope(
-                container: container,
-                child: MaterialApp(
-                  home: ServiceConnectionCreateScreen(
-                    workspaceId: workspace.id,
-                    initialType: .skillCredential,
-                    initialCredentialDefinitionId: definition.id,
-                  ),
-                  locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
-                  supportedLocales: context.supportedLocales,
-                ),
-              );
-            },
-          ),
-          supportedLocales: const [Locale('en')],
-          path: 'assets/i18n',
-          fallbackLocale: const Locale('en'),
-          startLocale: const Locale('en'),
-          useOnlyLangCode: true,
-          useFallbackTranslations: true,
-        ),
-      );
-    });
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('Add saved access'), findsOneWidget);
-    expect(
-      find.byType(AuraChoicePicker<ServiceConnectionCreateType>),
-      findsNothing,
-    );
-    expect(find.text('TheCatAPI Key'), findsOneWidget);
-    expect(find.text('apiKey'), findsOneWidget);
-    final inputs = tester
-        .widgetList<AuraInput>(find.byType(AuraInput))
-        .toList();
-    expect(inputs.map((input) => input.textInputAction), [
-      TextInputAction.next,
-      TextInputAction.done,
+      ServiceConnectionCreateType.connector,
     ]);
   });
 }

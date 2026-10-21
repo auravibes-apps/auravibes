@@ -27,65 +27,267 @@ import 'conversation_host_effects.dart';
 import 'server_tool_runtime.dart';
 import 'background_work_result_reader.dart';
 
-String cloudServiceConnectionId(String credentialId) =>
-    credentialId.startsWith('service:')
-    ? credentialId.substring('service:'.length)
-    : credentialId;
+String cloudServiceConnectionId(String connectionId) =>
+    connectionId.startsWith('service:')
+    ? connectionId.substring('service:'.length)
+    : connectionId;
 
-List<SkillCredentialOption> cloudSkillCredentialOptions({
-  required String slug,
-  required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<Map<String, dynamic>> serviceConnections,
-}) {
-  final user = userSkills.where((skill) => skill['slug'] == slug).firstOrNull;
-  final app = serviceSkillDefinitions
-      .where((skill) => skill.slug == slug || skill.identifier == slug)
-      .firstOrNull;
-  return [
-    for (final connection in serviceConnections)
-      if (connection['isEnabled'] != false &&
-          connection['hasSecret'] == true &&
-          ((user != null &&
-                  connection['kind'] == 'skillCredential' &&
-                  connection['credentialDefinitionId'] ==
-                      user['credentialDefinitionId']) ||
-              (user == null &&
-                  app != null &&
-                  connection['kind'] == 'appSkillCredential' &&
-                  connection['serviceId'] == app.identifier)))
-        if (connection['id'] case final String id)
-          SkillCredentialOption(
-            credentialId: id,
-            displayName: connection['name'] is String
-                ? connection['name']! as String
-                : id,
-          ),
-  ];
+Map<String, String> cloudModelConnectorCredentialAttributes(
+  String providerId,
+  String secret,
+) {
+  if (providerId != 'openai-codex') return {'apiKey': secret};
+
+  final token = jsonDecode(secret);
+  if (token is! Map<String, dynamic> || token['accessToken'] is! String) {
+    throw const FormatException('Provider credential is unavailable.');
+  }
+  final idToken = token['idToken'];
+  final accountId = idToken is String ? _codexAccountId(idToken) : null;
+  if (accountId == null) {
+    throw const FormatException('Provider credential is unavailable.');
+  }
+
+  return {'apiKey': token['accessToken']! as String, 'accountId': accountId};
 }
 
-bool isCloudAppSkillCredential(
+String? _codexAccountId(String idToken) {
+  final parts = idToken.split('.');
+  if (parts.length != 3) return null;
+  final normalized = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+  final padded = normalized.padRight((normalized.length + 3) ~/ 4 * 4, '=');
+  final claims = jsonDecode(utf8.decode(base64Decode(padded)));
+  if (claims is! Map<String, dynamic>) return null;
+  final auth = claims['https://api.openai.com/auth'];
+  final accountId = auth is Map ? auth['chatgpt_account_id'] : null;
+
+  return switch (accountId) {
+    final String id when id.isNotEmpty => id,
+    _ =>
+      claims['chatgpt_account_id'] is String
+          ? claims['chatgpt_account_id']! as String
+          : null,
+  };
+}
+
+bool _isCloudConnectorConnection(
   Map<String, dynamic> data,
-  String skillIdentifier,
+  String connectorId,
 ) =>
-    data['kind'] == 'appSkillCredential' &&
-    data['serviceId'] == skillIdentifier &&
+    data['kind'] == 'customHttp' &&
+    data['serviceId'] == connectorId &&
     data['isEnabled'] != false &&
     data['hasSecret'] == true;
 
-bool cloudToolAllowsCredential(
-  ServerResolvedTool tool,
-  String credentialId,
-) =>
-    (((tool.spec.inputJsonSchema['properties'] as Map?)?['credentialId']
-                as Map?)?['enum']
-            as List?)
-        ?.contains(credentialId) ==
-    true;
+List<Map<String, String>> cloudConnectorConnectionOptions({
+  required ConnectorDefinition connector,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+  Iterable<Map<String, dynamic>> modelConnections = const [],
+}) => [
+  for (final connection in serviceConnections)
+    if (connection['kind'] == 'customHttp' &&
+        connection['serviceId'] == connector.identifier &&
+        connection['isEnabled'] != false &&
+        connection['hasSecret'] == true)
+      if (connection['id'] case final String id)
+        {
+          'id': 'service:$id',
+          'name': connection['name'] is String
+              ? connection['name']! as String
+              : id,
+        },
+  for (final connection in modelConnections)
+    if (connector.compatibleModelProviderIds.contains(
+          connection['providerId'],
+        ) &&
+        connection['hasSecret'] == true)
+      if (connection['id'] case final String id)
+        {
+          'id': 'model:$id',
+          'name': connection['name'] is String
+              ? connection['name']! as String
+              : id,
+        },
+];
 
-String? cloudToolCredentialId(Object? value) {
-  if (value is String && value.trim().isNotEmpty) return value.trim();
-  return null;
+Map<String, Object?> cloudConnectorConnectionRecords({
+  required Iterable<ConnectorDefinition> connectors,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+  Iterable<Map<String, dynamic>> modelConnections = const [],
+}) {
+  final connectionsById = <String, Map<String, Object?>>{};
+  for (final connector in connectors) {
+    if (!connector.tools.any((tool) => tool.urlTemplate != null)) continue;
+    for (final connection in cloudConnectorConnectionOptions(
+      connector: connector,
+      serviceConnections: serviceConnections,
+      modelConnections: modelConnections,
+    )) {
+      final record = connectionsById.putIfAbsent(
+        connection['id']!,
+        () => {
+          'id': connection['id'],
+          'name': connection['name'],
+          'connectorIds': <String>[],
+        },
+      );
+      (record['connectorIds']! as List<String>).add(connector.identifier);
+    }
+  }
+  return {
+    'connections': [
+      for (final record in connectionsById.values)
+        {
+          ...record,
+          'connectorIds': (record['connectorIds']! as List<String>)..sort(),
+        },
+    ],
+  };
 }
+
+List<Map<String, Object?>> cloudConnectorToolRecords({
+  required Iterable<ConnectorDefinition> connectors,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+  Iterable<Map<String, dynamic>> modelConnections = const [],
+}) {
+  final records = <Map<String, Object?>>[];
+  for (final connector in connectors) {
+    final connections = cloudConnectorConnectionOptions(
+      connector: connector,
+      serviceConnections: serviceConnections,
+      modelConnections: modelConnections,
+    );
+    for (final tool in connector.tools) {
+      if (tool.urlTemplate == null) continue;
+      if (tool.requiresConnection && connections.isEmpty) continue;
+
+      records.add({
+        'toolId': connectorToolId(connector, tool),
+        'connectorId': connector.identifier,
+        'connectorName': connector.title,
+        'name': tool.title,
+        'description': tool.description,
+        'inputSchema': Map<String, Object?>.from(tool.inputJsonSchema),
+        'revision': connectorToolRevision(connector, tool),
+        'requiresConnection': tool.requiresConnection,
+        'connections': connections,
+      });
+    }
+  }
+  records.sort(
+    (left, right) => '${left['toolId']}'.compareTo('${right['toolId']}'),
+  );
+  return records;
+}
+
+String? resolveCloudConnectorConnectionId({
+  required List<Map<String, String>> connections,
+  required bool requiresConnection,
+  String? requestedConnectionId,
+}) {
+  if (!requiresConnection) {
+    if (requestedConnectionId == null) return null;
+    if (connections.any(
+      (connection) => connection['id'] == requestedConnectionId,
+    )) {
+      return requestedConnectionId;
+    }
+    _throwCloudConnectorCommandFailure(
+      'connection_unavailable',
+      'Connection is not available for this Connector tool.',
+      StackTrace.current,
+    );
+  }
+  if (connections.isEmpty) {
+    _throwCloudConnectorCommandFailure(
+      'connection_required',
+      'No enabled Connection is available for this tool. Connect one in the '
+          'current workspace and retry.',
+      StackTrace.current,
+    );
+  }
+  if (requestedConnectionId != null) {
+    if (connections.any(
+      (connection) => connection['id'] == requestedConnectionId,
+    )) {
+      return requestedConnectionId;
+    }
+    _throwCloudConnectorCommandFailure(
+      'connection_unavailable',
+      'Connection is not available for this Connector tool.',
+      StackTrace.current,
+    );
+  }
+  if (connections.length == 1) return connections.single['id'];
+  _throwCloudConnectorCommandFailure(
+    'connection_selection_required',
+    'Choose a Connection by passing connectionId to execute_connector_tool.',
+    StackTrace.current,
+  );
+}
+
+({ConnectorDefinition connector, ConnectorToolDefinition tool})
+resolveCloudConnectorTool({
+  required String toolId,
+  required Map<String, dynamic> arguments,
+  String? revision,
+  Iterable<ConnectorDefinition>? connectors,
+}) {
+  for (final connector in connectors ?? connectorDefinitions) {
+    for (final tool in connector.tools) {
+      if (tool.urlTemplate == null ||
+          connectorToolId(connector, tool) != toolId) {
+        continue;
+      }
+      if (revision != null &&
+          revision != connectorToolRevision(connector, tool)) {
+        _throwCloudConnectorCommandFailure(
+          'stale_contract',
+          'Connector tool contract changed. Refresh and retry.',
+          StackTrace.current,
+        );
+      }
+      try {
+        validateToolArguments(tool.inputJsonSchema, arguments);
+      } on FormatException {
+        _throwCloudConnectorCommandFailure(
+          'invalid_tool_arguments',
+          'Arguments do not match this Connector tool schema. Refresh the '
+              'contract and retry.',
+          StackTrace.current,
+        );
+      }
+      return (connector: connector, tool: tool);
+    }
+  }
+  _throwCloudConnectorCommandFailure(
+    'unknown_tool',
+    'Unknown Connector tool ID. Refresh Connector tools and retry.',
+    StackTrace.current,
+  );
+}
+
+class const _CloudConnectorCommandException({
+  required final String code,
+  required final String message,
+}) implements Exception;
+
+Never _throwCloudConnectorCommandFailure(
+  String code,
+  String message,
+  StackTrace stackTrace,
+) => Error.throwWithStackTrace(
+  AgentToolExecutionFailure(
+    responseRaw: jsonEncode({
+      'error': {'code': code, 'message': message},
+      'recoverable': true,
+    }),
+    error: _CloudConnectorCommandException(code: code, message: message),
+    stackTrace: stackTrace,
+    failurePhase: 'connector.command',
+  ),
+  stackTrace,
+);
 
 PatchWorkspaceStateRequest cloudSkillSelectionPatchRequest({
   required int workspaceId,
@@ -120,34 +322,35 @@ const _runCreateChildPhase = 'run.createChild';
 const _runCreatePromptPhase = 'run.createPrompt';
 const _runContinueAgentPhase = 'run.continueAgent';
 
-Future<Object?> runCompiledServiceSkillTool({
-  required String skillSlug,
+Future<Object?> runCompiledConnectorTool({
+  required String connectorId,
   required String toolSlug,
   required Map<String, dynamic> input,
   Map<String, String> credentials = const {},
-  required SkillHttpClient httpClient,
+  required ConnectorHttpClient httpClient,
 }) {
-  final skill = serviceSkillDefinitions
-      .where((candidate) => candidate.slug == skillSlug)
+  final connector = connectorDefinitions
+      .where((candidate) => candidate.identifier == connectorId)
       .firstOrNull;
-  final templateTool = skill?.tools
+  final connectorTool = connector?.tools
       .where((candidate) => candidate.slug == toolSlug)
       .firstOrNull;
-  if (skill == null ||
-      templateTool == null ||
-      templateTool.urlTemplate == null) {
+  final definition = connectorTool?.definition;
+  if (connector == null || connectorTool == null || definition == null) {
     throw const ServerToolNotConfiguredException();
   }
-  return AppSkillExecutor(
-        SkillTemplateExecutor(const ResolveSkillUrlTemplate(), httpClient),
+  return ConnectorToolTemplateExecutor(
+        const ResolveConnectorRequestTemplate(),
+        httpClient,
       )
-      .run(
-        skill: skill,
-        toolSlug: toolSlug,
-        input: input,
+      .call(
+        definition: definition,
+        inputs: input,
         credentials: credentials,
+        schema: connectorTool.inputJsonSchema,
       )
-      .value;
+      .value
+      .then((response) => response.body);
 }
 
 Future<({Uri uri, List<InternetAddress> addresses})>
@@ -287,19 +490,11 @@ class const ServerToolExecutorService({
         tool,
         request,
       ),
-      AgentResolvedToolKind.skillTemplate => _runSkill(
+      AgentResolvedToolKind.connectorCommand => _runConnectorCommand(
         session,
         turn,
         tool,
-        request.arguments,
-        isCancelled: request.isCancelled,
-      ),
-      AgentResolvedToolKind.skillAppTemplate => _runNativeSkill(
-        session,
-        turn,
-        tool,
-        request.arguments,
-        isCancelled: request.isCancelled,
+        request,
       ),
       AgentResolvedToolKind.builtIn
           when tool.descriptor.tableId == backgroundWorkResultReaderTableId &&
@@ -309,14 +504,269 @@ class const ServerToolExecutorService({
       AgentResolvedToolKind.skillNative
           when tool.descriptor.skillSlug == agentsSkillSlug =>
         _runSubAgentTool(session, turn, tool, request),
-      AgentResolvedToolKind.skillNative => _runNativeSkill(
-        session,
-        turn,
-        tool,
-        request.arguments,
-      ),
+      AgentResolvedToolKind.skillNative =>
+        throw const ServerToolNotConfiguredException(),
       _ => throw const ServerToolNotConfiguredException(),
     };
+  }
+
+  Future<Object?> _runConnectorCommand(
+    Session session,
+    ConversationTurn turn,
+    ServerResolvedTool tool,
+    ServerToolRequest request,
+  ) async {
+    try {
+      validateToolArguments(tool.spec.inputJsonSchema, request.arguments);
+      final serviceConnections = await _connectorServiceConnections(
+        session,
+        turn.workspaceId,
+      );
+      final modelConnections = await _connectorModelConnections(
+        session,
+        turn.workspaceId,
+      );
+      return switch (tool.descriptor.toolIdentifier) {
+        listConnectorConnectionsToolName => cloudConnectorConnectionRecords(
+          connectors: connectorDefinitions,
+          serviceConnections: serviceConnections,
+          modelConnections: modelConnections,
+        ),
+        listConnectorToolsToolName => {
+          'tools': cloudConnectorToolRecords(
+            connectors: connectorDefinitions,
+            serviceConnections: serviceConnections,
+            modelConnections: modelConnections,
+          ),
+        },
+        executeConnectorToolName => await _executeConnectorTool(
+          session,
+          turn,
+          request,
+          serviceConnections,
+          modelConnections,
+        ),
+        _ => throw const _CloudConnectorCommandException(
+          code: 'unknown_command',
+          message: 'Unknown Connector command.',
+        ),
+      };
+    } on _CloudConnectorCommandException catch (error, stackTrace) {
+      _throwCloudConnectorCommandFailure(
+        error.code,
+        error.message,
+        stackTrace,
+      );
+    } on AgentToolExecutionFailure catch (failure, stackTrace) {
+      if (failure.error is _CloudConnectorCommandException) rethrow;
+      _throwCloudConnectorCommandFailure(
+        'execution_failed',
+        'Connector command failed. Check the Connection and retry.',
+        stackTrace,
+      );
+    } on ConversationCancelledException {
+      rethrow;
+    } on Object catch (_, stackTrace) {
+      _throwCloudConnectorCommandFailure(
+        'execution_failed',
+        'Connector command failed. Check the Connection and retry.',
+        stackTrace,
+      );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _connectorServiceConnections(
+    Session session,
+    int workspaceId,
+  ) async {
+    final resources = await WorkspaceResource.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.resourceKind.equals(WorkspaceResourceKind.serviceConnection) &
+          table.deletedAt.equals(null),
+    );
+    return [
+      for (final resource in resources)
+        {'id': resource.resourceId, ..._jsonMap(resource.data)},
+    ];
+  }
+
+  Future<List<Map<String, dynamic>>> _connectorModelConnections(
+    Session session,
+    int workspaceId,
+  ) async {
+    final connections = await WorkspaceModelConnection.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
+    );
+    return [
+      for (final connection in connections)
+        {
+          'id': connection.connectionId,
+          'name': connection.name,
+          'providerId': connection.providerId,
+          'hasSecret': connection.hasSecret,
+        },
+    ];
+  }
+
+  Future<Object?> _executeConnectorTool(
+    Session session,
+    ConversationTurn turn,
+    ServerToolRequest request,
+    List<Map<String, dynamic>> serviceConnections,
+    List<Map<String, dynamic>> modelConnections,
+  ) async {
+    final toolId = request.arguments['toolId'];
+    if (toolId is! String || toolId.trim().isEmpty) {
+      throw const _CloudConnectorCommandException(
+        code: 'invalid_arguments',
+        message: 'toolId must be a non-empty string.',
+      );
+    }
+    final rawArguments = request.arguments['args'];
+    if (rawArguments is! Map) {
+      throw const _CloudConnectorCommandException(
+        code: 'invalid_arguments',
+        message: 'args must be an object.',
+      );
+    }
+    final arguments = <String, dynamic>{};
+    for (final entry in rawArguments.entries) {
+      if (entry.key is! String) {
+        throw const _CloudConnectorCommandException(
+          code: 'invalid_arguments',
+          message: 'args keys must be strings.',
+        );
+      }
+      arguments[entry.key! as String] = entry.value;
+    }
+    final requestedRevision = request.arguments['revision'];
+    final requestedConnectionId = request.arguments['connectionId'];
+    if (requestedRevision != null && requestedRevision is! String ||
+        requestedConnectionId != null && requestedConnectionId is! String) {
+      throw const _CloudConnectorCommandException(
+        code: 'invalid_arguments',
+        message: 'revision and connectionId must be strings.',
+      );
+    }
+
+    final resolved = resolveCloudConnectorTool(
+      toolId: toolId.trim(),
+      arguments: arguments,
+      revision: requestedRevision as String?,
+    );
+
+    final connectionOptions = resolved.tool.requiresConnection
+        ? cloudConnectorConnectionOptions(
+            connector: resolved.connector,
+            serviceConnections: serviceConnections,
+            modelConnections: modelConnections,
+          )
+        : const <Map<String, String>>[];
+    final connectionId = resolveCloudConnectorConnectionId(
+      connections: connectionOptions,
+      requiresConnection: resolved.tool.requiresConnection,
+      requestedConnectionId: requestedConnectionId as String?,
+    );
+    var credentials = const <String, String>{};
+    if (connectionId != null) {
+      if (connectionId.startsWith('model:')) {
+        final resourceId = connectionId.substring('model:'.length);
+        final modelConnection = await WorkspaceModelConnection.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(turn.workspaceId) &
+              table.connectionId.equals(resourceId) &
+              table.deletedAt.equals(null),
+        );
+        if (modelConnection == null ||
+            !modelConnection.hasSecret ||
+            !resolved.connector.compatibleModelProviderIds.contains(
+              modelConnection.providerId,
+            )) {
+          _throwCloudConnectorCommandFailure(
+            'connection_unavailable',
+            'Connection is not available for this Connector tool.',
+            StackTrace.current,
+          );
+        }
+        final secret = await _secret(
+          session,
+          turn.workspaceId,
+          turn.initiatorUserId,
+          WorkspaceSecretKind.provider,
+          resourceId,
+        );
+        if (secret == null) {
+          _throwCloudConnectorCommandFailure(
+            'connection_unavailable',
+            'Connection is not available for this Connector tool.',
+            StackTrace.current,
+          );
+        }
+        credentials = cloudModelConnectorCredentialAttributes(
+          modelConnection.providerId,
+          await const WorkspaceSecretCipher().decrypt(session, secret),
+        );
+      } else {
+        final resourceId = cloudServiceConnectionId(connectionId);
+        final resource = await _resource(
+          session,
+          turn.workspaceId,
+          WorkspaceResourceKind.serviceConnection,
+          resourceId,
+        );
+        if (!_isCloudConnectorConnection(
+          _jsonMap(resource.data),
+          resolved.connector.identifier,
+        )) {
+          _throwCloudConnectorCommandFailure(
+            'connection_unavailable',
+            'Connection is not available for this Connector tool.',
+            StackTrace.current,
+          );
+        }
+        final secret = await _secret(
+          session,
+          turn.workspaceId,
+          turn.initiatorUserId,
+          WorkspaceSecretKind.provider,
+          resourceId,
+        );
+        if (secret == null) {
+          _throwCloudConnectorCommandFailure(
+            'connection_unavailable',
+            'Connection is not available for this Connector tool.',
+            StackTrace.current,
+          );
+        }
+        credentials = {
+          'apiKey': await const WorkspaceSecretCipher().decrypt(
+            session,
+            secret,
+          ),
+        };
+      }
+    }
+    final executionArguments = Map<String, dynamic>.from(arguments);
+    if (connectionId != null) {
+      executionArguments.remove('connectionId');
+    }
+    return await runCompiledConnectorTool(
+      connectorId: resolved.connector.identifier,
+      toolSlug: resolved.tool.slug,
+      input: executionArguments,
+      credentials: credentials,
+      httpClient: _connectorHttpClient(
+        session,
+        turn,
+        requireHttps: credentials.isNotEmpty,
+        isCancelled: request.isCancelled,
+      ),
+    );
   }
 
   Future<Map<String, Object?>> _readBackgroundWorkResult(
@@ -359,12 +809,6 @@ class const ServerToolExecutorService({
     ServerResolvedTool tool,
     ServerToolRequest request,
   ) async {
-    if (tool.descriptor.toolIdentifier == listSkillCredentialsToolName) {
-      return _listSkillCredentials(session, turn, request.arguments);
-    }
-    if (tool.descriptor.toolIdentifier == callSkillToolName) {
-      return _runDispatchedSkill(session, turn, request);
-    }
     if (tool.descriptor.toolIdentifier == loadSkillResourceToolName) {
       return _loadSkillResource(session, turn, request.arguments);
     }
@@ -377,19 +821,9 @@ class const ServerToolExecutorService({
     final state = await _skillCommandState(session, turn);
     final skillId = _availableSkillId(target.slug, state);
     if (skillId == null) throw const ServerToolNotConfiguredException();
-    final tools = materializeCloudSkillTools(
-      selectedSkillIds: {...state.authorizedSkillIds, skillId},
-      userSkills: state.userSkills,
-      templateTools: state.templateTools,
-      appSkillSettings: state.appSkillSettings,
-      serviceConnections: state.serviceConnections,
-      isChildConversation:
-          state.conversation.parentConversationStableId != null,
-    );
     final manifest = await buildCloudSkillManifest(
       slug: target.slug,
       userSkills: state.userSkills,
-      tools: tools,
     );
     if (manifest == null || manifest.revision != target.revision) {
       throw FormatException(
@@ -397,13 +831,6 @@ class const ServerToolExecutorService({
         '${target.slug}',
       );
     }
-    final credentials = manifest.tools.any((tool) => tool.credentialRequired)
-        ? cloudSkillCredentialOptions(
-            slug: target.slug,
-            userSkills: state.userSkills,
-            serviceConnections: state.serviceConnections,
-          )
-        : const <SkillCredentialOption>[];
     final resources = await _skillResourceSummaries(
       session,
       turn,
@@ -435,7 +862,6 @@ class const ServerToolExecutorService({
     return buildSkillActivationResult(
       manifest: manifest,
       content: _skillContent(target.slug, state),
-      credentials: credentials,
       resources: resources,
     );
   }
@@ -511,104 +937,12 @@ class const ServerToolExecutorService({
         .toList();
   }
 
-  Future<Object?> _runDispatchedSkill(
-    Session session,
-    ConversationTurn turn,
-    ServerToolRequest request,
-  ) async {
-    final target = SkillCommandTarget.fromArguments(request.arguments);
-    final state = await _skillCommandState(session, turn);
-    final tools = _materializeStateTools(state);
-    final resolved = await resolveCloudSkillCommandTarget(
-      command: target,
-      userSkills: state.userSkills,
-      tools: tools,
-    );
-    final normalized = Map<String, dynamic>.from(target.args);
-    final result = await switch (resolved.descriptor.kind) {
-      AgentResolvedToolKind.skillTemplate => _runSkill(
-        session,
-        turn,
-        resolved,
-        normalized,
-      ),
-      AgentResolvedToolKind.skillAppTemplate => _runNativeSkill(
-        session,
-        turn,
-        resolved,
-        normalized,
-      ),
-      AgentResolvedToolKind.skillNative
-          when resolved.descriptor.skillSlug == agentsSkillSlug =>
-        _runSubAgentTool(
-          session,
-          turn,
-          resolved,
-          ServerToolRequest(
-            id: request.id,
-            name: resolved.spec.name,
-            arguments: normalized,
-          ),
-        ),
-      AgentResolvedToolKind.skillNative => _runNativeSkill(
-        session,
-        turn,
-        resolved,
-        normalized,
-      ),
-      _ => throw const ServerToolNotConfiguredException(),
-    };
-    return result is ServerToolAwaitingSubAgents ? result : {'result': result};
-  }
-
-  Future<Object?> _listSkillCredentials(
-    Session session,
-    ConversationTurn turn,
-    Map<String, dynamic> arguments,
-  ) async {
-    final slug = arguments['slug'] ?? arguments['skillSlug'];
-    if (slug is! String || slug.isEmpty) {
-      throw const FormatException('slug required');
-    }
-    final state = await _skillCommandState(session, turn);
-    final selectedId =
-        state.userSkills
-            .where((skill) => skill['slug'] == slug)
-            .map((skill) => skill['id'])
-            .whereType<String>()
-            .firstOrNull ??
-        serviceSkillDefinitions
-            .where((skill) => skill.slug == slug || skill.identifier == slug)
-            .map((skill) => skill.identifier)
-            .firstOrNull ??
-        slug;
-    if (!state.authorizedSkillIds.contains(selectedId)) {
-      throw const ServerToolNotConfiguredException();
-    }
-    final credentials = cloudSkillCredentialOptions(
-      slug: slug,
-      userSkills: state.userSkills,
-      serviceConnections: state.serviceConnections,
-    );
-    return {
-      'skillSlug': slug,
-      'credentials': [
-        for (final credential in credentials)
-          {
-            'id': credential.credentialId,
-            'name': credential.displayName,
-          },
-      ],
-    };
-  }
-
   Future<
     ({
       Conversation conversation,
       Set<String> selectedSkillIds,
       Set<String> authorizedSkillIds,
       List<Map<String, dynamic>> userSkills,
-      List<Map<String, dynamic>> templateTools,
       List<Map<String, dynamic>> appSkillSettings,
       List<Map<String, dynamic>> serviceConnections,
     })
@@ -642,6 +976,12 @@ class const ServerToolExecutorService({
         .map((data) => data['skillId'])
         .whereType<String>()
         .toSet();
+    final modelConnections = await WorkspaceModelConnection.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(turn.workspaceId) &
+          table.deletedAt.equals(null),
+    );
     return (
       conversation: conversation,
       selectedSkillIds: selectedSkillIds,
@@ -657,14 +997,6 @@ class const ServerToolExecutorService({
           )
           .map(withId)
           .toList(),
-      templateTools: resources
-          .where(
-            (resource) =>
-                resource.resourceKind ==
-                WorkspaceResourceKind.skillTemplateTool,
-          )
-          .map(withId)
-          .toList(),
       appSkillSettings: resources
           .where(
             (resource) =>
@@ -672,36 +1004,25 @@ class const ServerToolExecutorService({
           )
           .map(withId)
           .toList(),
-      serviceConnections: resources
-          .where(
-            (resource) =>
-                resource.resourceKind ==
-                WorkspaceResourceKind.serviceConnection,
-          )
-          .map(withId)
-          .toList(),
+      serviceConnections: [
+        ...resources
+            .where(
+              (resource) =>
+                  resource.resourceKind ==
+                  WorkspaceResourceKind.serviceConnection,
+            )
+            .map(withId),
+        for (final connection in modelConnections)
+          {
+            'id': connection.connectionId,
+            'name': connection.name,
+            'kind': 'modelProvider',
+            'providerId': connection.providerId,
+            'hasSecret': connection.hasSecret,
+          },
+      ],
     );
   }
-
-  List<ServerResolvedTool> _materializeStateTools(
-    ({
-      Conversation conversation,
-      Set<String> selectedSkillIds,
-      Set<String> authorizedSkillIds,
-      List<Map<String, dynamic>> userSkills,
-      List<Map<String, dynamic>> templateTools,
-      List<Map<String, dynamic>> appSkillSettings,
-      List<Map<String, dynamic>> serviceConnections,
-    })
-    state,
-  ) => materializeCloudSkillTools(
-    selectedSkillIds: state.authorizedSkillIds,
-    userSkills: state.userSkills,
-    templateTools: state.templateTools,
-    appSkillSettings: state.appSkillSettings,
-    serviceConnections: state.serviceConnections,
-    isChildConversation: state.conversation.parentConversationStableId != null,
-  );
 
   String? _availableSkillId(
     String slug,
@@ -710,7 +1031,6 @@ class const ServerToolExecutorService({
       Set<String> selectedSkillIds,
       Set<String> authorizedSkillIds,
       List<Map<String, dynamic>> userSkills,
-      List<Map<String, dynamic>> templateTools,
       List<Map<String, dynamic>> appSkillSettings,
       List<Map<String, dynamic>> serviceConnections,
     })
@@ -722,7 +1042,6 @@ class const ServerToolExecutorService({
     if (user != null &&
         cloudUserSkillReady(
           user,
-          state.templateTools,
           state.serviceConnections,
         )) {
       return user['id'] as String?;
@@ -745,8 +1064,7 @@ class const ServerToolExecutorService({
           ? app.identifier
           : null;
     }
-    if (!cloudAppSkillEnabled(app.identifier, state.appSkillSettings) ||
-        !cloudServiceSkillReady(app, state.serviceConnections)) {
+    if (!cloudServiceSkillReady(app, state.serviceConnections)) {
       return null;
     }
     return app.identifier;
@@ -776,7 +1094,6 @@ class const ServerToolExecutorService({
       Set<String> selectedSkillIds,
       Set<String> authorizedSkillIds,
       List<Map<String, dynamic>> userSkills,
-      List<Map<String, dynamic>> templateTools,
       List<Map<String, dynamic>> appSkillSettings,
       List<Map<String, dynamic>> serviceConnections,
     })
@@ -792,71 +1109,6 @@ class const ServerToolExecutorService({
         .firstOrNull;
     if (app != null) return app.content;
     throw const ServerToolNotConfiguredException();
-  }
-
-  Future<Object?> _runNativeSkill(
-    Session session,
-    ConversationTurn turn,
-    ServerResolvedTool tool,
-    Map<String, dynamic> arguments, {
-    Future<bool> Function()? isCancelled,
-  }) async {
-    final skill = serviceSkillDefinitions
-        .where((candidate) => candidate.slug == tool.descriptor.skillSlug)
-        .firstOrNull;
-    final templateTool = skill?.tools
-        .where((candidate) => candidate.slug == tool.descriptor.toolIdentifier)
-        .firstOrNull;
-    final credentialId = cloudToolCredentialId(arguments['credentialId']);
-    if (skill == null ||
-        skill.kind != AppSkillDefinitionKind.template ||
-        templateTool == null ||
-        templateTool.urlTemplate == null) {
-      throw const ServerToolNotConfiguredException();
-    }
-    var credentials = const <String, String>{};
-    if (templateTool.requiresCredential) {
-      if (credentialId is! String ||
-          credentialId.isEmpty ||
-          !cloudToolAllowsCredential(tool, credentialId)) {
-        throw const ServerToolNotConfiguredException();
-      }
-      final connectionId = cloudServiceConnectionId(credentialId);
-      final resource = await _resource(
-        session,
-        turn.workspaceId,
-        WorkspaceResourceKind.serviceConnection,
-        connectionId,
-      );
-      final data = _jsonMap(resource.data);
-      if (!isCloudAppSkillCredential(data, skill.identifier)) {
-        throw const ServerToolNotConfiguredException();
-      }
-      final secret = await _secret(
-        session,
-        turn.workspaceId,
-        turn.initiatorUserId,
-        WorkspaceSecretKind.skillCredential,
-        connectionId,
-      );
-      if (secret == null) throw const ServerToolNotConfiguredException();
-      credentials = Map<String, String>.from(
-        _jsonMap(await const WorkspaceSecretCipher().decrypt(session, secret)),
-      );
-    }
-    final httpClient = _skillHttpClient(
-      session,
-      turn,
-      requireHttps: credentials.isNotEmpty,
-      isCancelled: isCancelled,
-    );
-    return runCompiledServiceSkillTool(
-      skillSlug: skill.slug,
-      toolSlug: templateTool.slug,
-      input: arguments,
-      credentials: credentials,
-      httpClient: httpClient,
-    );
   }
 
   Future<Object?> _runSubAgentTool(
@@ -1610,211 +1862,6 @@ class const ServerToolExecutorService({
     }
   }
 
-  Future<Object?> _runSkill(
-    Session session,
-    ConversationTurn turn,
-    ServerResolvedTool tool,
-    Map<String, dynamic> arguments, {
-    Future<bool> Function()? isCancelled,
-  }) async {
-    final resources = await WorkspaceResource.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(turn.workspaceId) &
-          table.resourceKind.equals(WorkspaceResourceKind.skillTemplateTool) &
-          table.deletedAt.equals(null),
-    );
-    final resource = resources.where((candidate) {
-      final data = _jsonMap(candidate.data);
-      return data['skillSlug'] == tool.descriptor.skillSlug &&
-          (data['toolSlug'] == tool.descriptor.toolIdentifier ||
-              data['name'] == tool.descriptor.toolIdentifier);
-    }).firstOrNull;
-    if (resource == null) throw const ServerToolNotConfiguredException();
-    final data = _jsonMap(resource.data);
-    final credentialDefinitionId = await _skillCredentialDefinitionId(
-      session,
-      turn.workspaceId,
-      data,
-    );
-    final definition = await _skillTemplateDefinition(
-      session,
-      turn.workspaceId,
-      data,
-      credentialDefinitionId,
-    );
-    validateSkillTemplateDefinition(definition);
-    final credentialId = _resolveSkillTemplateCredentialId(
-      skillData: data,
-      value: arguments['credentialId'],
-    );
-    final secret = credentialId == null
-        ? null
-        : await _skillCredentialSecret(
-            session,
-            turn: turn,
-            skillData: data,
-            credentialId: credentialId,
-            credentialDefinitionId: credentialDefinitionId,
-          );
-    if (data['requiresCredential'] == true && secret == null) {
-      throw const ServerToolNotConfiguredException();
-    }
-    final credentials = secret == null
-        ? const <String, String>{}
-        : Map<String, String>.from(
-            _jsonMap(
-              await const WorkspaceSecretCipher().decrypt(session, secret),
-            ),
-          );
-    await _throwIfCancelled(session, turn, isCancelled: isCancelled);
-    final response =
-        await SkillTemplateExecutor(
-              const ResolveSkillUrlTemplate(),
-              _skillHttpClient(
-                session,
-                turn,
-                requireHttps: credentials.isNotEmpty,
-                isCancelled: isCancelled,
-              ),
-            )
-            .call(
-              definition: definition,
-              inputs: arguments,
-              credentials: credentials,
-            )
-            .value;
-    return response.body;
-  }
-
-  Future<SkillTemplateDefinition> _skillTemplateDefinition(
-    Session session,
-    int workspaceId,
-    Map<String, dynamic> data,
-    String? credentialDefinitionId,
-  ) async {
-    final definition = _skillTemplateDefinitionFromData(data);
-    if (credentialDefinitionId == null) return definition;
-
-    final credentialDefinition = await _resource(
-      session,
-      workspaceId,
-      WorkspaceResourceKind.skillDefinition,
-      credentialDefinitionId,
-    );
-    final credentialData = _jsonMap(credentialDefinition.data);
-    final attributesJson = credentialData['attributesJson'];
-    if (attributesJson is! String) {
-      throw const ServerToolNotConfiguredException();
-    }
-
-    return definition.copyWith(
-      credentialDefinitions: {
-        ...SkillCredentialAttributeDefinition.parseMap(attributesJson),
-        ...definition.credentialDefinitions,
-      },
-    );
-  }
-
-  SkillTemplateDefinition _skillTemplateDefinitionFromData(
-    Map<String, dynamic> data,
-  ) {
-    final definitionJson = data['definitionJson'];
-    if (definitionJson is String &&
-        definitionJson.trim().isNotEmpty &&
-        definitionJson != '{}') {
-      return SkillTemplateDefinition.fromJsonString(definitionJson);
-    }
-    final templateJson = data['templateJson'] ?? data['urlTemplateJson'];
-    final inputsJson = data['inputsJson'];
-    if (templateJson is! String || inputsJson is! String) {
-      throw const ServerToolNotConfiguredException();
-    }
-
-    return SkillTemplateDefinition.fromLegacyJson(
-      templateJson: templateJson,
-      inputsJson: inputsJson,
-    );
-  }
-
-  Future<String?> _skillCredentialDefinitionId(
-    Session session,
-    int workspaceId,
-    Map<String, dynamic> data,
-  ) async {
-    final toolDefinitionId = data['credentialDefinitionId'];
-    if (toolDefinitionId is String && toolDefinitionId.trim().isNotEmpty) {
-      return toolDefinitionId.trim();
-    }
-    final skillId = data['skillId'];
-    if (skillId is! String || skillId.isEmpty) return null;
-
-    final skill = await _resource(
-      session,
-      workspaceId,
-      WorkspaceResourceKind.skill,
-      skillId,
-    );
-    final skillDefinitionId = _jsonMap(skill.data)['credentialDefinitionId'];
-    if (skillDefinitionId is! String || skillDefinitionId.trim().isEmpty) {
-      return null;
-    }
-
-    return skillDefinitionId.trim();
-  }
-
-  String? _resolveSkillTemplateCredentialId({
-    required Map<String, dynamic> skillData,
-    required Object? value,
-  }) {
-    if (value is String && value.trim().isNotEmpty) return value.trim();
-    if (skillData['requiresCredential'] != true) return null;
-
-    throw const ServerToolNotConfiguredException();
-  }
-
-  Future<WorkspaceSecret?> _skillCredentialSecret(
-    Session session, {
-    required ConversationTurn turn,
-    required Map<String, dynamic> skillData,
-    required String credentialId,
-    String? credentialDefinitionId,
-  }) async {
-    final credential = await _resource(
-      session,
-      turn.workspaceId,
-      WorkspaceResourceKind.serviceConnection,
-      credentialId,
-    );
-    final credentialData = _jsonMap(credential.data);
-    final skillId = skillData['skillId'];
-    if (credentialData['kind'] != 'skillCredential' ||
-        credentialData['isEnabled'] != true ||
-        skillId is! String) {
-      throw const ServerToolNotConfiguredException();
-    }
-    final skill = await _resource(
-      session,
-      turn.workspaceId,
-      WorkspaceResourceKind.skill,
-      skillId,
-    );
-    final definitionId = credentialDefinitionId?.trim().isNotEmpty == true
-        ? credentialDefinitionId
-        : _jsonMap(skill.data)['credentialDefinitionId'];
-    if (definitionId is! String ||
-        credentialData['credentialDefinitionId'] != definitionId) {
-      throw const ServerToolNotConfiguredException();
-    }
-    return _secret(
-      session,
-      turn.workspaceId,
-      turn.initiatorUserId,
-      WorkspaceSecretKind.skillCredential,
-      credentialId,
-    );
-  }
-
   Future<Map<String, dynamic>> _postJson(
     Session session,
     ConversationTurn turn,
@@ -1859,7 +1906,7 @@ class const ServerToolExecutorService({
     }
   }
 
-  SkillHttpClient _skillHttpClient(
+  ConnectorHttpClient _connectorHttpClient(
     Session session,
     ConversationTurn turn, {
     required bool requireHttps,

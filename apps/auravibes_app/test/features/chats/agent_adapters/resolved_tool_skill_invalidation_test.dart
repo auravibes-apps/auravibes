@@ -41,12 +41,10 @@ void main() {
       SkillToolSlugs.createUserSkill,
       SkillToolSlugs.updateUserSkill,
       SkillToolSlugs.deleteUserSkill,
-      SkillToolSlugs.createSkillCredentialDefinition,
-      SkillToolSlugs.updateSkillCredentialDefinition,
-      SkillToolSlugs.deleteSkillCredentialDefinition,
-      SkillToolSlugs.createSkillTemplateTool,
-      SkillToolSlugs.updateSkillTemplateTool,
-      SkillToolSlugs.deleteSkillTemplateTool,
+      SkillToolSlugs.createSkillResource,
+      SkillToolSlugs.updateSkillResource,
+      SkillToolSlugs.deleteSkillResource,
+      SkillToolSlugs.cloneAppSkill,
     ]) {
       final generation = runtime.begin('conversation');
       runtime.ready(

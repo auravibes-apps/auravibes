@@ -106,7 +106,7 @@ void main() {
             ServiceConnectionsCompanion.insert(
               name: 'Private credential',
               serviceId: 'private-service',
-              kind: .skillCredential,
+              kind: .customHttp,
               authenticationType: .apiKey,
               encryptedAuthValue: const Value('encrypted-secret'),
               workspaceId: source.id,
