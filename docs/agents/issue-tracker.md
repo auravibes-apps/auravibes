@@ -35,7 +35,7 @@ Run `gh issue view <number> --comments`.
 
 ## Agent worktree readiness
 
-- Run `python3 tool/agent_worktree.py status` for linked worktrees, setup readiness, and active validation owner.
+- Run `python3 tool/agent_worktree.py status` for linked worktrees, setup readiness, and the current worktree's active validation owner.
 - Before claiming or creating a worktree, run `python3 tool/agent_worktree.py preflight --issue <number>`. This read-only check verifies the FVM link, resolved Pub workspace config, app DevTools config, and matching open PRs/branches/worktrees.
 - A nonzero result means setup is incomplete, target is closed, matching work exists, or a required command failed. Resolve the reported issue before proceeding.
 

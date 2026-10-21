@@ -40,6 +40,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 | App/UI focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm flutter test test/path/to/file_test.dart --no-pub` from target package |
 | App fatal analyzer      | `python3 tool/validation_lease.py -- fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
 | Engine focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
+| Changed Dart preflight  | `python3 tool/validation_lease.py -- fvm dart run melos run validate:changed` |
 | Validation              | `python3 tool/validation_lease.py -- fvm dart run melos run validate:quick` (same form for `validate` and `validate:ci`) |
 | Asset/clean scripts     | `python3 tool/validation_lease.py -- fvm dart run melos run generate:icons` (same form for `clean` and `generate:flavors`) |
 | Code generation         | `python3 tool/validation_lease.py -- fvm dart run melos run generate` (same form for `generate:localization` and `generate:serverpod`) |
@@ -48,7 +49,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - Script definitions and package filters live in root `pubspec.yaml`.
 - For a new checkout or worktree, use the `fvm use` command above, then bootstrap before running `--no-pub` checks.
 - Run local test, analyzer, code generation, bootstrap, and workspace validation commands through `tool/validation_lease.py`. From a package directory, use its absolute path via `$(git rev-parse --show-toplevel)`.
-- The lease keeps common-dir locking and adds a host-local per-user lock keyed by normalized origin; same-user clones sharing that cache coordinate. Other users, hosts, and origin mirrors do not. `python3 tool/agent_worktree.py status` reports worktrees and active lease owner.
+- The lease serializes validation only within the current worktree. Other worktrees and clones run independently. `python3 tool/agent_worktree.py status` reports worktrees and the current worktree's active lease owner.
 - Temp-volume stats are advisory; quotas and container limits may still reject writes.
 
 ## Git context
