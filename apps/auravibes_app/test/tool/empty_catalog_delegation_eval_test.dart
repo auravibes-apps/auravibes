@@ -89,15 +89,11 @@ void main() {
         expect(userMessage.role, ChatMessageRole.user);
         expect(userMessage.content, contains('delegate'));
         expect(
-          (turns.elementAt(1).history.last.parts.single as ToolResponsePart)
-              .toolResponse
-              .output,
+          _lastToolResponseOutput(turns.elementAt(1).history),
           contains('"agents":[]'),
         );
         expect(
-          (turns.elementAt(2).history.last.parts.single as ToolResponsePart)
-              .toolResponse
-              .output,
+          _lastToolResponseOutput(turns.elementAt(2).history),
           contains('AURAVIBES_EVAL_CHILD_RESULT'),
         );
 
@@ -228,3 +224,13 @@ ChatMessage _modelToolCall({
     ),
   ],
 );
+
+String _lastToolResponseOutput(List<ChatMessage> history) {
+  final message = history.lastOrNull;
+  if (message == null) fail('Model history has no tool response.');
+
+  final responses = message.parts.whereType<ToolResponsePart>().toList();
+  if (responses.length != 1) fail('Expected one tool response.');
+
+  return responses.single.toolResponse.output;
+}
