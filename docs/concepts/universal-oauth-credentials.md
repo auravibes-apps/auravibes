@@ -197,7 +197,9 @@ Examples:
 - MCP: `mcp_servers.service_connection_id`
 - Future model provider OAuth: model connection row references a service
   connection or becomes backed by one.
-- Future skill OAuth: skill credential row references a service connection.
+- Connector tools and Skills: resolve the workspace's service connection at
+  runtime; neither Skill nor Connector tool owns a credential row. See
+  [ADR 0001](../adr/0001-connector-tools-and-skills.md).
 
 ### 3. Resolve Credentials at Runtime
 
