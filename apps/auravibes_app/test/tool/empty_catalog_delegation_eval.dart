@@ -21,6 +21,25 @@ typedef StubSubAgentRunner = Future<String> Function({
 });
 
 typedef EmptyCatalogEvalCase = ({String provider, String model});
+typedef _ProviderConfig = ({
+  ModelProvidersType type,
+  String apiKeyEnvironmentKey,
+});
+
+const _providerConfigs = <String, _ProviderConfig>{
+  'openai': (
+    type: ModelProvidersType.openai,
+    apiKeyEnvironmentKey: 'OPENAI_API_KEY',
+  ),
+  'anthropic': (
+    type: ModelProvidersType.anthropic,
+    apiKeyEnvironmentKey: 'ANTHROPIC_API_KEY',
+  ),
+  'openrouter': (
+    type: ModelProvidersType.openrouter,
+    apiKeyEnvironmentKey: 'OPENROUTER_API_KEY',
+  ),
+};
 
 const _userRequest =
     'Please delegate this evaluation task to a sub-agent. First inspect the '
@@ -47,19 +66,21 @@ EmptyCatalogEvalCase _parseEmptyCatalogEvalCase(String value) {
       'Expected provider:model, for example openai:gpt-4o-mini.',
     );
   }
-  if (_providerType(provider) == null) {
+  if (_providerConfigs[provider] == null) {
     throw FormatException('Unsupported provider: $provider.');
   }
 
   return (provider: provider, model: model);
 }
 
-ModelProvidersType? _providerType(String provider) => switch (provider) {
-  'openai' => ModelProvidersType.openai,
-  'anthropic' => ModelProvidersType.anthropic,
-  'openrouter' => ModelProvidersType.openrouter,
-  _ => null,
-};
+String apiKeyEnvironmentKeyForProvider(String provider) {
+  final configuration = _providerConfigs[provider];
+  if (configuration == null) {
+    throw FormatException('Unsupported provider: $provider.');
+  }
+
+  return configuration.apiKeyEnvironmentKey;
+}
 
 class const EmptyCatalogDelegationEval({
   required final String provider,
@@ -200,8 +221,8 @@ Future<EmptyCatalogDelegationEval> runProviderModelEmptyCatalogDelegationEval({
   required String model,
   required String apiKey,
 }) async {
-  final providerType = _providerType(provider);
-  if (providerType == null) {
+  final providerConfiguration = _providerConfigs[provider];
+  if (providerConfiguration == null) {
     return _failure(
       provider,
       model,
@@ -213,7 +234,7 @@ Future<EmptyCatalogDelegationEval> runProviderModelEmptyCatalogDelegationEval({
   }
 
   try {
-    final config = _modelConfig(provider, model, providerType);
+    final config = _modelConfig(provider, model, providerConfiguration.type);
     final service = ChatbotService(
       serviceConnectionRepository: _EvalServiceConnectionRepository(apiKey),
     );

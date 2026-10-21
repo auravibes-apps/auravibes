@@ -1,8 +1,9 @@
-import 'package:auravibes_app/tool/empty_catalog_delegation_eval.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
+
+import 'empty_catalog_delegation_eval.dart';
 
 void main() {
   group('empty catalog delegation eval', () {

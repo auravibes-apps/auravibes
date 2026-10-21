@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:auravibes_app/tool/empty_catalog_delegation_eval.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'empty_catalog_delegation_eval.dart';
 
 /// Opt in with a comma-separated provider:model list and matching API keys.
 /// Run this file with `fvm flutter test`.
@@ -26,7 +27,7 @@ void main() {
 
   for (final evalCase in cases) {
     test('${evalCase.provider}:${evalCase.model}', () async {
-      final environmentKey = _apiKeyEnvironmentKey(evalCase.provider);
+      final environmentKey = apiKeyEnvironmentKeyForProvider(evalCase.provider);
       final apiKey = Platform.environment[environmentKey];
       if (apiKey == null) {
         fail('Set $environmentKey to run this provider case.');
@@ -41,10 +42,3 @@ void main() {
     });
   }
 }
-
-String _apiKeyEnvironmentKey(String provider) => switch (provider) {
-  'openai' => 'OPENAI_API_KEY',
-  'anthropic' => 'ANTHROPIC_API_KEY',
-  'openrouter' => 'OPENROUTER_API_KEY',
-  _ => throw FormatException('Unsupported provider: $provider.'),
-};
