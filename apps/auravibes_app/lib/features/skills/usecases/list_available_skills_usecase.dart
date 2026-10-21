@@ -5,12 +5,12 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
-import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/connector_tool_reference_readiness.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -22,10 +22,8 @@ class const ListAvailableSkillsUsecase(
   final ConversationSkillsRepository? _conversationSkillsRepository,
   final AppSkillWorkspaceSettingsRepository? _appSkillSettingsRepository,
   final AppSkillRegistry _appSkillRegistry, [
-  final CheckSkillCredentialReadinessUsecase?
-  _checkSkillCredentialReadinessUsecase,
-  final ListAppSkillCredentialCandidatesUsecase?
-  _listAppSkillCredentialCandidatesUsecase,
+  final ListConnectorConnectionCandidatesUsecase?
+  _listConnectorConnectionCandidatesUsecase,
   final CloudSkillStore? cloudStore,
   final Future<bool> Function(String conversationId)? _isTopLevelConversation,
 ]) {
@@ -93,8 +91,7 @@ typedef _LocalSkillDependencies = ({
 
 typedef _SharedSkillDependencies = ({
   AppSkillRegistry appSkillRegistry,
-  CheckSkillCredentialReadinessUsecase? credentialReadiness,
-  ListAppSkillCredentialCandidatesUsecase? credentialCandidates,
+  ListConnectorConnectionCandidatesUsecase? credentialCandidates,
   Future<bool> Function(String conversationId) isTopLevelConversation,
 });
 
@@ -272,85 +269,67 @@ extension ListAvailableSkillsUsecaseUserSkills on ListAvailableSkillsUsecase {
     if (!skill.isEnabled) return null;
 
     final isLoaded = request.loadedUserIds.contains(skill.id);
-    final credentialReadiness = await _userSkillCredentialReadiness(request);
-    if (!await _isUserSkillAvailable(request, isLoaded, credentialReadiness)) {
+    final connectorReadiness = await _userConnectorConnectionReadiness(request);
+    if (!await _isUserSkillAvailable(request, isLoaded, connectorReadiness)) {
       return null;
     }
 
-    return skill.toAvailableSkill(credentialReadiness: credentialReadiness);
+    return skill.toAvailableSkill(connectorReadiness: connectorReadiness);
   }
 
   Future<bool> _isUserSkillAvailable(
     _UserSkillAvailabilityRequest request,
     bool isLoaded,
-    SkillCredentialReadiness credentialReadiness,
+    ConnectorConnectionReadiness connectorReadiness,
   ) async {
     if (request.filter == .selector) return true;
 
-    final isCredentialReady = await _isUserSkillCredentialReady(
-      request,
-      isLoaded,
-      credentialReadiness,
-    );
-
-    return _isUserSkillLoadable(request.skill, isLoaded, isCredentialReady) &&
+    return _isUserSkillLoadable(
+          request.skill,
+          isLoaded,
+          connectorReadiness == .ready,
+        ) &&
         request.filter.matches(isLoaded: isLoaded);
   }
 
   bool _isUserSkillLoadable(
     SkillEntity skill,
     bool isLoaded,
-    bool isCredentialReady,
+    bool isConnectorReady,
   ) =>
       isLoaded ||
       isSkillLoadable(
         isEnabled: skill.isEnabled,
         isLoaded: isLoaded,
-        isCredentialReady: isCredentialReady,
+        isCredentialReady: isConnectorReady,
       );
 
-  Future<bool> _isUserSkillCredentialReady(
-    _UserSkillAvailabilityRequest request,
-    bool isLoaded,
-    SkillCredentialReadiness credentialReadiness,
-  ) {
-    final cloud = request.cloud;
-    if (cloud != null) return cloud.userSkillReady(request.skill);
-
-    return Future.value(isLoaded || credentialReadiness != .missing);
-  }
-
-  Future<SkillCredentialReadiness> _userSkillCredentialReadiness(
-    _UserSkillAvailabilityRequest request,
-  ) {
-    final cloud = request.cloud;
-    if (cloud != null) {
-      return _cloudUserSkillCredentialReadiness(cloud, request.skill);
-    }
-
-    return _localUserSkillCredentialReadiness(request);
-  }
-
-  Future<SkillCredentialReadiness> _cloudUserSkillCredentialReadiness(
-    CloudSkillStore cloud,
-    SkillEntity skill,
-  ) async => await cloud.userSkillReady(skill) ? .ready : .missing;
-}
-
-extension ListAvailableSkillsUsecaseCredentials on ListAvailableSkillsUsecase {
-  Future<SkillCredentialReadiness> _localUserSkillCredentialReadiness(
+  Future<ConnectorConnectionReadiness> _userConnectorConnectionReadiness(
     _UserSkillAvailabilityRequest request,
   ) async {
     final skill = request.skill;
-    if (skill.isCredentialOptional ||
-        skill.credentialDefinitionId?.isNotEmpty != true) {
-      return .ready;
+    final connectorToolIds = skill.connectorToolIds;
+    if (connectorToolIds.isNotEmpty) {
+      return await _connectorToolConnectionReadiness(request);
     }
 
-    final usecase = _checkSkillCredentialReadinessUsecase;
-    if (usecase == null) return .unknown;
+    return .ready;
+  }
+}
 
-    return await usecase.call(workspaceId: request.workspaceId, skill: skill)
+extension ListAvailableSkillsConnectionReadiness on ListAvailableSkillsUsecase {
+  Future<ConnectorConnectionReadiness> _connectorToolConnectionReadiness(
+    _UserSkillAvailabilityRequest request,
+  ) async {
+    final credentialCandidates = _listConnectorConnectionCandidatesUsecase;
+    if (credentialCandidates == null) return .unknown;
+    final skill = request.skill;
+
+    return await ConnectorToolReferenceReadiness.areReady(
+          connectorToolIds: skill.connectorToolIds,
+          workspaceId: request.workspaceId,
+          credentialCandidates: credentialCandidates,
+        )
         ? .ready
         : .missing;
   }
@@ -402,21 +381,27 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
     _AppSkillAvailabilityRequest request,
   ) async {
     final skill = request.skill;
-    if (!await _isAppSkillEnabled(request.cloud, request.workspaceId, skill)) {
+    final isEnabled = await _isAppSkillEnabled(
+      request.cloud,
+      request.workspaceId,
+      skill,
+    );
+    if (!isEnabled &&
+        !await _hasConnectorConnection(request.workspaceId, skill)) {
       return null;
     }
 
-    final credentialReadiness = await _credentialReadinessForAppSkillRequest(
+    final connectorReadiness = await _connectorReadinessForAppSkillRequest(
       request,
     );
-    if (credentialReadiness == null) {
+    if (connectorReadiness == null) {
       return null;
     }
 
-    return _availableAppSkill(skill, credentialReadiness: credentialReadiness);
+    return _availableAppSkill(skill, connectorReadiness: connectorReadiness);
   }
 
-  Future<SkillCredentialReadiness?> _credentialReadinessForAppSkillRequest(
+  Future<ConnectorConnectionReadiness?> _connectorReadinessForAppSkillRequest(
     _AppSkillAvailabilityRequest request,
   ) async {
     final skill = request.skill;
@@ -426,7 +411,7 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
       request.workspaceId,
       skill,
     );
-    final credentialReadiness = _appSkillCredentialReadiness(
+    final connectorReadiness = _appConnectorConnectionReadiness(
       skill,
       hasUsableTool,
     );
@@ -434,22 +419,22 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
       request,
       isLoaded,
       hasUsableTool,
-      credentialReadiness,
+      connectorReadiness,
     )) {
       return null;
     }
 
-    return credentialReadiness;
+    return connectorReadiness;
   }
 
   bool _isAppSkillAvailable(
     _AppSkillAvailabilityRequest request,
     bool isLoaded,
     bool hasUsableTool,
-    SkillCredentialReadiness credentialReadiness,
+    ConnectorConnectionReadiness connectorReadiness,
   ) {
     if (request.filter == .selector) {
-      return isLoaded || hasUsableTool || credentialReadiness == .missing;
+      return isLoaded || hasUsableTool || connectorReadiness == .missing;
     }
 
     return _isAppSkillLoadable(isLoaded, hasUsableTool) &&
@@ -478,6 +463,20 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
       ? _hasLocallyUsableAppSkillTool(workspaceId, skill)
       : _hasUsableAppSkillTool(workspaceId, skill);
 
+  Future<bool> _hasConnectorConnection(
+    String workspaceId,
+    AppSkillDefinition skill,
+  ) async {
+    final candidates = _listConnectorConnectionCandidatesUsecase;
+    if (candidates == null || skill.connectorToolIds.isEmpty) return false;
+
+    return await ConnectorToolReferenceReadiness.areReady(
+      connectorToolIds: skill.connectorToolIds,
+      workspaceId: workspaceId,
+      credentialCandidates: candidates,
+    );
+  }
+
   Future<bool> _isTopLevel(String conversationId) async {
     final checker = _isTopLevelConversation;
     if (checker == null) return false;
@@ -503,7 +502,7 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
 
   AvailableSkill _availableAppSkill(
     AppSkillDefinition skill, {
-    required SkillCredentialReadiness credentialReadiness,
+    required ConnectorConnectionReadiness connectorReadiness,
   }) => AvailableSkill(
     id: skill.identifier,
     slug: skill.slug,
@@ -511,22 +510,17 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
     description: skill.description,
     content: skill.content,
     source: .app,
-    kind: skill.kind == AppSkillDefinitionKind.template ? .template : .native,
-    credentialReadiness: credentialReadiness,
+    kind: .native,
+    connectorToolIds: _connectorToolIdsForSkill(skill),
+    connectorReadiness: connectorReadiness,
   );
 
-  SkillCredentialReadiness _appSkillCredentialReadiness(
+  ConnectorConnectionReadiness _appConnectorConnectionReadiness(
     AppSkillDefinition skill,
     bool hasUsableTool,
   ) {
     if (skill.contentOnly) return .ready;
-    final requiresCredential =
-        skill.requiresCredential ||
-        skill.tools.any((tool) => tool.requiresCredential);
-    if (!requiresCredential) return .ready;
-
-    final usecase = _listAppSkillCredentialCandidatesUsecase;
-    if (usecase == null) return .unknown;
+    if (skill.connectorToolIds.isEmpty) return .ready;
 
     return hasUsableTool ? .ready : .missing;
   }
@@ -536,17 +530,17 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
     AppSkillDefinition skill,
   ) async {
     if (skill.contentOnly) return true;
-    final usecase = _listAppSkillCredentialCandidatesUsecase;
-    if (usecase == null ||
-        skill.tools.any((tool) => !tool.requiresCredential) ||
-        !usecase.isCredentialRequired(skill)) {
-      return true;
+    final usecase = _listConnectorConnectionCandidatesUsecase;
+    if (skill.connectorToolIds.isNotEmpty) {
+      return usecase != null &&
+          await ConnectorToolReferenceReadiness.areReady(
+            connectorToolIds: skill.connectorToolIds,
+            workspaceId: workspaceId,
+            credentialCandidates: usecase,
+          );
     }
 
-    return (await usecase.call(
-      workspaceId: workspaceId,
-      skill: skill,
-    )).isNotEmpty;
+    return skill.tools.isNotEmpty;
   }
 
   Future<bool> _hasUsableAppSkillTool(
@@ -554,12 +548,23 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
     AppSkillDefinition skill,
   ) {
     if (skill.contentOnly) return Future.value(true);
-    final usecase = _listAppSkillCredentialCandidatesUsecase;
-    if (usecase == null) return Future.value(true);
+    final usecase = _listConnectorConnectionCandidatesUsecase;
+    if (skill.connectorToolIds.isNotEmpty) {
+      return usecase == null
+          ? Future.value(false)
+          : ConnectorToolReferenceReadiness.areReady(
+              connectorToolIds: skill.connectorToolIds,
+              workspaceId: workspaceId,
+              credentialCandidates: usecase,
+            );
+    }
 
-    return usecase.hasUsableNativeTool(workspaceId: workspaceId, skill: skill);
+    return Future.value(skill.tools.isNotEmpty);
   }
 }
+
+List<String> _connectorToolIdsForSkill(AppSkillDefinition skill) =>
+    skill.connectorToolIds;
 
 @riverpod
 ListAvailableSkillsUsecase listAvailableSkillsUsecase(
@@ -580,7 +585,7 @@ _ListAvailableSkillsProviderRequest _listAvailableSkillsProviderRequest(
   return (
     cloud: cloud,
     local: cloud == null ? _localSkillDependencies(ref) : null,
-    shared: _sharedSkillDependencies(ref, workspaceId),
+    shared: _sharedSkillDependencies(ref),
   );
 }
 
@@ -595,7 +600,6 @@ ListAvailableSkillsUsecase _buildListAvailableSkillsUsecase(
     local?.conversationSkillsRepository,
     local?.appSkillSettingsRepository,
     shared.appSkillRegistry,
-    shared.credentialReadiness,
     shared.credentialCandidates,
     request.cloud,
     shared.isTopLevelConversation,
@@ -610,16 +614,13 @@ _LocalSkillDependencies _localSkillDependencies(Ref ref) => (
   ),
 );
 
-_SharedSkillDependencies _sharedSkillDependencies(Ref ref, String workspaceId) {
+_SharedSkillDependencies _sharedSkillDependencies(Ref ref) {
   final conversationRepository = ref.watch(conversationRepositoryProvider);
 
   return (
     appSkillRegistry: ref.watch(appSkillRegistryProvider),
-    credentialReadiness: ref.watch(
-      checkSkillCredentialReadinessUsecaseProvider(workspaceId),
-    ),
     credentialCandidates: ref.watch(
-      listAppSkillCredentialCandidatesUsecaseProvider,
+      listConnectorConnectionCandidatesUsecaseProvider,
     ),
     isTopLevelConversation: (conversationId) =>
         _checkIsTopLevelConversation(conversationRepository, conversationId),
@@ -668,7 +669,7 @@ extension on List<ConversationSkillEntity> {
 
 extension on SkillEntity {
   AvailableSkill toAvailableSkill({
-    required SkillCredentialReadiness credentialReadiness,
+    required ConnectorConnectionReadiness connectorReadiness,
   }) {
     return AvailableSkill(
       id: id,
@@ -678,9 +679,8 @@ extension on SkillEntity {
       content: content,
       source: source,
       kind: kind,
-      isCredentialOptional: isCredentialOptional,
-      credentialDefinitionId: credentialDefinitionId,
-      credentialReadiness: credentialReadiness,
+      connectorToolIds: connectorToolIds,
+      connectorReadiness: connectorReadiness,
     );
   }
 }

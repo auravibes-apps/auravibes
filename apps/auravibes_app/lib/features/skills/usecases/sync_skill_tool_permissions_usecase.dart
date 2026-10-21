@@ -2,13 +2,11 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
-import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
@@ -40,7 +38,6 @@ typedef _InsertToolRequest = ({
 class const SyncSkillToolPermissionsUsecase({
   required final AppDatabase database,
   required final BuildDynamicSkillToolSpecsUsecase buildDynamicSkillToolSpecs,
-  required final BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecs,
   required final BuildAppSkillNativeToolSpecsUsecase
   buildAppSkillNativeToolSpecs,
   final ListConversationAgentSkillsUsecase? listConversationAgentSkillsUsecase,
@@ -48,12 +45,10 @@ class const SyncSkillToolPermissionsUsecase({
   Future<void> call({
     required String conversationId,
     required String workspaceId,
-    String? languageCode,
   }) async {
     final _ = await _syncTools(
       conversationId: conversationId,
       workspaceId: workspaceId,
-      languageCode: languageCode,
     );
   }
 
@@ -77,12 +72,10 @@ extension _SyncSkillToolPermissionsUsecaseSync
   Future<List<ToolsTable>> _syncTools({
     required String conversationId,
     required String workspaceId,
-    String? languageCode,
   }) async {
     final specs = await _loadToolSpecs(
       conversationId: conversationId,
       workspaceId: workspaceId,
-      languageCode: languageCode,
     );
 
     return _filterCurrentTools(
@@ -107,7 +100,6 @@ extension _SyncSkillToolPermissionsUsecaseSync
   Future<List<ToolSpec>> _loadToolSpecs({
     required String conversationId,
     required String workspaceId,
-    String? languageCode,
   }) async {
     final agentSkills = await _loadAgentSkills(
       conversationId: conversationId,
@@ -115,72 +107,53 @@ extension _SyncSkillToolPermissionsUsecaseSync
     );
 
     final specs = [
-      ...await _dynamicSpecs(conversationId, workspaceId, languageCode),
-      ...await _templateSpecs(conversationId, workspaceId, agentSkills),
-      ...await _nativeSpecs(
-        conversationId,
-        workspaceId,
-        agentSkills,
-        languageCode: languageCode,
-      ),
+      ...await _dynamicSpecs(conversationId, workspaceId),
+      ...await _nativeSpecs(conversationId, workspaceId, agentSkills),
     ];
-    _addRunSubAgentSpec(specs, languageCode);
+    _addRunSubAgentSpec(specs);
 
     return specs;
   }
 
-  void _addRunSubAgentSpec(List<ToolSpec> specs, String? languageCode) {
-    final runSubAgentSpec = _runSubAgentPermissionSpec(languageCode);
+  void _addRunSubAgentSpec(List<ToolSpec> specs) {
+    final runSubAgentSpec = _runSubAgentPermissionSpec();
     if (specs.any((spec) => spec.name == runSubAgentSpec.name)) return;
 
     specs.add(runSubAgentSpec);
   }
 
-  ToolSpec _runSubAgentPermissionSpec(String? languageCode) {
+  ToolSpec _runSubAgentPermissionSpec() {
     final descriptor = AgentResolvedToolName.skillNative(
       tableId: runSubAgentToolName,
       skillSlug: agentsSkillSlug,
       toolIdentifier: runSubAgentToolName,
     );
-    final spec = AgentGuidance.runSubAgentToolSpecForLanguageCode(languageCode);
 
     return ToolSpec(
       name: descriptor.fullName,
-      description: spec.description,
-      inputJsonSchema: Map<String, Object?>.from(spec.inputJsonSchema),
+      description: runSubAgentToolSpec.description,
+      inputJsonSchema: Map<String, Object?>.from(
+        runSubAgentToolSpec.inputJsonSchema,
+      ),
     );
   }
 
   Future<List<ToolSpec>> _dynamicSpecs(
     String conversationId,
     String workspaceId,
-    String? languageCode,
   ) => buildDynamicSkillToolSpecs.call(
     conversationId: conversationId,
     workspaceId: workspaceId,
-    languageCode: languageCode,
-  );
-
-  Future<List<ToolSpec>> _templateSpecs(
-    String conversationId,
-    String workspaceId,
-    List<AvailableSkill> extraSkills,
-  ) => buildSkillTemplateToolSpecs.call(
-    conversationId: conversationId,
-    workspaceId: workspaceId,
-    extraSkills: extraSkills,
   );
 
   Future<List<ToolSpec>> _nativeSpecs(
     String conversationId,
     String workspaceId,
-    List<AvailableSkill> extraSkills, {
-    String? languageCode,
-  }) => buildAppSkillNativeToolSpecs.call(
+    List<AvailableSkill> extraSkills,
+  ) => buildAppSkillNativeToolSpecs.call(
     conversationId: conversationId,
     workspaceId: workspaceId,
     extraSkills: extraSkills,
-    languageCode: languageCode,
   );
 
   Future<List<AvailableSkill>> _loadAgentSkills({
@@ -340,9 +313,6 @@ final syncSkillToolPermissionsUsecaseProvider =
         buildDynamicSkillToolSpecs: ref.watch(
           buildDynamicSkillToolSpecsUsecaseProvider,
         ),
-        buildSkillTemplateToolSpecs: ref.watch(
-          buildSkillTemplateToolSpecsUsecaseProvider,
-        ),
         buildAppSkillNativeToolSpecs: ref.watch(
           buildAppSkillNativeToolSpecsUsecaseProvider,
         ),
@@ -354,12 +324,7 @@ final syncSkillToolPermissionsUsecaseProvider =
 
 abstract final class SkillPermissionTools {
   static bool isSkillPermissionToolName(String toolName) {
-    final resolved = const AgentToolNameResolver(
-      skillControlToolNames: {
-        activateSkillToolName,
-        SkillToolNames.listCredentials,
-      },
-    ).resolve(toolName);
+    final resolved = const AgentToolNameResolver().resolve(toolName);
 
     return resolved?.isSkill == true ||
         resolved?.kind == AgentResolvedToolKind.skillControl;

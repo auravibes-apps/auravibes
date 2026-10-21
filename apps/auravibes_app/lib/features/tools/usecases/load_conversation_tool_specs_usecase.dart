@@ -3,11 +3,9 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
-import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -25,50 +23,35 @@ class const LoadConversationToolSpecsUsecase({
   _buildDynamicSkillToolSpecsUsecase,
   required final SyncSkillToolPermissionsUsecase
   _syncSkillToolPermissionsUsecase,
+  final SyncConnectorToolPermissionsUsecase?
+  syncConnectorToolPermissionsUsecase,
   final ConversationRepository? conversationRepository,
-  // Ponytail: Compatibility only; manifests now own materialization.
-  // ignore: avoid_unused_constructor_parameters
-  BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase,
-  // Native materializer remains accepted by legacy direct callers.
-  // ignore: avoid_unused_constructor_parameters
-  BuildAppSkillNativeToolSpecsUsecase? buildAppSkillNativeToolSpecsUsecase,
 }) {
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
-    String? languageCode,
   }) async => (await buildCatalog(
     conversationId: conversationId,
     workspaceId: workspaceId,
-    languageCode: languageCode,
   )).specs;
 
   Future<List<ToolSpec>> preview({
     required String conversationId,
     required String workspaceId,
-    String? languageCode,
-  }) async => (await _buildCatalogForConversation(
-    conversationId,
-    workspaceId,
-    languageCode,
-  )).specs;
+  }) async =>
+      (await _buildCatalogForConversation(conversationId, workspaceId)).specs;
 
   Future<agent.ToolCatalog<ResolvedTool>> buildCatalog({
     required String conversationId,
     required String workspaceId,
-    String? languageCode,
   }) async {
     await _syncSkillToolPermissionsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
-      languageCode: languageCode,
     );
+    await syncConnectorToolPermissionsUsecase?.call(workspaceId: workspaceId);
 
-    return await _buildCatalogForConversation(
-      conversationId,
-      workspaceId,
-      languageCode,
-    );
+    return await _buildCatalogForConversation(conversationId, workspaceId);
   }
 
   Future<List<agent.ToolCatalogCandidate<ResolvedTool>>> _loadToolCandidates(
@@ -84,38 +67,27 @@ class const LoadConversationToolSpecsUsecase({
   Future<agent.ToolCatalog<ResolvedTool>> _buildCatalogForConversation(
     String conversationId,
     String workspaceId,
-    String? languageCode,
   ) async {
-    final input = await _loadCatalogInput(
-      conversationId,
-      workspaceId,
-      languageCode,
-    );
+    final input = await _loadCatalogInput(conversationId, workspaceId);
 
     return _buildCatalog(
       toolCandidates: input.toolCandidates,
-      skillCommandSpecs: input.skillCommandSpecs,
+      skillControlSpecs: input.skillControlSpecs,
       includeRunSubAgent: await _includeRunSubAgent(conversationId),
-      languageCode: languageCode,
     );
   }
 
   Future<
     ({
       List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
-      List<ToolSpec> skillCommandSpecs,
+      List<ToolSpec> skillControlSpecs,
     })
   >
-  _loadCatalogInput(
-    String conversationId,
-    String workspaceId,
-    String? languageCode,
-  ) async => (
+  _loadCatalogInput(String conversationId, String workspaceId) async => (
     toolCandidates: await _loadToolCandidates(conversationId, workspaceId),
-    skillCommandSpecs: await _buildDynamicSkillToolSpecsUsecase.call(
+    skillControlSpecs: await _buildDynamicSkillToolSpecsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
-      languageCode: languageCode,
     ),
   );
 
@@ -131,32 +103,38 @@ class const LoadConversationToolSpecsUsecase({
 
 agent.ToolCatalog<ResolvedTool> _buildCatalog({
   required List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
-  required List<ToolSpec> skillCommandSpecs,
+  required List<ToolSpec> skillControlSpecs,
   required bool includeRunSubAgent,
-  String? languageCode,
 }) => agent.buildToolCatalog([
   ...toolCandidates,
-  ...skillCommandSpecs.map(_skillCommandCandidate),
-  if (includeRunSubAgent) _runSubAgentCandidate(languageCode),
+  ...agent.buildConnectorCommandToolSpecs().map(_connectorCommandCandidate),
+  ...skillControlSpecs.map(_skillControlCandidate),
+  if (includeRunSubAgent) _runSubAgentCandidate(),
 ]);
 
-agent.ToolCatalogCandidate<ResolvedTool> _skillCommandCandidate(
+agent.ToolCatalogCandidate<ResolvedTool> _connectorCommandCandidate(
   ToolSpec spec,
 ) => agent.ToolCatalogCandidate.reserved(
   spec: spec,
-  target: ResolvedTool.skillCommand(commandName: spec.name),
+  target: ResolvedTool.connectorCommand(commandName: spec.name),
 );
 
-agent.ToolCatalogCandidate<ResolvedTool> _runSubAgentCandidate(
-  String? languageCode,
+agent.ToolCatalogCandidate<ResolvedTool> _skillControlCandidate(
+  ToolSpec spec,
 ) => agent.ToolCatalogCandidate.reserved(
-  spec: AgentGuidance.runSubAgentToolSpecForLanguageCode(languageCode),
-  target: ResolvedTool.skillNative(
-    tableId: agent.runSubAgentToolName,
-    skillSlug: agent.agentsSkillSlug,
-    toolIdentifier: agent.runSubAgentToolName,
-  ),
+  spec: spec,
+  target: ResolvedTool.skillControl(toolIdentifier: spec.name),
 );
+
+agent.ToolCatalogCandidate<ResolvedTool> _runSubAgentCandidate() =>
+    agent.ToolCatalogCandidate.reserved(
+      spec: agent.runSubAgentToolSpec,
+      target: ResolvedTool.skillNative(
+        tableId: agent.runSubAgentToolName,
+        skillSlug: agent.agentsSkillSlug,
+        toolIdentifier: agent.runSubAgentToolName,
+      ),
+    );
 
 final ProviderFamily<LoadConversationToolSpecsUsecase, String>
 loadConversationToolSpecsUsecaseProvider =
@@ -183,6 +161,9 @@ loadConversationToolSpecsUsecaseProvider =
         ),
         syncSkillToolPermissionsUsecase: ref.watch(
           syncSkillToolPermissionsUsecaseProvider,
+        ),
+        syncConnectorToolPermissionsUsecase: ref.watch(
+          syncConnectorToolPermissionsUsecaseProvider,
         ),
         conversationRepository: ref.watch(conversationRepositoryProvider),
       );

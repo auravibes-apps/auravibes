@@ -239,16 +239,16 @@ void main() {
       expect(route.location, '/workspaces/ws-1/service-connections');
     });
 
-    test('create route includes credential definition query params', () {
+    test('create route includes Connector query params', () {
       final route = ServiceConnectionCreateRoute(
         workspaceId: 'ws-1',
-        type: 'skillCredential',
-        credentialDefinitionId: 'def-1',
+        type: 'connector',
+        connectorId: 'jina',
       );
       expect(
         route.location,
         '/workspaces/ws-1/service-connections/new'
-        '?type=skillCredential&credentialDefinitionId=def-1',
+        '?type=connector&connectorId=jina',
       );
     });
   });

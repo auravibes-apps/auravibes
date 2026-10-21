@@ -1,817 +1,201 @@
-import 'package:async/async.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
-import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/widgets.dart' show SizedBox;
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../../helpers/test_app.dart';
-
 void main() {
-  test('activates A2UI without tools or credential lookup', () async {
-    final load = _LoadRecorder();
-    var credentialCalls = 0;
-    var resourceSummaryCalls = 0;
-    final usecase = RunSkillCommandUsecase(
-      listAvailableSkillsUsecase: (_) => _LoadedSkills(
-        skills: const [
-          AvailableSkill(
-            id: 'a2ui',
-            slug: 'a2ui',
-            title: 'A2UI',
-            description: 'UI surfaces.',
-            content: 'Load A2UI resources when needed.',
-            source: .app,
-            kind: .native,
-          ),
-        ],
-      ),
-      loadConversationSkillUsecase: (_) => load,
-      buildLoadedSkillManifestsUsecase: _A2uiManifests(),
-      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
-      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
-      runSkillTemplateToolUsecase: _TemplateRunner(),
-      runAppSkillToolUsecase: _NativeRunner(),
-      listSkillCredentials:
-          ({
-            required conversationId,
-            required workspaceId,
-            required arguments,
-          }) async {
-            credentialCalls++;
+  const skill = AvailableSkill(
+    id: 'crm-skill',
+    slug: 'crm',
+    title: 'CRM',
+    description: 'Use Notion for CRM.',
+    content: 'Search before creating records.',
+    source: .user,
+    kind: .template,
+    connectorToolIds: ['connector/notion/search', 'connector/notion/create'],
+  );
+  final manifest = SkillManifest(
+    slug: 'crm',
+    title: 'CRM',
+    description: 'Use Notion for CRM.',
+    revision: 'r1',
+    connectorToolIds: ['connector/notion/create', 'connector/notion/search'],
+  );
 
-            return const {};
-          },
+  test('activation adds guidance and Connector references only', () async {
+    final loader = _SkillLoader();
+    var resourceSummaryReads = 0;
+    final usecase = _usecase(
+      skill: skill,
+      manifest: manifest,
+      loader: loader,
       listSkillResourceSummaries:
           ({
             required conversationId,
             required workspaceId,
             required skillSlug,
           }) async {
-            resourceSummaryCalls++;
+            resourceSummaryReads++;
 
             return const [
               SkillResourceSummary(
-                slug: 'a2ui-passive',
-                title: 'Passive',
-                description: 'Passive surfaces.',
-              ),
-              SkillResourceSummary(
-                slug: 'a2ui-core',
-                title: 'Core',
-                description: 'Core protocol.',
-              ),
-              SkillResourceSummary(
-                slug: 'a2ui-forms',
-                title: 'Forms',
-                description: 'Form surfaces.',
+                slug: 'crm-policy',
+                title: 'CRM policy',
+                description: 'Account rules.',
               ),
             ];
           },
     );
 
-    final result = await usecase.call((
-      conversationId: 'conversation-1',
-      toolCallId: 'call-1',
-      workspaceId: 'workspace-1',
-      commandName: activateSkillToolName,
-      arguments: const {'slug': 'a2ui', 'revision': 'a2ui-r1'},
-    ));
+    final result = await usecase.call(
+      _request(activateSkillToolName, const {'slug': 'crm', 'revision': 'r1'}),
+    );
 
     expect(result, isA<SkillActivationResult>());
-    final activation = result;
-    if (activation is! SkillActivationResult) {
-      fail('Expected a skill activation result');
-    }
-    expect(
-      activation.value.indexOf('a2ui-core'),
-      lessThan(activation.value.indexOf('a2ui-forms')),
-    );
-    expect(
-      activation.value.indexOf('a2ui-forms'),
-      lessThan(activation.value.indexOf('a2ui-passive')),
-    );
-    expect(load.calls, 1);
-    expect(credentialCalls, 0);
-    expect(resourceSummaryCalls, 1);
-  });
-
-  test('loads A2UI resource through the generic bounded result', () async {
-    var contentCalls = 0;
-    final usecase = RunSkillCommandUsecase(
-      listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
-      loadConversationSkillUsecase: (_) => _UnusedLoad(),
-      buildLoadedSkillManifestsUsecase: _A2uiManifests(),
-      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
-      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
-      runSkillTemplateToolUsecase: _TemplateRunner(),
-      runAppSkillToolUsecase: _NativeRunner(),
-      listSkillCredentials: ({
-        required conversationId,
-        required workspaceId,
-        required arguments,
-      }) async => const {},
-      loadSkillResourceContent:
-          ({
-            required conversationId,
-            required workspaceId,
-            required skillSlug,
-            required resourceSlug,
-          }) async {
-            contentCalls++;
-
-            return (title: 'A2UI core', content: 'before ]]> after');
-          },
-    );
-
-    final result = await usecase.call((
-      conversationId: 'conversation-1',
-      toolCallId: 'call-1',
-      workspaceId: 'workspace-1',
-      commandName: loadSkillResourceToolName,
-      arguments: const {'skill': 'a2ui', 'resource': 'a2ui-core'},
-    ));
-
-    expect(result, isA<SkillResourceResult>());
-    if (result is! SkillResourceResult) {
-      fail('Expected a skill resource result');
-    }
-    expect(result.value, contains('before ]]]]><![CDATA[> after'));
-    expect(contentCalls, 1);
-  });
-
-  test('requires parent activation before loading an A2UI resource', () async {
-    var contentCalls = 0;
-    final usecase = RunSkillCommandUsecase(
-      listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
-      loadConversationSkillUsecase: (_) => _UnusedLoad(),
-      buildLoadedSkillManifestsUsecase: _EmptyManifests(),
-      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
-      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
-      runSkillTemplateToolUsecase: _TemplateRunner(),
-      runAppSkillToolUsecase: _NativeRunner(),
-      listSkillCredentials: ({
-        required conversationId,
-        required workspaceId,
-        required arguments,
-      }) async => const {},
-      loadSkillResourceContent:
-          ({
-            required conversationId,
-            required workspaceId,
-            required skillSlug,
-            required resourceSlug,
-          }) async {
-            contentCalls++;
-
-            return (title: 'A2UI core', content: 'not authorized');
-          },
-    );
-
-    await expectLater(
-      usecase.call((
-        conversationId: 'conversation-1',
-        toolCallId: 'call-1',
-        workspaceId: 'workspace-1',
-        commandName: loadSkillResourceToolName,
-        arguments: const {'skill': 'a2ui', 'resource': 'a2ui-core'},
-      )),
-      throwsStateError,
-    );
-    expect(contentCalls, 0);
-  });
-
-  test('activates a catalog skill and returns its body envelope', () async {
-    final load = _LoadRecorder();
-    final credentialCalls = <Map<String, dynamic>>[];
-    final usecase = RunSkillCommandUsecase(
-      listAvailableSkillsUsecase: (_) => _LoadedSkills(
-        skills: const [
-          AvailableSkill(
-            id: 'research-skill-row',
-            slug: 'research',
-            title: 'Research',
-            description: 'Search sources.',
-            content: 'Use research instructions.',
-            source: .user,
-            kind: .template,
-          ),
-        ],
-      ),
-      loadConversationSkillUsecase: (_) => load,
-      buildLoadedSkillManifestsUsecase: _Manifests(credentialRequired: true),
-      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
-      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
-      runSkillTemplateToolUsecase: _TemplateRunner(),
-      runAppSkillToolUsecase: _NativeRunner(),
-      listSkillCredentials: ({
-        required conversationId,
-        required workspaceId,
-        required arguments,
-      }) async => const {},
-      listCatalogSkillCredentials:
-          ({
-            required conversationId,
-            required workspaceId,
-            required arguments,
-          }) async {
-            credentialCalls.add(arguments);
-
-            return const {
-              'credentials': [
-                {'id': 'credential-1', 'name': 'Personal account'},
-              ],
-            };
-          },
-      listSkillResourceSummaries:
-          ({
-            required conversationId,
-            required workspaceId,
-            required skillSlug,
-          }) async => const [
-            SkillResourceSummary(
-              slug: 'refund_policy',
-              title: 'Refund policy',
-              description: 'Refund rules.',
-            ),
-          ],
-    );
-
-    final result = await usecase.call((
-      conversationId: 'conversation-1',
-      toolCallId: 'call-1',
-      workspaceId: 'workspace-1',
-      commandName: activateSkillToolName,
-      arguments: const {'slug': 'research', 'revision': 'r1'},
-    ));
-
-    expect(result, isA<SkillActivationResult>());
-    if (result is! SkillActivationResult) {
-      fail('Expected a skill activation result.');
-    }
-    final activation = result;
-    expect(
-      activation.value,
-      allOf(
-        startsWith('<skill_content slug="research"'),
-        contains('Use research instructions.'),
-        contains('<skill_tools>'),
-        contains('<skill_credentials>'),
-        contains('credential-1,Personal account'),
-        contains('<skill_resources>'),
-        contains('refund_policy,Refund policy,Refund rules.'),
-      ),
-    );
-    expect(load.calls, 1);
-    expect(credentialCalls, [
-      {'slug': 'research'},
-    ]);
-  });
-
-  test('loads a resource as a bounded thread result', () async {
-    final usecase = RunSkillCommandUsecase(
-      listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
-      loadConversationSkillUsecase: (_) => _UnusedLoad(),
-      buildLoadedSkillManifestsUsecase: _Manifests(),
-      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
-      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
-      runSkillTemplateToolUsecase: _TemplateRunner(),
-      runAppSkillToolUsecase: _NativeRunner(),
-      listSkillCredentials: ({
-        required conversationId,
-        required workspaceId,
-        required arguments,
-      }) async => const {},
-      loadSkillResourceContent:
-          ({
-            required conversationId,
-            required workspaceId,
-            required skillSlug,
-            required resourceSlug,
-          }) async => (
-            title: 'Refund policy',
-            content: 'Never refund outside the policy.',
-          ),
-    );
-
-    final result = await usecase.call((
-      conversationId: 'conversation-1',
-      toolCallId: 'call-1',
-      workspaceId: 'workspace-1',
-      commandName: loadSkillResourceToolName,
-      arguments: const {'skill': 'research', 'resource': 'refund_policy'},
-    ));
-
-    expect(result, isA<SkillResourceResult>());
-    final resourceResult = result;
-    if (resourceResult is! SkillResourceResult) {
-      fail('Expected a skill resource result');
-    }
-
-    expect(resourceResult.value, contains('<skill_resource'));
-    expect(resourceResult.value, contains('CDATA'));
-    expect(resourceResult.value, contains('Never refund'));
-  });
-
-  test('does not persist selection when catalog credentials fail', () async {
-    final load = _LoadRecorder();
-    final usecase = RunSkillCommandUsecase(
-      listAvailableSkillsUsecase: (_) => _LoadedSkills(
-        skills: const [
-          AvailableSkill(
-            id: 'research-skill-row',
-            slug: 'research',
-            title: 'Research',
-            description: 'Search sources.',
-            content: 'Use research instructions.',
-            source: .user,
-            kind: .template,
-          ),
-        ],
-      ),
-      loadConversationSkillUsecase: (_) => load,
-      buildLoadedSkillManifestsUsecase: _Manifests(credentialRequired: true),
-      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
-      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
-      runSkillTemplateToolUsecase: _TemplateRunner(),
-      runAppSkillToolUsecase: _NativeRunner(),
-      listSkillCredentials: ({
-        required conversationId,
-        required workspaceId,
-        required arguments,
-      }) async => const {},
-      listCatalogSkillCredentials:
-          ({
-            required conversationId,
-            required workspaceId,
-            required arguments,
-          }) async {
-            throw StateError('credential lookup failed');
-          },
-    );
-
-    await expectLater(
-      usecase.call((
-        conversationId: 'conversation-1',
-        toolCallId: 'call-1',
-        workspaceId: 'workspace-1',
-        commandName: activateSkillToolName,
-        arguments: const {'slug': 'research', 'revision': 'r1'},
-      )),
-      throwsStateError,
-    );
-    expect(load.calls, 0);
+    if (result is! SkillActivationResult) fail('Expected activation result.');
+    expect(result.value, contains('Search before creating records.'));
+    expect(result.value, contains('connector/notion/search'));
+    expect(result.value, contains('connector/notion/create'));
+    expect(result.value, contains('crm-policy,CRM policy,Account rules.'));
+    expect(result.value, isNot(contains('<skill_tools>')));
+    expect(result.value, isNot(contains('<skill_credentials>')));
+    expect(loader.calls, 1);
+    expect(resourceSummaryReads, 1);
   });
 
   test(
-    'rejects a stale activation revision before persisting selection',
+    'stale Skill revision fails before changing conversation selection',
     () async {
-      final load = _LoadRecorder();
-      final usecase = RunSkillCommandUsecase(
-        listAvailableSkillsUsecase: (_) => _LoadedSkills(
-          skills: const [
-            AvailableSkill(
-              id: 'research-skill-row',
-              slug: 'research',
-              title: 'Research',
-              description: 'Search sources.',
-              content: 'Use research instructions.',
-              source: .user,
-              kind: .template,
-            ),
-          ],
-        ),
-        loadConversationSkillUsecase: (_) => load,
-        buildLoadedSkillManifestsUsecase: _Manifests(),
-        buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
-        buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
-        runSkillTemplateToolUsecase: _TemplateRunner(),
-        runAppSkillToolUsecase: _NativeRunner(),
-        listSkillCredentials: ({
-          required conversationId,
-          required workspaceId,
-          required arguments,
-        }) async => const {},
+      final loader = _SkillLoader();
+      final usecase = _usecase(
+        skill: skill,
+        manifest: manifest,
+        loader: loader,
       );
 
       await expectLater(
-        usecase.call((
-          conversationId: 'conversation-1',
-          toolCallId: 'call-1',
-          workspaceId: 'workspace-1',
-          commandName: activateSkillToolName,
-          arguments: const {'slug': 'research', 'revision': 'stale'},
-        )),
+        usecase.call(
+          _request(activateSkillToolName, const {
+            'slug': 'crm',
+            'revision': 'stale',
+          }),
+        ),
         throwsFormatException,
       );
-      expect(load.calls, 0);
+      expect(loader.calls, 0);
     },
   );
 
-  test('rejects invalid target arguments before either runner', () async {
-    final templateRunner = _TemplateRunner();
-    final nativeRunner = _NativeRunner();
-    final usecase = RunSkillCommandUsecase(
-      listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
-      loadConversationSkillUsecase: (_) => _UnusedLoad(),
-      buildLoadedSkillManifestsUsecase: _Manifests(),
-      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
-      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
-      runSkillTemplateToolUsecase: templateRunner,
-      runAppSkillToolUsecase: nativeRunner,
-      listSkillCredentials: ({
-        required conversationId,
-        required workspaceId,
-        required arguments,
-      }) async => const {},
+  test('resource load requires an activated Skill', () async {
+    var contentReads = 0;
+    final usecase = _usecase(
+      skill: skill,
+      manifest: manifest,
+      loadedManifests: const [],
+      loadSkillResourceContent:
+          ({
+            required conversationId,
+            required workspaceId,
+            required skillSlug,
+            required resourceSlug,
+          }) async {
+            contentReads++;
+
+            return (title: 'CRM policy', content: 'Account rules.');
+          },
     );
 
     await expectLater(
-      usecase.call((
-        conversationId: 'conversation-1',
-        toolCallId: 'call-1',
-        workspaceId: 'workspace-1',
-        commandName: callSkillToolName,
-        arguments: const {
-          'skill': 'research',
-          'tool': 'search',
-          'args': {'limit': 'wrong'},
-          'revision': 'r1',
-        },
-      )),
-      throwsFormatException,
+      usecase.call(
+        _request(loadSkillResourceToolName, const {
+          'skill': 'crm',
+          'resource': 'crm-policy',
+        }),
+      ),
+      throwsStateError,
     );
-    expect(templateRunner.calls, 0);
-    expect(nativeRunner.calls, 0);
+    expect(contentReads, 0);
   });
 
-  test(
-    'dispatches loaded github create_issue through call_skill_tool',
-    () async {
-      const issueSchema = <String, Object?>{
-        'type': 'object',
-        'properties': {
-          'title': {'type': 'string'},
-          'filters': {
-            'type': 'object',
-            'properties': {
-              'region': {'type': 'string'},
-            },
-            'required': <String>[],
-            'additionalProperties': false,
-          },
-        },
-        'required': ['title'],
-        'additionalProperties': false,
-      };
-      final loadedSkills = _LoadedSkills();
-      final templateSpecs = _SkillSpecs([
-        ToolSpec(
-          name: 'skill__user__github__create_issue',
-          description: 'Create a GitHub issue.',
-          inputJsonSchema: issueSchema,
-        ),
-      ]);
-      const nativeSpecs = _SkillSpecs([]);
-      final manifests = BuildLoadedSkillManifestsUsecase(
-        (_) => loadedSkills,
-        templateSpecs,
-        nativeSpecs,
-      );
-      final loadedManifest = (await manifests.call(
-        conversationId: 'conversation-1',
-        workspaceId: 'workspace-1',
-      )).single;
-      final templateRunner = _TemplateRunner(result: const {'issueNumber': 42});
-      final nativeRunner = _NativeRunner();
-      final usecase = RunSkillCommandUsecase(
-        listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
-        loadConversationSkillUsecase: (_) => _UnusedLoad(),
-        buildLoadedSkillManifestsUsecase: manifests,
-        buildSkillTemplateToolSpecsUsecase: templateSpecs,
-        buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
-        runSkillTemplateToolUsecase: templateRunner,
-        runAppSkillToolUsecase: nativeRunner,
-        listSkillCredentials: ({
-          required conversationId,
-          required workspaceId,
-          required arguments,
-        }) async => const {},
-      );
+  test('loaded Skill resource returns bounded content', () async {
+    final usecase = _usecase(
+      skill: skill,
+      manifest: manifest,
+      loadSkillResourceContent: ({
+        required conversationId,
+        required workspaceId,
+        required skillSlug,
+        required resourceSlug,
+      }) async => (title: 'CRM policy', content: 'Before ]]> after.'),
+    );
 
-      final result = await usecase.call((
-        conversationId: 'conversation-1',
-        toolCallId: 'call-1',
-        workspaceId: 'workspace-1',
-        commandName: callSkillToolName,
-        arguments: {
-          'skill': 'github',
-          'tool': 'create_issue',
-          'args': {
-            'title': 'Collision regression',
-            'filters': {'region': null},
-          },
-          'revision': loadedManifest.revision,
-        },
-      ));
+    final result = await usecase.call(
+      _request(loadSkillResourceToolName, const {
+        'skill': 'crm',
+        'resource': 'crm-policy',
+      }),
+    );
 
-      expect(result, {
-        'result': {'issueNumber': 42},
-      });
-      expect(loadedManifest.slug, 'github');
-      expect(loadedManifest.tools.single.name, 'create_issue');
-      expect(loadedSkills.calls, 2);
-      expect(loadedSkills.lastConversationId, 'conversation-1');
-      expect(loadedSkills.lastWorkspaceId, 'workspace-1');
-      expect(loadedSkills.filters, everyElement(SkillLoadFilter.loaded));
-      expect(templateRunner.calls, 1);
-      expect(templateRunner.lastWorkspaceId, 'workspace-1');
-      expect(templateRunner.lastSkillSlug, 'github');
-      expect(templateRunner.lastToolSlug, 'create_issue');
-      expect(templateRunner.lastArguments, {
-        'title': 'Collision regression',
-        'filters': <String, Object?>{},
-      });
-      expect(nativeRunner.calls, 0);
-    },
+    expect(result, isA<SkillResourceResult>());
+    if (result is! SkillResourceResult) fail('Expected resource result.');
+    expect(result.value, contains('CRM policy'));
+    expect(result.value, contains('Before ]]]]><![CDATA[> after.'));
+  });
+}
+
+RunSkillCommandRequest _request(
+  String commandName,
+  Map<String, dynamic> args,
+) => (
+  conversationId: 'conversation-1',
+  workspaceId: 'workspace-1',
+  commandName: commandName,
+  arguments: args,
+);
+
+RunSkillCommandUsecase _usecase({
+  required AvailableSkill skill,
+  required SkillManifest manifest,
+  _SkillLoader? loader,
+  List<SkillManifest>? loadedManifests,
+  ListSkillResourceSummaries? listSkillResourceSummaries,
+  LoadSkillResourceContent? loadSkillResourceContent,
+}) {
+  final skillLoader = loader ?? _SkillLoader();
+
+  return RunSkillCommandUsecase(
+    listAvailableSkillsUsecase: (_) => _SkillCatalog([skill]),
+    loadConversationSkillUsecase: (_) => skillLoader,
+    buildLoadedSkillManifestsUsecase: _SkillManifests(
+      loadedManifests ?? [manifest],
+    ),
+    listSkillResourceSummaries: listSkillResourceSummaries,
+    loadSkillResourceContent: loadSkillResourceContent,
   );
-
-  test('dispatches agents native tools through the injected runner', () async {
-    final nativeRunner = _NativeRunner();
-    final nativeTarget = <AgentResolvedToolName>[];
-    final nativeLanguageCode = <String?>[];
-    final nativeSpecs = _SkillSpecs([
-      ToolSpec(
-        name: 'skill__app_native__agents__list_agents',
-        description: 'List agents.',
-        inputJsonSchema: const {
-          'type': 'object',
-          'additionalProperties': false,
-        },
-      ),
-    ]);
-    final manifests = _AgentsManifests();
-    final usecase = RunSkillCommandUsecase(
-      listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
-      loadConversationSkillUsecase: (_) => _UnusedLoad(),
-      buildLoadedSkillManifestsUsecase: manifests,
-      buildSkillTemplateToolSpecsUsecase: const _SkillSpecs([]),
-      buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
-      runSkillTemplateToolUsecase: _TemplateRunner(),
-      runAppSkillToolUsecase: nativeRunner,
-      listSkillCredentials: ({
-        required conversationId,
-        required workspaceId,
-        required arguments,
-      }) async => const {},
-      runSkillNativeTool: (request) async {
-        nativeTarget.add(request.target);
-        nativeLanguageCode.add(request.languageCode);
-
-        return {'count': 1};
-      },
-    );
-
-    const command = (
-      conversationId: 'conversation-1',
-      toolCallId: 'call-1',
-      workspaceId: 'workspace-1',
-      commandName: callSkillToolName,
-      arguments: <String, Object?>{
-        'skill': agentsSkillSlug,
-        'tool': listAgentsToolName,
-        'args': {},
-        'revision': 'agents-r1',
-      },
-    );
-    final result = await usecase.call(command, languageCode: 'es-MX');
-
-    expect(result, {
-      'result': {'count': 1},
-    });
-    expect(
-      nativeTarget.single.fullName,
-      'skill__app_native__agents__list_agents',
-    );
-    expect(nativeLanguageCode, ['es-MX']);
-    expect(nativeRunner.calls, 0);
-    expect(manifests.calls, 1);
-  });
-
-  testWidgets('activates the agents skill using the conversation language', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      const TestableApp(child: SizedBox.shrink(), startLocale: .new('es')),
-    );
-    final _ = await tester.pumpAndSettle();
-    final _ = await tester.runAsync(() async {
-      for (var attempt = 0; attempt < 50; attempt++) {
-        if (LocaleKeys.agents_model_guidance_list_agents_description
-            .trExists()) {
-          return;
-        }
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-      }
-    });
-    expect(
-      LocaleKeys.agents_model_guidance_list_agents_description.trExists(),
-      isTrue,
-    );
-
-    final manifests = _AgentsManifests();
-    final usecase = RunSkillCommandUsecase(
-      listAvailableSkillsUsecase: (_) => _LoadedSkills(
-        skills: const [
-          AvailableSkill(
-            id: agentsSkillSlug,
-            slug: agentsSkillSlug,
-            title: agentsSkillTitle,
-            description: 'Run sub-agents.',
-            content: 'Use list_agents to choose a specialist.',
-            source: .app,
-            kind: .native,
-          ),
-        ],
-      ),
-      loadConversationSkillUsecase: (_) => _LoadRecorder(),
-      buildLoadedSkillManifestsUsecase: manifests,
-      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
-      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
-      runSkillTemplateToolUsecase: _TemplateRunner(),
-      runAppSkillToolUsecase: _NativeRunner(),
-      listSkillCredentials: ({
-        required conversationId,
-        required workspaceId,
-        required arguments,
-      }) async => const {},
-    );
-
-    const command = (
-      conversationId: 'conversation-1',
-      toolCallId: 'call-activate-agents',
-      workspaceId: 'workspace-1',
-      commandName: activateSkillToolName,
-      arguments: {'slug': agentsSkillSlug, 'revision': 'agents-es-r1'},
-    );
-    final result = await usecase.call(command, languageCode: 'es-MX');
-
-    expect(result, isA<SkillActivationResult>());
-    if (result is! SkillActivationResult) {
-      fail('Expected a skill activation result.');
-    }
-    expect(manifests.languageCodes, ['es-MX']);
-    expect(result.value, contains('Usa list_agents'));
-    expect(result.value, isNot(contains('Use list_agents')));
-  });
 }
 
-class _Manifests({final bool credentialRequired = false})
-    implements BuildLoadedSkillManifestsUsecase {
+class _SkillCatalog(final List<AvailableSkill> skills)
+    implements ListAvailableSkillsUsecase {
   @override
-  Future<List<SkillManifest>> call({
-    required String conversationId,
-    required String workspaceId,
-    List<AvailableSkill> extraSkills = const [],
-    String? languageCode,
-  }) async => [
-    SkillManifest(
-      slug: 'research',
-      title: 'Research',
-      description: 'Search.',
-      revision: 'r1',
-      tools: [
-        SkillManifestTool(
-          name: 'search',
-          description: 'Search.',
-          inputJsonSchema: const {
-            'type': 'object',
-            'properties': {
-              'limit': {'type': 'integer'},
-            },
-            'required': ['limit'],
-            'additionalProperties': false,
-          },
-          credentialRequired: credentialRequired,
-        ),
-      ],
-    ),
-  ];
-}
-
-class _A2uiManifests implements BuildLoadedSkillManifestsUsecase {
-  @override
-  Future<List<SkillManifest>> call({
-    required String conversationId,
-    required String workspaceId,
-    List<AvailableSkill> extraSkills = const [],
-    String? languageCode,
-  }) async => [
-    SkillManifest(
-      slug: 'a2ui',
-      title: 'A2UI',
-      description: 'UI surfaces.',
-      revision: 'a2ui-r1',
-      tools: [],
-    ),
-  ];
-}
-
-class _EmptyManifests implements BuildLoadedSkillManifestsUsecase {
-  @override
-  Future<List<SkillManifest>> call({
-    required String conversationId,
-    required String workspaceId,
-    List<AvailableSkill> extraSkills = const [],
-    String? languageCode,
-  }) async => const [];
-}
-
-class _AgentsManifests implements BuildLoadedSkillManifestsUsecase {
-  int calls = 0;
-  final languageCodes = <String?>[];
-
-  @override
-  Future<List<SkillManifest>> call({
-    required String conversationId,
-    required String workspaceId,
-    List<AvailableSkill> extraSkills = const [],
-    String? languageCode,
-  }) async {
-    calls++;
-    languageCodes.add(languageCode);
-
-    return [
-      SkillManifest(
-        slug: agentsSkillSlug,
-        title: agentsSkillTitle,
-        description: 'Run sub-agents.',
-        revision: languageCode?.startsWith('es') == true
-            ? 'agents-es-r1'
-            : 'agents-r1',
-        tools: [
-          SkillManifestTool(
-            name: listAgentsToolName,
-            description: 'List agents.',
-            inputJsonSchema: const {
-              'type': 'object',
-              'additionalProperties': false,
-            },
-          ),
-        ],
-      ),
-    ];
-  }
-}
-
-class _LoadedSkills({
-  final List<AvailableSkill> skills = const [
-    AvailableSkill(
-      id: 'github-skill-row',
-      slug: 'github',
-      title: 'GitHub',
-      description: 'Manage GitHub issues.',
-      content: 'Create issues when requested.',
-      source: .user,
-      kind: .template,
-    ),
-  ],
-}) implements ListAvailableSkillsUsecase {
-  int calls = 0;
-  String? lastConversationId;
-  String? lastWorkspaceId;
-  final filters = <SkillLoadFilter>[];
+  CloudSkillStore? get cloudStore => null;
 
   @override
   Future<List<AvailableSkill>> call({
     required String conversationId,
     required String workspaceId,
     required SkillLoadFilter filter,
-  }) async {
-    calls++;
-    lastConversationId = conversationId;
-    lastWorkspaceId = workspaceId;
-    filters.add(filter);
-
-    return skills;
-  }
-
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  }) async => skills;
 }
 
-class _LoadRecorder implements LoadConversationSkillUsecase {
+class _SkillLoader implements LoadConversationSkillUsecase {
   int calls = 0;
+
+  @override
+  CloudSkillStore? get cloudStore => null;
 
   @override
   Future<void> call({
@@ -821,107 +205,14 @@ class _LoadRecorder implements LoadConversationSkillUsecase {
   }) async {
     calls++;
   }
-
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
-class _TemplateRunner({final Map<String, int>? result})
-    implements RunSkillTemplateToolUsecase {
-  int calls = 0;
-  String? lastWorkspaceId;
-  String? lastSkillSlug;
-  String? lastToolSlug;
-  Map<String, dynamic>? lastArguments;
-
+class _SkillManifests(final List<SkillManifest> manifests)
+    implements BuildLoadedSkillManifestsUsecase {
   @override
-  Future<Object?> call({
-    required String workspaceId,
-    required String skillSlug,
-    required String toolSlug,
-    required Map<String, dynamic> arguments,
-  }) async {
-    calls++;
-    lastWorkspaceId = workspaceId;
-    lastSkillSlug = skillSlug;
-    lastToolSlug = toolSlug;
-    lastArguments = arguments;
-
-    return result;
-  }
-
-  @override
-  CancelableOperation<Object?> callCancelable({
-    required String workspaceId,
-    required String skillSlug,
-    required String toolSlug,
-    required Map<String, dynamic> arguments,
-  }) => CancelableOperation.fromFuture(
-    call(
-      workspaceId: workspaceId,
-      skillSlug: skillSlug,
-      toolSlug: toolSlug,
-      arguments: arguments,
-    ),
-  );
-}
-
-class _NativeRunner implements RunAppSkillToolUsecase {
-  int calls = 0;
-
-  @override
-  Future<Object?> call({
-    required String workspaceId,
-    required String skillSlug,
-    required String toolSlug,
-    required Map<String, dynamic> arguments,
-  }) async {
-    calls++;
-
-    return null;
-  }
-
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
-
-class _UnusedListSkills implements ListAvailableSkillsUsecase {
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
-
-class _UnusedLoad implements LoadConversationSkillUsecase {
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
-
-class const _SkillSpecs(final List<ToolSpec> specs)
-    implements
-        BuildSkillTemplateToolSpecsUsecase,
-        BuildAppSkillNativeToolSpecsUsecase {
-  @override
-  Future<WorkspaceSession> Function(String workspaceId)? get workspaceSession =>
-      null;
-
-  @override
-  Future<List<ToolSpec>> call({
+  Future<List<SkillManifest>> call({
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
-    String? languageCode,
-  }) async => specs;
-}
-
-class _UnusedTemplateSpecs implements BuildSkillTemplateToolSpecsUsecase {
-  @override
-  Future<WorkspaceSession> Function(String workspaceId)? get workspaceSession =>
-      null;
-
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
-
-class _UnusedNativeSpecs implements BuildAppSkillNativeToolSpecsUsecase {
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+  }) async => manifests;
 }

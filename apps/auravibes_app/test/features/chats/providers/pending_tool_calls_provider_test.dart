@@ -16,8 +16,8 @@ import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -64,40 +64,39 @@ class _PendingConversationRepository({
 }
 
 class const _FakeLoadConversationToolSpecsUsecase({
-  final bool includeSkillCommand = false,
+  final bool includeSkillControl = false,
 }) implements LoadConversationToolSpecsUsecase {
   @override
   ConversationRepository? get conversationRepository => null;
 
   @override
+  SyncConnectorToolPermissionsUsecase?
+  get syncConnectorToolPermissionsUsecase => null;
+
+  @override
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
-    String? languageCode,
   }) async => (await buildCatalog(
     conversationId: conversationId,
     workspaceId: workspaceId,
-    languageCode: languageCode,
   )).specs;
 
   @override
   Future<List<ToolSpec>> preview({
     required String conversationId,
     required String workspaceId,
-    String? languageCode,
   }) async => (await buildCatalog(
     conversationId: conversationId,
     workspaceId: workspaceId,
-    languageCode: languageCode,
   )).specs;
 
   @override
   Future<ToolCatalog<ResolvedTool>> buildCatalog({
     required String conversationId,
     required String workspaceId,
-    String? languageCode,
-  }) async => includeSkillCommand
-      ? _buildPendingToolCatalog(includeSkillCommand: true)
+  }) async => includeSkillControl
+      ? _buildPendingToolCatalog(includeSkillControl: true)
       : _pendingToolCatalog;
 }
 
@@ -111,16 +110,16 @@ final String _urlToolName =
     (throw StateError('Expected a URL tool spec.'));
 
 ToolCatalog<ResolvedTool> _buildPendingToolCatalog({
-  bool includeSkillCommand = false,
+  bool includeSkillControl = false,
 }) => buildToolCatalog<ResolvedTool>([
-  if (includeSkillCommand)
+  if (includeSkillControl)
     ToolCatalogCandidate.reserved(
       spec: .new(
-        name: callSkillToolName,
-        description: 'Call a loaded skill tool.',
+        name: activateSkillToolName,
+        description: 'Activate a Skill.',
         inputJsonSchema: const {'type': 'object'},
       ),
-      target: ResolvedTool.skillCommand(commandName: callSkillToolName),
+      target: ResolvedTool.skillControl(toolIdentifier: activateSkillToolName),
     ),
   ToolCatalogCandidate.external(
     spec: .new(
@@ -208,36 +207,6 @@ class _FakeResolveToolApprovalDecisionUsecase(
           permissionResult: .notConfigured,
         );
   }
-}
-
-class _FakeResolveEffectiveToolApprovalUsecase(
-  final AgentResolvedToolName target,
-) implements ResolveEffectiveToolApprovalUsecase {
-  ResolvedTool? lastRequestedTool;
-  String? lastArgumentsRaw;
-
-  @override
-  Future<ResolvedTool?> call({
-    required String conversationId,
-    required String workspaceId,
-    required ResolvedTool requestedTool,
-    required String argumentsRaw,
-  }) async {
-    lastRequestedTool = requestedTool;
-    lastArgumentsRaw = argumentsRaw;
-
-    return ResolvedTool.skillCommand(
-      commandName: callSkillToolName,
-      target: target,
-    );
-  }
-
-  @override
-  Future<AgentResolvedToolName?> resolveTarget({
-    required String conversationId,
-    required String workspaceId,
-    required SkillCommandTarget command,
-  }) async => target;
 }
 
 class _ThrowingToolApprovalUsecase()
@@ -646,17 +615,8 @@ void main() {
       );
     });
 
-    test('keeps stored nested approvals without resolving', () async {
-      const argumentsRaw =
-          '{"skill":"agents","tool":"list_agents","args":{},'
-          '"revision":"rev-1"}';
-      final effectiveUsecase = _FakeResolveEffectiveToolApprovalUsecase(
-        .skillNative(
-          tableId: listAgentsToolName,
-          skillSlug: agentsSkillSlug,
-          toolIdentifier: listAgentsToolName,
-        ),
-      );
+    test('keeps stored Skill control approvals without resolving', () async {
+      const argumentsRaw = '{"slug":"agents","revision":"rev-1"}';
       final decisionUsecase = _FakeResolveToolApprovalDecisionUsecase({
         'tc-list-agents': const ToolApprovalDecision(
           toolCallId: 'tc-list-agents',
@@ -671,7 +631,7 @@ void main() {
           toolCalls: [
             const MessageToolCallEntity(
               id: 'tc-list-agents',
-              name: callSkillToolName,
+              name: activateSkillToolName,
               argumentsRaw: argumentsRaw,
             ),
           ],
@@ -682,7 +642,7 @@ void main() {
         overrides: [
           loadConversationToolSpecsUsecaseProvider('ws-1').overrideWithValue(
             const _FakeLoadConversationToolSpecsUsecase(
-              includeSkillCommand: true,
+              includeSkillControl: true,
             ),
           ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
@@ -709,9 +669,6 @@ void main() {
               ),
             ),
           ),
-          resolveEffectiveToolApprovalUsecaseProvider.overrideWithValue(
-            effectiveUsecase,
-          ),
           resolveToolApprovalDecisionUsecaseProvider('ws-1')
               .overrideWithValue(decisionUsecase),
         ],
@@ -722,9 +679,7 @@ void main() {
       );
 
       expect(result, hasLength(1));
-      expect(result.single.toolCall.name, callSkillToolName);
-      expect(effectiveUsecase.lastRequestedTool, isNull);
-      expect(effectiveUsecase.lastArgumentsRaw, isNull);
+      expect(result.single.toolCall.name, activateSkillToolName);
       expect(decisionUsecase.lastResolvedTool, isNull);
     });
 

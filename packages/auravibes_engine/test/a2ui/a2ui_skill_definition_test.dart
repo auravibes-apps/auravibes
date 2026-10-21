@@ -7,7 +7,7 @@ void main() {
     expect(a2uiSkillDefinition.slug, 'a2ui');
     expect(a2uiSkillDefinition.contentOnly, isTrue);
     expect(a2uiSkillDefinition.tools, isEmpty);
-    expect(a2uiSkillDefinition.requiresCredential, isFalse);
+    expect(a2uiSkillDefinition.connectorToolIds, isEmpty);
     expect(a2uiSkillDefinition.resources.map((resource) => resource.slug), [
       'a2ui-core',
       'a2ui-forms',

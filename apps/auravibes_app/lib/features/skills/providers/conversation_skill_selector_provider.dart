@@ -256,10 +256,10 @@ ConversationSkillContextFailure? _contextFailure(
   ConversationSkillContextSnapshot? snapshot,
   String? currentRevision,
 ) {
-  if (skill.credentialReadiness == .missing) {
-    return .missingCredentials;
+  if (skill.connectorReadiness == .missing) {
+    return .missingConnection;
   }
-  if (skill.credentialReadiness == .unknown) {
+  if (skill.connectorReadiness == .unknown) {
     return .preparationFailed;
   }
   if (currentRevision == null) return .unavailableMetadata;

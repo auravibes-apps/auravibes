@@ -11,7 +11,6 @@ import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/cloud_tool_decision_item.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
@@ -43,7 +42,6 @@ class const BatchToolApprovalUsecase({
   required final AgentCancellationRuntime cancellationRuntime,
   required final ToolResolverService toolResolver,
   required final ToolSpecsResolver loadToolSpecs,
-  required final ResolveEffectiveToolApprovalUsecase? effectiveToolApproval,
   required final CloudTurnResolver resolveCloudTurn,
   required final void Function() onToolCallChanged,
 }) implements BatchToolApprovalActions {
@@ -178,52 +176,22 @@ extension on BatchToolApprovalUsecase {
         .buildCatalog(conversationId: entry.key, workspaceId: workspaceId);
 
     return await Future.wait(
-      entry.value.map(
-        (claim) =>
-            _resolveClaim(claim, catalog: catalog, workspaceId: workspaceId),
-      ),
+      entry.value.map((claim) => _resolveClaim(claim, catalog: catalog)),
     );
   }
 
   Future<_ResolvedBatchClaim> _resolveClaim(
     ToolCallApprovalBatchClaim claim, {
     required agent.ToolCatalog<ResolvedTool> catalog,
-    required String workspaceId,
   }) async {
     final toolCall = claim.toolCall;
     if (toolCall == null) {
       throw StateError('Claimed tool call is missing its metadata.');
     }
     final resolved = toolResolver.resolveTool(toolCall.name, catalog);
-    if (resolved == null) return _missingResolvedTool(claim, toolCall.name);
+    if (resolved == null) return _missingResolvedTool(claim);
 
-    return await _resolvedClaimWithApproval(
-      claim,
-      resolved,
-      argumentsRaw: toolCall.argumentsRaw,
-      workspaceId: workspaceId,
-    );
-  }
-
-  Future<_ResolvedBatchClaim> _resolvedClaimWithApproval(
-    ToolCallApprovalBatchClaim claim,
-    ResolvedTool resolved, {
-    required String argumentsRaw,
-    required String workspaceId,
-  }) async {
-    final effective = effectiveToolApproval;
-    final tool = effective == null
-        ? resolved
-        : await effective.call(
-            conversationId: claim.item.conversationId,
-            workspaceId: workspaceId,
-            requestedTool: resolved,
-            argumentsRaw: argumentsRaw,
-          );
-
-    return tool == null
-        ? _ResolvedBatchClaim(claim: claim, resultStatus: .notConfigured)
-        : _ResolvedBatchClaim(claim: claim, tool: tool);
+    return _ResolvedBatchClaim(claim: claim, tool: resolved);
   }
 
   Future<void> _resumeSources(
@@ -430,15 +398,8 @@ agent.AgentToolBatchCall<ResolvedTool> _executionCallForResolvedClaim(
   );
 }
 
-_ResolvedBatchClaim _missingResolvedTool(
-  ToolCallApprovalBatchClaim claim,
-  String toolName,
-) => .new(
-  claim: claim,
-  resultStatus: toolName == agent.callSkillToolName
-      ? .notConfigured
-      : .toolNotFound,
-);
+_ResolvedBatchClaim _missingResolvedTool(ToolCallApprovalBatchClaim claim) =>
+    .new(claim: claim, resultStatus: .toolNotFound);
 
 List<ToolCallExecutionBatchUpdate> _executionUpdates(
   Iterable<agent.AgentToolBatchResult<ResolvedTool>> results,

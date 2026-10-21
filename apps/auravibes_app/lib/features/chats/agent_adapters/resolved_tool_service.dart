@@ -4,40 +4,25 @@ import 'dart:async';
 
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
-import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
 import 'package:auravibes_app/features/chats/notifiers/mcp_elicitation_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
-import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/service_connections/usecases/connector_command_usecase.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credentials_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/resolved_skill_resource.dart';
-import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
@@ -50,22 +35,14 @@ import 'package:riverpod/riverpod.dart';
 
 const _conversationRepositoryNotConfigured =
     'ConversationRepository is not configured.';
-const _runAppSkillToolUsecaseNotConfigured =
-    'RunAppSkillToolUsecase is not configured.';
 const Set<String> _userSkillToolSlugs = {
   SkillToolSlugs.createUserSkill,
   SkillToolSlugs.updateUserSkill,
   SkillToolSlugs.deleteUserSkill,
-};
-const Set<String> _credentialDefinitionToolSlugs = {
-  SkillToolSlugs.createSkillCredentialDefinition,
-  SkillToolSlugs.updateSkillCredentialDefinition,
-  SkillToolSlugs.deleteSkillCredentialDefinition,
-};
-const Set<String> _templateToolSlugs = {
-  SkillToolSlugs.createSkillTemplateTool,
-  SkillToolSlugs.updateSkillTemplateTool,
-  SkillToolSlugs.deleteSkillTemplateTool,
+  SkillToolSlugs.createSkillResource,
+  SkillToolSlugs.updateSkillResource,
+  SkillToolSlugs.deleteSkillResource,
+  SkillToolSlugs.cloneAppSkill,
 };
 
 typedef SkillsManagerToolSuccessHandler = void Function({
@@ -82,11 +59,15 @@ typedef BrowserSkillToolRunner = Future<Object?> Function({
   required Map<String, dynamic> arguments,
 });
 
-typedef _ResolvedToolCallRequest = ({
-  String conversationId,
-  String toolCallId,
-  ResolvedTool tool,
-  Map<String, dynamic> arguments,
+typedef _SkillCommandDependencies = ({
+  ListAvailableSkillsUsecase Function(String workspaceId) listSkills,
+  LoadConversationSkillUsecase Function(String workspaceId) loadSkill,
+  BuildLoadedSkillManifestsUsecase buildManifests,
+});
+
+typedef _SkillCommandResources = ({
+  ListSkillResourceSummaries? list,
+  LoadSkillResourceContent? load,
 });
 
 class ResolvedToolService {
@@ -102,24 +83,17 @@ class ResolvedToolService {
     ConversationRepository? conversationRepository,
     LoadConversationSkillUsecase Function(String workspaceId)?
     loadConversationSkillUsecase,
-    RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase,
-    RunAppSkillToolUsecase? runAppSkillToolUsecase,
     BuildLoadedSkillManifestsUsecase? buildLoadedSkillManifestsUsecase,
-    BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase,
     BuildAppSkillNativeToolSpecsUsecase? buildAppSkillNativeToolSpecsUsecase,
     RunSkillsManagerToolUsecase Function(String workspaceId)?
     runSkillsManagerToolUsecase,
     ListAvailableSkillsUsecase Function(String workspaceId)?
     listAvailableSkillsUsecase,
     SkillResourceResolver Function(String workspaceId)? skillResourceResolver,
-    ListAppSkillCredentialCandidatesUsecase?
-    listAppSkillCredentialCandidatesUsecase,
-    AppSkillRegistry? appSkillRegistry,
-    SkillCredentialsRepository? skillCredentialsRepository,
     agent.SubAgentRunner? subAgentRunner,
     SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
     BrowserSkillToolRunner? browserSkillToolRunner,
-    ConversationAgentLanguageRuntime? conversationLanguageRuntime,
+    ConnectorCommandUsecase? connectorCommandUsecase,
   }) : _delegate = agent.ResolvedToolRunner<ResolvedTool>(
          provider: AppResolvedToolProvider(
            agentCancellationRuntime: agentCancellationRuntime,
@@ -127,24 +101,16 @@ class ResolvedToolService {
            mcpElicitationRequester: mcpElicitationRequester,
            conversationRepository: conversationRepository,
            loadConversationSkillUsecase: loadConversationSkillUsecase,
-           runSkillTemplateToolUsecase: runSkillTemplateToolUsecase,
-           runAppSkillToolUsecase: runAppSkillToolUsecase,
            buildLoadedSkillManifestsUsecase: buildLoadedSkillManifestsUsecase,
-           buildSkillTemplateToolSpecsUsecase:
-               buildSkillTemplateToolSpecsUsecase,
            buildAppSkillNativeToolSpecsUsecase:
                buildAppSkillNativeToolSpecsUsecase,
            runSkillsManagerToolUsecase: runSkillsManagerToolUsecase,
            listAvailableSkillsUsecase: listAvailableSkillsUsecase,
            skillResourceResolver: skillResourceResolver,
-           listAppSkillCredentialCandidatesUsecase:
-               listAppSkillCredentialCandidatesUsecase,
-           appSkillRegistry: appSkillRegistry,
-           skillCredentialsRepository: skillCredentialsRepository,
            subAgentRunner: subAgentRunner,
            onSkillsManagerToolSuccess: onSkillsManagerToolSuccess,
            browserSkillToolRunner: browserSkillToolRunner,
-           conversationLanguageRuntime: conversationLanguageRuntime,
+           connectorCommandUsecase: connectorCommandUsecase,
          ),
        );
   new _cloud() : _delegate = null;
@@ -164,23 +130,28 @@ class ResolvedToolService {
   bool supportsCancellation(ResolvedTool tool) =>
       _delegate?.supportsCancellation(tool) ?? false;
 
-  Future<Object?> call(_ResolvedToolCallRequest request) async {
+  Future<Object?> call({
+    required String conversationId,
+    required ResolvedTool tool,
+    required Map<String, dynamic> arguments,
+    String toolCallId = '',
+  }) async {
     final delegate = _delegate;
     if (delegate == null) {
       throw StateError('Cloud tools execute on the server.');
     }
 
     final result = await delegate.call(
-      conversationId: request.conversationId,
-      toolCallId: request.toolCallId,
-      tool: request.tool,
-      arguments: _executionArguments(request.tool, request.arguments),
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      tool: tool,
+      arguments: arguments,
     );
 
     return _modelToolResult(
       result,
-      request.conversationId,
-      request.toolCallId,
+      conversationId,
+      toolCallId,
       _mcpAppResultData,
     );
   }
@@ -205,18 +176,6 @@ Object? _modelToolResult(
   return result;
 }
 
-Map<String, dynamic> _executionArguments(
-  ResolvedTool tool,
-  Map<String, dynamic> arguments,
-) {
-  if (!tool.isSkillCommand || tool.target == null) return arguments;
-
-  final nestedArguments = arguments['args'];
-  if (nestedArguments is! Map) return arguments;
-
-  return Map<String, dynamic>.from(nestedArguments);
-}
-
 class const AppResolvedToolProvider({
   required final AgentCancellationRuntime agentCancellationRuntime,
   required final McpToolCaller mcpToolCaller,
@@ -224,10 +183,7 @@ class const AppResolvedToolProvider({
   final ConversationRepository? conversationRepository,
   final LoadConversationSkillUsecase Function(String workspaceId)?
   loadConversationSkillUsecase,
-  final RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase,
-  final RunAppSkillToolUsecase? runAppSkillToolUsecase,
   final BuildLoadedSkillManifestsUsecase? buildLoadedSkillManifestsUsecase,
-  final BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase,
   final BuildAppSkillNativeToolSpecsUsecase?
   buildAppSkillNativeToolSpecsUsecase,
   final RunSkillsManagerToolUsecase Function(String workspaceId)?
@@ -236,14 +192,10 @@ class const AppResolvedToolProvider({
   listAvailableSkillsUsecase,
   final SkillResourceResolver Function(String workspaceId)?
   skillResourceResolver,
-  final ListAppSkillCredentialCandidatesUsecase?
-  listAppSkillCredentialCandidatesUsecase,
-  final AppSkillRegistry? appSkillRegistry,
-  final SkillCredentialsRepository? skillCredentialsRepository,
   final agent.SubAgentRunner? subAgentRunner,
   final SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
   final BrowserSkillToolRunner? browserSkillToolRunner,
-  final ConversationAgentLanguageRuntime? conversationLanguageRuntime,
+  final ConnectorCommandUsecase? connectorCommandUsecase,
 }) implements agent.ResolvedToolProvider<ResolvedTool> {
   @override
   agent.AgentResolvedToolExecution<ResolvedTool> toExecution(
@@ -297,6 +249,22 @@ class const AppResolvedToolProvider({
       _runMcpToolCall(this, request);
 
   @override
+  Future<Object?> runConnectorCommandTool(
+    agent.ConnectorCommandToolRequest request,
+  ) {
+    final usecase = connectorCommandUsecase;
+    if (usecase == null) {
+      throw StateError('Connector commands are not configured.');
+    }
+
+    return usecase.call(
+      workspaceId: request.workspaceId,
+      commandName: request.toolIdentifier,
+      arguments: request.arguments,
+    );
+  }
+
+  @override
   Future<String> getConversationWorkspaceId(String conversationId) {
     return _workspaceIdFor(
       conversationRepository: conversationRepository,
@@ -306,17 +274,7 @@ class const AppResolvedToolProvider({
 
   @override
   Future<Object?> runSkillControlTool(agent.SkillControlToolRequest input) =>
-      _runSkillControlRequest(
-        this,
-        input,
-        languageCode: conversationLanguageRuntime?.languageCodeFor(
-          input.conversationId,
-        ),
-      );
-
-  @override
-  Future<Object?> runSkillTemplateTool(agent.SkillTemplateToolRequest input) =>
-      _runSkillTemplateTool(this, input);
+      _runSkillControlRequest(this, input);
 
   @override
   Future<Object?> runSkillNativeTool(agent.SkillNativeToolRequest input) {
@@ -327,69 +285,68 @@ class const AppResolvedToolProvider({
         workspaceId: input.workspaceId,
         skillSlug: input.skillSlug,
         toolSlug: input.toolSlug,
-        languageCode: conversationLanguageRuntime?.languageCodeFor(
-          input.conversationId,
-        ),
-        arguments: _unwrapSkillCommandArguments(
-          skillSlug: input.skillSlug,
-          toolSlug: input.toolSlug,
-          arguments: input.arguments,
-        ),
+        arguments: input.arguments,
         provider: this,
       ),
     );
   }
-
-  @override
-  Future<Object?> runSkillAppTemplateTool(
-    agent.SkillAppTemplateToolRequest input,
-  ) {
-    final usecase = runAppSkillToolUsecase;
-    if (usecase == null) {
-      throw StateError(_runAppSkillToolUsecaseNotConfigured);
-    }
-
-    return _runCurrentAppSkillTool(
-      _appSkillTemplateToolRequest(this, input),
-      usecase,
-      _appSkillTemplateToolName(input),
-    );
-  }
-}
-
-Map<String, dynamic> _unwrapSkillCommandArguments({
-  required String skillSlug,
-  required String toolSlug,
-  required Map<String, dynamic> arguments,
-}) {
-  if (arguments['skill'] != skillSlug || arguments['tool'] != toolSlug) {
-    return arguments;
-  }
-
-  final nestedArguments = arguments['args'];
-  if (nestedArguments is! Map) return arguments;
-
-  return Map<String, dynamic>.from(nestedArguments);
 }
 
 Future<Object?> _runSkillControlRequest(
   AppResolvedToolProvider provider,
-  _SkillControlToolRequest request, {
-  String? languageCode,
-}) {
-  if (_hasCombinedSkillCommandDependencies(provider)) {
-    return _runConfiguredSkillCommand(
-      provider,
-      request,
-      languageCode: languageCode,
-    );
+  _SkillControlToolRequest request,
+) {
+  final usecase = _skillCommandUsecase(
+    _skillCommandDependencies(provider),
+    _skillCommandResources(provider),
+  );
+
+  return usecase.call((
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    commandName: request.toolIdentifier,
+    arguments: request.arguments,
+  ));
+}
+
+_SkillCommandDependencies _skillCommandDependencies(
+  AppResolvedToolProvider provider,
+) {
+  final listSkills = provider.listAvailableSkillsUsecase;
+  final loadSkill = provider.loadConversationSkillUsecase;
+  final buildManifests = provider.buildLoadedSkillManifestsUsecase;
+  if (listSkills == null || loadSkill == null || buildManifests == null) {
+    throw StateError('Skill commands are not configured.');
   }
 
-  return _runSkillControlTool(
-    request: request,
-    dependencies: _skillControlToolDependencies(provider),
+  return (
+    listSkills: listSkills,
+    loadSkill: loadSkill,
+    buildManifests: buildManifests,
   );
 }
+
+_SkillCommandResources _skillCommandResources(
+  AppResolvedToolProvider provider,
+) {
+  final resolver = provider.skillResourceResolver;
+
+  return (
+    list: _listSkillResourceSummaries(resolver),
+    load: _loadSkillResourceContent(resolver),
+  );
+}
+
+RunSkillCommandUsecase _skillCommandUsecase(
+  _SkillCommandDependencies dependencies,
+  _SkillCommandResources resources,
+) => RunSkillCommandUsecase(
+  listAvailableSkillsUsecase: dependencies.listSkills,
+  loadConversationSkillUsecase: dependencies.loadSkill,
+  buildLoadedSkillManifestsUsecase: dependencies.buildManifests,
+  listSkillResourceSummaries: resources.list,
+  loadSkillResourceContent: resources.load,
+);
 
 agent.AgentResolvedToolExecution<ResolvedTool> _toExecution(ResolvedTool tool) {
   return agent.AgentResolvedToolExecution(
@@ -400,13 +357,12 @@ agent.AgentResolvedToolExecution<ResolvedTool> _toExecution(ResolvedTool tool) {
 }
 
 bool _supportsCancellation(ResolvedTool tool) => switch (tool.type) {
-  .builtIn || .mcp || .skillControl => false,
-  .native || .skillTemplate || .skillAppTemplate => true,
+  .builtIn || .mcp || .skillControl || .connectorCommand => false,
+  .native => true,
   .skillNative => _supportsSkillNativeCancellation(
     tool.skillSlug,
     tool.toolIdentifier,
   ),
-  .skillCommand => _supportsSkillCommandCancellation(tool.target),
 };
 
 bool _supportsSkillNativeCancellation(String? skillSlug, String toolSlug) {
@@ -415,62 +371,6 @@ bool _supportsSkillNativeCancellation(String? skillSlug, String toolSlug) {
   }
 
   return skillSlug != SkillToolSlugs.skillsManager;
-}
-
-bool _supportsSkillCommandCancellation(agent.AgentResolvedToolName? target) {
-  if (target == null) return false;
-
-  return switch (target.kind) {
-    .native || .skillTemplate || .skillAppTemplate => true,
-    .skillNative => _supportsSkillNativeCancellation(
-      target.skillSlug,
-      target.toolIdentifier,
-    ),
-    _ => false,
-  };
-}
-
-Future<Object?> _runSkillTemplateTool(
-  AppResolvedToolProvider provider,
-  agent.SkillTemplateToolRequest input,
-) => _registerAndAwaitCancelableOperation(
-  _skillTemplateOperationRequest(provider, input),
-);
-
-_CancelableOperationRequest _skillTemplateOperationRequest(
-  AppResolvedToolProvider provider,
-  agent.SkillTemplateToolRequest input,
-) => (
-  runtime: provider.agentCancellationRuntime,
-  conversationId: input.conversationId,
-  toolCallId: input.toolCallId,
-  operation: _startSkillTemplateOperation(provider, input),
-  isCancellationSupported: true,
-);
-
-CancelableOperation<Object?> _startSkillTemplateOperation(
-  AppResolvedToolProvider provider,
-  agent.SkillTemplateToolRequest input,
-) => _requiredSkillTemplateUsecase(provider).callCancelable(
-  workspaceId: input.workspaceId,
-  skillSlug: input.skillSlug,
-  toolSlug: input.toolSlug,
-  arguments: _unwrapSkillCommandArguments(
-    skillSlug: input.skillSlug,
-    toolSlug: input.toolSlug,
-    arguments: input.arguments,
-  ),
-);
-
-RunSkillTemplateToolUsecase _requiredSkillTemplateUsecase(
-  AppResolvedToolProvider provider,
-) {
-  final usecase = provider.runSkillTemplateToolUsecase;
-  if (usecase == null) {
-    throw StateError('RunSkillTemplateToolUsecase is not configured.');
-  }
-
-  return usecase;
 }
 
 Future<Object?> _runMcpToolCall(
@@ -514,11 +414,11 @@ agent.AgentResolvedToolName _toAgentDescriptor(ResolvedTool tool) {
     .builtIn => _builtInDescriptor(tool),
     .mcp => _mcpDescriptor(tool),
     .native => _nativeDescriptor(tool),
+    .connectorCommand => agent.AgentResolvedToolName.connectorCommand(
+      toolIdentifier: tool.toolIdentifier,
+    ),
     .skillControl => _skillControlDescriptor(tool),
-    .skillCommand => _skillCommandDescriptor(tool),
     .skillNative => _skillNativeDescriptor(tool),
-    .skillTemplate => _skillTemplateDescriptor(tool),
-    .skillAppTemplate => _skillAppTemplateDescriptor(tool),
   };
 }
 
@@ -551,31 +451,11 @@ agent.AgentResolvedToolName _skillControlDescriptor(ResolvedTool tool) {
   );
 }
 
-agent.AgentResolvedToolName _skillCommandDescriptor(ResolvedTool tool) {
-  return tool.target ?? _skillControlDescriptor(tool);
-}
-
 agent.AgentResolvedToolName _skillNativeDescriptor(ResolvedTool tool) {
   return agent.AgentResolvedToolName.skillNative(
     tableId: tool.tableId,
     skillSlug: tool.skillSlug ?? '',
     toolIdentifier: tool.skillToolSlug ?? tool.toolIdentifier,
-  );
-}
-
-agent.AgentResolvedToolName _skillTemplateDescriptor(ResolvedTool tool) {
-  return agent.AgentResolvedToolName.skillTemplate(
-    tableId: tool.tableId,
-    skillSlug: tool.skillSlug ?? '',
-    toolIdentifier: tool.toolIdentifier,
-  );
-}
-
-agent.AgentResolvedToolName _skillAppTemplateDescriptor(ResolvedTool tool) {
-  return agent.AgentResolvedToolName.skillAppTemplate(
-    tableId: tool.tableId,
-    skillSlug: tool.skillSlug ?? '',
-    toolIdentifier: tool.toolIdentifier,
   );
 }
 
@@ -697,31 +577,6 @@ Future<String> _workspaceIdFor({
   return conversation.workspaceId;
 }
 
-Future<Object?> _runSkillControlTool({
-  required _SkillControlToolRequest request,
-  required _SkillControlToolDependencies dependencies,
-}) {
-  if (request.toolIdentifier == SkillToolNames.listCredentials) {
-    return _listSkillCredentials(
-      request: request,
-      dependencies: dependencies,
-      filter: .loaded,
-    );
-  }
-  throw StateError(
-    'Skill activation requires the configured skill command runner.',
-  );
-}
-
-class const _SkillControlToolDependencies({
-  required final ListAvailableSkillsUsecase Function(String workspaceId)?
-  listAvailableSkillsUsecase,
-  required final ListAppSkillCredentialCandidatesUsecase?
-  listAppSkillCredentialCandidatesUsecase,
-  required final AppSkillRegistry? appSkillRegistry,
-  required final SkillCredentialsRepository? skillCredentialsRepository,
-});
-
 typedef _SkillControlToolRequest = agent.SkillControlToolRequest;
 
 class const _CancelableInputToolRequest({
@@ -756,20 +611,6 @@ class const _SkillNativeToolRequest({
   required final String toolSlug,
   required final Map<String, dynamic> arguments,
   required final AppResolvedToolProvider provider,
-  final String? languageCode,
-});
-
-class const _SkillCredentialRequest({
-  required final _SkillControlToolRequest request,
-  required final _SkillControlToolDependencies dependencies,
-  required final String skillSlug,
-});
-
-class const _UserSkillCredentialRequest({
-  required final _SkillCredentialRequest credentialRequest,
-  required final AvailableSkill skill,
-  required final String credentialDefinitionId,
-  required final SkillCredentialsRepository credentialsRepository,
 });
 
 Future<Object?> _runSubAgentTool({required _SkillNativeToolRequest request}) {
@@ -784,20 +625,15 @@ Future<Object?> _runSubAgentTool({required _SkillNativeToolRequest request}) {
 Future<Object?> _runSubAgentToolWithRunner(
   _SkillNativeToolRequest request,
   agent.SubAgentRunner runner,
-) async {
+) {
   if (request.toolSlug == agent.listAgentsToolName) {
-    final result = await runner.listAgents(
-      request.workspaceId,
-      arguments: request.arguments,
-    );
-
-    return AgentGuidance.localizeListAgentsResult(result, request.languageCode);
+    return runner.listAgents(request.workspaceId, arguments: request.arguments);
   }
   if (request.toolSlug != agent.runSubAgentToolName) {
     throw StateError('Unknown sub-agent tool: ${request.toolSlug}');
   }
 
-  return await _runCancellableSubAgent(request, runner);
+  return _runCancellableSubAgent(request, runner);
 }
 
 Future<Object?> _runCancellableSubAgent(
@@ -823,22 +659,9 @@ Future<Object?> _startSubAgentOperation(
   parentConversationId: request.conversationId,
   workspaceId: request.workspaceId,
   arguments: request.arguments,
-  onChildStarted: ({required childId, required parentId}) {
-    _recordSubAgentChildStarted(request, childStartedId, childId);
-  },
+  onChildStarted: ({required childId, required parentId}) =>
+      _recordStartedSubAgent(childStartedId, childId),
 );
-
-void _recordSubAgentChildStarted(
-  _SkillNativeToolRequest request,
-  Completer<String> childStartedId,
-  String childId,
-) {
-  request.provider.conversationLanguageRuntime?.remember(
-    childId,
-    request.languageCode,
-  );
-  _recordStartedSubAgent(childStartedId, childId);
-}
 
 void _recordStartedSubAgent(Completer<String> childStartedId, String childId) {
   if (!childStartedId.isCompleted) childStartedId.complete(childId);
@@ -979,234 +802,53 @@ Future<T?> _futureValueOrNull<T>(Future<T> future) async {
   }
 }
 
-Future<Object> _listSkillCredentials({
-  required _SkillControlToolRequest request,
-  required _SkillControlToolDependencies dependencies,
-  required SkillLoadFilter filter,
-}) async {
-  final credentialRequest = _SkillCredentialRequest(
-    request: request,
-    dependencies: dependencies,
-    skillSlug: _requiredSkillSlug(request.arguments),
-  );
-  final skill = await _loadedSkillForCredential(credentialRequest, filter);
+Future<Object?> _runSkillNativeTool(_SkillNativeToolRequest request) async {
+  final toolName = await _validateSkillNativeTool(request);
 
-  return await _credentialsForLoadedSkill(credentialRequest, skill);
+  return await _dispatchSkillNativeTool(request, toolName);
 }
 
-Future<Object> _credentialsForLoadedSkill(
-  _SkillCredentialRequest credentialRequest,
-  AvailableSkill? skill,
-) {
-  final loadedSkill = _requiredLoadedSkill(credentialRequest, skill);
-  if (loadedSkill.source == SkillSource.app) {
-    return _listAppSkillCredentials(credentialRequest);
+Future<String> _validateSkillNativeTool(_SkillNativeToolRequest request) async {
+  final buildSpecs = request.provider.buildAppSkillNativeToolSpecsUsecase;
+  if (buildSpecs == null) {
+    throw StateError('App skill tool specifications are not configured.');
   }
+  final toolName = _skillNativeToolName(request);
+  await _requireSkillNativeTool(buildSpecs, request, toolName);
 
-  return _listUserSkillCredentials(credentialRequest, loadedSkill);
+  return toolName;
 }
 
-AvailableSkill _requiredLoadedSkill(
-  _SkillCredentialRequest credentialRequest,
-  AvailableSkill? skill,
-) {
-  if (skill != null) return skill;
+String _skillNativeToolName(_SkillNativeToolRequest request) =>
+    agent.AgentResolvedToolName.skillNative(
+      tableId: request.toolSlug,
+      skillSlug: request.skillSlug,
+      toolIdentifier: request.toolSlug,
+    ).fullName;
 
-  throw StateError(
-    'Loaded skill with credentials not found: ${credentialRequest.skillSlug}',
-  );
-}
-
-Future<Object> _listUserSkillCredentials(
-  _SkillCredentialRequest credentialRequest,
-  AvailableSkill skill,
-) {
-  return _loadUserSkillCredentials(
-    .new(
-      credentialRequest: credentialRequest,
-      skill: skill,
-      credentialDefinitionId: _requiredCredentialDefinitionId(
-        skill,
-        credentialRequest.skillSlug,
-      ),
-      credentialsRepository: _requiredCredentialsRepository(
-        credentialRequest.dependencies,
-      ),
-    ),
-  );
-}
-
-String _requiredCredentialDefinitionId(AvailableSkill skill, String skillSlug) {
-  final credentialDefinitionId = skill.credentialDefinitionId;
-  if (credentialDefinitionId == null) {
-    throw StateError('Loaded skill with credentials not found: $skillSlug');
-  }
-
-  return credentialDefinitionId;
-}
-
-SkillCredentialsRepository _requiredCredentialsRepository(
-  _SkillControlToolDependencies dependencies,
-) {
-  final repository = dependencies.skillCredentialsRepository;
-  if (repository == null) {
-    throw StateError('Skill credential listing is not configured.');
-  }
-
-  return repository;
-}
-
-Future<Object> _loadUserSkillCredentials(
-  _UserSkillCredentialRequest credentialRequest,
+Future<void> _requireSkillNativeTool(
+  BuildAppSkillNativeToolSpecsUsecase buildSpecs,
+  _SkillNativeToolRequest request,
+  String toolName,
 ) async {
-  final credentials = await _loadCredentialsForDefinition(credentialRequest);
-
-  return _credentialResult(
-    credentialRequest.skill.slug,
-    credentials.map((credential) => (id: credential.id, name: credential.name)),
+  final specs = await buildSpecs.call(
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
   );
-}
-
-Future<List<SkillCredentialEntity>> _loadCredentialsForDefinition(
-  _UserSkillCredentialRequest credentialRequest,
-) {
-  return credentialRequest.credentialsRepository.getCredentialsForDefinition(
-    workspaceId: credentialRequest.credentialRequest.request.workspaceId,
-    credentialDefinitionId: credentialRequest.credentialDefinitionId,
-  );
-}
-
-Future<AvailableSkill?> _loadedSkillForCredential(
-  _SkillCredentialRequest credentialRequest,
-  SkillLoadFilter filter,
-) async {
-  final loadedSkills = await _loadCredentialSkills(credentialRequest, filter);
-
-  return _findLoadedSkill(loadedSkills, credentialRequest.skillSlug);
-}
-
-Future<List<AvailableSkill>> _loadCredentialSkills(
-  _SkillCredentialRequest credentialRequest,
-  SkillLoadFilter filter,
-) {
-  final listSkills = _requiredCredentialSkillLister(credentialRequest);
-
-  return listSkills.call(
-    conversationId: credentialRequest.request.conversationId,
-    workspaceId: credentialRequest.request.workspaceId,
-    filter: filter,
-  );
-}
-
-AvailableSkill? _findLoadedSkill(
-  Iterable<AvailableSkill> loadedSkills,
-  String skillSlug,
-) {
-  return loadedSkills.where((skill) => skill.slug == skillSlug).firstOrNull;
-}
-
-ListAvailableSkillsUsecase _requiredCredentialSkillLister(
-  _SkillCredentialRequest credentialRequest,
-) {
-  final dependencies = credentialRequest.dependencies;
-  final listSkills = dependencies.listAvailableSkillsUsecase?.call(
-    credentialRequest.request.workspaceId,
-  );
-  if (listSkills == null || dependencies.skillCredentialsRepository == null) {
-    throw StateError('Skill credential listing is not configured.');
+  if (!specs.any((spec) => spec.name == toolName)) {
+    throw StateError('App skill tool is not currently available: $toolName');
   }
-
-  return listSkills;
 }
 
-String _requiredSkillSlug(Map<String, dynamic> arguments) {
-  final skillSlug = arguments['slug'] ?? arguments['skillSlug'];
-  if (skillSlug is! String || skillSlug.isEmpty) {
-    throw const FormatException('Skill credential listing requires a slug.');
-  }
-
-  return skillSlug;
-}
-
-Future<Object> _listAppSkillCredentials(
-  _SkillCredentialRequest credentialRequest,
-) async {
-  final skillSlug = credentialRequest.skillSlug;
-  final appSkill = _requiredAppSkill(credentialRequest);
-  final credentials = await _loadAppCredentials(credentialRequest, appSkill);
-
-  return _credentialResult(
-    skillSlug,
-    credentials.map((credential) => (id: credential.id, name: credential.name)),
-  );
-}
-
-agent.AppSkillDefinition _requiredAppSkill(
-  _SkillCredentialRequest credentialRequest,
-) {
-  final dependencies = credentialRequest.dependencies;
-  final registry = dependencies.appSkillRegistry;
-  if (registry == null) {
-    throw StateError('App skill credential listing is not configured.');
-  }
-
-  return _requiredRegisteredAppSkill(registry, credentialRequest.skillSlug);
-}
-
-agent.AppSkillDefinition _requiredRegisteredAppSkill(
-  AppSkillRegistry registry,
-  String skillSlug,
-) {
-  final appSkill = registry.getBySlug(skillSlug);
-  if (appSkill == null) {
-    throw StateError('Loaded skill with credentials not found: $skillSlug');
-  }
-
-  return appSkill;
-}
-
-Future<List<AppSkillCredentialCandidate>> _loadAppCredentials(
-  _SkillCredentialRequest credentialRequest,
-  agent.AppSkillDefinition appSkill,
-) {
-  final appCandidates =
-      credentialRequest.dependencies.listAppSkillCredentialCandidatesUsecase;
-  if (appCandidates == null) {
-    throw StateError('App skill credential listing is not configured.');
-  }
-
-  return appCandidates.call(
-    workspaceId: credentialRequest.request.workspaceId,
-    skill: appSkill,
-  );
-}
-
-Map<String, Object> _credentialResult(
-  String skillSlug,
-  Iterable<({String id, String name})> credentials,
-) {
-  return {
-    'skillSlug': skillSlug,
-    'credentials': [
-      for (final credential in credentials)
-        {'id': credential.id, 'name': credential.name},
-    ],
-  };
-}
-
-Future<Object?> _runSkillNativeTool(_SkillNativeToolRequest request) {
-  if (request.skillSlug == AppSkillRegistry.browserSkillSlug) {
-    return _runBrowserSkillTool(request);
-  }
-  if (request.skillSlug == agent.agentsSkillSlug) {
-    return _runSubAgentNativeTool(request);
-  }
-  if (request.skillSlug != SkillToolSlugs.skillsManager) {
-    return _runAppNativeTool(request);
-  }
-
-  return _runSkillsManagerNativeTool(request);
-}
+Future<Object?> _dispatchSkillNativeTool(
+  _SkillNativeToolRequest request,
+  String toolName,
+) => switch (request.skillSlug) {
+  AppSkillRegistry.browserSkillSlug => _runBrowserSkillTool(request),
+  agent.agentsSkillSlug => _runSubAgentNativeTool(request),
+  SkillToolSlugs.skillsManager => _runSkillsManagerNativeTool(request),
+  _ => throw StateError('Unknown app skill tool: $toolName'),
+};
 
 Future<Object?> _runBrowserSkillTool(_SkillNativeToolRequest request) {
   final runner = request.provider.browserSkillToolRunner;
@@ -1225,32 +867,6 @@ Future<Object?> _runBrowserSkillTool(_SkillNativeToolRequest request) {
 Future<Object?> _runSubAgentNativeTool(_SkillNativeToolRequest request) {
   return _runSubAgentTool(request: request);
 }
-
-Future<Object?> _runAppNativeTool(_SkillNativeToolRequest request) {
-  final usecase = request.provider.runAppSkillToolUsecase;
-  if (usecase == null) {
-    throw StateError(_runAppSkillToolUsecaseNotConfigured);
-  }
-
-  final toolName = agent.AgentResolvedToolName.skillNative(
-    tableId: request.toolSlug,
-    skillSlug: request.skillSlug,
-    toolIdentifier: request.toolSlug,
-  ).fullName;
-
-  return _runCurrentAppSkillTool(request, usecase, toolName);
-}
-
-Future<Object?> _registerNativeOperation(
-  _SkillNativeToolRequest request,
-  CancelableOperation<Object?> operation,
-) => _registerAndAwaitCancelableOperation((
-  runtime: request.provider.agentCancellationRuntime,
-  conversationId: request.conversationId,
-  toolCallId: request.toolCallId,
-  operation: operation,
-  isCancellationSupported: true,
-));
 
 Future<Object?> _runSkillsManagerNativeTool(
   _SkillNativeToolRequest request,
@@ -1290,379 +906,6 @@ void _notifySkillsManagerSuccess(
     result: result,
   );
 }
-
-bool _hasCombinedSkillCommandDependencies(AppResolvedToolProvider provider) {
-  return provider.buildLoadedSkillManifestsUsecase != null &&
-      provider.buildSkillTemplateToolSpecsUsecase != null &&
-      provider.buildAppSkillNativeToolSpecsUsecase != null &&
-      provider.runSkillTemplateToolUsecase != null &&
-      provider.runAppSkillToolUsecase != null &&
-      provider.listAvailableSkillsUsecase != null &&
-      provider.loadConversationSkillUsecase != null;
-}
-
-Future<Object?> _runConfiguredSkillCommand(
-  AppResolvedToolProvider provider,
-  _SkillControlToolRequest request, {
-  String? languageCode,
-}) {
-  return _ConfiguredSkillCommandRunner(provider)
-      .run(request, languageCode: languageCode);
-}
-
-class _ConfiguredSkillCommandRunner {
-  new(this._provider) {
-    _usecase = _buildConfiguredSkillCommand(
-      _configuredSkillCommandDependencies(_provider),
-      (
-        listSkillCredentials: _listSkillCredentialsForCommand,
-        listCatalogSkillCredentials: _listCatalogSkillCredentialsForCommand,
-        runSkillNativeTool: _runSkillNativeTool,
-      ),
-    );
-  }
-
-  final AppResolvedToolProvider _provider;
-  RunSkillCommandUsecase? _usecase;
-
-  Future<Object?> run(
-    _SkillControlToolRequest request, {
-    String? languageCode,
-  }) {
-    final usecase = _usecase;
-    if (usecase == null) {
-      throw StateError('Combined skill command is not configured.');
-    }
-
-    final input = (
-      conversationId: request.conversationId,
-      toolCallId: request.toolCallId,
-      workspaceId: request.workspaceId,
-      commandName: request.toolIdentifier,
-      arguments: request.arguments,
-    );
-
-    return usecase.call(input, languageCode: languageCode);
-  }
-
-  Future<Map<String, Object?>> _listSkillCredentialsForCommand({
-    required String conversationId,
-    required String workspaceId,
-    required Map<String, dynamic> arguments,
-  }) {
-    return _listSkillCredentialsForCommandWithFilter(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-      arguments: arguments,
-      filter: .loaded,
-    );
-  }
-
-  Future<Map<String, Object?>> _listCatalogSkillCredentialsForCommand({
-    required String conversationId,
-    required String workspaceId,
-    required Map<String, dynamic> arguments,
-  }) {
-    return _listSkillCredentialsForCommandWithFilter(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-      arguments: arguments,
-      filter: .catalog,
-    );
-  }
-
-  Future<Map<String, Object?>> _listSkillCredentialsForCommandWithFilter({
-    required String conversationId,
-    required String workspaceId,
-    required Map<String, dynamic> arguments,
-    required SkillLoadFilter filter,
-  }) async {
-    final result = await _listSkillCredentials(
-      request: _skillCredentialsCommandRequest(
-        conversationId,
-        workspaceId,
-        arguments,
-      ),
-      dependencies: _skillControlToolDependencies(_provider),
-      filter: filter,
-    );
-
-    return _credentialMap(result);
-  }
-
-  Future<Object?> _runSkillNativeTool(RunSkillNativeToolRequest request) async {
-    if (request.target.skillSlug == agent.agentsSkillSlug) {
-      return await _runSubAgentNativeTool(
-        _subAgentSkillNativeToolRequest(_provider, request),
-      );
-    }
-    await _requireCurrentAppSkillToolForNativeRequest(_provider, request);
-
-    return await _runAppSkillTool(request);
-  }
-
-  Future<Object?> _runAppSkillTool(RunSkillNativeToolRequest request) {
-    if (request.target.skillSlug == AppSkillRegistry.browserSkillSlug) {
-      return _runBrowserSkillTool(request);
-    }
-
-    return _runConfiguredAppSkillTool(request);
-  }
-
-  Future<Object?> _runBrowserSkillTool(RunSkillNativeToolRequest request) {
-    final runner = _provider.browserSkillToolRunner;
-    if (runner == null) {
-      throw StateError('Browser skill tools are not configured.');
-    }
-
-    return runner(
-      workspaceId: request.workspaceId,
-      conversationId: request.conversationId,
-      toolSlug: request.target.toolIdentifier,
-      arguments: request.arguments,
-    );
-  }
-
-  Future<Object?> _runConfiguredAppSkillTool(
-    RunSkillNativeToolRequest request,
-  ) {
-    final target = request.target;
-    final usecase = _provider.runAppSkillToolUsecase;
-    if (usecase == null) {
-      throw StateError(_runAppSkillToolUsecaseNotConfigured);
-    }
-
-    return usecase.call(
-      workspaceId: request.workspaceId,
-      skillSlug: target.skillSlug ?? '',
-      toolSlug: target.toolIdentifier,
-      arguments: request.arguments,
-    );
-  }
-}
-
-Future<void> _requireCurrentAppSkillTool({
-  required AppResolvedToolProvider provider,
-  required String conversationId,
-  required String workspaceId,
-  required String toolName,
-}) async {
-  final buildSpecs = provider.buildAppSkillNativeToolSpecsUsecase;
-  if (buildSpecs == null) {
-    throw StateError('App skill tool specifications are not configured.');
-  }
-  final specs = await buildSpecs.call(
-    conversationId: conversationId,
-    workspaceId: workspaceId,
-  );
-  if (!specs.any((spec) => spec.name == toolName)) {
-    throw StateError('App skill tool is not currently available: $toolName');
-  }
-}
-
-Future<bool> _canRunCurrentAppSkillTool(
-  AppResolvedToolProvider provider,
-  String conversationId,
-  String workspaceId,
-  String toolName,
-) async {
-  await _requireCurrentAppSkillTool(
-    provider: provider,
-    conversationId: conversationId,
-    workspaceId: workspaceId,
-    toolName: toolName,
-  );
-
-  return !provider.agentCancellationRuntime.isCancellationRequested(
-    conversationId,
-  );
-}
-
-Future<Object?> _runCurrentAppSkillTool(
-  _SkillNativeToolRequest request,
-  RunAppSkillToolUsecase usecase,
-  String toolName,
-) async {
-  if (!await _canRunCurrentAppSkillTool(
-    request.provider,
-    request.conversationId,
-    request.workspaceId,
-    toolName,
-  )) {
-    return null;
-  }
-
-  final operation = usecase.callCancelable(
-    workspaceId: request.workspaceId,
-    skillSlug: request.skillSlug,
-    toolSlug: request.toolSlug,
-    arguments: request.arguments,
-  );
-
-  return await _registerNativeOperation(request, operation);
-}
-
-_SkillNativeToolRequest _appSkillTemplateToolRequest(
-  AppResolvedToolProvider provider,
-  agent.SkillAppTemplateToolRequest input,
-) {
-  final skillSlug = input.skillSlug;
-  final toolSlug = input.toolSlug;
-
-  return _SkillNativeToolRequest(
-    conversationId: input.conversationId,
-    toolCallId: input.toolCallId,
-    workspaceId: input.workspaceId,
-    skillSlug: skillSlug,
-    toolSlug: toolSlug,
-    arguments: input.arguments,
-    provider: provider,
-  );
-}
-
-String _appSkillTemplateToolName(agent.SkillAppTemplateToolRequest input) {
-  final skillSlug = input.skillSlug;
-  final toolSlug = input.toolSlug;
-
-  return agent.AgentResolvedToolName.skillAppTemplate(
-    tableId: toolSlug,
-    skillSlug: skillSlug,
-    toolIdentifier: toolSlug,
-  ).fullName;
-}
-
-_SkillNativeToolRequest _subAgentSkillNativeToolRequest(
-  AppResolvedToolProvider provider,
-  RunSkillNativeToolRequest request,
-) {
-  final target = request.target;
-
-  return _SkillNativeToolRequest(
-    conversationId: request.conversationId,
-    toolCallId: request.toolCallId,
-    workspaceId: request.workspaceId,
-    skillSlug: target.skillSlug ?? '',
-    toolSlug: target.toolIdentifier,
-    arguments: request.arguments,
-    provider: provider,
-    languageCode: request.languageCode,
-  );
-}
-
-Future<void> _requireCurrentAppSkillToolForNativeRequest(
-  AppResolvedToolProvider provider,
-  RunSkillNativeToolRequest request,
-) => _requireCurrentAppSkillTool(
-  provider: provider,
-  conversationId: request.conversationId,
-  workspaceId: request.workspaceId,
-  toolName: request.target.fullName,
-);
-
-_SkillControlToolRequest _skillCredentialsCommandRequest(
-  String conversationId,
-  String workspaceId,
-  Map<String, dynamic> arguments,
-) {
-  return (
-    conversationId: conversationId,
-    toolCallId: '',
-    workspaceId: workspaceId,
-    toolIdentifier: SkillToolNames.listCredentials,
-    arguments: arguments,
-  );
-}
-
-Map<String, Object?> _credentialMap(Object result) {
-  return Map<String, Object?>.from(result as Map);
-}
-
-class const _ConfiguredSkillCommandDependencies(
-  final ListAvailableSkillsUsecase Function(String workspaceId)
-  listAvailableSkillsUsecase,
-  final LoadConversationSkillUsecase Function(String workspaceId)
-  loadConversationSkillUsecase,
-  final BuildLoadedSkillManifestsUsecase buildLoadedSkillManifestsUsecase,
-  final BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecsUsecase,
-  final BuildAppSkillNativeToolSpecsUsecase buildAppSkillNativeToolSpecsUsecase,
-  final RunSkillTemplateToolUsecase runSkillTemplateToolUsecase,
-  final RunAppSkillToolUsecase runAppSkillToolUsecase,
-  final SkillResourceResolver Function(String workspaceId)?
-  skillResourceResolver,
-);
-
-typedef _ConfiguredSkillCommandCallbacks = ({
-  ListSkillCredentials listSkillCredentials,
-  ListSkillCredentials listCatalogSkillCredentials,
-  RunSkillNativeTool runSkillNativeTool,
-});
-
-_ConfiguredSkillCommandDependencies _configuredSkillCommandDependencies(
-  AppResolvedToolProvider provider,
-) {
-  const r = _requiredConfigured;
-  final resourceResolver = provider.skillResourceResolver;
-
-  return _ConfiguredSkillCommandDependencies(
-    r(provider.listAvailableSkillsUsecase),
-    r(provider.loadConversationSkillUsecase),
-    r(provider.buildLoadedSkillManifestsUsecase),
-    r(provider.buildSkillTemplateToolSpecsUsecase),
-    r(provider.buildAppSkillNativeToolSpecsUsecase),
-    r(provider.runSkillTemplateToolUsecase),
-    r(provider.runAppSkillToolUsecase),
-    resourceResolver,
-  );
-}
-
-RunSkillCommandUsecase _buildConfiguredSkillCommand(
-  _ConfiguredSkillCommandDependencies deps,
-  _ConfiguredSkillCommandCallbacks callbacks,
-) {
-  final resourceCallbacks = _configuredSkillResourceCallbacks(
-    deps.skillResourceResolver,
-  );
-
-  return .fromDependencies((
-    core: _coreSkillCommandDependencies(deps),
-    optional: _optionalSkillCommandDependencies(callbacks, resourceCallbacks),
-  ));
-}
-
-RunSkillCommandCoreDependencies _coreSkillCommandDependencies(
-  _ConfiguredSkillCommandDependencies deps,
-) => (
-  listAvailableSkillsUsecase: deps.listAvailableSkillsUsecase,
-  loadConversationSkillUsecase: deps.loadConversationSkillUsecase,
-  buildLoadedSkillManifestsUsecase: deps.buildLoadedSkillManifestsUsecase,
-  buildSkillTemplateToolSpecsUsecase: deps.buildSkillTemplateToolSpecsUsecase,
-  buildAppSkillNativeToolSpecsUsecase: deps.buildAppSkillNativeToolSpecsUsecase,
-  runSkillTemplateToolUsecase: deps.runSkillTemplateToolUsecase,
-  runAppSkillToolUsecase: deps.runAppSkillToolUsecase,
-);
-
-RunSkillCommandOptionalDependencies _optionalSkillCommandDependencies(
-  _ConfiguredSkillCommandCallbacks callbacks,
-  _SkillResourceCallbacks resourceCallbacks,
-) => (
-  listSkillCredentials: callbacks.listSkillCredentials,
-  listCatalogSkillCredentials: callbacks.listCatalogSkillCredentials,
-  listSkillResourceSummaries: resourceCallbacks.summaries,
-  loadSkillResourceContent: resourceCallbacks.content,
-  runSkillNativeTool: callbacks.runSkillNativeTool,
-);
-
-typedef _SkillResourceCallbacks = ({
-  ListSkillResourceSummaries? summaries,
-  LoadSkillResourceContent? content,
-});
-
-_SkillResourceCallbacks _configuredSkillResourceCallbacks(
-  SkillResourceResolver Function(String workspaceId)? resourceResolver,
-) => (
-  summaries: _listSkillResourceSummaries(resourceResolver),
-  content: _loadSkillResourceContent(resourceResolver),
-);
 
 ListSkillResourceSummaries? _listSkillResourceSummaries(
   SkillResourceResolver Function(String workspaceId)? resourceResolver,
@@ -1708,26 +951,6 @@ Future<({String title, String content})?> _resolveSkillResourceContent(
   return (title: resource.summary.title, content: resource.content);
 }
 
-_SkillControlToolDependencies _skillControlToolDependencies(
-  AppResolvedToolProvider provider,
-) {
-  return _SkillControlToolDependencies(
-    listAvailableSkillsUsecase: provider.listAvailableSkillsUsecase,
-    listAppSkillCredentialCandidatesUsecase:
-        provider.listAppSkillCredentialCandidatesUsecase,
-    appSkillRegistry: provider.appSkillRegistry,
-    skillCredentialsRepository: provider.skillCredentialsRepository,
-  );
-}
-
-T _requiredConfigured<T>(T? value) {
-  if (value == null) {
-    throw StateError('Combined skill command dependencies are incomplete.');
-  }
-
-  return value;
-}
-
 final Provider<ResolvedToolService>
 resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
   final container = ref.container;
@@ -1743,13 +966,8 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
     conversationRepository: ref.watch(conversationRepositoryProvider),
     loadConversationSkillUsecase: (workspaceId) =>
         container.read(loadConversationSkillUsecaseProvider(workspaceId)),
-    runSkillTemplateToolUsecase: ref.watch(runSkillTemplateToolUsecaseProvider),
-    runAppSkillToolUsecase: ref.watch(runAppSkillToolUsecaseProvider),
     buildLoadedSkillManifestsUsecase: ref.watch(
       buildLoadedSkillManifestsUsecaseProvider,
-    ),
-    buildSkillTemplateToolSpecsUsecase: ref.watch(
-      buildSkillTemplateToolSpecsUsecaseProvider,
     ),
     buildAppSkillNativeToolSpecsUsecase: ref.watch(
       buildAppSkillNativeToolSpecsUsecaseProvider,
@@ -1760,11 +978,6 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
         container.read(listAvailableSkillsUsecaseProvider(workspaceId)),
     skillResourceResolver: (workspaceId) =>
         container.read(skillResourceResolverProvider(workspaceId)),
-    listAppSkillCredentialCandidatesUsecase: ref.watch(
-      listAppSkillCredentialCandidatesUsecaseProvider,
-    ),
-    appSkillRegistry: ref.watch(appSkillRegistryProvider),
-    skillCredentialsRepository: ref.watch(skillCredentialsRepositoryProvider),
     subAgentRunner: .new(
       agentCatalog: AppSubAgentCatalog(ref.watch(agentsRepositoryProvider)),
       conversationStore: AppSubAgentConversationStore(
@@ -1822,9 +1035,7 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
         }) => container
             .read(browserSessionProvider(workspaceId, conversationId).notifier)
             .runSkillTool(toolSlug, arguments),
-    conversationLanguageRuntime: ref.watch(
-      conversationAgentLanguageRuntimeProvider,
-    ),
+    connectorCommandUsecase: ref.watch(connectorCommandUsecaseProvider),
   );
 });
 
@@ -1856,13 +1067,7 @@ void _invalidateSkillsManagerToolState(
 
 _SkillManagerInvalidationHandler? _skillManagerInvalidationHandler(
   String toolSlug,
-) => switch (toolSlug) {
-  _ when _userSkillToolSlugs.contains(toolSlug) => _invalidateUserSkill,
-  _ when _credentialDefinitionToolSlugs.contains(toolSlug) =>
-    _invalidateCredentialDefinition,
-  _ when _templateToolSlugs.contains(toolSlug) => _invalidateTemplateTool,
-  _ => null,
-};
+) => _userSkillToolSlugs.contains(toolSlug) ? _invalidateUserSkill : null;
 
 void _invalidateConversationSkillState(
   SkillsManagerToolInvalidationRequest request,
@@ -1885,40 +1090,6 @@ void _invalidateUserSkill(SkillsManagerToolInvalidationRequest request) {
   if (skillId is String && skillId.isNotEmpty) {
     request.container.invalidate(
       skillDetailProvider(request.workspaceId, skillId),
-    );
-  }
-}
-
-void _invalidateCredentialDefinition(
-  SkillsManagerToolInvalidationRequest request,
-) {
-  request.container
-    ..invalidate(skillCredentialDefinitionsProvider(request.workspaceId))
-    ..invalidate(serviceConnectionsProvider(request.workspaceId));
-  final definitionId = _resultValue(request.result, 'definitionId');
-  if (definitionId is String && definitionId.isNotEmpty) {
-    _invalidateCredentialDefinitionDetails(request, definitionId);
-  }
-}
-
-void _invalidateCredentialDefinitionDetails(
-  SkillsManagerToolInvalidationRequest request,
-  String definitionId,
-) {
-  request.container
-    ..invalidate(
-      skillCredentialDefinitionProvider(request.workspaceId, definitionId),
-    )
-    ..invalidate(
-      skillCredentialsForDefinitionProvider(request.workspaceId, definitionId),
-    );
-}
-
-void _invalidateTemplateTool(SkillsManagerToolInvalidationRequest request) {
-  final skillId = _resultValue(request.result, 'skillId');
-  if (skillId is String && skillId.isNotEmpty) {
-    request.container.invalidate(
-      skillTemplateToolsProvider(request.workspaceId, skillId),
     );
   }
 }

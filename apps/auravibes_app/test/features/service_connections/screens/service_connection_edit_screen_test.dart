@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/models/models/model_connection_store.dart';
 import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
@@ -11,8 +9,6 @@ import 'package:auravibes_app/features/service_connections/models/cloud_service_
 import 'package:auravibes_app/features/service_connections/models/mcp_server_for_edit.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,8 +20,6 @@ const _workspaceId = 'test-workspace';
 const _modelConnectionId = 'model-connection';
 const _genericConnectionId = 'generic-connection';
 const _mcpConnectionId = 'mcp-connection';
-const _credentialId = 'credential-1';
-const _definitionId = 'definition-1';
 
 void main() {
   testWidgets('missing connection offers return without endless retry', (
@@ -232,55 +226,6 @@ void main() {
     expect(savedUpdate?.secretEdit, ServiceConnectionSecretEdit.replace);
     expect(savedUpdate?.secret, secret);
   });
-
-  testWidgets('skill credential edits track values without exposing secrets', (
-    tester,
-  ) async {
-    const secret = 'credential-replacement-secret';
-    SkillCredentialToUpdate? savedUpdate;
-    await _pumpEditor(
-      tester,
-      connectionId: _credentialId,
-      skillCredential: _skillCredential(),
-      definition: _skillCredentialDefinition(),
-      onSkillUpdate: (update) => savedUpdate = update,
-    );
-    await _openEditor(tester);
-    final _ = await tester.binding.handlePopRoute();
-    final _ = await tester.pumpAndSettle();
-    expect(find.byType(AuraConfirmDialog), findsNothing);
-    expect(find.text('Open editor'), findsOneWidget);
-    await _openEditor(tester);
-
-    await tester.enterText(find.byType(EditableText).at(1), 'new-team');
-    await tester.tap(find.byIcon(Icons.arrow_back));
-    final _ = await tester.pumpAndSettle();
-    expect(find.byType(AuraConfirmDialog), findsOneWidget);
-    await tester.tap(find.text('Keep editing'));
-    final _ = await tester.pumpAndSettle();
-
-    await tester.tap(find.byIcon(Icons.clear));
-    await tester.enterText(find.byType(EditableText).last, secret);
-    await tester.pump();
-    await tester.tap(find.byIcon(Icons.arrow_back));
-    final _ = await tester.pumpAndSettle();
-    final dialog = find.byType(AuraConfirmDialog);
-    expect(dialog, findsOneWidget);
-    expect(
-      find.descendant(of: dialog, matching: find.text(secret)),
-      findsNothing,
-    );
-    await tester.tap(find.text('Keep editing'));
-    final _ = await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Save'));
-    final _ = await tester.pumpAndSettle();
-
-    expect(savedUpdate?.name, 'Account');
-    expect(savedUpdate?.nonSecretAttributes, {'team': 'new-team'});
-    expect(savedUpdate?.secretAttributes, {'api_key': secret});
-    expect(savedUpdate?.clearSecretAttributeNames, isEmpty);
-  });
 }
 
 Future<void> _pumpEditor(
@@ -288,11 +233,8 @@ Future<void> _pumpEditor(
   required String connectionId,
   ModelConnectionForEdit? modelConnection,
   GenericServiceConnectionForEdit? genericConnection,
-  SkillCredentialForEdit? skillCredential,
-  SkillCredentialDefinitionEntity? definition,
   McpServerForEdit? mcpServer,
   void Function(GenericServiceConnectionUpdate)? onGenericUpdate,
-  void Function(SkillCredentialToUpdate)? onSkillUpdate,
   void Function(McpServerSettingsUpdate)? onMcpUpdate,
   bool Function()? shouldFail,
 }) async {
@@ -336,17 +278,6 @@ Future<void> _pumpEditor(
                   onMcpUpdate: onMcpUpdate,
                 );
               }),
-          skillCredentialOperationsProvider(_workspaceId).overrideWithValue(
-            _skillOperations(
-              credential: skillCredential,
-              onUpdate: onSkillUpdate,
-            ),
-          ),
-          if (definition != null)
-            skillCredentialDefinitionProvider(
-              _workspaceId,
-              definition.id,
-            ).overrideWith((_) async => definition),
         ],
       ),
     );
@@ -365,9 +296,9 @@ ServiceConnectionOperations _serviceOperations({
   void Function(GenericServiceConnectionUpdate)? onUpdate,
   void Function(McpServerSettingsUpdate)? onMcpUpdate,
 }) => ServiceConnectionOperations(
-  createAppSkillCredential: ({
+  createConnectorConnection: ({
     required workspaceId,
-    required appSkillServiceId,
+    required connectorId,
     required name,
     required apiKey,
   }) => Future<void>.value(),
@@ -376,29 +307,6 @@ ServiceConnectionOperations _serviceOperations({
   updateGeneric: (_, update) async => onUpdate?.call(update),
   getMcpForEdit: (id) => Future.value(mcpServer?.id == id ? mcpServer : null),
   updateMcp: (_, update) async => onMcpUpdate?.call(update),
-);
-
-SkillCredentialOperations _skillOperations({
-  SkillCredentialForEdit? credential,
-  void Function(SkillCredentialToUpdate)? onUpdate,
-}) => SkillCredentialOperations(
-  create: (_, _) async => throw UnimplementedError(),
-  getForEdit: (id) => Future.value(credential?.id == id ? credential : null),
-  update: (_, update) async {
-    onUpdate?.call(update);
-
-    return SkillCredentialEntity(
-      id: _credentialId,
-      workspaceId: _workspaceId,
-      credentialDefinitionId: _definitionId,
-      name: update.name ?? 'Account',
-      attributes: {...update.nonSecretAttributes, ...update.secretAttributes},
-      isEnabled: true,
-      createdAt: .new(2026),
-      updatedAt: .new(2026),
-    );
-  },
-  delete: (_) => Future<void>.value(),
 );
 
 ModelConnectionForEdit _modelConnection() => const ModelConnectionForEdit(
@@ -430,31 +338,6 @@ McpServerForEdit _mcpServer() => const (
   revision: 4,
   secretRevision: 2,
 );
-
-SkillCredentialForEdit _skillCredential() => const SkillCredentialForEdit(
-  id: _credentialId,
-  workspaceId: _workspaceId,
-  credentialDefinitionId: _definitionId,
-  name: 'Account',
-  nonSecretAttributes: {'team': 'old-team'},
-  secretAttributes: {
-    'api_key': SkillCredentialSecretState(hasValue: true, keySuffix: '1234'),
-  },
-  isEnabled: true,
-);
-
-SkillCredentialDefinitionEntity _skillCredentialDefinition() =>
-    SkillCredentialDefinitionEntity(
-      id: _definitionId,
-      workspaceId: _workspaceId,
-      title: 'Test credential',
-      slug: 'test-credential',
-      attributesJson:
-          '{"team":{"description":"Team","secret":false},'
-          '"api_key":{"description":"API key","optional":true}}',
-      createdAt: .new(2026),
-      updatedAt: .new(2026),
-    );
 
 class const _FakeModelConnectionStore(final ModelConnectionForEdit? connection)
     implements ModelConnectionStore {

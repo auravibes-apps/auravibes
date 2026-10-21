@@ -2,56 +2,66 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('serviceSkillDefinitions', () {
-    test('cannot be mutated', () {
+  group('Connector service presets', () {
+    test('catalogs are immutable and have unique identifiers', () {
+      expect(serviceSkillPresets.removeLast, throwsUnsupportedError);
+      expect(connectorDefinitions.removeLast, throwsUnsupportedError);
       expect(serviceSkillDefinitions.removeLast, throwsUnsupportedError);
+
+      final connectorIds = connectorDefinitions
+          .map((connector) => connector.identifier)
+          .toList();
+      final skillSlugs = serviceSkillDefinitions
+          .map((skill) => skill.slug)
+          .toList();
+
+      expect(connectorIds, hasLength(connectorIds.toSet().length));
+      expect(skillSlugs, hasLength(skillSlugs.toSet().length));
+      expect(
+        connectorIds,
+        containsAll(['openai', 'codex', 'brave', 'duckduckgo']),
+      );
+      expect(
+        skillSlugs,
+        containsAll(['openai', 'codex', 'brave', 'duckduckgo']),
+      );
     });
 
-    test('uses unique service slugs', () {
-      final slugs = serviceSkillDefinitions.map((skill) => skill.slug).toList();
-
-      expect(slugs, hasLength(slugs.toSet().length));
-      expect(slugs, containsAll(['openai', 'codex', 'brave', 'duckduckgo']));
-      expect(slugs.where((slug) => slug.startsWith('search_')), isEmpty);
-    });
-
-    test('all service skills are declarative templates', () {
-      final missingExecutors = <String>[];
-      for (final skill in serviceSkillDefinitions) {
-        if (skill.kind != AppSkillDefinitionKind.template) {
-          missingExecutors.add('${skill.slug} is ${skill.kind}');
-        }
-        for (final tool in skill.tools) {
-          if (tool.urlTemplate == null) {
-            missingExecutors.add('${skill.slug}.${tool.slug}');
-          }
-        }
+    test('Skills reference Connector IDs without owning Connector tools', () {
+      for (final preset in serviceSkillPresets) {
+        expect(preset.skill.tools, isEmpty, reason: preset.slug);
+        expect(preset.skill.connectorToolIds, [
+          for (final tool in preset.tools)
+            'connector/${preset.identifier}/${tool.slug}',
+        ], reason: preset.slug);
       }
-
-      expect(missingExecutors, isEmpty);
     });
 
-    test('all service tools have valid versioned manifests', () {
-      for (final skill in serviceSkillDefinitions) {
-        for (final tool in skill.tools) {
+    test('Connector tools have valid request definitions', () {
+      for (final connector in connectorDefinitions) {
+        for (final tool in connector.tools) {
           final definition = tool.definition;
-          expect(definition, isNotNull, reason: '${skill.slug}.${tool.slug}');
+          expect(
+            definition,
+            isNotNull,
+            reason: '${connector.identifier}.${tool.slug}',
+          );
           try {
-            validateSkillTemplateDefinition(definition!);
+            validateConnectorToolRequestDefinition(definition!);
           } on Object catch (error) {
-            fail('${skill.slug}.${tool.slug}: $error');
+            fail('${connector.identifier}.${tool.slug}: $error');
           }
         }
       }
     });
 
-    test('resources are unique and complement a service tool', () {
+    test('resources are unique and describe a Connector tool', () {
       final invalid = <String>[];
-      for (final skill in serviceSkillDefinitions) {
-        final toolSlugs = skill.tools.map((tool) => tool.slug).toSet();
+      for (final preset in serviceSkillPresets) {
+        final toolSlugs = preset.tools.map((tool) => tool.slug).toSet();
         final resourceSlugs = <String>{};
-        for (final resource in skill.resources) {
-          final path = '${skill.slug}.${resource.slug}';
+        for (final resource in preset.resources) {
+          final path = '${preset.slug}.${resource.slug}';
           if (resource.slug.isEmpty || !resourceSlugs.add(resource.slug)) {
             invalid.add('$path has a duplicate or empty slug');
           }
@@ -63,7 +73,7 @@ void main() {
                 resource.description.contains(toolSlug) ||
                 resource.content.contains(toolSlug),
           )) {
-            invalid.add('$path does not reference a service tool');
+            invalid.add('$path does not reference a Connector tool');
           }
         }
       }
@@ -71,42 +81,42 @@ void main() {
       expect(invalid, isEmpty);
     });
 
-    test('agent-facing text hides API internals', () {
+    test('agent-facing guidance hides API internals', () {
       final leaks = <String>[];
-      for (final skill in serviceSkillDefinitions) {
-        _collectInternalLeaks(leaks, '${skill.slug}.title', skill.title);
+      for (final preset in serviceSkillPresets) {
+        _collectInternalLeaks(leaks, '${preset.slug}.title', preset.title);
         _collectInternalLeaks(
           leaks,
-          '${skill.slug}.description',
-          skill.description,
+          '${preset.slug}.description',
+          preset.description,
         );
-        _collectInternalLeaks(leaks, '${skill.slug}.content', skill.content);
-        for (final resource in skill.resources) {
+        _collectInternalLeaks(leaks, '${preset.slug}.content', preset.content);
+        for (final resource in preset.resources) {
           _collectInternalLeaks(
             leaks,
-            '${skill.slug}.${resource.slug}.title',
+            '${preset.slug}.${resource.slug}.title',
             resource.title,
           );
           _collectInternalLeaks(
             leaks,
-            '${skill.slug}.${resource.slug}.description',
+            '${preset.slug}.${resource.slug}.description',
             resource.description,
           );
           _collectInternalLeaks(
             leaks,
-            '${skill.slug}.${resource.slug}.content',
+            '${preset.slug}.${resource.slug}.content',
             resource.content,
           );
         }
-        for (final tool in skill.tools) {
+        for (final tool in preset.tools) {
           _collectInternalLeaks(
             leaks,
-            '${skill.slug}.${tool.slug}.title',
+            '${preset.slug}.${tool.slug}.title',
             tool.title,
           );
           _collectInternalLeaks(
             leaks,
-            '${skill.slug}.${tool.slug}.description',
+            '${preset.slug}.${tool.slug}.description',
             tool.description,
           );
         }
@@ -115,36 +125,17 @@ void main() {
       expect(leaks, isEmpty);
     });
 
-    test('OpenAI skill does not claim Codex credential support', () {
-      final openAi = serviceSkillDefinitions.singleWhere(
-        (skill) => skill.slug == 'openai',
-      );
+    test('OpenAI Connector offers tools and model access', () {
+      final openAi = _connector('openai');
 
       expect(openAi.title, 'OpenAI');
-      expect(openAi.content.toLowerCase(), isNot(contains('codex')));
-      expect(openAi.compatibleModelProviderIds, ['openai']);
-      expect(
-        openAi.compatibleModelProviderIds,
-        isNot(contains('openai-codex')),
-      );
+      expect(openAi.compatibleModelProviderIds, contains('openai'));
+      expect(openAi.tools.map((tool) => tool.slug), contains('web_search'));
+      expect(_connector('codex').compatibleModelProviderIds, ['openai-codex']);
     });
 
-    test('Codex skill uses Codex model provider credentials', () {
-      final codex = serviceSkillDefinitions.singleWhere(
-        (skill) => skill.slug == 'codex',
-      );
-
-      expect(codex.title, 'OpenAI Codex');
-      expect(codex.requiresCredential, isTrue);
-      expect(codex.compatibleModelProviderIds, ['openai-codex']);
-      expect(codex.tools.single.slug, 'web_search');
-      expect(codex.tools.single.urlTemplate, isNotNull);
-    });
-
-    test('Gemini only reuses Google API-key credentials', () {
-      final gemini = serviceSkillDefinitions.singleWhere(
-        (skill) => skill.slug == 'gemini',
-      );
+    test('Gemini Connector targets Google API-key models only', () {
+      final gemini = _connector('gemini');
 
       expect(gemini.compatibleModelProviderIds, ['google']);
       expect(
@@ -153,33 +144,28 @@ void main() {
       );
     });
 
-    test('DuckDuckGo uses raw HTML template instead of Instant Answer API', () {
-      final duckDuckGo = serviceSkillDefinitions.singleWhere(
-        (skill) => skill.slug == 'duckduckgo',
-      );
-      final tool = duckDuckGo.tools.single;
+    test('DuckDuckGo tool has no credential dependency', () {
+      final connector = _connector('duckduckgo');
+      final tool = connector.tools.single;
 
-      expect(duckDuckGo.title, 'DuckDuckGo Search');
-      expect(duckDuckGo.requiresCredential, isFalse);
+      expect(connector.title, 'DuckDuckGo Search');
       expect(tool.slug, 'search');
+      expect(tool.requiresConnection, isFalse);
       expect(tool.urlTemplate, isNotNull);
     });
 
-    test('SearXNG uses credential base URL instead of agent input', () {
-      final searXng = serviceSkillDefinitions.singleWhere(
-        (skill) => skill.slug == 'searxng',
-      );
-      final tool = searXng.tools.single;
+    test('SearXNG base URL belongs to Connector credentials', () {
+      final connector = _connector('searxng');
+      final tool = connector.tools.single;
       final properties = tool.inputJsonSchema['properties'] as Map;
 
-      expect(searXng.requiresCredential, isTrue);
-      expect(tool.requiresCredential, isTrue);
+      expect(tool.requiresConnection, isTrue);
       expect(properties, contains('query'));
       expect(properties, isNot(contains('baseUrl')));
-      expect(tool.urlTemplate?.credentialDefinitions, contains('baseUrl'));
+      expect(tool.definition!.credentialDefinitions, contains('baseUrl'));
     });
 
-    test('provider tools expose expanded input schemas', () {
+    test('provider Connector tools expose their expanded input schemas', () {
       expect(_properties('openai', 'web_search'), contains('model'));
       expect(_properties('codex', 'web_search'), contains('blockedDomains'));
       expect(
@@ -208,11 +194,12 @@ void main() {
   });
 }
 
-Map<String, Object?> _properties(String skillSlug, String toolSlug) {
-  final skill = serviceSkillDefinitions.singleWhere(
-    (skill) => skill.slug == skillSlug,
-  );
-  final tool = skill.tools.singleWhere((tool) => tool.slug == toolSlug);
+ConnectorDefinition _connector(String identifier) => connectorDefinitions
+    .singleWhere((connector) => connector.identifier == identifier);
+
+Map<String, Object?> _properties(String connectorId, String toolSlug) {
+  final tool = _connector(connectorId).tools
+      .singleWhere((tool) => tool.slug == toolSlug);
 
   return Map<String, Object?>.from(tool.inputJsonSchema['properties']! as Map);
 }

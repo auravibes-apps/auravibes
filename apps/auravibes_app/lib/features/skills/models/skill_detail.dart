@@ -1,17 +1,12 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show
-        AppSkillDefinition,
-        AppSkillDefinitionKind,
-        AppSkillResourceDefinition,
-        AppSkillToolDefinition;
+    show AppSkillDefinition, AppSkillResourceDefinition, AppSkillToolDefinition;
 
 typedef SkillDetailNativeValues = ({
   String title,
   String slug,
   String description,
   String content,
-  bool isCredentialOptional,
   String? titleKey,
   String? descriptionKey,
   String? contentKey,
@@ -34,8 +29,7 @@ class const SkillDetail({
   required final String description,
   required final String content,
   required final bool isEnabled,
-  required final bool isCredentialOptional,
-  final String? credentialDefinitionId,
+  final List<String> connectorToolIds = const [],
   final List<AppSkillToolDefinition> appTools = const [],
   final List<AppSkillResourceDefinition> appResources = const [],
   final String? titleKey,
@@ -62,15 +56,13 @@ class _NativeSkillDetail extends SkillDetail {
         source: SkillSource.app,
         id: request.appSkill.identifier,
         workspaceId: request.workspaceId,
-        kind: request.appSkill.kind == AppSkillDefinitionKind.template
-            ? .template
-            : .native,
+        kind: .native,
         title: values.title,
         slug: values.slug,
         description: values.description,
         content: values.content,
         isEnabled: request.isEnabled,
-        isCredentialOptional: values.isCredentialOptional,
+        connectorToolIds: request.appSkill.connectorToolIds,
         appTools: request.appSkill.tools,
         appResources: request.appSkill.resources,
         titleKey: values.titleKey,
@@ -91,7 +83,6 @@ class _UserSkillSkillDetail extends SkillDetail {
         description: skill.description,
         content: skill.content,
         isEnabled: skill.isEnabled,
-        isCredentialOptional: skill.isCredentialOptional,
-        credentialDefinitionId: skill.credentialDefinitionId,
+        connectorToolIds: skill.connectorToolIds,
       );
 }

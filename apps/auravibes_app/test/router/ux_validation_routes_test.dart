@@ -5,10 +5,7 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -29,14 +26,13 @@ import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspac
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_tool_catalog_item.dart';
+import 'package:auravibes_app/features/service_connections/providers/connector_tool_catalog_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen.dart';
-import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
@@ -44,7 +40,6 @@ import 'package:auravibes_app/features/tools/widgets/tools_search_input.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/cloud_auth_protocol.dart';
-import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_app/widgets/feature_destination_master.dart';
@@ -677,147 +672,6 @@ void main() {
   );
 
   testWidgets(
-    'schema creation returns selected type and encrypted credential saves',
-    (tester) async {
-      final f = await UxValidationFixture.create();
-      final repository = SkillCredentialsRepository(
-        database: f.database,
-        encryptionService: .new(_SecretKeyManager()),
-      );
-      final _ = await SkillsRepository(f.database).deleteSkill(f.skillId);
-      final _ = await f.database
-          .delete(f.database.skillCredentialDefinitions)
-          .go();
-      final parent = ServiceConnectionCreateRoute(
-        workspaceId: f.workspaceId,
-        type: 'skillCredential',
-      ).location;
-      final _ = await f.pump(
-        tester,
-        parent,
-        size: const Size(1280, 1600),
-        overrides: [
-          skillCredentialsRepositoryProvider.overrideWithValue(repository),
-        ],
-      );
-      await tester.enterText(find.byType(AuraInput).first, 'Project access');
-      await tester.tap(find.text('Create credential type'));
-      await f.settle(tester);
-      expect(find.byType(SkillCredentialDefinitionEditScreen), findsOneWidget);
-      await tester.enterText(find.byType(AuraInput).at(0), 'Project schema');
-      await tester.enterText(find.byType(AuraInput).at(1), 'api_key');
-      await tester.enterText(find.byType(AuraInput).at(2), 'API key');
-      await tester.testTextInput.receiveAction(.done);
-      await f.settle(tester);
-      expect(find.byType(ServiceConnectionCreateScreen), findsOneWidget);
-      expect(find.text('Project schema'), findsOneWidget);
-      expect(find.text('Project access'), findsOneWidget);
-      await tester.enterText(find.byType(AuraInput).last, 'fixture-secret');
-      await tester.tap(find.text('Save').last);
-      for (
-        var i = 0;
-        i < 20 &&
-            find.byType(ServiceConnectionCreateScreen).evaluate().isNotEmpty;
-        i++
-      ) {
-        await f.settle(tester);
-      }
-      final definition = await SkillCredentialDefinitionsRepository(f.database)
-          .getDefinitionBySlug(f.workspaceId, 'project_schema');
-      expect(definition, isNotNull);
-      final credentials = await repository.getCredentialsForDefinition(
-        workspaceId: f.workspaceId,
-        credentialDefinitionId:
-            definition?.id ?? (throw StateError('Missing saved definition')),
-      );
-      expect(credentials.single.name, 'Project access');
-      expect(
-        (await repository.getCredentialForEdit(credentials.single.id))
-            ?.secretAttributes['api_key']
-            ?.hasValue,
-        isTrue,
-      );
-      final row = await f.database.skillCredentialsDao.getCredentialById(
-        credentials.single.id,
-      );
-      expect(row?.encryptedAuthValue, isNot(contains('fixture-secret')));
-      expect(
-        await EncryptionService(_SecretKeyManager()).decrypt(
-          row?.encryptedAuthValue ??
-              (throw StateError('Missing encrypted credential')),
-        ),
-        contains('fixture-secret'),
-      );
-      expect(credentials.single.attributes, isNot(contains('api_key')));
-      expect(tester.takeException(), isNull);
-      await f.close(tester);
-    },
-  );
-
-  testWidgets(
-    'owning skill credential action persists and refreshes retained parent',
-    (tester) async {
-      final f = await UxValidationFixture.create();
-      final repository = SkillCredentialsRepository(
-        database: f.database,
-        encryptionService: .new(_SecretKeyManager()),
-      );
-      final parent = SkillDetailRoute(
-        workspaceId: f.workspaceId,
-        skillId: f.skillId,
-      ).location;
-      final router = await f.pump(
-        tester,
-        parent,
-        size: const Size(1280, 1800),
-        overrides: [
-          skillCredentialsRepositoryProvider.overrideWithValue(repository),
-        ],
-      );
-      await tester.enterText(
-        find.byType(AuraInput).first,
-        'Unpersisted owner title',
-      );
-      final create = find.text('Add Credential').first;
-      await Scrollable.ensureVisible(tester.element(create), alignment: 0.5);
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(create);
-      await f.settle(tester);
-      expect(find.byType(ServiceConnectionCreateScreen), findsOneWidget);
-      expect(find.text('Research access'), findsOneWidget);
-      await tester.enterText(find.byType(AuraInput).first, 'Owner access');
-      await tester.enterText(find.byType(AuraInput).last, 'owner-secret');
-      await tester.tap(find.text('Save').last);
-      for (
-        var i = 0;
-        i < 20 && find.byType(SkillDetailScreen).evaluate().isEmpty;
-        i++
-      ) {
-        await f.settle(tester);
-      }
-      expect(router.routeInformationProvider.value.uri.path, parent);
-      expect(
-        tester.widget<AuraInput>(find.byType(AuraInput).first).controller?.text,
-        'Unpersisted owner title',
-      );
-      expect(
-        (await repository.getCredentialsForDefinition(
-          workspaceId: f.workspaceId,
-          credentialDefinitionId: f.definitionId,
-        )).single.name,
-        'Owner access',
-      );
-      expect(
-        (await SkillsRepository(f.database).getSkillById(f.skillId))?.title,
-        'Research notes',
-      );
-      expect(find.text('1 credential configured'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-      await f.close(tester);
-    },
-  );
-
-  testWidgets(
     'first local use creates workspace provider model and persisted message',
     (tester) async {
       svg.cache.clear();
@@ -993,60 +847,7 @@ void main() {
     },
   );
 
-  testWidgets(
-    'credential dependency opens actual skill and refreshes after repair',
-    (tester) async {
-      final f = await UxValidationFixture.create();
-      final parent = SkillCredentialDefinitionEditRoute(
-        workspaceId: f.workspaceId,
-        definitionId: f.definitionId,
-      ).location;
-      final router = await f.pump(tester, parent, size: const Size(1280, 1800));
-      await tester.enterText(
-        find.byType(AuraInput).first,
-        'Unpersisted schema title',
-      );
-      await tester.tap(find.text('Research notes').last);
-      await f.settle(tester);
-      expect(find.byType(SkillDetailScreen), findsOneWidget);
-      final selected = find
-          .descendant(
-            of: find.byType(SkillDetailScreen),
-            matching: find.text('Research access'),
-          )
-          .first;
-      await Scrollable.ensureVisible(tester.element(selected), alignment: 0.5);
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(selected);
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(find.text('No credential type').last);
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Save skill'));
-      await f.settle(tester);
-      expect(find.byType(SkillCredentialDefinitionEditScreen), findsOneWidget);
-      expect(router.routeInformationProvider.value.uri.path, parent);
-      expect(
-        tester.widget<AuraInput>(find.byType(AuraInput).first).controller?.text,
-        'Unpersisted schema title',
-      );
-      expect(
-        (await SkillsRepository(f.database).getSkillById(f.skillId))
-            ?.credentialDefinitionId,
-        isNull,
-      );
-      expect(find.text('Research notes'), findsNothing);
-      expect(
-        (await SkillCredentialDefinitionsRepository(f.database)
-                .getDefinitionById(f.definitionId))
-            ?.title,
-        'Research access',
-      );
-      expect(tester.takeException(), isNull);
-      await f.close(tester);
-    },
-  );
-
-  testWidgets('staged skill creates resource and tool with retained parent', (
+  testWidgets('staged skill creates resource and links Connector tool', (
     tester,
   ) async {
     final f = await UxValidationFixture.create();
@@ -1054,6 +855,18 @@ void main() {
       tester,
       SkillCreateRoute(workspaceId: f.workspaceId).location,
       size: const Size(1280, 1600),
+      overrides: [
+        connectorToolCatalogProvider.overrideWith(
+          (_) => const [
+            ConnectorToolCatalogItem(
+              toolId: 'connector/test/search',
+              connectorName: 'Research',
+              title: 'Search sources',
+              description: 'Search public sources.',
+            ),
+          ],
+        ),
+      ],
     );
     await tester.enterText(find.byType(AuraInput).first, 'Complete authoring');
     for (final field in ['Edit description', 'Edit content']) {
@@ -1124,8 +937,9 @@ void main() {
       (await SkillsRepository(f.database).getSkillById(skillId))?.title,
       'Complete authoring',
     );
+    const connectorToolId = 'connector/test/search';
     await tester.scrollUntilVisible(
-      find.byTooltip('New template tool'),
+      find.text('Connector tools'),
       350,
       scrollable: find
           .descendant(
@@ -1134,94 +948,34 @@ void main() {
           )
           .first,
     );
-    await tester.tap(find.byTooltip('New template tool'));
+    await tester.tap(find.text('Choose tools'));
     final _ = await tester.pumpAndSettle();
-    expect(find.byType(SkillToolEditScreen), findsOneWidget);
-    await _enter(tester, 'Title', 'New reference lookup');
-    await _enter(tester, 'URL', 'https://example.test/reference');
-    await Scrollable.ensureVisible(
-      tester.element(find.text('Edit description')),
-      alignment: 0.5,
+    final connectorToolOption = find.byType(AuraCheckboxListTile);
+    expect(connectorToolOption, findsOneWidget);
+    expect(
+      tester.widget<AuraCheckboxListTile>(connectorToolOption).value,
+      isFalse,
     );
+    await tester.tap(connectorToolOption);
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('Edit description'));
-    final _ = await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byType(EditableText).last,
-      'Find a public reference.',
+    expect(
+      tester.widget<AuraCheckboxListTile>(connectorToolOption).value,
+      isTrue,
     );
-    await tester.tap(find.byTooltip('Apply changes'));
-    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Apply'));
+    await f.settle(tester);
+    expect(find.text('Research: Search sources'), findsOneWidget);
     await tester.tap(find.byTooltip('Save skill'));
     await f.settle(tester);
 
-    expect(find.byType(SkillDetailScreen), findsOneWidget);
-    expect(
-      tester.widget<AuraInput>(find.byType(AuraInput).first).controller?.text,
-      'Unpersisted parent title',
-    );
-    final tools = await SkillTemplateToolsRepository(f.database)
-        .getSkillTools(skillId);
-    final created = tools.singleWhere(
-      (tool) => tool.title == 'New reference lookup',
-    );
-    expect(tools, hasLength(1));
-    expect(
-      (await SkillsRepository(f.database).getSkillById(skillId))?.title,
-      'Complete authoring',
-    );
-    await tester.scrollUntilVisible(
-      find.text('New reference lookup'),
-      350,
-      scrollable: find
-          .descendant(
-            of: find.byType(SkillDetailScreen),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
-    await tester.tap(find.text('New reference lookup'));
-    final _ = await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<SkillToolEditScreen>(find.byType(SkillToolEditScreen))
-          .toolId,
-      created.id,
-    );
-    await _enter(tester, 'Title', 'Updated reference lookup');
-    await tester.tap(find.byTooltip('Save skill'));
-    await f.settle(tester);
-
-    expect(
-      GoRouterState.of(tester.element(find.byType(SkillDetailScreen))).uri.path,
-      parent,
-    );
-    expect(
-      tester.widget<AuraInput>(find.byType(AuraInput).first).controller?.text,
-      'Unpersisted parent title',
-    );
-    final updated = await SkillTemplateToolsRepository(f.database)
-        .getSkillTools(skillId);
-    expect(
-      updated.singleWhere((tool) => tool.id == created.id).title,
-      'Updated reference lookup',
-    );
-    expect(updated, hasLength(1));
+    final updatedSkill = await SkillsRepository(f.database)
+        .getSkillById(skillId);
+    expect(updatedSkill?.connectorToolIds, [connectorToolId]);
+    expect(updatedSkill?.title, 'Unpersisted parent title');
     expect(
       await SkillResourcesRepository(f.database).getSkillResources(skillId),
       resources,
     );
-    await tester.scrollUntilVisible(
-      find.text('Updated reference lookup'),
-      400,
-      scrollable: find
-          .descendant(
-            of: find.byType(SkillDetailScreen),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
-    expect(find.text('Updated reference lookup'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await f.close(tester);
   });

@@ -1,9 +1,5 @@
-import 'dart:convert';
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
@@ -22,26 +18,20 @@ void main() {
   );
   setUp(() => clearAppDatabase(database));
   tearDownAll(database.close);
-  test('clones declarative app skills without credential values', () async {
+
+  test('clones Connector tool references and Skill resources', () async {
     final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );
     final skillsRepository = SkillsRepository(database);
-    final definitionsRepository = SkillCredentialDefinitionsRepository(
-      database,
-    );
     final resourcesRepository = SkillResourcesRepository(database);
-    final toolsRepository = SkillTemplateToolsRepository(database);
+    const registry = AppSkillRegistry();
+    final appSkill = registry.getBySlug('brave');
+    if (appSkill == null) fail('Brave Skill fixture is missing.');
     final usecase = CloneAppSkillUsecase(
-      const AppSkillRegistry(),
+      registry,
       skillsRepository,
       .new(skillsRepository),
-      .new(definitionsRepository),
-      .new(
-        toolsRepository,
-        skillsRepository: skillsRepository,
-        skillCredentialDefinitionsRepository: definitionsRepository,
-      ),
       resourceRepository: resourcesRepository,
     );
 
@@ -49,28 +39,11 @@ void main() {
 
     expect(cloned.kind, SkillKind.template);
     expect(cloned.title, 'Brave Search Copy');
-    final tools = await toolsRepository.getSkillTools(cloned.id);
-    expect(tools, isNotEmpty);
-    for (final tool in tools) {
-      expect(tool.definitionJson, contains('"version":1'));
-      final credentialDefinitionId = tool.credentialDefinitionId;
-      if (credentialDefinitionId == null) {
-        fail('Cloned tool must have a credential definition.');
-      }
-      final definition = await definitionsRepository.getDefinitionById(
-        credentialDefinitionId,
-      );
-      if (definition == null) {
-        fail('Cloned credential definition must be persisted.');
-      }
-      final attributes =
-          jsonDecode(definition.attributesJson) as Map<String, Object?>;
-      expect(attributes.values, everyElement(isA<Map<String, Object?>>()));
-      expect(attributes.values, everyElement(isNot(contains('value'))));
-    }
-    final resources = await resourcesRepository.getSkillResources(cloned.id);
-    expect(resources, hasLength(1));
-    expect(resources.single.slug, 'query_operators_and_paging');
+    expect(cloned.connectorToolIds, unorderedEquals(appSkill.connectorToolIds));
+    expect(
+      await resourcesRepository.getSkillResources(cloned.id),
+      hasLength(1),
+    );
   });
 
   test('does not clone native app controls', () async {
@@ -78,23 +51,15 @@ void main() {
       const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );
     final skillsRepository = SkillsRepository(database);
-    final definitionsRepository = SkillCredentialDefinitionsRepository(
-      database,
-    );
     final usecase = CloneAppSkillUsecase(
       const AppSkillRegistry(),
       skillsRepository,
       .new(skillsRepository),
-      .new(definitionsRepository),
-      .new(
-        .new(database),
-        skillsRepository: skillsRepository,
-        skillCredentialDefinitionsRepository: definitionsRepository,
-      ),
+      resourceRepository: .new(database),
     );
 
-    final _ = await expectLater(
-      usecase.call(workspace.id, 'skills_manager'),
+    expect(
+      () => usecase.call(workspace.id, 'skills_manager'),
       throwsA(isA<StateError>()),
     );
   });

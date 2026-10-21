@@ -183,31 +183,32 @@ void main() {
     }
   });
 
-  testWidgets('nested credential routes select saved credentials', (
+  testWidgets('nested Connector create route keeps Connectors selected', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1280, 700));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final credentials = FeatureDestinations.connections('A').last;
+    final connectors = FeatureDestinations.connections('A').firstWhere(
+      (destination) => destination.location.endsWith('?view=connectors'),
+    );
     final router = _router(
-      FeatureDestinations.masterLocation(credentials.location),
+      FeatureDestinations.masterLocation(connectors.location),
     );
     addTearDown(router.dispose);
     await _pumpRouter(tester, router, 'en');
 
-    await tester.tap(find.byKey(_destinationKey(credentials)));
+    await tester.tap(find.byKey(_destinationKey(connectors)));
     final _ = await tester.pumpAndSettle();
     unawaited(
-      router.push<void>('/workspaces/A/skill-credential-definitions/new'),
+      router.push<void>(
+        '/workspaces/A/service-connections/new?type=connector&connectorId=jina',
+      ),
     );
     final _ = await tester.pumpAndSettle();
 
+    expect(router.state.uri.path, '/workspaces/A/service-connections/new');
     expect(
-      router.state.uri.path,
-      '/workspaces/A/skill-credential-definitions/new',
-    );
-    expect(
-      tester.widget<AuraTile>(find.byKey(_destinationKey(credentials))).variant,
+      tester.widget<AuraTile>(find.byKey(_destinationKey(connectors))).variant,
       AuraTileVariant.selected,
     );
     expect(tester.takeException(), isNull);
@@ -395,7 +396,7 @@ void main() {
     await tester.tap(find.byKey(_destinationKey(destinations[1])));
     final _ = await tester.pump(const Duration(milliseconds: 80));
     expect(tester.getTopLeft(master), masterPosition);
-    expect(router.state.uri.queryParameters['view'], 'providers');
+    expect(router.state.uri.queryParameters['view'], 'connectors');
     expect(find.byType(FeatureDestinationMaster), findsOneWidget);
     final _ = await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
@@ -560,14 +561,6 @@ GoRouter _router(
                 pageBuilder: pageBuilder,
                 routes: [GoRoute(path: 'new', pageBuilder: pageBuilder)],
               ),
-              GoRoute(
-                path: 'skill-credential-definitions',
-                pageBuilder: pageBuilder,
-                routes: [
-                  GoRoute(path: 'new', pageBuilder: pageBuilder),
-                  GoRoute(path: ':definitionId', pageBuilder: pageBuilder),
-                ],
-              ),
             ],
             navigatorKey: connectionsNavigatorKey,
           ),
@@ -602,6 +595,7 @@ String _localizedLabel(String key, String language) => switch (key) {
   'related_lists.agents' => language == 'en' ? 'Agents' : 'Agentes',
   'related_lists.skills' => language == 'en' ? 'Skills' : 'Habilidades',
   'related_lists.overview' => language == 'en' ? 'Overview' : 'Resumen',
+  'related_lists.connectors' => language == 'en' ? 'Connectors' : 'Conectores',
   'related_lists.providers' =>
     language == 'en' ? 'AI providers' : 'Proveedores de IA',
   'related_lists.services' => language == 'en' ? 'Services' : 'Servicios',

@@ -255,16 +255,15 @@ void main() {
     });
   });
 
-  test('credential requirement changes fail closed', () {
+  test('tool definition changes fail closed', () {
     final changed = AgentTranscriptContextEntry(
       afterMessageId: 'u1',
       update: .new(
         toolsAdded: [
           ToolSpec(
             name: 'lookup',
-            description: 'Lookup',
+            description: 'Changed lookup',
             inputJsonSchema: const {'type': 'object'},
-            requiresCredential: true,
           ),
         ],
         toolsRemoved: ['lookup'],

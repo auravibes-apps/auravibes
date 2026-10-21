@@ -61,7 +61,7 @@ void main() {
       );
       expect(
         skills.singleWhere((skill) => skill.slug == 'duckduckgo').kind,
-        SkillKind.template,
+        SkillKind.native,
       );
       expect(
         skills.singleWhere((skill) => skill.slug == 'skills_manager').kind,
