@@ -43,6 +43,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 | Validation              | `python3 tool/validation_lease.py -- fvm dart run melos run validate:quick` (same form for `validate` and `validate:ci`) |
 | Asset/clean scripts     | `python3 tool/validation_lease.py -- fvm dart run melos run generate:icons` (same form for `clean` and `generate:flavors`) |
 | Code generation         | `python3 tool/validation_lease.py -- fvm dart run melos run generate` (same form for `generate:localization` and `generate:serverpod`) |
+| Generated drift check    | `python3 tool/validation_lease.py -- fvm dart run melos run validate:generated` (clean worktree) |
 
 - Script definitions and package filters live in root `pubspec.yaml`.
 - For a new checkout or worktree, use the `fvm use` command above, then bootstrap before running `--no-pub` checks.
@@ -72,7 +73,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 - Run the smallest scope-appropriate check with pinned FVM through the validation lease.
 - For Dart syntax checks, use `fvm dart analyze <path>` when generic syntax parsing reports unsupported language.
-- For generated source changes, run the relevant generator and inspect its output.
+- For generator-input changes, follow the generated-artifact check in [validation policy](docs/agents/task-policies.md#validation).
 - For scope-specific checks, read [validation policy](docs/agents/task-policies.md#validation).
 - For GitHub CI coverage, read the [local CI parity matrix](docs/agents/ci-local-parity.md); `validate:ci` covers the Melos validation subset only.
 - For shared result or status contract changes, follow [behavior-path review](docs/agents/task-policies.md#behavior-path-review).
@@ -108,6 +109,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 - PR titles use Conventional Commits. Keep each PR to one coherent change with its related tests; describe purpose, behavior, validation, and requested reviewer focus.
 - Use each contributor's configured tools and workflow for PR delivery and review. Do not install tools or prepare a full local environment solely for these tasks.
+- Local commits do not publish changes and need no separate user authorization; `git push` and `gh pr merge` require explicit user authorization.
 - If a requested Codex review rejects its configured model as unsupported, retry once with a model supported by the current host. Report a blocker if none is available.
 - Before pushing code changes for review, run `python3 tool/validation_lease.py -- fvm dart run melos run validate:pr`. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
 

@@ -64,7 +64,7 @@ melos:
       description: Fail when unused Dart files are detected
 
     dcl:analyze:
-      run: dart run tool/run_quiet.dart -- dart run dart_code_linter:metrics analyze apps/auravibes_app/lib packages/auravibes_engine/lib packages/auravibes_ui/lib widgetbook/lib --exclude='{**/*_test.dart,**/test/**}' --set-exit-on-violation-level=warning
+      run: dart run tool/run_quiet.dart -- dart run dart_code_linter:metrics analyze apps/auravibes_app/lib packages/auravibes_engine/lib packages/auravibes_ui/lib widgetbook/lib --exclude='{**/*_test.dart,**/test/**}' --no-congratulate --set-exit-on-violation-level=warning
       description: Run legacy Dart Code Linter rule analysis manually
 
     unused:code:
@@ -218,6 +218,22 @@ melos:
         - melos run analyze
         - melos run format:check
       description: Quick validation for development (analyze + format)
+
+    validate:generated:
+      run: |
+        set -e
+        if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
+          echo "Run validate:generated from a clean worktree." >&2
+          exit 2
+        fi
+        melos run generate --no-select
+        melos run generate:serverpod
+        if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
+          echo "Generated artifacts are out of date; inspect and commit the generated diff." >&2
+          git status --short --untracked-files=all
+          exit 1
+        fi
+      description: Check generated artifacts for drift (requires clean worktree)
 
     validate:app:
       steps:
