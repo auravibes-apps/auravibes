@@ -46,12 +46,10 @@ class AppAgentToolResumeProvider({
   Future<agent.AgentIterationDecision> runAllowedTools({
     required String conversationId,
     required String workspaceId,
-    String? languageCode,
   }) async {
     final decision = await _runAllowedTools(
       conversationId: conversationId,
       workspaceId: workspaceId,
-      languageCode: languageCode,
     );
     if (decision != agent.AgentIterationDecision.done) return decision;
 
@@ -97,13 +95,11 @@ class AppAgentToolResumeProvider({
   Future<agent.AgentIterationDecision> _runAllowedTools({
     required String conversationId,
     required String workspaceId,
-    String? languageCode,
   }) async {
     try {
       return await toolExecutionService.call(
         conversationId: conversationId,
         workspaceId: workspaceId,
-        languageCode: languageCode,
       );
     } on Object catch (error, stackTrace) {
       _finishChildIfNeeded(activeSubAgents, (

@@ -133,6 +133,23 @@ void main() {
       runSubAgentToolSpec.description,
     );
   });
+
+  test('localizes list result hint without changing its JSON shape', () {
+    final englishResult = jsonEncode({
+      'agents': const <Map<String, Object?>>[],
+      'nextCursor': null,
+      'hint': 'Configured agents are optional.',
+    });
+    final spanishResult = jsonDecode(
+      AgentGuidance.localizeListAgentsResult(englishResult, 'es'),
+    ) as Map<String, dynamic>;
+
+    expect(spanishResult.keys, const <String>['agents', 'nextCursor', 'hint']);
+    expect(
+      spanishResult['hint'],
+      AgentGuidance.generalSubAgentHintForLanguageCode('es'),
+    );
+  });
 }
 
 String _translationAt(Map<String, dynamic> translations, String key) {

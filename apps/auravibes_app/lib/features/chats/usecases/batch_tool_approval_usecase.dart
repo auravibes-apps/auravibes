@@ -597,13 +597,11 @@ agent.AgentResolvedToolRunner<ResolvedTool> _resolvedToolBatchRunner(
       required toolCallId,
       required tool,
       required arguments,
-      languageCode,
     }) => runResolvedTool((
       conversationId: conversationId,
       toolCallId: toolCallId,
       tool: tool,
       arguments: arguments,
-      languageCode: languageCode,
     ));
 
 void _logToolExecutionError(

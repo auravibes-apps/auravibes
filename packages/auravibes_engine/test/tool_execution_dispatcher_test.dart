@@ -16,7 +16,6 @@ void main() {
         required toolCallId,
         required tool,
         required arguments,
-        languageCode,
       }) async => result,
       isCancellationRequested: (_) => false,
       logToolExecutionError: (request) {},
@@ -146,7 +145,6 @@ void main() {
             required toolCallId,
             required tool,
             required arguments,
-            languageCode,
           }) async => 'x' * 1000,
           isCancellationRequested: (_) => false,
           logToolExecutionError: (_) {},
@@ -202,7 +200,6 @@ void main() {
                       required toolCallId,
                       required tool,
                       required arguments,
-                      languageCode,
                     }) async {
                       if (fails) {
                         throw AgentToolExecutionFailure(
@@ -261,7 +258,6 @@ void main() {
                   required toolCallId,
                   required tool,
                   required arguments,
-                  languageCode,
                 }) async {
                   if (fails) {
                     throw AgentToolExecutionFailure(
@@ -304,7 +300,6 @@ void main() {
               required toolCallId,
               required tool,
               required arguments,
-              languageCode,
             }) async => source,
             isCancellationRequested: (_) => false,
             logToolExecutionError: (_) {},
@@ -336,7 +331,6 @@ void main() {
             required toolCallId,
             required tool,
             required arguments,
-            languageCode,
           }) async => tool * (defaultToolOutputBytes + 1),
           isCancellationRequested: (_) => false,
           logToolExecutionError: (_) {},
@@ -374,7 +368,6 @@ void main() {
                   required toolCallId,
                   required tool,
                   required arguments,
-                  languageCode,
                 }) async {
                   executed = true;
                   return 'unexpected';
@@ -404,7 +397,6 @@ void main() {
             required toolCallId,
             required tool,
             required arguments,
-            languageCode,
           }) async => '{"conversationId":"child-1","status":"stopped"}',
           isCancellationRequested: (_) => cancellationChecks++ > 0,
           logToolExecutionError: (_) {},
@@ -428,7 +420,6 @@ void main() {
             required toolCallId,
             required tool,
             required arguments,
-            languageCode,
           }) async => 'x' * (defaultToolOutputBytes + 1),
           isCancellationRequested: (_) => cancellationChecks++ > 0,
           logToolExecutionError: (_) {},
@@ -457,7 +448,6 @@ void main() {
                 required toolCallId,
                 required tool,
                 required arguments,
-                languageCode,
               }) async {
                 dispatched = true;
                 return 'unexpected';
@@ -489,7 +479,6 @@ void main() {
                   required toolCallId,
                   required tool,
                   required arguments,
-                  languageCode,
                 }) async {
                   throw AgentToolExecutionFailure(
                     responseRaw:

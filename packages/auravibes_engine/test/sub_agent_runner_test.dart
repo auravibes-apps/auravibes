@@ -69,17 +69,6 @@ void main() {
       );
     });
 
-    test('list result uses the supplied hint', () async {
-      final runner = _runner();
-      const hint = 'Configured agents are optional.';
-
-      final result = jsonDecode(
-        await runner.listAgents('w1', hint: hint),
-      ) as Map<String, Object?>;
-
-      expect(result['hint'], hint);
-    });
-
     test('filters listed agents by type', () async {
       final runner = _runner(
         catalog: const _Catalog(

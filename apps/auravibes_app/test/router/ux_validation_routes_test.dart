@@ -846,7 +846,11 @@ void main() {
           sendMessageUsecaseProvider.overrideWith(
             (ref, workspaceId) => SendMessageUsecase(
               continueAgentTurn:
-                  ({required conversationId, required context}) async {
+                  ({
+                    required conversationId,
+                    required context,
+                    languageCode,
+                  }) async {
                     continued = conversationId;
                     expect(context.ackMessageIds, hasLength(1));
                     expect(

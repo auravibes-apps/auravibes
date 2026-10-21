@@ -14,7 +14,6 @@ void main() {
             required toolCallId,
             required tool,
             required arguments,
-            languageCode,
           }) async {
             started.add(tool);
             await release.future;

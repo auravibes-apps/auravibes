@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_chat_attachment_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
@@ -26,6 +27,7 @@ import 'package:riverpod/src/providers/provider.dart';
 typedef ContinueAgentTurn = Future<AgentIterationDecision> Function({
   required String conversationId,
   required AgentIterationContext context,
+  String? languageCode,
 });
 
 class SendMessageUsecase {
@@ -129,8 +131,8 @@ class SendMessageUsecase {
       context: AgentIterationContext(
         origin: origin,
         ackMessageIds: [messageId],
-        languageCode: languageCode,
       ),
+      languageCode: languageCode,
     );
   }
 
@@ -369,7 +371,17 @@ sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
     final agentService = ref.watch(auraAgentServiceProvider);
 
     return SendMessageUsecase(
-      continueAgentTurn: agentService.agent.continueTurn,
+      continueAgentTurn:
+          ({required conversationId, required context, languageCode}) async {
+            ref
+                .read(conversationAgentLanguageRuntimeProvider)
+                .remember(conversationId, languageCode);
+
+            return await agentService.agent.continueTurn(
+              conversationId: conversationId,
+              context: context,
+            );
+          },
       messageRepository: ref.watch(messageRepositoryProvider),
       getConversationBusyStateUsecase: ref.watch(
         getConversationBusyStateUsecaseProvider,

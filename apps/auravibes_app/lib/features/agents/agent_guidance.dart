@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
@@ -57,6 +59,18 @@ abstract final class AgentGuidance {
         generalSubAgentHint,
         languageCode,
       );
+
+  static String localizeListAgentsResult(String result, String? languageCode) {
+    if (!_usesSpanish(languageCode)) return result;
+
+    final decodedResult = jsonDecode(result);
+    if (decodedResult is! Map<String, dynamic>) return result;
+
+    return jsonEncode({
+      ...decodedResult,
+      'hint': generalSubAgentHintForLanguageCode(languageCode),
+    });
+  }
 
   static ToolSpec listAgentsToolSpecForLanguageCode(String? languageCode) =>
       _localizedToolSpec(

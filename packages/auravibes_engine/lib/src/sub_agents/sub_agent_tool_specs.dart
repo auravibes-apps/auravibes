@@ -15,20 +15,13 @@ const generalSubAgentHint =
     'and set agentId to null to run a general sub-agent, even when agents is '
     'empty. Older calls may omit agentId.';
 
-const _listAgentsDescription =
-    'List enabled configured agents. General sub-agents are not listed; '
-    'an empty list still allows run_sub_agent without agentId. Returns '
-    'id, name, description, supported types, nextCursor, and a usage hint. '
-    'Reuse the same query and type with nextCursor.';
-const _runSubAgentDescription =
-    'Run a sub-agent in an isolated child conversation. Set agentId to null '
-    'to run a general sub-agent; older calls may omit agentId. '
-    'This works when list_agents returns no agents. '
-    'Use list_agents with type=sub_agent to choose a configured specialist.';
-
 final listAgentsToolSpec = ToolSpec(
   name: listAgentsToolName,
-  description: _listAgentsDescription,
+  description:
+      'List enabled configured agents. General sub-agents are not listed; '
+      'an empty list still allows run_sub_agent without agentId. Returns '
+      'id, name, description, supported types, nextCursor, and a usage hint. '
+      'Reuse the same query and type with nextCursor.',
   inputJsonSchema: {
     'type': 'object',
     'properties': {
@@ -61,7 +54,11 @@ final listAgentsToolSpec = ToolSpec(
 
 final runSubAgentToolSpec = ToolSpec(
   name: runSubAgentToolName,
-  description: _runSubAgentDescription,
+  description:
+      'Run a sub-agent in an isolated child conversation. Set agentId to null '
+      'to run a general sub-agent; older calls may omit agentId. '
+      'This works when list_agents returns no agents. '
+      'Use list_agents with type=sub_agent to choose a configured specialist.',
   inputJsonSchema: {
     'type': 'object',
     'properties': {

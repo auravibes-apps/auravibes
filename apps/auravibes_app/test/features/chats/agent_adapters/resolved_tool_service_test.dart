@@ -281,7 +281,6 @@ void main() {
         tooltype: .calculator,
       ),
       arguments: {'input': '2 + 3'},
-      languageCode: null,
     ));
 
     expect(result, '5.0');
@@ -298,7 +297,6 @@ void main() {
           tooltype: .calculator,
         ),
         arguments: {},
-        languageCode: null,
       )),
       throwsA(isA<FormatException>()),
     );
@@ -311,7 +309,6 @@ void main() {
         toolCallId: '',
         tool: ResolvedTool.native(tableId: 'tool-1', nativeToolType: .url),
         arguments: {},
-        languageCode: null,
       )),
       throwsA(isA<FormatException>()),
     );
@@ -331,7 +328,6 @@ void main() {
         ),
       ),
       arguments: {'value': 1},
-      languageCode: null,
     ));
 
     expect(result, 'mcp result');
@@ -374,7 +370,6 @@ void main() {
       ),
       arguments: const {'text': 'first conversation'},
       toolCallId: 'tool-call-1',
-      languageCode: null,
     ));
     final secondResult = await service((
       conversationId: 'conversation-2',
@@ -389,7 +384,6 @@ void main() {
       ),
       arguments: const {'text': 'second conversation'},
       toolCallId: 'tool-call-1',
-      languageCode: null,
     ));
 
     expect(firstResult, 'model result');
@@ -438,7 +432,6 @@ void main() {
       ),
       arguments: const {},
       toolCallId: 'tool-call-1',
-      languageCode: null,
     ));
 
     expect(result, 'ordinary result');
@@ -509,7 +502,6 @@ void main() {
         ),
       ),
       arguments: const {},
-      languageCode: null,
     ));
 
     expect(result, 'done');
@@ -532,7 +524,6 @@ void main() {
           ),
         ),
         arguments: const {},
-        languageCode: null,
       )),
       throwsA(isA<StateError>()),
     );
@@ -549,7 +540,6 @@ void main() {
           mcp: (mcpServerId: '', mcpSlug: 'server-1', outputSchemaJson: null),
         ),
         arguments: {'value': 1},
-        languageCode: null,
       )),
       throwsA(isA<StateError>()),
     );
@@ -610,7 +600,6 @@ void main() {
         'revision': 'rev-1',
         'args': {'question': 'What is TCGplayer?'},
       },
-      languageCode: null,
     ));
 
     expect(result, 'codex result');
@@ -1337,7 +1326,6 @@ void main() {
           },
         },
         toolCallId: '',
-        languageCode: null,
       ));
 
       expect(result, 'native result');
@@ -1374,7 +1362,6 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: listAgentsToolName,
-        languageCode: null,
         arguments: const {},
       )),
       contains('agent-1'),
@@ -1386,7 +1373,6 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: runSubAgentToolName,
-        languageCode: null,
         arguments: const {'title': 'Child', 'prompt': 'Run task'},
       )),
       contains('child-1'),
@@ -1398,7 +1384,6 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: 'unknown',
-        languageCode: null,
         arguments: const {},
       )),
       throwsA(isA<StateError>()),
@@ -1477,7 +1462,6 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'skills_manager',
         toolSlug: 'native-tool',
-        languageCode: null,
         arguments: {'value': 2},
       )),
       {'ok': true},
@@ -1489,7 +1473,6 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'duckduckgo',
         toolSlug: 'search',
-        languageCode: null,
         arguments: {'query': 'dart'},
       )),
       'service result',
@@ -1532,7 +1515,6 @@ void main() {
       workspaceId: 'workspace-1',
       skillSlug: 'duckduckgo',
       toolSlug: 'search',
-      languageCode: null,
       arguments: {'query': 'dart'},
     ));
     cancellationRuntime.requestStop('conversation-1');
@@ -1583,7 +1565,6 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'duckduckgo',
         toolSlug: 'search',
-        languageCode: null,
         arguments: {'query': 'dart'},
       ));
       await Future<void>.delayed(.zero);
@@ -1628,7 +1609,6 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'duckduckgo',
         toolSlug: 'search',
-        languageCode: null,
         arguments: const {'query': 'dart'},
       )),
       throwsA(isA<StateError>()),
@@ -1672,7 +1652,6 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'skill-1',
         toolSlug: 'native-tool',
-        languageCode: null,
         arguments: const {},
       )),
       throwsA(isA<StateError>()),
@@ -1697,7 +1676,6 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: agentsSkillSlug,
         toolSlug: listAgentsToolName,
-        languageCode: null,
         arguments: const {},
       )),
       throwsA(isA<StateError>()),
@@ -1709,7 +1687,6 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: SkillToolSlugs.skillsManager,
         toolSlug: 'list',
-        languageCode: null,
         arguments: const {},
       )),
       throwsA(isA<StateError>()),
@@ -1934,7 +1911,6 @@ void main() {
         toolIdentifier: runSubAgentToolName,
       ),
       arguments: const {'title': 'Child', 'prompt': 'Run task'},
-      languageCode: null,
     ));
     await approvalWait.future;
     expect(
@@ -2053,7 +2029,6 @@ void main() {
           toolIdentifier: runSubAgentToolName,
         ),
         arguments: const {'title': 'Child', 'prompt': 'Run task'},
-        languageCode: null,
       ));
 
       expect(result, contains('"conversationId":"child-1"'));

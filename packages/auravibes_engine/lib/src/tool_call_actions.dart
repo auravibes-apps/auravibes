@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:auravibes_engine/src/resolved_tool_service.dart';
 import 'package:auravibes_engine/src/skills/skill_command.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 import 'package:crypto/crypto.dart';
@@ -77,7 +76,12 @@ abstract interface class ApproveToolCallProvider<TTool extends Object> {
     required TTool tool,
   });
 
-  Future<Object?> runResolvedTool(AgentResolvedToolCallRequest<TTool> request);
+  Future<Object?> runResolvedTool({
+    required String conversationId,
+    required String toolCallId,
+    required TTool tool,
+    required Map<String, dynamic> arguments,
+  });
 
   Future<void> markToolCallRunning({
     required String messageId,
@@ -90,7 +94,6 @@ abstract interface class ApproveToolCallProvider<TTool extends Object> {
   Future<void> resumeConversationIfReady({
     required String messageId,
     required String conversationId,
-    String? languageCode,
   });
 
   bool isCancellationRequested(String conversationId);
@@ -108,7 +111,6 @@ abstract interface class SkipToolCallProvider {
   Future<void> resumeConversationIfReady({
     required String messageId,
     required String conversationId,
-    String? languageCode,
   });
 }
 
@@ -116,7 +118,6 @@ abstract interface class StopPendingToolCallsProvider {
   Future<void> stopPendingToolCalls({
     required String messageId,
     required String conversationId,
-    String? languageCode,
   });
 }
 
@@ -130,7 +131,6 @@ class const ApproveToolCallService<TTool extends Object>({
     required String conversationId,
     required AgentToolGrantLevel level,
     required String approvalDigest,
-    String? languageCode,
   }) async {
     final toolCall = await provider.loadToolCall(
       messageId: messageId,
@@ -173,7 +173,6 @@ class const ApproveToolCallService<TTool extends Object>({
       await provider.resumeConversationIfReady(
         messageId: messageId,
         conversationId: conversationId,
-        languageCode: languageCode,
       );
 
       return;
@@ -197,7 +196,6 @@ class const ApproveToolCallService<TTool extends Object>({
       toolCallId: toolCallId,
       tool: tool,
       argumentsRaw: toolCall.argumentsRaw,
-      languageCode: languageCode,
     );
 
     await provider.updateToolCallResult((
@@ -218,7 +216,6 @@ class const ApproveToolCallService<TTool extends Object>({
     await provider.resumeConversationIfReady(
       messageId: messageId,
       conversationId: conversationId,
-      languageCode: languageCode,
     );
   }
 
@@ -227,23 +224,9 @@ class const ApproveToolCallService<TTool extends Object>({
     required String toolCallId,
     required TTool tool,
     required String argumentsRaw,
-    String? languageCode,
   }) {
     return AgentToolExecutionDispatcher<TTool>(
-      runResolvedTool:
-          ({
-            required conversationId,
-            required toolCallId,
-            required tool,
-            required arguments,
-            languageCode,
-          }) => provider.runResolvedTool((
-            conversationId: conversationId,
-            toolCallId: toolCallId,
-            tool: tool,
-            arguments: arguments,
-            languageCode: languageCode,
-          )),
+      runResolvedTool: provider.runResolvedTool,
       isCancellationRequested: provider.isCancellationRequested,
       logToolExecutionError: provider.logToolExecutionError,
       outputPolicyForTool: outputPolicyForTool,
@@ -252,7 +235,6 @@ class const ApproveToolCallService<TTool extends Object>({
       toolCallId: toolCallId,
       tool: tool,
       argumentsRaw: argumentsRaw,
-      languageCode: languageCode,
     );
   }
 }
@@ -264,7 +246,6 @@ class const SkipToolCallService({
     required String toolCallId,
     required String messageId,
     required String conversationId,
-    String? languageCode,
   }) async {
     final skipped = await provider.skipToolCall(
       messageId: messageId,
@@ -276,7 +257,6 @@ class const SkipToolCallService({
     await provider.resumeConversationIfReady(
       messageId: messageId,
       conversationId: conversationId,
-      languageCode: languageCode,
     );
   }
 }

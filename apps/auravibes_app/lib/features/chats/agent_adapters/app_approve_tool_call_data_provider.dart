@@ -188,9 +188,17 @@ class const AppApproveToolCallDataProvider({
   }
 
   @override
-  Future<Object?> runResolvedTool(
-    agent.AgentResolvedToolCallRequest<ResolvedTool> request,
-  ) => runResolvedToolUsecase(request);
+  Future<Object?> runResolvedTool({
+    required String conversationId,
+    required String toolCallId,
+    required ResolvedTool tool,
+    required Map<String, dynamic> arguments,
+  }) => runResolvedToolUsecase((
+    conversationId: conversationId,
+    toolCallId: toolCallId,
+    tool: tool,
+    arguments: arguments,
+  ));
 
   @override
   Future<void> markToolCallRunning({
@@ -222,12 +230,8 @@ class const AppApproveToolCallDataProvider({
   Future<void> resumeConversationIfReady({
     required String messageId,
     required String conversationId,
-    String? languageCode,
   }) {
-    return agentToolResumeService.call(
-      messageId: messageId,
-      languageCode: languageCode,
-    );
+    return agentToolResumeService.call(messageId: messageId);
   }
 
   @override

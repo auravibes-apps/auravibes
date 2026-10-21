@@ -236,10 +236,13 @@ class _FakeApproveToolCallProvider({
   }
 
   @override
-  Future<Object?> runResolvedTool(
-    AgentResolvedToolCallRequest<String> request,
-  ) async {
-    calls.add('run:${request.arguments['input']}');
+  Future<Object?> runResolvedTool({
+    required String conversationId,
+    required String toolCallId,
+    required String tool,
+    required Map<String, dynamic> arguments,
+  }) async {
+    calls.add('run:${arguments['input']}');
     final error = runError;
     if (error is Exception) throw error;
     if (error is Error) throw error;
@@ -268,7 +271,6 @@ class _FakeApproveToolCallProvider({
   Future<void> resumeConversationIfReady({
     required String messageId,
     required String conversationId,
-    String? languageCode,
   }) async {
     didResume = true;
     calls.add('resume:$messageId');
@@ -301,7 +303,6 @@ class _FakeSkipToolCallProvider({required final bool shouldSkip})
   Future<void> resumeConversationIfReady({
     required String messageId,
     required String conversationId,
-    String? languageCode,
   }) async {
     didResume = true;
     calls.add('resume:$messageId');

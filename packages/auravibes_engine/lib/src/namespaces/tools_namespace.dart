@@ -25,7 +25,6 @@ class ToolsNamespace<TTool extends Object>({
     required String conversationId,
     required AgentToolGrantLevel level,
     required String approvalDigest,
-    String? languageCode,
   }) async {
     final cancellationScope = _cancellationEffects.start(conversationId);
     try {
@@ -35,7 +34,6 @@ class ToolsNamespace<TTool extends Object>({
         conversationId: conversationId,
         level: level,
         approvalDigest: approvalDigest,
-        languageCode: languageCode,
       );
     } finally {
       _cancellationEffects.clear(conversationId, cancellationScope);
@@ -46,32 +44,25 @@ class ToolsNamespace<TTool extends Object>({
     required String toolCallId,
     required String messageId,
     required String conversationId,
-    String? languageCode,
   }) {
     return _skip.call(
       toolCallId: toolCallId,
       messageId: messageId,
       conversationId: conversationId,
-      languageCode: languageCode,
     );
   }
 
   Future<void> stopPending({
     required String messageId,
     required String conversationId,
-    String? languageCode,
   }) {
     return _stopPending.stopPendingToolCalls(
       messageId: messageId,
       conversationId: conversationId,
-      languageCode: languageCode,
     );
   }
 
-  Future<void> resumeIfReady({
-    required String messageId,
-    String? languageCode,
-  }) {
-    return _resume.call(messageId: messageId, languageCode: languageCode);
+  Future<void> resumeIfReady({required String messageId}) {
+    return _resume.call(messageId: messageId);
   }
 }

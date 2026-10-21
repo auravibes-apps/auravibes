@@ -36,7 +36,6 @@ void main() {
         tooltype: .calculator,
       ),
       arguments: <String, dynamic>{},
-      languageCode: null,
     ));
   });
 

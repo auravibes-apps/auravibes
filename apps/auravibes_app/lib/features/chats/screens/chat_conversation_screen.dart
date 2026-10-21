@@ -30,6 +30,7 @@ import 'package:auravibes_app/features/chats/providers/background_work_continuat
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
@@ -2875,12 +2876,16 @@ Future<AgentIterationDecision> _continueLocalAgent(
   String conversationId,
   String languageCode,
 ) async {
+  ref
+      .read(conversationAgentLanguageRuntimeProvider)
+      .remember(conversationId, languageCode);
+
   return await ref
       .read(auraAgentServiceProvider)
       .agent
       .continueTurn(
         conversationId: conversationId,
-        context: .new(origin: .manualContinue, languageCode: languageCode),
+        context: const .new(origin: .manualContinue),
       );
 }
 

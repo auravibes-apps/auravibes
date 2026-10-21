@@ -154,9 +154,17 @@ class const AppAllowedToolsDataProvider({
   }
 
   @override
-  Future<Object?> runResolvedTool(
-    agent.AgentResolvedToolCallRequest<ResolvedTool> request,
-  ) => resolvedToolService(request);
+  Future<Object?> runResolvedTool({
+    required String conversationId,
+    required String toolCallId,
+    required ResolvedTool tool,
+    required Map<String, dynamic> arguments,
+  }) => resolvedToolService((
+    conversationId: conversationId,
+    toolCallId: toolCallId,
+    tool: tool,
+    arguments: arguments,
+  ));
 
   @override
   Future<agent.AgentIterationDecision> getAgentIterationDecision({

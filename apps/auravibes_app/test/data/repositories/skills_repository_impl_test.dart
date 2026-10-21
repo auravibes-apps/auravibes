@@ -1123,7 +1123,6 @@ void main() {
         toolCallId: '',
         tool: .skillControl(toolIdentifier: SkillToolNames.listCredentials),
         arguments: {'skillSlug': skill.slug},
-        languageCode: null,
       ));
       final result =
           (output ?? fail('skill control result missing'))

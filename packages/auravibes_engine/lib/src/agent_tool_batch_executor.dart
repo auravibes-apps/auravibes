@@ -25,7 +25,6 @@ class const AgentToolBatchExecutor<TTool extends Object>({
   Future<List<AgentToolBatchResult<TTool>>> call(
     Iterable<AgentToolBatchCall<TTool>> calls, {
     AgentToolBatchResultHandler<TTool>? onResult,
-    String? languageCode,
   }) => Future.wait(
     calls.map((call) async {
       final result =
@@ -39,7 +38,6 @@ class const AgentToolBatchExecutor<TTool extends Object>({
             toolCallId: call.toolCallId,
             tool: call.tool,
             argumentsRaw: call.argumentsRaw,
-            languageCode: languageCode,
           );
       final batchResult = AgentToolBatchResult(call: call, result: result);
       if (onResult != null) await onResult(batchResult);

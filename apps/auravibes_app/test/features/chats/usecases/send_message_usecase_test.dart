@@ -71,15 +71,12 @@ void main() {
         () => verify(
           () => fixture.runAgentIterationUsecase.call(
             conversationId: 'conversation-1',
-            context: const AgentIterationContext(
-              origin: .userMessage,
-              ackMessageIds: ['user-1'],
-              languageCode: 'es',
-            ),
+            context: any(named: 'context'),
           ),
         ).called(1),
         returnsNormally,
       );
+      expect(fixture.callbackLanguageCodes, ['es']);
     });
 
     test('returns iteration limit decision from foreground send', () async {
@@ -179,10 +176,10 @@ void main() {
             context: const AgentIterationContext(
               origin: .manualContinue,
               ackMessageIds: ['failed-user'],
-              languageCode: 'en',
             ),
           ),
         ).called(1);
+        expect(fixture.callbackLanguageCodes, ['en']);
         final _ = verifyNever(
           () => fixture.messageRepository.createMessage(any()),
         );
@@ -217,10 +214,10 @@ void main() {
             context: const AgentIterationContext(
               origin: .manualContinue,
               ackMessageIds: ['failed-user'],
-              languageCode: 'es',
             ),
           ),
         ).called(1);
+        expect(fixture.callbackLanguageCodes, ['es']);
       },
     );
 
@@ -364,10 +361,10 @@ void main() {
           context: const AgentIterationContext(
             origin: .userMessage,
             ackMessageIds: ['user-1'],
-            languageCode: 'es',
           ),
         ),
       ).called(1);
+      expect(fixture.callbackLanguageCodes, ['es']);
       expect(errors, isEmpty);
 
       completer.complete();
@@ -399,6 +396,7 @@ void main() {
 
 class _SendMessageUsecaseFixture({
   required final MockAgentLoopRunner runAgentIterationUsecase,
+  required final List<String?> callbackLanguageCodes,
   required final MockMessageRepository messageRepository,
   required final MockGetConversationBusyStateUsecase
   getConversationBusyStateUsecase,
@@ -407,6 +405,7 @@ class _SendMessageUsecaseFixture({
 }) {
   factory create() {
     final runAgentIterationUsecase = MockAgentLoopRunner();
+    final callbackLanguageCodes = <String?>[];
     final messageRepository = MockMessageRepository();
     final getConversationBusyStateUsecase =
         MockGetConversationBusyStateUsecase();
@@ -417,11 +416,20 @@ class _SendMessageUsecaseFixture({
 
     return _SendMessageUsecaseFixture(
       runAgentIterationUsecase: runAgentIterationUsecase,
+      callbackLanguageCodes: callbackLanguageCodes,
       messageRepository: messageRepository,
       getConversationBusyStateUsecase: getConversationBusyStateUsecase,
       container: container,
       usecase: .new(
-        continueAgentTurn: runAgentIterationUsecase.call,
+        continueAgentTurn:
+            ({required conversationId, required context, languageCode}) {
+              callbackLanguageCodes.add(languageCode);
+
+              return runAgentIterationUsecase.call(
+                conversationId: conversationId,
+                context: context,
+              );
+            },
         messageRepository: messageRepository,
         getConversationBusyStateUsecase: getConversationBusyStateUsecase,
         conversationActivityGate: container.read(
