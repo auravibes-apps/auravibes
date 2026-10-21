@@ -104,8 +104,6 @@ bool _matchesFilter(
   .tools => offering.offersTools,
 };
 
-Iterable<String> _serviceIds(ConnectorCatalogOffering? offering) {
-  if (offering == null) return const [];
-
+Iterable<String> _serviceIds(ConnectorCatalogOffering offering) {
   return {offering.id, ...offering.serviceIds};
 }

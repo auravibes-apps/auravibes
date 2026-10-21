@@ -37,7 +37,7 @@ String connectorToolRevision(
   return sha256.convert(utf8.encode(contract)).toString();
 }
 
-String _canonicalJson(Object? value) => jsonEncode(_canonicalize(value));
+String _canonicalJson(Object value) => jsonEncode(_canonicalize(value));
 
 Object? _canonicalize(Object? value) => switch (value) {
   final Map<Object?, Object?> map => {
