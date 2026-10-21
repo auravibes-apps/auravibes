@@ -179,6 +179,7 @@ void main() {
             context: const AgentIterationContext(
               origin: .manualContinue,
               ackMessageIds: ['failed-user'],
+              languageCode: 'en',
             ),
           ),
         ).called(1);
@@ -187,6 +188,41 @@ void main() {
         );
       });
     }
+
+    test(
+      'preserves the requested locale when retrying a user message',
+      () async {
+        final message = MessageEntity(
+          id: 'failed-user',
+          conversationId: 'conversation-1',
+          content: 'Original prompt',
+          messageType: .text,
+          isUser: true,
+          status: .unfinished,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
+        );
+        when(() => fixture.messageRepository.getMessageById(message.id))
+            .thenAnswer((_) async => message);
+
+        final _ = await fixture.usecase.retryUserMessage(
+          conversationId: 'conversation-1',
+          messageId: message.id,
+          languageCode: 'es',
+        );
+
+        verify(
+          () => fixture.runAgentIterationUsecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: .manualContinue,
+              ackMessageIds: ['failed-user'],
+              languageCode: 'es',
+            ),
+          ),
+        ).called(1);
+      },
+    );
 
     test(
       'does not dispatch a retry for a persisted non-retryable failure',

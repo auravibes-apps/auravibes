@@ -59,7 +59,7 @@ class const CloudTurnUsecase(final CloudChatGateway _gateway) {
   Future<ConversationSnapshot> continueSharedConversation({
     required String conversationId,
     required int projectionRevision,
-    String? languageCode,
+    String languageCode = 'en',
   }) => _gateway.continueConversation(
     requestId: DateTime.now().microsecondsSinceEpoch.toString(),
     conversationId: conversationId,

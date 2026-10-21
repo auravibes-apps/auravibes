@@ -101,7 +101,7 @@ class SendMessageUsecase {
   Future<AgentIterationDecision> retryUserMessage({
     required String conversationId,
     required String messageId,
-    String? languageCode,
+    String languageCode = 'en',
   }) => _withConversationActivity(
     conversationActivityGate,
     conversationId,
@@ -215,7 +215,7 @@ Future<AgentIterationDecision> _retryUserMessage(
   SendMessageUsecase usecase, {
   required String conversationId,
   required String messageId,
-  String? languageCode,
+  required String languageCode,
 }) async {
   final repository =
       usecase.messageRepository ??
