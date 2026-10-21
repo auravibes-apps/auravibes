@@ -140,6 +140,39 @@ void main() {
     expect(messages.single.messageType, MessagesTableType.text);
   });
 
+  test(
+    'seeds and clears a second local workspace for switch coverage',
+    () async {
+      final seededData = await state.seedDemoData();
+      expect(
+        seededData['conversationId'],
+        MarionetteDevelopmentState.demoConversationId,
+      );
+
+      final smokeWorkspace =
+          await (database.select(database.workspaces)..where(
+                (table) => table.id.equals(
+                  MarionetteDevelopmentState.smokeWorkspaceId,
+                ),
+              ))
+              .getSingleOrNull();
+      expect(smokeWorkspace?.type, WorkspaceType.local);
+      expect(smokeWorkspace?.name, 'Marionette Smoke Workspace');
+
+      final clearResult = await state.clearDevelopmentState();
+      expect(clearResult['deletedSmokeWorkspace'], isTrue);
+
+      final clearedWorkspace =
+          await (database.select(database.workspaces)..where(
+                (table) => table.id.equals(
+                  MarionetteDevelopmentState.smokeWorkspaceId,
+                ),
+              ))
+              .getSingleOrNull();
+      expect(clearedWorkspace, isNull);
+    },
+  );
+
   test('navigates only to the seeded local demo conversation', () async {
     final _ = await state.seedDemoData();
 

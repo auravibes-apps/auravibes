@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/model_usage_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -1570,6 +1571,8 @@ void main() {
         id: 'previous-user-error-1',
         status: .error,
       );
+      var persistedUserMessage = previousUserError;
+      final userMessagePatches = <MessagePatch>[];
       when(() => conversationRepository.getConversationById('conversation-1'))
           .thenAnswer((_) async => _conversation);
       when(() => messageRepository.getSystemMessages('conversation-1'))
@@ -1578,7 +1581,7 @@ void main() {
         () => messageRepository.getMessagesByStatus('conversation-1', .error),
       ).thenAnswer((_) async => [previousUserError]);
       when(() => messageRepository.getMessageById(previousUserError.id))
-          .thenAnswer((_) async => previousUserError);
+          .thenAnswer((_) async => persistedUserMessage);
       when(() => messageRepository.deleteMessage(any()))
           .thenAnswer((_) async => true);
       when(() => messageRepository.getMessagesByConversation('conversation-1'))
@@ -1606,7 +1609,35 @@ void main() {
         );
       });
       when(() => messageRepository.patchMessage(any(), any()))
-          .thenAnswer((_) async => errorMessage);
+          .thenAnswer((invocation) async {
+            final messageId = invocation.positionalArguments.first as String;
+            final patch = invocation.positionalArguments[1] as MessagePatch;
+            if (messageId != previousUserError.id) return errorMessage;
+
+            userMessagePatches.add(patch);
+            final isRetryReset =
+                persistedUserMessage.status == .error &&
+                patch.status == .sending &&
+                patch.content == null &&
+                patch.metadata == null;
+            final changesTerminalUserMessage =
+                persistedUserMessage.status == .error &&
+                (patch.content != null ||
+                    patch.metadata != null ||
+                    (patch.status != null &&
+                        patch.status != persistedUserMessage.status));
+            if (changesTerminalUserMessage && !isRetryReset) {
+              throw const MessageValidationException(
+                'Terminal message is immutable',
+              );
+            }
+
+            return persistedUserMessage = persistedUserMessage.copyWith(
+              content: patch.content ?? persistedUserMessage.content,
+              metadata: patch.metadata ?? persistedUserMessage.metadata,
+              status: patch.status ?? persistedUserMessage.status,
+            );
+          });
       when(
         () => chatbotService.sendMessage(
           _model,
@@ -1674,18 +1705,26 @@ void main() {
           const MessagePatch(status: .sending),
         ),
       ).called(1);
-      final failedUserPatch = verify(
-        () => messageRepository.patchMessage(
-          'previous-user-error-1',
-          captureAny(),
-        ),
-      ).captured.cast<MessagePatch>().last;
-      expect(failedUserPatch.status, MessageStatus.error);
-      expect(failedUserPatch.metadata?.modelMetadata['providerRecovery'], {
-        'classification': 'unknown',
-        'retryable': false,
-        'providerStatus': 'INTERNAL',
-      });
+      expect(userMessagePatches, hasLength(2));
+      expect(
+        userMessagePatches.firstOrNull,
+        const MessagePatch(status: .sending),
+      );
+      expect(userMessagePatches.last.status, MessageStatus.error);
+      expect(
+        userMessagePatches.last.metadata?.modelMetadata['providerRecovery'],
+        {
+          'classification': 'unknown',
+          'retryable': false,
+          'providerStatus': 'INTERNAL',
+        },
+      );
+      expect(persistedUserMessage.status, MessageStatus.error);
+      expect(persistedUserMessage.content, previousUserError.content);
+      expect(
+        persistedUserMessage.metadata?.modelMetadata['providerRecovery'],
+        userMessagePatches.last.metadata?.modelMetadata['providerRecovery'],
+      );
       final _ = verifyNever(
         () => messageRepository.deleteMessage('previous-system-error-1'),
       );

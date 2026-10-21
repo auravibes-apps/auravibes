@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 const _defaultServerUrl = 'http://localhost:8080/';
 const _startupProgressInterval = Duration(seconds: 30);
 final _vmServiceUriPattern = RegExp(r'ws://[^\s]+/ws');
+const _maxVmServiceOutputCodePoints = 8192;
 
 Future<void> main(List<String> args) async {
   try {
@@ -22,6 +23,17 @@ Future<void> main(List<String> args) async {
 /// Extracts the VM service URI emitted by `flutter run`.
 String? extractVmServiceUri(String output) {
   return _vmServiceUriPattern.firstMatch(output)?.group(0);
+}
+
+String retainVmServiceOutputTail(String output) {
+  if (output.length <= _maxVmServiceOutputCodePoints) return output;
+
+  final codePoints = output.runes.toList(growable: false);
+  if (codePoints.length <= _maxVmServiceOutputCodePoints) return output;
+
+  return String.fromCharCodes(
+    codePoints.skip(codePoints.length - _maxVmServiceOutputCodePoints),
+  );
 }
 
 /// Detects a launch phase from Flutter or Xcode output.
@@ -163,11 +175,8 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
     stdout.write(chunk);
     recordOutput(chunk, fromStderr: false);
     outputBuffer = '$outputBuffer$chunk';
-    if (outputBuffer.length > 8192) {
-      final codePoints = outputBuffer.runes.toList(growable: false);
-      outputBuffer = String.fromCharCodes(
-        codePoints.skip(codePoints.length - 8192),
-      );
+    if (outputBuffer.length > _maxVmServiceOutputCodePoints) {
+      outputBuffer = retainVmServiceOutputTail(outputBuffer);
     }
 
     final uri = extractVmServiceUri(outputBuffer);

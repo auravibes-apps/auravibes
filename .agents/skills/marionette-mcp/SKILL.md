@@ -103,7 +103,9 @@ requires a GUI app and a live VM service.
 ## Repeatable agent smoke runbook
 
 Use this flow for an isolated macOS dev-app smoke run. It uses no production
-server, credentials, or user data.
+server, credentials, or user data. Expect 2–4 minutes after app startup. The
+repeatable flow is macOS dev only; the CLI fallback cannot call custom
+extensions.
 
 1. Give the run a unique ID and keep the launcher terminal/session open:
 
@@ -122,18 +124,25 @@ server, credentials, or user data.
    `extension: "auravibes.instanceIdentity"`. Continue only when the returned
    `instanceId` exactly matches `agent-a`.
 
-3. Call `get_interactive_elements` before interacting. Use stable keys, never
-   coordinates. The new-chat smoke controls are:
+3. Call `get_interactive_elements` before interacting. Use stable keys or
+   semantics identifiers, never coordinates. The chat smoke controls are:
 
-   - `workspace_selector`
-   - `chat_composer`
+   - Identifier `app_drawer_menu` to open the drawer
+   - Key `workspace_choice` in the drawer to open the workspace list
+   - Key `workspace_selector` on layouts that expose the selector directly
+   - Key `chat_composer`
+   - Identifier `chat_send_button`
+   - Identifier `chat_stop_generation` while a response is active
+   - Key `retry_message_<message-id>` after a message fails
+
+   The new-chat controls also include:
+
    - `chat_agent_selector`
    - `chat_model_selector`
    - `chat_attachment_options_button`
-   - `chat_send_button`
 
-   If a required control has no stable key, stop and report the missing
-   selector. Visible text is a fallback, not a coordinate substitute.
+   If a required control has no stable key or identifier, stop and report the
+   missing selector. Visible text is a fallback, not a coordinate substitute.
 
 4. Seed deterministic local state through the app custom extensions. Use the
    promoted MCP tools when present, or `call_custom_extension` with these
@@ -156,21 +165,91 @@ server, credentials, or user data.
    `Marionette Demo`, `marionette-demo-model`, and the seeded
    `Marionette Demo Conversation`. These fixed IDs are local development
    fixtures, not production records. The `demo_conversation` route opens only
-   that seeded conversation in the local demo workspace.
+   that seeded conversation in the local demo workspace. Marionette marks only
+   this exact demo connection and model ready in Riverpod memory; it does not
+   write credentials or readiness flags to persistent storage. This override
+   is installed only for a Marionette launch.
 
-5. Exercise the deterministic composer path with stable keys:
+5. Confirm the deterministic composer selectors before starting the scenarios:
 
    ```text
-   tap {"key":"chat_composer"}
-   enter_text {"key":"chat_composer","input":"Marionette smoke message"}
    get_interactive_elements {}
    ```
 
-   Call `get_logs` after every tap or text-entry action. Verify the entered
-   text from the inspected `EditableText`; do not send unless a controlled
-   local backend or fixture makes the send result deterministic.
+   Verify `chat_composer` and `chat_send_button` are present. Do not enter a
+   placeholder draft here; each scenario below configures its fixture and
+   enters its own exact message. The Marionette demo model uses a local
+   fixture, so these sends do not call a model provider or server.
 
-6. Exercise optional controls only when their state is present:
+6. Run complete, stop, and retry scenarios. Before each message, call
+   `auravibes.configureChatSmokeFixture` with that scenario through the
+   promoted MCP tool or `call_custom_extension`, then call `get_logs`. The
+   configuration applies to the next demo-model request, so configure each
+   scenario immediately before its message. Call `get_logs` after every tap
+   or text entry and use inspection to synchronize; do not use timing sleeps
+   as the primary wait.
+
+   Run these scenarios in the seeded `Marionette Demo Conversation` opened in
+   step 4. If New Chat is visible, navigate back with
+   `auravibes.navigate {"route":"demo_conversation",
+   "workspaceId":"marionette-demo-workspace"}` and inspect the conversation
+   title before sending.
+
+   - **Complete:** configure
+     `auravibes.configureChatSmokeFixture {"scenario":"complete"}`, enter
+     `Marionette complete smoke`, then send through
+     identifier `chat_send_button`. Inspect until
+     `Marionette demo response.` is visible and stop control is gone. Verify
+     persisted user and assistant messages with the scoped dev DB query below;
+     both should have status `sent`.
+   - **Stop:** configure
+     `auravibes.configureChatSmokeFixture {"scenario":"stop"}`, enter
+     `Marionette stop smoke`, then send through identifier
+     `chat_send_button`. Inspect until
+     `Marionette response in progress.` and identifier `chat_stop_generation`
+     are visible. Tap the stop identifier. Inspect until stop control is gone
+     and composer is available. Query persisted messages; no message should
+     remain in transient `sending` status.
+   - **Retry:** configure
+     `auravibes.configureChatSmokeFixture {"scenario":"retry"}`, enter
+     `Marionette retry smoke`, then send through identifier
+     `chat_send_button`. Inspect until the
+     failed user message exposes its surfaced `retry_message_<message-id>` key.
+     Tap that exact key. Inspect until `Marionette demo response.` is visible
+     and stop control is gone. Verify the retried user and assistant messages
+     are persisted with status `sent`.
+
+   From the repository root, the database query is scoped to this worktree's
+   `DB_HASH_SOURCE` and prints only smoke messages, avoiding the conversation's
+   internal context rows:
+
+   ```sh
+   fvm dart run tool/db_query.dart "SELECT content, is_user, status FROM messages WHERE conversation_id = 'marionette-demo-conversation' AND content IN ('Marionette complete smoke', 'Marionette stop smoke', 'Marionette retry smoke', 'Marionette demo response.', 'Marionette response in progress.') ORDER BY created_at DESC"
+   ```
+
+7. Switch workspaces from New Chat and a conversation using the visible
+   selector. The seed step creates a second local workspace for this check.
+   Navigate to New Chat in the demo workspace with
+   `auravibes.navigate {"route":"new_chat",
+   "workspaceId":"marionette-demo-workspace"}`. Then tap
+   `app_drawer_menu`, tap `workspace_choice`, and select the surfaced workspace
+   option with stable identifier `workspace_option_marionette-smoke-workspace`.
+   On layouts that expose `workspace_selector` directly, open that selector
+   and use the same option identifier. Call `get_logs`
+   after every tap and inspect until New Chat is scoped to
+   `marionette-smoke-workspace`; open the drawer once to confirm the selected
+   workspace label.
+
+   Navigate back to the seeded conversation with
+   `auravibes.navigate {"route":"demo_conversation",
+   "workspaceId":"marionette-demo-workspace"}`, then repeat the drawer
+   selector switch from that conversation. Workspace switching routes to New
+   Chat in the selected workspace; inspect the route and selected workspace
+   after the switch. Use the visible selector to return with identifier
+   `workspace_option_marionette-demo-workspace`, then navigate to
+   `demo_conversation` and verify its title.
+
+8. Exercise optional controls only when their state is present:
 
    - Tap `chat_attachment_options_button`, inspect the surfaced menu keys, and
      use only a checked-in fixture if a file picker is available. Never attach
@@ -189,7 +268,7 @@ server, credentials, or user data.
    configured `http://localhost:8080/` server is not running; report it as an
    environment limitation, not as proof that chat sending passed.
 
-7. On any failed action, immediately call `get_logs` and
+9. On any failed action, immediately call `get_logs` and
    `take_screenshots`. With the CLI fallback, save the image under
    `.dart_tool/marionette/` with the instance ID. Record the failed stable key,
    current route/state, first relevant redacted log, and screenshot path.
@@ -197,7 +276,7 @@ server, credentials, or user data.
    `pkill`, a broad Flutter kill, or another agent's manifest. On clean exit,
    disconnect the bridge and confirm the manifest was removed.
 
-8. If the process crashed and the manifest remains, verify that its exact PID
+10. If the process crashed and the manifest remains, verify that its exact PID
    is no longer the matching runner before removing the stale manifest or
    choosing another ID. A stale manifest is not permission to connect by
    scanning for another VM service.
