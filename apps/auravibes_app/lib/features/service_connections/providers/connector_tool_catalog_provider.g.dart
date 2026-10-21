@@ -57,4 +57,4 @@ final class ConnectorToolCatalogProvider
 }
 
 String _$connectorToolCatalogHash() =>
-    r'2acd972171b8349486dce09c96fb91536966fd8d';
+    r'63b36d946d4856416ec02a2afb5a84722568869d';
