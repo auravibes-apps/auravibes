@@ -232,5 +232,8 @@ String _lastToolResponseOutput(List<ChatMessage> history) {
   final responses = message.parts.whereType<ToolResponsePart>().toList();
   if (responses.length != 1) fail('Expected one tool response.');
 
-  return responses.single.toolResponse.output;
+  final output = responses.single.toolResponse.output;
+  if (output is! String) fail('Tool response output is not a string.');
+
+  return output;
 }
