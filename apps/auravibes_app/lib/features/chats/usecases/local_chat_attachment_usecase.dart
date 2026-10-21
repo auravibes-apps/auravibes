@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:riverpod/riverpod.dart';
@@ -11,6 +13,16 @@ class const LocalChatAttachmentUsecase(
   }) {
     return _service.copyIntoAppStorage(sourcePath, displayName: displayName);
   }
+
+  Future<MessageAttachmentToCreate> copyBytesIntoAppStorage(
+    Uint8List bytes, {
+    required String fileName,
+    required String displayName,
+  }) => _service.copyBytesIntoAppStorage(
+    bytes,
+    fileName: fileName,
+    displayName: displayName,
+  );
 
   Future<void> deleteAttachment(String localPath) {
     return _service.deleteAttachment(localPath);

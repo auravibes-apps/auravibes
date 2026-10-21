@@ -72,6 +72,33 @@ void main() {
     expect(attachment.localPath, contains('chat_attachments_draft'));
   });
 
+  test('copyBytesIntoAppStorage stores a sanitized dropped file', () async {
+    final bytes = Uint8List.fromList([
+      0x89,
+      0x50,
+      0x4E,
+      0x47,
+      0x0D,
+      0x0A,
+      0x1A,
+      0x0A,
+    ]);
+
+    final attachment = await LocalChatAttachmentService()
+        .copyBytesIntoAppStorage(
+          bytes,
+          fileName: '../image:bad?.png',
+          displayName: 'Screenshot',
+        );
+
+    expect(attachment.fileName, 'image_bad_.png');
+    expect(attachment.displayName, 'Screenshot');
+    expect(attachment.mimeType, 'image/png');
+    expect(attachment.modality, MessageAttachmentModality.image);
+    expect(attachment.sizeBytes, bytes.length);
+    expect(await File(attachment.localPath).readAsBytes(), bytes);
+  });
+
   test(
     'createToolResultAttachment stores image with tool call association',
     () async {

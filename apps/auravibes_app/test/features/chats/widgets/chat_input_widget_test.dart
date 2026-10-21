@@ -25,6 +25,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:super_clipboard/super_clipboard.dart';
+import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -62,6 +64,7 @@ void main() {
     ValueChanged<ConversationToolAccessMode>? onToolAccessModeChanged,
     Locale locale = const Locale('en'),
     bool disabled = false,
+    bool acceptDroppedFilesWhenDisabled = false,
     bool isBusy = false,
     bool? showStopButton,
     VoidCallback? onStop,
@@ -136,6 +139,7 @@ void main() {
               disabledHint: disabledHint,
               compactDisabledHint: compactDisabledHint,
               disabled: disabled,
+              acceptDroppedFilesWhenDisabled: acceptDroppedFilesWhenDisabled,
               isBusy: isBusy,
               showStopButton: showStopButton,
               onStop: onStop,
@@ -671,7 +675,160 @@ void main() {
     );
 
     expect(find.byType(ChatInputWidget), findsOneWidget);
+    expect(find.byType(DropRegion), findsOneWidget);
     expect(find.byType(AuraInput), findsOneWidget);
+  });
+
+  testWidgets('shows hint outside and highlights inside drop target', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        disabled: true,
+        acceptDroppedFilesWhenDisabled: true,
+        onSendMessage: (_) => _noop(),
+      ),
+    );
+
+    final dropMonitor = tester.widget<DropMonitor>(find.byType(DropMonitor));
+    expect(
+      tester.getRect(find.byType(DropRegion)),
+      tester.getRect(find.byType(AuraInput)),
+    );
+    final session = _TestFileDropSession();
+    dropMonitor.onDropOver?.call(
+      .new(
+        session: session,
+        position: .new(
+          local: const Offset(-10, -10),
+          global: const Offset(10, 10),
+        ),
+        isInside: false,
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byIcon(Icons.file_upload_outlined), findsOneWidget);
+    expect(find.text('Drop files to attach'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('chat_input_drop_highlight')),
+      findsNothing,
+    );
+
+    dropMonitor.onDropOver?.call(
+      .new(
+        session: session,
+        position: .new(
+          local: .zero,
+          global: tester.getCenter(find.byType(AuraInput)),
+        ),
+        isInside: true,
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('chat_input_drop_highlight')),
+      findsOneWidget,
+    );
+
+    dropMonitor.onDropOver?.call(
+      .new(
+        session: session,
+        position: .new(
+          local: const Offset(-10, -10),
+          global: const Offset(10, 10),
+        ),
+        isInside: false,
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('chat_input_drop_highlight')),
+      findsNothing,
+    );
+    expect(find.text('Drop files to attach'), findsOneWidget);
+
+    dropMonitor.onDropLeave?.call(.new(session: session));
+    await tester.pump();
+
+    expect(find.text('Drop files to attach'), findsNothing);
+  });
+
+  testWidgets('adds dropped files to disabled new-chat draft', (tester) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 8,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(attachment);
+    final bytes = Uint8List.fromList('report!!'.codeUnits);
+    final dropFile = _TestDataReaderFile('report.pdf', bytes);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        disabled: true,
+        acceptDroppedFilesWhenDisabled: true,
+        attachmentService: attachmentService,
+        onSendMessage: (_) => _noop(),
+      ),
+    );
+
+    final dropRegion = tester.widget<DropRegion>(find.byType(DropRegion));
+    final session = _TestFileDropSession(dataReader: _TestDataReader(dropFile));
+    final _ = await dropRegion.onPerformDrop(
+      .new(
+        session: session,
+        position: .new(local: .zero, global: .zero),
+        acceptedOperation: .copy,
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('report.pdf'), findsOneWidget);
+    expect(attachmentService.copiedBytes, bytes);
+    expect(attachmentService.copiedFileName, 'report.pdf');
+    expect(dropFile.wasClosed, isTrue);
+  });
+
+  testWidgets('blocks send when draft attachment is unsupported', (
+    tester,
+  ) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 2048,
+    );
+    final sentDrafts = <ChatDraft>[];
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['text'],
+        attachmentService: _FakeLocalChatAttachmentService(attachment),
+        draftToLoad: const ChatDraft(
+          text: 'Question',
+          attachments: [attachment],
+        ),
+        onSendMessage: sentDrafts.add,
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.arrow_upward).hitTestable());
+    final _ = await tester.pumpAndSettle();
+
+    expect(sentDrafts, isEmpty);
+    expect(find.text('report.pdf'), findsOneWidget);
+    expect(find.textContaining('support file input'), findsOneWidget);
   });
 
   testWidgets('loads a queued draft with its attachments', (tester) async {
@@ -2019,6 +2176,87 @@ void _noop() {
   final _ = Object();
 }
 
+class _TestFileDropSession({final DataReader? dataReader}) extends DropSession {
+  @override
+  final List<DropItem> items = [_TestFileDropItem(dataReader)];
+
+  @override
+  Listenable get onDisposed => const _TestListenable();
+
+  @override
+  Set<DropOperation> get allowedOperations => {DropOperation.copy};
+}
+
+class _TestFileDropItem(final DataReader? _dataReader) extends DropItem {
+  @override
+  DataReader? get dataReader => _dataReader;
+
+  @override
+  Null get localData => null;
+
+  @override
+  List<PlatformFormat> get platformFormats => const [];
+
+  @override
+  bool canProvide(DataFormat format) => true;
+}
+
+class const _TestListenable() implements Listenable {
+  @override
+  void addListener(VoidCallback listener) {
+    final _ = listener;
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    final _ = listener;
+  }
+}
+
+class _TestDataReader(final DataReaderFile file) implements DataReader {
+  @override
+  ReadProgress? getFile(
+    FileFormat? format,
+    AsyncValueChanged<DataReaderFile> onFile, {
+    ValueChanged<Object>? onError,
+    bool allowVirtualFiles = true,
+    bool synthesizeFilesFromURIs = true,
+  }) {
+    unawaited(Future<void>.sync(() => onFile(file)).whenComplete(file.close));
+
+    return _TestReadProgress();
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _TestReadProgress implements ReadProgress {
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _TestDataReaderFile(
+  @override final String? fileName,
+  final Uint8List bytes,
+) implements DataReaderFile {
+  bool wasClosed = false;
+
+  @override
+  int get fileSize => bytes.length;
+
+  @override
+  void close() {
+    wasClosed = true;
+  }
+
+  @override
+  Stream<Uint8List> getStream() => Stream.value(bytes);
+
+  @override
+  Future<Uint8List> readAll() async => bytes;
+}
+
 class _FakeLocalChatAttachmentService(
   final MessageAttachmentToCreate attachment, {
   final Exception? copyError,
@@ -2028,6 +2266,8 @@ class _FakeLocalChatAttachmentService(
 }) implements LocalChatAttachmentService {
   final String storageNamespace = 'test';
   final deletedPaths = <String>[];
+  Uint8List? copiedBytes;
+  String? copiedFileName;
   int startCount = 0;
   int stopCount = 0;
   int cancelCount = 0;
@@ -2042,6 +2282,19 @@ class _FakeLocalChatAttachmentService(
     return attachment.copyWith(
       displayName: displayName ?? attachment.displayName,
     );
+  }
+
+  @override
+  Future<MessageAttachmentToCreate> copyBytesIntoAppStorage(
+    Uint8List bytes, {
+    required String fileName,
+    required String displayName,
+  }) async {
+    if (copyError case final error?) throw error;
+    copiedBytes = .fromList(bytes);
+    copiedFileName = fileName;
+
+    return attachment.copyWith(displayName: displayName);
   }
 
   @override

@@ -915,6 +915,7 @@
     "semantics_credentials": "Set up credentials for {skill}"
   },
   "chat_input": {
+    "drop_files_to_attach": "Drop files to attach",
     "tool_access_label": "Tool access",
     "tool_access_default_label": "Default",
     "tool_access_default_compact_label": "Default",
