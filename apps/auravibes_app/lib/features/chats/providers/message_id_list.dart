@@ -23,6 +23,7 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
@@ -257,6 +258,65 @@ Stream<List<MessageEntity>> _cloudMessages(
   _readCloudConversationMessages,
 );
 
+@riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
+Future<MessageEntity?> fetchConversationMessageById(
+  Ref ref,
+  _MessageLookupRequest request,
+) async {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(request.workspaceId).future,
+  );
+  if (session.cloud == null) {
+    return await _localConversationMessage(ref, request);
+  }
+
+  return await _cloudConversationMessage(ref, request, session);
+}
+
+Future<MessageEntity?> _localConversationMessage(
+  Ref ref,
+  _MessageLookupRequest request,
+) async =>
+    (await ref
+            .watch(messageRepositoryProvider)
+            .getMessagesByConversation(request.conversationId))
+        .firstWhereOrNull((message) => message.id == request.messageId);
+
+Future<MessageEntity?> _cloudConversationMessage(
+  Ref ref,
+  _MessageLookupRequest request,
+  WorkspaceSession session,
+) async {
+  final message = await _cloudConversationMessageView(ref, request, session);
+  if (message == null) return null;
+
+  return _readCloudMessage(message, (
+    a2uiMessages: null,
+    a2uiIssuesBySurface: null,
+    a2uiMessageIssues: null,
+  ));
+}
+
+Future<ConversationMessageView?> _cloudConversationMessageView(
+  Ref ref,
+  _MessageLookupRequest request,
+  WorkspaceSession session,
+) async {
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayProvider(session).future,
+  );
+  if (gateway == null) return null;
+
+  final messages = await CloudChatGateway(gateway).listConversationMessages(
+    request.conversationId,
+    limit: 1,
+    messageId: request.messageId,
+  );
+
+  return messages.firstWhereOrNull((item) => item.id == request.messageId);
+}
+
 Stream<List<MessageEntity>> _messageStream<T>(
   Ref ref,
   ProviderListenable<AsyncValue<T>> provider,
@@ -388,11 +448,18 @@ int? _activeAssistantMessageIndex(
 MessageEntity _readCloudMessage(
   ConversationMessageView message,
   _CloudMessageOverlay overlay,
-) => _cloudMessageEntity(
-  message,
-  _readCloudMessageStatus(message.status),
-  _readCloudMessageMetadata(message, overlay),
-);
+) {
+  final entity = _cloudMessageEntity(
+    message,
+    _readCloudMessageStatus(message.status),
+    _readCloudMessageMetadata(message, overlay),
+  );
+
+  return entity.copyWith(
+    sourceConversationId: message.sourceConversationId,
+    sourceMessageId: message.sourceMessageId,
+  );
+}
 
 MessageEntity _cloudMessageEntity(
   ConversationMessageView message,

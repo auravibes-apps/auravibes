@@ -37,6 +37,13 @@ extension MessageDaoCoreOperations on MessageDao {
 
     return count > 0;
   }
+
+  Future<bool> setBookmarked(String id, {required bool isBookmarked}) async {
+    final count = await (update(messages)..where((tbl) => tbl.id.equals(id)))
+        .write(MessagesCompanion(isBookmarked: .new(isBookmarked)));
+
+    return count > 0;
+  }
 }
 
 extension MessageDaoConversationOperations on MessageDao {

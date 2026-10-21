@@ -25,6 +25,9 @@ conversation:
   - listPage:
   - get:
   - listMessages:
+  - bookmarkMessage:
+  - unbookmarkMessage:
+  - listMessageBookmarks:
   - searchMessages:
   - update:
   - delete:

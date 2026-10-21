@@ -2,6 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
+import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -36,6 +37,25 @@ class _StubMessageRepository implements MessageRepository {
   ) async {
     return messagesByConversation;
   }
+
+  @override
+  Future<bool> bookmarkMessage({
+    required String workspaceId,
+    required String conversationId,
+    required String messageId,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<bool> unbookmarkMessage({
+    required String workspaceId,
+    required String conversationId,
+    required String messageId,
+  }) => throw UnimplementedError();
+
+  @override
+  Stream<List<MessageBookmarkEntity>> watchBookmarkedMessages([
+    String? workspaceId,
+  ]) => throw UnimplementedError();
 
   @override
   Future<List<MessageEntity>> getTranscriptMessagesByConversation(
