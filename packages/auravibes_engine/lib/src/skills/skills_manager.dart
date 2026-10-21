@@ -9,18 +9,13 @@ const skillsManagerSkillDefinition = AppSkillDefinition(
   identifier: skillsManagerSkillSlug,
   slug: skillsManagerSkillSlug,
   title: 'Skills Manager',
-  description: 'Create and edit user skills, resources, and tools.',
+  description: 'Create and edit user skills and resources.',
   content: '''
-Use this skill to create, inspect, edit, and delete user skills, skill resources, skill template tools, and skill credential definitions.
+Use this skill to create, inspect, edit, and delete user skills and skill resources.
 Create the parent skill first, then create resources separately with the resource tools. Resources are one-level text or Markdown references loaded only after the parent skill is activated.
-When creating a skill, add the skill instructions, any needed resources, template tool definitions, and credential definitions.
-Inspect existing workspace skills, template tools, and credential definitions before creating new records.
-When a skill needs credentials, first create or find the credential definition, then pass its definitionId as credentialDefinitionId when creating or updating the skill. Do not use credential definition slug for skill associations.
-Credential definition attributes are secret by default. Set secret false only for safe display values like account id, region, tenant, username, or base path.
-Use Liquid templates for URL, query, headers, and body: {{ input.name }}, {{ credential.apiKey }}, {% if input.location %}, and {% for item in input.items %}.
-For JSON request bodies, set bodyFormat to json and use {{ input.name | json }} or {{ credential.name | json }} for dynamic JSON values.
-Use Liquid conditionals for optional or dependent fields. Do not use {input:name}, {credential:name}, or {{name}} in new templates.
-Define each tool input accurately with type, description, and optional when appropriate.
+Set connectorToolIds to the stable IDs of shared Connector tools the guidance uses. Do not copy Connector tool definitions or credentials into a Skill.
+Connector references guide the agent. The current Connection and permissions are checked when the Connector tool runs.
+Inspect existing workspace Skills before creating records.
 Only create user skills from explicit user intent.
 ''',
   tools: [
@@ -153,6 +148,12 @@ final List<ToolSpec> skillsManagerToolSpecs = _strictSkillsManagerToolSpecs([
         'isCredentialOptional': 'boolean',
         'isEnabled': 'boolean',
       },
+      extraJson: const {
+        'connectorToolIds': {
+          'type': 'array',
+          'items': {'type': 'string'},
+        },
+      },
     ),
   ),
   _spec(
@@ -167,6 +168,12 @@ final List<ToolSpec> skillsManagerToolSpecs = _strictSkillsManagerToolSpecs([
         'credentialDefinitionId': 'string',
         'isCredentialOptional': 'boolean',
         'isEnabled': 'boolean',
+      },
+      extraJson: const {
+        'connectorToolIds': {
+          'type': 'array',
+          'items': {'type': 'string'},
+        },
       },
     ),
   ),
@@ -333,12 +340,14 @@ ToolSpec _spec(
 Map<String, Object?> _schema(
   List<String> required, {
   Map<String, String> extra = const {},
+  Map<String, Object?> extraJson = const {},
   Set<String> objectFields = const {},
 }) {
   final properties = <String, Object?>{
     for (final field in required)
       field: {'type': objectFields.contains(field) ? 'object' : 'string'},
     for (final entry in extra.entries) entry.key: {'type': entry.value},
+    ...extraJson,
   };
   return {
     'type': 'object',

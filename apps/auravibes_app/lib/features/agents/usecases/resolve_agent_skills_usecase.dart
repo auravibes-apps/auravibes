@@ -114,6 +114,10 @@ AvailableSkill _toAvailableAppSkill(AppSkillDefinition skill) => AvailableSkill(
   content: skill.content,
   source: .app,
   kind: .native,
+  connectorToolIds: [
+    for (final tool in skill.tools.where((tool) => tool.urlTemplate != null))
+      connectorToolId(skill, tool),
+  ],
 );
 
 class const ResolvedAgentSkills({
@@ -146,6 +150,7 @@ extension AgentSkillEntityAvailableSkill on SkillEntity {
       content: content,
       source: source,
       kind: kind,
+      connectorToolIds: connectorToolIds,
       isCredentialOptional: isCredentialOptional,
       credentialDefinitionId: credentialDefinitionId,
     );

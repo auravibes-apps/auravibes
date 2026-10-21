@@ -35,6 +35,7 @@ void main() {
       final enabledSkill = await fixture.createSkill(
         fixture.workspaceId,
         'Enabled Skill',
+        connectorToolIds: const ['connector/notion/read_page'],
       );
       final disabledSkill = await fixture.createSkill(
         fixture.workspaceId,
@@ -45,6 +46,11 @@ void main() {
         fixture.otherWorkspaceId,
         'Other Skill',
       );
+      await fixture.appSettingsRepository.setAppSkillEnabled(
+        fixture.workspaceId,
+        'openai',
+        isEnabled: true,
+      );
 
       final resolved = await fixture.usecase(
         workspaceId: fixture.workspaceId,
@@ -54,6 +60,7 @@ void main() {
           AgentSkillRef.user(otherWorkspaceSkill.id),
           const AgentSkillRef.user('missing-skill'),
           const AgentSkillRef.app('skills_manager'),
+          const AgentSkillRef.app('openai'),
           const AgentSkillRef.app('missing-app-skill'),
         ],
       );
@@ -61,6 +68,17 @@ void main() {
       expect(resolved.available.map((skill) => skill.id), [
         enabledSkill.id,
         'skills_manager',
+        'openai',
+      ]);
+      final connectorToolIdsBySkill = {
+        for (final skill in resolved.available)
+          skill.id: skill.connectorToolIds,
+      };
+      expect(connectorToolIdsBySkill[enabledSkill.id], [
+        'connector/notion/read_page',
+      ]);
+      expect(connectorToolIdsBySkill['openai'], [
+        'connector/openai/web_search',
       ]);
       expect(resolved.unavailable, [
         AgentSkillRef.user(disabledSkill.id),
@@ -126,6 +144,7 @@ class _ResolveAgentSkillsFixture({
     String targetWorkspaceId,
     String title, {
     bool isEnabled = true,
+    List<String> connectorToolIds = const [],
   }) {
     return skillsRepository.createSkill(
       targetWorkspaceId,
@@ -134,6 +153,7 @@ class _ResolveAgentSkillsFixture({
         title: title,
         description: 'Description',
         content: 'Content',
+        connectorToolIds: connectorToolIds,
         isEnabled: isEnabled,
       ),
     );

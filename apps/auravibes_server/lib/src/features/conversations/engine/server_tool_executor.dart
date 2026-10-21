@@ -761,19 +761,10 @@ class const ServerToolExecutorService({
     final state = await _skillCommandState(session, turn);
     final skillId = _availableSkillId(target.slug, state);
     if (skillId == null) throw const ServerToolNotConfiguredException();
-    final tools = materializeCloudSkillTools(
-      selectedSkillIds: {...state.authorizedSkillIds, skillId},
-      userSkills: state.userSkills,
-      templateTools: state.templateTools,
-      appSkillSettings: state.appSkillSettings,
-      serviceConnections: state.serviceConnections,
-      isChildConversation:
-          state.conversation.parentConversationStableId != null,
-    );
     final manifest = await buildCloudSkillManifest(
       slug: target.slug,
       userSkills: state.userSkills,
-      tools: tools,
+      tools: const [],
     );
     if (manifest == null || manifest.revision != target.revision) {
       throw FormatException(

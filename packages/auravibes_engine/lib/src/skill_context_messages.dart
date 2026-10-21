@@ -71,15 +71,25 @@ String buildSkillRevision({
   required String description,
   required String instructions,
   required Iterable<SkillManifestTool> tools,
+  Iterable<String> connectorToolIds = const [],
 }) {
   final sortedTools = tools.toList()
     ..sort((left, right) => left.name.compareTo(right.name));
+  final sortedConnectorToolIds =
+      connectorToolIds
+          .map((id) => id.trim())
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
   final canonical = _canonicalJson({
     'identity': identity,
     'slug': slug,
     'title': title,
     'description': description,
     'instructions': instructions,
+    if (sortedConnectorToolIds.isNotEmpty)
+      'connectorToolIds': sortedConnectorToolIds,
     'tools': [for (final tool in sortedTools) tool.toJson()],
   });
   return sha256.convert(utf8.encode(jsonEncode(canonical))).toString();
@@ -106,6 +116,9 @@ SkillActivationResult buildSkillActivationResult({
   final title = _xmlAttributeEscape.convert(manifest.title);
   final revision = _xmlAttributeEscape.convert(manifest.revision);
   final tools = _xmlTextEscape.convert(_skillToolsJson(manifest));
+  final connectorToolRefs = _xmlTextEscape.convert(
+    jsonEncode(manifest.connectorToolIds),
+  );
   final credentialOptions = _xmlTextEscape.convert(
     _skillCredentialsToon(credentials),
   );
@@ -115,8 +128,9 @@ SkillActivationResult buildSkillActivationResult({
   return SkillActivationResult(
     '<skill_content slug="$slug" title="$title" revision="$revision">'
     '${_xmlCdata(content)}'
-    '<skill_tools>$tools</skill_tools>'
-    '<skill_credentials>$credentialOptions</skill_credentials>'
+    '${manifest.tools.isEmpty ? '' : '<skill_tools>$tools</skill_tools>'}'
+    '${manifest.connectorToolIds.isEmpty ? '' : '<connector_tool_refs>$connectorToolRefs</connector_tool_refs>'}'
+    '${credentials.isEmpty ? '' : '<skill_credentials>$credentialOptions</skill_credentials>'}'
     '<skill_resources>$resourceOptions</skill_resources>'
     '</skill_content>',
   );
@@ -235,17 +249,26 @@ class const BuildSkillContextMessages() {
 
   String _skillXml(AgentSkill skill) {
     final manifest = skill.manifest;
-    final tools = manifest == null
+    final tools = manifest == null || manifest.tools.isEmpty
         ? ''
         : _xmlTextEscape.convert(
             _skillToolsJson(manifest, includeRevision: true),
           );
     final manifestXml = manifest == null
         ? ''
-        : '<skill_tools>$tools</skill_tools>';
+        : _skillManifestXml(manifest, tools);
 
     return '<skill><name>${_xmlTextEscape.convert(skill.title)}</name>'
         '<content>${_xmlTextEscape.convert(skill.content)}</content>'
         '$manifestXml</skill>';
+  }
+
+  String _skillManifestXml(SkillManifest manifest, String tools) {
+    final connectorToolRefs = manifest.connectorToolIds.isEmpty
+        ? ''
+        : '<connector_tool_refs>${_xmlTextEscape.convert(jsonEncode(manifest.connectorToolIds))}</connector_tool_refs>';
+
+    return '${tools.isEmpty ? '' : '<skill_tools>$tools</skill_tools>'}'
+        '$connectorToolRefs';
   }
 }

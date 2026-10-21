@@ -49,6 +49,13 @@ void main() {
 
     expect(cloned.kind, SkillKind.template);
     expect(cloned.title, 'Brave Search Copy');
+    expect(cloned.connectorToolIds, [
+      'connector/brave/image_search',
+      'connector/brave/llm_context',
+      'connector/brave/news_search',
+      'connector/brave/video_search',
+      'connector/brave/web_search',
+    ]);
     final tools = await toolsRepository.getSkillTools(cloned.id);
     expect(tools, isNotEmpty);
     for (final tool in tools) {

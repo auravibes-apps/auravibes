@@ -25,6 +25,9 @@ class Skills extends Table with TableMixin {
 
   TextColumn get content => text()();
 
+  TextColumn get connectorToolIdsJson =>
+      text().withDefault(const Constant('[]'))();
+
   TextColumn get credentialDefinitionId => text().nullable().references(
     SkillCredentialDefinitions,
     #id,

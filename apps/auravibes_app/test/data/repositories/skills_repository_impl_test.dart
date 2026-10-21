@@ -255,7 +255,13 @@ void main() {
           title: 'Example Services',
           description: 'Call Example APIs',
           content: 'Use Example Services for company data.',
+          connectorToolIds: ['connector/example/search'],
         ),
+      );
+      expect(skill.connectorToolIds, ['connector/example/search']);
+      expect(
+        (await skillsRepository.getSkillById(skill.id))?.connectorToolIds,
+        ['connector/example/search'],
       );
 
       final updated = await updateSkillUsecase.call(
@@ -362,6 +368,7 @@ void main() {
           title: 'Example Services',
           description: 'Call Example APIs',
           content: 'Use Example Services for company data.',
+          connectorToolIds: ['connector/example/search'],
         ),
       );
       final _ = await toolsRepository.createTool(
@@ -381,6 +388,7 @@ void main() {
 
       expect(duplicate.title, 'Example Services Copy');
       expect(duplicate.slug, 'example_services_copy');
+      expect(duplicate.connectorToolIds, ['connector/example/search']);
       expect(duplicateTools, hasLength(1));
       expect(duplicateTools.single.slug, 'find_company');
     });
@@ -515,15 +523,6 @@ void main() {
       );
       final loadedManifests = BuildLoadedSkillManifestsUsecase(
         (_) => listAvailableSkillsUsecase,
-        .new(
-          (_) => listAvailableSkillsUsecase,
-          toolsRepository,
-          skillCredentialsRepository,
-        ),
-        .new(
-          (_) => listAvailableSkillsUsecase,
-          .new(() => serviceConnectionRepository),
-        ),
       );
       final buildSpecsUsecase = BuildDynamicSkillToolSpecsUsecase(
         loadedManifests,
@@ -603,15 +602,6 @@ void main() {
         skill.id,
         isLoaded: true,
       );
-      final buildTemplateSpecs = BuildSkillTemplateToolSpecsUsecase(
-        (_) => listAvailableSkillsUsecase,
-        toolsRepository,
-        skillCredentialsRepository,
-      );
-      final buildNativeSpecs = BuildAppSkillNativeToolSpecsUsecase(
-        (_) => listAvailableSkillsUsecase,
-        .new(() => serviceConnectionRepository),
-      );
       final usecase = BuildSkillContextMessagesService(
         listAvailableSkillsUsecase.call,
         .new(
@@ -624,11 +614,7 @@ void main() {
             const AppSkillRegistry(),
           ).call,
         ),
-        .new(
-          (workspaceId) => listAvailableSkillsUsecase,
-          buildTemplateSpecs,
-          buildNativeSpecs,
-        ),
+        .new((workspaceId) => listAvailableSkillsUsecase),
       );
 
       final messages = await usecase.call(
@@ -1512,6 +1498,11 @@ void main() {
           'description': 'Call Example APIs',
           'content': 'Use Example Services for company data.',
           'credentialDefinitionId': definitionResult['definitionId'],
+          'connectorToolIds': [
+            ' connector/notion/search ',
+            'connector/notion/search',
+            '',
+          ],
           'isCredentialOptional': true,
         },
       );
@@ -1538,6 +1529,10 @@ void main() {
         arguments: {
           'skillSlug': 'example_services',
           'credentialDefinitionId': '',
+          'connectorToolIds': [
+            'connector/notion/search',
+            'connector/notion/create',
+          ],
         },
       );
       final updatedSkill = await skillsRepository.getSkillBySlug(
@@ -1579,6 +1574,7 @@ void main() {
           createSkillSpec.inputJsonSchema['properties']! as Map;
       expect(createSkillProperties, contains('credentialDefinitionId'));
       expect(createSkillProperties, contains('isCredentialOptional'));
+      expect(createSkillProperties, contains('connectorToolIds'));
       expect(
         createSkillProperties,
         isNot(contains('credentialDefinitionSlug')),
@@ -1597,6 +1593,10 @@ void main() {
         containsPair('account_id', containsPair('secret', false)),
       );
       expect(skillResult, containsPair('slug', 'example_services'));
+      expect(
+        skillResult,
+        containsPair('connectorToolIds', ['connector/notion/search']),
+      );
       expect(skillResult, containsPair('isCredentialOptional', true));
       expect(
         skillResult,
@@ -1610,6 +1610,10 @@ void main() {
       expect(clearCredentialResult, containsPair('status', 'updated'));
       expect(updatedSkill?.credentialDefinitionId, null);
       expect(updatedSkill?.isCredentialOptional, true);
+      expect(updatedSkill?.connectorToolIds, [
+        'connector/notion/create',
+        'connector/notion/search',
+      ]);
 
       final listedSkills = await runUsecase.call(
         workspaceId: workspace.id,
@@ -1621,6 +1625,13 @@ void main() {
         toolSlug: SkillToolSlugs.getUserSkill,
         arguments: {'skillSlug': 'example_services'},
       ) as Map<String, Object?>;
+      expect(
+        foundSkill,
+        containsPair('connectorToolIds', [
+          'connector/notion/create',
+          'connector/notion/search',
+        ]),
+      );
       final listedTools = await runUsecase.call(
         workspaceId: workspace.id,
         toolSlug: SkillToolSlugs.listSkillTemplateTools,
@@ -1721,6 +1732,25 @@ void main() {
             contains(
               'Skill credential definition not found: missing-definition-id',
             ),
+          ),
+        ),
+      );
+      await expectLater(
+        runUsecase.call(
+          workspaceId: workspace.id,
+          toolSlug: SkillToolSlugs.createUserSkill,
+          arguments: const {
+            'title': 'Invalid Connector Skill',
+            'description': 'Invalid Connector IDs',
+            'content': 'Use only valid Connector IDs.',
+            'connectorToolIds': ['connector/notion/search', 42],
+          },
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('connectorToolIds must be an array of strings'),
           ),
         ),
       );

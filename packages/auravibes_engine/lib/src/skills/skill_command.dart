@@ -200,19 +200,30 @@ class SkillManifest {
     required this.description,
     required this.revision,
     required Iterable<SkillManifestTool> tools,
-  }) : tools = List.unmodifiable(tools.toList()..sort(_compareTools));
+    Iterable<String> connectorToolIds = const [],
+  }) : tools = List.unmodifiable(tools.toList()..sort(_compareTools)),
+       connectorToolIds = List.unmodifiable(
+         connectorToolIds
+             .map((id) => id.trim())
+             .where((id) => id.isNotEmpty)
+             .toSet()
+             .toList()
+           ..sort(),
+       );
 
   final String slug;
   final String title;
   final String description;
   final String revision;
   final List<SkillManifestTool> tools;
+  final List<String> connectorToolIds;
 
   Map<String, Object?> toJson() => {
     'slug': slug,
     'title': title,
     'description': description,
     'revision': revision,
+    if (connectorToolIds.isNotEmpty) 'connectorToolIds': connectorToolIds,
     'tools': tools.map((tool) => tool.toJson()).toList(growable: false),
   };
 

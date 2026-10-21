@@ -1147,6 +1147,18 @@ abstract class LocaleKeys {
   static const skills_screen_content_label = 'skills_screen.content_label';
   static const skills_screen_edit_content = 'skills_screen.edit_content';
   static const skills_screen_content_empty = 'skills_screen.content_empty';
+  static const skills_screen_connector_tools_label =
+      'skills_screen.connector_tools_label';
+  static const skills_screen_connector_tools_hint =
+      'skills_screen.connector_tools_hint';
+  static const skills_screen_connector_tools_empty =
+      'skills_screen.connector_tools_empty';
+  static const skills_screen_connector_tools_select =
+      'skills_screen.connector_tools_select';
+  static const skills_screen_connector_tools_dialog_title =
+      'skills_screen.connector_tools_dialog_title';
+  static const skills_screen_connector_tools_apply =
+      'skills_screen.connector_tools_apply';
   static const skills_screen_enabled_label = 'skills_screen.enabled_label';
   static const skills_screen_disabled_label = 'skills_screen.disabled_label';
   static const skills_screen_credential_optional_label =

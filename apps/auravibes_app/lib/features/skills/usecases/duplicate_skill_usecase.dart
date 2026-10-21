@@ -53,6 +53,7 @@ extension on DuplicateSkillUsecase {
         title: title,
         description: skill.description,
         content: skill.content,
+        connectorToolIds: skill.connectorToolIds,
         credentialDefinitionId: skill.credentialDefinitionId,
         isEnabled: skill.isEnabled,
       ),

@@ -41,7 +41,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 30);
+      expect(fixture.database.schemaVersion, 31);
     });
 
     test('migration from schema 29 adds unbookmarked messages', () async {
@@ -62,6 +62,26 @@ void main() {
           .getSingle();
 
       expect(row.read<bool>('is_bookmarked'), isFalse);
+    });
+
+    test('migration from schema 30 adds empty Connector references', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 30
+        ..execute('CREATE TABLE skills (id TEXT PRIMARY KEY)')
+        ..execute('INSERT INTO skills VALUES (?)', ['existing']);
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final row = await database
+          .customSelect(
+            'SELECT connector_tool_ids_json FROM skills WHERE id = ?',
+            variables: [const Variable<String>('existing')],
+          )
+          .getSingle();
+
+      expect(row.read<String>('connector_tool_ids_json'), '[]');
     });
 
     test(

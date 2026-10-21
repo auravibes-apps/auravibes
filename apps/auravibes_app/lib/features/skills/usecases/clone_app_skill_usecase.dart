@@ -115,6 +115,12 @@ extension _CloneAppSkillDefinitions on CloneAppSkillUsecase {
       title: title,
       description: appSkill.description,
       content: appSkill.content,
+      connectorToolIds: [
+        for (final tool in appSkill.tools.where(
+          (tool) => tool.urlTemplate != null,
+        ))
+          connectorToolId(appSkill, tool),
+      ],
     ),
   );
 

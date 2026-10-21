@@ -418,6 +418,19 @@ void main() {
             'requiresCredential': false,
           },
         ),
+        _cloudResource(
+          kind: .skill,
+          id: 'connector-reference-only',
+          data: {
+            'kind': 'template',
+            'title': 'Connector reference only',
+            'slug': 'connector_reference_only',
+            'description': 'Description',
+            'content': 'Use Notion search.',
+            'connectorToolIds': ['connector/notion/search'],
+            'isEnabled': true,
+          },
+        ),
       ]);
       final usecase = ListAvailableSkillsUsecase(
         null,
@@ -446,6 +459,21 @@ void main() {
             .singleWhere((skill) => skill.id == 'credentialless-tool')
             .credentialReadiness,
         SkillCredentialReadiness.ready,
+      );
+      expect(
+        selectable
+            .singleWhere((skill) => skill.id == 'connector-reference-only')
+            .connectorToolIds,
+        ['connector/notion/search'],
+      );
+      final loadable = await usecase.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        filter: .loadable,
+      );
+      expect(
+        loadable.map((skill) => skill.id),
+        contains('connector-reference-only'),
       );
     });
 

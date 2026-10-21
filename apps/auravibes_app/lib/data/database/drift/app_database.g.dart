@@ -5969,6 +5969,18 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _connectorToolIdsJsonMeta =
+      const VerificationMeta('connectorToolIdsJson');
+  @override
+  late final GeneratedColumn<String> connectorToolIdsJson =
+      GeneratedColumn<String>(
+        'connector_tool_ids_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
   static const VerificationMeta _credentialDefinitionIdMeta =
       const VerificationMeta('credentialDefinitionId');
   @override
@@ -6024,6 +6036,7 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
     slug,
     description,
     content,
+    connectorToolIdsJson,
     credentialDefinitionId,
     isCredentialOptional,
     isEnabled,
@@ -6100,6 +6113,15 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
       );
     } else if (isInserting) {
       context.missing(_contentMeta);
+    }
+    if (data.containsKey('connector_tool_ids_json')) {
+      context.handle(
+        _connectorToolIdsJsonMeta,
+        connectorToolIdsJson.isAcceptableOrUnknown(
+          data['connector_tool_ids_json']!,
+          _connectorToolIdsJsonMeta,
+        ),
+      );
     }
     if (data.containsKey('credential_definition_id')) {
       context.handle(
@@ -6183,6 +6205,10 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
         DriftSqlType.string,
         data['${effectivePrefix}content'],
       )!,
+      connectorToolIdsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}connector_tool_ids_json'],
+      )!,
       credentialDefinitionId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}credential_definition_id'],
@@ -6225,6 +6251,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
   final String slug;
   final String description;
   final String content;
+  final String connectorToolIdsJson;
   final String? credentialDefinitionId;
   final bool isCredentialOptional;
   final bool isEnabled;
@@ -6239,6 +6266,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     required this.slug,
     required this.description,
     required this.content,
+    required this.connectorToolIdsJson,
     this.credentialDefinitionId,
     required this.isCredentialOptional,
     required this.isEnabled,
@@ -6262,6 +6290,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     map['slug'] = Variable<String>(slug);
     map['description'] = Variable<String>(description);
     map['content'] = Variable<String>(content);
+    map['connector_tool_ids_json'] = Variable<String>(connectorToolIdsJson);
     if (!nullToAbsent || credentialDefinitionId != null) {
       map['credential_definition_id'] = Variable<String>(
         credentialDefinitionId,
@@ -6284,6 +6313,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
       slug: Value(slug),
       description: Value(description),
       content: Value(content),
+      connectorToolIdsJson: Value(connectorToolIdsJson),
       credentialDefinitionId: credentialDefinitionId == null && nullToAbsent
           ? const Value.absent()
           : Value(credentialDefinitionId),
@@ -6312,6 +6342,9 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
       slug: serializer.fromJson<String>(json['slug']),
       description: serializer.fromJson<String>(json['description']),
       content: serializer.fromJson<String>(json['content']),
+      connectorToolIdsJson: serializer.fromJson<String>(
+        json['connectorToolIdsJson'],
+      ),
       credentialDefinitionId: serializer.fromJson<String?>(
         json['credentialDefinitionId'],
       ),
@@ -6339,6 +6372,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
       'slug': serializer.toJson<String>(slug),
       'description': serializer.toJson<String>(description),
       'content': serializer.toJson<String>(content),
+      'connectorToolIdsJson': serializer.toJson<String>(connectorToolIdsJson),
       'credentialDefinitionId': serializer.toJson<String?>(
         credentialDefinitionId,
       ),
@@ -6358,6 +6392,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     String? slug,
     String? description,
     String? content,
+    String? connectorToolIdsJson,
     Value<String?> credentialDefinitionId = const Value.absent(),
     bool? isCredentialOptional,
     bool? isEnabled,
@@ -6372,6 +6407,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     slug: slug ?? this.slug,
     description: description ?? this.description,
     content: content ?? this.content,
+    connectorToolIdsJson: connectorToolIdsJson ?? this.connectorToolIdsJson,
     credentialDefinitionId: credentialDefinitionId.present
         ? credentialDefinitionId.value
         : this.credentialDefinitionId,
@@ -6394,6 +6430,9 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
           ? data.description.value
           : this.description,
       content: data.content.present ? data.content.value : this.content,
+      connectorToolIdsJson: data.connectorToolIdsJson.present
+          ? data.connectorToolIdsJson.value
+          : this.connectorToolIdsJson,
       credentialDefinitionId: data.credentialDefinitionId.present
           ? data.credentialDefinitionId.value
           : this.credentialDefinitionId,
@@ -6417,6 +6456,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
           ..write('slug: $slug, ')
           ..write('description: $description, ')
           ..write('content: $content, ')
+          ..write('connectorToolIdsJson: $connectorToolIdsJson, ')
           ..write('credentialDefinitionId: $credentialDefinitionId, ')
           ..write('isCredentialOptional: $isCredentialOptional, ')
           ..write('isEnabled: $isEnabled')
@@ -6436,6 +6476,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     slug,
     description,
     content,
+    connectorToolIdsJson,
     credentialDefinitionId,
     isCredentialOptional,
     isEnabled,
@@ -6454,6 +6495,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
           other.slug == this.slug &&
           other.description == this.description &&
           other.content == this.content &&
+          other.connectorToolIdsJson == this.connectorToolIdsJson &&
           other.credentialDefinitionId == this.credentialDefinitionId &&
           other.isCredentialOptional == this.isCredentialOptional &&
           other.isEnabled == this.isEnabled);
@@ -6470,6 +6512,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
   final Value<String> slug;
   final Value<String> description;
   final Value<String> content;
+  final Value<String> connectorToolIdsJson;
   final Value<String?> credentialDefinitionId;
   final Value<bool> isCredentialOptional;
   final Value<bool> isEnabled;
@@ -6485,6 +6528,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     this.slug = const Value.absent(),
     this.description = const Value.absent(),
     this.content = const Value.absent(),
+    this.connectorToolIdsJson = const Value.absent(),
     this.credentialDefinitionId = const Value.absent(),
     this.isCredentialOptional = const Value.absent(),
     this.isEnabled = const Value.absent(),
@@ -6501,6 +6545,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     required String slug,
     required String description,
     required String content,
+    this.connectorToolIdsJson = const Value.absent(),
     this.credentialDefinitionId = const Value.absent(),
     this.isCredentialOptional = const Value.absent(),
     this.isEnabled = const Value.absent(),
@@ -6523,6 +6568,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     Expression<String>? slug,
     Expression<String>? description,
     Expression<String>? content,
+    Expression<String>? connectorToolIdsJson,
     Expression<String>? credentialDefinitionId,
     Expression<bool>? isCredentialOptional,
     Expression<bool>? isEnabled,
@@ -6539,6 +6585,8 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
       if (slug != null) 'slug': slug,
       if (description != null) 'description': description,
       if (content != null) 'content': content,
+      if (connectorToolIdsJson != null)
+        'connector_tool_ids_json': connectorToolIdsJson,
       if (credentialDefinitionId != null)
         'credential_definition_id': credentialDefinitionId,
       if (isCredentialOptional != null)
@@ -6559,6 +6607,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     Value<String>? slug,
     Value<String>? description,
     Value<String>? content,
+    Value<String>? connectorToolIdsJson,
     Value<String?>? credentialDefinitionId,
     Value<bool>? isCredentialOptional,
     Value<bool>? isEnabled,
@@ -6575,6 +6624,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
       slug: slug ?? this.slug,
       description: description ?? this.description,
       content: content ?? this.content,
+      connectorToolIdsJson: connectorToolIdsJson ?? this.connectorToolIdsJson,
       credentialDefinitionId:
           credentialDefinitionId ?? this.credentialDefinitionId,
       isCredentialOptional: isCredentialOptional ?? this.isCredentialOptional,
@@ -6620,6 +6670,11 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     if (content.present) {
       map['content'] = Variable<String>(content.value);
     }
+    if (connectorToolIdsJson.present) {
+      map['connector_tool_ids_json'] = Variable<String>(
+        connectorToolIdsJson.value,
+      );
+    }
     if (credentialDefinitionId.present) {
       map['credential_definition_id'] = Variable<String>(
         credentialDefinitionId.value,
@@ -6652,6 +6707,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
           ..write('slug: $slug, ')
           ..write('description: $description, ')
           ..write('content: $content, ')
+          ..write('connectorToolIdsJson: $connectorToolIdsJson, ')
           ..write('credentialDefinitionId: $credentialDefinitionId, ')
           ..write('isCredentialOptional: $isCredentialOptional, ')
           ..write('isEnabled: $isEnabled, ')
@@ -23269,6 +23325,7 @@ typedef $$SkillsTableCreateCompanionBuilder = SkillsCompanion Function({
   required String slug,
   required String description,
   required String content,
+  Value<String> connectorToolIdsJson,
   Value<String?> credentialDefinitionId,
   Value<bool> isCredentialOptional,
   Value<bool> isEnabled,
@@ -23285,6 +23342,7 @@ typedef $$SkillsTableUpdateCompanionBuilder = SkillsCompanion Function({
   Value<String> slug,
   Value<String> description,
   Value<String> content,
+  Value<String> connectorToolIdsJson,
   Value<String?> credentialDefinitionId,
   Value<bool> isCredentialOptional,
   Value<bool> isEnabled,
@@ -23476,6 +23534,11 @@ class $$SkillsTableFilterComposer
 
   ColumnFilters<String> get content => $composableBuilder(
     column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get connectorToolIdsJson => $composableBuilder(
+    column: $table.connectorToolIdsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -23691,6 +23754,11 @@ class $$SkillsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get connectorToolIdsJson => $composableBuilder(
+    column: $table.connectorToolIdsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isCredentialOptional => $composableBuilder(
     column: $table.isCredentialOptional,
     builder: (column) => ColumnOrderings(column),
@@ -23786,6 +23854,11 @@ class $$SkillsTableAnnotationComposer
 
   GeneratedColumn<String> get content =>
       $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<String> get connectorToolIdsJson => $composableBuilder(
+    column: $table.connectorToolIdsJson,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isCredentialOptional => $composableBuilder(
     column: $table.isCredentialOptional,
@@ -23991,6 +24064,7 @@ class $$SkillsTableTableManager
                 Value<String> slug = const Value.absent(),
                 Value<String> description = const Value.absent(),
                 Value<String> content = const Value.absent(),
+                Value<String> connectorToolIdsJson = const Value.absent(),
                 Value<String?> credentialDefinitionId = const Value.absent(),
                 Value<bool> isCredentialOptional = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
@@ -24006,6 +24080,7 @@ class $$SkillsTableTableManager
                 slug: slug,
                 description: description,
                 content: content,
+                connectorToolIdsJson: connectorToolIdsJson,
                 credentialDefinitionId: credentialDefinitionId,
                 isCredentialOptional: isCredentialOptional,
                 isEnabled: isEnabled,
@@ -24023,6 +24098,7 @@ class $$SkillsTableTableManager
                 required String slug,
                 required String description,
                 required String content,
+                Value<String> connectorToolIdsJson = const Value.absent(),
                 Value<String?> credentialDefinitionId = const Value.absent(),
                 Value<bool> isCredentialOptional = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
@@ -24038,6 +24114,7 @@ class $$SkillsTableTableManager
                 slug: slug,
                 description: description,
                 content: content,
+                connectorToolIdsJson: connectorToolIdsJson,
                 credentialDefinitionId: credentialDefinitionId,
                 isCredentialOptional: isCredentialOptional,
                 isEnabled: isEnabled,

@@ -477,6 +477,31 @@ void main() {
     expect(manifest.tools, isEmpty);
   });
 
+  test(
+    'loads Connector references without Skill credentials or tool specs',
+    () async {
+      const skill = {
+        'id': 'crm-skill',
+        'slug': 'crm',
+        'title': 'CRM',
+        'description': 'Manage CRM records.',
+        'content': 'Use Notion search.',
+        'connectorToolIds': ['connector/notion/search'],
+        'isEnabled': true,
+      };
+
+      expect(cloudUserSkillReady(skill, const [], const []), isTrue);
+      final manifest = await buildCloudSkillManifest(
+        slug: 'crm',
+        userSkills: const [skill],
+        tools: const [],
+      );
+
+      expect(manifest?.connectorToolIds, ['connector/notion/search']);
+      expect(manifest?.tools, isEmpty);
+    },
+  );
+
   test('materializes selected cloud skill tools only', () {
     final service = serviceSkillDefinitions.first;
     final tools = materializeCloudSkillTools(

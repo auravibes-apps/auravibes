@@ -451,93 +451,92 @@ void main() {
   });
 
   test(
-    'dispatches loaded github create_issue through call_skill_tool',
+    'loaded user Skills expose Connector references without Skill tools',
     () async {
-      const issueSchema = <String, Object?>{
-        'type': 'object',
-        'properties': {
-          'title': {'type': 'string'},
-          'filters': {
-            'type': 'object',
-            'properties': {
-              'region': {'type': 'string'},
-            },
-            'required': <String>[],
-            'additionalProperties': false,
-          },
-        },
-        'required': ['title'],
-        'additionalProperties': false,
-      };
-      final loadedSkills = _LoadedSkills();
-      final templateSpecs = _SkillSpecs([
-        ToolSpec(
-          name: 'skill__user__github__create_issue',
-          description: 'Create a GitHub issue.',
-          inputJsonSchema: issueSchema,
-        ),
-      ]);
-      const nativeSpecs = _SkillSpecs([]);
-      final manifests = BuildLoadedSkillManifestsUsecase(
-        (_) => loadedSkills,
-        templateSpecs,
-        nativeSpecs,
+      final loadedSkills = _LoadedSkills(
+        skills: const [
+          AvailableSkill(
+            id: 'github-skill-row',
+            slug: 'github',
+            title: 'GitHub',
+            description: 'Manage GitHub issues.',
+            content: 'Create issues when requested.',
+            source: .user,
+            kind: .template,
+            connectorToolIds: ['connector/github/create_issue'],
+          ),
+        ],
       );
+      final manifests = BuildLoadedSkillManifestsUsecase((_) => loadedSkills);
       final loadedManifest = (await manifests.call(
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
       )).single;
+      final templateSpecs = _SkillSpecs([
+        ToolSpec(
+          name: 'skill__user__github__create_issue',
+          description: 'Create a GitHub issue.',
+          inputJsonSchema: const {'type': 'object'},
+        ),
+      ]);
       final templateRunner = _TemplateRunner(result: const {'issueNumber': 42});
-      final nativeRunner = _NativeRunner();
+      final load = _LoadRecorder();
+      var credentialCalls = 0;
       final usecase = RunSkillCommandUsecase(
-        listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
-        loadConversationSkillUsecase: (_) => _UnusedLoad(),
+        listAvailableSkillsUsecase: (_) => loadedSkills,
+        loadConversationSkillUsecase: (_) => load,
         buildLoadedSkillManifestsUsecase: manifests,
         buildSkillTemplateToolSpecsUsecase: templateSpecs,
-        buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
+        buildAppSkillNativeToolSpecsUsecase: const _SkillSpecs([]),
         runSkillTemplateToolUsecase: templateRunner,
-        runAppSkillToolUsecase: nativeRunner,
-        listSkillCredentials: ({
-          required conversationId,
-          required workspaceId,
-          required arguments,
-        }) async => const {},
+        runAppSkillToolUsecase: _NativeRunner(),
+        listSkillCredentials:
+            ({
+              required conversationId,
+              required workspaceId,
+              required arguments,
+            }) async {
+              credentialCalls++;
+
+              return const {};
+            },
       );
 
-      final result = await usecase.call((
+      expect(loadedManifest.connectorToolIds, [
+        'connector/github/create_issue',
+      ]);
+      expect(loadedManifest.tools, isEmpty);
+      final activation = await usecase.call((
         conversationId: 'conversation-1',
-        toolCallId: 'call-1',
+        toolCallId: 'activate-1',
         workspaceId: 'workspace-1',
-        commandName: callSkillToolName,
-        arguments: {
-          'skill': 'github',
-          'tool': 'create_issue',
-          'args': {
-            'title': 'Collision regression',
-            'filters': {'region': null},
-          },
-          'revision': loadedManifest.revision,
-        },
+        commandName: activateSkillToolName,
+        arguments: {'slug': 'github', 'revision': loadedManifest.revision},
       ));
-
-      expect(result, {
-        'result': {'issueNumber': 42},
-      });
-      expect(loadedManifest.slug, 'github');
-      expect(loadedManifest.tools.single.name, 'create_issue');
-      expect(loadedSkills.calls, 2);
-      expect(loadedSkills.lastConversationId, 'conversation-1');
-      expect(loadedSkills.lastWorkspaceId, 'workspace-1');
-      expect(loadedSkills.filters, everyElement(SkillLoadFilter.loaded));
-      expect(templateRunner.calls, 1);
-      expect(templateRunner.lastWorkspaceId, 'workspace-1');
-      expect(templateRunner.lastSkillSlug, 'github');
-      expect(templateRunner.lastToolSlug, 'create_issue');
-      expect(templateRunner.lastArguments, {
-        'title': 'Collision regression',
-        'filters': <String, Object?>{},
-      });
-      expect(nativeRunner.calls, 0);
+      expect(activation, isA<SkillActivationResult>());
+      if (activation is SkillActivationResult) {
+        expect(activation.value, contains('connector/github/create_issue'));
+        expect(activation.value, isNot(contains('<skill_tools>')));
+        expect(activation.value, isNot(contains('<skill_credentials>')));
+      }
+      expect(load.calls, 1);
+      expect(credentialCalls, 0);
+      await expectLater(
+        usecase.call((
+          conversationId: 'conversation-1',
+          toolCallId: 'call-1',
+          workspaceId: 'workspace-1',
+          commandName: callSkillToolName,
+          arguments: {
+            'skill': 'github',
+            'tool': 'create_issue',
+            'args': {'title': 'Collision regression'},
+            'revision': loadedManifest.revision,
+          },
+        )),
+        throwsStateError,
+      );
+      expect(templateRunner.calls, 0);
     },
   );
 

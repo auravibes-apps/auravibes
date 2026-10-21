@@ -28,6 +28,7 @@ import 'package:auravibes_app/features/skills/usecases/duplicate_skill_template_
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
+import 'package:auravibes_app/features/skills/widgets/connector_tool_reference_picker.dart';
 import 'package:auravibes_app/features/skills/widgets/skill_access_status_view.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
@@ -54,6 +55,7 @@ typedef _SkillDetailFormValues = ({
   String description,
   String content,
   String? credentialDefinitionId,
+  String connectorToolIds,
   bool isCredentialOptional,
   bool isEnabled,
 });
@@ -72,6 +74,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   final _descriptionController = TextfEditingController();
   final _contentController = TextEditingController();
   String? _credentialDefinitionId;
+  Set<String> _connectorToolIds = {};
   bool _isCredentialOptional = false;
   bool _isEnabled = true;
   bool _initialized = false;
@@ -85,6 +88,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
     description: '',
     content: '',
     credentialDefinitionId: null,
+    connectorToolIds: '',
     isCredentialOptional: false,
     isEnabled: true,
   );
@@ -148,6 +152,7 @@ extension on _SkillDetailScreenState {
     description: _descriptionController.text,
     content: _contentController.text,
     credentialDefinitionId: _credentialDefinitionId,
+    connectorToolIds: (_connectorToolIds.toList()..sort()).join('\n'),
     isCredentialOptional: _isCredentialOptional,
     isEnabled: _isEnabled,
   );
@@ -219,6 +224,10 @@ extension on _SkillDetailScreenState {
     _updateState(() => _isCredentialOptional = value);
   }
 
+  void _setConnectorToolIds(Set<String> value) {
+    _updateState(() => _connectorToolIds = .of(value));
+  }
+
   void _setEnabled(bool value) {
     _updateState(() => _isEnabled = value);
   }
@@ -229,6 +238,7 @@ extension on _SkillDetailScreenState {
     _isUserSkill = detail.isUserSkill;
     _initializeTextFields(context, detail);
     _credentialDefinitionId = detail.credentialDefinitionId;
+    _connectorToolIds = detail.connectorToolIds.toSet();
     _isCredentialOptional = detail.isCredentialOptional;
     _isEnabled = detail.isEnabled;
     _savedFormValues = _currentFormValues();
@@ -348,6 +358,7 @@ extension on _SkillDetailScreenState {
     description: _descriptionController.text,
     content: _contentController.text,
     credentialDefinitionId: _credentialDefinitionId,
+    connectorToolIds: (_connectorToolIds.toList()..sort()),
     isCredentialOptional: _isCredentialOptional,
     isEnabled: _isEnabled,
   );
@@ -363,6 +374,7 @@ extension on _SkillDetailScreenState {
     description: _descriptionController.text,
     content: _contentController.text,
     credentialDefinitionId: _credentialDefinitionId,
+    connectorToolIds: (_connectorToolIds.toList()..sort()),
     clearCredentialDefinition: _credentialDefinitionId == null,
     isCredentialOptional: _isCredentialOptional,
     isEnabled: _isEnabled,
@@ -857,6 +869,11 @@ class _SkillDetailFormChildren {
            detail: detail,
            context: context,
          ).values,
+         if (detail == null || detail.isUserSkill)
+           ConnectorToolReferencePicker(
+             selectedToolIds: state._connectorToolIds,
+             onChanged: state._setConnectorToolIds,
+           ),
          _SkillEnabledField(
            value: state._isEnabled,
            onChanged: detail == null || detail.isUserSkill

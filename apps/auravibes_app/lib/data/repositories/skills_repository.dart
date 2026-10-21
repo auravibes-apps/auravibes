@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_resources_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skills_dao.dart';
@@ -85,6 +87,7 @@ extension SkillsRepositoryCompanionMappings on SkillsRepository {
   ) => companion.copyWith(
     description: .new(skill.description),
     content: .new(skill.content),
+    connectorToolIdsJson: .new(_encodeConnectorToolIds(skill.connectorToolIds)),
     credentialDefinitionId: .new(skill.credentialDefinitionId),
     isCredentialOptional: .new(skill.isCredentialOptional),
     isEnabled: .new(skill.isEnabled),
@@ -97,14 +100,21 @@ extension SkillsRepositoryCompanionMappings on SkillsRepository {
   SkillsCompanion _addSkillUpdateFields(
     SkillsCompanion companion,
     SkillToUpdate skill,
-  ) => companion.copyWith(
-    title: _skillTitleValue(skill.title),
-    description: .absentIfNull(skill.description),
-    content: .absentIfNull(skill.content),
-    credentialDefinitionId: _credentialDefinitionValue(skill),
-    isCredentialOptional: .absentIfNull(skill.isCredentialOptional),
-    isEnabled: .absentIfNull(skill.isEnabled),
-  );
+  ) {
+    final connectorToolIds = skill.connectorToolIds;
+
+    return companion.copyWith(
+      title: _skillTitleValue(skill.title),
+      description: .absentIfNull(skill.description),
+      content: .absentIfNull(skill.content),
+      connectorToolIdsJson: connectorToolIds == null
+          ? const Value.absent()
+          : Value(_encodeConnectorToolIds(connectorToolIds)),
+      credentialDefinitionId: _credentialDefinitionValue(skill),
+      isCredentialOptional: .absentIfNull(skill.isCredentialOptional),
+      isEnabled: .absentIfNull(skill.isEnabled),
+    );
+  }
 
   Value<String>? _skillTitleValue(String? title) {
     return title == null ? const Value.absent() : .new(title.trim());
@@ -139,6 +149,7 @@ extension SkillsRepositoryEntityMappings on SkillsRepository {
         slug: table.slug,
         description: table.description,
         content: table.content,
+        connectorToolIds: _decodeConnectorToolIds(table.connectorToolIdsJson),
       );
 
   SkillEntity _withSkillState(SkillEntity skill, SkillsTable table) =>
@@ -171,6 +182,18 @@ extension SkillsRepositoryEntityMappings on SkillsRepository {
     };
   }
 }
+
+String _encodeConnectorToolIds(Iterable<String> toolIds) =>
+    jsonEncode(_normalizedConnectorToolIds(toolIds));
+
+List<String> _decodeConnectorToolIds(String value) =>
+    _normalizedConnectorToolIds(
+      (jsonDecode(value) as List).whereType<String>(),
+    );
+
+List<String> _normalizedConnectorToolIds(Iterable<String> toolIds) =>
+    toolIds.map((id) => id.trim()).where((id) => id.isNotEmpty).toSet().toList()
+      ..sort();
 
 final _emptySkillEntity = SkillEntity(
   id: '',

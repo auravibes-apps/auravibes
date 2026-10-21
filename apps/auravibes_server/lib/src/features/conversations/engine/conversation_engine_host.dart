@@ -170,21 +170,12 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
     isChildConversation: isChildConversation,
     a2uiSupportedComponents: a2uiSupportedComponents,
   );
-  final candidateIds = candidates.map((candidate) => candidate.id).toSet();
-  final tools = materializeCloudSkillTools(
-    selectedSkillIds: candidateIds,
-    userSkills: userSkills,
-    templateTools: templateTools,
-    appSkillSettings: appSkillSettings,
-    serviceConnections: serviceConnections,
-    isChildConversation: isChildConversation,
-  );
   final entries = <SkillCatalogEntry>[];
   for (final candidate in candidates) {
     final manifest = await buildCloudSkillManifest(
       slug: candidate.slug,
       userSkills: userSkills,
-      tools: tools,
+      tools: const [],
     );
     if (manifest == null) continue;
     entries.add(
@@ -1239,25 +1230,6 @@ final class const ServerConversationEngineHost({
           },
         )
         .toList(growable: false);
-    final targets = materializeCloudSkillTools(
-      selectedSkillIds: skillIds.toSet(),
-      userSkills: userSkills,
-      templateTools: appResources
-          .where(
-            (resource) =>
-                resource.resourceKind ==
-                WorkspaceResourceKind.skillTemplateTool,
-          )
-          .map(
-            (resource) => {
-              'id': resource.resourceId,
-              ..._jsonObject(resource.data),
-            },
-          ),
-      appSkillSettings: appSettings,
-      serviceConnections: serviceConnections,
-      isChildConversation: isChildConversation,
-    );
     final withManifests = <AgentSkill>[];
     for (final skill in skills) {
       final user = userSkills
@@ -1272,7 +1244,7 @@ final class const ServerConversationEngineHost({
           : await buildCloudSkillManifest(
               slug: slug,
               userSkills: userSkills,
-              tools: targets,
+              tools: const [],
             );
       withManifests.add(
         AgentSkill(

@@ -35,6 +35,7 @@ class const SkillDetail({
   required final String content,
   required final bool isEnabled,
   required final bool isCredentialOptional,
+  final List<String> connectorToolIds = const [],
   final String? credentialDefinitionId,
   final List<AppSkillToolDefinition> appTools = const [],
   final List<AppSkillResourceDefinition> appResources = const [],
@@ -92,6 +93,7 @@ class _UserSkillSkillDetail extends SkillDetail {
         content: skill.content,
         isEnabled: skill.isEnabled,
         isCredentialOptional: skill.isCredentialOptional,
+        connectorToolIds: skill.connectorToolIds,
         credentialDefinitionId: skill.credentialDefinitionId,
       );
 }

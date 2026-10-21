@@ -272,7 +272,9 @@ extension ListAvailableSkillsUsecaseUserSkills on ListAvailableSkillsUsecase {
     if (!skill.isEnabled) return null;
 
     final isLoaded = request.loadedUserIds.contains(skill.id);
-    final credentialReadiness = await _userSkillCredentialReadiness(request);
+    final credentialReadiness = skill.connectorToolIds.isNotEmpty
+        ? SkillCredentialReadiness.ready
+        : await _userSkillCredentialReadiness(request);
     if (!await _isUserSkillAvailable(request, isLoaded, credentialReadiness)) {
       return null;
     }
@@ -512,6 +514,10 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
     content: skill.content,
     source: .app,
     kind: skill.kind == AppSkillDefinitionKind.template ? .template : .native,
+    connectorToolIds: [
+      for (final tool in skill.tools.where((tool) => tool.urlTemplate != null))
+        connectorToolId(skill, tool),
+    ],
     credentialReadiness: credentialReadiness,
   );
 
@@ -678,6 +684,7 @@ extension on SkillEntity {
       content: content,
       source: source,
       kind: kind,
+      connectorToolIds: connectorToolIds,
       isCredentialOptional: isCredentialOptional,
       credentialDefinitionId: credentialDefinitionId,
       credentialReadiness: credentialReadiness,

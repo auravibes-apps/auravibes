@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SkillEntity {
 
- String get id; String get workspaceId; SkillSource get source; SkillKind get kind; String get title; String get slug; String get description; String get content; bool get isEnabled; bool get isCredentialOptional; DateTime get createdAt; DateTime get updatedAt; String? get credentialDefinitionId;
+ String get id; String get workspaceId; SkillSource get source; SkillKind get kind; String get title; String get slug; String get description; String get content; bool get isEnabled; bool get isCredentialOptional; DateTime get createdAt; DateTime get updatedAt; List<String> get connectorToolIds; String? get credentialDefinitionId;
 /// Create a copy of SkillEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $SkillEntityCopyWith<SkillEntity> get copyWith => _$SkillEntityCopyWithImpl<Skil
 @override
 bool operator ==(Object other) {
   final _this = this as SkillEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.source, _this.source) || other.source == _this.source)&&(identical(other.kind, _this.kind) || other.kind == _this.kind)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.slug, _this.slug) || other.slug == _this.slug)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.isCredentialOptional, _this.isCredentialOptional) || other.isCredentialOptional == _this.isCredentialOptional)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.source, _this.source) || other.source == _this.source)&&(identical(other.kind, _this.kind) || other.kind == _this.kind)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.slug, _this.slug) || other.slug == _this.slug)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.isCredentialOptional, _this.isCredentialOptional) || other.isCredentialOptional == _this.isCredentialOptional)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&const DeepCollectionEquality().equals(other.connectorToolIds, _this.connectorToolIds)&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as SkillEntity;
-  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.source,_this.kind,_this.title,_this.slug,_this.description,_this.content,_this.isEnabled,_this.isCredentialOptional,_this.createdAt,_this.updatedAt,_this.credentialDefinitionId);
+  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.source,_this.kind,_this.title,_this.slug,_this.description,_this.content,_this.isEnabled,_this.isCredentialOptional,_this.createdAt,_this.updatedAt,const DeepCollectionEquality().hash(_this.connectorToolIds),_this.credentialDefinitionId);
 }
 
 @override
 String toString() {
   final _this = this as SkillEntity;
-  return 'SkillEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, source: ${_this.source}, kind: ${_this.kind}, title: ${_this.title}, slug: ${_this.slug}, description: ${_this.description}, content: ${_this.content}, isEnabled: ${_this.isEnabled}, isCredentialOptional: ${_this.isCredentialOptional}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, credentialDefinitionId: ${_this.credentialDefinitionId})';
+  return 'SkillEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, source: ${_this.source}, kind: ${_this.kind}, title: ${_this.title}, slug: ${_this.slug}, description: ${_this.description}, content: ${_this.content}, isEnabled: ${_this.isEnabled}, isCredentialOptional: ${_this.isCredentialOptional}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, connectorToolIds: ${_this.connectorToolIds}, credentialDefinitionId: ${_this.credentialDefinitionId})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $SkillEntityCopyWith<$Res>  {
   factory $SkillEntityCopyWith(SkillEntity value, $Res Function(SkillEntity) _then) = _$SkillEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String workspaceId, SkillSource source, SkillKind kind, String title, String slug, String description, String content, bool isEnabled, bool isCredentialOptional, DateTime createdAt, DateTime updatedAt, String? credentialDefinitionId
+ String id, String workspaceId, SkillSource source, SkillKind kind, String title, String slug, String description, String content, bool isEnabled, bool isCredentialOptional, DateTime createdAt, DateTime updatedAt, List<String> connectorToolIds, String? credentialDefinitionId
 });
 
 
@@ -68,7 +68,7 @@ class _$SkillEntityCopyWithImpl<$Res>
 
 /// Create a copy of SkillEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? source = null,Object? kind = null,Object? title = null,Object? slug = null,Object? description = null,Object? content = null,Object? isEnabled = null,Object? isCredentialOptional = null,Object? createdAt = null,Object? updatedAt = null,Object? credentialDefinitionId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? source = null,Object? kind = null,Object? title = null,Object? slug = null,Object? description = null,Object? content = null,Object? isEnabled = null,Object? isCredentialOptional = null,Object? createdAt = null,Object? updatedAt = null,Object? connectorToolIds = null,Object? credentialDefinitionId = freezed,}) {
   return _then(SkillEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -82,7 +82,8 @@ as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: 
 as bool,isCredentialOptional: null == isCredentialOptional ? _self.isCredentialOptional : isCredentialOptional // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
+as DateTime,connectorToolIds: null == connectorToolIds ? _self.connectorToolIds : connectorToolIds // ignore: cast_nullable_to_non_nullable
+as List<String>,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -168,10 +169,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  SkillSource source,  SkillKind kind,  String title,  String slug,  String description,  String content,  bool isEnabled,  bool isCredentialOptional,  DateTime createdAt,  DateTime updatedAt,  String? credentialDefinitionId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  SkillSource source,  SkillKind kind,  String title,  String slug,  String description,  String content,  bool isEnabled,  bool isCredentialOptional,  DateTime createdAt,  DateTime updatedAt,  List<String> connectorToolIds,  String? credentialDefinitionId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SkillEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.source,_that.kind,_that.title,_that.slug,_that.description,_that.content,_that.isEnabled,_that.isCredentialOptional,_that.createdAt,_that.updatedAt,_that.credentialDefinitionId);case _:
+return $default(_that.id,_that.workspaceId,_that.source,_that.kind,_that.title,_that.slug,_that.description,_that.content,_that.isEnabled,_that.isCredentialOptional,_that.createdAt,_that.updatedAt,_that.connectorToolIds,_that.credentialDefinitionId);case _:
   return orElse();
 
 }
@@ -189,10 +190,10 @@ return $default(_that.id,_that.workspaceId,_that.source,_that.kind,_that.title,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  SkillSource source,  SkillKind kind,  String title,  String slug,  String description,  String content,  bool isEnabled,  bool isCredentialOptional,  DateTime createdAt,  DateTime updatedAt,  String? credentialDefinitionId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  SkillSource source,  SkillKind kind,  String title,  String slug,  String description,  String content,  bool isEnabled,  bool isCredentialOptional,  DateTime createdAt,  DateTime updatedAt,  List<String> connectorToolIds,  String? credentialDefinitionId)  $default,) {final _that = this;
 switch (_that) {
 case _SkillEntity():
-return $default(_that.id,_that.workspaceId,_that.source,_that.kind,_that.title,_that.slug,_that.description,_that.content,_that.isEnabled,_that.isCredentialOptional,_that.createdAt,_that.updatedAt,_that.credentialDefinitionId);case _:
+return $default(_that.id,_that.workspaceId,_that.source,_that.kind,_that.title,_that.slug,_that.description,_that.content,_that.isEnabled,_that.isCredentialOptional,_that.createdAt,_that.updatedAt,_that.connectorToolIds,_that.credentialDefinitionId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -209,10 +210,10 @@ return $default(_that.id,_that.workspaceId,_that.source,_that.kind,_that.title,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  SkillSource source,  SkillKind kind,  String title,  String slug,  String description,  String content,  bool isEnabled,  bool isCredentialOptional,  DateTime createdAt,  DateTime updatedAt,  String? credentialDefinitionId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  SkillSource source,  SkillKind kind,  String title,  String slug,  String description,  String content,  bool isEnabled,  bool isCredentialOptional,  DateTime createdAt,  DateTime updatedAt,  List<String> connectorToolIds,  String? credentialDefinitionId)?  $default,) {final _that = this;
 switch (_that) {
 case _SkillEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.source,_that.kind,_that.title,_that.slug,_that.description,_that.content,_that.isEnabled,_that.isCredentialOptional,_that.createdAt,_that.updatedAt,_that.credentialDefinitionId);case _:
+return $default(_that.id,_that.workspaceId,_that.source,_that.kind,_that.title,_that.slug,_that.description,_that.content,_that.isEnabled,_that.isCredentialOptional,_that.createdAt,_that.updatedAt,_that.connectorToolIds,_that.credentialDefinitionId);case _:
   return null;
 
 }
@@ -224,7 +225,7 @@ return $default(_that.id,_that.workspaceId,_that.source,_that.kind,_that.title,_
 
 
 class _SkillEntity extends SkillEntity {
-  const _SkillEntity({required this.id, required this.workspaceId, required this.source, required this.kind, required this.title, required this.slug, required this.description, required this.content, required this.isEnabled, required this.isCredentialOptional, required this.createdAt, required this.updatedAt, this.credentialDefinitionId}): super._();
+  const _SkillEntity({required this.id, required this.workspaceId, required this.source, required this.kind, required this.title, required this.slug, required this.description, required this.content, required this.isEnabled, required this.isCredentialOptional, required this.createdAt, required this.updatedAt,  List<String> connectorToolIds = const <String>[], this.credentialDefinitionId}): _connectorToolIds = connectorToolIds,super._();
   
 
 @override final  String id;
@@ -239,6 +240,13 @@ class _SkillEntity extends SkillEntity {
 @override final  bool isCredentialOptional;
 @override final  DateTime createdAt;
 @override final  DateTime updatedAt;
+ final  List<String> _connectorToolIds;
+@override@JsonKey() List<String> get connectorToolIds {
+  if (_connectorToolIds is EqualUnmodifiableListView) return _connectorToolIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_connectorToolIds);
+}
+
 @override final  String? credentialDefinitionId;
 
 /// Create a copy of SkillEntity
@@ -251,18 +259,18 @@ _$SkillEntityCopyWith<_SkillEntity> get copyWith => __$SkillEntityCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.source, source) || other.source == source)&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.title, title) || other.title == title)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.isCredentialOptional, isCredentialOptional) || other.isCredentialOptional == isCredentialOptional)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.source, source) || other.source == source)&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.title, title) || other.title == title)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.isCredentialOptional, isCredentialOptional) || other.isCredentialOptional == isCredentialOptional)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.connectorToolIds, _connectorToolIds)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,workspaceId,source,kind,title,slug,description,content,isEnabled,isCredentialOptional,createdAt,updatedAt,credentialDefinitionId);
+    return Object.hash(runtimeType,id,workspaceId,source,kind,title,slug,description,content,isEnabled,isCredentialOptional,createdAt,updatedAt,const DeepCollectionEquality().hash(_connectorToolIds),credentialDefinitionId);
 }
 
 @override
 String toString() {
-    return 'SkillEntity(id: $id, workspaceId: $workspaceId, source: $source, kind: $kind, title: $title, slug: $slug, description: $description, content: $content, isEnabled: $isEnabled, isCredentialOptional: $isCredentialOptional, createdAt: $createdAt, updatedAt: $updatedAt, credentialDefinitionId: $credentialDefinitionId)';
+    return 'SkillEntity(id: $id, workspaceId: $workspaceId, source: $source, kind: $kind, title: $title, slug: $slug, description: $description, content: $content, isEnabled: $isEnabled, isCredentialOptional: $isCredentialOptional, createdAt: $createdAt, updatedAt: $updatedAt, connectorToolIds: $connectorToolIds, credentialDefinitionId: $credentialDefinitionId)';
 }
 
 
@@ -273,7 +281,7 @@ abstract mixin class _$SkillEntityCopyWith<$Res> implements $SkillEntityCopyWith
   factory _$SkillEntityCopyWith(_SkillEntity value, $Res Function(_SkillEntity) _then) = __$SkillEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String workspaceId, SkillSource source, SkillKind kind, String title, String slug, String description, String content, bool isEnabled, bool isCredentialOptional, DateTime createdAt, DateTime updatedAt, String? credentialDefinitionId
+ String id, String workspaceId, SkillSource source, SkillKind kind, String title, String slug, String description, String content, bool isEnabled, bool isCredentialOptional, DateTime createdAt, DateTime updatedAt, List<String> connectorToolIds, String? credentialDefinitionId
 });
 
 
@@ -290,7 +298,7 @@ class __$SkillEntityCopyWithImpl<$Res>
 
 /// Create a copy of SkillEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? source = null,Object? kind = null,Object? title = null,Object? slug = null,Object? description = null,Object? content = null,Object? isEnabled = null,Object? isCredentialOptional = null,Object? createdAt = null,Object? updatedAt = null,Object? credentialDefinitionId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? source = null,Object? kind = null,Object? title = null,Object? slug = null,Object? description = null,Object? content = null,Object? isEnabled = null,Object? isCredentialOptional = null,Object? createdAt = null,Object? updatedAt = null,Object? connectorToolIds = null,Object? credentialDefinitionId = freezed,}) {
   return _then(_SkillEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -304,7 +312,8 @@ as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: 
 as bool,isCredentialOptional: null == isCredentialOptional ? _self.isCredentialOptional : isCredentialOptional // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
+as DateTime,connectorToolIds: null == connectorToolIds ? _self._connectorToolIds : connectorToolIds // ignore: cast_nullable_to_non_nullable
+as List<String>,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -315,7 +324,7 @@ as String?,
 /// @nodoc
 mixin _$SkillToCreate {
 
- SkillKind get kind; String get title; String get description; String get content; String? get credentialDefinitionId; bool get isCredentialOptional; bool get isEnabled;
+ SkillKind get kind; String get title; String get description; String get content; String? get credentialDefinitionId; bool get isCredentialOptional; List<String> get connectorToolIds; bool get isEnabled;
 /// Create a copy of SkillToCreate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -327,20 +336,20 @@ $SkillToCreateCopyWith<SkillToCreate> get copyWith => _$SkillToCreateCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as SkillToCreate;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillToCreate&&(identical(other.kind, _this.kind) || other.kind == _this.kind)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId)&&(identical(other.isCredentialOptional, _this.isCredentialOptional) || other.isCredentialOptional == _this.isCredentialOptional)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillToCreate&&(identical(other.kind, _this.kind) || other.kind == _this.kind)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId)&&(identical(other.isCredentialOptional, _this.isCredentialOptional) || other.isCredentialOptional == _this.isCredentialOptional)&&const DeepCollectionEquality().equals(other.connectorToolIds, _this.connectorToolIds)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
 }
 
 
 @override
 int get hashCode {
   final _this = this as SkillToCreate;
-  return Object.hash(runtimeType,_this.kind,_this.title,_this.description,_this.content,_this.credentialDefinitionId,_this.isCredentialOptional,_this.isEnabled);
+  return Object.hash(runtimeType,_this.kind,_this.title,_this.description,_this.content,_this.credentialDefinitionId,_this.isCredentialOptional,const DeepCollectionEquality().hash(_this.connectorToolIds),_this.isEnabled);
 }
 
 @override
 String toString() {
   final _this = this as SkillToCreate;
-  return 'SkillToCreate(kind: ${_this.kind}, title: ${_this.title}, description: ${_this.description}, content: ${_this.content}, credentialDefinitionId: ${_this.credentialDefinitionId}, isCredentialOptional: ${_this.isCredentialOptional}, isEnabled: ${_this.isEnabled})';
+  return 'SkillToCreate(kind: ${_this.kind}, title: ${_this.title}, description: ${_this.description}, content: ${_this.content}, credentialDefinitionId: ${_this.credentialDefinitionId}, isCredentialOptional: ${_this.isCredentialOptional}, connectorToolIds: ${_this.connectorToolIds}, isEnabled: ${_this.isEnabled})';
 }
 
 
@@ -351,7 +360,7 @@ abstract mixin class $SkillToCreateCopyWith<$Res>  {
   factory $SkillToCreateCopyWith(SkillToCreate value, $Res Function(SkillToCreate) _then) = _$SkillToCreateCopyWithImpl;
 @useResult
 $Res call({
- SkillKind kind, String title, String description, String content, String? credentialDefinitionId, bool isCredentialOptional, bool isEnabled
+ SkillKind kind, String title, String description, String content, String? credentialDefinitionId, bool isCredentialOptional, List<String> connectorToolIds, bool isEnabled
 });
 
 
@@ -368,7 +377,7 @@ class _$SkillToCreateCopyWithImpl<$Res>
 
 /// Create a copy of SkillToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? kind = null,Object? title = null,Object? description = null,Object? content = null,Object? credentialDefinitionId = freezed,Object? isCredentialOptional = null,Object? isEnabled = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? kind = null,Object? title = null,Object? description = null,Object? content = null,Object? credentialDefinitionId = freezed,Object? isCredentialOptional = null,Object? connectorToolIds = null,Object? isEnabled = null,}) {
   return _then(SkillToCreate(
 kind: null == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
 as SkillKind,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -376,7 +385,8 @@ as String,description: null == description ? _self.description : description // 
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
 as String?,isCredentialOptional: null == isCredentialOptional ? _self.isCredentialOptional : isCredentialOptional // ignore: cast_nullable_to_non_nullable
-as bool,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as bool,connectorToolIds: null == connectorToolIds ? _self.connectorToolIds : connectorToolIds // ignore: cast_nullable_to_non_nullable
+as List<String>,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -462,10 +472,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SkillKind kind,  String title,  String description,  String content,  String? credentialDefinitionId,  bool isCredentialOptional,  bool isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SkillKind kind,  String title,  String description,  String content,  String? credentialDefinitionId,  bool isCredentialOptional,  List<String> connectorToolIds,  bool isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SkillToCreate() when $default != null:
-return $default(_that.kind,_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.isCredentialOptional,_that.isEnabled);case _:
+return $default(_that.kind,_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.isCredentialOptional,_that.connectorToolIds,_that.isEnabled);case _:
   return orElse();
 
 }
@@ -483,10 +493,10 @@ return $default(_that.kind,_that.title,_that.description,_that.content,_that.cre
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SkillKind kind,  String title,  String description,  String content,  String? credentialDefinitionId,  bool isCredentialOptional,  bool isEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SkillKind kind,  String title,  String description,  String content,  String? credentialDefinitionId,  bool isCredentialOptional,  List<String> connectorToolIds,  bool isEnabled)  $default,) {final _that = this;
 switch (_that) {
 case _SkillToCreate():
-return $default(_that.kind,_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.isCredentialOptional,_that.isEnabled);case _:
+return $default(_that.kind,_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.isCredentialOptional,_that.connectorToolIds,_that.isEnabled);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -503,10 +513,10 @@ return $default(_that.kind,_that.title,_that.description,_that.content,_that.cre
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SkillKind kind,  String title,  String description,  String content,  String? credentialDefinitionId,  bool isCredentialOptional,  bool isEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SkillKind kind,  String title,  String description,  String content,  String? credentialDefinitionId,  bool isCredentialOptional,  List<String> connectorToolIds,  bool isEnabled)?  $default,) {final _that = this;
 switch (_that) {
 case _SkillToCreate() when $default != null:
-return $default(_that.kind,_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.isCredentialOptional,_that.isEnabled);case _:
+return $default(_that.kind,_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.isCredentialOptional,_that.connectorToolIds,_that.isEnabled);case _:
   return null;
 
 }
@@ -518,7 +528,7 @@ return $default(_that.kind,_that.title,_that.description,_that.content,_that.cre
 
 
 class _SkillToCreate extends SkillToCreate {
-  const _SkillToCreate({required this.kind, required this.title, required this.description, required this.content, this.credentialDefinitionId, this.isCredentialOptional = false, this.isEnabled = true}): super._();
+  const _SkillToCreate({required this.kind, required this.title, required this.description, required this.content, this.credentialDefinitionId, this.isCredentialOptional = false,  List<String> connectorToolIds = const <String>[], this.isEnabled = true}): _connectorToolIds = connectorToolIds,super._();
   
 
 @override final  SkillKind kind;
@@ -527,6 +537,13 @@ class _SkillToCreate extends SkillToCreate {
 @override final  String content;
 @override final  String? credentialDefinitionId;
 @override@JsonKey() final  bool isCredentialOptional;
+ final  List<String> _connectorToolIds;
+@override@JsonKey() List<String> get connectorToolIds {
+  if (_connectorToolIds is EqualUnmodifiableListView) return _connectorToolIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_connectorToolIds);
+}
+
 @override@JsonKey() final  bool isEnabled;
 
 /// Create a copy of SkillToCreate
@@ -539,18 +556,18 @@ _$SkillToCreateCopyWith<_SkillToCreate> get copyWith => __$SkillToCreateCopyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillToCreate&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.isCredentialOptional, isCredentialOptional) || other.isCredentialOptional == isCredentialOptional)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillToCreate&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.isCredentialOptional, isCredentialOptional) || other.isCredentialOptional == isCredentialOptional)&&const DeepCollectionEquality().equals(other.connectorToolIds, _connectorToolIds)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,kind,title,description,content,credentialDefinitionId,isCredentialOptional,isEnabled);
+    return Object.hash(runtimeType,kind,title,description,content,credentialDefinitionId,isCredentialOptional,const DeepCollectionEquality().hash(_connectorToolIds),isEnabled);
 }
 
 @override
 String toString() {
-    return 'SkillToCreate(kind: $kind, title: $title, description: $description, content: $content, credentialDefinitionId: $credentialDefinitionId, isCredentialOptional: $isCredentialOptional, isEnabled: $isEnabled)';
+    return 'SkillToCreate(kind: $kind, title: $title, description: $description, content: $content, credentialDefinitionId: $credentialDefinitionId, isCredentialOptional: $isCredentialOptional, connectorToolIds: $connectorToolIds, isEnabled: $isEnabled)';
 }
 
 
@@ -561,7 +578,7 @@ abstract mixin class _$SkillToCreateCopyWith<$Res> implements $SkillToCreateCopy
   factory _$SkillToCreateCopyWith(_SkillToCreate value, $Res Function(_SkillToCreate) _then) = __$SkillToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- SkillKind kind, String title, String description, String content, String? credentialDefinitionId, bool isCredentialOptional, bool isEnabled
+ SkillKind kind, String title, String description, String content, String? credentialDefinitionId, bool isCredentialOptional, List<String> connectorToolIds, bool isEnabled
 });
 
 
@@ -578,7 +595,7 @@ class __$SkillToCreateCopyWithImpl<$Res>
 
 /// Create a copy of SkillToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? kind = null,Object? title = null,Object? description = null,Object? content = null,Object? credentialDefinitionId = freezed,Object? isCredentialOptional = null,Object? isEnabled = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? kind = null,Object? title = null,Object? description = null,Object? content = null,Object? credentialDefinitionId = freezed,Object? isCredentialOptional = null,Object? connectorToolIds = null,Object? isEnabled = null,}) {
   return _then(_SkillToCreate(
 kind: null == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
 as SkillKind,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -586,7 +603,8 @@ as String,description: null == description ? _self.description : description // 
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
 as String?,isCredentialOptional: null == isCredentialOptional ? _self.isCredentialOptional : isCredentialOptional // ignore: cast_nullable_to_non_nullable
-as bool,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as bool,connectorToolIds: null == connectorToolIds ? _self._connectorToolIds : connectorToolIds // ignore: cast_nullable_to_non_nullable
+as List<String>,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -597,7 +615,7 @@ as bool,
 /// @nodoc
 mixin _$SkillToUpdate {
 
- String? get title; String? get description; String? get content; String? get credentialDefinitionId; bool get clearCredentialDefinition; bool? get isCredentialOptional; bool? get isEnabled;
+ String? get title; String? get description; String? get content; String? get credentialDefinitionId; bool get clearCredentialDefinition; bool? get isCredentialOptional; List<String>? get connectorToolIds; bool? get isEnabled;
 /// Create a copy of SkillToUpdate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -609,20 +627,20 @@ $SkillToUpdateCopyWith<SkillToUpdate> get copyWith => _$SkillToUpdateCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as SkillToUpdate;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillToUpdate&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId)&&(identical(other.clearCredentialDefinition, _this.clearCredentialDefinition) || other.clearCredentialDefinition == _this.clearCredentialDefinition)&&(identical(other.isCredentialOptional, _this.isCredentialOptional) || other.isCredentialOptional == _this.isCredentialOptional)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillToUpdate&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId)&&(identical(other.clearCredentialDefinition, _this.clearCredentialDefinition) || other.clearCredentialDefinition == _this.clearCredentialDefinition)&&(identical(other.isCredentialOptional, _this.isCredentialOptional) || other.isCredentialOptional == _this.isCredentialOptional)&&const DeepCollectionEquality().equals(other.connectorToolIds, _this.connectorToolIds)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
 }
 
 
 @override
 int get hashCode {
   final _this = this as SkillToUpdate;
-  return Object.hash(runtimeType,_this.title,_this.description,_this.content,_this.credentialDefinitionId,_this.clearCredentialDefinition,_this.isCredentialOptional,_this.isEnabled);
+  return Object.hash(runtimeType,_this.title,_this.description,_this.content,_this.credentialDefinitionId,_this.clearCredentialDefinition,_this.isCredentialOptional,const DeepCollectionEquality().hash(_this.connectorToolIds),_this.isEnabled);
 }
 
 @override
 String toString() {
   final _this = this as SkillToUpdate;
-  return 'SkillToUpdate(title: ${_this.title}, description: ${_this.description}, content: ${_this.content}, credentialDefinitionId: ${_this.credentialDefinitionId}, clearCredentialDefinition: ${_this.clearCredentialDefinition}, isCredentialOptional: ${_this.isCredentialOptional}, isEnabled: ${_this.isEnabled})';
+  return 'SkillToUpdate(title: ${_this.title}, description: ${_this.description}, content: ${_this.content}, credentialDefinitionId: ${_this.credentialDefinitionId}, clearCredentialDefinition: ${_this.clearCredentialDefinition}, isCredentialOptional: ${_this.isCredentialOptional}, connectorToolIds: ${_this.connectorToolIds}, isEnabled: ${_this.isEnabled})';
 }
 
 
@@ -633,7 +651,7 @@ abstract mixin class $SkillToUpdateCopyWith<$Res>  {
   factory $SkillToUpdateCopyWith(SkillToUpdate value, $Res Function(SkillToUpdate) _then) = _$SkillToUpdateCopyWithImpl;
 @useResult
 $Res call({
- String? title, String? description, String? content, String? credentialDefinitionId, bool clearCredentialDefinition, bool? isCredentialOptional, bool? isEnabled
+ String? title, String? description, String? content, String? credentialDefinitionId, bool clearCredentialDefinition, bool? isCredentialOptional, List<String>? connectorToolIds, bool? isEnabled
 });
 
 
@@ -650,7 +668,7 @@ class _$SkillToUpdateCopyWithImpl<$Res>
 
 /// Create a copy of SkillToUpdate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? title = freezed,Object? description = freezed,Object? content = freezed,Object? credentialDefinitionId = freezed,Object? clearCredentialDefinition = null,Object? isCredentialOptional = freezed,Object? isEnabled = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? title = freezed,Object? description = freezed,Object? content = freezed,Object? credentialDefinitionId = freezed,Object? clearCredentialDefinition = null,Object? isCredentialOptional = freezed,Object? connectorToolIds = freezed,Object? isEnabled = freezed,}) {
   return _then(SkillToUpdate(
 title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
@@ -658,7 +676,8 @@ as String?,content: freezed == content ? _self.content : content // ignore: cast
 as String?,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
 as String?,clearCredentialDefinition: null == clearCredentialDefinition ? _self.clearCredentialDefinition : clearCredentialDefinition // ignore: cast_nullable_to_non_nullable
 as bool,isCredentialOptional: freezed == isCredentialOptional ? _self.isCredentialOptional : isCredentialOptional // ignore: cast_nullable_to_non_nullable
-as bool?,isEnabled: freezed == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as bool?,connectorToolIds: freezed == connectorToolIds ? _self.connectorToolIds : connectorToolIds // ignore: cast_nullable_to_non_nullable
+as List<String>?,isEnabled: freezed == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool?,
   ));
 }
@@ -744,10 +763,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? title,  String? description,  String? content,  String? credentialDefinitionId,  bool clearCredentialDefinition,  bool? isCredentialOptional,  bool? isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? title,  String? description,  String? content,  String? credentialDefinitionId,  bool clearCredentialDefinition,  bool? isCredentialOptional,  List<String>? connectorToolIds,  bool? isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SkillToUpdate() when $default != null:
-return $default(_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.clearCredentialDefinition,_that.isCredentialOptional,_that.isEnabled);case _:
+return $default(_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.clearCredentialDefinition,_that.isCredentialOptional,_that.connectorToolIds,_that.isEnabled);case _:
   return orElse();
 
 }
@@ -765,10 +784,10 @@ return $default(_that.title,_that.description,_that.content,_that.credentialDefi
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? title,  String? description,  String? content,  String? credentialDefinitionId,  bool clearCredentialDefinition,  bool? isCredentialOptional,  bool? isEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? title,  String? description,  String? content,  String? credentialDefinitionId,  bool clearCredentialDefinition,  bool? isCredentialOptional,  List<String>? connectorToolIds,  bool? isEnabled)  $default,) {final _that = this;
 switch (_that) {
 case _SkillToUpdate():
-return $default(_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.clearCredentialDefinition,_that.isCredentialOptional,_that.isEnabled);case _:
+return $default(_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.clearCredentialDefinition,_that.isCredentialOptional,_that.connectorToolIds,_that.isEnabled);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -785,10 +804,10 @@ return $default(_that.title,_that.description,_that.content,_that.credentialDefi
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? title,  String? description,  String? content,  String? credentialDefinitionId,  bool clearCredentialDefinition,  bool? isCredentialOptional,  bool? isEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? title,  String? description,  String? content,  String? credentialDefinitionId,  bool clearCredentialDefinition,  bool? isCredentialOptional,  List<String>? connectorToolIds,  bool? isEnabled)?  $default,) {final _that = this;
 switch (_that) {
 case _SkillToUpdate() when $default != null:
-return $default(_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.clearCredentialDefinition,_that.isCredentialOptional,_that.isEnabled);case _:
+return $default(_that.title,_that.description,_that.content,_that.credentialDefinitionId,_that.clearCredentialDefinition,_that.isCredentialOptional,_that.connectorToolIds,_that.isEnabled);case _:
   return null;
 
 }
@@ -800,7 +819,7 @@ return $default(_that.title,_that.description,_that.content,_that.credentialDefi
 
 
 class _SkillToUpdate extends SkillToUpdate {
-  const _SkillToUpdate({this.title, this.description, this.content, this.credentialDefinitionId, this.clearCredentialDefinition = false, this.isCredentialOptional, this.isEnabled}): super._();
+  const _SkillToUpdate({this.title, this.description, this.content, this.credentialDefinitionId, this.clearCredentialDefinition = false, this.isCredentialOptional,  List<String>? connectorToolIds, this.isEnabled}): _connectorToolIds = connectorToolIds,super._();
   
 
 @override final  String? title;
@@ -809,6 +828,15 @@ class _SkillToUpdate extends SkillToUpdate {
 @override final  String? credentialDefinitionId;
 @override@JsonKey() final  bool clearCredentialDefinition;
 @override final  bool? isCredentialOptional;
+ final  List<String>? _connectorToolIds;
+@override List<String>? get connectorToolIds {
+  final value = _connectorToolIds;
+  if (value == null) return null;
+  if (_connectorToolIds is EqualUnmodifiableListView) return _connectorToolIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
 @override final  bool? isEnabled;
 
 /// Create a copy of SkillToUpdate
@@ -821,18 +849,18 @@ _$SkillToUpdateCopyWith<_SkillToUpdate> get copyWith => __$SkillToUpdateCopyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillToUpdate&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.clearCredentialDefinition, clearCredentialDefinition) || other.clearCredentialDefinition == clearCredentialDefinition)&&(identical(other.isCredentialOptional, isCredentialOptional) || other.isCredentialOptional == isCredentialOptional)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillToUpdate&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.clearCredentialDefinition, clearCredentialDefinition) || other.clearCredentialDefinition == clearCredentialDefinition)&&(identical(other.isCredentialOptional, isCredentialOptional) || other.isCredentialOptional == isCredentialOptional)&&const DeepCollectionEquality().equals(other.connectorToolIds, _connectorToolIds)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,title,description,content,credentialDefinitionId,clearCredentialDefinition,isCredentialOptional,isEnabled);
+    return Object.hash(runtimeType,title,description,content,credentialDefinitionId,clearCredentialDefinition,isCredentialOptional,const DeepCollectionEquality().hash(_connectorToolIds),isEnabled);
 }
 
 @override
 String toString() {
-    return 'SkillToUpdate(title: $title, description: $description, content: $content, credentialDefinitionId: $credentialDefinitionId, clearCredentialDefinition: $clearCredentialDefinition, isCredentialOptional: $isCredentialOptional, isEnabled: $isEnabled)';
+    return 'SkillToUpdate(title: $title, description: $description, content: $content, credentialDefinitionId: $credentialDefinitionId, clearCredentialDefinition: $clearCredentialDefinition, isCredentialOptional: $isCredentialOptional, connectorToolIds: $connectorToolIds, isEnabled: $isEnabled)';
 }
 
 
@@ -843,7 +871,7 @@ abstract mixin class _$SkillToUpdateCopyWith<$Res> implements $SkillToUpdateCopy
   factory _$SkillToUpdateCopyWith(_SkillToUpdate value, $Res Function(_SkillToUpdate) _then) = __$SkillToUpdateCopyWithImpl;
 @override @useResult
 $Res call({
- String? title, String? description, String? content, String? credentialDefinitionId, bool clearCredentialDefinition, bool? isCredentialOptional, bool? isEnabled
+ String? title, String? description, String? content, String? credentialDefinitionId, bool clearCredentialDefinition, bool? isCredentialOptional, List<String>? connectorToolIds, bool? isEnabled
 });
 
 
@@ -860,7 +888,7 @@ class __$SkillToUpdateCopyWithImpl<$Res>
 
 /// Create a copy of SkillToUpdate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? title = freezed,Object? description = freezed,Object? content = freezed,Object? credentialDefinitionId = freezed,Object? clearCredentialDefinition = null,Object? isCredentialOptional = freezed,Object? isEnabled = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? title = freezed,Object? description = freezed,Object? content = freezed,Object? credentialDefinitionId = freezed,Object? clearCredentialDefinition = null,Object? isCredentialOptional = freezed,Object? connectorToolIds = freezed,Object? isEnabled = freezed,}) {
   return _then(_SkillToUpdate(
 title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
@@ -868,7 +896,8 @@ as String?,content: freezed == content ? _self.content : content // ignore: cast
 as String?,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
 as String?,clearCredentialDefinition: null == clearCredentialDefinition ? _self.clearCredentialDefinition : clearCredentialDefinition // ignore: cast_nullable_to_non_nullable
 as bool,isCredentialOptional: freezed == isCredentialOptional ? _self.isCredentialOptional : isCredentialOptional // ignore: cast_nullable_to_non_nullable
-as bool?,isEnabled: freezed == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as bool?,connectorToolIds: freezed == connectorToolIds ? _self._connectorToolIds : connectorToolIds // ignore: cast_nullable_to_non_nullable
+as List<String>?,isEnabled: freezed == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool?,
   ));
 }

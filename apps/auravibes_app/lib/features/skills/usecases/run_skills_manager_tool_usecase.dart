@@ -276,6 +276,7 @@ extension _RunSkillsManagerMutations on RunSkillsManagerToolUsecase {
     content: _optionalString(arguments, 'content'),
     credentialDefinitionId: credential.id,
     clearCredentialDefinition: credential.provided && credential.id == null,
+    connectorToolIds: _optionalStringList(arguments, 'connectorToolIds'),
     isCredentialOptional: _optionalBool(arguments, 'isCredentialOptional'),
     isEnabled: _optionalBool(arguments, 'isEnabled'),
   );
@@ -289,6 +290,8 @@ extension _RunSkillsManagerMutations on RunSkillsManagerToolUsecase {
     description: _requiredString(arguments, 'description'),
     content: _requiredString(arguments, 'content'),
     credentialDefinitionId: credentialDefinitionId,
+    connectorToolIds:
+        _optionalStringList(arguments, 'connectorToolIds') ?? const [],
     isCredentialOptional:
         _optionalBool(arguments, 'isCredentialOptional') ?? false,
     isEnabled: _optionalBool(arguments, 'isEnabled') ?? true,
@@ -1103,6 +1106,7 @@ extension _RunSkillsManagerResultDetails on RunSkillsManagerToolUsecase {
   Map<String, Object?> _skillDetails(SkillEntity skill) => {
     'description': skill.description,
     'content': skill.content,
+    'connectorToolIds': skill.connectorToolIds,
     'isEnabled': skill.isEnabled,
   };
 
@@ -1157,6 +1161,25 @@ extension _RunSkillsManagerInputValidation on RunSkillsManagerToolUsecase {
     if (value is! String) throw FormatException('$key must be a string.');
 
     return value.trim();
+  }
+
+  List<String>? _optionalStringList(
+    Map<String, dynamic> arguments,
+    String key,
+  ) {
+    final value = arguments[key];
+    if (value == null) return null;
+    if (value is! List || value.any((item) => item is! String)) {
+      throw FormatException('$key must be an array of strings.');
+    }
+
+    return value
+        .cast<String>()
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
   }
 
   bool? _optionalBool(Map<String, dynamic> arguments, String key) {

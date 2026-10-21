@@ -183,7 +183,10 @@ class AppDatabase extends _$AppDatabase {
       _backgroundWorkChildLinkSchemaVersion + 1;
   static const int _messageBookmarkSchemaVersion =
       _toolCallAttachmentSchemaVersion + 1;
-  static const int _currentSchemaVersion = _messageBookmarkSchemaVersion;
+  static const int _connectorSkillToolReferencesSchemaVersion =
+      _messageBookmarkSchemaVersion + 1;
+  static const int _currentSchemaVersion =
+      _connectorSkillToolReferencesSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -231,6 +234,7 @@ extension on AppDatabase {
     await _upgradeToolAccessModeSchema(m);
     await _upgradeToolCallAttachmentSchema(m, from);
     await _upgradeMessageBookmarkSchema(m, from);
+    await _upgradeConnectorSkillToolReferencesSchema(m, from);
   }
 
   Future<void> _upgradeMessageBookmarkSchema(Migrator m, int from) async {
@@ -387,6 +391,18 @@ extension on AppDatabase {
     if (from < AppDatabase._skillResourceSchemaVersion) {
       await m.createTable(skillResources);
     }
+  }
+
+  Future<void> _upgradeConnectorSkillToolReferencesSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._connectorSkillToolReferencesSchemaVersion ||
+        !await _tableExists('skills') ||
+        await _columnExists('skills', 'connector_tool_ids_json')) {
+      return;
+    }
+    await m.addColumn(skills, skills.connectorToolIdsJson);
   }
 
   Future<void> _upgradeAgentsSchema(Migrator m, int from) async {

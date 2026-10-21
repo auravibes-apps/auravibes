@@ -6,7 +6,7 @@ void main() {
     expect(skillsManagerSkillDefinition.slug, skillsManagerSkillSlug);
     expect(
       skillsManagerSkillDefinition.content,
-      contains('Do not use {input:name}, {credential:name}, or {{name}}'),
+      contains('Set connectorToolIds'),
     );
     expect(skillsManagerToolSpecs, hasLength(21));
     expect(
@@ -42,7 +42,12 @@ void main() {
       'credentialDefinitionId',
       'isCredentialOptional',
       'isEnabled',
+      'connectorToolIds',
     ]);
+    expect(
+      skillsManagerToolSpecs[2].inputJsonSchema['properties'],
+      containsPair('connectorToolIds', containsPair('type', ['array', 'null'])),
+    );
     expect(skillsManagerToolSpecs[7].inputJsonSchema['required'], [
       'skillSlug',
       'title',

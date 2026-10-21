@@ -8,6 +8,7 @@ class const AvailableSkill({
   required final String content,
   required final SkillSource source,
   required final SkillKind kind,
+  final List<String> connectorToolIds = const [],
   final bool isCredentialOptional = false,
   final String? credentialDefinitionId,
   final SkillCredentialReadiness credentialReadiness = .unknown,

@@ -212,6 +212,7 @@ Future<SkillManifest?> buildCloudSkillManifest({
     _ => null,
   };
   if (title == null || instructions == null) return null;
+  final connectorToolIds = _cloudSkillConnectorToolIds(userSkill, appSkill);
   final manifestTools =
       tools
           .where(
@@ -242,6 +243,7 @@ Future<SkillManifest?> buildCloudSkillManifest({
         userSkill?['description'] as String? ?? appSkill?.description ?? '',
     instructions: instructions,
     tools: manifestTools,
+    connectorToolIds: connectorToolIds,
   );
   return SkillManifest(
     slug: slug,
@@ -250,31 +252,33 @@ Future<SkillManifest?> buildCloudSkillManifest({
         userSkill?['description'] as String? ?? appSkill?.description ?? '',
     revision: revision,
     tools: manifestTools,
+    connectorToolIds: connectorToolIds,
   );
 }
 
-Future<List<SkillManifest>> _cloudSkillManifests({
-  required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<ServerResolvedTool> tools,
-}) async {
-  final slugs =
-      tools
-          .map((tool) => tool.descriptor.skillSlug)
-          .whereType<String>()
-          .toSet()
-          .toList()
-        ..sort();
-  final manifests = <SkillManifest>[];
-  for (final slug in slugs) {
-    final manifest = await buildCloudSkillManifest(
-      slug: slug,
-      userSkills: userSkills,
-      tools: tools,
+List<String> _cloudSkillConnectorToolIds(
+  Map<String, dynamic>? userSkill,
+  AppSkillDefinition? appSkill,
+) {
+  final storedToolIds = userSkill?['connectorToolIds'];
+  if (storedToolIds is List) {
+    return _normalizedCloudSkillConnectorToolIds(
+      storedToolIds.whereType<String>(),
     );
-    if (manifest != null) manifests.add(manifest);
   }
-  return manifests;
+
+  final definition = appSkill;
+  if (definition == null) return const [];
+
+  return _normalizedCloudSkillConnectorToolIds([
+    for (final tool in definition.tools)
+      if (tool.urlTemplate != null) connectorToolId(definition, tool),
+  ]);
 }
+
+List<String> _normalizedCloudSkillConnectorToolIds(Iterable<String> values) =>
+    values.map((id) => id.trim()).where((id) => id.isNotEmpty).toSet().toList()
+      ..sort();
 
 Future<ServerResolvedTool> resolveCloudSkillCommandTarget({
   required SkillCommandTarget command,
@@ -422,6 +426,12 @@ bool cloudUserSkillReady(
 ) {
   final skillId = skill['id'];
   if (skillId is! String || skill['isEnabled'] == false) return false;
+  if ((skill['connectorToolIds'] as List?)?.whereType<String>().any(
+        (id) => id.trim().isNotEmpty,
+      ) ==
+      true) {
+    return true;
+  }
   return templateTools.any(
     (tool) {
       if (tool['skillId'] != skillId || tool['isEnabled'] == false) {
@@ -955,14 +965,6 @@ class ServerToolRuntime({
           table.stableId.equals(conversationStableId) &
           table.deletedAt.equals(null),
     );
-    final skillTargets = _materializeCloudSkillTargets(
-      conversation: conversation,
-      resources: resources,
-    );
-    final skillManifests = await _cloudSkillManifests(
-      userSkills: skillTargets.userSkills,
-      tools: skillTargets.tools,
-    );
     final appSkillSettings = resources
         .where(
           (resource) =>
@@ -987,7 +989,7 @@ class ServerToolRuntime({
     return [
       ...genericTools,
       ...fixedCloudConnectorCommandTools(),
-      ...fixedCloudSkillCommandTools(manifests: skillManifests),
+      ...fixedCloudSkillCommandTools(),
       ...agentTools,
       ServerResolvedTool(
         descriptor: AgentResolvedToolName.builtIn(

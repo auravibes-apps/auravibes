@@ -15,16 +15,41 @@ void main() {
             description: 'Use primary sources.',
             revision: 'r1',
             tools: const [],
+            connectorToolIds: ['connector/notion/search'],
           ),
         ),
       ],
       agentSkills: const [],
     );
 
-    expect(messages.single.content, contains('<skill_tools>'));
-    expect(messages.single.content, contains('"revision":"r1"'));
-    expect(messages.single.content, contains('"tools":[]'));
+    expect(messages.single.content, contains('<connector_tool_refs>'));
+    expect(messages.single.content, contains('connector/notion/search'));
+    expect(messages.single.content, isNot(contains('<skill_tools>')));
+    expect(messages.single.content, isNot(contains('inputSchema')));
   });
+
+  test(
+    'activation exposes references without tool definitions or credentials',
+    () {
+      final result = buildSkillActivationResult(
+        manifest: SkillManifest(
+          slug: 'crm',
+          title: 'CRM',
+          description: 'Use Notion for CRM.',
+          revision: 'r1',
+          tools: const [],
+          connectorToolIds: const ['connector/notion/search'],
+        ),
+        content: 'Search before creating records.',
+      );
+
+      expect(result.value, contains('<connector_tool_refs>'));
+      expect(result.value, contains('connector/notion/search'));
+      expect(result.value, isNot(contains('<skill_tools>')));
+      expect(result.value, isNot(contains('<skill_credentials>')));
+      expect(result.value, isNot(contains('inputSchema')));
+    },
+  );
 
   test('catalog is system context and sorted by slug', () {
     final messages = const BuildSkillContextMessages().compose(

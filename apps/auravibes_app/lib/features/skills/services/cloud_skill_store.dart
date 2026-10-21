@@ -701,6 +701,7 @@ extension CloudSkillStoreRuntimeOperations on CloudSkillStore {
   /// Matches the server's cloud template-tool materialization policy.
   Future<bool> userSkillReady(SkillEntity skill) async {
     if (!skill.isEnabled) return false;
+    if (skill.connectorToolIds.isNotEmpty) return true;
     final skillCredentialDefinitionId = skill.credentialDefinitionId;
     for (final tool in await tools(skill.id)) {
       if (!tool.isEnabled) continue;
@@ -826,6 +827,7 @@ extension _CloudSkillStoreSkillMapping on CloudSkillStore {
       skill.copyWith(
         description: value.description,
         content: value.content,
+        connectorToolIds: value.connectorToolIds,
         isEnabled: value.isEnabled,
       );
 
@@ -861,6 +863,7 @@ extension _CloudSkillStoreSkillUpdateMapping on CloudSkillStore {
       skill.copyWith(
         description: value.description ?? skill.description,
         content: value.content ?? skill.content,
+        connectorToolIds: value.connectorToolIds ?? skill.connectorToolIds,
         credentialDefinitionId: _skillCredentialDefinitionId(skill, value),
       );
 
@@ -1488,6 +1491,7 @@ extension _CloudSkillStoreSkillParsing on CloudSkillStore {
       skill.copyWith(
         description: data['description'] as String,
         content: data['content'] as String,
+        connectorToolIds: _connectorToolIdsFromData(data),
         isEnabled: data['isEnabled'] as bool,
       );
 
@@ -1509,12 +1513,22 @@ extension _CloudSkillStoreSkillParsing on CloudSkillStore {
     'slug': value.slug,
     'description': value.description,
     'content': value.content,
+    'connectorToolIds': _normalizedConnectorToolIds(value.connectorToolIds),
     'isEnabled': value.isEnabled,
     'isCredentialOptional': value.isCredentialOptional,
     'skillDefinitionId': ?value.credentialDefinitionId,
     'credentialDefinitionId': ?value.credentialDefinitionId,
   };
 }
+
+List<String> _connectorToolIdsFromData(Map<String, dynamic> data) =>
+    _normalizedConnectorToolIds(
+      (data['connectorToolIds'] as List? ?? const []).whereType<String>(),
+    );
+
+List<String> _normalizedConnectorToolIds(Iterable<String> values) =>
+    values.map((id) => id.trim()).where((id) => id.isNotEmpty).toSet().toList()
+      ..sort();
 
 extension _CloudSkillStoreToolParsing on CloudSkillStore {
   SkillTemplateToolEntity _tool(WorkspaceResource value) {
