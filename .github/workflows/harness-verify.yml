@@ -26,8 +26,14 @@ jobs:
       - name: Verify instructions, skill references, and evaluation cases
         run: python3 tool/verify_agent_harness.py
 
+      - name: Run Melos setup behavior evaluations
+        run: python3 tool/run_melos_skill_evals.py
+
       - name: Test harness repair diagnostics
         run: python3 -m unittest discover -s tool -p 'verify_agent_harness_test.py'
+
+      - name: Test Melos setup evaluation
+        run: python3 -m unittest discover -s tool -p 'run_melos_skill_evals_test.py'
 
       - name: Test CI change classification
         run: python3 -m unittest discover -s tool -p 'classify_ci_changes_test.py'
