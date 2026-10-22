@@ -21,19 +21,25 @@ import 'package:material_ui/material_ui.dart';
 
 class const MessageBookmarksScreen({
   required final String workspaceId,
+  final String? conversationId,
   super.key,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AppScreen(
-    child: _MessageBookmarksBody(workspaceId: workspaceId),
+    child: _MessageBookmarksBody(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
     appBar: const AuraAppBarWithDrawer(
       title: TextLocale(LocaleKeys.chats_screens_chats_list_saved_messages),
     ),
   );
 }
 
-class const _MessageBookmarksBody({required final String workspaceId})
-    extends ConsumerWidget {
+class const _MessageBookmarksBody({
+  required final String workspaceId,
+  required final String? conversationId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookmarks = ref.watch(messageBookmarksProvider(workspaceId));
@@ -41,7 +47,7 @@ class const _MessageBookmarksBody({required final String workspaceId})
 
     return switch (bookmarks) {
       AsyncData(:final value) => _MessageBookmarksData(
-        bookmarks: value,
+        bookmarks: _conversationBookmarks(value, workspaceId, conversationId),
         cloudBookmarks: cloudBookmarks,
       ),
       AsyncError(:final error, :final stackTrace) => AppErrorWidget(
@@ -51,6 +57,22 @@ class const _MessageBookmarksBody({required final String workspaceId})
       AsyncLoading() => const Center(child: AuraSpinner()),
     };
   }
+}
+
+List<MessageBookmarkEntity> _conversationBookmarks(
+  List<MessageBookmarkEntity> bookmarks,
+  String workspaceId,
+  String? conversationId,
+) {
+  if (conversationId == null) return bookmarks;
+
+  return bookmarks
+      .where(
+        (bookmark) =>
+            bookmark.workspace.workspaceId == workspaceId &&
+            bookmark.details.conversationId == conversationId,
+      )
+      .toList(growable: false);
 }
 
 class const _MessageBookmarksData({
@@ -167,16 +189,34 @@ class const _MessageBookmarkMetadata({
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .start,
     children: [
+      if (bookmark.details.isUser case final isUser?)
+        _MessageBookmarkAuthorRole(isUser: isUser),
       Text(_conversationTitle(bookmark)),
       Text(bookmark.details.workspaceName),
-      Text(
-        RelativeTimeFormatter.format(
-          bookmark.details.createdAt,
-          locale: Localizations.localeOf(context),
-          translate: (key, {args}) => context.tr(key, args: args),
-        ),
-      ),
+      _MessageBookmarkTime(createdAt: bookmark.details.createdAt),
     ],
+  );
+}
+
+class const _MessageBookmarkAuthorRole({required final bool isUser})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextLocale(
+    isUser
+        ? LocaleKeys.chats_screens_conversation_search_user_role
+        : LocaleKeys.chats_screens_conversation_search_assistant_role,
+  );
+}
+
+class const _MessageBookmarkTime({required final DateTime createdAt})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    RelativeTimeFormatter.format(
+      createdAt,
+      locale: Localizations.localeOf(context),
+      translate: (key, {args}) => context.tr(key, args: args),
+    ),
   );
 }
 

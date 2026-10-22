@@ -10363,6 +10363,490 @@ class MessageAttachmentsCompanion
   }
 }
 
+class $MessageBookmarksTable extends MessageBookmarks
+    with TableInfo<$MessageBookmarksTable, MessageBookmarksTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MessageBookmarksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES conversations (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _contentSnapshotMeta = const VerificationMeta(
+    'contentSnapshot',
+  );
+  @override
+  late final GeneratedColumn<String> contentSnapshot = GeneratedColumn<String>(
+    'content_snapshot',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isUserMeta = const VerificationMeta('isUser');
+  @override
+  late final GeneratedColumn<bool> isUser = GeneratedColumn<bool>(
+    'is_user',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_user" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _messageCreatedAtMeta = const VerificationMeta(
+    'messageCreatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> messageCreatedAt =
+      GeneratedColumn<DateTime>(
+        'message_created_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    conversationId,
+    contentSnapshot,
+    isUser,
+    messageCreatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'message_bookmarks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MessageBookmarksTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('content_snapshot')) {
+      context.handle(
+        _contentSnapshotMeta,
+        contentSnapshot.isAcceptableOrUnknown(
+          data['content_snapshot']!,
+          _contentSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentSnapshotMeta);
+    }
+    if (data.containsKey('is_user')) {
+      context.handle(
+        _isUserMeta,
+        isUser.isAcceptableOrUnknown(data['is_user']!, _isUserMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_isUserMeta);
+    }
+    if (data.containsKey('message_created_at')) {
+      context.handle(
+        _messageCreatedAtMeta,
+        messageCreatedAt.isAcceptableOrUnknown(
+          data['message_created_at']!,
+          _messageCreatedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_messageCreatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MessageBookmarksTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MessageBookmarksTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      )!,
+      contentSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_snapshot'],
+      )!,
+      isUser: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_user'],
+      )!,
+      messageCreatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}message_created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MessageBookmarksTable createAlias(String alias) {
+    return $MessageBookmarksTable(attachedDatabase, alias);
+  }
+}
+
+class MessageBookmarksTable extends DataClass
+    implements Insertable<MessageBookmarksTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String conversationId;
+  final String contentSnapshot;
+  final bool isUser;
+  final DateTime messageCreatedAt;
+  const MessageBookmarksTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.conversationId,
+    required this.contentSnapshot,
+    required this.isUser,
+    required this.messageCreatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['conversation_id'] = Variable<String>(conversationId);
+    map['content_snapshot'] = Variable<String>(contentSnapshot);
+    map['is_user'] = Variable<bool>(isUser);
+    map['message_created_at'] = Variable<DateTime>(messageCreatedAt);
+    return map;
+  }
+
+  MessageBookmarksCompanion toCompanion(bool nullToAbsent) {
+    return MessageBookmarksCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      conversationId: Value(conversationId),
+      contentSnapshot: Value(contentSnapshot),
+      isUser: Value(isUser),
+      messageCreatedAt: Value(messageCreatedAt),
+    );
+  }
+
+  factory MessageBookmarksTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MessageBookmarksTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      conversationId: serializer.fromJson<String>(json['conversationId']),
+      contentSnapshot: serializer.fromJson<String>(json['contentSnapshot']),
+      isUser: serializer.fromJson<bool>(json['isUser']),
+      messageCreatedAt: serializer.fromJson<DateTime>(json['messageCreatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'conversationId': serializer.toJson<String>(conversationId),
+      'contentSnapshot': serializer.toJson<String>(contentSnapshot),
+      'isUser': serializer.toJson<bool>(isUser),
+      'messageCreatedAt': serializer.toJson<DateTime>(messageCreatedAt),
+    };
+  }
+
+  MessageBookmarksTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? conversationId,
+    String? contentSnapshot,
+    bool? isUser,
+    DateTime? messageCreatedAt,
+  }) => MessageBookmarksTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    conversationId: conversationId ?? this.conversationId,
+    contentSnapshot: contentSnapshot ?? this.contentSnapshot,
+    isUser: isUser ?? this.isUser,
+    messageCreatedAt: messageCreatedAt ?? this.messageCreatedAt,
+  );
+  MessageBookmarksTable copyWithCompanion(MessageBookmarksCompanion data) {
+    return MessageBookmarksTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      contentSnapshot: data.contentSnapshot.present
+          ? data.contentSnapshot.value
+          : this.contentSnapshot,
+      isUser: data.isUser.present ? data.isUser.value : this.isUser,
+      messageCreatedAt: data.messageCreatedAt.present
+          ? data.messageCreatedAt.value
+          : this.messageCreatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessageBookmarksTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('contentSnapshot: $contentSnapshot, ')
+          ..write('isUser: $isUser, ')
+          ..write('messageCreatedAt: $messageCreatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    conversationId,
+    contentSnapshot,
+    isUser,
+    messageCreatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MessageBookmarksTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.conversationId == this.conversationId &&
+          other.contentSnapshot == this.contentSnapshot &&
+          other.isUser == this.isUser &&
+          other.messageCreatedAt == this.messageCreatedAt);
+}
+
+class MessageBookmarksCompanion extends UpdateCompanion<MessageBookmarksTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> conversationId;
+  final Value<String> contentSnapshot;
+  final Value<bool> isUser;
+  final Value<DateTime> messageCreatedAt;
+  final Value<int> rowid;
+  const MessageBookmarksCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.contentSnapshot = const Value.absent(),
+    this.isUser = const Value.absent(),
+    this.messageCreatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MessageBookmarksCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String conversationId,
+    required String contentSnapshot,
+    required bool isUser,
+    required DateTime messageCreatedAt,
+    this.rowid = const Value.absent(),
+  }) : conversationId = Value(conversationId),
+       contentSnapshot = Value(contentSnapshot),
+       isUser = Value(isUser),
+       messageCreatedAt = Value(messageCreatedAt);
+  static Insertable<MessageBookmarksTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? conversationId,
+    Expression<String>? contentSnapshot,
+    Expression<bool>? isUser,
+    Expression<DateTime>? messageCreatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (contentSnapshot != null) 'content_snapshot': contentSnapshot,
+      if (isUser != null) 'is_user': isUser,
+      if (messageCreatedAt != null) 'message_created_at': messageCreatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MessageBookmarksCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? conversationId,
+    Value<String>? contentSnapshot,
+    Value<bool>? isUser,
+    Value<DateTime>? messageCreatedAt,
+    Value<int>? rowid,
+  }) {
+    return MessageBookmarksCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      conversationId: conversationId ?? this.conversationId,
+      contentSnapshot: contentSnapshot ?? this.contentSnapshot,
+      isUser: isUser ?? this.isUser,
+      messageCreatedAt: messageCreatedAt ?? this.messageCreatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (contentSnapshot.present) {
+      map['content_snapshot'] = Variable<String>(contentSnapshot.value);
+    }
+    if (isUser.present) {
+      map['is_user'] = Variable<bool>(isUser.value);
+    }
+    if (messageCreatedAt.present) {
+      map['message_created_at'] = Variable<DateTime>(messageCreatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessageBookmarksCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('contentSnapshot: $contentSnapshot, ')
+          ..write('isUser: $isUser, ')
+          ..write('messageCreatedAt: $messageCreatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ConversationToolsTable extends ConversationTools
     with TableInfo<$ConversationToolsTable, ConversationToolsTable> {
   @override
@@ -15065,6 +15549,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MessagesTable messages = $MessagesTable(this);
   late final $MessageAttachmentsTable messageAttachments =
       $MessageAttachmentsTable(this);
+  late final $MessageBookmarksTable messageBookmarks = $MessageBookmarksTable(
+    this,
+  );
   late final $ConversationToolsTable conversationTools =
       $ConversationToolsTable(this);
   late final $WorkspaceCompactionSettingsTable workspaceCompactionSettings =
@@ -15205,6 +15692,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     agentTools,
     messages,
     messageAttachments,
+    messageBookmarks,
     conversationTools,
     workspaceCompactionSettings,
     skillResources,
@@ -15379,6 +15867,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('message_attachments', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('message_bookmarks', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -19817,6 +20312,29 @@ final class $$ConversationsTableReferences
   }
 
   static MultiTypedResultKey<
+    $MessageBookmarksTable,
+    List<MessageBookmarksTable>
+  >
+  _messageBookmarksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.messageBookmarks,
+    aliasName: 'conversations__id__message_bookmarks__conversation_id',
+  );
+
+  $$MessageBookmarksTableProcessedTableManager get messageBookmarksRefs {
+    final manager = $$MessageBookmarksTableTableManager(
+      $_db,
+      $_db.messageBookmarks,
+    ).filter((f) => f.conversationId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _messageBookmarksRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
     $ConversationToolsTable,
     List<ConversationToolsTable>
   >
@@ -20110,6 +20628,31 @@ class $$ConversationsTableFilterComposer
           }) => $$MessagesTableFilterComposer(
             $db: $db,
             $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> messageBookmarksRefs(
+    Expression<bool> Function($$MessageBookmarksTableFilterComposer f) f,
+  ) {
+    final $$MessageBookmarksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.messageBookmarks,
+      getReferencedColumn: (t) => t.conversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessageBookmarksTableFilterComposer(
+            $db: $db,
+            $table: $db.messageBookmarks,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -20587,6 +21130,31 @@ class $$ConversationsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> messageBookmarksRefs<T extends Object>(
+    Expression<T> Function($$MessageBookmarksTableAnnotationComposer a) f,
+  ) {
+    final $$MessageBookmarksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.messageBookmarks,
+      getReferencedColumn: (t) => t.conversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessageBookmarksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.messageBookmarks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> conversationToolsRefs<T extends Object>(
     Expression<T> Function($$ConversationToolsTableAnnotationComposer a) f,
   ) {
@@ -20735,6 +21303,7 @@ class $$ConversationsTableTableManager
             bool agentId,
             bool parentConversationId,
             bool messagesRefs,
+            bool messageBookmarksRefs,
             bool conversationToolsRefs,
             bool conversationSkillsRefs,
             bool modelUsageRecordsRefs,
@@ -20846,6 +21415,7 @@ class $$ConversationsTableTableManager
                 agentId = false,
                 parentConversationId = false,
                 messagesRefs = false,
+                messageBookmarksRefs = false,
                 conversationToolsRefs = false,
                 conversationSkillsRefs = false,
                 modelUsageRecordsRefs = false,
@@ -20856,6 +21426,7 @@ class $$ConversationsTableTableManager
                   db: db,
                   explicitlyWatchedTables: [
                     if (messagesRefs) db.messages,
+                    if (messageBookmarksRefs) db.messageBookmarks,
                     if (conversationToolsRefs) db.conversationTools,
                     if (conversationSkillsRefs) db.conversationSkills,
                     if (modelUsageRecordsRefs) db.modelUsageRecords,
@@ -20942,6 +21513,27 @@ class $$ConversationsTableTableManager
                                 table,
                                 p0,
                               ).messagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.conversationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (messageBookmarksRefs)
+                        await $_getPrefetchedData<
+                          ConversationsTable,
+                          $ConversationsTable,
+                          MessageBookmarksTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ConversationsTableReferences
+                              ._messageBookmarksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ConversationsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).messageBookmarksRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.conversationId == item.id,
@@ -21079,6 +21671,7 @@ typedef $$ConversationsTableProcessedTableManager =
         bool agentId,
         bool parentConversationId,
         bool messagesRefs,
+        bool messageBookmarksRefs,
         bool conversationToolsRefs,
         bool conversationSkillsRefs,
         bool modelUsageRecordsRefs,
@@ -25698,6 +26291,377 @@ typedef $$MessageAttachmentsTableProcessedTableManager =
       MessageAttachmentsTable,
       PrefetchHooks Function({bool messageId})
     >;
+typedef $$MessageBookmarksTableCreateCompanionBuilder =
+    MessageBookmarksCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String conversationId,
+      required String contentSnapshot,
+      required bool isUser,
+      required DateTime messageCreatedAt,
+      Value<int> rowid,
+    });
+typedef $$MessageBookmarksTableUpdateCompanionBuilder =
+    MessageBookmarksCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> conversationId,
+      Value<String> contentSnapshot,
+      Value<bool> isUser,
+      Value<DateTime> messageCreatedAt,
+      Value<int> rowid,
+    });
+
+final class $$MessageBookmarksTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $MessageBookmarksTable,
+          MessageBookmarksTable
+        > {
+  $$MessageBookmarksTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) => db
+      .conversations
+      .createAlias('message_bookmarks__conversation_id__conversations__id');
+
+  $$ConversationsTableProcessedTableManager get conversationId {
+    final $_column = $_itemColumn<String>('conversation_id')!;
+
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MessageBookmarksTableFilterComposer
+    extends Composer<_$AppDatabase, $MessageBookmarksTable> {
+  $$MessageBookmarksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentSnapshot => $composableBuilder(
+    column: $table.contentSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isUser => $composableBuilder(
+    column: $table.isUser,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get messageCreatedAt => $composableBuilder(
+    column: $table.messageCreatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ConversationsTableFilterComposer get conversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessageBookmarksTableOrderingComposer
+    extends Composer<_$AppDatabase, $MessageBookmarksTable> {
+  $$MessageBookmarksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentSnapshot => $composableBuilder(
+    column: $table.contentSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isUser => $composableBuilder(
+    column: $table.isUser,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get messageCreatedAt => $composableBuilder(
+    column: $table.messageCreatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ConversationsTableOrderingComposer get conversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessageBookmarksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MessageBookmarksTable> {
+  $$MessageBookmarksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get contentSnapshot => $composableBuilder(
+    column: $table.contentSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isUser =>
+      $composableBuilder(column: $table.isUser, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get messageCreatedAt => $composableBuilder(
+    column: $table.messageCreatedAt,
+    builder: (column) => column,
+  );
+
+  $$ConversationsTableAnnotationComposer get conversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessageBookmarksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MessageBookmarksTable,
+          MessageBookmarksTable,
+          $$MessageBookmarksTableFilterComposer,
+          $$MessageBookmarksTableOrderingComposer,
+          $$MessageBookmarksTableAnnotationComposer,
+          $$MessageBookmarksTableCreateCompanionBuilder,
+          $$MessageBookmarksTableUpdateCompanionBuilder,
+          (MessageBookmarksTable, $$MessageBookmarksTableReferences),
+          MessageBookmarksTable,
+          PrefetchHooks Function({bool conversationId})
+        > {
+  $$MessageBookmarksTableTableManager(
+    _$AppDatabase db,
+    $MessageBookmarksTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MessageBookmarksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MessageBookmarksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MessageBookmarksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> conversationId = const Value.absent(),
+                Value<String> contentSnapshot = const Value.absent(),
+                Value<bool> isUser = const Value.absent(),
+                Value<DateTime> messageCreatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MessageBookmarksCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                conversationId: conversationId,
+                contentSnapshot: contentSnapshot,
+                isUser: isUser,
+                messageCreatedAt: messageCreatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String conversationId,
+                required String contentSnapshot,
+                required bool isUser,
+                required DateTime messageCreatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => MessageBookmarksCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                conversationId: conversationId,
+                contentSnapshot: contentSnapshot,
+                isUser: isUser,
+                messageCreatedAt: messageCreatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$MessageBookmarksTable, MessageBookmarksTable>(
+                    table,
+                  ),
+                  $$MessageBookmarksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({conversationId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (conversationId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.conversationId,
+                        referencedTable: $$MessageBookmarksTableReferences
+                            ._conversationIdTable(db),
+                        referencedColumn: $$MessageBookmarksTableReferences
+                            ._conversationIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MessageBookmarksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MessageBookmarksTable,
+      MessageBookmarksTable,
+      $$MessageBookmarksTableFilterComposer,
+      $$MessageBookmarksTableOrderingComposer,
+      $$MessageBookmarksTableAnnotationComposer,
+      $$MessageBookmarksTableCreateCompanionBuilder,
+      $$MessageBookmarksTableUpdateCompanionBuilder,
+      (MessageBookmarksTable, $$MessageBookmarksTableReferences),
+      MessageBookmarksTable,
+      PrefetchHooks Function({bool conversationId})
+    >;
 typedef $$ConversationToolsTableCreateCompanionBuilder =
     ConversationToolsCompanion Function({
       Value<String> id,
@@ -29359,6 +30323,8 @@ class $AppDatabaseManager {
       $$MessagesTableTableManager(_db, _db.messages);
   $$MessageAttachmentsTableTableManager get messageAttachments =>
       $$MessageAttachmentsTableTableManager(_db, _db.messageAttachments);
+  $$MessageBookmarksTableTableManager get messageBookmarks =>
+      $$MessageBookmarksTableTableManager(_db, _db.messageBookmarks);
   $$ConversationToolsTableTableManager get conversationTools =>
       $$ConversationToolsTableTableManager(_db, _db.conversationTools);
   $$WorkspaceCompactionSettingsTableTableManager

@@ -73,7 +73,7 @@ void main() {
             updatedAt: now,
           ),
         );
-        await ConversationMessage.db.insertRow(
+        final assistantMessage = await ConversationMessage.db.insertRow(
           database,
           ConversationMessage(
             workspaceId: workspace.id!,
@@ -139,6 +139,16 @@ void main() {
           session,
           BookmarkMessageRequest(
             workspaceId: workspace.id!,
+            requestId: 'bookmark-assistant',
+            conversationId: created.id,
+            sourceConversationId: created.id,
+            messageId: assistantMessage.stableId,
+          ),
+        );
+        await endpoints.conversation.bookmarkMessage(
+          session,
+          BookmarkMessageRequest(
+            workspaceId: workspace.id!,
             requestId: 'bookmark-from-fork',
             conversationId: 'fork',
             sourceConversationId: created.id,
@@ -150,12 +160,20 @@ void main() {
           session,
           ListMessageBookmarksRequest(workspaceId: workspace.id!),
         );
-        expect(bookmarks, hasLength(1));
-        expect(bookmarks.single.conversationId, created.id);
-        expect(bookmarks.single.messageId, message.stableId);
-        expect(bookmarks.single.conversationTitle, 'Source');
-        expect(bookmarks.single.workspaceName, 'Bookmarks');
-        expect(bookmarks.single.excerpt, '${List.filled(160, 'x').join()}...');
+        expect(bookmarks, hasLength(2));
+        final userBookmark = bookmarks.singleWhere(
+          (bookmark) => bookmark.messageId == message.stableId,
+        );
+        expect(userBookmark.conversationId, created.id);
+        expect(userBookmark.isUser, isTrue);
+        expect(userBookmark.conversationTitle, 'Source');
+        expect(userBookmark.workspaceName, 'Bookmarks');
+        expect(userBookmark.excerpt, '${List.filled(160, 'x').join()}...');
+        final assistantBookmark = bookmarks.singleWhere(
+          (bookmark) => bookmark.messageId == assistantMessage.stableId,
+        );
+        expect(assistantBookmark.conversationId, created.id);
+        expect(assistantBookmark.isUser, isFalse);
 
         final nonMemberId = const Uuid().v4().toString();
         await AuthUser.db.insertRow(
@@ -221,6 +239,24 @@ void main() {
             messageId: message.stableId,
           ),
         );
+        final remainingBookmarks = await endpoints.conversation
+            .listMessageBookmarks(
+              session,
+              ListMessageBookmarksRequest(workspaceId: workspace.id!),
+            );
+        expect(remainingBookmarks, hasLength(1));
+        expect(remainingBookmarks.single.messageId, assistantMessage.stableId);
+        expect(remainingBookmarks.single.isUser, isFalse);
+        await endpoints.conversation.unbookmarkMessage(
+          session,
+          UnbookmarkMessageRequest(
+            workspaceId: workspace.id!,
+            requestId: 'unbookmark-assistant',
+            conversationId: created.id,
+            sourceConversationId: created.id,
+            messageId: assistantMessage.stableId,
+          ),
+        );
         expect(
           await endpoints.conversation.listMessageBookmarks(
             session,
@@ -254,6 +290,97 @@ void main() {
             where: (table) => table.workspaceId.equals(workspace.id!),
           ),
           isEmpty,
+        );
+      },
+    );
+
+    test(
+      'keeps a saved target available after its message is removed',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final session = sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final database = session.build();
+        await AuthUser.db.insertRow(
+          database,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          database,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: '$userId@example.com',
+            passwordHash: 'unused',
+          ),
+        );
+        final workspace = await workspace_repo.CloudWorkspaceRepository()
+            .createWorkspace(
+              database,
+              name: 'Bookmarks',
+              ownerUserId: userId,
+              now: DateTime.now().toUtc(),
+            );
+        final created = await endpoints.conversation.create(
+          session,
+          CreateConversationRequest(
+            workspaceId: workspace.id!,
+            requestId: 'create-unavailable-target',
+            conversationId: 'unavailable-target',
+            title: 'Unavailable target',
+            isPinned: false,
+          ),
+        );
+        final source = (await Conversation.db.findFirstRow(
+          database,
+          where: (table) =>
+              table.workspaceId.equals(workspace.id!) &
+              table.stableId.equals(created.id),
+        ))!;
+        final now = DateTime.now().toUtc();
+        final message = await ConversationMessage.db.insertRow(
+          database,
+          ConversationMessage(
+            workspaceId: workspace.id!,
+            conversationId: source.id!,
+            stableId: 'unavailable-message',
+            role: 'user',
+            kind: 'text',
+            status: ConversationStatuses.completed,
+            content: List.filled(161, 'x').join(),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        await endpoints.conversation.bookmarkMessage(
+          session,
+          BookmarkMessageRequest(
+            workspaceId: workspace.id!,
+            requestId: 'bookmark-unavailable-target',
+            conversationId: created.id,
+            sourceConversationId: created.id,
+            messageId: message.stableId,
+          ),
+        );
+        await ConversationMessage.db.deleteRow(database, message);
+
+        final unavailableTargetBookmarks = await endpoints.conversation
+            .listMessageBookmarks(
+              session,
+              ListMessageBookmarksRequest(workspaceId: workspace.id!),
+            );
+        expect(unavailableTargetBookmarks, hasLength(1));
+        expect(unavailableTargetBookmarks.single.messageId, message.stableId);
+        expect(unavailableTargetBookmarks.single.conversationId, created.id);
+        expect(unavailableTargetBookmarks.single.isUser, isTrue);
+        expect(
+          unavailableTargetBookmarks.single.excerpt,
+          '${List.filled(160, 'x').join()}...',
         );
       },
     );

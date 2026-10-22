@@ -766,6 +766,49 @@ void main() {
         .called(1);
   });
 
+  testWidgets('opens saved messages scoped to the loaded conversation', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/conversation',
+          builder: (_, _) => const ChatConversationScreen(
+            workspaceId: _workspaceId,
+            chatId: _chatId,
+          ),
+        ),
+        GoRoute(
+          path: '/workspaces/:workspaceId/bookmarks',
+          builder: (_, state) => Text(
+            'Bookmarks ${state.pathParameters['workspaceId']} '
+            '${state.uri.queryParameters['conversation-id']}',
+          ),
+        ),
+      ],
+      initialLocation: '/conversation',
+    );
+    addTearDown(router.dispose);
+
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: const Stream.empty(),
+      router: router,
+    );
+
+    final bookmarksButton = find.byTooltip('Saved messages');
+    expect(bookmarksButton, findsOneWidget);
+    await tester.tap(bookmarksButton);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Bookmarks ws-1 chat-1'), findsOneWidget);
+    expect(
+      router.routeInformationProvider.value.uri.toString(),
+      '/workspaces/ws-1/bookmarks?conversation-id=chat-1',
+    );
+  });
+
   testWidgets('passes compaction and tool access state to chat input', (
     tester,
   ) async {
@@ -1994,6 +2037,7 @@ Future<void> _pumpCloudConversationScreen(
   Future<CloudTurnUsecase?>? usecaseFuture,
   bool iterationLimitReached = false,
   String? parentId,
+  GoRouter? router,
 }) async {
   await tester.binding.setSurfaceSize(const Size(800, 1200));
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -2014,6 +2058,30 @@ Future<void> _pumpCloudConversationScreen(
       EasyLocalization(
         child: Builder(
           builder: (context) {
+            final TransitionBuilder? appBuilder = iterationLimitReached
+                ? (_, child) =>
+                      AuraSnackBarHost(child: child ?? const SizedBox.shrink())
+                : null;
+            final Widget app = router == null
+                ? MaterialApp(
+                    home: ChatConversationScreen(
+                      workspaceId: _workspaceId,
+                      chatId: _chatId,
+                      showInputComposer: parentId == null,
+                    ),
+                    builder: appBuilder,
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                  )
+                : MaterialApp.router(
+                    routerConfig: router,
+                    builder: appBuilder,
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                  );
+
             return TestProviderScope(
               overrides: [
                 ..._emptyBackgroundWorkOverrides(),
@@ -2098,21 +2166,7 @@ Future<void> _pumpCloudConversationScreen(
                 agentsProvider(_workspaceId)
                     .overrideWith((ref) => Stream.value(const [])),
               ],
-              child: MaterialApp(
-                home: ChatConversationScreen(
-                  workspaceId: _workspaceId,
-                  chatId: _chatId,
-                  showInputComposer: parentId == null,
-                ),
-                builder: iterationLimitReached
-                    ? (_, child) => AuraSnackBarHost(
-                        child: child ?? const SizedBox.shrink(),
-                      )
-                    : null,
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              ),
+              child: app,
             );
           },
         ),

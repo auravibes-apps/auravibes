@@ -3,6 +3,7 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
@@ -30,28 +31,40 @@ class const LoadConversationToolSpecsUsecase({
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async => (await buildCatalog(
     conversationId: conversationId,
     workspaceId: workspaceId,
+    languageCode: languageCode,
   )).specs;
 
   Future<List<ToolSpec>> preview({
     required String conversationId,
     required String workspaceId,
-  }) async =>
-      (await _buildCatalogForConversation(conversationId, workspaceId)).specs;
+    String? languageCode,
+  }) async => (await _buildCatalogForConversation(
+    conversationId,
+    workspaceId,
+    languageCode,
+  )).specs;
 
   Future<agent.ToolCatalog<ResolvedTool>> buildCatalog({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     await _syncSkillToolPermissionsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     );
     await syncConnectorToolPermissionsUsecase?.call(workspaceId: workspaceId);
 
-    return await _buildCatalogForConversation(conversationId, workspaceId);
+    return await _buildCatalogForConversation(
+      conversationId,
+      workspaceId,
+      languageCode,
+    );
   }
 
   Future<List<agent.ToolCatalogCandidate<ResolvedTool>>> _loadToolCandidates(
@@ -67,6 +80,7 @@ class const LoadConversationToolSpecsUsecase({
   Future<agent.ToolCatalog<ResolvedTool>> _buildCatalogForConversation(
     String conversationId,
     String workspaceId,
+    String? languageCode,
   ) async {
     final input = await _loadCatalogInput(conversationId, workspaceId);
 
@@ -74,6 +88,7 @@ class const LoadConversationToolSpecsUsecase({
       toolCandidates: input.toolCandidates,
       skillControlSpecs: input.skillControlSpecs,
       includeRunSubAgent: await _includeRunSubAgent(conversationId),
+      languageCode: languageCode,
     );
   }
 
@@ -105,11 +120,12 @@ agent.ToolCatalog<ResolvedTool> _buildCatalog({
   required List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
   required List<ToolSpec> skillControlSpecs,
   required bool includeRunSubAgent,
+  String? languageCode,
 }) => agent.buildToolCatalog([
   ...toolCandidates,
   ...agent.buildConnectorCommandToolSpecs().map(_connectorCommandCandidate),
   ...skillControlSpecs.map(_skillControlCandidate),
-  if (includeRunSubAgent) _runSubAgentCandidate(),
+  if (includeRunSubAgent) _runSubAgentCandidate(languageCode),
 ]);
 
 agent.ToolCatalogCandidate<ResolvedTool> _connectorCommandCandidate(
@@ -126,15 +142,16 @@ agent.ToolCatalogCandidate<ResolvedTool> _skillControlCandidate(
   target: ResolvedTool.skillControl(toolIdentifier: spec.name),
 );
 
-agent.ToolCatalogCandidate<ResolvedTool> _runSubAgentCandidate() =>
-    agent.ToolCatalogCandidate.reserved(
-      spec: agent.runSubAgentToolSpec,
-      target: ResolvedTool.skillNative(
-        tableId: agent.runSubAgentToolName,
-        skillSlug: agent.agentsSkillSlug,
-        toolIdentifier: agent.runSubAgentToolName,
-      ),
-    );
+agent.ToolCatalogCandidate<ResolvedTool> _runSubAgentCandidate(
+  String? languageCode,
+) => agent.ToolCatalogCandidate.reserved(
+  spec: AgentGuidance.runSubAgentToolSpecForLanguageCode(languageCode),
+  target: ResolvedTool.skillNative(
+    tableId: agent.runSubAgentToolName,
+    skillSlug: agent.agentsSkillSlug,
+    toolIdentifier: agent.runSubAgentToolName,
+  ),
+);
 
 final ProviderFamily<LoadConversationToolSpecsUsecase, String>
 loadConversationToolSpecsUsecaseProvider =

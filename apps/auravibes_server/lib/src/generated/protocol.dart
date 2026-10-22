@@ -2689,10 +2689,40 @@ class Protocol extends _is.DatabaseSerializationManager {
           dartType: 'String',
         ),
         _isp.ColumnDefinition(
+          name: 'conversationId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
           name: 'messageId',
           columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'messageStableId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'contentSnapshot',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'roleSnapshot',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'messageCreatedAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
         ),
         _isp.ColumnDefinition(
           name: 'createdAt',
@@ -2714,8 +2744,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         ),
         _isp.ForeignKeyDefinition(
           constraintName: 'message_bookmark_fk_1',
-          columns: ['messageId'],
-          referenceTable: 'conversation_message',
+          columns: ['conversationId'],
+          referenceTable: 'conversation',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
           onUpdate: _isp.ForeignKeyAction.noAction,

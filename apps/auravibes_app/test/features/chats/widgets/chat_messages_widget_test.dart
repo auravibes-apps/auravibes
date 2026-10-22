@@ -11,10 +11,13 @@ import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
@@ -25,6 +28,7 @@ import 'package:auravibes_app/features/chats/providers/background_work_providers
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
+import 'package:auravibes_app/features/chats/screens/message_bookmarks_screen.dart';
 import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
@@ -81,6 +85,7 @@ Finder _auraButtonFor(Finder child) =>
 Widget buildSubject({
   required List<String> messages,
   required List<Object> overrides,
+  List<MessageBookmarkEntity> bookmarks = const [],
   Map<String, MessageEntity>? messageEntitiesById,
   String conversationId = 'conv-1',
   List<PendingToolCall> pendingToolCalls = const [],
@@ -97,6 +102,7 @@ Widget buildSubject({
   return _ChatMessagesTestSubject(
     conversationId: conversationId,
     messages: messages,
+    bookmarks: bookmarks,
     overrides: overrides,
     pendingToolCalls: pendingToolCalls,
     workspaceSession: workspaceSession,
@@ -6562,6 +6568,94 @@ void main() {
       expect(find.text('Retry'), findsNothing);
     });
 
+    testWidgets('opening a saved deleted message shows its unavailable state', (
+      tester,
+    ) async {
+      const deletedMessageId = 'deleted-message';
+      final workspace = WorkspaceEntity(
+        id: 'ws-1',
+        name: 'Local workspace',
+        type: WorkspaceType.local,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      );
+      final workspaceRepository = _MockWorkspaceRepository();
+      when(() => workspaceRepository.getAllWorkspaces())
+          .thenAnswer((_) async => [workspace]);
+      final bookmark = MessageBookmarkEntity(
+        details: .new(
+          messageId: deletedMessageId,
+          conversationId: 'conv-1',
+          excerpt: 'Saved message excerpt',
+          workspaceName: workspace.name,
+          createdAt: DateTime(2026),
+          isUser: true,
+        ),
+        workspace: const MessageBookmarkWorkspace(workspaceId: 'ws-1'),
+      );
+      Widget? chat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/saved-messages',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/saved-messages',
+            builder: (_, state) => Scaffold(
+              body: MessageBookmarksScreen(
+                workspaceId: state.pathParameters['workspaceId']!,
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            pageBuilder: (_, state) => MaterialPage<void>(
+              child: chat ?? const SizedBox.shrink(),
+              arguments: state.uri.queryParameters,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: const [],
+          bookmarks: [bookmark],
+          overrides: [
+            cloudMessageBookmarksProvider.overrideWith((ref) async => const []),
+            messageBookmarkUseCaseProvider.overrideWith(
+              (ref) => MessageBookmarkUseCase(
+                workspaceRepository: workspaceRepository,
+                messageRepository: _MockMessageRepository(),
+              ),
+            ),
+            fetchConversationMessageByIdProvider.overrideWith(
+              (ref, request) async => null,
+            ),
+          ],
+          appBuilder: (context, child) {
+            chat = ChatPrimaryScrollController(child: child);
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Saved message excerpt'));
+      await tester.pumpAndSettle();
+
+      expect(router.state.uri.path, '/workspaces/ws-1/chats/conv-1');
+      expect(router.state.uri.queryParameters['message-id'], deletedMessageId);
+      expect(find.text('This message is no longer available.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('renders provider error details without localization', (
       tester,
     ) async {
@@ -6667,6 +6761,7 @@ class const _ChatMessagesTestSubject({
   required final String conversationId,
   required final List<String> messages,
   required final List<Object> overrides,
+  required final List<MessageBookmarkEntity> bookmarks,
   required final List<PendingToolCall> pendingToolCalls,
   final WorkspaceSession? workspaceSession,
   final Map<String, MessageEntity>? messageEntitiesById,
@@ -6705,7 +6800,7 @@ class const _ChatMessagesTestSubject({
         conversationBackgroundWorksProvider(conversationId)
             .overrideWith((ref) => Stream.value(const [])),
         messageBookmarksProvider.overrideWith(
-          (ref, _) => Stream.value(const []),
+          (ref, _) => Stream.value(bookmarks),
         ),
         ...overrides.cast(),
       ],

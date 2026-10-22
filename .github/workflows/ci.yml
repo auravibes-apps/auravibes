@@ -234,6 +234,11 @@ jobs:
               ;;
             workflow_dispatch)
               full_build=true
+              if [[ -n "$head_sha" ]] && \
+                git cat-file -e "origin/main^{commit}" 2>/dev/null && \
+                git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
+                base_sha="$(git merge-base origin/main "$head_sha" 2>/dev/null || true)"
+              fi
               ;;
             *)
               full_build=true
@@ -273,6 +278,9 @@ jobs:
           platforms=()
 
           if [[ "$full_build" == true ]]; then
+            if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+              run_server_integration=true
+            fi
             printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
             printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
             printf 'run_server_integration=%s\n' "$run_server_integration" >> "$GITHUB_OUTPUT"

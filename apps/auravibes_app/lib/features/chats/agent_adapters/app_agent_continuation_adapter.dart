@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_transcript_context_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
@@ -37,6 +38,7 @@ class AppAgentContinuationAdapter({
   final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase,
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace,
+  final ConversationAgentLanguageRuntime? conversationLanguageRuntime,
 }) with _AgentContinuationMessageRoleChecks
     implements
         AgentContinuationProvider<
@@ -115,6 +117,9 @@ class AppAgentContinuationAdapter({
     return buildSkillContextMessagesUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: conversationLanguageRuntime?.languageCodeFor(
+        conversationId,
+      ),
     );
   }
 
@@ -131,6 +136,9 @@ class AppAgentContinuationAdapter({
     return usecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: conversationLanguageRuntime?.languageCodeFor(
+        conversationId,
+      ),
     );
   }
 
@@ -267,5 +275,8 @@ final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
         },
     loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) =>
         ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
+    conversationLanguageRuntime: ref.watch(
+      conversationAgentLanguageRuntimeProvider,
+    ),
   );
 });

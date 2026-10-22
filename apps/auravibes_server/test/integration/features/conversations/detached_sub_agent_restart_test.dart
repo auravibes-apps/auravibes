@@ -503,6 +503,7 @@ void main() {
             clientMessageId: 'completed-before-detach-parent-message',
             content: 'Continue.',
             attachmentIds: const [],
+            languageCode: 'es',
           ),
         );
         await endpoints.conversation.continueConversation(
@@ -512,6 +513,7 @@ void main() {
             requestId: 'continue-completed-before-detach-parent',
             conversationId: conversation.stableId,
             expectedProjectionRevision: 2,
+            languageCode: 'es',
           ),
         );
         final turn = (await ConversationTurn.db.findFirstRow(
@@ -626,6 +628,10 @@ void main() {
         expect(work?.status, 'completed');
         expect(completedCall?.status, 'runningInBackground');
         expect(completionEvents, hasLength(1));
+        expect(
+          jsonDecode(completionEvents.single.payloadJson)['languageCode'],
+          'es',
+        );
       },
     );
   });

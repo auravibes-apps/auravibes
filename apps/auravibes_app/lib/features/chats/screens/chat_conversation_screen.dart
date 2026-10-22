@@ -30,6 +30,7 @@ import 'package:auravibes_app/features/chats/providers/background_work_continuat
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
@@ -70,7 +71,6 @@ import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
-        AgentIterationContext,
         AgentIterationDecision,
         ConversationToolAccessMode,
         ReasoningConfiguration,
@@ -170,6 +170,7 @@ typedef _CloudContinueRequest = ({
   CloudTurnUsecase cloud,
   String workspaceId,
   String conversationId,
+  String languageCode,
 });
 
 typedef _SendMessageRequest = ({
@@ -745,13 +746,18 @@ _ConversationContextRequest _loadedConversationContextRequest(
 Future<void> Function(ChatDraft) _loadedConversationSendMessage(
   _LoadedRuntimeRequest request,
 ) =>
-    (draft) => _sendMessage((
-      context: request.context,
-      ref: request.ref,
-      workspaceId: request.workspaceId,
-      conversationId: request.conversation.id,
-      draft: draft,
-    ));
+    (draft) => _sendMessage(_loadedConversationSendRequest(request, draft));
+
+_SendMessageRequest _loadedConversationSendRequest(
+  _LoadedRuntimeRequest request,
+  ChatDraft draft,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  conversationId: request.conversation.id,
+  draft: draft.withLanguageCode(request.context.locale.languageCode),
+);
 
 Future<void> Function(MessageEntity) _loadedConversationRetryMessage(
   _LoadedRuntimeRequest request,
@@ -1580,14 +1586,30 @@ class const _LoadedChatConversationScreen({
         child: _LoadedChatConversationLayout(data: data, sidePanel: sidePanel),
         appBar: _ChatConversationAppBar(
           data: data,
-          sidePanelVisible: sideValues.isVisible,
-          tabCount: _browserTabCount(browserSession, sideValues.toolResultTabs),
-          onSidebarToggle: actions.onToggle,
+          actions: _chatConversationAppBarActions(
+            data,
+            sideValues,
+            browserSession,
+            actions,
+          ),
         ),
       ),
     );
   }
 }
+
+_ChatConversationAppBarActions _chatConversationAppBarActions(
+  _LoadedChatConversationData data,
+  _LoadedSidePanelValues sideValues,
+  BrowserSessionState? browserSession,
+  _LoadedSidePanelActions actions,
+) => .new(
+  workspaceId: data.workspaceId,
+  conversationId: data.conversation.id,
+  sidePanelVisible: sideValues.isVisible,
+  tabCount: _browserTabCount(browserSession, sideValues.toolResultTabs),
+  onSidebarToggle: actions.onToggle,
+);
 
 int? _browserTabCount(
   BrowserSessionState? browserSession,
@@ -1639,9 +1661,7 @@ class const _LoadedChatConversationMain({
 
 class const _ChatConversationAppBar({
   required final _LoadedChatConversationData data,
-  required final bool sidePanelVisible,
-  required final int? tabCount,
-  required final VoidCallback onSidebarToggle,
+  required final _ChatConversationAppBarActions actions,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -1649,19 +1669,48 @@ class const _ChatConversationAppBar({
   @override
   Widget build(BuildContext context) => AuraAppBarWithDrawer(
     title: Text(data.conversation.title),
-    actions: [
-      ModelUsageHeaderButton(conversationId: data.conversation.id),
-      BackgroundWorkHeaderButton(
-        workspaceId: data.workspaceId,
-        conversationId: data.conversation.id,
-      ),
-      ConversationSidebarToggleButton(
-        isPanelVisible: sidePanelVisible,
-        tabCount: tabCount,
-        onPressed: onSidebarToggle,
-      ),
-    ],
+    actions: actions.widgets,
     leading: data.leading,
+  );
+}
+
+class _ChatConversationAppBarActions({
+  required String workspaceId,
+  required String conversationId,
+  required bool sidePanelVisible,
+  required int? tabCount,
+  required VoidCallback onSidebarToggle,
+}) {
+  final List<Widget> widgets = [
+    ModelUsageHeaderButton(conversationId: conversationId),
+    BackgroundWorkHeaderButton(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+    _ConversationBookmarksButton(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+    ConversationSidebarToggleButton(
+      isPanelVisible: sidePanelVisible,
+      tabCount: tabCount,
+      onPressed: onSidebarToggle,
+    ),
+  ];
+}
+
+class const _ConversationBookmarksButton({
+  required final String workspaceId,
+  required final String conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.bookmark_border,
+    onPressed: () => MessageBookmarksRoute(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ).go(context),
+    tooltip: LocaleKeys.chats_screens_chats_list_saved_messages.tr(),
   );
 }
 
@@ -2831,10 +2880,27 @@ Future<AgentIterationDecision?> _continueAgentTurn(
   final cloud = await request.ref.read(
     cloudTurnUsecaseProvider(request.workspaceId).future,
   );
-  if (!request.context.mounted) return null;
+  final context = request.context;
+  if (!context.mounted) return null;
 
+  return await _continueAgentTurnWithLanguage(
+    request,
+    cloud,
+    context.locale.languageCode,
+  );
+}
+
+Future<AgentIterationDecision?> _continueAgentTurnWithLanguage(
+  _ConversationContextRequest request,
+  CloudTurnUsecase? cloud,
+  String languageCode,
+) async {
   if (cloud == null) {
-    return await _continueLocalAgent(request.ref, request.conversationId);
+    return await _continueLocalAgent(
+      request.ref,
+      request.conversationId,
+      languageCode,
+    );
   }
 
   await _continueCloudAgent((
@@ -2842,6 +2908,7 @@ Future<AgentIterationDecision?> _continueAgentTurn(
     cloud: cloud,
     workspaceId: request.workspaceId,
     conversationId: request.conversationId,
+    languageCode: languageCode,
   ));
 
   return null;
@@ -2850,13 +2917,18 @@ Future<AgentIterationDecision?> _continueAgentTurn(
 Future<AgentIterationDecision> _continueLocalAgent(
   WidgetRef ref,
   String conversationId,
+  String languageCode,
 ) async {
+  ref
+      .read(conversationAgentLanguageRuntimeProvider)
+      .remember(conversationId, languageCode);
+
   return await ref
       .read(auraAgentServiceProvider)
       .agent
       .continueTurn(
         conversationId: conversationId,
-        context: const AgentIterationContext(origin: .manualContinue),
+        context: const .new(origin: .manualContinue),
       );
 }
 
@@ -2925,6 +2997,7 @@ Future<AgentIterationDecision> _retryLocalMessage(
     .retryUserMessage(
       conversationId: request.conversationId,
       messageId: request.message.id,
+      languageCode: request.context.locale.languageCode,
     );
 
 Future<void> _retryCloudMessage(
@@ -2935,6 +3008,7 @@ Future<void> _retryCloudMessage(
   cloud: cloud,
   workspaceId: request.workspaceId,
   conversationId: request.conversationId,
+  languageCode: request.context.locale.languageCode,
 ));
 
 void _reportRetryMessageError(
@@ -3018,6 +3092,7 @@ Future<void> _continueCloudAgent(_CloudContinueRequest request) async {
   final _ = await request.cloud.continueSharedConversation(
     conversationId: request.conversationId,
     projectionRevision: state.conversation.projectionRevision,
+    languageCode: request.languageCode,
   );
 }
 

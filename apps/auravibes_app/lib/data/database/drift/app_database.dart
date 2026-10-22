@@ -32,6 +32,7 @@ import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/data/database/drift/tables/message_attachments.dart';
+import 'package:auravibes_app/data/database/drift/tables/message_bookmarks.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_usage_records.dart';
@@ -84,6 +85,7 @@ part 'app_database.g.dart';
     AgentTools,
     Messages,
     MessageAttachments,
+    MessageBookmarks,
     Tools,
     ToolsGroups,
     ConversationTools,
@@ -172,8 +174,10 @@ class AppDatabase extends _$AppDatabase {
       _messageBookmarkSchemaVersion + 1;
   static const int _retireSkillOwnedStorageSchemaVersion =
       _connectorSkillToolReferencesSchemaVersion + 1;
+  static const int _messageBookmarkSnapshotsSchemaVersion =
+      _retireSkillOwnedStorageSchemaVersion + 1;
   static const int _currentSchemaVersion =
-      _retireSkillOwnedStorageSchemaVersion;
+      _messageBookmarkSnapshotsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -220,7 +224,7 @@ extension on AppDatabase {
     await _upgradeModelUsageSchema(m);
     await _upgradeToolAccessModeSchema(m);
     await _upgradeToolCallAttachmentSchema(m, from);
-    await _upgradeMessageBookmarkSchema(m, from);
+    await _upgradeMessageBookmarkSchemas(m, from);
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
   }
@@ -232,6 +236,51 @@ extension on AppDatabase {
       return;
     }
     await m.addColumn(messages, messages.isBookmarked);
+  }
+
+  Future<void> _upgradeMessageBookmarkSchemas(Migrator m, int from) async {
+    await _upgradeMessageBookmarkSchema(m, from);
+    await _upgradeMessageBookmarkSnapshotsSchema(m, from);
+  }
+
+  Future<void> _upgradeMessageBookmarkSnapshotsSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._messageBookmarkSnapshotsSchemaVersion) return;
+
+    if (!await _tableExists('message_bookmarks')) {
+      await m.createTable(messageBookmarks);
+    }
+    if (!await _tableExists('messages')) return;
+    for (final columnName in [
+      'id',
+      'conversation_id',
+      'content',
+      'is_user',
+      'created_at',
+      'is_bookmarked',
+    ]) {
+      if (!await _columnExists('messages', columnName)) return;
+    }
+
+    await customStatement('''
+      INSERT OR IGNORE INTO message_bookmarks (
+        id,
+        conversation_id,
+        content_snapshot,
+        is_user,
+        message_created_at
+      )
+      SELECT
+        id,
+        conversation_id,
+        content,
+        is_user,
+        created_at
+      FROM messages
+      WHERE is_bookmarked = 1
+    ''');
   }
 
   Future<void> _upgradeToolAccessModeSchema(Migrator m) async {

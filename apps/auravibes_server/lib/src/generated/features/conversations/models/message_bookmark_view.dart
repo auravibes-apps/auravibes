@@ -18,6 +18,7 @@ abstract class MessageBookmarkView
     required this.conversationId,
     required this.messageId,
     required this.excerpt,
+    this.isUser,
     this.conversationTitle,
     required this.workspaceName,
     required this.createdAt,
@@ -27,6 +28,7 @@ abstract class MessageBookmarkView
     required String conversationId,
     required String messageId,
     required String excerpt,
+    bool? isUser,
     String? conversationTitle,
     required String workspaceName,
     required DateTime createdAt,
@@ -37,6 +39,9 @@ abstract class MessageBookmarkView
       conversationId: jsonSerialization['conversationId'] as String,
       messageId: jsonSerialization['messageId'] as String,
       excerpt: jsonSerialization['excerpt'] as String,
+      isUser: jsonSerialization['isUser'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['isUser']),
       conversationTitle: jsonSerialization['conversationTitle'] as String?,
       workspaceName: jsonSerialization['workspaceName'] as String,
       createdAt: _is.DateTimeJsonExtension.fromJson(
@@ -51,6 +56,8 @@ abstract class MessageBookmarkView
 
   String excerpt;
 
+  bool? isUser;
+
   String? conversationTitle;
 
   String workspaceName;
@@ -64,6 +71,7 @@ abstract class MessageBookmarkView
     String? conversationId,
     String? messageId,
     String? excerpt,
+    bool? isUser,
     String? conversationTitle,
     String? workspaceName,
     DateTime? createdAt,
@@ -75,6 +83,7 @@ abstract class MessageBookmarkView
       'conversationId': conversationId,
       'messageId': messageId,
       'excerpt': excerpt,
+      if (isUser != null) 'isUser': isUser,
       if (conversationTitle != null) 'conversationTitle': conversationTitle,
       'workspaceName': workspaceName,
       'createdAt': createdAt.toJson(),
@@ -88,6 +97,7 @@ abstract class MessageBookmarkView
       'conversationId': conversationId,
       'messageId': messageId,
       'excerpt': excerpt,
+      if (isUser != null) 'isUser': isUser,
       if (conversationTitle != null) 'conversationTitle': conversationTitle,
       'workspaceName': workspaceName,
       'createdAt': createdAt.toJson(),
@@ -107,6 +117,7 @@ class _MessageBookmarkViewImpl extends MessageBookmarkView {
     required String conversationId,
     required String messageId,
     required String excerpt,
+    bool? isUser,
     String? conversationTitle,
     required String workspaceName,
     required DateTime createdAt,
@@ -114,6 +125,7 @@ class _MessageBookmarkViewImpl extends MessageBookmarkView {
          conversationId: conversationId,
          messageId: messageId,
          excerpt: excerpt,
+         isUser: isUser,
          conversationTitle: conversationTitle,
          workspaceName: workspaceName,
          createdAt: createdAt,
@@ -127,6 +139,7 @@ class _MessageBookmarkViewImpl extends MessageBookmarkView {
     String? conversationId,
     String? messageId,
     String? excerpt,
+    Object? isUser = _Undefined,
     Object? conversationTitle = _Undefined,
     String? workspaceName,
     DateTime? createdAt,
@@ -135,6 +148,7 @@ class _MessageBookmarkViewImpl extends MessageBookmarkView {
       conversationId: conversationId ?? this.conversationId,
       messageId: messageId ?? this.messageId,
       excerpt: excerpt ?? this.excerpt,
+      isUser: isUser is bool? ? isUser : this.isUser,
       conversationTitle: conversationTitle is String?
           ? conversationTitle
           : this.conversationTitle,

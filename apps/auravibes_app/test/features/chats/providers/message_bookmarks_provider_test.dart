@@ -60,6 +60,7 @@ void main() {
                 conversationId: 'conversation-${workspace.id}',
                 messageId: 'message-${workspace.id}',
                 excerpt: 'Saved in ${workspace.name}',
+                isUser: workspace.id == 11,
                 conversationTitle: 'Conversation ${workspace.name}',
                 workspaceName: workspace.name,
                 createdAt: .utc(2026),
@@ -115,6 +116,8 @@ void main() {
       };
 
       expect(byMessageId, hasLength(2));
+      expect(byMessageId['message-11']?.details.isUser, isTrue);
+      expect(byMessageId['message-12']?.details.isUser, isFalse);
       expect(byMessageId['message-11']?.workspace.workspaceId, 'mirror-11');
       expect(byMessageId['message-12']?.workspace.workspaceId, isNull);
       expect(
