@@ -1249,6 +1249,7 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       DynamicTranslationSite(
         file: 'features/intro/widgets/intro_welcome_pager.dart',
         method: 'TextLocale',
+        // Store the exact source form the scanner reports for this call site.
         // ignore: avoid_escaping_inner_quotes
         keyExpression: '\'intro_flow.preview.\$label\'',
       ),
@@ -1846,6 +1847,7 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       DynamicTranslationSite(
         file: 'features/workspaces/widgets/workspace_setup_content.dart',
         method: 'tr',
+        // Store the exact source form the scanner reports for this call site.
         // ignore: avoid_escaping_inner_quotes
         keyExpression: '\'workspace_setup.\${draft.intent.name}\'',
       ),
