@@ -35,6 +35,19 @@ class AppOpenAICodexPlugin({
 
 const int _maximumRetryAfterSeconds = 60;
 
+class _CodexStreamAttempt(
+  final Map<String, dynamic> body,
+  final ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  final int attempt,
+) {
+  bool sentChunks = false;
+
+  void sendChunk(ModelResponseChunk chunk) {
+    sentChunks = true;
+    context.sendChunk(chunk);
+  }
+}
+
 extension on AppOpenAICodexPlugin {
   Model<dynamic> _createModel(String modelName) => Model<dynamic>(
     name: '$name/$modelName',
@@ -48,7 +61,7 @@ extension on AppOpenAICodexPlugin {
   ) async {
     final body = _requestBody(modelName, request, context.streamingRequested);
     if (!context.streamingRequested) {
-      return await codec.complete(_transport, body);
+      return await codec.complete((body) => _transport(body, context), body);
     }
 
     return await _streamWithRetry(body, context);
@@ -75,22 +88,46 @@ extension on AppOpenAICodexPlugin {
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
     int attempt,
   ) async {
-    var sentChunks = false;
+    final streamAttempt = _CodexStreamAttempt(body, context, attempt);
     try {
-      return await codec.stream(_transport, body, (chunk) {
-        sentChunks = true;
-        context.sendChunk(chunk);
-      });
-    } on GenkitException catch (error) {
-      if (!_shouldRetryStream(error, attempt, sentChunks)) rethrow;
-
-      return await _streamAttempt(body, context, attempt + 1);
+      return await codec.stream(
+        (body) => _transport(body, context),
+        body,
+        streamAttempt.sendChunk,
+      );
+    } on GenkitException catch (error, stackTrace) {
+      return await _retryStreamAfterFailure(streamAttempt, error, stackTrace);
     }
   }
 
-  Future<ProviderTransportResponse> _transport(Map<String, dynamic> body) {
+  Future<ModelResponse> _retryStreamAfterFailure(
+    _CodexStreamAttempt streamAttempt,
+    GenkitException error,
+    StackTrace stackTrace,
+  ) {
+    streamAttempt.context.cancel?.throwIfCancelled();
+    final shouldRetry = _shouldRetryStream(
+      error,
+      streamAttempt.attempt,
+      streamAttempt.sentChunks,
+    );
+    if (shouldRetry) {
+      return _streamAttempt(
+        streamAttempt.body,
+        streamAttempt.context,
+        streamAttempt.attempt + 1,
+      );
+    }
+
+    Error.throwWithStackTrace(error, stackTrace);
+  }
+
+  Future<ProviderTransportResponse> _transport(
+    Map<String, dynamic> body,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  ) {
     _ensureAccessToken();
-    final request = _request(body);
+    final request = _request(body, context);
     final client = httpClient ?? http.Client();
 
     return _sendRequest(client, request);
@@ -105,8 +142,15 @@ extension on AppOpenAICodexPlugin {
     );
   }
 
-  http.Request _request(Map<String, dynamic> body) =>
-      http.Request('POST', .parse(baseUrl))
+  http.Request _request(
+    Map<String, dynamic> body,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  ) =>
+      http.AbortableRequest(
+          'POST',
+          .parse(baseUrl),
+          abortTrigger: context.cancel?.whenCancelled,
+        )
         ..headers.addAll({
           'authorization': 'Bearer ${accessToken.trim()}',
           'content-type': 'application/json',
@@ -157,6 +201,7 @@ void _closeProviderClient(http.Client client, bool closeClient) {
 }
 
 Object _classifyProviderTransportError(Object error) => switch (error) {
+  http.RequestAbortedException() => error,
   http.ClientException() => ProviderTransientFailureException(error),
   _ => error,
 };
@@ -183,6 +228,8 @@ Stream<List<int>> _classifyProviderTransportStream(
 ) async* {
   try {
     yield* stream;
+  } on http.RequestAbortedException {
+    rethrow;
   } on http.ClientException catch (error, stackTrace) {
     Error.throwWithStackTrace(
       ProviderTransientFailureException(error),
