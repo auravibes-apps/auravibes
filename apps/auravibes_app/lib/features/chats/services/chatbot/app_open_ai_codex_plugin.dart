@@ -35,6 +35,20 @@ class AppOpenAICodexPlugin({
 
 const int _maximumRetryAfterSeconds = 60;
 
+class _CodexStreamAttempt {
+  _CodexStreamAttempt(this.body, this.context, this.attempt);
+
+  final Map<String, dynamic> body;
+  final ActionFnArg<ModelResponseChunk, ModelRequest, void> context;
+  final int attempt;
+  var sentChunks = false;
+
+  void sendChunk(ModelResponseChunk chunk) {
+    sentChunks = true;
+    context.sendChunk(chunk);
+  }
+}
+
 extension on AppOpenAICodexPlugin {
   Model<dynamic> _createModel(String modelName) => Model<dynamic>(
     name: '$name/$modelName',
@@ -75,24 +89,38 @@ extension on AppOpenAICodexPlugin {
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
     int attempt,
   ) async {
-    var sentChunks = false;
+    final streamAttempt = _CodexStreamAttempt(body, context, attempt);
     try {
-      void sendChunk(ModelResponseChunk chunk) {
-        sentChunks = true;
-        context.sendChunk(chunk);
-      }
-
       return await codec.stream(
         (body) => _transport(body, context),
         body,
-        sendChunk,
+        streamAttempt.sendChunk,
       );
-    } on GenkitException catch (error) {
-      context.cancel?.throwIfCancelled();
-      if (!_shouldRetryStream(error, attempt, sentChunks)) rethrow;
-
-      return await _streamAttempt(body, context, attempt + 1);
+    } on GenkitException catch (error, stackTrace) {
+      return _retryStreamAfterFailure(streamAttempt, error, stackTrace);
     }
+  }
+
+  Future<ModelResponse> _retryStreamAfterFailure(
+    _CodexStreamAttempt streamAttempt,
+    GenkitException error,
+    StackTrace stackTrace,
+  ) {
+    streamAttempt.context.cancel?.throwIfCancelled();
+    final shouldRetry = _shouldRetryStream(
+      error,
+      streamAttempt.attempt,
+      streamAttempt.sentChunks,
+    );
+    if (shouldRetry) {
+      return _streamAttempt(
+        streamAttempt.body,
+        streamAttempt.context,
+        streamAttempt.attempt + 1,
+      );
+    }
+
+    Error.throwWithStackTrace(error, stackTrace);
   }
 
   Future<ProviderTransportResponse> _transport(
