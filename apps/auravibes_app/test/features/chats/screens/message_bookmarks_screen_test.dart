@@ -51,7 +51,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('lists only bookmarks from the selected conversation', (
+  testWidgets('lists bookmarks from the selected workspace and conversation', (
     tester,
   ) async {
     final selectedBookmark = MessageBookmarkEntity(
@@ -74,6 +74,21 @@ void main() {
       ),
       workspace: const MessageBookmarkWorkspace(workspaceId: 'local'),
     );
+    final sameConversationInOtherWorkspace = MessageBookmarkEntity(
+      details: .new(
+        messageId: 'foreign-message',
+        conversationId: 'conversation-1',
+        excerpt: 'Other workspace message',
+        workspaceName: 'Other workspace',
+        createdAt: .utc(2026),
+      ),
+      workspace: const MessageBookmarkWorkspace(
+        workspaceId: 'other-workspace',
+        cloudServerUrl: 'https://cloud.example',
+        cloudAccountId: 'account-2',
+        cloudWorkspaceId: 27,
+      ),
+    );
 
     final _ = await tester.runAsync(
       () => tester.pumpWidget(
@@ -85,7 +100,11 @@ void main() {
           overrides: [
             cloudMessageBookmarksProvider.overrideWith((ref) async => const []),
             messageBookmarksProvider('local').overrideWith(
-              (ref) => Stream.value([selectedBookmark, otherBookmark]),
+              (ref) => Stream.value([
+                selectedBookmark,
+                otherBookmark,
+                sameConversationInOtherWorkspace,
+              ]),
             ),
           ],
           workspaceId: 'local',
@@ -96,6 +115,7 @@ void main() {
 
     expect(find.text('Selected conversation message'), findsOneWidget);
     expect(find.text('Other conversation message'), findsNothing);
+    expect(find.text('Other workspace message'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

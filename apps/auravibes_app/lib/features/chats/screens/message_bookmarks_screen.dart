@@ -47,7 +47,7 @@ class const _MessageBookmarksBody({
 
     return switch (bookmarks) {
       AsyncData(:final value) => _MessageBookmarksData(
-        bookmarks: _conversationBookmarks(value, conversationId),
+        bookmarks: _conversationBookmarks(value, workspaceId, conversationId),
         cloudBookmarks: cloudBookmarks,
       ),
       AsyncError(:final error, :final stackTrace) => AppErrorWidget(
@@ -61,12 +61,17 @@ class const _MessageBookmarksBody({
 
 List<MessageBookmarkEntity> _conversationBookmarks(
   List<MessageBookmarkEntity> bookmarks,
+  String workspaceId,
   String? conversationId,
 ) {
   if (conversationId == null) return bookmarks;
 
   return bookmarks
-      .where((bookmark) => bookmark.details.conversationId == conversationId)
+      .where(
+        (bookmark) =>
+            bookmark.workspace.workspaceId == workspaceId &&
+            bookmark.details.conversationId == conversationId,
+      )
       .toList(growable: false);
 }
 
