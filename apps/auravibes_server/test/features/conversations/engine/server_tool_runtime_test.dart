@@ -2,12 +2,134 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('protocol serializes both named modes and nullable updates', () {
+    final now = DateTime.utc(2026);
+    for (final mode in ['default', 'allow_all']) {
+      final create = CreateConversationRequest(
+        workspaceId: 1,
+        requestId: 'create',
+        conversationId: 'conversation',
+        title: 'Conversation',
+        isPinned: false,
+        toolAccessMode: mode,
+      );
+      expect(
+        CreateConversationRequest.fromJson(create.toJson()).toolAccessMode,
+        mode,
+      );
+      final summary = ConversationSummary(
+        id: 'conversation',
+        title: 'Conversation',
+        isPinned: false,
+        toolAccessMode: mode,
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      );
+      expect(
+        ConversationSummary.fromJson(summary.toJson()).toolAccessMode,
+        mode,
+      );
+      final projection = ConversationProjectionView(
+        id: 'conversation',
+        workspaceId: 1,
+        executionState: 'idle',
+        projectionRevision: 1,
+        sequence: 0,
+        toolAccessMode: mode,
+        updatedAt: now,
+      );
+      expect(
+        ConversationProjectionView.fromJson(projection.toJson()).toolAccessMode,
+        mode,
+      );
+      final update = UpdateConversationRequest(
+        workspaceId: 1,
+        requestId: 'update',
+        conversationId: 'conversation',
+        expectedRevision: 1,
+        toolAccessMode: mode,
+        clearModel: false,
+        clearAgent: false,
+        clearReasoningConfig: false,
+        clearParent: false,
+      );
+      expect(
+        UpdateConversationRequest.fromJson(update.toJson()).toolAccessMode,
+        mode,
+      );
+      expect(update.toJson(), isNot(contains('title')));
+      expect(
+        update.copyWith(toolAccessMode: null).toJson(),
+        isNot(contains('toolAccessMode')),
+      );
+    }
+  });
+
+  test('cloud mode decodes unknown strings before policy evaluation', () {
+    for (final mode in ['default', 'future_mode', 'allowAll', '']) {
+      expect(
+        applyConversationToolAccessMode(
+          AgentToolPermissionResult.needsConfirmation,
+          mode: ConversationToolAccessModeStorage.decode(mode),
+        ),
+        AgentToolPermissionResult.needsConfirmation,
+      );
+    }
+    for (final permission in AgentToolPermissionResult.values) {
+      expect(
+        applyConversationToolAccessMode(
+          permission,
+          mode: ConversationToolAccessModeStorage.decode('allow_all'),
+        ),
+        permission == AgentToolPermissionResult.needsConfirmation
+            ? AgentToolPermissionResult.granted
+            : permission,
+      );
+    }
+  });
+
+  test('conversation ask cannot mask agent or workspace denial', () {
+    for (final workspace in [
+      AgentToolPermissionResult.needsConfirmation,
+      AgentToolPermissionResult.disabledInWorkspace,
+    ]) {
+      expect(
+        applyConversationToolAccessMode(
+          resolveCloudToolPermission(
+            workspacePermission: workspace,
+            agentPermissionMode: 'alwaysDeny',
+            conversationPermissionMode: 'alwaysAsk',
+          ),
+          mode: ConversationToolAccessMode.allowAll,
+        ),
+        AgentToolPermissionResult.disabledInWorkspace,
+      );
+    }
+    expect(
+      resolveCloudToolPermission(
+        workspacePermission: AgentToolPermissionResult.disabledInWorkspace,
+        agentPermissionMode: 'alwaysDeny',
+        conversationPermissionMode: 'alwaysAllow',
+      ),
+      AgentToolPermissionResult.granted,
+    );
+    expect(
+      resolveCloudToolPermission(
+        workspacePermission: AgentToolPermissionResult.granted,
+        conversationPermissionMode: 'alwaysDeny',
+      ),
+      AgentToolPermissionResult.disabledInWorkspace,
+    );
+  });
+
   test('authorizes active agent-associated skills for execution', () {
     final now = DateTime.utc(2026);
     WorkspaceResource resource(
@@ -75,19 +197,20 @@ void main() {
     expect(serverToolExecutionFailureCode(StateError('secret')), 'unexpected');
   });
 
-  test('recognizes every persisted skill kind for replay', () {
+  test('only native skill tools are replayable', () {
     expect(
-      [
-        AgentResolvedToolKind.skillTemplate,
-        AgentResolvedToolKind.skillNative,
-        AgentResolvedToolKind.skillAppTemplate,
-      ].every(serverToolIsReplayableSkillKind),
+      serverToolIsReplayableSkillKind(AgentResolvedToolKind.skillNative),
       isTrue,
     );
-    expect(serverToolIsReplayableSkillKind(AgentResolvedToolKind.mcp), isFalse);
+    expect(
+      AgentResolvedToolKind.values
+          .where((kind) => kind != AgentResolvedToolKind.skillNative)
+          .every((kind) => !serverToolIsReplayableSkillKind(kind)),
+      isTrue,
+    );
   });
 
-  test('only cancellable template calls can run in background', () {
+  test('only native run_sub_agent can run in background', () {
     ServerResolvedTool tool(AgentResolvedToolName descriptor) =>
         ServerResolvedTool(
           descriptor: descriptor,
@@ -97,49 +220,52 @@ void main() {
             inputJsonSchema: const {'type': 'object'},
           ),
         );
+    final runSubAgent = tool(
+      AgentResolvedToolName.skillNative(
+        tableId: runSubAgentToolName,
+        skillSlug: agentsSkillSlug,
+        toolIdentifier: runSubAgentToolName,
+      ),
+    );
 
     expect(
       serverToolCanRunInBackground(
-        tool(
-          AgentResolvedToolName.skillTemplate(
-            tableId: 'search',
-            skillSlug: 'research',
-            toolIdentifier: 'search',
-          ),
-        ),
+        runSubAgent,
+        isTopLevelConversation: true,
       ),
       isTrue,
     );
     expect(
       serverToolCanRunInBackground(
-        tool(
-          AgentResolvedToolName.skillAppTemplate(
-            tableId: 'calendar',
-            skillSlug: 'calendar',
-            toolIdentifier: 'list_events',
-          ),
-        ),
-      ),
-      isTrue,
-    );
-    expect(
-      serverToolCanRunInBackground(
-        tool(
-          AgentResolvedToolName.mcp(
-            tableId: 'server',
-            toolIdentifier: 'list',
-            mcpServerId: 'server',
-            mcpSlug: 'list',
-          ),
-        ),
+        runSubAgent,
+        isTopLevelConversation: false,
       ),
       isFalse,
     );
-  });
-
-  test('does not infer an omitted cloud tool credentialId', () {
-    expect(cloudToolCredentialId(null), isNull);
-    expect(cloudToolCredentialId(' credential-1 '), 'credential-1');
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.skillNative(
+            tableId: 'guide',
+            skillSlug: 'research',
+            toolIdentifier: 'guide',
+          ),
+        ),
+        isTopLevelConversation: true,
+      ),
+      isFalse,
+    );
+    expect(
+      serverToolCanRunInBackground(
+        tool(
+          AgentResolvedToolName.connectorCommand(
+            toolIdentifier: executeConnectorToolName,
+          ),
+        ),
+        isTopLevelConversation: true,
+      ),
+      isFalse,
+    );
   });
 
   test('builds audited cloud skill selection patches', () {
@@ -200,7 +326,7 @@ void main() {
       serviceConnections: [
         {
           'id': 'service-credential',
-          'kind': 'appSkillCredential',
+          'kind': 'customHttp',
           'serviceId': service.identifier,
           'isEnabled': true,
           'hasSecret': true,
@@ -284,8 +410,6 @@ void main() {
       expect(
         materializeCloudSkillTools(
           selectedSkillIds: const {a2uiSkillSlug},
-          userSkills: const [],
-          templateTools: const [],
           appSkillSettings: const [],
           isChildConversation: false,
         ).where((tool) => tool.descriptor.skillSlug == a2uiSkillSlug),
@@ -298,111 +422,70 @@ void main() {
     final manifest = await buildCloudSkillManifest(
       slug: a2uiSkillSlug,
       userSkills: const [],
-      tools: const [],
     );
 
     expect(manifest, isNotNull);
     expect(manifest!.title, a2uiSkillDefinition.title);
-    expect(manifest.tools, isEmpty);
+    expect(manifest.connectorToolIds, isEmpty);
   });
 
-  test('materializes selected cloud skill tools only', () {
-    final service = serviceSkillDefinitions.first;
+  test(
+    'loads Connector references without Skill credentials or tool specs',
+    () async {
+      final connector = connectorDefinitions.firstWhere(
+        (connector) => connector.tools.any((tool) => tool.requiresConnection),
+      );
+      final requiredTool = connector.tools.firstWhere(
+        (tool) => tool.requiresConnection,
+      );
+      final toolId = connectorToolId(connector, requiredTool);
+      final skill = {
+        'id': 'crm-skill',
+        'slug': 'crm',
+        'title': 'CRM',
+        'description': 'Manage CRM records.',
+        'content': 'Use OpenAI web search.',
+        'connectorToolIds': [toolId],
+        'isEnabled': true,
+      };
+
+      expect(cloudUserSkillReady(skill, const []), isFalse);
+      expect(
+        cloudUserSkillReady(skill, [
+          {
+            'kind': 'customHttp',
+            'serviceId': connector.identifier,
+            'isEnabled': true,
+            'hasSecret': true,
+          },
+        ]),
+        isTrue,
+      );
+      final manifest = await buildCloudSkillManifest(
+        slug: 'crm',
+        userSkills: [skill],
+      );
+
+      expect(manifest?.connectorToolIds, [toolId]);
+      expect(manifest?.toJson(), isNot(contains('tools')));
+    },
+  );
+
+  test('loading a Skill does not materialize its Connector tools', () {
     final tools = materializeCloudSkillTools(
-      selectedSkillIds: {'research', agentsSkillSlug, service.identifier},
-      userSkills: const [
-        {
-          'id': 'research',
-          'slug': 'research',
-          'credentialDefinitionId': 'definition-1',
-          'isEnabled': true,
-        },
-      ],
-      templateTools: const [
-        {
-          'skillId': 'research',
-          'skillSlug': 'research',
-          'toolSlug': 'search',
-          'description': 'Search primary sources.',
-          'isEnabled': true,
-          'requiresCredential': true,
-          'inputsJson': [
-            {
-              'name': 'query',
-              'type': 'string',
-              'description': 'Search query.',
-              'isOptional': false,
-            },
-          ],
-        },
-        {
-          'skillId': 'other',
-          'skillSlug': 'other',
-          'toolSlug': 'hidden',
-          'description': 'Not selected.',
-          'isEnabled': true,
-          'inputsJson': [],
-        },
-      ],
-      appSkillSettings: [
-        {'skillId': service.identifier, 'isEnabled': true},
-      ],
-      serviceConnections: [
-        {
-          'id': 'template-credential',
-          'kind': 'skillCredential',
-          'credentialDefinitionId': 'definition-1',
-          'isEnabled': true,
-          'hasSecret': true,
-        },
-        {
-          'id': 'service-credential',
-          'kind': 'appSkillCredential',
-          'serviceId': service.identifier,
-          'isEnabled': true,
-          'hasSecret': true,
-        },
+      selectedSkillIds: const {'crm'},
+      appSkillSettings: const [
+        {'skillId': agentsSkillSlug, 'isEnabled': false},
       ],
       isChildConversation: false,
     );
 
-    expect(
-      tools.map((tool) => tool.spec.name),
-      containsAll([
-        'skill__user__research__search',
-        'skill__app_native__agents__list_agents',
-        'skill__app_native__agents__run_sub_agent',
-        for (final tool in service.tools)
-          'skill__app_template__${service.slug}__${tool.slug}',
-      ]),
-    );
-    final template = tools.firstWhere(
-      (tool) => tool.spec.name == 'skill__user__research__search',
-    );
-    expect(template.spec.inputJsonSchema, {
-      'type': 'object',
-      'properties': {
-        'query': {
-          'type': 'string',
-          'description': 'Search query.',
-        },
-        'credentialId': {
-          'type': 'string',
-          'enum': ['template-credential'],
-        },
-      },
-      'required': ['query'],
-      'additionalProperties': false,
-    });
-
-    expect(tools.map((tool) => tool.spec.name), isNot(contains('hidden')));
+    expect(tools, isEmpty);
   });
 
   test('materializes root sub-agent execution without loading agents', () {
     final rootTools = materializeCloudSkillTools(
       selectedSkillIds: const {},
-      userSkills: const [],
-      templateTools: const [],
       appSkillSettings: const [],
       isChildConversation: false,
     );
@@ -414,8 +497,6 @@ void main() {
 
     final disabledTools = materializeCloudSkillTools(
       selectedSkillIds: const {},
-      userSkills: const [],
-      templateTools: const [],
       appSkillSettings: const [
         {'skillId': agentsSkillSlug, 'isEnabled': false},
       ],
@@ -425,33 +506,95 @@ void main() {
 
     final childTools = materializeCloudSkillTools(
       selectedSkillIds: const {agentsSkillSlug},
-      userSkills: const [],
-      templateTools: const [],
       appSkillSettings: const [],
       isChildConversation: true,
     );
     expect(childTools, isEmpty);
   });
 
+  test('materializes localized sub-agent guidance with stable schemas', () {
+    final tools = materializeCloudSkillTools(
+      selectedSkillIds: const {agentsSkillSlug},
+      appSkillSettings: const [],
+      isChildConversation: false,
+      languageCode: 'es-MX',
+    );
+    final englishTools = materializeCloudSkillTools(
+      selectedSkillIds: const {agentsSkillSlug},
+      appSkillSettings: const [],
+      isChildConversation: false,
+      languageCode: 'en',
+    );
+    final listAgents = tools.singleWhere(
+      (tool) => tool.descriptor.toolIdentifier == listAgentsToolName,
+    );
+    final englishListAgents = englishTools.singleWhere(
+      (tool) => tool.descriptor.toolIdentifier == listAgentsToolName,
+    );
+    final runSubAgent = tools.singleWhere(
+      (tool) => tool.descriptor.toolIdentifier == runSubAgentToolName,
+    );
+    final englishRunSubAgent = englishTools.singleWhere(
+      (tool) => tool.descriptor.toolIdentifier == runSubAgentToolName,
+    );
+
+    expect(listAgents.spec.name, englishListAgents.spec.name);
+    expect(listAgents.spec.description, contains('agentes configurados'));
+    expect(
+      listAgents.spec.inputJsonSchema,
+      englishListAgents.spec.inputJsonSchema,
+    );
+    expect(runSubAgent.spec.name, englishRunSubAgent.spec.name);
+    expect(runSubAgent.spec.description, contains('subagente'));
+    expect(
+      runSubAgent.spec.inputJsonSchema,
+      englishRunSubAgent.spec.inputJsonSchema,
+    );
+  });
+
+  test('localizes the agents skill manifest instructions', () async {
+    final english = await buildCloudSkillManifest(
+      slug: agentsSkillSlug,
+      userSkills: const [],
+      languageCode: 'en',
+    );
+    final spanish = await buildCloudSkillManifest(
+      slug: agentsSkillSlug,
+      userSkills: const [],
+      languageCode: 'es-MX',
+    );
+
+    expect(english, isNotNull);
+    expect(spanish, isNotNull);
+    expect(spanish!.revision, isNot(english!.revision));
+  });
+
   test('lists only ready user skills in cloud load controls', () {
+    final connector = connectorDefinitions.firstWhere(
+      (candidate) => candidate.tools.any((tool) => tool.requiresConnection),
+    );
+    final requiredTool = connector.tools.firstWhere(
+      (tool) => tool.requiresConnection,
+    );
+    final requiredToolId = connectorToolId(connector, requiredTool);
     final controls = materializeCloudSkillControlTools(
       selectedSkillIds: const {},
-      userSkills: const [
+      userSkills: [
         {'id': 'ready', 'slug': 'ready', 'isEnabled': true},
         {'id': 'disabled', 'slug': 'disabled', 'isEnabled': false},
-        {'id': 'credentialed', 'slug': 'credentialed', 'isEnabled': true},
-      ],
-      templateTools: const [
-        {'skillId': 'ready', 'isEnabled': true, 'requiresCredential': false},
         {
-          'skillId': 'disabled',
-          'isEnabled': false,
-          'requiresCredential': false,
-        },
-        {
-          'skillId': 'credentialed',
+          'id': 'credentialed',
+          'slug': 'credentialed',
+          'connectorToolIds': [requiredToolId],
           'isEnabled': true,
-          'requiresCredential': true,
+        },
+      ],
+      serviceConnections: [
+        {
+          'kind': 'customHttp',
+          'serviceId': connector.identifier,
+          'isEnabled': true,
+          'hasSecret': true,
         },
       ],
       appSkillSettings: const [],
@@ -464,25 +607,19 @@ void main() {
             as List;
     expect(slugs, contains('ready'));
     expect(slugs, isNot(contains('disabled')));
-    expect(slugs, isNot(contains('credentialed')));
+    expect(slugs, contains('credentialed'));
   });
 
-  test('does not expose service skills without enabled ready cloud state', () {
-    final service = serviceSkillDefinitions.first;
+  test('does not expose unavailable service Skills', () {
+    final service = serviceSkillDefinitions.firstWhere(
+      (skill) => skill.connectorToolIds.isNotEmpty,
+    );
     final controls = materializeCloudSkillControlTools(
       selectedSkillIds: const {},
       userSkills: const [],
       appSkillSettings: const [],
       isChildConversation: false,
     );
-    final tools = materializeCloudSkillTools(
-      selectedSkillIds: {service.identifier},
-      userSkills: const [],
-      templateTools: const [],
-      appSkillSettings: const [],
-      isChildConversation: false,
-    );
-
     expect(
       controls
           .firstWhere((tool) => tool.spec.name == activateSkillToolName)
@@ -495,156 +632,12 @@ void main() {
         ),
       ),
     );
-    expect(
-      tools.map((tool) => tool.spec.name),
-      ['skill__app_native__agents__run_sub_agent'],
-    );
+    expect(cloudServiceSkillReady(service, const []), isFalse);
   });
-
-  test('native credential schemas offer opaque credential IDs', () {
-    expect(
-      cloudNativeInputSchema(
-        const {
-          'type': 'object',
-          'properties': {
-            'query': {'type': 'string'},
-          },
-          'required': ['query'],
-        },
-        requiresCredential: true,
-        credentialIds: const ['credential-1'],
-      ),
-      {
-        'type': 'object',
-        'properties': {
-          'query': {'type': 'string'},
-          'credentialId': {
-            'type': 'string',
-            'enum': ['credential-1'],
-          },
-        },
-        'required': ['query'],
-      },
-    );
-  });
-
-  test(
-    'credential schemas require explicit selection only with multiple IDs',
-    () {
-      expect(
-        cloudTemplateInputSchema(
-          '[{"name":"query","type":"string"}]',
-          requiresCredential: true,
-          credentialIds: const ['credential-1'],
-        ),
-        containsPair(
-          'properties',
-          containsPair(
-            'credentialId',
-            {
-              'type': 'string',
-              'enum': ['credential-1'],
-            },
-          ),
-        ),
-      );
-      expect(
-        cloudTemplateInputSchema(
-          '[{"name":"query","type":"string"}]',
-          requiresCredential: true,
-          credentialIds: const ['credential-1'],
-        )['required'],
-        ['query'],
-      );
-      expect(
-        cloudNativeInputSchema(
-          const {'type': 'object', 'properties': <String, Object?>{}},
-          requiresCredential: true,
-          credentialIds: const ['credential-1', 'credential-2'],
-        )['required'],
-        ['credentialId'],
-      );
-    },
-  );
-
-  test('malformed template inputs fail fast', () {
-    expect(
-      () => cloudTemplateInputSchema('{not-json', requiresCredential: false),
-      throwsFormatException,
-    );
-  });
-
-  test('does not materialize credentialed templates without candidates', () {
-    final tools = materializeCloudSkillTools(
-      selectedSkillIds: const {'research'},
-      userSkills: const [
-        {
-          'id': 'research',
-          'slug': 'research',
-          'credentialDefinitionId': 'definition-1',
-          'isEnabled': true,
-        },
-      ],
-      templateTools: const [
-        {
-          'skillId': 'research',
-          'skillSlug': 'research',
-          'toolSlug': 'search',
-          'isEnabled': true,
-          'requiresCredential': true,
-          'inputsJson': [],
-        },
-      ],
-      appSkillSettings: const [],
-      isChildConversation: false,
-    );
-
-    expect(
-      tools.map((tool) => tool.spec.name),
-      ['skill__app_native__agents__run_sub_agent'],
-    );
-  });
-
-  test(
-    'materializes only credential-eligible server-native service tools',
-    () {
-      final jina = serviceSkillDefinitions.singleWhere(
-        (skill) => skill.identifier == 'jina',
-      );
-      final tools = materializeCloudSkillTools(
-        selectedSkillIds: {jina.identifier},
-        userSkills: const [],
-        templateTools: const [],
-        appSkillSettings: [
-          {'skillId': jina.identifier, 'isEnabled': true},
-        ],
-        isChildConversation: false,
-      );
-
-      expect(
-        tools.map((tool) => tool.spec.name),
-        [
-          'skill__app_native__agents__run_sub_agent',
-          'skill__app_template__jina__reader_fetch',
-        ],
-      );
-      final jinaTool = tools.singleWhere(
-        (tool) => tool.spec.name == 'skill__app_template__jina__reader_fetch',
-      );
-      expect(
-        jinaTool.spec.inputJsonSchema['properties'],
-        isNot(contains('credentialId')),
-      );
-    },
-  );
 
   test('does not materialize disabled or child-only cloud skill tools', () {
     final tools = materializeCloudSkillTools(
       selectedSkillIds: {agentsSkillSlug, 'research'},
-      userSkills: const [
-        {'id': 'research', 'slug': 'research', 'isEnabled': false},
-      ],
-      templateTools: const [],
       appSkillSettings: const [
         {'skillId': 'agents', 'isEnabled': false},
       ],
@@ -679,116 +672,17 @@ void main() {
       isTrue,
     );
   });
-  test('server executes declarative service template tools', () {
-    final skill = serviceSkillDefinitions.first;
-    final templateTool = skill.tools.first;
+  test('server executes shared Connector commands', () {
+    final commands = fixedCloudConnectorCommandTools();
 
+    expect(commands, isNotEmpty);
     expect(
-      serverToolIsExecutable(
-        AgentResolvedToolName.skillAppTemplate(
-          tableId: templateTool.slug,
-          skillSlug: skill.slug,
-          toolIdentifier: templateTool.slug,
-        ),
+      commands.every(
+        (tool) =>
+            tool.descriptor.kind == AgentResolvedToolKind.connectorCommand &&
+            serverToolIsExecutable(tool.descriptor),
       ),
       isTrue,
-    );
-  });
-
-  test('advertises compiled declarative service tools to cloud', () {
-    final skill = serviceSkillDefinitions.singleWhere(
-      (candidate) => candidate.identifier == 'anthropic',
-    );
-    final tools = materializeCloudSkillTools(
-      selectedSkillIds: {skill.identifier},
-      userSkills: const [],
-      templateTools: const [],
-      appSkillSettings: [
-        {'skillId': skill.identifier, 'isEnabled': true},
-      ],
-      serviceConnections: [
-        {
-          'id': 'anthropic-credential',
-          'kind': 'appSkillCredential',
-          'serviceId': skill.identifier,
-          'isEnabled': true,
-          'hasSecret': true,
-        },
-      ],
-      isChildConversation: false,
-    );
-
-    expect(tools, hasLength(skill.tools.length + 1));
-    expect(
-      tools.map((tool) => tool.spec.name),
-      contains('skill__app_native__agents__run_sub_agent'),
-    );
-    for (final templateTool in skill.tools) {
-      expect(
-        serverToolIsExecutable(
-          AgentResolvedToolName.skillAppTemplate(
-            tableId: templateTool.slug,
-            skillSlug: skill.slug,
-            toolIdentifier: templateTool.slug,
-          ),
-        ),
-        isTrue,
-      );
-    }
-  });
-
-  test('cloud native credentials require the matching service', () {
-    expect(cloudServiceConnectionId('service:credential-1'), 'credential-1');
-    expect(cloudServiceConnectionId('credential-1'), 'credential-1');
-    expect(
-      isCloudAppSkillCredential(
-        const {
-          'kind': 'appSkillCredential',
-          'serviceId': 'search',
-          'isEnabled': true,
-          'hasSecret': true,
-        },
-        'search',
-      ),
-      isTrue,
-    );
-    expect(
-      isCloudAppSkillCredential(
-        const {'kind': 'appSkillCredential', 'serviceId': 'other'},
-        'search',
-      ),
-      isFalse,
-    );
-    expect(
-      isCloudAppSkillCredential(
-        const {'kind': 'modelProvider', 'serviceId': 'search'},
-        'search',
-      ),
-      isFalse,
-    );
-    expect(
-      isCloudAppSkillCredential(
-        const {
-          'kind': 'appSkillCredential',
-          'serviceId': 'search',
-          'isEnabled': false,
-          'hasSecret': true,
-        },
-        'search',
-      ),
-      isFalse,
-    );
-    expect(
-      isCloudAppSkillCredential(
-        const {
-          'kind': 'appSkillCredential',
-          'serviceId': 'search',
-          'isEnabled': true,
-          'hasSecret': false,
-        },
-        'search',
-      ),
-      isFalse,
     );
   });
 
@@ -916,152 +810,71 @@ void main() {
       before.every((tool) => serverToolIsExecutable(tool.descriptor)),
       isTrue,
     );
-    final callSkill = before.singleWhere(
-      (tool) => tool.spec.name == callSkillToolName,
+    final activateSkill = before.singleWhere(
+      (tool) => tool.spec.name == activateSkillToolName,
     );
     expect(
       strictToolSchemaIssue(
-        Map<String, dynamic>.from(callSkill.spec.inputJsonSchema),
+        Map<String, dynamic>.from(activateSkill.spec.inputJsonSchema),
       ),
       isNull,
     );
   });
 
-  test('cloud and local command schemas share active skill contracts', () {
+  test('cloud exposes Connector commands independently of Skills', () {
+    final tools = fixedCloudConnectorCommandTools();
+
+    expect(
+      tools.map((tool) => tool.spec.name),
+      orderedEquals(buildConnectorCommandToolSpecs().map((spec) => spec.name)),
+    );
+    expect(
+      tools.every(
+        (tool) =>
+            tool.descriptor.kind == AgentResolvedToolKind.connectorCommand &&
+            serverToolIsExecutable(tool.descriptor) &&
+            defaultCloudToolPermission(tool.descriptor) ==
+                AgentToolPermissionResult.needsConfirmation,
+      ),
+      isTrue,
+    );
+  });
+
+  test('Skill references do not change fixed command schemas', () {
     final manifest = SkillManifest(
       slug: 'research',
       title: 'Research',
       description: 'Search sources.',
       revision: 'r1',
-      tools: [
-        SkillManifestTool(
-          name: 'search',
-          description: 'Search sources.',
-          optionalNullMeansOmission: true,
-          inputJsonSchema: const {
-            'type': 'object',
-            'properties': {
-              'query': {'type': 'string'},
-              'limit': {'type': 'integer'},
-            },
-            'required': ['query'],
-            'additionalProperties': false,
-          },
-        ),
-      ],
+      connectorToolIds: const ['connector/openai/web_search'],
     );
-    final local = buildSkillCommandToolSpecs(manifests: [manifest]);
-    final cloud = fixedCloudSkillCommandTools(manifests: [manifest]);
+    final before = fixedCloudSkillCommandTools();
+    final after = fixedCloudSkillCommandTools();
 
     expect(
-      cloud.map((tool) => tool.spec),
-      orderedEquals(local),
-    );
-    final callSkill = cloud.singleWhere(
-      (tool) => tool.spec.name == callSkillToolName,
+      before.map((tool) => tool.spec),
+      orderedEquals(after.map((tool) => tool.spec)),
     );
     expect(
-      strictToolSchemaIssue(
-        Map<String, dynamic>.from(callSkill.spec.inputJsonSchema),
-      ),
-      isNull,
+      manifest.toJson()['connectorToolIds'],
+      ['connector/openai/web_search'],
+    );
+    expect(before.map((tool) => tool.spec.name), skillCommandToolNames);
+    expect(
+      before.map((tool) => tool.spec.name),
+      isNot(contains('connector/openai/web_search')),
     );
   });
-
   test(
-    'cloud skill command omits null optional nested inputs before validation',
+    'builds deterministic cloud manifest from Connector tool references',
     () async {
-      final descriptor = AgentResolvedToolName.skillTemplate(
-        tableId: 'tool-1',
-        skillSlug: 'research',
-        toolIdentifier: 'search',
-      );
-      final target = ServerResolvedTool(
-        descriptor: descriptor,
-        spec: ToolSpec(
-          name: descriptor.fullName,
-          description: 'Search sources.',
-          inputJsonSchema: const {
-            'type': 'object',
-            'properties': {
-              'filters': {
-                'type': 'object',
-                'properties': {
-                  'region': {'type': 'string'},
-                },
-                'required': <String>[],
-                'additionalProperties': false,
-              },
-            },
-            'required': <String>[],
-            'additionalProperties': false,
-          },
-        ),
-      );
-      const userSkills = [
-        {
-          'id': 'research-id',
-          'slug': 'research',
-          'title': 'Research',
-          'description': 'Search sources.',
-          'content': 'Find sources.',
-          'isEnabled': true,
-        },
-      ];
-      final manifest = await buildCloudSkillManifest(
-        slug: 'research',
-        userSkills: userSkills,
-        tools: [target],
-      );
-      final command = SkillCommandTarget.fromArguments({
-        'skill': 'research',
-        'tool': 'search',
-        'args': {
-          'filters': {'region': null},
-        },
-        'revision': manifest!.revision,
-      });
-
-      await expectLater(
-        resolveCloudSkillCommandTarget(
-          command: command,
-          userSkills: userSkills,
-          tools: [target],
-        ),
-        completes,
-      );
-    },
-  );
-
-  test(
-    'builds deterministic cloud manifest from authoritative target specs',
-    () async {
-      final descriptor = AgentResolvedToolName.skillTemplate(
-        tableId: 'tool-1',
-        skillSlug: 'research',
-        toolIdentifier: 'search',
-      );
-      final targets = [
-        ServerResolvedTool(
-          descriptor: descriptor,
-          spec: ToolSpec(
-            name: descriptor.fullName,
-            description: 'Search sources.',
-            inputJsonSchema: const {
-              'type': 'object',
-              'properties': {
-                'query': {'type': 'string'},
-              },
-            },
-          ),
-        ),
-      ];
       const skills = [
         {
           'id': 'skill-1',
           'slug': 'research',
           'title': 'Research',
           'content': 'Use primary sources.',
+          'connectorToolIds': ['connector/openai/web_search'],
           'isEnabled': true,
         },
       ];
@@ -1069,44 +882,25 @@ void main() {
       final first = await buildCloudSkillManifest(
         slug: 'research',
         userSkills: skills,
-        tools: targets,
       );
       final second = await buildCloudSkillManifest(
         slug: 'research',
         userSkills: skills,
-        tools: targets,
       );
 
       expect(first?.revision, second?.revision);
-      expect(first?.tools.single.name, 'search');
-      expect(first?.tools.single.inputJsonSchema['properties'], isNotNull);
+      expect(first?.connectorToolIds, ['connector/openai/web_search']);
+      expect(first?.toJson(), isNot(contains('tools')));
     },
   );
 
-  test('keeps the direct sub-agent tool out of the agents manifest', () async {
-    final direct = ServerResolvedTool(
-      descriptor: AgentResolvedToolName.skillNative(
-        tableId: runSubAgentToolName,
-        skillSlug: agentsSkillSlug,
-        toolIdentifier: runSubAgentToolName,
-      ),
-      spec: runSubAgentToolSpec,
-    );
-    final list = ServerResolvedTool(
-      descriptor: AgentResolvedToolName.skillNative(
-        tableId: listAgentsToolName,
-        skillSlug: agentsSkillSlug,
-        toolIdentifier: listAgentsToolName,
-      ),
-      spec: listAgentsToolSpec,
-    );
-
+  test('agents manifest contains guidance without tool definitions', () async {
     final manifest = await buildCloudSkillManifest(
       slug: agentsSkillSlug,
       userSkills: const [],
-      tools: [direct, list],
     );
 
-    expect(manifest?.tools.map((tool) => tool.name), [listAgentsToolName]);
+    expect(manifest?.connectorToolIds, isEmpty);
+    expect(manifest?.toJson(), isNot(contains('tools')));
   });
 }

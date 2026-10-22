@@ -16,8 +16,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MessageToolCallEntity {
 
- String get id; String get name; String get argumentsRaw;@JsonKey(includeIfNull: false) String? get userFacingDescription;@JsonKey(includeIfNull: false) String? get argumentsDigest;@JsonKey(includeIfNull: false) String? get turnId;@JsonKey(includeIfNull: false) int? get turnRevision;/// The raw response from tool execution, if successful.
- String? get responseRaw;/// The bounded response projection used in model context, when different.
+ String get id; String get name; String get argumentsRaw;@JsonKey(includeIfNull: false) String? get userFacingDescription;@JsonKey(includeIfNull: false) String? get argumentsDigest;@JsonKey(includeIfNull: false) String? get turnId;@JsonKey(includeIfNull: false) int? get turnRevision; bool get backgroundEligible;/// Null preserves legacy pending approvals; false marks fresh model calls.
+@JsonKey(includeIfNull: false) bool? get approvalRequested;/// The raw response from tool execution, if successful.
+ String? get responseRaw;/// App-only result data that is never sent to the model.
+@JsonKey(includeIfNull: false) Map<String, Object?>? get appData;/// The bounded response projection used in model context, when different.
 @JsonKey(includeIfNull: false) String? get responseContextRaw;/// Whether output was truncated for model context or persistence.
  bool get outputTruncated;/// Original result size before projection or persistence bounds.
 @JsonKey(includeIfNull: false) int? get originalResponseBytes;/// Whether a justified full-output policy applies to model context.
@@ -39,14 +41,14 @@ $MessageToolCallEntityCopyWith<MessageToolCallEntity> get copyWith => _$MessageT
 @override
 bool operator ==(Object other) {
   final _this = this as MessageToolCallEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToolCallEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.argumentsRaw, _this.argumentsRaw) || other.argumentsRaw == _this.argumentsRaw)&&(identical(other.userFacingDescription, _this.userFacingDescription) || other.userFacingDescription == _this.userFacingDescription)&&(identical(other.argumentsDigest, _this.argumentsDigest) || other.argumentsDigest == _this.argumentsDigest)&&(identical(other.turnId, _this.turnId) || other.turnId == _this.turnId)&&(identical(other.turnRevision, _this.turnRevision) || other.turnRevision == _this.turnRevision)&&(identical(other.responseRaw, _this.responseRaw) || other.responseRaw == _this.responseRaw)&&(identical(other.responseContextRaw, _this.responseContextRaw) || other.responseContextRaw == _this.responseContextRaw)&&(identical(other.outputTruncated, _this.outputTruncated) || other.outputTruncated == _this.outputTruncated)&&(identical(other.originalResponseBytes, _this.originalResponseBytes) || other.originalResponseBytes == _this.originalResponseBytes)&&(identical(other.fullOutputForContext, _this.fullOutputForContext) || other.fullOutputForContext == _this.fullOutputForContext)&&(identical(other.resultStatus, _this.resultStatus) || other.resultStatus == _this.resultStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToolCallEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.argumentsRaw, _this.argumentsRaw) || other.argumentsRaw == _this.argumentsRaw)&&(identical(other.userFacingDescription, _this.userFacingDescription) || other.userFacingDescription == _this.userFacingDescription)&&(identical(other.argumentsDigest, _this.argumentsDigest) || other.argumentsDigest == _this.argumentsDigest)&&(identical(other.turnId, _this.turnId) || other.turnId == _this.turnId)&&(identical(other.turnRevision, _this.turnRevision) || other.turnRevision == _this.turnRevision)&&(identical(other.backgroundEligible, _this.backgroundEligible) || other.backgroundEligible == _this.backgroundEligible)&&(identical(other.approvalRequested, _this.approvalRequested) || other.approvalRequested == _this.approvalRequested)&&(identical(other.responseRaw, _this.responseRaw) || other.responseRaw == _this.responseRaw)&&const DeepCollectionEquality().equals(other.appData, _this.appData)&&(identical(other.responseContextRaw, _this.responseContextRaw) || other.responseContextRaw == _this.responseContextRaw)&&(identical(other.outputTruncated, _this.outputTruncated) || other.outputTruncated == _this.outputTruncated)&&(identical(other.originalResponseBytes, _this.originalResponseBytes) || other.originalResponseBytes == _this.originalResponseBytes)&&(identical(other.fullOutputForContext, _this.fullOutputForContext) || other.fullOutputForContext == _this.fullOutputForContext)&&(identical(other.resultStatus, _this.resultStatus) || other.resultStatus == _this.resultStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as MessageToolCallEntity;
-  return Object.hash(runtimeType,_this.id,_this.name,_this.argumentsRaw,_this.userFacingDescription,_this.argumentsDigest,_this.turnId,_this.turnRevision,_this.responseRaw,_this.responseContextRaw,_this.outputTruncated,_this.originalResponseBytes,_this.fullOutputForContext,_this.resultStatus);
+  return Object.hash(runtimeType,_this.id,_this.name,_this.argumentsRaw,_this.userFacingDescription,_this.argumentsDigest,_this.turnId,_this.turnRevision,_this.backgroundEligible,_this.approvalRequested,_this.responseRaw,const DeepCollectionEquality().hash(_this.appData),_this.responseContextRaw,_this.outputTruncated,_this.originalResponseBytes,_this.fullOutputForContext,_this.resultStatus);
 }
 
 
@@ -58,7 +60,7 @@ abstract mixin class $MessageToolCallEntityCopyWith<$Res>  {
   factory $MessageToolCallEntityCopyWith(MessageToolCallEntity value, $Res Function(MessageToolCallEntity) _then) = _$MessageToolCallEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String argumentsRaw,@JsonKey(includeIfNull: false) String? userFacingDescription,@JsonKey(includeIfNull: false) String? argumentsDigest,@JsonKey(includeIfNull: false) String? turnId,@JsonKey(includeIfNull: false) int? turnRevision, String? responseRaw,@JsonKey(includeIfNull: false) String? responseContextRaw, bool outputTruncated,@JsonKey(includeIfNull: false) int? originalResponseBytes, bool fullOutputForContext,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
+ String id, String name, String argumentsRaw,@JsonKey(includeIfNull: false) String? userFacingDescription,@JsonKey(includeIfNull: false) String? argumentsDigest,@JsonKey(includeIfNull: false) String? turnId,@JsonKey(includeIfNull: false) int? turnRevision, bool backgroundEligible,@JsonKey(includeIfNull: false) bool? approvalRequested, String? responseRaw,@JsonKey(includeIfNull: false) Map<String, Object?>? appData,@JsonKey(includeIfNull: false) String? responseContextRaw, bool outputTruncated,@JsonKey(includeIfNull: false) int? originalResponseBytes, bool fullOutputForContext,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
 });
 
 
@@ -75,7 +77,7 @@ class _$MessageToolCallEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageToolCallEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? userFacingDescription = freezed,Object? argumentsDigest = freezed,Object? turnId = freezed,Object? turnRevision = freezed,Object? responseRaw = freezed,Object? responseContextRaw = freezed,Object? outputTruncated = null,Object? originalResponseBytes = freezed,Object? fullOutputForContext = null,Object? resultStatus = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? userFacingDescription = freezed,Object? argumentsDigest = freezed,Object? turnId = freezed,Object? turnRevision = freezed,Object? backgroundEligible = null,Object? approvalRequested = freezed,Object? responseRaw = freezed,Object? appData = freezed,Object? responseContextRaw = freezed,Object? outputTruncated = null,Object? originalResponseBytes = freezed,Object? fullOutputForContext = null,Object? resultStatus = freezed,}) {
   return _then(MessageToolCallEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -84,8 +86,11 @@ as String,userFacingDescription: freezed == userFacingDescription ? _self.userFa
 as String?,argumentsDigest: freezed == argumentsDigest ? _self.argumentsDigest : argumentsDigest // ignore: cast_nullable_to_non_nullable
 as String?,turnId: freezed == turnId ? _self.turnId : turnId // ignore: cast_nullable_to_non_nullable
 as String?,turnRevision: freezed == turnRevision ? _self.turnRevision : turnRevision // ignore: cast_nullable_to_non_nullable
-as int?,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
-as String?,responseContextRaw: freezed == responseContextRaw ? _self.responseContextRaw : responseContextRaw // ignore: cast_nullable_to_non_nullable
+as int?,backgroundEligible: null == backgroundEligible ? _self.backgroundEligible : backgroundEligible // ignore: cast_nullable_to_non_nullable
+as bool,approvalRequested: freezed == approvalRequested ? _self.approvalRequested : approvalRequested // ignore: cast_nullable_to_non_nullable
+as bool?,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
+as String?,appData: freezed == appData ? _self.appData : appData // ignore: cast_nullable_to_non_nullable
+as Map<String, Object?>?,responseContextRaw: freezed == responseContextRaw ? _self.responseContextRaw : responseContextRaw // ignore: cast_nullable_to_non_nullable
 as String?,outputTruncated: null == outputTruncated ? _self.outputTruncated : outputTruncated // ignore: cast_nullable_to_non_nullable
 as bool,originalResponseBytes: freezed == originalResponseBytes ? _self.originalResponseBytes : originalResponseBytes // ignore: cast_nullable_to_non_nullable
 as int?,fullOutputForContext: null == fullOutputForContext ? _self.fullOutputForContext : fullOutputForContext // ignore: cast_nullable_to_non_nullable
@@ -175,10 +180,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  String? responseRaw, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  bool backgroundEligible, @JsonKey(includeIfNull: false)  bool? approvalRequested,  String? responseRaw, @JsonKey(includeIfNull: false)  Map<String, Object?>? appData, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity() when $default != null:
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
+return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.backgroundEligible,_that.approvalRequested,_that.responseRaw,_that.appData,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
   return orElse();
 
 }
@@ -196,10 +201,10 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescripti
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  String? responseRaw, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  bool backgroundEligible, @JsonKey(includeIfNull: false)  bool? approvalRequested,  String? responseRaw, @JsonKey(includeIfNull: false)  Map<String, Object?>? appData, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity():
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
+return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.backgroundEligible,_that.approvalRequested,_that.responseRaw,_that.appData,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -216,10 +221,10 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescripti
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  String? responseRaw, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? userFacingDescription, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  bool backgroundEligible, @JsonKey(includeIfNull: false)  bool? approvalRequested,  String? responseRaw, @JsonKey(includeIfNull: false)  Map<String, Object?>? appData, @JsonKey(includeIfNull: false)  String? responseContextRaw,  bool outputTruncated, @JsonKey(includeIfNull: false)  int? originalResponseBytes,  bool fullOutputForContext, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity() when $default != null:
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
+return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescription,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.backgroundEligible,_that.approvalRequested,_that.responseRaw,_that.appData,_that.responseContextRaw,_that.outputTruncated,_that.originalResponseBytes,_that.fullOutputForContext,_that.resultStatus);case _:
   return null;
 
 }
@@ -231,7 +236,7 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.userFacingDescripti
 @JsonSerializable()
 
 class _MessageToolCallEntity extends MessageToolCallEntity {
-  const _MessageToolCallEntity({required this.id, required this.name, required this.argumentsRaw, @JsonKey(includeIfNull: false) this.userFacingDescription, @JsonKey(includeIfNull: false) this.argumentsDigest, @JsonKey(includeIfNull: false) this.turnId, @JsonKey(includeIfNull: false) this.turnRevision, this.responseRaw, @JsonKey(includeIfNull: false) this.responseContextRaw, this.outputTruncated = false, @JsonKey(includeIfNull: false) this.originalResponseBytes, this.fullOutputForContext = false, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) this.resultStatus}): super._();
+  const _MessageToolCallEntity({required this.id, required this.name, required this.argumentsRaw, @JsonKey(includeIfNull: false) this.userFacingDescription, @JsonKey(includeIfNull: false) this.argumentsDigest, @JsonKey(includeIfNull: false) this.turnId, @JsonKey(includeIfNull: false) this.turnRevision, this.backgroundEligible = false, @JsonKey(includeIfNull: false) this.approvalRequested, this.responseRaw, @JsonKey(includeIfNull: false)  Map<String, Object?>? appData, @JsonKey(includeIfNull: false) this.responseContextRaw, this.outputTruncated = false, @JsonKey(includeIfNull: false) this.originalResponseBytes, this.fullOutputForContext = false, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) this.resultStatus}): _appData = appData,super._();
   factory _MessageToolCallEntity.fromJson(Map<String, dynamic> json) => _$MessageToolCallEntityFromJson(json);
 
 @override final  String id;
@@ -241,8 +246,22 @@ class _MessageToolCallEntity extends MessageToolCallEntity {
 @override@JsonKey(includeIfNull: false) final  String? argumentsDigest;
 @override@JsonKey(includeIfNull: false) final  String? turnId;
 @override@JsonKey(includeIfNull: false) final  int? turnRevision;
+@override@JsonKey() final  bool backgroundEligible;
+/// Null preserves legacy pending approvals; false marks fresh model calls.
+@override@JsonKey(includeIfNull: false) final  bool? approvalRequested;
 /// The raw response from tool execution, if successful.
 @override final  String? responseRaw;
+/// App-only result data that is never sent to the model.
+ final  Map<String, Object?>? _appData;
+/// App-only result data that is never sent to the model.
+@override@JsonKey(includeIfNull: false) Map<String, Object?>? get appData {
+  final value = _appData;
+  if (value == null) return null;
+  if (_appData is EqualUnmodifiableMapView) return _appData;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(value);
+}
+
 /// The bounded response projection used in model context, when different.
 @override@JsonKey(includeIfNull: false) final  String? responseContextRaw;
 /// Whether output was truncated for model context or persistence.
@@ -270,13 +289,13 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToolCallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&(identical(other.userFacingDescription, userFacingDescription) || other.userFacingDescription == userFacingDescription)&&(identical(other.argumentsDigest, argumentsDigest) || other.argumentsDigest == argumentsDigest)&&(identical(other.turnId, turnId) || other.turnId == turnId)&&(identical(other.turnRevision, turnRevision) || other.turnRevision == turnRevision)&&(identical(other.responseRaw, responseRaw) || other.responseRaw == responseRaw)&&(identical(other.responseContextRaw, responseContextRaw) || other.responseContextRaw == responseContextRaw)&&(identical(other.outputTruncated, outputTruncated) || other.outputTruncated == outputTruncated)&&(identical(other.originalResponseBytes, originalResponseBytes) || other.originalResponseBytes == originalResponseBytes)&&(identical(other.fullOutputForContext, fullOutputForContext) || other.fullOutputForContext == fullOutputForContext)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToolCallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&(identical(other.userFacingDescription, userFacingDescription) || other.userFacingDescription == userFacingDescription)&&(identical(other.argumentsDigest, argumentsDigest) || other.argumentsDigest == argumentsDigest)&&(identical(other.turnId, turnId) || other.turnId == turnId)&&(identical(other.turnRevision, turnRevision) || other.turnRevision == turnRevision)&&(identical(other.backgroundEligible, backgroundEligible) || other.backgroundEligible == backgroundEligible)&&(identical(other.approvalRequested, approvalRequested) || other.approvalRequested == approvalRequested)&&(identical(other.responseRaw, responseRaw) || other.responseRaw == responseRaw)&&const DeepCollectionEquality().equals(other.appData, _appData)&&(identical(other.responseContextRaw, responseContextRaw) || other.responseContextRaw == responseContextRaw)&&(identical(other.outputTruncated, outputTruncated) || other.outputTruncated == outputTruncated)&&(identical(other.originalResponseBytes, originalResponseBytes) || other.originalResponseBytes == originalResponseBytes)&&(identical(other.fullOutputForContext, fullOutputForContext) || other.fullOutputForContext == fullOutputForContext)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,name,argumentsRaw,userFacingDescription,argumentsDigest,turnId,turnRevision,responseRaw,responseContextRaw,outputTruncated,originalResponseBytes,fullOutputForContext,resultStatus);
+    return Object.hash(runtimeType,id,name,argumentsRaw,userFacingDescription,argumentsDigest,turnId,turnRevision,backgroundEligible,approvalRequested,responseRaw,const DeepCollectionEquality().hash(_appData),responseContextRaw,outputTruncated,originalResponseBytes,fullOutputForContext,resultStatus);
 }
 
 
@@ -288,7 +307,7 @@ abstract mixin class _$MessageToolCallEntityCopyWith<$Res> implements $MessageTo
   factory _$MessageToolCallEntityCopyWith(_MessageToolCallEntity value, $Res Function(_MessageToolCallEntity) _then) = __$MessageToolCallEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String argumentsRaw,@JsonKey(includeIfNull: false) String? userFacingDescription,@JsonKey(includeIfNull: false) String? argumentsDigest,@JsonKey(includeIfNull: false) String? turnId,@JsonKey(includeIfNull: false) int? turnRevision, String? responseRaw,@JsonKey(includeIfNull: false) String? responseContextRaw, bool outputTruncated,@JsonKey(includeIfNull: false) int? originalResponseBytes, bool fullOutputForContext,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
+ String id, String name, String argumentsRaw,@JsonKey(includeIfNull: false) String? userFacingDescription,@JsonKey(includeIfNull: false) String? argumentsDigest,@JsonKey(includeIfNull: false) String? turnId,@JsonKey(includeIfNull: false) int? turnRevision, bool backgroundEligible,@JsonKey(includeIfNull: false) bool? approvalRequested, String? responseRaw,@JsonKey(includeIfNull: false) Map<String, Object?>? appData,@JsonKey(includeIfNull: false) String? responseContextRaw, bool outputTruncated,@JsonKey(includeIfNull: false) int? originalResponseBytes, bool fullOutputForContext,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
 });
 
 
@@ -305,7 +324,7 @@ class __$MessageToolCallEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageToolCallEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? userFacingDescription = freezed,Object? argumentsDigest = freezed,Object? turnId = freezed,Object? turnRevision = freezed,Object? responseRaw = freezed,Object? responseContextRaw = freezed,Object? outputTruncated = null,Object? originalResponseBytes = freezed,Object? fullOutputForContext = null,Object? resultStatus = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? userFacingDescription = freezed,Object? argumentsDigest = freezed,Object? turnId = freezed,Object? turnRevision = freezed,Object? backgroundEligible = null,Object? approvalRequested = freezed,Object? responseRaw = freezed,Object? appData = freezed,Object? responseContextRaw = freezed,Object? outputTruncated = null,Object? originalResponseBytes = freezed,Object? fullOutputForContext = null,Object? resultStatus = freezed,}) {
   return _then(_MessageToolCallEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -314,8 +333,11 @@ as String,userFacingDescription: freezed == userFacingDescription ? _self.userFa
 as String?,argumentsDigest: freezed == argumentsDigest ? _self.argumentsDigest : argumentsDigest // ignore: cast_nullable_to_non_nullable
 as String?,turnId: freezed == turnId ? _self.turnId : turnId // ignore: cast_nullable_to_non_nullable
 as String?,turnRevision: freezed == turnRevision ? _self.turnRevision : turnRevision // ignore: cast_nullable_to_non_nullable
-as int?,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
-as String?,responseContextRaw: freezed == responseContextRaw ? _self.responseContextRaw : responseContextRaw // ignore: cast_nullable_to_non_nullable
+as int?,backgroundEligible: null == backgroundEligible ? _self.backgroundEligible : backgroundEligible // ignore: cast_nullable_to_non_nullable
+as bool,approvalRequested: freezed == approvalRequested ? _self.approvalRequested : approvalRequested // ignore: cast_nullable_to_non_nullable
+as bool?,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
+as String?,appData: freezed == appData ? _self._appData : appData // ignore: cast_nullable_to_non_nullable
+as Map<String, Object?>?,responseContextRaw: freezed == responseContextRaw ? _self.responseContextRaw : responseContextRaw // ignore: cast_nullable_to_non_nullable
 as String?,outputTruncated: null == outputTruncated ? _self.outputTruncated : outputTruncated // ignore: cast_nullable_to_non_nullable
 as bool,originalResponseBytes: freezed == originalResponseBytes ? _self.originalResponseBytes : originalResponseBytes // ignore: cast_nullable_to_non_nullable
 as int?,fullOutputForContext: null == fullOutputForContext ? _self.fullOutputForContext : fullOutputForContext // ignore: cast_nullable_to_non_nullable
@@ -330,7 +352,7 @@ as ToolCallResultStatus?,
 /// @nodoc
 mixin _$MessageAttachmentEntity {
 
- String get id; String get messageId; String get localPath; String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; int get sizeBytes; DateTime get createdAt; DateTime get updatedAt;
+ String get id; String get messageId; String get localPath; String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; int get sizeBytes; DateTime get createdAt; DateTime get updatedAt; String? get toolCallId;
 /// Create a copy of MessageAttachmentEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -342,20 +364,20 @@ $MessageAttachmentEntityCopyWith<MessageAttachmentEntity> get copyWith => _$Mess
 @override
 bool operator ==(Object other) {
   final _this = this as MessageAttachmentEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.messageId, _this.messageId) || other.messageId == _this.messageId)&&(identical(other.localPath, _this.localPath) || other.localPath == _this.localPath)&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&(identical(other.sizeBytes, _this.sizeBytes) || other.sizeBytes == _this.sizeBytes)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.messageId, _this.messageId) || other.messageId == _this.messageId)&&(identical(other.localPath, _this.localPath) || other.localPath == _this.localPath)&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&(identical(other.sizeBytes, _this.sizeBytes) || other.sizeBytes == _this.sizeBytes)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.toolCallId, _this.toolCallId) || other.toolCallId == _this.toolCallId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as MessageAttachmentEntity;
-  return Object.hash(runtimeType,_this.id,_this.messageId,_this.localPath,_this.fileName,_this.displayName,_this.mimeType,_this.modality,_this.sizeBytes,_this.createdAt,_this.updatedAt);
+  return Object.hash(runtimeType,_this.id,_this.messageId,_this.localPath,_this.fileName,_this.displayName,_this.mimeType,_this.modality,_this.sizeBytes,_this.createdAt,_this.updatedAt,_this.toolCallId);
 }
 
 @override
 String toString() {
   final _this = this as MessageAttachmentEntity;
-  return 'MessageAttachmentEntity(id: ${_this.id}, messageId: ${_this.messageId}, localPath: ${_this.localPath}, fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, sizeBytes: ${_this.sizeBytes}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt})';
+  return 'MessageAttachmentEntity(id: ${_this.id}, messageId: ${_this.messageId}, localPath: ${_this.localPath}, fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, sizeBytes: ${_this.sizeBytes}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, toolCallId: ${_this.toolCallId})';
 }
 
 
@@ -366,7 +388,7 @@ abstract mixin class $MessageAttachmentEntityCopyWith<$Res>  {
   factory $MessageAttachmentEntityCopyWith(MessageAttachmentEntity value, $Res Function(MessageAttachmentEntity) _then) = _$MessageAttachmentEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String messageId, String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, DateTime createdAt, DateTime updatedAt
+ String id, String messageId, String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, DateTime createdAt, DateTime updatedAt, String? toolCallId
 });
 
 
@@ -383,7 +405,7 @@ class _$MessageAttachmentEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageAttachmentEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? messageId = null,Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? messageId = null,Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? createdAt = null,Object? updatedAt = null,Object? toolCallId = freezed,}) {
   return _then(MessageAttachmentEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,messageId: null == messageId ? _self.messageId : messageId // ignore: cast_nullable_to_non_nullable
@@ -395,7 +417,8 @@ as String,modality: null == modality ? _self.modality : modality // ignore: cast
 as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
 as int,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -480,10 +503,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt,  String? toolCallId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageAttachmentEntity() when $default != null:
-return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt,_that.toolCallId);case _:
   return orElse();
 
 }
@@ -501,10 +524,10 @@ return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.di
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt,  String? toolCallId)  $default,) {final _that = this;
 switch (_that) {
 case _MessageAttachmentEntity():
-return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt,_that.toolCallId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -521,10 +544,10 @@ return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.di
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt,  String? toolCallId)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageAttachmentEntity() when $default != null:
-return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt,_that.toolCallId);case _:
   return null;
 
 }
@@ -536,7 +559,7 @@ return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.di
 
 
 class _MessageAttachmentEntity implements MessageAttachmentEntity {
-  const _MessageAttachmentEntity({required this.id, required this.messageId, required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes, required this.createdAt, required this.updatedAt});
+  const _MessageAttachmentEntity({required this.id, required this.messageId, required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes, required this.createdAt, required this.updatedAt, this.toolCallId});
   
 
 @override final  String id;
@@ -549,6 +572,7 @@ class _MessageAttachmentEntity implements MessageAttachmentEntity {
 @override final  int sizeBytes;
 @override final  DateTime createdAt;
 @override final  DateTime updatedAt;
+@override final  String? toolCallId;
 
 /// Create a copy of MessageAttachmentEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -560,18 +584,18 @@ _$MessageAttachmentEntityCopyWith<_MessageAttachmentEntity> get copyWith => __$M
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.messageId, messageId) || other.messageId == messageId)&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.messageId, messageId) || other.messageId == messageId)&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.toolCallId, toolCallId) || other.toolCallId == toolCallId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,messageId,localPath,fileName,displayName,mimeType,modality,sizeBytes,createdAt,updatedAt);
+    return Object.hash(runtimeType,id,messageId,localPath,fileName,displayName,mimeType,modality,sizeBytes,createdAt,updatedAt,toolCallId);
 }
 
 @override
 String toString() {
-    return 'MessageAttachmentEntity(id: $id, messageId: $messageId, localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'MessageAttachmentEntity(id: $id, messageId: $messageId, localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes, createdAt: $createdAt, updatedAt: $updatedAt, toolCallId: $toolCallId)';
 }
 
 
@@ -582,7 +606,7 @@ abstract mixin class _$MessageAttachmentEntityCopyWith<$Res> implements $Message
   factory _$MessageAttachmentEntityCopyWith(_MessageAttachmentEntity value, $Res Function(_MessageAttachmentEntity) _then) = __$MessageAttachmentEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String messageId, String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, DateTime createdAt, DateTime updatedAt
+ String id, String messageId, String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, DateTime createdAt, DateTime updatedAt, String? toolCallId
 });
 
 
@@ -599,7 +623,7 @@ class __$MessageAttachmentEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageAttachmentEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? messageId = null,Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? messageId = null,Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? createdAt = null,Object? updatedAt = null,Object? toolCallId = freezed,}) {
   return _then(_MessageAttachmentEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,messageId: null == messageId ? _self.messageId : messageId // ignore: cast_nullable_to_non_nullable
@@ -611,7 +635,8 @@ as String,modality: null == modality ? _self.modality : modality // ignore: cast
 as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
 as int,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -621,7 +646,7 @@ as DateTime,
 /// @nodoc
 mixin _$MessageAttachmentToCreate {
 
- String get localPath; String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; int get sizeBytes;
+ String get localPath; String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; int get sizeBytes; String? get toolCallId;
 /// Create a copy of MessageAttachmentToCreate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -633,20 +658,20 @@ $MessageAttachmentToCreateCopyWith<MessageAttachmentToCreate> get copyWith => _$
 @override
 bool operator ==(Object other) {
   final _this = this as MessageAttachmentToCreate;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentToCreate&&(identical(other.localPath, _this.localPath) || other.localPath == _this.localPath)&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&(identical(other.sizeBytes, _this.sizeBytes) || other.sizeBytes == _this.sizeBytes));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentToCreate&&(identical(other.localPath, _this.localPath) || other.localPath == _this.localPath)&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&(identical(other.sizeBytes, _this.sizeBytes) || other.sizeBytes == _this.sizeBytes)&&(identical(other.toolCallId, _this.toolCallId) || other.toolCallId == _this.toolCallId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as MessageAttachmentToCreate;
-  return Object.hash(runtimeType,_this.localPath,_this.fileName,_this.displayName,_this.mimeType,_this.modality,_this.sizeBytes);
+  return Object.hash(runtimeType,_this.localPath,_this.fileName,_this.displayName,_this.mimeType,_this.modality,_this.sizeBytes,_this.toolCallId);
 }
 
 @override
 String toString() {
   final _this = this as MessageAttachmentToCreate;
-  return 'MessageAttachmentToCreate(localPath: ${_this.localPath}, fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, sizeBytes: ${_this.sizeBytes})';
+  return 'MessageAttachmentToCreate(localPath: ${_this.localPath}, fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, sizeBytes: ${_this.sizeBytes}, toolCallId: ${_this.toolCallId})';
 }
 
 
@@ -657,7 +682,7 @@ abstract mixin class $MessageAttachmentToCreateCopyWith<$Res>  {
   factory $MessageAttachmentToCreateCopyWith(MessageAttachmentToCreate value, $Res Function(MessageAttachmentToCreate) _then) = _$MessageAttachmentToCreateCopyWithImpl;
 @useResult
 $Res call({
- String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes
+ String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, String? toolCallId
 });
 
 
@@ -674,7 +699,7 @@ class _$MessageAttachmentToCreateCopyWithImpl<$Res>
 
 /// Create a copy of MessageAttachmentToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? toolCallId = freezed,}) {
   return _then(MessageAttachmentToCreate(
 localPath: null == localPath ? _self.localPath : localPath // ignore: cast_nullable_to_non_nullable
 as String,fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
@@ -682,7 +707,8 @@ as String,displayName: null == displayName ? _self.displayName : displayName // 
 as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
 as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
 as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
-as int,
+as int,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -767,10 +793,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  String? toolCallId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageAttachmentToCreate() when $default != null:
-return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes);case _:
+return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.toolCallId);case _:
   return orElse();
 
 }
@@ -788,10 +814,10 @@ return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  String? toolCallId)  $default,) {final _that = this;
 switch (_that) {
 case _MessageAttachmentToCreate():
-return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes);case _:
+return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.toolCallId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -808,10 +834,10 @@ return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  String? toolCallId)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageAttachmentToCreate() when $default != null:
-return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes);case _:
+return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.toolCallId);case _:
   return null;
 
 }
@@ -823,7 +849,7 @@ return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,
 
 
 class _MessageAttachmentToCreate implements MessageAttachmentToCreate {
-  const _MessageAttachmentToCreate({required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes});
+  const _MessageAttachmentToCreate({required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes, this.toolCallId});
   
 
 @override final  String localPath;
@@ -832,6 +858,7 @@ class _MessageAttachmentToCreate implements MessageAttachmentToCreate {
 @override final  String mimeType;
 @override final  MessageAttachmentModality modality;
 @override final  int sizeBytes;
+@override final  String? toolCallId;
 
 /// Create a copy of MessageAttachmentToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -843,18 +870,18 @@ _$MessageAttachmentToCreateCopyWith<_MessageAttachmentToCreate> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentToCreate&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentToCreate&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.toolCallId, toolCallId) || other.toolCallId == toolCallId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,localPath,fileName,displayName,mimeType,modality,sizeBytes);
+    return Object.hash(runtimeType,localPath,fileName,displayName,mimeType,modality,sizeBytes,toolCallId);
 }
 
 @override
 String toString() {
-    return 'MessageAttachmentToCreate(localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes)';
+    return 'MessageAttachmentToCreate(localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes, toolCallId: $toolCallId)';
 }
 
 
@@ -865,7 +892,7 @@ abstract mixin class _$MessageAttachmentToCreateCopyWith<$Res> implements $Messa
   factory _$MessageAttachmentToCreateCopyWith(_MessageAttachmentToCreate value, $Res Function(_MessageAttachmentToCreate) _then) = __$MessageAttachmentToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes
+ String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, String? toolCallId
 });
 
 
@@ -882,7 +909,7 @@ class __$MessageAttachmentToCreateCopyWithImpl<$Res>
 
 /// Create a copy of MessageAttachmentToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? toolCallId = freezed,}) {
   return _then(_MessageAttachmentToCreate(
 localPath: null == localPath ? _self.localPath : localPath // ignore: cast_nullable_to_non_nullable
 as String,fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
@@ -890,7 +917,8 @@ as String,displayName: null == displayName ? _self.displayName : displayName // 
 as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
 as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
 as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
-as int,
+as int,toolCallId: freezed == toolCallId ? _self.toolCallId : toolCallId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -1265,7 +1293,8 @@ mixin _$MessageEntity {
  bool get isUser;/// Status of the message.
  MessageStatus get status;/// Timestamp when the message was created.
  DateTime get createdAt;/// Timestamp when the message was last updated.
- DateTime get updatedAt;/// Additional metadata for the message (JSON).
+ DateTime get updatedAt;/// Canonical source IDs for cloud messages materialized into a fork.
+ String? get sourceConversationId; String? get sourceMessageId;/// Additional metadata for the message (JSON).
  MessageMetadataEntity? get metadata; List<MessageAttachmentEntity> get attachments;/// True when the message is inherited from a reference-backed fork
 /// source and cannot be mutated by the current conversation.
  bool get isForkReference;
@@ -1280,20 +1309,20 @@ $MessageEntityCopyWith<MessageEntity> get copyWith => _$MessageEntityCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as MessageEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.messageType, _this.messageType) || other.messageType == _this.messageType)&&(identical(other.isUser, _this.isUser) || other.isUser == _this.isUser)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.metadata, _this.metadata) || other.metadata == _this.metadata)&&const DeepCollectionEquality().equals(other.attachments, _this.attachments)&&(identical(other.isForkReference, _this.isForkReference) || other.isForkReference == _this.isForkReference));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.messageType, _this.messageType) || other.messageType == _this.messageType)&&(identical(other.isUser, _this.isUser) || other.isUser == _this.isUser)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.sourceConversationId, _this.sourceConversationId) || other.sourceConversationId == _this.sourceConversationId)&&(identical(other.sourceMessageId, _this.sourceMessageId) || other.sourceMessageId == _this.sourceMessageId)&&(identical(other.metadata, _this.metadata) || other.metadata == _this.metadata)&&const DeepCollectionEquality().equals(other.attachments, _this.attachments)&&(identical(other.isForkReference, _this.isForkReference) || other.isForkReference == _this.isForkReference));
 }
 
 
 @override
 int get hashCode {
   final _this = this as MessageEntity;
-  return Object.hash(runtimeType,_this.id,_this.conversationId,_this.content,_this.messageType,_this.isUser,_this.status,_this.createdAt,_this.updatedAt,_this.metadata,const DeepCollectionEquality().hash(_this.attachments),_this.isForkReference);
+  return Object.hash(runtimeType,_this.id,_this.conversationId,_this.content,_this.messageType,_this.isUser,_this.status,_this.createdAt,_this.updatedAt,_this.sourceConversationId,_this.sourceMessageId,_this.metadata,const DeepCollectionEquality().hash(_this.attachments),_this.isForkReference);
 }
 
 @override
 String toString() {
   final _this = this as MessageEntity;
-  return 'MessageEntity(id: ${_this.id}, conversationId: ${_this.conversationId}, content: ${_this.content}, messageType: ${_this.messageType}, isUser: ${_this.isUser}, status: ${_this.status}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, metadata: ${_this.metadata}, attachments: ${_this.attachments}, isForkReference: ${_this.isForkReference})';
+  return 'MessageEntity(id: ${_this.id}, conversationId: ${_this.conversationId}, content: ${_this.content}, messageType: ${_this.messageType}, isUser: ${_this.isUser}, status: ${_this.status}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, sourceConversationId: ${_this.sourceConversationId}, sourceMessageId: ${_this.sourceMessageId}, metadata: ${_this.metadata}, attachments: ${_this.attachments}, isForkReference: ${_this.isForkReference})';
 }
 
 
@@ -1304,7 +1333,7 @@ abstract mixin class $MessageEntityCopyWith<$Res>  {
   factory $MessageEntityCopyWith(MessageEntity value, $Res Function(MessageEntity) _then) = _$MessageEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, MessageMetadataEntity? metadata, List<MessageAttachmentEntity> attachments, bool isForkReference
+ String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, String? sourceConversationId, String? sourceMessageId, MessageMetadataEntity? metadata, List<MessageAttachmentEntity> attachments, bool isForkReference
 });
 
 
@@ -1321,7 +1350,7 @@ class _$MessageEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? metadata = freezed,Object? attachments = null,Object? isForkReference = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? sourceConversationId = freezed,Object? sourceMessageId = freezed,Object? metadata = freezed,Object? attachments = null,Object? isForkReference = null,}) {
   return _then(MessageEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
@@ -1331,7 +1360,9 @@ as MessageType,isUser: null == isUser ? _self.isUser : isUser // ignore: cast_nu
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as MessageStatus,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
+as DateTime,sourceConversationId: freezed == sourceConversationId ? _self.sourceConversationId : sourceConversationId // ignore: cast_nullable_to_non_nullable
+as String?,sourceMessageId: freezed == sourceMessageId ? _self.sourceMessageId : sourceMessageId // ignore: cast_nullable_to_non_nullable
+as String?,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
 as MessageMetadataEntity?,attachments: null == attachments ? _self.attachments : attachments // ignore: cast_nullable_to_non_nullable
 as List<MessageAttachmentEntity>,isForkReference: null == isForkReference ? _self.isForkReference : isForkReference // ignore: cast_nullable_to_non_nullable
 as bool,
@@ -1431,10 +1462,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  String? sourceConversationId,  String? sourceMessageId,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageEntity() when $default != null:
-return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments,_that.isForkReference);case _:
+return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.sourceConversationId,_that.sourceMessageId,_that.metadata,_that.attachments,_that.isForkReference);case _:
   return orElse();
 
 }
@@ -1452,10 +1483,10 @@ return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  String? sourceConversationId,  String? sourceMessageId,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)  $default,) {final _that = this;
 switch (_that) {
 case _MessageEntity():
-return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments,_that.isForkReference);case _:
+return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.sourceConversationId,_that.sourceMessageId,_that.metadata,_that.attachments,_that.isForkReference);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1472,10 +1503,10 @@ return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  String? sourceConversationId,  String? sourceMessageId,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments,  bool isForkReference)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageEntity() when $default != null:
-return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments,_that.isForkReference);case _:
+return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.sourceConversationId,_that.sourceMessageId,_that.metadata,_that.attachments,_that.isForkReference);case _:
   return null;
 
 }
@@ -1487,7 +1518,7 @@ return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_t
 
 
 class _MessageEntity extends MessageEntity {
-  const _MessageEntity({required this.id, required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, required this.createdAt, required this.updatedAt, this.metadata,  List<MessageAttachmentEntity> attachments = const <MessageAttachmentEntity>[], this.isForkReference = false}): _attachments = attachments,super._();
+  const _MessageEntity({required this.id, required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, required this.createdAt, required this.updatedAt, this.sourceConversationId, this.sourceMessageId, this.metadata,  List<MessageAttachmentEntity> attachments = const <MessageAttachmentEntity>[], this.isForkReference = false}): _attachments = attachments,super._();
   
 
 /// Unique identifier for the message.
@@ -1506,6 +1537,9 @@ class _MessageEntity extends MessageEntity {
 @override final  DateTime createdAt;
 /// Timestamp when the message was last updated.
 @override final  DateTime updatedAt;
+/// Canonical source IDs for cloud messages materialized into a fork.
+@override final  String? sourceConversationId;
+@override final  String? sourceMessageId;
 /// Additional metadata for the message (JSON).
 @override final  MessageMetadataEntity? metadata;
  final  List<MessageAttachmentEntity> _attachments;
@@ -1529,18 +1563,18 @@ _$MessageEntityCopyWith<_MessageEntity> get copyWith => __$MessageEntityCopyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, _attachments)&&(identical(other.isForkReference, isForkReference) || other.isForkReference == isForkReference));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.sourceConversationId, sourceConversationId) || other.sourceConversationId == sourceConversationId)&&(identical(other.sourceMessageId, sourceMessageId) || other.sourceMessageId == sourceMessageId)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, _attachments)&&(identical(other.isForkReference, isForkReference) || other.isForkReference == isForkReference));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,conversationId,content,messageType,isUser,status,createdAt,updatedAt,metadata,const DeepCollectionEquality().hash(_attachments),isForkReference);
+    return Object.hash(runtimeType,id,conversationId,content,messageType,isUser,status,createdAt,updatedAt,sourceConversationId,sourceMessageId,metadata,const DeepCollectionEquality().hash(_attachments),isForkReference);
 }
 
 @override
 String toString() {
-    return 'MessageEntity(id: $id, conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata, attachments: $attachments, isForkReference: $isForkReference)';
+    return 'MessageEntity(id: $id, conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, sourceConversationId: $sourceConversationId, sourceMessageId: $sourceMessageId, metadata: $metadata, attachments: $attachments, isForkReference: $isForkReference)';
 }
 
 
@@ -1551,7 +1585,7 @@ abstract mixin class _$MessageEntityCopyWith<$Res> implements $MessageEntityCopy
   factory _$MessageEntityCopyWith(_MessageEntity value, $Res Function(_MessageEntity) _then) = __$MessageEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, MessageMetadataEntity? metadata, List<MessageAttachmentEntity> attachments, bool isForkReference
+ String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, String? sourceConversationId, String? sourceMessageId, MessageMetadataEntity? metadata, List<MessageAttachmentEntity> attachments, bool isForkReference
 });
 
 
@@ -1568,7 +1602,7 @@ class __$MessageEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? metadata = freezed,Object? attachments = null,Object? isForkReference = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? sourceConversationId = freezed,Object? sourceMessageId = freezed,Object? metadata = freezed,Object? attachments = null,Object? isForkReference = null,}) {
   return _then(_MessageEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
@@ -1578,7 +1612,9 @@ as MessageType,isUser: null == isUser ? _self.isUser : isUser // ignore: cast_nu
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as MessageStatus,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
+as DateTime,sourceConversationId: freezed == sourceConversationId ? _self.sourceConversationId : sourceConversationId // ignore: cast_nullable_to_non_nullable
+as String?,sourceMessageId: freezed == sourceMessageId ? _self.sourceMessageId : sourceMessageId // ignore: cast_nullable_to_non_nullable
+as String?,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
 as MessageMetadataEntity?,attachments: null == attachments ? _self._attachments : attachments // ignore: cast_nullable_to_non_nullable
 as List<MessageAttachmentEntity>,isForkReference: null == isForkReference ? _self.isForkReference : isForkReference // ignore: cast_nullable_to_non_nullable
 as bool,

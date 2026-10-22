@@ -1,17 +1,130 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 // ignore_for_file: cascade_invocations
+
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
+import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class _SwipeDraft extends StatefulWidget {
+  const new({
+    required this.guard,
+    required this.controller,
+    required this.isSaving,
+    required this.confirm,
+  });
+
+  final DraftExitGuard guard;
+  final TextEditingController controller;
+  final bool isSaving;
+  final Future<bool?> Function(BuildContext) confirm;
+
+  @override
+  State<_SwipeDraft> createState() => _SwipeDraftState();
+}
+
+class _SwipeDraftState extends State<_SwipeDraft> {
+  @override
+  Widget build(BuildContext context) {
+    widget.guard.bind(
+      readers: (
+        isDirty: () => widget.controller.text.isNotEmpty,
+        isSaving: () => widget.isSaving,
+      ),
+      callbacks: .new(confirm: widget.confirm),
+    );
+
+    return DraftExitScope(
+      guard: widget.guard,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Draft detail')),
+        body: TextField(
+          controller: widget.controller,
+          onChanged: (_) => widget.guard.update(
+            isDirty: widget.controller.text.isNotEmpty,
+            isSaving: widget.isSaving,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+GoRouter _buildSwipeTestRouter({
+  required DraftExitRegistry registry,
+  required ResponsiveSlidingDrawerController controller,
+  required Widget detail,
+  bool Function()? canPopCurrentRoute,
+  TextDirection textDirection = TextDirection.ltr,
+}) => GoRouter(
+  routes: [
+    ShellRoute(
+      builder: (context, state, child) => Directionality(
+        textDirection: textDirection,
+        child: ResponsiveSlidingDrawer(
+          drawer: const Text('Drawer'),
+          body: child,
+          isDarkMode: false,
+          controller: controller,
+          canPopCurrentRoute: canPopCurrentRoute,
+        ),
+      ),
+      routes: [
+        GoRoute(
+          path: '/home',
+          builder: (_, _) => const Text('Home'),
+          routes: [
+            GoRoute(
+              path: 'detail',
+              builder: (_, _) => detail,
+              onExit: (context, state) =>
+                  registry.canUseNativeBack(.of(context))
+                  ? true
+                  : registry.canExitRoute(state.uri),
+            ),
+          ],
+        ),
+      ],
+    ),
+  ],
+  initialLocation: '/home',
+);
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  Widget buildSwipeTestApp({
+    required GoRouter router,
+    required ProviderContainer container,
+  }) => EasyLocalization(
+    child: Builder(
+      builder: (context) => UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(
+          routerConfig: router,
+          theme: .new(platform: TargetPlatform.iOS),
+          locale: context.locale,
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+        ),
+      ),
+    ),
+    supportedLocales: const [Locale('en')],
+    path: 'assets/i18n',
+    fallbackLocale: const Locale('en'),
+    startLocale: const Locale('en'),
+    useOnlyLangCode: true,
+    useFallbackTranslations: true,
+  );
 
   group('ResponsiveSlidingDrawerController', () {
     test('isDesktop defaults to false without state', () {
@@ -126,6 +239,7 @@ void main() {
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
       bool initiallyOpen = false,
+      TextDirection textDirection = TextDirection.ltr,
       TargetPlatform? platform,
       Widget drawer = const Text('Drawer'),
       Widget body = const Text('Body'),
@@ -137,12 +251,15 @@ void main() {
               return AuraThemeScope(
                 theme: .light,
                 child: MaterialApp(
-                  home: ResponsiveSlidingDrawer(
-                    drawer: drawer,
-                    body: body,
-                    isDarkMode: isDarkMode,
-                    controller: controller,
-                    initiallyOpen: initiallyOpen,
+                  home: Directionality(
+                    textDirection: textDirection,
+                    child: ResponsiveSlidingDrawer(
+                      drawer: drawer,
+                      body: body,
+                      isDarkMode: isDarkMode,
+                      controller: controller,
+                      initiallyOpen: initiallyOpen,
+                    ),
                   ),
                   theme: .new(platform: platform),
                   locale: context.locale,
@@ -167,6 +284,7 @@ void main() {
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
       bool initiallyOpen = false,
+      TextDirection textDirection = TextDirection.ltr,
       Size viewSize = const Size(1200, 800),
       TargetPlatform? platform,
       Widget drawer = const Text('Drawer'),
@@ -184,6 +302,7 @@ void main() {
             controller: controller,
             isDarkMode: isDarkMode,
             initiallyOpen: initiallyOpen,
+            textDirection: textDirection,
             platform: platform,
             drawer: drawer,
             body: body,
@@ -205,6 +324,176 @@ void main() {
       expect(find.text('Drawer'), findsOneWidget);
       expect(find.text('Body'), findsOneWidget);
       expect(controller.isDesktop, isTrue);
+    });
+
+    testWidgets('mobile body fills the width through horizontal safe insets', (
+      tester,
+    ) async {
+      tester.view
+        ..padding = const FakeViewPadding(left: 24, right: 20)
+        ..viewPadding = const FakeViewPadding(left: 24, right: 20);
+      addTearDown(tester.view.resetPadding);
+      addTearDown(tester.view.resetViewPadding);
+      var bodyWidth = 0.0;
+
+      await pumpDrawer(
+        tester,
+        controller: .new(),
+        viewSize: const Size(400, 800),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            bodyWidth = constraints.maxWidth;
+
+            return const Text('Body');
+          },
+        ),
+      );
+
+      expect(bodyWidth, 400);
+    });
+
+    testWidgets('desktop body fills the width to the edge opposite sidebar', (
+      tester,
+    ) async {
+      for (final textDirection in <TextDirection>[.ltr, .rtl]) {
+        tester.view
+          ..padding = const FakeViewPadding(left: 24, right: 20)
+          ..viewPadding = const FakeViewPadding(left: 24, right: 20);
+        addTearDown(tester.view.resetPadding);
+        addTearDown(tester.view.resetViewPadding);
+        var bodyWidth = 0.0;
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        await pumpDrawer(
+          tester,
+          controller: .new(),
+          textDirection: textDirection,
+          initiallyOpen: true,
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              bodyWidth = constraints.maxWidth;
+
+              return const Text('Body');
+            },
+          ),
+        );
+
+        expect(bodyWidth, 840 + (textDirection == TextDirection.ltr ? 24 : 20));
+      }
+    });
+
+    testWidgets('drawer leaves safe insets available to its content', (
+      tester,
+    ) async {
+      for (final direction in [TextDirection.ltr, TextDirection.rtl]) {
+        tester.view
+          ..padding = const FakeViewPadding(left: 24, right: 20, bottom: 16)
+          ..viewPadding = const FakeViewPadding(
+            left: 24,
+            right: 20,
+            bottom: 16,
+          );
+        addTearDown(tester.view.resetPadding);
+        addTearDown(tester.view.resetViewPadding);
+
+        EdgeInsets? contentPadding;
+        await pumpDrawer(
+          tester,
+          controller: .new(),
+          initiallyOpen: true,
+          textDirection: direction,
+          viewSize: const Size(400, 800),
+          drawer: Builder(
+            builder: (context) {
+              contentPadding = MediaQuery.paddingOf(context);
+
+              return const SizedBox.expand();
+            },
+          ),
+        );
+
+        final padding = contentPadding;
+        if (padding == null) fail('Expected drawer content to build');
+        expect(padding.left, 24);
+        expect(padding.right, 20);
+        expect(padding.bottom, 16);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    });
+
+    testWidgets('body safe-area gap animates to the drawer edge', (
+      tester,
+    ) async {
+      const scenarios = [
+        (size: Size(400, 800), drawerWidth: 320.0),
+        (size: Size(1200, 800), drawerWidth: 360.0),
+      ];
+
+      for (final scenario in scenarios) {
+        for (final direction in [TextDirection.ltr, TextDirection.rtl]) {
+          const leftInset = 24.0;
+          const rightInset = 20.0;
+          tester.view
+            ..padding = const FakeViewPadding(
+              left: leftInset,
+              right: rightInset,
+            )
+            ..viewPadding = const FakeViewPadding(
+              left: leftInset,
+              right: rightInset,
+            );
+          addTearDown(tester.view.resetPadding);
+          addTearDown(tester.view.resetViewPadding);
+
+          final controller = ResponsiveSlidingDrawerController();
+          await pumpDrawer(
+            tester,
+            controller: controller,
+            textDirection: direction,
+            viewSize: scenario.size,
+            body: const SafeArea(
+              child: Align(alignment: .topStart, child: Text('Body')),
+            ),
+          );
+
+          final body = find.text('Body');
+          double leadingEdge(Rect rect) => direction == TextDirection.ltr
+              ? rect.left
+              : scenario.size.width - rect.right;
+          final safeInset = direction == TextDirection.ltr
+              ? leftInset
+              : rightInset;
+          expect(leadingEdge(tester.getRect(body)), closeTo(safeInset, 0.01));
+
+          controller.open();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 125));
+          final expectedMidpoint =
+              safeInset + (scenario.drawerWidth - safeInset) / 2;
+          expect(
+            leadingEdge(tester.getRect(body)),
+            closeTo(expectedMidpoint, 1),
+          );
+
+          final _ = await tester.pumpAndSettle();
+          expect(
+            leadingEdge(tester.getRect(body)),
+            closeTo(scenario.drawerWidth, 0.01),
+          );
+
+          controller.close();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 125));
+          expect(
+            leadingEdge(tester.getRect(body)),
+            closeTo(expectedMidpoint, 1),
+          );
+          final _ = await tester.pumpAndSettle();
+          expect(leadingEdge(tester.getRect(body)), closeTo(safeInset, 0.01));
+          await tester.pumpWidget(const SizedBox.shrink());
+        }
+      }
     });
 
     testWidgets('controller opens, closes, and toggles drawer', (tester) async {
@@ -268,10 +557,11 @@ void main() {
       expect(controller1.isDesktop, isFalse);
     });
 
-    testWidgets('uses overlay through 959 and docked layout at 960', (
+    testWidgets('uses overlay below 900 and docked layout at 900', (
       tester,
     ) async {
-      for (final width in [599.0, 600.0, 959.0, 960.0]) {
+      for (final width in [599.0, 600.0, 899.0, 900.0, 951.0]) {
+        await tester.pumpWidget(const SizedBox.shrink());
         final controller = ResponsiveSlidingDrawerController();
         await pumpDrawer(
           tester,
@@ -280,15 +570,34 @@ void main() {
           initiallyOpen: true,
         );
 
-        expect(controller.isDesktop, width == 960);
+        expect(controller.isDesktop, width >= 900);
         final panel = find
             .ancestor(of: find.text('Drawer'), matching: find.byType(SizedBox))
             .first;
-        final expectedWidth = width >= 960
+        final expectedWidth = width >= 900
             ? (width * 0.3).clamp(150.0, 400.0)
             : (width * 0.8).clamp(0.0, 400.0);
         expect(tester.getSize(panel).width, closeTo(expectedWidth, 0.1));
       }
+    });
+
+    testWidgets('closes on mobile and opens on desktop when resized', (
+      tester,
+    ) async {
+      final controller = ResponsiveSlidingDrawerController();
+
+      await pumpDrawer(tester, controller: controller, initiallyOpen: true);
+      expect(tester.getTopLeft(find.text('Drawer')).dx, closeTo(0, 0.1));
+
+      tester.view.physicalSize = const Size(400, 800);
+      final _ = await tester.pumpAndSettle();
+      expect(controller.isDesktop, isFalse);
+      expect(tester.getTopLeft(find.text('Drawer')).dx, lessThan(0));
+
+      tester.view.physicalSize = const Size(1200, 800);
+      final _ = await tester.pumpAndSettle();
+      expect(controller.isDesktop, isTrue);
+      expect(tester.getTopLeft(find.text('Drawer')).dx, closeTo(0, 0.1));
     });
 
     testWidgets('restores the desktop drawer width after it is recreated', (
@@ -402,38 +711,310 @@ void main() {
       expect(find.text('Drawer'), findsOneWidget);
     });
 
-    testWidgets('mobile drawer opens from blank body space', (tester) async {
+    testWidgets('mobile diagonal chat drag scrolls without opening drawer', (
+      tester,
+    ) async {
+      final controller = ResponsiveSlidingDrawerController();
+      final scrollController = ScrollController();
+      addTearDown(scrollController.dispose);
+
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        viewSize: const Size(400, 800),
+        platform: .iOS,
+        body: SizedBox.expand(
+          child: ListView(
+            controller: scrollController,
+            children: const [
+              SizedBox(height: 1200, child: Text('Chat content')),
+            ],
+          ),
+        ),
+      );
+
+      await tester.dragFrom(const Offset(200, 500), const Offset(100, -80));
+      final _ = await tester.pumpAndSettle();
+
+      expect(tester.getTopLeft(find.text('Drawer')).dx, lessThan(0));
+      expect(scrollController.offset, greaterThan(0));
+    });
+
+    testWidgets('mobile drawer opens from left edge swipe', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
       await pumpDrawer(
         tester,
         controller: controller,
-        initiallyOpen: true,
         viewSize: const Size(400, 800),
         platform: .iOS,
-        body: const SizedBox.expand(
-          child: Align(alignment: .topLeft, child: Text('Body')),
+        drawer: const SizedBox.expand(
+          child: Align(alignment: .topLeft, child: Text('Drawer')),
         ),
       );
 
-      final bodyGestureFinder = find.ancestor(
-        of: find.text('Body'),
-        matching: find.byType(GestureDetector),
-      );
-      final bodyGesture = tester.widget<GestureDetector>(
-        bodyGestureFinder.first,
-      );
-      expect(bodyGesture.behavior, HitTestBehavior.opaque);
-
-      final bodyRect = tester.getRect(bodyGestureFinder.first);
-      final gesture = await tester.startGesture(
-        .new(bodyRect.center.dx, bodyRect.bottom - 16),
-      );
+      final gesture = await tester.startGesture(const Offset(12, 400));
       await gesture.moveBy(const Offset(150, 0));
       await gesture.up();
       final _ = await tester.pumpAndSettle();
 
-      expect(tester.getTopLeft(find.text('Body')).dx, greaterThan(0));
+      expect(tester.getTopLeft(find.text('Drawer')).dx, closeTo(0, 0.1));
+    });
+
+    testWidgets('edge uses active navigator instead of shell history', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final registry = container.read(draftExitRegistryProvider);
+      final router = _buildSwipeTestRouter(
+        registry: registry,
+        controller: .new(),
+        detail: const Text('Detail'),
+        canPopCurrentRoute: () => false,
+      );
+      addTearDown(router.dispose);
+      await tester.runAsync(
+        () => tester.pumpWidget(
+          buildSwipeTestApp(router: router, container: container),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      final detail = router.push<void>('/home/detail');
+      final _ = await tester.pumpAndSettle();
+      expect(router.canPop(), isTrue);
+
+      await tester.dragFrom(const Offset(12, 500), const Offset(250, 500));
+      final _ = await tester.pumpAndSettle();
+
+      expect(router.state.uri.path, '/home/detail');
+      expect(tester.getTopLeft(find.text('Drawer')).dx, closeTo(0, 0.1));
+      router.pop();
+      final _ = await tester.pumpAndSettle();
+      await detail;
+    });
+
+    testWidgets('RTL drawer opens from the right edge swipe', (tester) async {
+      final controller = ResponsiveSlidingDrawerController();
+
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        viewSize: const Size(400, 800),
+        platform: .iOS,
+        textDirection: .rtl,
+        drawer: const SizedBox.expand(
+          child: Align(alignment: .topRight, child: Text('Drawer')),
+        ),
+      );
+
+      final gesture = await tester.startGesture(const Offset(388, 400));
+      await gesture.moveBy(const Offset(-150, 0));
+      await gesture.up();
+      final _ = await tester.pumpAndSettle();
+
+      expect(tester.getRect(find.text('Drawer')).right, closeTo(400, 0.1));
+    });
+
+    testWidgets('iOS edge swipe pops a clean nested route', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final registry = container.read(draftExitRegistryProvider);
+      final router = _buildSwipeTestRouter(
+        registry: registry,
+        controller: .new(),
+        detail: const Text('Clean detail'),
+      );
+      addTearDown(router.dispose);
+      await tester.runAsync(
+        () => tester.pumpWidget(
+          buildSwipeTestApp(router: router, container: container),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      final detail = router.push<void>('/home/detail');
+      final _ = await tester.pumpAndSettle();
+      expect(router.canPop(), isTrue);
+      expect(registry.canUseNativeBack(router), isTrue);
+      final route = ModalRoute.of(tester.element(find.text('Clean detail')));
+      expect(route?.popGestureEnabled, isTrue);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget.runtimeType.toString() == 'CupertinoPageTransition',
+        ),
+        findsNWidgets(2),
+      );
+
+      await tester.dragFrom(const Offset(12, 500), const Offset(250, 0));
+      final _ = await tester.pumpAndSettle();
+
+      expect(tester.getTopLeft(find.text('Drawer')).dx, lessThan(0));
+      expect(router.state.uri.path, '/home');
+      expect(find.text('Home'), findsOneWidget);
+      await detail;
+    });
+
+    testWidgets(
+      'dirty iOS edge swipe confirms before popping and cancel keeps edits',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final registry = container.read(draftExitRegistryProvider);
+        final guard = DraftExitGuard();
+        final draftController = TextEditingController();
+        addTearDown(draftController.dispose);
+        var answer = false;
+        var confirmations = 0;
+        final router = _buildSwipeTestRouter(
+          registry: registry,
+          controller: .new(),
+          detail: _SwipeDraft(
+            guard: guard,
+            controller: draftController,
+            isSaving: false,
+            confirm: (_) async {
+              confirmations++;
+
+              return answer;
+            },
+          ),
+        );
+        addTearDown(router.dispose);
+        await tester.runAsync(
+          () => tester.pumpWidget(
+            buildSwipeTestApp(router: router, container: container),
+          ),
+        );
+        final _ = await tester.pumpAndSettle();
+        final detail = router.push<void>('/home/detail');
+        final _ = await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField), 'Keep this draft');
+        final _ = await tester.pumpAndSettle();
+
+        Future<void> swipeBack() async {
+          await tester.dragFrom(const Offset(12, 500), const Offset(150, 0));
+          final _ = await tester.pumpAndSettle();
+        }
+
+        await swipeBack();
+        expect(confirmations, 1);
+        expect(router.state.uri.path, '/home/detail');
+        expect(draftController.text, 'Keep this draft');
+
+        answer = true;
+        await swipeBack();
+        expect(confirmations, 2);
+        expect(router.state.uri.path, '/home');
+        expect(find.text('Home'), findsOneWidget);
+        await detail;
+      },
+    );
+
+    testWidgets('RTL dirty iOS edge swipe pops from the right edge', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final registry = container.read(draftExitRegistryProvider);
+      final guard = DraftExitGuard();
+      final draftController = TextEditingController(text: 'Unsaved');
+      addTearDown(draftController.dispose);
+      var confirmations = 0;
+      final router = _buildSwipeTestRouter(
+        registry: registry,
+        controller: .new(),
+        detail: _SwipeDraft(
+          guard: guard,
+          controller: draftController,
+          isSaving: false,
+          confirm: (_) async {
+            confirmations++;
+
+            return true;
+          },
+        ),
+        textDirection: .rtl,
+      );
+      addTearDown(router.dispose);
+      await tester.runAsync(
+        () => tester.pumpWidget(
+          buildSwipeTestApp(router: router, container: container),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      final detail = router.push<void>('/home/detail');
+      final _ = await tester.pumpAndSettle();
+
+      await tester.dragFrom(const Offset(388, 500), const Offset(-150, 0));
+      final _ = await tester.pumpAndSettle();
+
+      expect(confirmations, 1);
+      expect(router.state.uri.path, '/home');
+      await detail;
+    });
+
+    testWidgets('saving draft blocks iOS edge swipe without confirmation', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final registry = container.read(draftExitRegistryProvider);
+      final guard = DraftExitGuard();
+      final draftController = TextEditingController();
+      addTearDown(draftController.dispose);
+      var confirmations = 0;
+      final router = _buildSwipeTestRouter(
+        registry: registry,
+        controller: .new(),
+        detail: _SwipeDraft(
+          guard: guard,
+          controller: draftController,
+          isSaving: true,
+          confirm: (_) async {
+            confirmations++;
+
+            return true;
+          },
+        ),
+      );
+      addTearDown(router.dispose);
+      await tester.runAsync(
+        () => tester.pumpWidget(
+          buildSwipeTestApp(router: router, container: container),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      final _ = router.push<void>('/home/detail');
+      final _ = await tester.pumpAndSettle();
+
+      await tester.dragFrom(const Offset(12, 500), const Offset(150, 0));
+      final _ = await tester.pumpAndSettle();
+
+      expect(confirmations, 0);
+      expect(router.state.uri.path, '/home/detail');
+      expect(find.byType(TextField), findsOneWidget);
+      expect(tester.getTopLeft(find.text('Drawer')).dx, lessThan(0));
     });
 
     testWidgets('mobile drawer closes from blank panel space', (tester) async {
@@ -493,24 +1074,38 @@ void main() {
       expect(FocusManager.instance.primaryFocus, isNot(drawerFocus));
     });
 
-    testWidgets('desktop drawer closes from blank panel space', (tester) async {
-      final controller = ResponsiveSlidingDrawerController();
+    testWidgets(
+      'desktop drawer stays open after swipes from panel or chat edge',
+      (tester) async {
+        final controller = ResponsiveSlidingDrawerController();
 
-      await pumpDrawer(
-        tester,
-        controller: controller,
-        drawer: const SizedBox.expand(
-          child: Align(alignment: .topLeft, child: Text('Drawer')),
-        ),
-      );
+        await pumpDrawer(
+          tester,
+          controller: controller,
+          initiallyOpen: true,
+          drawer: const SizedBox.expand(
+            child: Align(alignment: .topLeft, child: Text('Drawer')),
+          ),
+          body: const SizedBox.expand(
+            child: Align(alignment: .topLeft, child: Text('Body')),
+          ),
+        );
 
-      final gesture = await tester.startGesture(const Offset(220, 500));
-      await gesture.moveBy(const Offset(-180, 0));
-      await gesture.up();
-      final _ = await tester.pumpAndSettle();
+        final gesture = await tester.startGesture(const Offset(220, 500));
+        await gesture.moveBy(const Offset(-300, 0));
+        await gesture.up();
+        final _ = await tester.pumpAndSettle();
 
-      expect(tester.getTopLeft(find.text('Drawer')).dx, lessThan(0));
-    });
+        expect(tester.getTopLeft(find.text('Drawer')).dx, closeTo(0, 0.1));
+
+        final edgeGesture = await tester.startGesture(const Offset(365, 500));
+        await edgeGesture.moveBy(const Offset(-300, 0));
+        await edgeGesture.up();
+        final _ = await tester.pumpAndSettle();
+
+        expect(tester.getTopLeft(find.text('Drawer')).dx, closeTo(0, 0.1));
+      },
+    );
 
     testWidgets('divider hover changes state on desktop', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
@@ -554,7 +1149,9 @@ void main() {
       expect(opacity.opacity, greaterThan(0));
     });
 
-    testWidgets('desktop drag area exists when closed', (tester) async {
+    testWidgets('desktop drawer content remains mounted when closed', (
+      tester,
+    ) async {
       final controller = ResponsiveSlidingDrawerController();
 
       await pumpDrawer(tester, controller: controller);

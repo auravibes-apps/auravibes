@@ -77,7 +77,9 @@ class const _MarkdownPreviewHeader({
       Expanded(
         child: AuraRow(
           children: [
-            AuraText(child: TextLocale(titleKey), style: .heading6),
+            Flexible(
+              child: AuraText(child: TextLocale(titleKey), style: .heading6),
+            ),
             if (isRequired) const AuraText(child: Text('*'), tint: .error),
           ],
           spacing: .xs,

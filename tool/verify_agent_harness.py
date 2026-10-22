@@ -9,15 +9,11 @@ import string
 import sys
 from urllib.parse import unquote, urlsplit
 
-SCOPES = (
-    "apps/auravibes_app",
-    "packages/auravibes_engine",
-    "packages/auravibes_ui",
-    "widgetbook",
-)
 HTML_TAG_START = re.compile(
     r"</?[A-Za-z][A-Za-z0-9:-]*(?:[ \t\r\n]|/?>|$)"
 )
+ACTION_USES = re.compile(r"^\s*(?:-\s*)?uses:\s*(\S+)")
+FULL_COMMIT_SHA = re.compile(r"[0-9a-fA-F]{40}")
 
 
 class _HtmlImageSourceParser(HTMLParser):
@@ -267,15 +263,44 @@ def verify(root):
     def fail(path, message):
         errors.append(f"{path.relative_to(root)}: {message}")
 
-    instructions = [root / "AGENTS.md"]
-    instructions.extend(root / scope / "AGENTS.md" for scope in SCOPES)
+    for directory in (root / ".github/workflows", root / ".github/actions"):
+        if not directory.is_dir():
+            continue
+        for path in sorted(directory.rglob("*")):
+            if not path.is_file() or path.suffix.lower() not in {".yml", ".yaml"}:
+                continue
+            for line_number, line in enumerate(path.read_text().splitlines(), start=1):
+                match = ACTION_USES.match(line)
+                if not match:
+                    continue
+                reference = match.group(1).strip("\"'")
+                if reference.startswith("./"):
+                    continue
+                _, separator, revision = reference.rpartition("@")
+                if not separator or not FULL_COMMIT_SHA.fullmatch(revision):
+                    fail(
+                        path,
+                        f"Mutable or incomplete external action reference '{reference}' "
+                        f"on line {line_number}. Pin it to a full 40-character commit SHA.",
+                    )
+
+    main = root / "AGENTS.md"
+    instructions = [main]
+    if main.is_file():
+        for target in markdown_links(main.read_text()):
+            url = urlsplit(target)
+            destination = Path(unquote(url.path))
+            if url.scheme or url.netloc or destination.name != "AGENTS.md":
+                continue
+            scoped = main.parent / destination
+            if scoped.resolve().is_relative_to(root) and scoped not in instructions:
+                instructions.append(scoped)
     for path in instructions:
         if not path.is_file():
             fail(path, "Missing instructions. Restore this scope's AGENTS.md.")
         alias = path.with_name("CLAUDE.md")
         if not alias.is_symlink() or alias.readlink() != Path("AGENTS.md"):
             fail(alias, "Expected symlink to AGENTS.md. Restore the local alias.")
-    main = root / "AGENTS.md"
     if main.is_file() and len(main.read_text().splitlines()) > 150:
         fail(main, "Over 150 lines. Move rare procedures to conditional references.")
     architecture = root / "docs/ARCHITECTURE.md"
@@ -289,6 +314,33 @@ def verify(root):
         for path in (root / "README.md", root / "CONTRIBUTING.md")
         if path.is_file()
     )
+    context_map = root / "CONTEXT-MAP.md"
+    if not context_map.is_file():
+        fail(context_map, "Missing context map. Restore CONTEXT-MAP.md.")
+    else:
+        markdown.add(context_map)
+        contexts = set()
+        for target in markdown_links(context_map.read_text()):
+            url = urlsplit(target)
+            if url.scheme or url.netloc or Path(unquote(url.path)).name != "CONTEXT.md":
+                continue
+            path = (context_map.parent / unquote(url.path)).resolve()
+            if not path.is_relative_to(root):
+                continue  # The shared link check reports paths outside the repository.
+            contexts.add(path)
+            if not path.is_file():
+                fail(path, "Missing context document. Restore the mapped CONTEXT.md file.")
+                continue
+            text = _without_code(path.read_text())
+            if re.search(r"\bplaceholder\b|No glossary or context-specific ADRs documented yet", text, re.I):
+                fail(path, "Placeholder context document. Add verified terms, invariants, and relationships.")
+            else:
+                body = re.sub(r"(?m)^\s*#{1,6}\s+.*$", "", text)
+                body = re.sub(r"(?im)^\s*[-*>\s]*(?:(?:TODO|TBD)\b[^\n]*|\.\.\.[.!\s]*)$", "", body)
+                if not re.search(r"[A-Za-z0-9]", body):
+                    fail(path, "Empty context document. Add verified terms, invariants, and relationships.")
+        if not contexts:
+            fail(context_map, "No local context documents. Link the workspace CONTEXT.md files.")
     for directory in (root / "docs/agents", root / ".agents"):
         if directory.is_dir():
             markdown.update(path for path in directory.rglob("*.md") if path.is_file())
@@ -363,8 +415,9 @@ def main():
         print("Repair affected guidance, then rerun python3 tool/verify_agent_harness.py.", file=sys.stderr)
         return 1
     print(
-        "Harness verification passed (documentation links and image references, "
-        "aliases, metadata, evaluation schema)."
+        "Harness verification passed (immutable GitHub action references, "
+        "documentation links and image references, "
+        "context documents, aliases, metadata, evaluation schema)."
     )
     print("Behavioral model trials are separate; this check does not run them.")
     return 0

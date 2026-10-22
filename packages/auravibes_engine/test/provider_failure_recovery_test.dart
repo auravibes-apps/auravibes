@@ -145,6 +145,43 @@ void main() {
     );
   });
 
+  for (final detail in [
+    'Cookie: session=sentinel-cookie; other=sentinel-other\nRequest failed.',
+    'sEt-CoOkIe: session=sentinel-cookie; Path=/; HttpOnly\nRequest failed.',
+    'Cookie: session=left}sentinel-tail\nRequest failed.',
+    '{"Cookie":"session=sentinel-cookie","message":"Request failed."}',
+    "'SET-COOKIE'='session=sentinel-cookie; Path=/', Request failed.",
+    '{Cookie: session=sentinel-cookie, message: Request failed.}',
+    "https://user:sentinel'password@example.com/path Request failed.",
+    '"https://sentinel\'password@example.com/path" Request failed.',
+    'https://user:sentinel-password@example.com/path Request failed.',
+    'HTTPS://sentinel-user:sentinel-password@example.com/path Request failed.',
+    'https://example.com/path?sig=sentinel-sig&region=west Request failed.',
+    'https://ex.com/?X-Amz-Signature=sentinel-sig Request failed.',
+    '"X-Goog-Signature": "sentinel-sig", "message": "Request failed."',
+    "'SIGNATURE'='sentinel-sig', Request failed.",
+    'signature=sentinel-sig Request failed.',
+    '{"signature":"left,sentinel-tail","message":"Request failed."}',
+    '{"sig":"left sentinel-tail","message":"Request failed."}',
+    r'{"signature":"left\"sentinel-tail","message":"Request failed."}',
+  ]) {
+    test('redacts provider detail $detail', () {
+      final sanitized = ProviderFailureRecovery.safeDetail(
+        GenkitException('Request failed.', details: detail),
+      );
+
+      expect(sanitized, isNot(contains('sentinel-')));
+      expect(sanitized, contains('[REDACTED]'));
+      expect(sanitized, contains('Request failed.'));
+      if (detail.contains('example.com')) {
+        expect(sanitized, contains('example.com/path'));
+      }
+      if (detail.contains('region=west')) {
+        expect(sanitized, contains('region=west'));
+      }
+    });
+  }
+
   test('bounds persisted provider details', () {
     expect(sanitizeProviderErrorDetail('x' * 600), hasLength(500));
   });

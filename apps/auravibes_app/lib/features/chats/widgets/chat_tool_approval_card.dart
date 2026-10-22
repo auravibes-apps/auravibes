@@ -11,11 +11,11 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
-import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
@@ -25,6 +25,8 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     as agent
     show AgentToolGrantLevel, toolCallApprovalDigest;
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show normalizeToolCallUserFacingDescription;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -733,14 +735,7 @@ class const _ApprovalCardDisplay({
 _ApprovalToolDisplay _approvalToolDisplay(
   _ApprovalDisplayContext displayContext,
   _ApprovalCardRequest request,
-) {
-  final target = SkillToolCallDisplay.parseTarget(request.current.toolCall);
-  if (target == null) {
-    return _standardApprovalToolDisplay(displayContext, request);
-  }
-
-  return _skillApprovalToolDisplay(displayContext, request, target);
-}
+) => _standardApprovalToolDisplay(displayContext, request);
 
 _ApprovalToolDisplay _standardApprovalToolDisplay(
   _ApprovalDisplayContext displayContext,
@@ -754,54 +749,10 @@ _ApprovalToolDisplay _standardApprovalToolDisplay(
       request.source.workspaceId,
       toolCall.name,
     ),
-    description: SkillToolCallDisplay.description(
-      context: displayContext.context,
-      titles: null,
-      userFacingDescription: toolCall.userFacingDescription,
+    description: normalizeToolCallUserFacingDescription(
+      toolCall.userFacingDescription,
     ),
   );
-}
-
-_ApprovalToolDisplay _skillApprovalToolDisplay(
-  _ApprovalDisplayContext displayContext,
-  _ApprovalCardRequest request,
-  SkillToolCallTarget target,
-) {
-  final toolCall = request.current.toolCall;
-  final titles = _skillToolCallDisplayTitles(
-    displayContext.ref,
-    request.source.workspaceId,
-    target,
-  );
-
-  return (
-    name: SkillToolCallDisplay.displayName(
-      context: displayContext.context,
-      titles: titles,
-      target: target,
-    ),
-    description: SkillToolCallDisplay.description(
-      context: displayContext.context,
-      titles: titles,
-      userFacingDescription: toolCall.userFacingDescription,
-    ),
-  );
-}
-
-SkillToolCallDisplayTitles? _skillToolCallDisplayTitles(
-  WidgetRef ref,
-  String workspaceId,
-  SkillToolCallTarget target,
-) {
-  final titlesAsync = ref.watch(
-    skillToolCallDisplayTitlesProvider(
-      workspaceId,
-      target.skillSlug,
-      target.toolSlug,
-    ),
-  );
-
-  return titlesAsync.maybeWhen(data: (titles) => titles, orElse: () => null);
 }
 
 String _toolDisplayName(WidgetRef ref, String workspaceId, String rawToolName) {
@@ -1565,23 +1516,53 @@ class const _BatchApprovalButton({
     BuildContext context, {
     required bool approved,
   }) async {
-    final calls = _uniquePendingToolCalls(pendingCalls, conversationId);
-    final hiddenKeys = onHideCalls(calls);
-    if (hiddenKeys == null) return;
+    final batch = _prepareBatch(ref, context);
+    if (batch == null) return;
 
     try {
-      await _performBatch(ref, calls, approved: approved);
+      await _performBatch(ref, batch.calls, approved: approved);
     } on Object catch (error, stackTrace) {
-      if (context.mounted) {
-        _handleBatchError((
-          context: context,
-          approved: approved,
-          hiddenKeys: hiddenKeys,
-          error: error,
-          stackTrace: stackTrace,
-        ));
-      }
+      _handleBatchFailure((
+        context: context,
+        approved: approved,
+        hiddenKeys: batch.hiddenKeys,
+        error: error,
+        stackTrace: stackTrace,
+      ));
     }
+  }
+
+  ({List<PendingToolCall> calls, Set<String> hiddenKeys})? _prepareBatch(
+    WidgetRef ref,
+    BuildContext context,
+  ) {
+    final calls = _uniquePendingToolCalls(pendingCalls, conversationId);
+    final hiddenKeys = onHideCalls(calls);
+    if (hiddenKeys == null) return null;
+
+    _rememberBatchConversationLanguages(ref, context, calls);
+
+    return (calls: calls, hiddenKeys: hiddenKeys);
+  }
+
+  void _rememberBatchConversationLanguages(
+    WidgetRef ref,
+    BuildContext context,
+    List<PendingToolCall> calls,
+  ) {
+    final languageRuntime = ref.read(conversationAgentLanguageRuntimeProvider);
+    for (final call in calls) {
+      languageRuntime.remember(
+        _pendingToolCallSourceConversationId(call, conversationId),
+        context.locale.languageCode,
+      );
+    }
+  }
+
+  void _handleBatchFailure(_BatchApprovalErrorRequest request) {
+    if (!request.context.mounted) return;
+
+    _handleBatchError(request);
   }
 
   Future<void> _performBatch(
@@ -1693,7 +1674,7 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
     return _runAction((
       context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_once,
-      action: () => _approve(ref, agent.AgentToolGrantLevel.once),
+      action: () => _approve(ref, context, agent.AgentToolGrantLevel.once),
       onStarted: onDecisionStarted,
       onFailed: onDecisionFailed,
     ));
@@ -1703,7 +1684,8 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
     return _runAction((
       context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_conversation,
-      action: () => _approve(ref, agent.AgentToolGrantLevel.conversation),
+      action: () =>
+          _approve(ref, context, agent.AgentToolGrantLevel.conversation),
       onStarted: onDecisionStarted,
       onFailed: onDecisionFailed,
     ));
@@ -1713,7 +1695,7 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
     return _runAction((
       context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_skip,
-      action: () => _skip(ref),
+      action: () => _skip(ref, context),
       onStarted: onDecisionStarted,
       onFailed: onDecisionFailed,
     ));
@@ -1723,7 +1705,7 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
     return _runAction((
       context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_stop_all,
-      action: () => _stopAll(ref),
+      action: () => _stopAll(ref, context),
       onStarted: onStopAllStarted,
       onFailed: onDecisionFailed,
     ));
@@ -1731,8 +1713,25 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
 }
 
 extension _ConfirmationToolActions on _ConfirmationActionHandler {
-  Future<void> _approve(WidgetRef ref, agent.AgentToolGrantLevel level) async {
+  Future<void> _approve(
+    WidgetRef ref,
+    BuildContext context,
+    agent.AgentToolGrantLevel level,
+  ) async {
+    final languageCode = context.locale.languageCode;
     if (await _decideCloud(ref, approved: true)) return;
+
+    await _approveLocal(ref, level, languageCode);
+  }
+
+  Future<void> _approveLocal(
+    WidgetRef ref,
+    agent.AgentToolGrantLevel level,
+    String languageCode,
+  ) async {
+    ref
+        .read(conversationAgentLanguageRuntimeProvider)
+        .remember(conversationId, languageCode);
 
     await ref
         .read(auraAgentServiceProvider)
@@ -1750,8 +1749,13 @@ extension _ConfirmationToolActions on _ConfirmationActionHandler {
         );
   }
 
-  Future<void> _skip(WidgetRef ref) async {
+  Future<void> _skip(WidgetRef ref, BuildContext context) async {
+    final languageCode = context.locale.languageCode;
     if (await _decideCloud(ref, approved: false)) return;
+
+    ref
+        .read(conversationAgentLanguageRuntimeProvider)
+        .remember(conversationId, languageCode);
 
     await ref
         .read(auraAgentServiceProvider)
@@ -1763,8 +1767,13 @@ extension _ConfirmationToolActions on _ConfirmationActionHandler {
         );
   }
 
-  Future<void> _stopAll(WidgetRef ref) async {
+  Future<void> _stopAll(WidgetRef ref, BuildContext context) async {
+    final languageCode = context.locale.languageCode;
     if (await _decideCloud(ref, approved: false, stopAll: true)) return;
+
+    ref
+        .read(conversationAgentLanguageRuntimeProvider)
+        .remember(conversationId, languageCode);
 
     await ref
         .read(auraAgentServiceProvider)

@@ -30,7 +30,7 @@ void main() {
         conversationId: 'conversation-1',
       );
 
-      expect(result.failure, SkillContextPreparationFailure.missingCredentials);
+      expect(result.failure, SkillContextPreparationFailure.missingConnection);
       expect(result.selectedRevisions, {'research': 'skill-revision'});
     });
 
@@ -106,10 +106,10 @@ const _skill = AvailableSkill(
   content: 'Research carefully.',
   source: .user,
   kind: .template,
-  credentialReadiness: .ready,
+  connectorReadiness: .ready,
 );
 
-AvailableSkill _skillWithReadiness(SkillCredentialReadiness readiness) =>
+AvailableSkill _skillWithReadiness(ConnectorConnectionReadiness readiness) =>
     AvailableSkill(
       id: _skill.id,
       slug: _skill.slug,
@@ -118,5 +118,5 @@ AvailableSkill _skillWithReadiness(SkillCredentialReadiness readiness) =>
       content: _skill.content,
       source: _skill.source,
       kind: _skill.kind,
-      credentialReadiness: readiness,
+      connectorReadiness: readiness,
     );

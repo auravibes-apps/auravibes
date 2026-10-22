@@ -1,0 +1,18 @@
+class: MessageBookmark
+table: message_bookmark
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  userId: String
+  conversationId: int, relation(parent=conversation, onDelete=Cascade)
+  messageId: int
+  messageStableId: String
+  contentSnapshot: String
+  roleSnapshot: String
+  messageCreatedAt: DateTime
+  createdAt: DateTime
+indexes:
+  message_bookmark_identity_idx:
+    fields: workspaceId, userId, messageId
+    unique: true
+  message_bookmark_workspace_user_created_idx:
+    fields: workspaceId, userId, createdAt

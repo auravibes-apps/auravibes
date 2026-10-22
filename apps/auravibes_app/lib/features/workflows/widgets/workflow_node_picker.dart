@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
-import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
-import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_tool_catalog_item.dart';
+import 'package:auravibes_app/features/service_connections/providers/connector_tool_catalog_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_graph_validation.dart';
@@ -38,7 +38,7 @@ abstract final class WorkflowNodePicker {
 typedef _WorkflowNodePickerItems = ({
   List<WorkspaceToolEntity> tools,
   List<AgentEntity> agents,
-  List<WorkspaceSkill> skills,
+  List<ConnectorToolCatalogItem> connectorTools,
   List<WorkflowDefinition> workflows,
   bool isLoading,
 });
@@ -46,7 +46,7 @@ typedef _WorkflowNodePickerItems = ({
 typedef _WorkflowNodePickerSources = ({
   AsyncValue<List<WorkspaceToolEntity>> tools,
   AsyncValue<List<AgentEntity>> agents,
-  AsyncValue<List<WorkspaceSkill>> skills,
+  List<ConnectorToolCatalogItem> connectorTools,
   AsyncValue<List<WorkflowDefinition>> workflows,
   String? currentWorkflowId,
 });
@@ -69,7 +69,7 @@ class const _WorkflowNodePicker({
     final catalog = WorkflowNodePickerCatalog.fromStates((
       tools: ref.watch(workspaceToolsProvider(workspaceId)),
       agents: ref.watch(agentsProvider(workspaceId)),
-      skills: ref.watch(workspaceSkillsProvider(workspaceId)),
+      connectorTools: ref.watch(connectorToolCatalogProvider),
       workflows: ref.watch(workflowsProvider(workspaceId)),
       currentWorkflowId: currentWorkflowId,
     ));
@@ -87,7 +87,7 @@ abstract final class WorkflowNodePickerCatalog {
     return (
       tools: _enabledTools(sources.tools),
       agents: _enabledAgents(sources.agents),
-      skills: _enabledSkills(sources.skills),
+      connectorTools: sources.connectorTools,
       workflows: _eligibleWorkflows(workflows, sources.currentWorkflowId),
       isLoading: _anyLoading(sources),
     );
@@ -125,14 +125,9 @@ abstract final class WorkflowNodePickerCatalog {
     AsyncValue<List<AgentEntity>> state,
   ) => _values(state, (agent) => agent.isEnabled);
 
-  static List<WorkspaceSkill> _enabledSkills(
-    AsyncValue<List<WorkspaceSkill>> state,
-  ) => _values(state, (skill) => skill.isEnabled);
-
   static bool _anyLoading(_WorkflowNodePickerSources sources) =>
       sources.tools.isLoading ||
       sources.agents.isLoading ||
-      sources.skills.isLoading ||
       sources.workflows.isLoading;
 
   static List<T> _values<T>(
@@ -221,7 +216,9 @@ class const _WorkflowPickerBody({
   }
 
   bool _hasNoSimpleItems(_WorkflowNodePickerItems items) =>
-      items.tools.isEmpty && items.agents.isEmpty && items.skills.isEmpty;
+      items.tools.isEmpty &&
+      items.agents.isEmpty &&
+      items.connectorTools.isEmpty;
 }
 
 class const _WorkflowPickerList({
@@ -233,7 +230,7 @@ class const _WorkflowPickerList({
     children: [
       _WorkflowToolSection(tools: catalog.tools),
       _WorkflowAgentSection(agents: catalog.agents),
-      _WorkflowSkillSection(skills: catalog.skills),
+      _WorkflowConnectorToolSection(connectorTools: catalog.connectorTools),
       _WorkflowDefinitionSection(workflows: catalog.workflows),
     ],
   );
@@ -304,34 +301,54 @@ class const _WorkflowAgentPickerItem({required final AgentEntity agent})
   );
 }
 
-class const _WorkflowSkillSection({required final List<WorkspaceSkill> skills})
-    extends StatelessWidget {
+class const _WorkflowConnectorToolSection({
+  required final List<ConnectorToolCatalogItem> connectorTools,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _WorkflowLibrarySection(
-    titleKey: LocaleKeys.workflow_editor_available_skills,
-    isEmpty: skills.isEmpty,
+    titleKey: LocaleKeys.workflow_editor_available_connector_tools,
+    isEmpty: connectorTools.isEmpty,
     children: [
-      for (final skill in skills) _WorkflowSkillPickerItem(skill: skill),
+      for (final connectorTool in connectorTools)
+        _WorkflowConnectorToolPickerItem(connectorTool: connectorTool),
     ],
   );
 }
 
-class const _WorkflowSkillPickerItem({required final WorkspaceSkill skill})
-    extends StatelessWidget {
+class const _WorkflowConnectorToolPickerItem({
+  required final ConnectorToolCatalogItem connectorTool,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _WorkflowLibraryTile(
-    title: skill.title,
-    icon: Icons.psychology_alt_outlined,
-    draft: WorkflowNodePickerCatalog.draft(context, (
-      kind: .skill,
-      targetId: skill.id,
-      label: skill.title,
-      targetSource: skill.source.name,
-      inputs: null,
-      outputs: null,
-    )),
-    subtitle: skill.description,
-  );
+  Widget build(BuildContext context) {
+    final label = '${connectorTool.connectorName}: ${connectorTool.title}';
+
+    return _WorkflowLibraryTile(
+      title: label,
+      icon: Icons.extension_outlined,
+      draft: WorkflowNodePickerCatalog.draft(context, (
+        kind: .connectorTool,
+        targetId: connectorTool.toolId,
+        label: label,
+        targetSource: connectorTool.connectorName,
+        inputs: WorkflowSchemaPortParser.parse(
+          jsonEncode(connectorTool.inputJsonSchema),
+          isInput: true,
+        ),
+        outputs: null,
+      )),
+      subtitle: _subtitle(context),
+    );
+  }
+
+  String _subtitle(BuildContext context) {
+    final description = connectorTool.description;
+    if (!connectorTool.requiresConnection) return description;
+    final requirement = LocaleKeys
+        .workflow_editor_connector_tool_requires_connection
+        .tr(context: context);
+
+    return description.isEmpty ? requirement : '$description ($requirement)';
+  }
 }
 
 class const _WorkflowDefinitionSection({

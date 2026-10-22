@@ -114,7 +114,7 @@ void main() {
     final router = GoRouter(
       routes: [
         GoRoute(
-          path: '/workspaces/:workspaceId/more/manage-workspaces',
+          path: '/workspaces/:workspaceId/manage-workspaces',
           pageBuilder: (context, state) => NoTransitionPage(
             child: const WorkspaceManagementScreen(
               workspaceId: 'local',
@@ -147,7 +147,7 @@ void main() {
           ),
         ),
       ],
-      initialLocation: '/workspaces/local/more/manage-workspaces?view=connect',
+      initialLocation: '/workspaces/local/manage-workspaces?view=connect',
     );
     addTearDown(router.dispose);
     final container = ProviderContainer(

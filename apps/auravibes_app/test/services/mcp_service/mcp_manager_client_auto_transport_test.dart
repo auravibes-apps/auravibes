@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/services/mcp_service/mcp_legacy_sse_unavailable_exception.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_web_sse_client_transport.dart';
+import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
 
@@ -24,7 +26,367 @@ void main() {
       );
 
       expect(client.resolvedTransport, isA<McpTransportTypeStreamableHttp>());
-      expect(server.streamablePostCount, 1);
+      expect(server.clientCapabilities, {
+        'elicitation': {
+          'form': <String, Object?>{},
+          'url': <String, Object?>{},
+        },
+        'extensions': {
+          'io.modelcontextprotocol/ui': {
+            'mimeTypes': ['text/html;profile=mcp-app'],
+          },
+        },
+      });
+      expect(server.streamablePostCount, greaterThanOrEqualTo(1));
+      expect(server.sseGetCount, 0);
+    });
+
+    test('advertises MCP Apps and reads tool UI metadata', () async {
+      final server = await _LocalMcpHttpServer.start(
+        tools: [
+          {
+            'name': 'weather',
+            '_meta': {
+              'ui': {'resourceUri': 'ui://weather/forecast'},
+            },
+          },
+        ],
+      );
+      final manager = McpManagerService();
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(server.endpoint),
+      );
+      final tools = await manager.getTools(client);
+      final uiExtension =
+          server.clientExtensions?['io.modelcontextprotocol/ui'] as Map?;
+
+      expect(uiExtension?['mimeTypes'], contains('text/html;profile=mcp-app'));
+      expect(tools.single.metadata, {
+        'ui': {'resourceUri': 'ui://weather/forecast'},
+      });
+    });
+
+    test('reads app resources and preserves tool result metadata', () async {
+      final server = await _LocalMcpHttpServer.start();
+      final manager = McpManagerService();
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(server.endpoint),
+      );
+      final resource = await manager.readResource(
+        client,
+        'ui://weather/forecast',
+      );
+      final toolResult = await manager.callToolResult(
+        client,
+        toolIdentifier: 'refresh',
+        arguments: {'day': 'today'},
+        elicitation: (serverName: 'Test MCP server', onElicitation: null),
+      );
+      final toolOutput = await manager.callToolOutput((
+        client: client,
+        toolIdentifier: 'refresh',
+        arguments: {'day': 'today'},
+        includeAppData: true,
+        elicitation: (serverName: 'Test MCP server', onElicitation: null),
+      ));
+
+      final contentsValue = resource['contents'];
+      if (contentsValue is! List<Object?>) {
+        fail('Expected one MCP resource content.');
+      }
+      final contentValue = contentsValue.single;
+      if (contentValue is! Map) fail('Expected MCP resource content map.');
+      final content = Map<String, Object?>.from(contentValue);
+
+      expect(contentsValue, hasLength(1));
+      expect(content['text'], '<html>app</html>');
+      expect(content['_meta'], {
+        'ui': {
+          'csp': {'connectDomains': <String>[]},
+        },
+      });
+      expect(toolResult['_meta'], {
+        'ui': {'resourceUri': 'ui://weather/forecast'},
+      });
+      expect(toolResult['structuredContent'], {'day': 'today'});
+      expect(toolOutput.appData['_meta'], toolResult['_meta']);
+      expect(toolOutput.modelText, contains('"day":"today"'));
+      expect(toolOutput.modelText, isNot(contains('resourceUri')));
+    });
+
+    test('bounds oversized app results and keeps a text fallback', () async {
+      final server = await _LocalMcpHttpServer.start(
+        toolResult: {
+          'content': [
+            {'type': 'text', 'text': 'x' * (300 * 1024)},
+          ],
+          '_meta': {
+            'ui': {'resourceUri': 'ui://weather/forecast'},
+          },
+        },
+      );
+      final manager = McpManagerService();
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(server.endpoint),
+      );
+      final toolOutput = await manager.callToolOutput((
+        client: client,
+        toolIdentifier: 'refresh',
+        arguments: const {},
+        includeAppData: true,
+        elicitation: (serverName: 'Test MCP server', onElicitation: null),
+      ));
+      final fallbackResult = await manager.callToolResult(
+        client,
+        toolIdentifier: 'refresh',
+        arguments: const {},
+        elicitation: (serverName: 'Test MCP server', onElicitation: null),
+      );
+      final fallbackContentValue = toolOutput.appData['content'];
+      if (fallbackContentValue is! List<Object?>) {
+        fail('Expected fallback MCP content.');
+      }
+      final firstFallbackContent = fallbackContentValue.single;
+      if (firstFallbackContent is! Map<Object?, Object?>) {
+        fail('Expected fallback content item.');
+      }
+      final fallbackText = firstFallbackContent['text'];
+      if (fallbackText is! String) fail('Expected fallback text.');
+
+      expect(
+        utf8.encode(jsonEncode(toolOutput.appData)).length,
+        lessThanOrEqualTo(256 * 1024),
+      );
+      expect(fallbackText.length, lessThan(20 * 1024));
+      expect(toolOutput.appData['_meta'], {
+        'ui': {'resourceUri': 'ui://weather/forecast'},
+      });
+      expect(
+        utf8.encode(jsonEncode(fallbackResult)).length,
+        lessThanOrEqualTo(256 * 1024),
+      );
+      expect(toolOutput.modelText, contains('x'));
+    });
+
+    test(
+      'bounds oversized app results without serializing structured data',
+      () async {
+        final server = await _LocalMcpHttpServer.start(
+          toolResult: {
+            'content': [
+              {'type': 'text', 'text': 'small fallback'},
+            ],
+            'structuredContent': {'payload': 'x' * (300 * 1024)},
+            '_meta': {
+              'ui': {'resourceUri': 'ui://weather/forecast'},
+            },
+          },
+        );
+        final manager = McpManagerService();
+        McpManagerClient? client;
+        addTearDown(() async {
+          await manager.disconnect(client);
+          await server.close();
+        });
+
+        client = await manager.connectMcpWithAutoTransport(
+          _connectionRequest(server.endpoint),
+        );
+        final result = await manager.callToolResult(
+          client,
+          toolIdentifier: 'refresh',
+          arguments: const {},
+          elicitation: (serverName: 'Test MCP server', onElicitation: null),
+        );
+
+        expect(result['content'], [
+          {'type': 'text', 'text': 'small fallback'},
+        ]);
+        expect(result['_meta'], {
+          'ui': {'resourceUri': 'ui://weather/forecast'},
+        });
+        expect(result, isNot(contains('structuredContent')));
+      },
+    );
+
+    test(
+      'skips app result serialization when app data is not requested',
+      () async {
+        final server = await _LocalMcpHttpServer.start(
+          toolResult: {
+            'content': [
+              {'type': 'text', 'text': 'x' * (300 * 1024)},
+            ],
+            '_meta': {
+              'ui': {'resourceUri': 'ui://weather/forecast'},
+            },
+          },
+        );
+        final manager = McpManagerService();
+        McpManagerClient? client;
+        addTearDown(() async {
+          await manager.disconnect(client);
+          await server.close();
+        });
+
+        client = await manager.connectMcpWithAutoTransport(
+          _connectionRequest(server.endpoint),
+        );
+        final toolOutput = await manager.callToolOutput((
+          client: client,
+          toolIdentifier: 'refresh',
+          arguments: const {},
+          includeAppData: false,
+          elicitation: (serverName: 'Test MCP server', onElicitation: null),
+        ));
+
+        expect(toolOutput.appData, isEmpty);
+        expect(toolOutput.modelText, contains('x'));
+      },
+    );
+
+    test('uses app OAuth token provider for Streamable HTTP', () async {
+      final server = await _LocalMcpHttpServer.start();
+      final manager = McpManagerService();
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(
+          server.endpoint,
+          authenticationType: .oauth(
+            token: .new(
+              accessToken: 'configured-token',
+              issuedAt: DateTime(2026),
+              refreshToken: 'refresh-token',
+              expiresIn: 3600,
+            ),
+            clientId: 'client-id',
+            authorizationEndpoint: 'https://example.com/authorize',
+            tokenEndpoint: 'https://example.com/token',
+          ),
+        ),
+      );
+
+      expect(client.resolvedTransport, isA<McpTransportTypeStreamableHttp>());
+      expect(server.streamablePostCount, greaterThanOrEqualTo(1));
+      expect(server.sseGetCount, 0);
+      expect(server.streamableAuthorization, 'Bearer configured-token');
+    });
+
+    test('waits for form elicitation before returning tool result', () async {
+      final server = await _LocalMcpHttpServer.start(streamableStatus: 405);
+      final transport = _ElicitationClientTransport();
+      final manager = McpManagerService(
+        legacySseTransportFactory: (_) async => transport,
+      );
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(server.endpoint),
+      );
+      final request = Completer<McpElicitationRequest>();
+      final response = Completer<McpElicitationResponse>();
+      final toolResult = manager.callToolString(
+        client,
+        toolIdentifier: 'request_name',
+        arguments: const {},
+        elicitation: (
+          serverName: 'Example server',
+          onElicitation: (elicitation) {
+            request.complete(elicitation);
+
+            return response.future;
+          },
+        ),
+      );
+
+      final elicitation = await request.future;
+      expect(elicitation, isA<McpElicitationRequest>());
+      expect(elicitation.serverName, 'Example server');
+      response.complete(
+        const McpElicitationResponse(action: .accept, content: {'name': 'Ada'}),
+      );
+
+      expect(await toolResult, 'done');
+      expect(await transport.elicitationResponse, {
+        'jsonrpc': '2.0',
+        'id': 900,
+        'result': {
+          'action': 'accept',
+          'content': {'name': 'Ada'},
+        },
+      });
+    });
+
+    test('uses refreshed OAuth token on later requests', () async {
+      final server = await _LocalMcpHttpServer.start();
+      final oauthService = _RotatingOAuthCredentialService();
+      final manager = McpManagerService(oauthCredentialService: oauthService);
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(
+          server.endpoint,
+          authenticationType: .oauth(
+            token: .new(
+              accessToken: 'configured-token',
+              issuedAt: DateTime(2026),
+              refreshToken: 'refresh-token',
+              expiresIn: 3600,
+            ),
+            clientId: 'client-id',
+            authorizationEndpoint: 'https://example.com/authorize',
+            tokenEndpoint: 'https://example.com/token',
+          ),
+          serviceConnectionId: 'oauth-connection',
+        ),
+      );
+
+      expect(await manager.getTools(client), isEmpty);
+      expect(server.streamablePostCount, greaterThan(1));
+      expect(
+        server.streamableAuthorizationHeaders.first,
+        'Bearer initial-token',
+      );
+      expect(
+        server.streamableAuthorizationHeaders,
+        contains('Bearer refreshed-token'),
+      );
+      expect(oauthService.requestedConnectionIds, hasLength(greaterThan(1)));
+      expect(
+        oauthService.requestedConnectionIds,
+        everyElement('oauth-connection'),
+      );
       expect(server.sseGetCount, 0);
     });
 
@@ -48,9 +410,44 @@ void main() {
       await server.waitForInitializedNotification();
 
       expect(client.resolvedTransport, isA<McpTransportTypeSSE>());
-      expect(server.streamablePostCount, 1);
+      expect(server.streamablePostCount, greaterThanOrEqualTo(1));
       expect(server.sseGetCount, 1);
       expect(server.streamableAuthorization, 'Bearer configured-token');
+      expect(server.sseAuthorization, 'Bearer configured-token');
+      expect(server.sseMessageAuthorization, 'Bearer configured-token');
+    });
+
+    test('uses browser-compatible transport for legacy SSE fallback', () async {
+      final server = await _LocalMcpHttpServer.start(streamableStatus: 405);
+      final manager = McpManagerService(
+        legacySseTransportFactory: (serverInfo) {
+          expect(serverInfo.transport, isA<McpTransportTypeSSE>());
+
+          return McpWebSseClientTransport.create(
+            serverUrl: serverInfo.url,
+            headers: const {'Authorization': 'Bearer configured-token'},
+          );
+        },
+      );
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(
+          server.endpoint,
+          authenticationType: const McpAuthenticationType.bearerToken(
+            bearerToken: 'configured-token',
+          ),
+        ),
+      );
+      final _ = await manager.getTools(client);
+      await server.waitForInitializedNotification();
+
+      expect(client.resolvedTransport, isA<McpTransportTypeSSE>());
+      expect(server.sseGetCount, 1);
       expect(server.sseAuthorization, 'Bearer configured-token');
       expect(server.sseMessageAuthorization, 'Bearer configured-token');
     });
@@ -111,33 +508,19 @@ void main() {
       expect(legacySseAttempted, isTrue);
       expect(server.sseGetCount, 0);
     });
-
-    test('reports legacy SSE unavailable when platform disallows it', () async {
-      final server = await _LocalMcpHttpServer.start(streamableStatus: 405);
-      final manager = McpManagerService(legacySseSupported: false);
-      addTearDown(server.close);
-
-      await expectLater(
-        manager.connectMcpWithAutoTransport(
-          _connectionRequest(server.endpoint),
-        ),
-        throwsA(isA<McpLegacySseUnavailableException>()),
-      );
-
-      expect(server.sseGetCount, 0);
-    });
   });
 }
 
 McpConnectionRequest _connectionRequest(
   Uri endpoint, {
   McpAuthenticationType authenticationType = const McpAuthenticationTypeNone(),
+  String? serviceConnectionId,
 }) => (
   name: 'Test MCP',
   url: endpoint.toString(),
   useHttp2: false,
   authenticationType: authenticationType,
-  serviceConnectionId: null,
+  serviceConnectionId: serviceConnectionId,
   description: null,
 );
 
@@ -147,14 +530,21 @@ final class _LocalMcpHttpServer {
     required this.streamableStatus,
     required this.sseStatus,
     required this.useJsonRpcError,
+    required this.tools,
+    required this.toolResult,
   });
 
   final int streamableStatus;
   final int sseStatus;
   final bool useJsonRpcError;
+  final List<Map<String, Object?>> tools;
+  final Map<String, Object?>? toolResult;
+  Map<String, Object?>? clientExtensions;
   int streamablePostCount = 0;
   int sseGetCount = 0;
+  Map<String, Object?>? clientCapabilities;
   String? streamableAuthorization;
+  final streamableAuthorizationHeaders = <String?>[];
   String? sseAuthorization;
   String? sseMessageAuthorization;
 
@@ -173,6 +563,8 @@ final class _LocalMcpHttpServer {
     int streamableStatus = 200,
     int sseStatus = 200,
     bool useJsonRpcError = false,
+    List<Map<String, Object?>> tools = const [],
+    Map<String, Object?>? toolResult,
   }) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final local = _LocalMcpHttpServer(
@@ -180,6 +572,8 @@ final class _LocalMcpHttpServer {
       streamableStatus: streamableStatus,
       sseStatus: sseStatus,
       useJsonRpcError: useJsonRpcError,
+      tools: tools,
+      toolResult: toolResult,
     );
     final _ = server.listen((request) => unawaited(local._handle(request)));
 
@@ -219,7 +613,13 @@ final class _LocalMcpHttpServer {
     streamableAuthorization = request.headers.value(
       HttpHeaders.authorizationHeader,
     );
+    streamableAuthorizationHeaders.add(streamableAuthorization);
     final message = await _readMessage(request);
+    if (message['method'] == 'initialize') {
+      clientCapabilities = _objectMap(
+        _objectMap(message['params'])['capabilities'],
+      );
+    }
     final response = request.response..statusCode = streamableStatus;
     if (streamableStatus != HttpStatus.ok) {
       if (useJsonRpcError) {
@@ -240,7 +640,62 @@ final class _LocalMcpHttpServer {
     }
 
     response.headers.contentType = .json;
-    response.write(jsonEncode(_initializeResult(message)));
+    if (message['method'] == 'initialize') {
+      final capabilities = _objectMap(message['params'])['capabilities'];
+      if (capabilities is Map<Object?, Object?>) {
+        final extensions = capabilities['extensions'];
+        if (extensions is Map<Object?, Object?>) {
+          clientExtensions = Map<String, Object?>.from(extensions);
+        }
+      }
+    }
+    if (message['method'] == 'tools/list') {
+      response.write(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'id': message['id'],
+          'result': {'tools': tools},
+        }),
+      );
+    } else if (message['method'] == 'resources/read') {
+      response.write(
+        jsonEncode({
+          'jsonrpc': '2.0',
+          'id': message['id'],
+          'result': {
+            'contents': [
+              {
+                'uri': 'ui://weather/forecast',
+                'mimeType': 'text/html;profile=mcp-app',
+                'text': '<html>app</html>',
+                '_meta': {
+                  'ui': {
+                    'csp': {'connectDomains': <String>[]},
+                  },
+                },
+              },
+            ],
+          },
+        }),
+      );
+    } else if (message['method'] == 'tools/call') {
+      final result =
+          toolResult ??
+          {
+            'content': [
+              {'type': 'text', 'text': 'refreshed'},
+            ],
+            'structuredContent': {'day': 'today'},
+            '_meta': {
+              'ui': {'resourceUri': 'ui://weather/forecast'},
+            },
+          };
+      response.write(
+        jsonEncode({'jsonrpc': '2.0', 'id': message['id'], 'result': result}),
+      );
+    } else {
+      response.write(jsonEncode(_initializeResult(message)));
+    }
     final _ = await response.close();
   }
 
@@ -271,10 +726,19 @@ final class _LocalMcpHttpServer {
       HttpHeaders.authorizationHeader,
     );
     final message = await _readMessage(request);
-    if (message['method'] == 'initialize') {
+    final responseMessage = switch (message['method']) {
+      'initialize' => _initializeResult(message),
+      'tools/list' => {
+        'jsonrpc': '2.0',
+        'id': message['id'],
+        'result': {'tools': <Object?>[]},
+      },
+      _ => null,
+    };
+    if (responseMessage != null) {
       final response = await _sseResponse.future;
       response.write(
-        'event: message\ndata: ${jsonEncode(_initializeResult(message))}\n\n',
+        'event: message\ndata: ${jsonEncode(responseMessage)}\n\n',
       );
       final _ = await response.flush();
     }
@@ -319,12 +783,97 @@ final class _MissingSseEndpointTransport implements mcp.ClientTransport {
   }
 }
 
+final class _ElicitationClientTransport implements mcp.ClientTransport {
+  final _messages = StreamController<Object?>.broadcast(sync: true);
+  final _closed = Completer<void>();
+  final _requestSent = Completer<McpElicitationRequest>();
+  final _responseReceived = Completer<Map<String, Object?>>();
+  int? _toolCallId;
+
+  Future<McpElicitationRequest> get elicitationRequest => _requestSent.future;
+  Future<Map<String, Object?>> get elicitationResponse =>
+      _responseReceived.future;
+
+  @override
+  Stream<Object?> get onMessage => _messages.stream;
+
+  @override
+  Future<void> get onClose => _closed.future;
+
+  @override
+  void send(Object? message) {
+    if (message is! Map) throw ArgumentError.value(message, 'message');
+    final request = Map<String, dynamic>.from(message);
+    switch (request['method']) {
+      case 'server/discover':
+        _messages.add({
+          'jsonrpc': '2.0',
+          'id': request['id'],
+          'error': {'code': -32601, 'message': 'Legacy MCP server.'},
+        });
+      case 'initialize':
+        final params = Map<String, dynamic>.from(request['params'] as Map);
+        _messages.add({
+          'jsonrpc': '2.0',
+          'id': request['id'],
+          'result': {
+            'protocolVersion': params['protocolVersion'],
+            'capabilities': {'tools': <String, Object?>{}},
+            'serverInfo': {'name': 'elicitation-test', 'version': '1.0'},
+          },
+        });
+      case 'notifications/initialized':
+        break;
+      case 'tools/call':
+        final toolCallId = request['id'];
+        _toolCallId = toolCallId is int ? toolCallId : null;
+        _messages.add({
+          'jsonrpc': '2.0',
+          'id': 900,
+          'method': 'elicitation/create',
+          'params': {
+            'mode': 'form',
+            'message': 'Please provide your name.',
+            'requestedSchema': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+              'required': ['name'],
+            },
+          },
+        });
+      default:
+        if (request['id'] != 900 || _toolCallId == null) return;
+        _responseReceived.complete(request);
+        _messages.add({
+          'jsonrpc': '2.0',
+          'id': _toolCallId,
+          'result': {
+            'content': [
+              {'type': 'text', 'text': 'done'},
+            ],
+          },
+        });
+    }
+  }
+
+  @override
+  void close() {
+    if (!_closed.isCompleted) _closed.complete();
+    unawaited(_messages.close());
+  }
+}
+
 Map<String, Object?> _initializeResult(Map<String, Object?> request) => {
   'jsonrpc': '2.0',
   'id': request['id'],
   'result': {
     'protocolVersion': _objectMap(request['params'])['protocolVersion'],
-    'capabilities': <String, Object?>{},
+    'capabilities': {
+      'resources': <String, Object?>{},
+      'tools': <String, Object?>{},
+    },
     'serverInfo': {'name': 'test-server', 'version': '1.0'},
   },
 };
@@ -335,4 +884,20 @@ Map<String, Object?> _objectMap(Object? value) {
   }
 
   return Map<String, Object?>.from(value);
+}
+
+final class _RotatingOAuthCredentialService implements OAuthCredentialService {
+  final requestedConnectionIds = <String>[];
+
+  @override
+  Future<String> getValidAccessToken(String serviceConnectionId) async {
+    requestedConnectionIds.add(serviceConnectionId);
+
+    return requestedConnectionIds.length == 1
+        ? 'initial-token'
+        : 'refreshed-token';
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

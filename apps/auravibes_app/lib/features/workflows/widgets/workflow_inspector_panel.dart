@@ -316,6 +316,9 @@ abstract final class WorkflowInspectorText {
           context: context,
         ),
         .agent => LocaleKeys.workflow_editor_agent.tr(context: context),
+        .connectorTool => LocaleKeys.workflow_editor_connector_tool.tr(
+          context: context,
+        ),
         .skill => LocaleKeys.workflow_editor_skill.tr(context: context),
         .workflow => LocaleKeys.workflow_editor_workflow.tr(context: context),
       };

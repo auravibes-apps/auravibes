@@ -3,4 +3,5 @@ fields:
   workspaceId: int
   conversationId: String
   limit: int
+  messageId: String?
   a2uiSupportedComponents: List<String>?

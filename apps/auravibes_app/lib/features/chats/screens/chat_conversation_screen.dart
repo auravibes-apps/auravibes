@@ -6,6 +6,7 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/data/repositories/side_panel_preferences_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -13,16 +14,23 @@ import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
+import 'package:auravibes_app/features/browser/models/browser_session_state.dart';
+import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
+import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
+import 'package:auravibes_app/features/browser/screens/browser_panel.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_decode_exception.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/notifiers/mcp_elicitation_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_continuation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
@@ -34,28 +42,37 @@ import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.da
 import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_continuation_status.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_detach_controls.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_mcp_elicitation_card.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_sidebar_toggle_button.dart';
 import 'package:auravibes_app/features/chats/widgets/model_usage_header_button.dart';
+import 'package:auravibes_app/features/chats/widgets/responsive_conversation_layout.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
-        AgentIterationContext,
+        AgentIterationDecision,
+        ConversationToolAccessMode,
         ReasoningConfiguration,
         ReasoningOption,
         SelectedModelNotFoundException;
@@ -66,6 +83,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final _logger = Logger('chat_conversation_screen');
 
@@ -103,6 +121,11 @@ typedef _ConversationContextRequest = ({
   WidgetRef ref,
   String workspaceId,
   String conversationId,
+});
+
+typedef _BackgroundWorkStatusPresence = ({
+  bool hasDetachableToolCalls,
+  bool hasBackgroundWorks,
 });
 
 typedef _ContinueCallbackRequest = ({
@@ -147,6 +170,7 @@ typedef _CloudContinueRequest = ({
   CloudTurnUsecase cloud,
   String workspaceId,
   String conversationId,
+  String languageCode,
 });
 
 typedef _SendMessageRequest = ({
@@ -223,6 +247,52 @@ typedef _LoadedRuntimeStateRequest = ({
 });
 
 typedef _LoadedRuntimeStateBuildRequest = _LoadedRuntimeStateRequest;
+
+typedef _LoadedSidePanelValues = ({
+  bool isVisible,
+  bool isMounted,
+  double widthPercent,
+  List<SidebarToolResultTab> toolResultTabs,
+  String? selectedToolResultTabId,
+});
+typedef _LoadedConversationSidePanel = ({
+  _LoadedSidePanelValues values,
+  _LoadedSidePanelActions actions,
+});
+typedef _LoadedSidePanelRequest = ({
+  BuildContext context,
+  WidgetRef ref,
+  _SidePanelHookValues panel,
+  _ToolResultTabHookValues tabs,
+  AsyncValue<SharedPreferences> preferencesAsync,
+  int? browserActionRevision,
+  ObjectRef<bool> hasAutoOpenedSidebar,
+});
+
+typedef _SidePanelHookValues = ({
+  ValueNotifier<bool> visible,
+  ValueNotifier<bool> mounted,
+  ValueNotifier<double> widthPercent,
+  _SidePanelHookFlags flags,
+});
+
+typedef _ToolResultTabHookValues = ({
+  ValueNotifier<List<SidebarToolResultTab>> tabs,
+  ValueNotifier<String?> selectedId,
+});
+typedef _BrowserActionSidebarEffectRequest = ({
+  int? revision,
+  AsyncValue<SharedPreferences> preferencesAsync,
+  ValueNotifier<String?> selectedTabId,
+  ObjectRef<bool> hasAutoOpenedSidebar,
+  VoidCallback openSidebar,
+});
+
+class _SidePanelHookFlags {
+  bool preferencesLoaded = false;
+  bool visibilityChanged = false;
+  bool widthChanged = false;
+}
 
 class const ChatConversationScreen({
   required final String workspaceId,
@@ -370,7 +440,7 @@ _ConversationAsyncState _conversationResultState(ConversationResult? result) =>
 class const _ConversationLoading() extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      const AuraScreen(child: Center(child: AuraSpinner()));
+      const AppScreen(child: Center(child: AuraSpinner()));
 }
 
 class const _ConversationLoadError({
@@ -378,7 +448,7 @@ class const _ConversationLoadError({
   required final StackTrace stackTrace,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: AppErrorWidget(error: error, stackTrace: stackTrace),
   );
 }
@@ -387,7 +457,7 @@ class const _ConversationResultError({
   required final ConversationResult? result,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: AppErrorWidget(
       error: _conversationResultErrorMessage(result),
       stackTrace: .empty,
@@ -423,19 +493,61 @@ class const _LoadedChatConversationRuntime({
   required final bool showInputComposer,
 }) extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) =>
-      _LoadedChatConversationRender(
-        workspaceId: workspaceId,
-        conversation: conversation,
-        runtimeState: _useLoadedChatConversationRuntimeState((
-          context: context,
-          ref: ref,
-          workspaceId: workspaceId,
-          conversation: conversation,
-        )),
-        showInputComposer: showInputComposer,
-        leading: showInputComposer ? null : const _ChatConversationBackButton(),
-      );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final request = (
+      context: context,
+      ref: ref,
+      workspaceId: workspaceId,
+      conversation: conversation,
+    );
+    _listenForPendingIterationLimitNotice(request);
+
+    final runtimeState = _useLoadedChatConversationRuntimeState(request);
+
+    return _LoadedChatConversationRender(
+      workspaceId: workspaceId,
+      conversation: conversation,
+      runtimeState: runtimeState,
+      showInputComposer: showInputComposer,
+      leading: showInputComposer ? null : const _ChatConversationBackButton(),
+    );
+  }
+}
+
+void _listenForPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
+  final iterationLimitProvider = conversationIterationLimitProvider(
+    request.conversation.id,
+  );
+  if (request.ref.read(iterationLimitProvider)) {
+    _schedulePendingIterationLimitNotice(request);
+  }
+  request.ref.listen(iterationLimitProvider, (_, pending) {
+    if (pending) _schedulePendingIterationLimitNotice(request);
+  });
+}
+
+void _schedulePendingIterationLimitNotice(_LoadedRuntimeRequest request) =>
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _showPendingIterationLimitNotice(request),
+    );
+
+void _showPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
+  if (!request.context.mounted) return;
+
+  final conversationId = request.conversation.id;
+  request.ref
+      .read(conversationIterationLimitProvider(conversationId).notifier)
+      .consume();
+  final conversationContextRequest = (
+    context: request.context,
+    ref: request.ref,
+    workspaceId: request.workspaceId,
+    conversationId: conversationId,
+  );
+  _showIterationLimitNoticeForConversation(
+    conversationContextRequest,
+    .iterationLimitReached,
+  );
 }
 
 class const _ChatConversationBackButton() extends StatelessWidget {
@@ -471,6 +583,7 @@ typedef _LoadedChatConversationSelectorCallbacks = ({
   ValueChanged<String?> onModelChanged,
   ValueChanged<String?> onModelSelectionChanged,
   ValueChanged<String?> onAgentChanged,
+  ValueChanged<ConversationToolAccessMode> onToolAccessModeChanged,
   VoidCallback onSkillsPress,
   VoidCallback? Function({required bool isInputBusy}) continueAgent,
 });
@@ -598,6 +711,7 @@ _LoadedChatConversationSelectorCallbacks _loadedConversationSelectorCallbacks(
   onModelChanged: _loadedConversationModelChanged(request),
   onModelSelectionChanged: _loadedConversationModelChanged(request),
   onAgentChanged: _agentChanged(request),
+  onToolAccessModeChanged: _toolAccessModeChanged(request),
   onSkillsPress: _loadedConversationSkillsPress(request),
   continueAgent: _loadedConversationContinue(request),
 );
@@ -632,13 +746,18 @@ _ConversationContextRequest _loadedConversationContextRequest(
 Future<void> Function(ChatDraft) _loadedConversationSendMessage(
   _LoadedRuntimeRequest request,
 ) =>
-    (draft) => _sendMessage((
-      context: request.context,
-      ref: request.ref,
-      workspaceId: request.workspaceId,
-      conversationId: request.conversation.id,
-      draft: draft,
-    ));
+    (draft) => _sendMessage(_loadedConversationSendRequest(request, draft));
+
+_SendMessageRequest _loadedConversationSendRequest(
+  _LoadedRuntimeRequest request,
+  ChatDraft draft,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  conversationId: request.conversation.id,
+  draft: draft.withLanguageCode(request.context.locale.languageCode),
+);
 
 Future<void> Function(MessageEntity) _loadedConversationRetryMessage(
   _LoadedRuntimeRequest request,
@@ -711,6 +830,44 @@ ValueChanged<String?> _agentChanged(_LoadedRuntimeRequest request) =>
           .setAgent(agentId),
     );
 
+ValueChanged<ConversationToolAccessMode> _toolAccessModeChanged(
+  _LoadedRuntimeRequest request,
+) =>
+    (mode) => unawaited(_setToolAccessMode(request, mode));
+
+Future<void> _setToolAccessMode(
+  _LoadedRuntimeRequest request,
+  ConversationToolAccessMode mode,
+) async {
+  try {
+    await request.ref
+        .read(
+          conversationChatProvider(
+            request.workspaceId,
+            request.conversation.id,
+          ).notifier,
+        )
+        .setToolAccessMode(mode);
+  } on Exception catch (error, stackTrace) {
+    _handleToolAccessModeError(request, error, stackTrace);
+  }
+}
+
+void _handleToolAccessModeError(
+  _LoadedRuntimeRequest request,
+  Exception error,
+  StackTrace stackTrace,
+) {
+  _logger.severe('Failed to update tool approval mode', error, stackTrace);
+  if (!request.context.mounted) return;
+
+  final _ = AuraSnackBars.show(
+    context: request.context,
+    content: const TextLocale(LocaleKeys.common_error_message),
+    variant: .error,
+  );
+}
+
 typedef _LoadedChatConversationDependencies = _LoadedConversationWatchParts;
 
 class const _LoadedChatConversationCoreState({
@@ -742,7 +899,7 @@ class const _LoadedChatConversationActivityState({
   required final bool hasPendingApprovals,
   required final bool isInputBusy,
   required final bool isCompacting,
-  required final bool isGenerating,
+  required final bool isAgentWorking,
 });
 
 _LoadedChatConversationActivityState _watchLoadedChatConversationActivity(
@@ -784,11 +941,11 @@ _LoadedChatConversationActivityState _loadedChatConversationActivityState(
   hasPendingApprovals: request.pendingCalls.isNotEmpty,
   isInputBusy: request.isInputBusy,
   isCompacting: request.dependencies.display.isCompacting,
-  isGenerating: _isGeneratingFromCore(request.core),
+  isAgentWorking: _isAgentWorkingFromCore(request.core),
 );
 
-bool _isGeneratingFromCore(_LoadedChatConversationCoreState core) =>
-    _isGenerating(
+bool _isAgentWorkingFromCore(_LoadedChatConversationCoreState core) =>
+    _isAgentWorking(
       isCloud: core.isCloud,
       cloudConversation: core.cloudConversation,
       busyState: core.busyState,
@@ -821,7 +978,7 @@ class const _LoadedChatConversationState({
   required final List<String> modalitiesInput,
   required final bool isInputBusy,
   required final bool isCompacting,
-  required final bool isGenerating,
+  required final bool isAgentWorking,
 });
 
 class const _LoadedChatConversationData({
@@ -920,6 +1077,7 @@ class const _LoadedChatConversationRender({
       callbacks: runtimeState.callbacks,
       leading: leading,
     ),
+    key: ValueKey((workspaceId: workspaceId, conversationId: conversation.id)),
   );
 }
 
@@ -1027,7 +1185,7 @@ _LoadedChatConversationState _loadedChatConversationState({
   modalitiesInput: core.modalitiesInput,
   isInputBusy: activity.isInputBusy,
   isCompacting: activity.isCompacting,
-  isGenerating: activity.isGenerating,
+  isAgentWorking: activity.isAgentWorking,
 );
 
 bool _isCloudWorkspace(WidgetRef ref, String workspaceId) =>
@@ -1113,7 +1271,7 @@ bool _isCloudInputBusy(CloudConversationState? state) {
   return executionState == 'running' || executionState == 'awaitingApproval';
 }
 
-bool _isGenerating({
+bool _isAgentWorking({
   required bool isCloud,
   required CloudConversationState? cloudConversation,
   required ConversationBusyState? busyState,
@@ -1122,7 +1280,7 @@ bool _isGenerating({
     return cloudConversation?.conversation.executionState == 'running';
   }
 
-  return busyState?.isStreaming == true;
+  return busyState?.isStreaming == true || busyState?.isAgentWorking == true;
 }
 
 VoidCallback? _continueAgentCallback(_ContinueCallbackRequest request) {
@@ -1138,60 +1296,630 @@ VoidCallback? _continueAgentCallback(_ContinueCallbackRequest request) {
   );
 }
 
+void _openSidebarForBrowserAction(
+  int? actionRevision,
+  ObjectRef<bool> hasAutoOpened,
+  ValueNotifier<String?> selectedToolResultTabId,
+  VoidCallback onOpen,
+) {
+  if ((actionRevision ?? 0) == 0 || hasAutoOpened.value) return;
+  hasAutoOpened.value = true;
+  selectedToolResultTabId.value = null;
+  onOpen();
+}
+
+Future<void> _persistSidePanelOpen(
+  WidgetRef ref, {
+  required bool isOpen,
+}) async {
+  try {
+    final preferences = await ref.read(sharedPreferencesProvider.future);
+    await SidePanelPreferencesRepository(preferences)
+        .saveIsOpen(isOpen: isOpen);
+  } on Object {
+    return;
+  }
+}
+
+Future<void> _persistSidePanelWidth(WidgetRef ref, double widthPercent) async {
+  try {
+    final preferences = await ref.read(sharedPreferencesProvider.future);
+    await SidePanelPreferencesRepository(preferences)
+        .saveWidthPercent(widthPercent);
+  } on Object {
+    return;
+  }
+}
+
 class const _LoadedChatConversationView({
   required final _LoadedChatConversationData data,
+  super.key,
+}) extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final browserSession = ref
+        .watch(browserSessionProvider(data.workspaceId, data.conversation.id))
+        .value;
+    final sidePanel = _useLoadedConversationSidePanel(
+      context: context,
+      ref: ref,
+      browserActionRevision: browserSession?.agentActionRevision,
+    );
+
+    return _LoadedChatConversationScreen(
+      data: data,
+      browserSession: browserSession,
+      sidePanel: sidePanel,
+    );
+  }
+}
+
+_LoadedConversationSidePanel _useLoadedConversationSidePanel({
+  required BuildContext context,
+  required WidgetRef ref,
+  required int? browserActionRevision,
+}) {
+  final preferencesAsync = ref.watch(sharedPreferencesProvider);
+  final panel = _useSidePanelHookValues();
+  final tabs = _useToolResultTabHookValues();
+  final hasAutoOpenedSidebar = useRef(false);
+
+  return _prepareLoadedConversationSidePanel((
+    context: context,
+    ref: ref,
+    panel: panel,
+    tabs: tabs,
+    preferencesAsync: preferencesAsync,
+    browserActionRevision: browserActionRevision,
+    hasAutoOpenedSidebar: hasAutoOpenedSidebar,
+  ));
+}
+
+_LoadedConversationSidePanel _prepareLoadedConversationSidePanel(
+  _LoadedSidePanelRequest request,
+) {
+  _useStoredSidePanelPreferences(request.preferencesAsync, request.panel);
+  _useBrowserActionSidebarEffect((
+    revision: request.browserActionRevision,
+    preferencesAsync: request.preferencesAsync,
+    selectedTabId: request.tabs.selectedId,
+    hasAutoOpenedSidebar: request.hasAutoOpenedSidebar,
+    openSidebar: () =>
+        _setSidePanelOpen(request.ref, request.panel, isOpen: true),
+  ));
+
+  return _loadedConversationSidePanelState(request);
+}
+
+_SidePanelHookValues _useSidePanelHookValues() => (
+  visible: useState(false),
+  mounted: useState(false),
+  widthPercent: useState(SidePanelPreferencesRepository.defaultWidthPercent),
+  flags: useMemoized(_SidePanelHookFlags.new),
+);
+
+_ToolResultTabHookValues _useToolResultTabHookValues() => (
+  tabs: useState<List<SidebarToolResultTab>>([]),
+  selectedId: useState<String?>(null),
+);
+
+void _useStoredSidePanelPreferences(
+  AsyncValue<SharedPreferences> preferencesAsync,
+  _SidePanelHookValues panel,
+) {
+  useEffect(() => _restoreSidePanelPreferences(preferencesAsync, panel), [
+    preferencesAsync.value,
+    preferencesAsync.hasError,
+  ]);
+}
+
+VoidCallback? _restoreSidePanelPreferences(
+  AsyncValue<SharedPreferences> preferencesAsync,
+  _SidePanelHookValues panel,
+) {
+  final preferences = preferencesAsync.value;
+  if (preferences == null && !preferencesAsync.hasError) return null;
+  if (preferences != null) _applySidePanelPreferences(preferences, panel);
+
+  return null;
+}
+
+void _applySidePanelPreferences(
+  SharedPreferences preferences,
+  _SidePanelHookValues panel,
+) {
+  final flags = panel.flags;
+  if (flags.preferencesLoaded) return;
+  flags.preferencesLoaded = true;
+  final stored = SidePanelPreferencesRepository(preferences);
+  if (!flags.widthChanged) {
+    panel.widthPercent.value = stored.widthPercent;
+  }
+  if (flags.visibilityChanged) return;
+  panel.mounted.value = stored.isOpen;
+  panel.visible.value = stored.isOpen;
+}
+
+void _useBrowserActionSidebarEffect(
+  _BrowserActionSidebarEffectRequest request,
+) {
+  useEffect(() => _openBrowserActionSidebar(request), [
+    request.revision,
+    request.preferencesAsync.value,
+    request.preferencesAsync.hasError,
+  ]);
+}
+
+VoidCallback? _openBrowserActionSidebar(
+  _BrowserActionSidebarEffectRequest request,
+) {
+  if (request.preferencesAsync.value == null &&
+      !request.preferencesAsync.hasError) {
+    return null;
+  }
+  _openSidebarForBrowserAction(
+    request.revision,
+    request.hasAutoOpenedSidebar,
+    request.selectedTabId,
+    request.openSidebar,
+  );
+
+  return null;
+}
+
+_LoadedConversationSidePanel _loadedConversationSidePanelState(
+  _LoadedSidePanelRequest request,
+) => (
+  values: _loadedSidePanelValues(request.panel, request.tabs),
+  actions: _loadedSidePanelActions(request),
+);
+
+_LoadedSidePanelValues _loadedSidePanelValues(
+  _SidePanelHookValues panel,
+  _ToolResultTabHookValues tabs,
+) => (
+  isVisible: panel.visible.value,
+  isMounted: panel.mounted.value,
+  widthPercent: panel.widthPercent.value,
+  toolResultTabs: tabs.tabs.value,
+  selectedToolResultTabId: tabs.selectedId.value,
+);
+
+_LoadedSidePanelActions _loadedSidePanelActions(
+  _LoadedSidePanelRequest request,
+) => _LoadedSidePanelActions(
+  context: request.context,
+  ref: request.ref,
+  panel: request.panel,
+  tabs: request.tabs,
+);
+
+void _setSidePanelOpen(
+  WidgetRef ref,
+  _SidePanelHookValues panel, {
+  required bool isOpen,
+}) {
+  panel.flags.visibilityChanged = true;
+  if (isOpen) panel.mounted.value = true;
+  panel.visible.value = isOpen;
+  unawaited(_persistSidePanelOpen(ref, isOpen: isOpen));
+}
+
+void _toggleSidePanel(
+  BuildContext context,
+  WidgetRef ref,
+  _SidePanelHookValues panel,
+) {
+  if (!panel.visible.value) {
+    FocusScope.of(context).unfocus();
+    _setSidePanelOpen(ref, panel, isOpen: true);
+
+    return;
+  }
+  _setSidePanelOpen(ref, panel, isOpen: false);
+}
+
+void _updateSidePanelWidth(
+  WidgetRef ref,
+  _SidePanelHookValues panel,
+  double widthPercent,
+) {
+  panel.flags.widthChanged = true;
+  panel.widthPercent.value = widthPercent;
+  unawaited(_persistSidePanelWidth(ref, widthPercent));
+}
+
+void _closeToolResult(_ToolResultTabHookValues tabs, String id) {
+  tabs.tabs.value = tabs.tabs.value.where((tab) => tab.id != id).toList();
+  if (tabs.selectedId.value == id) tabs.selectedId.value = null;
+}
+
+class const _LoadedSidePanelActions({
+  required final BuildContext context,
+  required final WidgetRef ref,
+  required final _SidePanelHookValues panel,
+  required final _ToolResultTabHookValues tabs,
+}) {
+  void onToggle() => _toggleSidePanel(context, ref, panel);
+
+  void onClose() => _setSidePanelOpen(ref, panel, isOpen: false);
+
+  void onWidthChanged(double width) => _updateSidePanelWidth(ref, panel, width);
+
+  void onOpenToolResult(SidebarToolResultTab tab) {
+    _upsertToolResultTab(tabs, tab);
+    _setSelectedToolResult(tabs.selectedId, tab.id);
+    FocusScope.of(context).unfocus();
+    _setSidePanelOpen(ref, panel, isOpen: true);
+  }
+
+  void onCloseToolResult(String id) => _closeToolResult(tabs, id);
+
+  void onSelectToolResult(String? id) =>
+      _setSelectedToolResult(tabs.selectedId, id);
+}
+
+void _upsertToolResultTab(
+  _ToolResultTabHookValues tabs,
+  SidebarToolResultTab tab,
+) {
+  final existingTabs = tabs.tabs.value;
+  final updatedTabs = existingTabs.where((existing) => existing.id != tab.id);
+  tabs.tabs.value = [...updatedTabs, tab];
+}
+
+void _setSelectedToolResult(ValueNotifier<String?> selectedId, String? id) =>
+    selectedId.value = id;
+
+class const _LoadedChatConversationScreen({
+  required final _LoadedChatConversationData data,
+  required final BrowserSessionState? browserSession,
+  required final _LoadedConversationSidePanel sidePanel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final sideValues = sidePanel.values;
+    final actions = sidePanel.actions;
+
     return ChatPrimaryScrollController(
-      child: AuraScreen(
-        child: _ChatConversationBody(data: data),
+      child: AppScreen(
+        child: _LoadedChatConversationLayout(data: data, sidePanel: sidePanel),
         appBar: _ChatConversationAppBar(
-          title: data.conversation.title,
-          conversationId: data.conversation.id,
-          leading: data.leading,
+          data: data,
+          actions: _chatConversationAppBarActions(
+            data,
+            sideValues,
+            browserSession,
+            actions,
+          ),
         ),
       ),
     );
   }
 }
 
+_ChatConversationAppBarActions _chatConversationAppBarActions(
+  _LoadedChatConversationData data,
+  _LoadedSidePanelValues sideValues,
+  BrowserSessionState? browserSession,
+  _LoadedSidePanelActions actions,
+) => .new(
+  workspaceId: data.workspaceId,
+  conversationId: data.conversation.id,
+  sidePanelVisible: sideValues.isVisible,
+  tabCount: _browserTabCount(browserSession, sideValues.toolResultTabs),
+  onSidebarToggle: actions.onToggle,
+);
+
+int? _browserTabCount(
+  BrowserSessionState? browserSession,
+  List<SidebarToolResultTab> resultTabs,
+) => browserSession == null
+    ? null
+    : browserSession.tabs.length + resultTabs.length;
+
+class const _LoadedChatConversationLayout({
+  required final _LoadedChatConversationData data,
+  required final _LoadedConversationSidePanel sidePanel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final values = sidePanel.values;
+    final actions = sidePanel.actions;
+
+    return ResponsiveConversationLayout(
+      mainContent: _LoadedChatConversationMain(data: data, actions: actions),
+      sidePanel: _loadedChatConversationSidePanel(data, values, actions),
+    );
+  }
+}
+
+ResponsiveConversationSidePanel _loadedChatConversationSidePanel(
+  _LoadedChatConversationData data,
+  _LoadedSidePanelValues values,
+  _LoadedSidePanelActions actions,
+) => .new(
+  visible: values.isVisible,
+  mounted: values.isMounted,
+  widthPercent: values.widthPercent,
+  onWidthChanged: actions.onWidthChanged,
+  onClose: actions.onClose,
+  builder: () =>
+      _LoadedChatBrowserPanel(data: data, values: values, actions: actions),
+);
+
+class const _LoadedChatConversationMain({
+  required final _LoadedChatConversationData data,
+  required final _LoadedSidePanelActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ChatConversationBody(
+    data: data,
+    onOpenToolResult: actions.onOpenToolResult,
+  );
+}
+
 class const _ChatConversationAppBar({
-  required final String title,
-  required final String conversationId,
-  required final Widget? leading,
+  required final _LoadedChatConversationData data,
+  required final _ChatConversationAppBarActions actions,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) => AuraAppBarWithDrawer(
-    title: Text(title),
-    actions: [ModelUsageHeaderButton(conversationId: conversationId)],
-    leading: leading,
+    title: Text(data.conversation.title),
+    actions: actions.widgets,
+    leading: data.leading,
+  );
+}
+
+class _ChatConversationAppBarActions({
+  required String workspaceId,
+  required String conversationId,
+  required bool sidePanelVisible,
+  required int? tabCount,
+  required VoidCallback onSidebarToggle,
+}) {
+  final List<Widget> widgets = [
+    ModelUsageHeaderButton(conversationId: conversationId),
+    BackgroundWorkHeaderButton(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+    _ConversationBookmarksButton(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+    ConversationSidebarToggleButton(
+      isPanelVisible: sidePanelVisible,
+      tabCount: tabCount,
+      onPressed: onSidebarToggle,
+    ),
+  ];
+}
+
+class const _ConversationBookmarksButton({
+  required final String workspaceId,
+  required final String conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.bookmark_border,
+    onPressed: () => MessageBookmarksRoute(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ).go(context),
+    tooltip: LocaleKeys.chats_screens_chats_list_saved_messages.tr(),
+  );
+}
+
+class const _LoadedChatBrowserPanel({
+  required final _LoadedChatConversationData data,
+  required final _LoadedSidePanelValues values,
+  required final _LoadedSidePanelActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => BrowserPanel(
+    workspaceId: data.workspaceId,
+    conversationId: data.conversation.id,
+    toolResultTabs: values.toolResultTabs,
+    selectedToolResultTabId: values.selectedToolResultTabId,
+    onSelectToolResultTab: actions.onSelectToolResult,
+    onCloseToolResultTab: actions.onCloseToolResult,
   );
 }
 
 class const _ChatConversationBody({
   required final _LoadedChatConversationData data,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final backgroundWorkStatus = _backgroundWorkStatusPresence(ref, data);
+    final hasOtherStatus = _hasChatConversationStatus(data);
+    final hasStatusArea = _hasChatConversationStatusArea(
+      ref,
+      data,
+      backgroundWorkStatus,
+      hasOtherStatus,
+    );
+
+    return _ChatConversationBodyLayout(
+      data: data,
+      onOpenToolResult: onOpenToolResult,
+      backgroundWorkStatus: backgroundWorkStatus,
+      hasOtherStatus: hasOtherStatus,
+      hasStatusArea: hasStatusArea,
+    );
+  }
+}
+
+bool _hasChatConversationStatusArea(
+  WidgetRef ref,
+  _LoadedChatConversationData data,
+  _BackgroundWorkStatusPresence backgroundWorkStatus,
+  bool hasOtherStatus,
+) =>
+    backgroundWorkStatus.hasDetachableToolCalls ||
+    backgroundWorkStatus.hasBackgroundWorks ||
+    hasOtherStatus ||
+    ref.watch(mcpElicitationProvider(data.conversation.id)).isNotEmpty ||
+    data.showInputComposer;
+
+_BackgroundWorkStatusPresence _backgroundWorkStatusPresence(
+  WidgetRef ref,
+  _LoadedChatConversationData data,
+) {
+  final key = (
+    workspaceId: data.workspaceId,
+    conversationId: data.conversation.id,
+  );
+  final detachableToolCalls = ref.watch(
+    backgroundDetachableToolCallsProvider(key),
+  );
+  final backgroundWorks = ref.watch(backgroundWorkContinuationsProvider(key));
+
+  return (
+    hasDetachableToolCalls: detachableToolCalls.isNotEmpty,
+    hasBackgroundWorks: backgroundWorks.value?.isNotEmpty ?? false,
+  );
+}
+
+class const _ChatConversationBodyLayout({
+  required final _LoadedChatConversationData data,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
+  required final _BackgroundWorkStatusPresence backgroundWorkStatus,
+  required final bool hasOtherStatus,
+  required final bool hasStatusArea,
 }) extends StatelessWidget {
+  CloudConversationKey get _conversationKey =>
+      (workspaceId: data.workspaceId, conversationId: data.conversation.id);
+
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
       _ConversationOrientation(data: data),
       _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
-      _ChatConversationMessageList(data: data),
-      if (_hasChatConversationStatus(data) || data.showInputComposer)
-        _ChatConversationStatusAndComposer(
+      _CloudConversationStreamRecovery(conversationKey: _conversationKey),
+      _ChatConversationMessageList(
+        data: data,
+        onOpenToolResult: onOpenToolResult,
+      ),
+      if (hasStatusArea)
+        _ChatConversationStatusArea(
           data: data,
-          key: ValueKey((
-            workspaceId: data.workspaceId,
-            conversationId: data.conversation.id,
-          )),
+          backgroundWorkStatus: backgroundWorkStatus,
+          hasOtherStatus: hasOtherStatus,
         ),
     ],
+    spacing: .none,
   );
+}
+
+class const _CloudConversationStreamRecovery({
+  required final CloudConversationKey conversationKey,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!_isCloudWorkspace(ref, conversationKey.workspaceId)) {
+      return const SizedBox.shrink();
+    }
+
+    final provider = cloudConversationStateProvider(conversationKey);
+    final error = ref.watch(provider).error;
+    if (error == null) return const SizedBox.shrink();
+
+    return _CloudConversationStreamRecoveryContent(
+      error: error,
+      onRetry: () => ref.invalidate(provider),
+    );
+  }
+}
+
+class const _CloudConversationStreamRecoveryContent({
+  required final Object error,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPadding(
+    child: AuraColumn(
+      children: [
+        _CloudConversationStreamFailureCallout(error: error),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: AuraButton(
+            onPressed: onRetry,
+            child: const TextLocale(LocaleKeys.route_state_retry),
+          ),
+        ),
+      ],
+      spacing: .sm,
+      mainAxisSize: .min,
+    ),
+    padding: const .horizontal(.md),
+  );
+}
+
+class const _CloudConversationStreamFailureCallout({
+  required final Object error,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final errorMessageKey = switch (error) {
+      CloudConversationStreamFailure(:final localizationKey) => localizationKey,
+      _ => CloudAppErrors.localizationKey(error),
+    };
+
+    return AuraCallout(
+      title: LocaleKeys.common_error_title.tr(context: context),
+      description: errorMessageKey.tr(context: context),
+      icon: Icons.cloud_off_outlined,
+      tint: .error,
+    );
+  }
+}
+
+class const _ChatConversationStatusArea({
+  required final _LoadedChatConversationData data,
+  required final _BackgroundWorkStatusPresence backgroundWorkStatus,
+  required final bool hasOtherStatus,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      if (backgroundWorkStatus.hasDetachableToolCalls ||
+          backgroundWorkStatus.hasBackgroundWorks)
+        _BackgroundWorkStatus(data: data, presence: backgroundWorkStatus),
+      ChatMcpElicitationCard(conversationId: data.conversation.id),
+      _ChatConversationComposerStatus(
+        data: data,
+        hasOtherStatus: hasOtherStatus,
+      ),
+    ],
+    mainAxisSize: .min,
+  );
+}
+
+class const _ChatConversationComposerStatus({
+  required final _LoadedChatConversationData data,
+  required final bool hasOtherStatus,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!hasOtherStatus && !data.showInputComposer) {
+      return const SizedBox.shrink();
+    }
+
+    return _ChatConversationStatusAndComposer(
+      data: data,
+      key: ValueKey((
+        workspaceId: data.workspaceId,
+        conversationId: data.conversation.id,
+      )),
+    );
+  }
 }
 
 class const _IncompleteImportedAgentContextNotice({
@@ -1261,7 +1989,7 @@ class const _ChatConversationStatusAndComposerView({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       if (_hasChatConversationStatus(data))
-        _ChatConversationStatus(data: data, onEditDraft: onEditDraft),
+        _OtherConversationStatus(data: data, onEditDraft: onEditDraft),
       if (data.showInputComposer)
         _ChatComposer(data: data, draftToLoad: draftToLoad),
     ],
@@ -1271,11 +1999,16 @@ class const _ChatConversationStatusAndComposerView({
 
 class const _ChatConversationMessageList({
   required final _LoadedChatConversationData data,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
 }) extends StatelessWidget {
   Future<void> Function(MessageEntity message)? get _onRetryMessage =>
       data.state.isInputBusy ? null : data.callbacks.hooks.onRetryMessage;
 
-  bool get _showThinking => data.state.isGenerating && !data.hidesStoppedRun;
+  bool get _showThinking =>
+      data.state.isAgentWorking &&
+      data.state.rateLimitRetryAt == null &&
+      !data.state.isCompacting &&
+      !data.hidesStoppedRun;
 
   @override
   Widget build(BuildContext context) => Expanded(
@@ -1285,6 +2018,7 @@ class const _ChatConversationMessageList({
       pendingToolCalls: data.state.pendingCalls,
       isStopRequested: data.isStopRequested,
       onRetryMessage: _onRetryMessage,
+      onOpenToolResult: onOpenToolResult,
       showThinking: _showThinking,
     ),
   );
@@ -1357,7 +2091,29 @@ class const _IdleConversationActivityLabel({
         );
 }
 
-class const _ChatConversationStatus({
+class const _BackgroundWorkStatus({
+  required final _LoadedChatConversationData data,
+  required final _BackgroundWorkStatusPresence presence,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      if (presence.hasDetachableToolCalls)
+        BackgroundWorkDetachControls(
+          workspaceId: data.workspaceId,
+          conversationId: data.conversation.id,
+        ),
+      if (presence.hasBackgroundWorks)
+        BackgroundWorkContinuationStatus(
+          workspaceId: data.workspaceId,
+          conversationId: data.conversation.id,
+        ),
+    ],
+    mainAxisSize: .min,
+  );
+}
+
+class const _OtherConversationStatus({
   required final _LoadedChatConversationData data,
   required final ValueChanged<ChatDraft>? onEditDraft,
 }) extends StatelessWidget {
@@ -1419,18 +2175,24 @@ class const _ChatComposer({
     return _ChatComposerView(
       data: data,
       modelStatus: modelStatus,
-      reasoningControl: _reasoningControl(ref, modelStatus.reasoningOptions),
+      reasoningSettingsControl: _reasoningSettingsControl(
+        ref,
+        modelStatus.reasoningOptions,
+      ),
       canCompact: _canCompact(ref, modelStatus.available),
       draftToLoad: draftToLoad,
     );
   }
 
-  Widget? _reasoningControl(WidgetRef ref, List<ReasoningOption> options) {
+  Widget? _reasoningSettingsControl(
+    WidgetRef ref,
+    List<ReasoningOption> options,
+  ) {
     if (!ChatReasoningControls.hasSupportedReasoningOptions(options)) {
       return null;
     }
 
-    return ChatReasoningControl(
+    return ChatReasoningControls(
       options: options,
       value: data.conversation.reasoningConfiguration,
       onChanged: (value) =>
@@ -1471,7 +2233,7 @@ class _ChatComposerView extends StatelessWidget {
   new({
     required _LoadedChatConversationData data,
     required _ChatComposerModelStatus modelStatus,
-    required Widget? reasoningControl,
+    required Widget? reasoningSettingsControl,
     required bool canCompact,
     required ChatDraft? draftToLoad,
   }) : offstage = data.state.hasPendingApprovals,
@@ -1479,7 +2241,7 @@ class _ChatComposerView extends StatelessWidget {
          data: data,
          draftToLoad: draftToLoad,
          canCompact: canCompact,
-         reasoningControl: reasoningControl,
+         reasoningSettingsControl: reasoningSettingsControl,
          modelUnavailable: modelStatus.missing,
          compactDisabledHint: modelStatus.hint,
          continueDisabledHint: modelStatus.hint,
@@ -1561,7 +2323,7 @@ class _ChatComposerInput extends StatelessWidget {
     required this.data,
     required this.draftToLoad,
     required this.canCompact,
-    required this.reasoningControl,
+    required this.reasoningSettingsControl,
     required this.modelUnavailable,
     required this.compactDisabledHint,
     required this.continueDisabledHint,
@@ -1596,7 +2358,11 @@ class _ChatComposerInput extends StatelessWidget {
            onCompactTap: onPressed,
          ),
          conversationId: data.conversation.id,
-         reasoningControl: reasoningControl,
+         toolAccessMode: data.conversation.toolAccessMode,
+         onToolAccessModeChanged:
+             data.callbacks.selectors.onToolAccessModeChanged,
+         topPadding: 0,
+         reasoningSettingsControl: reasoningSettingsControl,
          draftToLoad: draftToLoad,
          modalitiesInput: data.state.modalitiesInput,
          onSkillsPress: data.callbacks.selectors.onSkillsPress,
@@ -1616,7 +2382,7 @@ class _ChatComposerInput extends StatelessWidget {
   final _LoadedChatConversationData data;
   final ChatDraft? draftToLoad;
   final bool canCompact;
-  final Widget? reasoningControl;
+  final Widget? reasoningSettingsControl;
   final bool modelUnavailable;
   final String? compactDisabledHint;
   final String? continueDisabledHint;
@@ -1738,11 +2504,7 @@ class const _ChatControlsPadding({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(
-      left: context.auraTheme.fromSpacing(.md),
-      top: context.auraTheme.fromSpacing(.sm),
-      right: context.auraTheme.fromSpacing(.md),
-    ),
+    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
     child: _ChatControlsAlignment(
       workspaceId: workspaceId,
       conversationId: conversationId,
@@ -2063,18 +2825,22 @@ class const _ModelSwitchConfirmButton() extends StatelessWidget {
 }
 
 Future<void> _continueAgent(_ConversationContextRequest request) async {
+  if (!request.context.mounted) return;
   if (!_canContinueConversation(request)) return;
 
-  await _continueAgentTurnWithErrorHandling(request);
+  final decision = await _continueAgentTurnWithErrorHandling(request);
+  _showIterationLimitNoticeForConversation(request, decision);
 }
 
-Future<void> _continueAgentTurnWithErrorHandling(
+Future<AgentIterationDecision?> _continueAgentTurnWithErrorHandling(
   _ConversationContextRequest request,
 ) async {
   try {
-    await _continueAgentTurn(request);
+    return await _continueAgentTurn(request);
   } on Exception catch (error, stackTrace) {
     _reportContinueAgentFailure(request, error, stackTrace);
+
+    return null;
   }
 }
 
@@ -2108,14 +2874,33 @@ bool _canContinueConversation(_ConversationContextRequest request) =>
       )[request.conversationId],
     );
 
-Future<void> _continueAgentTurn(_ConversationContextRequest request) async {
+Future<AgentIterationDecision?> _continueAgentTurn(
+  _ConversationContextRequest request,
+) async {
   final cloud = await request.ref.read(
     cloudTurnUsecaseProvider(request.workspaceId).future,
   );
-  if (cloud == null) {
-    await _continueLocalAgent(request.ref, request.conversationId);
+  final context = request.context;
+  if (!context.mounted) return null;
 
-    return;
+  return await _continueAgentTurnWithLanguage(
+    request,
+    cloud,
+    context.locale.languageCode,
+  );
+}
+
+Future<AgentIterationDecision?> _continueAgentTurnWithLanguage(
+  _ConversationContextRequest request,
+  CloudTurnUsecase? cloud,
+  String languageCode,
+) async {
+  if (cloud == null) {
+    return await _continueLocalAgent(
+      request.ref,
+      request.conversationId,
+      languageCode,
+    );
   }
 
   await _continueCloudAgent((
@@ -2123,16 +2908,27 @@ Future<void> _continueAgentTurn(_ConversationContextRequest request) async {
     cloud: cloud,
     workspaceId: request.workspaceId,
     conversationId: request.conversationId,
+    languageCode: languageCode,
   ));
+
+  return null;
 }
 
-Future<void> _continueLocalAgent(WidgetRef ref, String conversationId) async {
-  final _ = await ref
+Future<AgentIterationDecision> _continueLocalAgent(
+  WidgetRef ref,
+  String conversationId,
+  String languageCode,
+) async {
+  ref
+      .read(conversationAgentLanguageRuntimeProvider)
+      .remember(conversationId, languageCode);
+
+  return await ref
       .read(auraAgentServiceProvider)
       .agent
       .continueTurn(
         conversationId: conversationId,
-        context: const AgentIterationContext(origin: .manualContinue),
+        context: const .new(origin: .manualContinue),
       );
 }
 
@@ -2140,7 +2936,11 @@ Future<void> _retryMessage(_RetryMessageRequest request) async {
   if (!_canRetryMessage(request)) return;
 
   try {
-    await _runRetryMessage(request);
+    final decision = await _runRetryMessage(request);
+    _showIterationLimitNoticeForConversation(
+      _conversationContextForRetry(request),
+      decision,
+    );
   } on Exception catch (error, stackTrace) {
     _reportRetryMessageError(request, error, stackTrace);
   }
@@ -2173,24 +2973,31 @@ bool _canRetryProviderMessage(MessageEntity message) =>
         (message.status == .error &&
             ProviderRecoveryMetadata.isRetryEligible(message)));
 
-Future<void> _runRetryMessage(_RetryMessageRequest request) async {
+Future<AgentIterationDecision?> _runRetryMessage(
+  _RetryMessageRequest request,
+) async {
   final cloud = await request.ref.read(
     cloudTurnUsecaseProvider(request.workspaceId).future,
   );
-  if (cloud == null) {
-    await _retryLocalMessage(request);
+  if (!request.context.mounted) return null;
 
-    return;
+  if (cloud == null) {
+    return await _retryLocalMessage(request);
   }
 
   await _retryCloudMessage(request, cloud);
+
+  return null;
 }
 
-Future<void> _retryLocalMessage(_RetryMessageRequest request) => request.ref
+Future<AgentIterationDecision> _retryLocalMessage(
+  _RetryMessageRequest request,
+) => request.ref
     .read(sendMessageUsecaseProvider(request.workspaceId))
     .retryUserMessage(
       conversationId: request.conversationId,
       messageId: request.message.id,
+      languageCode: request.context.locale.languageCode,
     );
 
 Future<void> _retryCloudMessage(
@@ -2201,6 +3008,7 @@ Future<void> _retryCloudMessage(
   cloud: cloud,
   workspaceId: request.workspaceId,
   conversationId: request.conversationId,
+  languageCode: request.context.locale.languageCode,
 ));
 
 void _reportRetryMessageError(
@@ -2250,18 +3058,20 @@ void _reportContinueAgentFlutterError(_ContinueErrorRequest request) {
 void _showContinueAgentError(BuildContext context, Exception error) {
   if (!context.mounted) return;
 
-  final messageKey = switch (error) {
+  final message = switch (error) {
     UnsupportedTranscriptVersionException() =>
-      LocaleKeys.chats_screens_chat_conversation_transcript_context_unsupported,
+      LocaleKeys.chats_screens_chat_conversation_transcript_context_unsupported
+          .tr(),
     MalformedTranscriptContextException() =>
-      LocaleKeys.chats_screens_chat_conversation_transcript_context_malformed,
+      LocaleKeys.chats_screens_chat_conversation_transcript_context_malformed
+          .tr(),
     SelectedModelNotFoundException() =>
-      LocaleKeys.chats_screens_chat_conversation_model_missing,
-    _ => LocaleKeys.chats_screens_chat_conversation_continue_error,
+      LocaleKeys.chats_screens_chat_conversation_model_missing.tr(),
+    _ => LocaleKeys.chats_screens_chat_conversation_continue_error.tr(),
   };
   final _ = AuraSnackBars.show(
     context: context,
-    content: Text(messageKey.tr()),
+    content: Text(message),
     variant: .error,
   );
 }
@@ -2282,6 +3092,7 @@ Future<void> _continueCloudAgent(_CloudContinueRequest request) async {
   final _ = await request.cloud.continueSharedConversation(
     conversationId: request.conversationId,
     projectionRevision: state.conversation.projectionRevision,
+    languageCode: request.languageCode,
   );
 }
 
@@ -2535,7 +3346,11 @@ bool _canStopCloudState(CloudConversationState state) {
 
 Future<void> _sendMessage(_SendMessageRequest request) async {
   try {
-    await _sendMessageUsecase(request);
+    final decision = await _sendMessageUsecase(request);
+    _showIterationLimitNoticeForConversation(
+      _conversationContextForSend(request),
+      decision,
+    );
   } on MessagePersistedException catch (error) {
     _reportSendMessageFailure(request, error, error.stackTrace);
   } on Object catch (error, stackTrace) {
@@ -2544,9 +3359,64 @@ Future<void> _sendMessage(_SendMessageRequest request) async {
   }
 }
 
-Future<void> _sendMessageUsecase(_SendMessageRequest request) => request.ref
+Future<AgentIterationDecision?> _sendMessageUsecase(
+  _SendMessageRequest request,
+) => request.ref
     .read(sendMessageUsecaseProvider(request.workspaceId))
     .call(conversationId: request.conversationId, draft: request.draft);
+
+_ConversationContextRequest _conversationContextForRetry(
+  _RetryMessageRequest request,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  conversationId: request.conversationId,
+);
+
+_ConversationContextRequest _conversationContextForSend(
+  _SendMessageRequest request,
+) => (
+  context: request.context,
+  ref: request.ref,
+  workspaceId: request.workspaceId,
+  conversationId: request.conversationId,
+);
+
+VoidCallback _conversationContextContinueCallback(
+  _ConversationContextRequest request,
+) =>
+    () => unawaited(_continueAgent(request));
+
+void _showIterationLimitNoticeForConversation(
+  _ConversationContextRequest request,
+  AgentIterationDecision? decision,
+) => _showIterationLimitNoticeIfNeeded(
+  context: request.context,
+  decision: decision,
+  onContinue: _conversationContextContinueCallback(request),
+);
+
+void _showIterationLimitNoticeIfNeeded({
+  required BuildContext context,
+  required AgentIterationDecision? decision,
+  required VoidCallback onContinue,
+}) {
+  if (decision != AgentIterationDecision.iterationLimitReached ||
+      !context.mounted) {
+    return;
+  }
+
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
+    ),
+    duration: const Duration(seconds: 10),
+    actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent.tr(),
+    onAction: onContinue,
+  );
+}
 
 void _reportSendMessageFailure(
   _SendMessageRequest request,
@@ -2617,6 +3487,7 @@ class const _ChatList({
   required final List<PendingToolCall> pendingToolCalls,
   required final bool isStopRequested,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   final bool showThinking = false,
 }) extends ConsumerWidget {
   @override
@@ -2633,6 +3504,7 @@ class const _ChatList({
       isStopRequested: isStopRequested,
       showThinking: showThinking,
       onRetryMessage: onRetryMessage,
+      onOpenToolResult: onOpenToolResult,
     );
   }
 }
@@ -2645,6 +3517,7 @@ class const _ChatListContent({
   required final bool isStopRequested,
   required final bool showThinking,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -2658,6 +3531,7 @@ class const _ChatListContent({
       isStopRequested: isStopRequested,
       showThinking: showThinking,
       onRetryMessage: onRetryMessage,
+      onOpenToolResult: onOpenToolResult,
     );
   }
 }
@@ -2670,27 +3544,33 @@ class const _ChatListErrorOrResult({
   required final bool isStopRequested,
   required final bool showThinking,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final asyncError = chatMessages.asError;
     if (asyncError != null) {
-      return _ChatListError(
-        error: asyncError.error,
-        stackTrace: asyncError.stackTrace,
-      );
+      return _buildError(asyncError);
     }
 
-    return _ChatListResult(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-      messages: chatMessages.value ?? const <MessageEntity>[],
-      pendingToolCalls: pendingToolCalls,
-      isStopRequested: isStopRequested,
-      showThinking: showThinking,
-      onRetryMessage: onRetryMessage,
-    );
+    return _buildResult();
   }
+}
+
+extension on _ChatListErrorOrResult {
+  Widget _buildError(AsyncError<List<MessageEntity>> error) =>
+      _ChatListError(error: error.error, stackTrace: error.stackTrace);
+
+  Widget _buildResult() => _ChatListResult(
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+    messages: this.chatMessages.value ?? const <MessageEntity>[],
+    pendingToolCalls: this.pendingToolCalls,
+    isStopRequested: isStopRequested,
+    showThinking: showThinking,
+    onRetryMessage: onRetryMessage,
+    onOpenToolResult: onOpenToolResult,
+  );
 }
 
 bool _isChatMessagesLoading(AsyncValue<List<MessageEntity>> state) =>
@@ -2718,6 +3598,7 @@ class const _ChatListResult({
   required final bool isStopRequested,
   required final bool showThinking,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -2727,6 +3608,7 @@ class const _ChatListResult({
       workspaceId: workspaceId,
       conversationId: conversationId,
       messages: messageData.ids,
+      onOpenToolResult: onOpenToolResult,
       messageEntitiesById: messageData.entitiesById,
       pendingToolCalls: pendingToolCalls,
       showThinking: showThinking,
@@ -2888,7 +3770,7 @@ String _conversationActivityFallbackKey(
   _ when state.rateLimitRetryAt != null => 'retry',
   _ when state.isCompacting => 'compacting',
   _ when childCount > 0 => 'delegated',
-  _ when state.isGenerating || state.isInputBusy => 'working',
+  _ when state.isAgentWorking || state.isInputBusy => 'working',
   _ when state.queuedDrafts.isNotEmpty => 'queued',
   _ => 'idle',
 };

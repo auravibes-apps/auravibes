@@ -20,6 +20,7 @@ abstract class ConversationProjectionView
     required this.executionState,
     required this.projectionRevision,
     required this.sequence,
+    String? toolAccessMode,
     this.modelId,
     this.agentId,
     this.reasoningConfigJson,
@@ -30,7 +31,7 @@ abstract class ConversationProjectionView
     this.activeExecutionId,
     this.activeCompactionCheckpointId,
     required this.updatedAt,
-  });
+  }) : toolAccessMode = toolAccessMode ?? 'default';
 
   factory ConversationProjectionView({
     required String id,
@@ -38,6 +39,7 @@ abstract class ConversationProjectionView
     required String executionState,
     required int projectionRevision,
     required int sequence,
+    String? toolAccessMode,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -59,6 +61,7 @@ abstract class ConversationProjectionView
       executionState: jsonSerialization['executionState'] as String,
       projectionRevision: jsonSerialization['projectionRevision'] as int,
       sequence: jsonSerialization['sequence'] as int,
+      toolAccessMode: jsonSerialization['toolAccessMode'] as String?,
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
@@ -91,6 +94,8 @@ abstract class ConversationProjectionView
 
   int sequence;
 
+  String toolAccessMode;
+
   String? modelId;
 
   String? agentId;
@@ -120,6 +125,7 @@ abstract class ConversationProjectionView
     String? executionState,
     int? projectionRevision,
     int? sequence,
+    String? toolAccessMode,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -140,6 +146,7 @@ abstract class ConversationProjectionView
       'executionState': executionState,
       'projectionRevision': projectionRevision,
       'sequence': sequence,
+      'toolAccessMode': toolAccessMode,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
@@ -167,6 +174,7 @@ abstract class ConversationProjectionView
       'executionState': executionState,
       'projectionRevision': projectionRevision,
       'sequence': sequence,
+      'toolAccessMode': toolAccessMode,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
@@ -200,6 +208,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
     required String executionState,
     required int projectionRevision,
     required int sequence,
+    String? toolAccessMode,
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
@@ -216,6 +225,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
          executionState: executionState,
          projectionRevision: projectionRevision,
          sequence: sequence,
+         toolAccessMode: toolAccessMode,
          modelId: modelId,
          agentId: agentId,
          reasoningConfigJson: reasoningConfigJson,
@@ -238,6 +248,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
     String? executionState,
     int? projectionRevision,
     int? sequence,
+    String? toolAccessMode,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
     Object? reasoningConfigJson = _Undefined,
@@ -255,6 +266,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
       executionState: executionState ?? this.executionState,
       projectionRevision: projectionRevision ?? this.projectionRevision,
       sequence: sequence ?? this.sequence,
+      toolAccessMode: toolAccessMode ?? this.toolAccessMode,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
       reasoningConfigJson: reasoningConfigJson is String?

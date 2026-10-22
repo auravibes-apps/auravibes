@@ -8,9 +8,50 @@ import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 
 void main() {
   group('ApplyConversationSkillActionUsecase', () {
+    test('history write failure logs no content and does not retry', () async {
+      final records = <LogRecord>[];
+      final subscription = Logger.root.onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      var writes = 0;
+      var sends = 0;
+      final usecase = _usecase(
+        send: (_, _, _) async => sends++,
+        recordRecentSkillUse: (_, _, _) async {
+          writes++;
+          throw StateError('research Research secret-prompt credential-token');
+        },
+      );
+
+      final result = await _call(
+        usecase,
+        workspaceId: 'workspace-1',
+        conversationId: 'conversation-1',
+        slug: 'research',
+        action: .useNow,
+        userRequestForSkill: _requestForSkill,
+      );
+
+      expect(result, ConversationSkillActionResult.used);
+      expect(writes, 1);
+      expect(sends, 1);
+      final diagnostics = records
+          .where(
+            (record) => record.loggerName == 'apply_conversation_skill_action',
+          )
+          .toList();
+      expect(diagnostics, hasLength(1));
+      expect(diagnostics.single.level, Level.WARNING);
+      expect(
+        diagnostics.single.message,
+        'Recent skill history write failed. Request continues without retry.',
+      );
+      expect(diagnostics.single.error, isNull);
+      expect(diagnostics.single.stackTrace, isNull);
+    });
     test('Add persists selection without sending a message', () async {
       var loads = 0;
       var sends = 0;
@@ -196,12 +237,12 @@ void main() {
       final credentialCases =
           <
             ({
-              SkillCredentialReadiness readiness,
+              ConnectorConnectionReadiness readiness,
               ConversationSkillActionResult expected,
             })
           >[
-            (readiness: .missing, expected: .credentialsMissing),
-            (readiness: .unknown, expected: .credentialsUnknown),
+            (readiness: .missing, expected: .connectionMissing),
+            (readiness: .unknown, expected: .connectionUnknown),
           ];
       for (final (:readiness, :expected) in credentialCases) {
         var loads = 0;
@@ -390,10 +431,10 @@ const _skill = AvailableSkill(
   content: 'Research carefully.',
   source: .user,
   kind: .template,
-  credentialReadiness: .ready,
+  connectorReadiness: .ready,
 );
 
-AvailableSkill _skillWithReadiness(SkillCredentialReadiness readiness) =>
+AvailableSkill _skillWithReadiness(ConnectorConnectionReadiness readiness) =>
     AvailableSkill(
       id: _skill.id,
       slug: _skill.slug,
@@ -402,5 +443,5 @@ AvailableSkill _skillWithReadiness(SkillCredentialReadiness readiness) =>
       content: _skill.content,
       source: _skill.source,
       kind: _skill.kind,
-      credentialReadiness: readiness,
+      connectorReadiness: readiness,
     );

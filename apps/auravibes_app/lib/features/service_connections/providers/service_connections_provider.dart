@@ -7,7 +7,6 @@ import 'package:auravibes_app/features/service_connections/models/cloud_service_
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
 import 'package:auravibes_app/features/service_connections/usecases/watch_service_connection_list_items_usecase.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
@@ -104,8 +103,6 @@ Stream<List<ServiceConnectionListItem>> _watchLocalServiceConnections(
   final usecase = WatchServiceConnectionListItemsUsecase(
     ref.watch(appDatabaseProvider),
     ref.watch(modelConnectionRepositoryProvider),
-    ref.watch(skillCredentialDefinitionsRepositoryProvider),
-    ref.watch(skillCredentialsRepositoryProvider),
     DateTime.now,
   );
 
@@ -128,7 +125,7 @@ List<ServiceConnectionListItem> _sortedCloudConnections(
 ServiceConnectionListItem _cloudMcpConnectionItem(WorkspaceResource resource) {
   final fields = _cloudMcpConnectionFields(resource);
 
-  return serviceConnectionListItemFromCloudMcp(fields);
+  return ServiceConnectionListItem.fromCloudMcp(fields);
 }
 
 ServiceConnectionCloudMcp _cloudMcpConnectionFields(
@@ -195,9 +192,8 @@ ServiceConnectionListItem _cloudServiceConnectionItem(
   workspaceId: workspaceId,
   name: connection.name,
   serviceName: connection.serviceId,
-  kind: .skillCredential,
+  kind: .connector,
   keySuffix: connection.keySuffix,
-  credentialDefinitionId: connection.credentialDefinitionId,
   mcpServerId: null,
   authenticationType: null,
   displayStatus: _cloudConnectionDisplayStatus(connection),

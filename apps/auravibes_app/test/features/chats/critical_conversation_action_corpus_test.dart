@@ -4,8 +4,10 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -162,6 +164,7 @@ Future<void> _stopAvailable(WidgetTester tester) async {
 
   final stopButton = find.byKey(const ValueKey<String>('chat_stop_generation'));
   expect(stopButton, findsOneWidget);
+  expect(find.byKey(const ValueKey<String>('chat_send_button')), findsNothing);
   await tester.tap(stopButton);
   expect(stopped, isTrue);
 }
@@ -181,6 +184,10 @@ Future<void> _stopUnavailable(WidgetTester tester) async {
   expect(
     find.byKey(const ValueKey<String>('chat_stop_generation')).hitTestable(),
     findsNothing,
+  );
+  expect(
+    find.byKey(const ValueKey<String>('chat_send_button')),
+    findsOneWidget,
   );
   expect(stopped, isFalse);
 }
@@ -477,6 +484,7 @@ class const _MessageSubject({
           workspaceId: criticalConversationWorkspaceId,
           conversationId: criticalConversationId,
           messages: [message.id],
+          onOpenToolResult: (_) => fail('Unexpected tool result tab'),
           messageEntitiesById: {message.id: message},
           onRetryMessage: onRetryMessage,
         ),
@@ -484,6 +492,9 @@ class const _MessageSubject({
     ),
     overrides: [
       conversationSelectedProvider.overrideWithValue(criticalConversationId),
+      conversationBackgroundWorksProvider(criticalConversationId)
+          .overrideWith((ref) => const Stream.empty()),
+      messageBookmarksProvider.overrideWith((ref, _) => Stream.value(const [])),
       workspaceSessionForRouteProvider(criticalConversationWorkspaceId)
           .overrideWithValue(
             const AsyncData(

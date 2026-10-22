@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:auravibes_app/app_env_config.dart';
+import 'package:auravibes_app/features/chats/providers/recover_interrupted_background_work_use_case_provider.dart';
 import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_notifier.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
@@ -10,6 +11,8 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/main/main_locale.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
+import 'package:auravibes_app/services/marionette/marionette_chat_smoke_fixture.dart';
+import 'package:auravibes_app/services/marionette/marionette_chat_smoke_provider_overrides.dart';
 import 'package:auravibes_app/services/marionette/marionette_extensions.dart';
 import 'package:auravibes_app/widgets/android_desktop_caption_backdrop.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
@@ -27,6 +30,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker_android/image_picker_android.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
+import 'package:in_app_webview_flutter/in_app_webview_flutter.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
 import 'package:material_ui/material_ui.dart';
@@ -34,6 +38,7 @@ import 'package:material_ui/material_ui.dart';
 PrintLogCollector? _marionetteLogCollector;
 
 Future<void> main() async {
+  PlatformInAppWebViewController.debugLoggingSettings.enabled = false;
   _configureFlavor();
   final marionetteInstanceId = _ensureFlutterBinding();
   _configurePlatformPlugins();
@@ -41,16 +46,46 @@ Future<void> main() async {
   await MainLocale.ensureInitialized();
 
   _configureSystemUi();
-  final container = ProviderContainer();
-  if (marionetteInstanceId != null) {
-    MarionetteExtensionRegistration.register(
-      MarionetteExtensionBootstrap.createState(container),
-    );
-  }
-
+  final container = await _prepareMarionetteContainer(marionetteInstanceId);
   _runApp(container);
   _scheduleModelSync(container);
 }
+
+Future<ProviderContainer> _prepareMarionetteContainer(
+  String? instanceId,
+) async {
+  final smokeSetup = _createMarionetteChatSmokeContainer(instanceId);
+  final container = smokeSetup.container;
+  await _recoverInterruptedBackgroundWork(container);
+  final chatSmokeFixture = smokeSetup.fixture;
+  if (chatSmokeFixture != null) {
+    MarionetteExtensionRegistration.register(
+      MarionetteExtensionBootstrap.createState(container),
+      chatSmokeFixture: chatSmokeFixture,
+    );
+  }
+
+  return container;
+}
+
+({ProviderContainer container, MarionetteChatSmokeFixture? fixture})
+_createMarionetteChatSmokeContainer(String? instanceId) {
+  final fixture = instanceId == null ? null : MarionetteChatSmokeFixture();
+
+  return (
+    container: ProviderContainer(
+      overrides: fixture == null
+          ? const []
+          : MarionetteChatSmokeProviderOverrides.create(fixture),
+    ),
+    fixture: fixture,
+  );
+}
+
+Future<void> _recoverInterruptedBackgroundWork(ProviderContainer container) =>
+    container
+        .read(recoverInterruptedBackgroundWorkUseCaseProvider)
+        .call(startedAt: DateTime.now().toUtc());
 
 void _configureFlavor() =>
     AppFlavorConfig.instance.setAppFlavor(AppFlavorResolver.resolve(appFlavor));
@@ -296,13 +331,6 @@ class const _MaterialAppRouterView({
   }
 }
 
-Brightness _effectiveBrightness(ThemeMode themeMode, BuildContext context) =>
-    switch (themeMode) {
-      .light => .light,
-      .dark => .dark,
-      .system => MediaQuery.platformBrightnessOf(context),
-    };
-
 class _AuraMaterialApp extends MaterialApp {
   new({
     required GoRouter routerConfig,
@@ -332,6 +360,13 @@ class _AuraMaterialApp extends MaterialApp {
        );
 }
 
+Brightness _effectiveBrightness(ThemeMode themeMode, BuildContext context) =>
+    switch (themeMode) {
+      .light => .light,
+      .dark => .dark,
+      .system => MediaQuery.platformBrightnessOf(context),
+    };
+
 class const _AuraAppContent({
   required final GoRouter router,
   required final AuraTheme targetAuraTheme,
@@ -357,11 +392,28 @@ class const _AuraAppThemeContent({
   required final Widget child,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraThemeScope(
-    theme: theme,
-    child: _RouteTitle(router: router, child: child),
-  );
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
+    return AuraThemeScope(
+      theme: theme,
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        child: _RouteTitle(router: router, child: child),
+        value: _statusBarOverlayStyle(brightness),
+      ),
+    );
+  }
 }
+
+SystemUiOverlayStyle _statusBarOverlayStyle(Brightness brightness) =>
+    SystemUiOverlayStyle(
+      statusBarBrightness: brightness == Brightness.dark
+          ? Brightness.dark
+          : Brightness.light,
+      statusBarIconBrightness: brightness == Brightness.dark
+          ? Brightness.light
+          : Brightness.dark,
+    );
 
 class const _RouteTitle({
   required final GoRouter router,
@@ -403,11 +455,9 @@ class const _RouteTitleContent({
 
 abstract final class RouteTitles {
   static const _workspaceRouteLength = 3;
-  static const _moreRouteLength = 4;
-  static const _cloudAccountRouteLength = 5;
+  static const _cloudAccountRouteLength = 4;
   static const _workspaceAreaIndex = 2;
-  static const _moreSectionIndex = 3;
-  static const _cloudAccountScreenIndex = 4;
+  static const _cloudAccountScreenIndex = 3;
 
   static String? titleKeyForPath(String path) {
     if (path == '/') return LocaleKeys.intro_flow_welcome_title;
@@ -425,25 +475,18 @@ abstract final class RouteTitles {
       'chat' => LocaleKeys.menu_new_chat,
       'chats' => LocaleKeys.menu_chats,
       'settings' => LocaleKeys.settings_screen_title,
-      'more' => _moreTitleKey(segments),
-      _ => null,
+      _ => _featureTitleKey(segments),
     };
   }
 
-  static String? _moreTitleKey(List<String> segments) {
-    if (segments.length < _moreRouteLength) {
-      return LocaleKeys.more_screen_title;
-    }
-
-    return switch (segments[_moreSectionIndex]) {
+  static String? _featureTitleKey(List<String> segments) {
+    return switch (segments[_workspaceAreaIndex]) {
       'manage-workspaces' => LocaleKeys.workspace_management_title,
       'cloud-accounts' => _cloudAccountTitleKey(segments),
       'tools' => LocaleKeys.tools_screen_title,
       'models' => LocaleKeys.models_screens_title,
       'service-connections' => LocaleKeys.service_connections_title,
       'skills' => LocaleKeys.skills_screen_title,
-      'skill-credential-definitions' =>
-        LocaleKeys.skill_credentials_definitions_title,
       'agents' => LocaleKeys.agents_title,
       _ => null,
     };

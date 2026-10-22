@@ -106,6 +106,37 @@ Future<void> _pumpRouter(
 }
 
 void main() {
+  testWidgets('bind notifies after descendant build completes', (tester) async {
+    final guard = DraftExitGuard();
+    addTearDown(guard.dispose);
+    var didBind = false;
+
+    await tester.pumpWidget(
+      DraftExitScope(
+        guard: guard,
+        child: Builder(
+          builder: (_) {
+            if (!didBind) {
+              didBind = true;
+              guard
+                ..update(isDirty: false, isSaving: false)
+                ..bind(readers: (isDirty: () => true, isSaving: () => false));
+            }
+
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.widget<PopScope<Object?>>(find.byType(PopScope<Object?>)).canPop,
+      isFalse,
+    );
+  });
+
   testWidgets(
     'workspace preflight cancels before writes and failed consent prompts '
     'on retry',

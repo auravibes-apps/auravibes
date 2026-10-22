@@ -1,3 +1,4 @@
+import 'package:auravibes_engine/src/connectors/connector_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/anthropic.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/brave.dart';
@@ -18,8 +19,17 @@ import 'package:auravibes_engine/src/skills/service_skills/providers/tavily.dart
 import 'package:auravibes_engine/src/skills/service_skills/providers/tinyfish.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/xai.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/zai.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
+
+final List<ConnectorDefinition> connectorDefinitions = .unmodifiable([
+  for (final preset in serviceSkillPresets) preset.connector,
+]);
 
 final List<AppSkillDefinition> serviceSkillDefinitions = .unmodifiable([
+  for (final preset in serviceSkillPresets) preset.skill,
+]);
+
+final List<ServiceSkillPreset> serviceSkillPresets = .unmodifiable([
   braveSkill,
   exaSkill,
   anthropicSkill,

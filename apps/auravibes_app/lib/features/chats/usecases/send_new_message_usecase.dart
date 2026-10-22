@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/services/cloud_conversation_creator.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
@@ -23,6 +24,7 @@ typedef _SendNewMessageRequest = ({
   ChatDraft draft,
   String workspaceModelSelectionId,
   String? agentId,
+  ConversationToolAccessMode toolAccessMode,
   ReasoningConfiguration? reasoningConfiguration,
 });
 
@@ -36,6 +38,7 @@ class const SendNewMessageUsecase({
   required final MonitoringService monitoringService,
   final Future<ConversationEntity> Function(ConversationToCreate value)?
   cloudCreate,
+  final void Function(String conversationId)? onIterationLimit,
 }) {
   Future<ConversationEntity> call(_SendNewMessageRequest request) =>
       _send(request);
@@ -64,6 +67,7 @@ class const SendNewMessageUsecase({
             stackTrace: stackTrace,
           );
         },
+        onIterationLimit: onIterationLimit,
       );
     } on Object catch (error, stackTrace) {
       monitoringService.trackError(
@@ -92,6 +96,7 @@ class const SendNewMessageUsecase({
       .new(
         title: 'New Conversation',
         workspaceId: request.workspaceId,
+        toolAccessMode: request.toolAccessMode,
         modelId: request.workspaceModelSelectionId,
         agentId: request.agentId,
         reasoningConfiguration: request.reasoningConfiguration,
@@ -131,21 +136,49 @@ bool _isCloud(Ref ref, String workspaceId) =>
         .cloud !=
     null;
 
+typedef _SendNewMessageUsecaseDependencies = ({
+  ConversationRepository conversationRepo,
+  SendMessageUsecase sendMessageUsecase,
+  GenerateTitleUsecase generateTitleUsecase,
+  MonitoringService monitoringService,
+});
+
+_SendNewMessageUsecaseDependencies _sendNewMessageUsecaseDependencies(
+  Ref ref,
+  String workspaceId,
+) => (
+  conversationRepo: ref.watch(conversationRepositoryProvider),
+  sendMessageUsecase: ref.watch(sendMessageUsecaseProvider(workspaceId)),
+  generateTitleUsecase: ref.watch(generateTitleUsecaseProvider),
+  monitoringService: ref.watch(monitoringServiceProvider),
+);
+
 SendNewMessageUsecase _buildSendNewMessageUsecase(
   Ref ref,
   String workspaceId,
   bool isCloud,
 ) {
+  final dependencies = _sendNewMessageUsecaseDependencies(ref, workspaceId);
+
   return SendNewMessageUsecase(
-    conversationRepo: ref.watch(conversationRepositoryProvider),
-    sendMessageUsecase: ref.watch(sendMessageUsecaseProvider(workspaceId)),
-    modelSelectionStore: (workspaceId) =>
-        ref.read(modelSelectionStoreProvider(workspaceId).future),
-    generateTitleUsecase: ref.watch(generateTitleUsecaseProvider),
-    monitoringService: ref.watch(monitoringServiceProvider),
+    conversationRepo: dependencies.conversationRepo,
+    sendMessageUsecase: dependencies.sendMessageUsecase,
+    modelSelectionStore: _loadModelSelectionStore(ref),
+    generateTitleUsecase: dependencies.generateTitleUsecase,
+    monitoringService: dependencies.monitoringService,
     cloudCreate: _cloudCreate(ref, workspaceId, isCloud),
+    onIterationLimit: _reportIterationLimit(ref),
   );
 }
+
+Future<ModelSelectionStore> Function(String workspaceId)
+_loadModelSelectionStore(Ref ref) =>
+    (workspaceId) => ref.read(modelSelectionStoreProvider(workspaceId).future);
+
+void Function(String conversationId) _reportIterationLimit(Ref ref) =>
+    (conversationId) => ref
+        .read(conversationIterationLimitProvider(conversationId).notifier)
+        .markReached();
 
 Future<ConversationEntity> Function(ConversationToCreate)? _cloudCreate(
   Ref ref,

@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
@@ -11,7 +12,10 @@ import 'package:auravibes_app/features/skills/usecases/list_available_skills_use
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
+
+final _logger = Logger('apply_conversation_skill_action');
 
 class ApplyConversationSkillActionUsecase({
   required final Future<String?> Function(String conversationId)
@@ -78,10 +82,10 @@ bool _isAlreadyAdded(
     request.action == .add &&
     loadedSkills.any((item) => item.slug == request.slug);
 
-ConversationSkillActionResult? _credentialFailure(AvailableSkill skill) =>
-    switch (skill.credentialReadiness) {
-      .missing => .credentialsMissing,
-      .unknown => .credentialsUnknown,
+ConversationSkillActionResult? _connectionFailure(AvailableSkill skill) =>
+    switch (skill.connectorReadiness) {
+      .missing => .connectionMissing,
+      .unknown => .connectionUnknown,
       .ready => null,
     };
 
@@ -93,8 +97,8 @@ ConversationSkillActionResult _loadFailure(
   LoadConversationSkillException error,
 ) {
   if (error.localizationKey ==
-      LocaleKeys.skills_screen_error_requires_credential) {
-    return .credentialsMissing;
+      LocaleKeys.skills_screen_error_requires_connection) {
+    return .connectionMissing;
   }
   if (error.localizationKey ==
       LocaleKeys.skills_screen_error_app_skill_disabled) {
@@ -126,7 +130,7 @@ extension on ApplyConversationSkillActionUsecase {
     if (skill == null) return .unavailable;
     if (_isAlreadyAdded(request, resolved.loadedSkills)) return .alreadyAdded;
 
-    final credentialFailure = _credentialFailure(skill);
+    final credentialFailure = _connectionFailure(skill);
     if (credentialFailure != null) return credentialFailure;
 
     return await _loadAndFinishAction(request, skill);
@@ -237,7 +241,11 @@ extension on ApplyConversationSkillActionUsecase {
         skill.slug,
       );
     } on Object {
-      // A recent-history write must not block an explicit skill request.
+      // Ignore this optional write. Do not retry or block the explicit request.
+      // Storage errors can contain user data. Do not log their details.
+      _logger.warning(
+        'Recent skill history write failed. Request continues without retry.',
+      );
     }
 
     try {
@@ -299,9 +307,15 @@ final applyConversationSkillActionUsecaseProvider =
               workspaceId: workspaceId,
               slug: slug,
             ),
-        sendMessage: (workspaceId, conversationId, draft) => ref
-            .read(sendMessageUsecaseProvider(workspaceId))
-            .call(conversationId: conversationId, draft: draft),
+        sendMessage: (workspaceId, conversationId, draft) async {
+          final iterationLimitNotifier = ref.read(
+            conversationIterationLimitProvider(conversationId).notifier,
+          );
+          final decision = await ref
+              .read(sendMessageUsecaseProvider(workspaceId))
+              .call(conversationId: conversationId, draft: draft);
+          iterationLimitNotifier.markIfIterationLimitReached(decision);
+        },
         recordRecentSkillUse: (workspaceId, conversationId, skillSlug) async {
           await ref
               .read(recentSkillUsageRepositoryProvider)

@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.d
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -629,6 +630,11 @@ class _FakeConversationToolsRepository implements ConversationToolsRepository {
   List<String> availableTools = const [];
   bool availableToolsThrow = false;
   List<WorkspaceToolEntity> availableToolEntities = const [];
+
+  @override
+  Future<ConversationToolAccessMode> getToolAccessMode(
+    String conversationId,
+  ) async => .defaultMode;
 
   @override
   Future<List<ConversationToolEntity>> getConversationTools(

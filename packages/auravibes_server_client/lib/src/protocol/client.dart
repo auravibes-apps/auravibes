@@ -30,6 +30,8 @@ import 'package:auravibes_server_client/src/protocol/features/codex_oauth/models
     as _i614hct4;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/background_work_view.dart'
     as _ii9na0oj;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/bookmark_message_request.dart'
+    as _i2vimay9;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/cancel_turn_request.dart'
     as _icy1uco6;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/compact_conversation_request.dart'
@@ -38,6 +40,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _iikp15t9;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/continue_turn_request.dart'
     as _ivlxpbcf;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_search_result.dart'
+    as _id2d4bnf;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_view.dart'
     as _isubclmd;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_mutation_result.dart'
@@ -72,6 +76,10 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _ikmnkbtb;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_conversations_request.dart'
     as _it3m8kdz;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_message_bookmarks_request.dart'
+    as _i7pc0xlt;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/message_bookmark_view.dart'
+    as _iricssvi;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/queue_conversation_message_request.dart'
     as _iia9quot;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/remove_pending_conversation_message_request.dart'
@@ -80,6 +88,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _i28kt77m;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _id785g3f;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/search_conversation_messages_request.dart'
+    as _izqmo6ty;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_request.dart'
     as _iewqezs8;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_result.dart'
@@ -96,6 +106,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _iqbrsea4;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/turn_snapshot.dart'
     as _i2p4k8hs;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/unbookmark_message_request.dart'
+    as _ip59ad7x;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/update_conversation_request.dart'
     as _irx2op5d;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/update_conversation_settings_request.dart'
@@ -595,6 +607,38 @@ class EndpointConversation extends _isc.EndpointRef {
     'listMessages',
     {'request': request},
   );
+
+  _ida.Future<void> bookmarkMessage(_i2vimay9.BookmarkMessageRequest request) =>
+      caller.callServerEndpoint<void>(
+        'conversation',
+        'bookmarkMessage',
+        {'request': request},
+      );
+
+  _ida.Future<void> unbookmarkMessage(
+    _ip59ad7x.UnbookmarkMessageRequest request,
+  ) => caller.callServerEndpoint<void>(
+    'conversation',
+    'unbookmarkMessage',
+    {'request': request},
+  );
+
+  _ida.Future<List<_iricssvi.MessageBookmarkView>> listMessageBookmarks(
+    _i7pc0xlt.ListMessageBookmarksRequest request,
+  ) => caller.callServerEndpoint<List<_iricssvi.MessageBookmarkView>>(
+    'conversation',
+    'listMessageBookmarks',
+    {'request': request},
+  );
+
+  _ida.Future<List<_id2d4bnf.ConversationMessageSearchResult>> searchMessages(
+    _izqmo6ty.SearchConversationMessagesRequest request,
+  ) => caller
+      .callServerEndpoint<List<_id2d4bnf.ConversationMessageSearchResult>>(
+        'conversation',
+        'searchMessages',
+        {'request': request},
+      );
 
   _ida.Future<_i54dvwkh.ConversationSummary> update(
     _irx2op5d.UpdateConversationRequest request,

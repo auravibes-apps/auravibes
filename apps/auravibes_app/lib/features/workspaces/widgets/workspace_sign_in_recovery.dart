@@ -14,6 +14,7 @@ class const WorkspaceSignInRecovery({
   required final String workspaceId,
   required final WorkspaceSession? session,
   required final VoidCallback onReturn,
+  final String? returnLocation,
   final String? returnLabelKey,
   super.key,
 }) extends ConsumerWidget {
@@ -23,6 +24,7 @@ class const WorkspaceSignInRecovery({
         workspaceId: workspaceId,
         session: session,
         onReturn: onReturn,
+        returnLocation: returnLocation,
         returnLabelKey: returnLabelKey,
       );
 }
@@ -31,6 +33,7 @@ class const _WorkspaceSignInRecoveryBody({
   required final String workspaceId,
   required final WorkspaceSession? session,
   required final VoidCallback onReturn,
+  required final String? returnLocation,
   required final String? returnLabelKey,
 }) extends ConsumerWidget {
   @override
@@ -48,10 +51,10 @@ class const _WorkspaceSignInRecoveryBody({
   VoidCallback? _signInAction(BuildContext context, WidgetRef ref) {
     final cloud = session?.cloud;
     if (cloud == null) return null;
-    final uri = GoRouterState.of(context).uri;
+    final location = returnLocation ?? GoRouterState.of(context).uri.toString();
 
     return () =>
-        context.go(_workspaceLoginLocation(ref, uri, workspaceId, cloud));
+        context.go(_workspaceLoginLocation(ref, location, workspaceId, cloud));
   }
 }
 
@@ -72,14 +75,17 @@ class const _WorkspaceSignInRecoveryView({
 
 String _workspaceLoginLocation(
   WidgetRef ref,
-  Uri uri,
+  String returnLocation,
   String workspaceId,
   CloudWorkspaceRef cloud,
 ) {
-  final key = cloudAccountKey(cloud.serverUrl, cloud.accountId);
+  final key = CloudAccountKeyFactory.fromIdentity(
+    cloud.serverUrl,
+    cloud.accountId,
+  );
   final route = CloudAccountLoginRoute(
     workspaceId: workspaceId,
-    returnPath: TaskReturn.validate(uri.toString(), workspaceId: workspaceId),
+    returnPath: TaskReturn.validate(returnLocation, workspaceId: workspaceId),
   ).location;
 
   return _loginLocation(route, key, _accountEmail(ref, key));

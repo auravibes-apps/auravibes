@@ -60,6 +60,19 @@ class AgentListNotifier extends _$AgentListNotifier {
     unawaited(_replaceAgents(this));
   }
 
+  void clearFilters() {
+    final current = _current;
+    if (current == null || (current.type == null && current.status == null)) {
+      return;
+    }
+    _searchTimer?.cancel();
+    _generation++;
+    state = AsyncData(
+      current.copyWith(type: null, status: null, refreshFailed: false),
+    );
+    unawaited(_replaceAgents(this));
+  }
+
   Future<void> refresh() {
     _searchTimer?.cancel();
     _generation++;
@@ -76,12 +89,11 @@ class AgentListNotifier extends _$AgentListNotifier {
   Future<void> loadMore() => _loadMore(this);
 
   Future<void> _completeRequest(_AgentPageRequest request) async {
+    state = AsyncData(request.loadingState);
     final page = await _tryListAgents(request.repository, request.query);
     if (!ref.mounted || request.generation != _generation) return;
     state = AsyncData(request.complete(page));
   }
-
-  void _setState(AgentListState value) => state = AsyncData(value);
 }
 
 @immutable
@@ -150,6 +162,7 @@ Future<void> _replaceAgents(AgentListNotifier notifier) {
 typedef _AgentPageRequest = ({
   AgentRepository repository,
   AgentListQuery query,
+  AgentListState loadingState,
   int generation,
   AgentListState Function(AgentListPage? page) complete,
 });
@@ -167,11 +180,12 @@ _AgentPageRequest _startLoadMore(
 ) {
   final (:current, :repository) = context;
   final generation = ++notifier._generation;
-  notifier._setState(_loadingMore(current));
+  final loadingState = _loadingMore(current);
 
   return (
     repository: repository,
     query: _loadMoreQuery(notifier.workspaceId, current),
+    loadingState: loadingState,
     generation: generation,
     complete: (page) => _completedLoadMore(current, page),
   );
@@ -194,11 +208,11 @@ _AgentPageRequest _startReplace(
   final (:current, :repository) = context;
   final generation = ++notifier._generation;
   final refreshing = _refreshing(current);
-  notifier._setState(refreshing);
 
   return (
     repository: repository,
     query: _agentListQuery(notifier.workspaceId, current),
+    loadingState: refreshing,
     generation: generation,
     complete: (page) => _completedRefresh(refreshing, page),
   );

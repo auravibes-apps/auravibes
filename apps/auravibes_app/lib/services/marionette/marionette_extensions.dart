@@ -12,6 +12,8 @@ import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usec
 import 'package:auravibes_app/flavor.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
+import 'package:auravibes_app/services/marionette/marionette_chat_smoke_fixture.dart';
+import 'package:auravibes_app/services/marionette/marionette_chat_smoke_scenario.dart';
 import 'package:auravibes_app/services/marionette/marionette_development_state.dart';
 import 'package:auravibes_app/services/marionette/marionette_sub_agent_smoke_fixture.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
@@ -168,6 +170,18 @@ final class MarionetteExtensionBootstrap {
     title: 'AuraVibes Demo Data Seed',
     description: 'No arguments. Writes only fixed local development records.',
   );
+  static const _configureChatSmokeFixtureSchema = ExtensionInputSchema(
+    properties: {
+      'scenario': ExtensionParam.string(
+        description: 'Response behavior for the next demo-model request.',
+        enumValues: MarionetteDevelopmentState.allowedChatSmokeScenarioValues,
+      ),
+    },
+    required: ['scenario'],
+    title: 'Configure Chat Smoke Fixture',
+    description:
+        'Sets one deterministic response scenario for the local demo model.',
+  );
   static const _startSubAgentSmokeFixtureSchema = ExtensionInputSchema(
     properties: {
       'count': ExtensionParam.string(
@@ -277,7 +291,10 @@ final class _MarionetteStateDependencies(ProviderContainer container) {
 }
 
 final class MarionetteExtensionRegistration {
-  static void register(MarionetteExtensionActions actions) {
+  static void register(
+    MarionetteExtensionActions actions, {
+    required MarionetteChatSmokeFixture chatSmokeFixture,
+  }) {
     final dispatcher = MarionetteExtensions(actions);
 
     _registerNavigate(dispatcher);
@@ -286,7 +303,7 @@ final class MarionetteExtensionRegistration {
     _registerStartSubAgentSmokeFixture(dispatcher);
     _registerFinishSubAgentSmokeFixture(dispatcher);
     _registerStopSubAgentSmokeFixtureParent(dispatcher);
-    _registerSeedDemoData(dispatcher);
+    _registerSeedDemoData(dispatcher, chatSmokeFixture);
     _registerClearDevelopmentState(dispatcher);
     _registerSetDevelopmentFeatureFlag(dispatcher);
   }
@@ -356,7 +373,10 @@ final class MarionetteExtensionRegistration {
     );
   }
 
-  static void _registerSeedDemoData(MarionetteExtensions dispatcher) {
+  static void _registerSeedDemoData(
+    MarionetteExtensions dispatcher,
+    MarionetteChatSmokeFixture chatSmokeFixture,
+  ) {
     registerMarionetteExtension(
       name: 'auravibes.seedDemoData',
       description:
@@ -365,14 +385,22 @@ final class MarionetteExtensionRegistration {
       inputSchema: MarionetteExtensionBootstrap._seedDemoDataSchema,
       callback: dispatcher.seedDemoData,
     );
+    registerMarionetteExtension(
+      name: 'auravibes.configureChatSmokeFixture',
+      description: 'Configure the next response from the local demo model.',
+      inputSchema:
+          MarionetteExtensionBootstrap._configureChatSmokeFixtureSchema,
+      callback: (params) =>
+          dispatcher.configureSmokeFixture(params, chatSmokeFixture),
+    );
   }
 
   static void _registerClearDevelopmentState(MarionetteExtensions dispatcher) {
     registerMarionetteExtension(
       name: 'auravibes.clearDevelopmentState',
       description:
-          'Clear only the fixed Marionette demo workspace and development '
-          'feature flags.',
+          'Clear the fixed Marionette demo and smoke workspaces, recent demo '
+          'model selections, and development feature flags.',
       inputSchema: MarionetteExtensionBootstrap._clearDevelopmentStateSchema,
       callback: dispatcher.clearDevelopmentState,
     );
@@ -389,6 +417,24 @@ final class MarionetteExtensionRegistration {
       callback: dispatcher.setDevelopmentFeatureFlag,
     );
   }
+}
+
+extension MarionetteChatSmokeFixtureDispatcher on MarionetteExtensions {
+  Future<MarionetteExtensionResult> configureSmokeFixture(
+    Map<String, String> params,
+    MarionetteChatSmokeFixture fixture,
+  ) => _invoke(params, const {'scenario'}, () async {
+    final scenario = MarionetteChatSmokeScenario.values.byName(
+      _marionetteEnumValue(
+        params,
+        'scenario',
+        MarionetteDevelopmentState.allowedChatSmokeScenarios,
+      ),
+    );
+    fixture.configure(scenario);
+
+    return {'scenario': scenario.name};
+  });
 }
 
 void _validateMarionetteParameterNames(

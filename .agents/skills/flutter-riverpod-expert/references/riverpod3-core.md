@@ -64,7 +64,7 @@ Generated family parameters become available by name inside the class (`listId` 
 - Failing providers retry automatically by default with exponential backoff until success or disposal. Disable/customize retry at `ProviderScope`, `ProviderContainer`, or provider annotation/constructor when errors are permanent.
 - Generated providers are auto-dispose by default. Use `@Riverpod(keepAlive: true)` only when provider lifetime must outlive listeners.
 - `StateProvider`, `StateNotifierProvider`, and `ChangeNotifierProvider` are legacy in Riverpod 3. Keep them only for migration/maintenance and import from `legacy.dart`.
-- `AsyncValue` is sealed. Prefer exhaustive `switch` or `.when`.
+- `AsyncValue` is sealed. Prefer exhaustive `switch` pattern matching in UI; do not use `.when()` in new code.
 - In Riverpod 3, `valueOrNull` was renamed to `.value` and removed; migrate old `valueOrNull` reads to `.value`.
 - Riverpod throws if `Ref`/`Notifier` is used after disposal. Check `ref.mounted` after awaits in methods that might outlive the provider.
 - Exceptions while reading providers may be wrapped in `ProviderException`; inspect the original error when needed.
@@ -79,8 +79,6 @@ return switch (ref.watch(todosProvider(listId))) {
   AsyncLoading(:final progress) => LoadingView(progress: progress),
 };
 ```
-
-Use `.when` if that better matches existing code.
 
 ## Mutations
 

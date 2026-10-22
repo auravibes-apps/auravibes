@@ -38,23 +38,7 @@ void main() {
         'content': 'Content',
         'isEnabled': true,
       },
-      .skillDefinition: {
-        'title': 'Credential',
-        'slug': 'credential',
-        'attributesJson': '{}',
-      },
       .skillSetting: {'skillId': 'skill', 'isEnabled': true},
-      .skillTemplateTool: {
-        'skillId': 'skill',
-        'templateType': 'url',
-        'title': 'Tool',
-        'description': 'Description',
-        'slug': 'tool',
-        'templateJson': '{}',
-        'inputsJson': '{}',
-        'isEnabled': true,
-        'requiresCredential': false,
-      },
       .conversationToolSelection: {
         'conversationId': 'conversation',
         'toolId': 'tool',

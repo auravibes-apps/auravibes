@@ -306,13 +306,13 @@ packages:
     source: hosted
     version: "1.1.3"
   code_assets:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: code_assets
-      sha256: cfd4f5f575a49c5f10ca856e9846073f1e6c3ee94912377eea5f6cefc5272941
+      sha256: "828110d598123b5ea96c00c9f3c72105bf79f8ee36c20a39b26209ade421ec57"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.0"
+    version: "2.1.0"
   code_builder:
     dependency: transitive
     description:
@@ -513,6 +513,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.0"
+  device_info_plus:
+    dependency: transitive
+    description:
+      name: device_info_plus
+      sha256: ade1c36f8355d6284c98e4a47992ea263887ed3d1acb281e37635dd45f04c4aa
+      url: "https://pub.dev"
+    source: hosted
+    version: "13.3.0"
+  device_info_plus_platform_interface:
+    dependency: transitive
+    description:
+      name: device_info_plus_platform_interface
+      sha256: "04b173a92e2d9161dfead145667037c8d834db725ce2e7b942bfe18fd2f45a46"
+      url: "https://pub.dev"
+    source: hosted
+    version: "8.1.0"
   device_preview:
     dependency: transitive
     description:
@@ -747,6 +763,70 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.21.3+1"
+  flutter_inappwebview_android_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_android_fx
+      sha256: "061d33d1f65faceb3ec37b87e08c979294b6ff0c8e5ab98344f8b1a40801a9e3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
+  flutter_inappwebview_internal_annotations:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_internal_annotations
+      sha256: e30fba942e3debea7b7e6cdd4f0f59ce89dd403a9865193e3221293b6d1544c6
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.0"
+  flutter_inappwebview_ios_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_ios_fx
+      sha256: "41990996e4a27fc25595fd56df5aea46abe70b1ca4496f346e3f19547e400160"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
+  flutter_inappwebview_linux_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_linux_fx
+      sha256: "5da6f472579475c7000b441df8e6309e9914c78a8d6872fe16dbd9bbf2784ebb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
+  flutter_inappwebview_macos_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_macos_fx
+      sha256: "200ccdd3edb30b7a403f7fd4c209d648fc5293df11060d6af95044ba2e251a1a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
+  flutter_inappwebview_platform_interface_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_platform_interface_fx
+      sha256: da2615a1f88710ac1728137bfeeeeb26223085f143fb37dac69859b194aa55e9
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.0"
+  flutter_inappwebview_web_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_web_fx
+      sha256: f3cd22b00a83c32ea7b0fbfe343e5d849abb18695e4cd2ecdf72b750c2dfe2a6
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
+  flutter_inappwebview_windows_fx:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_windows_fx
+      sha256: "00f615504fc33907be98117ae310d4106944c159efc22c3caabc35280a807eb9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.0"
   flutter_launcher_icons:
     dependency: transitive
     description:
@@ -1167,6 +1247,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0-releasecandidate.1"
+  in_app_webview_flutter:
+    dependency: transitive
+    description:
+      name: in_app_webview_flutter
+      sha256: b7869949ab998d94465041a7b78dea6afa7fa9f7caebb0c8d10dac51cebf5ce7
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   intl:
     dependency: transitive
     description:
@@ -1183,6 +1271,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
+  irondash_engine_context:
+    dependency: transitive
+    description:
+      name: irondash_engine_context
+      sha256: eccd423b2e6b821338fc3c0bf4d12192cff7a4a3f5c66c6abc704f25aa3886b1
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0-dev.0"
+  irondash_message_channel:
+    dependency: transitive
+    description:
+      name: irondash_message_channel
+      sha256: "247e07d6b8694d9fd2c372832a6c5ef057298aa9a52ed4d74861c064096ee1ab"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.8.0-dev.0"
   isolated_object:
     dependency: transitive
     description:
@@ -1403,10 +1507,10 @@ packages:
     dependency: transitive
     description:
       name: mcp_client
-      sha256: "29fd5e5592016d141b481b2ada0459332058e263b3c44aba8a7819983e4f8eea"
+      sha256: "679aba997e1e19891c96ba864c72249d78b1c80df61c461f75737ad7f708f694"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.1"
+    version: "3.0.0"
   mcp_dart:
     dependency: transitive
     description:
@@ -1499,10 +1603,18 @@ packages:
     dependency: transitive
     description:
       name: native_toolchain_c
-      sha256: "9d233b6f2d9c52e1a2b5fbe70451d2c10ac674d3bb419d0ec8de14989d437c26"
+      sha256: "90eaad8059ebc2004a63810a4696ea9acdb02473e47ed3b6b3bafb100ac77e31"
       url: "https://pub.dev"
     source: hosted
-    version: "0.19.4"
+    version: "0.19.5"
+  native_toolchain_rust:
+    dependency: "direct overridden"
+    description:
+      name: native_toolchain_rust
+      sha256: dc8e5f20c0cb7052372bc302f075607086d86354b37199e89ec9d3d35589e519
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.7"
   nested:
     dependency: transitive
     description:
@@ -1539,10 +1651,10 @@ packages:
     dependency: transitive
     description:
       name: objective_c
-      sha256: ad56fd53a78ff6b1472fa59ff2a4e8b8ccabafc586fc263a1dfad0b99b5553e3
+      sha256: "5c80c2ad6e2c0397de5db38c6d653e69616a3397e13aa7633bf39eb668f2041b"
       url: "https://pub.dev"
     source: hosted
-    version: "9.6.0"
+    version: "9.6.2"
   openai_dart:
     dependency: transitive
     description:
@@ -1655,6 +1767,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.2"
+  pixel_snap:
+    dependency: transitive
+    description:
+      name: pixel_snap
+      sha256: "677410ea37b07cd37ecb6d5e6c0d8d7615a7cf3bd92ba406fd1ac57e937d1fb0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.5"
   platform:
     dependency: transitive
     description:
@@ -2340,6 +2460,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0-dev.4"
+  super_clipboard:
+    dependency: transitive
+    description:
+      name: super_clipboard
+      sha256: "9c6a698aa85258a9860123a30802ad5a5c82852008244c5e6c4f589559298da2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.10.0-dev.2"
+  super_drag_and_drop:
+    dependency: transitive
+    description:
+      name: super_drag_and_drop
+      sha256: "2fe00592e6e7d659e8affb367df6f95c27a0a0f5fc321aac880e44ff762e1fd5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.10.0-dev.2"
+  super_native_extensions:
+    dependency: transitive
+    description:
+      name: super_native_extensions
+      sha256: cb633ce1150acb2c43e3457f2659a06a77f620f125bf73e15b9217483faf9ec3
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.10.0-dev.2"
   sync_http:
     dependency: transitive
     description:
@@ -2420,6 +2564,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
+  toml:
+    dependency: transitive
+    description:
+      name: toml
+      sha256: "35a35f782228656a2af31e8c73d1353cc4ef3d683fd68af1111b44631879c05e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.18.0"
   toon_dart:
     dependency: transitive
     description:
@@ -2708,6 +2860,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.4.0"
+  win32_registry:
+    dependency: transitive
+    description:
+      name: win32_registry
+      sha256: "73b1d78920a9d6e03f8b4e43e612b87bf3152a0e5c5e5150267762b7c4116904"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.3"
   window_to_front:
     dependency: transitive
     description:

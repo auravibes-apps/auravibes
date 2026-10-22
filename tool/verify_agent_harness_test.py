@@ -7,7 +7,7 @@ import sys
 import tempfile
 import unittest
 
-from verify_agent_harness import SCOPES, markdown_links, verify
+from verify_agent_harness import markdown_links, verify
 
 
 class HarnessVerificationTest(unittest.TestCase):
@@ -15,26 +15,165 @@ class HarnessVerificationTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        for scope in ("", *SCOPES):
+        scopes = (
+            "apps/auravibes_app",
+            "packages/auravibes_engine",
+            "packages/auravibes_ui",
+            "widgetbook",
+        )
+        for scope in ("", *scopes):
             folder = self.root / scope
             folder.mkdir(parents=True, exist_ok=True)
             (folder / "AGENTS.md").write_text("# Instructions\n")
             (folder / "CLAUDE.md").symlink_to("AGENTS.md")
+        (self.root / "AGENTS.md").write_text(
+            "# Instructions\n\n"
+            + "\n".join(f"[Scope]({scope}/AGENTS.md)" for scope in scopes)
+            + "\n"
+        )
         (self.root / "docs").mkdir()
         (self.root / "docs/ARCHITECTURE.md").write_text("# Architecture\n")
         (self.root / "docs/agents").mkdir()
         (self.root / "README.md").write_text("# README\n")
         (self.root / "CONTRIBUTING.md").write_text("# Contributing\n")
+        context_map = Path(__file__).resolve().parent.parent / "CONTEXT-MAP.md"
+        (self.root / "CONTEXT-MAP.md").write_text(context_map.read_text())
+        self.contexts = [
+            self.root / target
+            for target in markdown_links(context_map.read_text())
+            if Path(target).name == "CONTEXT.md"
+        ]
+        for path in self.contexts:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("# Context\n\nOwns workspace state and returns typed results.\n")
         self.skill = self.root / ".agents/skills/example"
         self.skill.mkdir(parents=True)
         (self.skill / "SKILL.md").write_text(
             "---\nname: example\ndescription: Use for an example task.\n---\n"
         )
 
+    def test_new_indexed_scope_alias_needs_no_scope_registration(self):
+        instructions = self.root / "AGENTS.md"
+        instructions.write_text(
+            instructions.read_text() + "\n[New scope](new-scope/AGENTS.md)\n"
+        )
+        scope = self.root / "new-scope"
+        scope.mkdir()
+        (scope / "AGENTS.md").write_text("# New scope\n")
+
+        errors = verify(self.root)
+
+        self.assertTrue(
+            any(
+                "new-scope/CLAUDE.md: Expected symlink" in error
+                for error in errors
+            ),
+            errors,
+        )
+        (scope / "CLAUDE.md").symlink_to("AGENTS.md")
+        self.assertEqual(verify(self.root), [])
+
     def test_valid_harness_is_read_only(self):
         before = (self.skill / "SKILL.md").read_bytes()
         self.assertEqual(verify(self.root), [])
         self.assertEqual((self.skill / "SKILL.md").read_bytes(), before)
+
+    def test_mutable_action_references_report_path_and_reference(self):
+        workflow = self.root / ".github/workflows/actions.yml"
+        workflow.parent.mkdir(parents=True)
+        workflow.write_text(
+            "jobs:\n"
+            "  check:\n"
+            "    steps:\n"
+            "      - uses: example-org/workflow-action@v4\n"
+            "      - uses: ./.github/actions/local-action\n"
+        )
+        action = self.root / ".github/actions/example/action.yml"
+        action.parent.mkdir(parents=True)
+        action.write_text(
+            "runs:\n"
+            "  using: composite\n"
+            "  steps:\n"
+            "    - uses: example-org/composite-action@main\n"
+        )
+
+        errors = verify(self.root)
+
+        self.assertEqual(len(errors), 2, errors)
+        self.assertTrue(
+            any(
+                ".github/workflows/actions.yml" in error
+                and "example-org/workflow-action@v4" in error
+                for error in errors
+            ),
+            errors,
+        )
+        self.assertTrue(
+            any(
+                ".github/actions/example/action.yml" in error
+                and "example-org/composite-action@main" in error
+                for error in errors
+            ),
+            errors,
+        )
+
+    def test_full_sha_and_local_action_references_are_accepted(self):
+        workflow = self.root / ".github/workflows/actions.yml"
+        workflow.parent.mkdir(parents=True)
+        workflow.write_text(
+            "jobs:\n"
+            "  check:\n"
+            "    steps:\n"
+            "      - uses: example-org/action@0123456789abcdef0123456789abcdef01234567 # v1\n"
+            "      - uses: ./.github/actions/local-action\n"
+        )
+
+        self.assertEqual(verify(self.root), [])
+
+    def test_all_current_mapped_contexts_are_checked(self):
+        self.assertEqual(len(self.contexts), 6)
+        self.assertIn(self.root / "apps/auravibes_server/CONTEXT.md", self.contexts)
+        self.assertIn(self.root / "packages/auravibes_server_client/CONTEXT.md", self.contexts)
+        for path in self.contexts:
+            with self.subTest(context=path.relative_to(self.root)):
+                content = path.read_text()
+                path.unlink()
+                errors = verify(self.root)
+                self.assertTrue(any(str(path.relative_to(self.root)) in error for error in errors), errors)
+                path.write_text(content)
+                path.write_text("# Context\n\nPlaceholder. Add resolved domain terms here.\n")
+                errors = verify(self.root)
+                self.assertTrue(any(f"{path.relative_to(self.root)}: Placeholder" in error for error in errors), errors)
+                path.write_text(content)
+
+    def test_new_mapped_context_needs_no_scope_registration(self):
+        context_map = self.root / "CONTEXT-MAP.md"
+        context_map.write_text(context_map.read_text() + "\n[New](new/CONTEXT.md)\n")
+        path = self.root / "new/CONTEXT.md"
+        path.parent.mkdir()
+        path.write_text("# New context\n\n## Terms\n\n<!-- Write terms here. -->\n\n## Invariants\n- TBD\n")
+        self.assertTrue(any("new/CONTEXT.md: Empty" in error for error in verify(self.root)))
+        path.write_text("# New context\n\nOwns examples and returns sample output.\n")
+        self.assertEqual(verify(self.root), [])
+
+    def test_template_instructions_are_not_resolved_content(self):
+        path = self.contexts[0]
+        path.write_text("# Context\n## Domain terms\n- TODO: add terms\n## Invariants\n- TBD: add invariants\n")
+        self.assertTrue(any(f"{path.relative_to(self.root)}: Empty" in error for error in verify(self.root)))
+        path.write_text("# Context\n\nOwns workspace state.\n\n- TODO: add more terms\n")
+        self.assertEqual(verify(self.root), [])
+
+    def test_missing_or_empty_context_map_fails(self):
+        path = self.root / "CONTEXT-MAP.md"
+        path.unlink()
+        self.assertTrue(any("CONTEXT-MAP.md: Missing" in error for error in verify(self.root)))
+        path.write_text("# Context Map\n")
+        self.assertTrue(any("CONTEXT-MAP.md: No local context" in error for error in verify(self.root)))
+
+    def test_context_links_use_existing_link_checks(self):
+        self.contexts[0].write_text("# Context\n\nOwns state. See [architecture](missing.md).\n")
+        errors = verify(self.root)
+        self.assertTrue(any("Dead reference: missing.md" in error for error in errors))
 
     def test_nested_reference_uses_own_directory(self):
         (self.skill / "references").mkdir()

@@ -35,7 +35,14 @@ runs:
         mkdir -p .fvm
         ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
+    - name: Install Linux native build dependencies
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends libgtk-3-dev
+
     - name: Bootstrap workspace
-      uses: bluefireteam/melos-action@b79b63bcd183f823740a7976cbdb4b0fc95a0eb8
+      uses: bluefireteam/melos-action@b79b63bcd183f823740a7976cbdb4b0fc95a0eb8 # v3.10.0
       with:
         run-bootstrap: true

@@ -166,6 +166,7 @@ void main() {
         },
         selectedIndex: 0,
         workspaceId: 'ws-1',
+        canPopCurrentRoute: () => false,
       );
       expect(widget.workspaceId, 'ws-1');
       expect(widget.selectedIndex, 0);
@@ -180,6 +181,7 @@ void main() {
         },
         selectedIndex: 0,
         workspaceId: 'ws-1',
+        canPopCurrentRoute: () => false,
         key: const Key('drawer-key'),
       );
       expect(widget.key, const Key('drawer-key'));
@@ -194,6 +196,7 @@ void main() {
         },
         selectedIndex: 0,
         workspaceId: 'ws-1',
+        canPopCurrentRoute: () => false,
       );
       expect(widget, isA<StatefulWidget>());
     });
@@ -625,11 +628,11 @@ void main() {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'more/agents',
+                path: 'agents',
                 builder: (_, _) => const Text('Agents list'),
               ),
               GoRoute(
-                path: 'more/skills',
+                path: 'skills',
                 builder: (_, _) => const Text('Skills list'),
                 routes: [
                   GoRoute(
@@ -637,11 +640,13 @@ void main() {
                     builder: (_, _) {
                       guard.bind(
                         readers: (isDirty: () => true, isSaving: () => false),
-                        confirm: (_) {
-                          confirmations++;
+                        callbacks: .new(
+                          confirm: (_) {
+                            confirmations++;
 
-                          return answer.future;
-                        },
+                            return answer.future;
+                          },
+                        ),
                       );
 
                       return DraftExitScope(
@@ -657,11 +662,11 @@ void main() {
                 ],
               ),
               GoRoute(
-                path: 'more/service-connections',
+                path: 'service-connections',
                 builder: (_, _) => const Text('Connections list'),
               ),
               GoRoute(
-                path: 'more/cloud-accounts',
+                path: 'cloud-accounts',
                 builder: (_, _) => const Text('Accounts list'),
               ),
             ],
@@ -684,19 +689,16 @@ void main() {
         AuraSidebar sidebar() =>
             tester.widget<AuraSidebar>(find.byType(AuraSidebar));
         expect(sidebar().selectedIndex, -1);
-        router.go('/workspaces/ws-test/more/skills');
+        router.go('/workspaces/ws-test/skills');
         final _ = await tester.pump();
         expect(sidebar().selectedIndex, 1);
-        router.go('/workspaces/ws-test/more/skills/skill-A');
+        router.go('/workspaces/ws-test/skills/skill-A');
         final _ = await tester.pump();
         sidebar().onNavigationTap.call(2);
         sidebar().onNavigationTap.call(3);
         await tester.pump();
         expect(confirmations, 1);
-        expect(
-          router.state.uri.path,
-          '/workspaces/ws-test/more/skills/skill-A',
-        );
+        expect(router.state.uri.path, '/workspaces/ws-test/skills/skill-A');
         answer.complete(false);
         final _ = await tester.pumpAndSettle();
         expect(sidebar().selectedIndex, 1);
@@ -708,44 +710,45 @@ void main() {
         expect(confirmations, 2);
         expect(
           router.state.uri.path,
-          '/workspaces/ws-test/more/service-connections',
+          '/workspaces/ws-test/service-connections',
         );
+        expect(router.state.uri.queryParameters['destinationList'], 'true');
         expect(sidebar().selectedIndex, 2);
         sidebar().onNavigationTap.call(1);
         final _ = await tester.pump();
-        expect(router.state.uri.path, '/workspaces/ws-test/more/skills');
+        expect(router.state.uri.path, '/workspaces/ws-test/skills');
+        expect(router.state.uri.queryParameters['destinationList'], 'true');
         sidebar().onNavigationTap.call(3);
         final _ = await tester.pump();
         expect(router.state.uri.path, '/workspaces/ws-test/settings');
         expect(sidebar().selectedIndex, 3);
         sidebar().onNavigationTap.call(4);
         final _ = await tester.pump();
-        expect(
-          router.state.uri.path,
-          '/workspaces/ws-test/more/cloud-accounts',
-        );
+        expect(router.state.uri.path, '/workspaces/ws-test/cloud-accounts');
         expect(sidebar().selectedIndex, 4);
         sidebar().onNavigationTap.call(0);
         final _ = await tester.pump();
-        expect(router.state.uri.path, '/workspaces/ws-test/chats/chat-A');
+        expect(router.state.uri.path, '/workspaces/ws-test/chat/new');
         expect(confirmations, 2);
         router.go('/workspaces/B/chat/new');
         final _ = await tester.pump();
         sidebar().onNavigationTap.call(1);
         final _ = await tester.pump();
-        expect(router.state.uri.path, '/workspaces/B/more/agents');
+        expect(router.state.uri.path, '/workspaces/B/agents');
+        expect(router.state.uri.queryParameters['destinationList'], 'true');
         router.go('/workspaces/ws-test/chat/new');
         final _ = await tester.pump();
         sidebar().onNavigationTap.call(1);
         final _ = await tester.pump();
-        expect(router.state.uri.path, '/workspaces/ws-test/more/skills');
-        for (final width in [959.0, 960.0]) {
+        expect(router.state.uri.path, '/workspaces/ws-test/skills');
+        expect(router.state.uri.queryParameters['destinationList'], 'true');
+        for (final width in [899.0, 900.0]) {
           tester.view.physicalSize = .new(width, 900);
           final _ = await tester.pumpAndSettle();
           final controller = ResponsiveSlidingDrawerProvider.of(
             tester.element(find.text('Skills list')),
           );
-          expect(controller.isDesktop, width >= 960);
+          expect(controller.isDesktop, width >= 900);
           expect(tester.takeException(), isNull);
         }
       },
@@ -874,8 +877,8 @@ void main() {
           expect(_sidebarPanelWidth(tester), 80);
           expect(find.byType(SidebarConversationsWidget), findsNothing);
           expect(find.byTooltip('Expand sidebar'), findsOneWidget);
-          expect(find.bySemanticsLabel('Chats'), findsOneWidget);
-          expect(find.byTooltip('Chats'), findsOneWidget);
+          expect(find.bySemanticsLabel('New Chat'), findsOneWidget);
+          expect(find.byTooltip('New Chat'), findsOneWidget);
         } finally {
           semantics.dispose();
         }
@@ -891,7 +894,7 @@ void main() {
         );
         expect(_sidebarPanelWidth(tester), 320);
         expect(find.byType(SidebarConversationsWidget), findsOneWidget);
-        expect(find.text('Chats'), findsOneWidget);
+        expect(find.text('New Chat'), findsOneWidget);
       },
     );
 

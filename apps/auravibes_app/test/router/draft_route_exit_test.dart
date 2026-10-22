@@ -1,8 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
@@ -15,6 +13,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -45,7 +44,6 @@ void main() {
     'skill',
     'resource',
     'agent',
-    'type',
     'connection',
     'workspace',
   ]) {
@@ -62,14 +60,11 @@ void main() {
           content: 'Persisted instructions',
         ),
       );
-      final definition = await SkillCredentialDefinitionsRepository(database)
-          .createDefinition(
-            workspace.id,
-            const SkillCredentialDefinitionToCreate(
-              title: 'Test type',
-              attributesJson: '{"apiKey":{"description":"API key"}}',
-            ),
-          );
+      final connector = connectorDefinitions.firstWhere(
+        (item) =>
+            item.compatibleModelProviderIds.isEmpty &&
+            item.tools.any((tool) => tool.urlTemplate != null),
+      );
       final session = WorkspaceSession(
         LocalWorkspaceRef(localWorkspaceId: workspace.id),
       );
@@ -93,13 +88,10 @@ void main() {
           skillId: skill.id,
         ),
         'agent' => AgentCreateRoute(workspaceId: workspace.id),
-        'type' => SkillCredentialDefinitionCreateRoute(
-          workspaceId: workspace.id,
-        ),
         'connection' => ServiceConnectionCreateRoute(
           workspaceId: workspace.id,
-          type: 'skillCredential',
-          credentialDefinitionId: definition.id,
+          type: 'connector',
+          connectorId: connector.identifier,
         ),
         'workspace' => WorkspaceCreateRoute(workspaceId: workspace.id),
         _ => SkillCreateRoute(workspaceId: workspace.id),
@@ -119,7 +111,7 @@ void main() {
             onExit: route.onExit,
           ),
           GoRoute(
-            path: '/workspaces/:workspaceId/more/agents',
+            path: '/workspaces/:workspaceId/agents',
             pageBuilder: (_, state) => NoTransitionPage(
               child: const Text('Workspace agents destination'),
               key: state.pageKey,

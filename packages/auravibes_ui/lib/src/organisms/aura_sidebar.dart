@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 /// to be a pure UI component that receives all necessary data and callbacks.
 class AuraSidebar extends StatelessWidget {
   static const _shadowAlpha = 0.1;
+  static const _shadowOffset = 2.0;
 
   /// Creates a Aura sidebar organism.
   const new({
@@ -23,6 +24,7 @@ class AuraSidebar extends StatelessWidget {
     this.header,
     this.middleSection,
     this.footer,
+    this.padding = EdgeInsets.zero,
     super.key,
   });
 
@@ -48,14 +50,20 @@ class AuraSidebar extends StatelessWidget {
   /// Optional footer widget to display at the bottom of the sidebar.
   final Widget? footer;
 
+  /// Insets sidebar content while leaving its surface full bleed.
+  final EdgeInsetsGeometry padding;
+
   @override
   Widget build(BuildContext context) {
+    final isLtr = Directionality.of(context) == TextDirection.ltr;
+
     return _AuraSidebarShell(
-      decoration: _sidebarDecoration(context.auraColors),
+      decoration: _sidebarDecoration(context.auraColors, isLtr),
       isExpanded: isExpanded,
       navigationItems: navigationItems,
       selectedIndex: selectedIndex,
       onNavigationTap: onNavigationTap,
+      padding: padding,
       header: header,
       middleSection: middleSection,
       footer: footer,
@@ -98,12 +106,14 @@ class const _AuraSidebarShell({
   required final List<AuraNavigationData> navigationItems,
   required final int selectedIndex,
   required final void Function(int value) onNavigationTap,
+  required final EdgeInsetsGeometry padding,
   final Widget? header,
   final Widget? middleSection,
   final Widget? footer,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
+    padding: padding,
     decoration: decoration,
     width: isExpanded ? 280 : 80,
     child: _AuraSidebarContent(
@@ -118,17 +128,21 @@ class const _AuraSidebarShell({
   );
 }
 
-BoxDecoration _sidebarDecoration(AuraColorScheme colors) => BoxDecoration(
-  color: colors.surface,
-  border: BorderDirectional(end: .new(color: colors.outline)),
-  boxShadow: [
-    BoxShadow(
-      color: colors.shadow.withValues(alpha: AuraSidebar._shadowAlpha),
-      offset: const Offset(2, 0),
-      blurRadius: 8,
-    ),
-  ],
-);
+BoxDecoration _sidebarDecoration(AuraColorScheme colors, bool isLtr) =>
+    BoxDecoration(
+      color: colors.surface,
+      border: BorderDirectional(end: .new(color: colors.outline)),
+      boxShadow: [
+        BoxShadow(
+          color: colors.shadow.withValues(alpha: AuraSidebar._shadowAlpha),
+          offset: .new(
+            isLtr ? AuraSidebar._shadowOffset : -AuraSidebar._shadowOffset,
+            0,
+          ),
+          blurRadius: 8,
+        ),
+      ],
+    );
 
 class _AuraSidebarContent extends StatelessWidget {
   new({
@@ -174,15 +188,12 @@ class const _AuraSidebarFooterNavigation({
   required final bool isExpanded,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => SafeArea(
-    top: false,
-    child: _AuraSidebarNavigation(
-      navigationItems: navigationItems,
-      selectedIndex: selectedIndex,
-      onNavigationTap: onNavigationTap,
-      isExpanded: isExpanded,
-      footer: true,
-    ),
+  Widget build(BuildContext context) => _AuraSidebarNavigation(
+    navigationItems: navigationItems,
+    selectedIndex: selectedIndex,
+    onNavigationTap: onNavigationTap,
+    isExpanded: isExpanded,
+    footer: true,
   );
 }
 
@@ -201,19 +212,17 @@ class const _AuraSidebarBody({
   final Widget? middleSection,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        _AuraSidebarNavigation(
-          navigationItems: navigationItems,
-          selectedIndex: selectedIndex,
-          onNavigationTap: onNavigationTap,
-          isExpanded: isExpanded,
-        ),
-        ?middleSection,
-      ],
-    );
-  }
+  Widget build(BuildContext context) => ListView(
+    children: [
+      _AuraSidebarNavigation(
+        navigationItems: navigationItems,
+        selectedIndex: selectedIndex,
+        onNavigationTap: onNavigationTap,
+        isExpanded: isExpanded,
+      ),
+      ?middleSection,
+    ],
+  );
 }
 
 class const _AuraSidebarFooter({required final Widget child})

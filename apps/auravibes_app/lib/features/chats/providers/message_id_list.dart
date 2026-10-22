@@ -8,20 +8,21 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
+import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
@@ -31,6 +32,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:riverpod/misc.dart' show FutureProviderFamily;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 export 'conversation_selection_provider.dart';
@@ -41,6 +43,42 @@ part 'pending_tool_call.dart';
 part 'streaming_message_metadata.dart';
 
 final _logger = Logger('message_id_list');
+
+typedef ConversationMessageTargetKey = ({
+  String workspaceId,
+  String conversationId,
+  String messageId,
+});
+
+final FutureProviderFamily<List<MessageEntity>, ConversationMessageTargetKey>
+conversationMessageTargetMessagesProvider = FutureProvider.autoDispose
+    .family<List<MessageEntity>, ConversationMessageTargetKey>((
+      ref,
+      key,
+    ) async {
+      final session = await ref.watch(
+        workspaceSessionForRouteProvider(key.workspaceId).future,
+      );
+      final gateway = await ref.watch(
+        cloudWorkspaceStateGatewayProvider(session).future,
+      );
+      if (gateway == null) {
+        throw StateError('Cloud message retrieval unavailable');
+      }
+
+      final messages = await CloudChatGateway(
+        gateway,
+      ).listConversationMessages(key.conversationId, messageId: key.messageId);
+      const _CloudMessageOverlay overlay = (
+        a2uiMessages: null,
+        a2uiIssuesBySurface: null,
+        a2uiMessageIssues: null,
+      );
+
+      return messages.reversed
+          .map((message) => _readCloudMessage(message, overlay))
+          .toList();
+    });
 
 extension MessageIdList on ChatMessagesFamily {
   Override overrideWithValue(Stream<List<MessageEntity>> value) =>
@@ -161,7 +199,6 @@ typedef _PendingCatalogRequest = ({
 
 typedef _PendingApprovalServices = ({
   ResolveToolApprovalDecisionUsecase decisionUsecase,
-  ResolveEffectiveToolApprovalUsecase? effectiveToolApprovalUsecase,
 });
 
 typedef _PendingToolCallListRequest = ({
@@ -174,7 +211,6 @@ typedef _PendingToolCallListRequest = ({
 typedef _PendingToolCallDecisionRequest = ({
   ProviderContainer container,
   ResolveToolApprovalDecisionUsecase decisionUsecase,
-  ResolveEffectiveToolApprovalUsecase? effectiveToolApprovalUsecase,
   ToolCatalog<ResolvedTool> catalog,
   String conversationId,
   String workspaceId,
@@ -218,6 +254,65 @@ Stream<List<MessageEntity>> _cloudMessages(
   )),
   _readCloudConversationMessages,
 );
+
+@riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
+Future<MessageEntity?> fetchConversationMessageById(
+  Ref ref,
+  _MessageLookupRequest request,
+) async {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(request.workspaceId).future,
+  );
+  if (session.cloud == null) {
+    return await _localConversationMessage(ref, request);
+  }
+
+  return await _cloudConversationMessage(ref, request, session);
+}
+
+Future<MessageEntity?> _localConversationMessage(
+  Ref ref,
+  _MessageLookupRequest request,
+) async =>
+    (await ref
+            .watch(messageRepositoryProvider)
+            .getMessagesByConversation(request.conversationId))
+        .firstWhereOrNull((message) => message.id == request.messageId);
+
+Future<MessageEntity?> _cloudConversationMessage(
+  Ref ref,
+  _MessageLookupRequest request,
+  WorkspaceSession session,
+) async {
+  final message = await _cloudConversationMessageView(ref, request, session);
+  if (message == null) return null;
+
+  return _readCloudMessage(message, (
+    a2uiMessages: null,
+    a2uiIssuesBySurface: null,
+    a2uiMessageIssues: null,
+  ));
+}
+
+Future<ConversationMessageView?> _cloudConversationMessageView(
+  Ref ref,
+  _MessageLookupRequest request,
+  WorkspaceSession session,
+) async {
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayProvider(session).future,
+  );
+  if (gateway == null) return null;
+
+  final messages = await CloudChatGateway(gateway).listConversationMessages(
+    request.conversationId,
+    limit: 1,
+    messageId: request.messageId,
+  );
+
+  return messages.firstWhereOrNull((item) => item.id == request.messageId);
+}
 
 Stream<List<MessageEntity>> _messageStream<T>(
   Ref ref,
@@ -350,11 +445,18 @@ int? _activeAssistantMessageIndex(
 MessageEntity _readCloudMessage(
   ConversationMessageView message,
   _CloudMessageOverlay overlay,
-) => _cloudMessageEntity(
-  message,
-  _readCloudMessageStatus(message.status),
-  _readCloudMessageMetadata(message, overlay),
-);
+) {
+  final entity = _cloudMessageEntity(
+    message,
+    _readCloudMessageStatus(message.status),
+    _readCloudMessageMetadata(message, overlay),
+  );
+
+  return entity.copyWith(
+    sourceConversationId: message.sourceConversationId,
+    sourceMessageId: message.sourceMessageId,
+  );
+}
 
 MessageEntity _cloudMessageEntity(
   ConversationMessageView message,
@@ -420,6 +522,7 @@ MessageToolCallEntity _readCloudToolCall(
     argumentsDigest: call.argumentsDigest,
     turnId: message.turnId,
     turnRevision: message.turnRevision,
+    backgroundEligible: call.backgroundEligible,
     resultStatus: CloudMessageTools.resultStatus(call.status),
   );
 
@@ -616,7 +719,7 @@ void _watchLocalConversation(
 ) {
   ref
     ..watch(
-      conversationStreamingProvider.select(
+      conversationActivityProvider.select(
         (conversations) => conversations.contains(conversationId),
       ),
     )
@@ -1261,7 +1364,7 @@ _PendingEntriesRequest _pendingEntriesRequest(_PendingCatalogRequest input) {
   return (
     container: ref.container,
     resolution: request,
-    services: _pendingApprovalServices(ref, workspaceId, request.pendingCalls),
+    services: _pendingApprovalServices(ref, workspaceId),
     catalog: input.catalog,
     workspaceId: workspaceId,
   );
@@ -1270,21 +1373,7 @@ _PendingEntriesRequest _pendingEntriesRequest(_PendingCatalogRequest input) {
 _PendingApprovalServices _pendingApprovalServices(
   Ref ref,
   String workspaceId,
-  List<MessageToolCallEntity> pendingCalls,
-) => (
-  decisionUsecase: _decisionUsecase(ref, workspaceId),
-  effectiveToolApprovalUsecase: _effectiveToolApprovalUsecase(
-    ref,
-    pendingCalls,
-  ),
-);
-
-ResolveEffectiveToolApprovalUsecase? _effectiveToolApprovalUsecase(
-  Ref ref,
-  List<MessageToolCallEntity> pendingCalls,
-) => pendingCalls.any((toolCall) => toolCall.name == callSkillToolName)
-    ? ref.watch(resolveEffectiveToolApprovalUsecaseProvider)
-    : null;
+) => (decisionUsecase: _decisionUsecase(ref, workspaceId));
 
 ResolveToolApprovalDecisionUsecase _decisionUsecase(
   Ref ref,
@@ -1330,7 +1419,6 @@ _PendingToolCallDecisionRequest _pendingToolCallDecisionRequest(
 ) => (
   container: request.container,
   decisionUsecase: request.services.decisionUsecase,
-  effectiveToolApprovalUsecase: request.services.effectiveToolApprovalUsecase,
   catalog: request.catalog,
   conversationId: request.resolution.conversation.conversationId,
   workspaceId: request.workspaceId,
@@ -1346,7 +1434,7 @@ MessageEntity? _latestAssistantMessage(List<MessageEntity>? messages) {
 
 List<MessageToolCallEntity> _awaitingApprovalToolCalls(MessageEntity message) =>
     message.metadata?.toolCalls
-        .where((toolCall) => toolCall.isAwaitingApproval)
+        .where((toolCall) => toolCall.hasPendingApproval)
         .toList() ??
     const [];
 
@@ -1365,6 +1453,9 @@ List<PendingToolCall> _toPendingToolCalls(
 
 Future<({MessageToolCallEntity toolCall, bool needsConfirmation})>
 _resolvePendingToolCall(_PendingToolCallDecisionRequest request) async {
+  if (request.toolCall.hasPendingApproval) {
+    return (toolCall: request.toolCall, needsConfirmation: true);
+  }
   final resolvedTool = await _resolvePendingToolTarget(request);
   if (resolvedTool == null) {
     return await _unresolvedPendingToolCall(request);
@@ -1391,94 +1482,15 @@ Future<ResolvedTool?> _resolvePendingToolTarget(
 }
 
 Future<({MessageToolCallEntity toolCall, bool needsConfirmation})>
-_unresolvedPendingToolCall(_PendingToolCallDecisionRequest request) async {
-  final toolCall = request.toolCall;
-  if (toolCall.name == callSkillToolName) {
-    await _markNestedToolCallNotConfigured(request);
-
-    return (toolCall: toolCall, needsConfirmation: false);
-  }
-
-  return (toolCall: toolCall, needsConfirmation: true);
-}
-
-Future<void> _markNestedToolCallNotConfigured(
-  _PendingToolCallDecisionRequest request,
-) async {
-  final metadata = _notConfiguredMetadata(request);
-  if (metadata == null) return;
-
-  final _ = await request.container
-      .read(messageRepositoryProvider)
-      .patchMessage(request.message.id, .new(metadata: metadata));
-}
-
-MessageMetadataEntity? _notConfiguredMetadata(
-  _PendingToolCallDecisionRequest request,
-) {
-  final metadata = request.message.metadata;
-  if (metadata == null) return null;
-
-  final updatedCalls = _notConfiguredToolCalls(
-    metadata.toolCalls,
-    request.toolCall.id,
-  );
-  if (updatedCalls == null) return null;
-
-  return metadata.copyWith(toolCalls: updatedCalls);
-}
-
-List<MessageToolCallEntity>? _notConfiguredToolCalls(
-  List<MessageToolCallEntity> toolCalls,
-  String toolCallId,
-) {
-  final callIndex = toolCalls.indexWhere(
-    (toolCall) => toolCall.id == toolCallId,
-  );
-  if (callIndex == -1) return null;
-
-  final updatedCalls = [...toolCalls];
-  updatedCalls[callIndex] = updatedCalls[callIndex].copyWith(
-    resultStatus: .notConfigured,
-    responseRaw: ToolCallResultStatus.notConfigured.toResponseString(),
-  );
-
-  return updatedCalls;
-}
+_unresolvedPendingToolCall(_PendingToolCallDecisionRequest request) async =>
+    (toolCall: request.toolCall, needsConfirmation: true);
 
 Future<ResolvedTool?> _resolvedTool(
   _PendingToolCallDecisionRequest request,
-) async {
-  final resolved = _catalogResolvedTool(request);
-  if (resolved == null) return null;
-  if (!_isCallSkillTool(resolved)) return resolved;
-
-  return await _resolveNestedTool(request, resolved);
-}
-
-ResolvedTool? _catalogResolvedTool(_PendingToolCallDecisionRequest request) =>
-    const ToolResolverService().resolveTool(
-      request.toolCall.name,
-      request.catalog,
-    );
-
-bool _isCallSkillTool(ResolvedTool tool) =>
-    tool.isSkillCommand && tool.toolIdentifier == callSkillToolName;
-
-Future<ResolvedTool?> _resolveNestedTool(
-  _PendingToolCallDecisionRequest request,
-  ResolvedTool resolved,
-) async {
-  final resolver = request.effectiveToolApprovalUsecase;
-  if (resolver == null) return null;
-
-  return await resolver.call(
-    conversationId: request.conversationId,
-    workspaceId: request.workspaceId,
-    requestedTool: resolved,
-    argumentsRaw: request.toolCall.argumentsRaw,
-  );
-}
+) async => const ToolResolverService().resolveTool(
+  request.toolCall.name,
+  request.catalog,
+);
 
 Future<({MessageToolCallEntity toolCall, bool needsConfirmation})>
 _resolvePendingToolCallSafely(

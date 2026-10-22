@@ -6,6 +6,7 @@ import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -88,6 +89,13 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(observedTheme?.colors.onSurface, AuraTheme.light.colors.onSurface);
+    var systemOverlayStyle = tester
+        .widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+          find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+        )
+        .value;
+    expect(systemOverlayStyle.statusBarBrightness, Brightness.light);
+    expect(systemOverlayStyle.statusBarIconBrightness, Brightness.dark);
     final materialTheme =
         observedMaterialTheme ??
         fail('Expected the route to build with a Material theme.');
@@ -179,6 +187,13 @@ void main() {
         brightness: .dark,
       ).onSurface,
     );
+    systemOverlayStyle = tester
+        .widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+          find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+        )
+        .value;
+    expect(systemOverlayStyle.statusBarBrightness, Brightness.dark);
+    expect(systemOverlayStyle.statusBarIconBrightness, Brightness.light);
     final darkPrimary = observedTheme?.colors.primary;
     expect(observedSelectionTheme?.cursorColor, darkPrimary);
     expect(observedSelectionTheme?.selectionHandleColor, darkPrimary);

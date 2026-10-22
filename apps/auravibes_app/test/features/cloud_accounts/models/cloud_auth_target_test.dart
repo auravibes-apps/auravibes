@@ -31,15 +31,32 @@ void main() {
   });
   test('return accepts recognized same-workspace context', () {
     const path =
-        '/workspaces/w/more/service-connections/new?credential-definition-id=cred&app-skill-id=skill';
+        '/workspaces/w/service-connections/new?type=connector&connectorId=jina';
     expect(TaskReturn.validate(path, workspaceId: 'w'), path);
-    expect(
-      TaskReturn.validate(
-        '/workspaces/w/more/manage-workspaces?view=connect',
-        workspaceId: 'w',
-      ),
-      isNotNull,
-    );
+    for (final destination in [
+      'tools',
+      'models',
+      'agents',
+      'agents/new',
+      'agents/agent',
+      'skills',
+      'skills/new',
+      'skills/skill',
+      'skills/skill/resources/resource',
+      'service-connections',
+      'service-connections/connection',
+      'manage-workspaces?view=connect',
+      'manage-workspaces/create',
+      'manage-workspaces/cloud/account/42',
+      'cloud-accounts',
+    ]) {
+      final location = '/workspaces/w/$destination';
+      expect(
+        TaskReturn.validate(location, workspaceId: 'w'),
+        location,
+        reason: location,
+      );
+    }
   });
   test('return rejects unsafe, unknown and other-workspace paths', () {
     for (final path in [
@@ -47,9 +64,15 @@ void main() {
       '//evil.test/a',
       '/workspaces/other/chat/new',
       '/workspaces/w/unknown',
-      '/workspaces/w/more/../chat/new',
-      '/workspaces/w/more/%2e%2e/chat/new',
-      '/workspaces/w/more/%252e%252e/chat/new',
+      '/workspaces/w/../chat/new',
+      '/workspaces/w/%2e%2e/chat/new',
+      '/workspaces/w/%252e%252e/chat/new',
+      '/workspaces/w/skills/skill%2Fother',
+      '/workspaces/w/skills/skill%252Fother',
+      '/workspaces/w/skills//resource',
+      '/workspaces/w/manage-workspaces/cloud/account/not-an-id',
+      '/workspaces/w/cloud-accounts/login/editor',
+      '/workspaces/w/tools#fragment',
     ]) {
       expect(TaskReturn.validate(path, workspaceId: 'w'), isNull, reason: path);
     }

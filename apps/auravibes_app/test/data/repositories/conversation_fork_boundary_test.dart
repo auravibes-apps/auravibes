@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
+import 'package:auravibes_app/data/repositories/background_work_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -55,6 +56,111 @@ void main() {
     ),
   );
 
+  test(
+    'local mode defaults off, persists create and patch, forks independently',
+    () async {
+      await insertSource();
+      final source =
+          await repository.getConversationById('source') ??
+          fail('Expected source conversation');
+      expect(source.toolAccessMode, ConversationToolAccessMode.defaultMode);
+      final created = await repository.createConversation(
+        .new(
+          title: 'Auto',
+          workspaceId: source.workspaceId,
+          toolAccessMode: .allowAll,
+        ),
+      );
+      expect(created.toolAccessMode, ConversationToolAccessMode.allowAll);
+      final changed = await repository.patchConversation(
+        'source',
+        const .new(toolAccessMode: .allowAll),
+      );
+      expect(changed.toolAccessMode, ConversationToolAccessMode.allowAll);
+      final _ = await insertMessage(
+        id: 'mode-terminal',
+        createdAt: .utc(2026),
+        isUser: false,
+        status: .sent,
+      );
+      final fork = await repository.forkConversation('source');
+      expect(fork.toolAccessMode, ConversationToolAccessMode.allowAll);
+      final off = await repository.patchConversation(
+        'source',
+        const .new(toolAccessMode: .defaultMode),
+      );
+      expect(off.toolAccessMode, ConversationToolAccessMode.defaultMode);
+      expect(
+        (await repository.getConversationById(fork.id) ??
+                fail('Expected fork conversation'))
+            .toolAccessMode,
+        ConversationToolAccessMode.allowAll,
+      );
+    },
+  );
+
+  test(
+    'child fork snapshots current root mode and then stays independent',
+    () async {
+      await insertSource();
+      final root =
+          await repository.getConversationById('source') ??
+          fail('Expected root');
+      final _ = await repository.patchConversation(
+        root.id,
+        const .new(toolAccessMode: .allowAll),
+      );
+      final child = await repository.createConversation(
+        .new(
+          title: 'Child',
+          workspaceId: root.workspaceId,
+          parentConversationId: root.id,
+        ),
+      );
+      expect(child.toolAccessMode, ConversationToolAccessMode.defaultMode);
+      final _ = await database.messageDao.insertMessage(
+        .new(
+          conversationId: Value(child.id),
+          content: const Value('Terminal'),
+          messageType: const Value(MessagesTableType.text),
+          isUser: const Value(false),
+          status: const Value(MessageTableStatus.sent),
+        ),
+      );
+      final fork = await repository.forkConversation(child.id);
+      expect(fork.toolAccessMode, ConversationToolAccessMode.allowAll);
+      expect(fork.parentConversationId, isNull);
+      final _ = await repository.patchConversation(
+        root.id,
+        const .new(toolAccessMode: .defaultMode),
+      );
+      expect(
+        (await repository.getConversationById(fork.id) ?? fail('Expected fork'))
+            .toolAccessMode,
+        ConversationToolAccessMode.allowAll,
+      );
+    },
+  );
+
+  test(
+    'unknown stored mode defaults safely in entity and root lookup',
+    () async {
+      await insertSource();
+      final _ = await database.conversationDao.patchConversation(
+        'source',
+        const .new(toolAccessMode: Value('future_mode')),
+      );
+      expect(
+        (await repository.getConversationById('source'))?.toolAccessMode,
+        ConversationToolAccessMode.defaultMode,
+      );
+      expect(
+        await database.conversationDao.getToolAccessMode('source'),
+        ConversationToolAccessMode.defaultMode,
+      );
+    },
+  );
+
   test('fork copies conversation reasoning configuration', () async {
     const configuration = ReasoningConfiguration(effort: 'high');
     await insertSource(reasoningConfigJson: configuration.encode());
@@ -75,6 +181,159 @@ void main() {
     final fork = await repository.forkConversation('source');
 
     expect(fork.reasoningConfiguration?.encode(), configuration.encode());
+  });
+
+  test('fork does not inherit detached work records', () async {
+    await insertSource();
+    final source = await repository.getConversationById('source');
+    if (source == null) fail('Source conversation was not created.');
+    final backgroundWork = BackgroundWorkRepository(database);
+    const workId = 'source-only-background-work';
+    const toolCallId = 'source-only-tool-call';
+    const completedWorkId = 'source-only-completed-background-work';
+    const completedToolCallId = 'source-only-completed-tool-call';
+    final _ = await backgroundWork.create(
+      .new(
+        id: workId,
+        workspaceId: source.workspaceId,
+        conversationId: source.id,
+        toolCallId: toolCallId,
+        toolKind: 'skill.native',
+      ),
+    );
+    final _ = await backgroundWork.create(
+      .new(
+        id: completedWorkId,
+        workspaceId: source.workspaceId,
+        conversationId: source.id,
+        toolCallId: completedToolCallId,
+        toolKind: 'skill.native',
+      ),
+    );
+    const completedResult = 'completed result stays in the source record';
+    final _ = await backgroundWork.finish(
+      .new(
+        conversationId: source.id,
+        workId: completedWorkId,
+        status: AgentBackgroundWorkStatus.completed,
+        resultContent: completedResult,
+        resultByteLength: utf8.encode(completedResult).length,
+        statusPreview: 'Completed',
+      ),
+    );
+    final now = DateTime.utc(2026);
+    final _ = await insertMessage(
+      id: 'user-before-active-work',
+      createdAt: now,
+      isUser: true,
+      status: .sent,
+    );
+    final _ = await insertMessage(
+      id: 'assistant-with-active-work',
+      createdAt: now.add(const Duration(seconds: 1)),
+      isUser: false,
+      status: .sent,
+      metadata: jsonEncode(
+        const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: toolCallId,
+              name: 'research-search',
+              argumentsRaw: '{"query":"still running"}',
+              resultStatus: .success,
+            ),
+            MessageToolCallEntity(
+              id: completedToolCallId,
+              name: 'research-search',
+              argumentsRaw: '{"query":"completed private query"}',
+              resultStatus: .success,
+            ),
+          ],
+        ).toJson(),
+      ),
+    );
+
+    final fork = await repository.forkConversation(source.id);
+    final forkMessages = await MessageRepository(database)
+        .getMessagesByConversation(fork.id);
+
+    expect(
+      (await backgroundWork.watchConversation(source.id).first).map(
+        (work) => work.identity.id,
+      ),
+      containsAll([workId, completedWorkId]),
+    );
+    expect(await backgroundWork.watchConversation(fork.id).first, isEmpty);
+    expect(
+      forkMessages.expand((message) => message.metadata?.toolCalls ?? []),
+      isNot(
+        contains(
+          predicate<MessageToolCallEntity>(
+            (call) =>
+                call.id == toolCallId ||
+                call.argumentsRaw.contains('still running') ||
+                call.id == completedToolCallId ||
+                call.argumentsRaw.contains('completed private query'),
+          ),
+        ),
+      ),
+    );
+
+    final _ = await backgroundWork.finish(
+      .new(
+        conversationId: source.id,
+        workId: workId,
+        status: .cancelled,
+        resultContent: null,
+        resultByteLength: 0,
+        statusPreview: 'Stopped',
+      ),
+    );
+    final cancelledForkMessages = await MessageRepository(database)
+        .getMessagesByConversation(fork.id);
+    expect(
+      cancelledForkMessages.expand(
+        (message) => message.metadata?.toolCalls ?? [],
+      ),
+      isNot(
+        contains(
+          predicate<MessageToolCallEntity>(
+            (call) =>
+                call.id == toolCallId ||
+                call.argumentsRaw.contains('still running') ||
+                call.id == completedToolCallId ||
+                call.argumentsRaw.contains('completed private query'),
+          ),
+        ),
+      ),
+    );
+
+    final frozenBoundaries = await repository.captureForkBoundaries(source.id);
+    expect(
+      await repository.deleteConversationWithFrozenForkBoundaries(
+        source.id,
+        frozenForkBoundaries: frozenBoundaries,
+      ),
+      isTrue,
+    );
+    final materializedMessages = await MessageRepository(database)
+        .getMessagesByConversation(fork.id);
+    expect(
+      materializedMessages.expand(
+        (message) => message.metadata?.toolCalls ?? [],
+      ),
+      isNot(
+        contains(
+          predicate<MessageToolCallEntity>(
+            (call) =>
+                call.id == toolCallId ||
+                call.argumentsRaw.contains('still running') ||
+                call.id == completedToolCallId ||
+                call.argumentsRaw.contains('completed private query'),
+          ),
+        ),
+      ),
+    );
   });
 
   test('fork preserves selected conversation skills', () async {

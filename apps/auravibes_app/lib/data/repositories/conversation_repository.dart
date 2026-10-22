@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
+import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
@@ -36,6 +37,13 @@ typedef _MaterializeRowsRequest = ({
   String? boundary,
   bool boundaryWasCaptured,
   String forkId,
+});
+
+typedef _CopyMaterializedRowsRequest = ({
+  List<({MessagesTable table, bool isForkReference})> rows,
+  String forkId,
+  String? boundary,
+  Map<String, Set<String>> detachedToolCallIds,
 });
 
 typedef _MaterializeForkNodeRequest = ({
@@ -153,7 +161,10 @@ class ConversationRepository(
     final boundary = _resolveForkBoundary(effective, throughMessageId);
 
     final forkDetails = await _forkDetails(source, effective, boundary);
-    final fork = await _createFork(source, forkDetails);
+    final fork = await _createForkWithEffectiveToolAccessMode(
+      source,
+      forkDetails,
+    );
 
     return _mapToConversation(fork);
   }
@@ -437,6 +448,7 @@ extension on ConversationRepository {
     modelId: .new(source.modelId),
     agentId: .new(source.agentId),
     reasoningConfigJson: .new(source.reasoningConfigJson),
+    toolAccessMode: .new(source.toolAccessMode),
   );
 
   Future<_ForkDetails> _forkDetails(
@@ -534,6 +546,16 @@ extension on ConversationRepository {
 
     return created;
   });
+
+  Future<ConversationsTable> _createForkWithEffectiveToolAccessMode(
+    ConversationsTable source,
+    _ForkDetails details,
+  ) async {
+    final mode = await _database.conversationDao.getToolAccessMode(source.id);
+    final effectiveSource = source.copyWith(toolAccessMode: mode.storedValue);
+
+    return await _createFork(effectiveSource, details);
+  }
 
   Future<String> _forkTitle(String workspaceId, String sourceTitle) async {
     final title = sourceTitle.trim();
@@ -806,15 +828,45 @@ extension on ConversationRepository {
     String forkId,
     String? boundary,
   ) async {
+    final materializedRows = rows.toList();
+    final detachedToolCallIds = await _detachedForkToolCallIds(
+      materializedRows,
+    );
+
+    return await _copyRowsWithDetachedCalls((
+      rows: materializedRows,
+      forkId: forkId,
+      boundary: boundary,
+      detachedToolCallIds: detachedToolCallIds,
+    ));
+  }
+
+  Future<({Map<String, String> idMap, String? mappedBoundary})>
+  _copyRowsWithDetachedCalls(_CopyMaterializedRowsRequest request) async {
     final idMap = <String, String>{};
     String? mappedBoundary;
-    for (final row in rows) {
-      final messageId = await _copyForkMessage(row, forkId);
-      idMap[row.table.id] = messageId;
-      if (row.table.id == boundary) mappedBoundary = messageId;
+    for (final row in request.rows) {
+      mappedBoundary =
+          await _copyAndMapMaterializedRow(row, request, idMap) ??
+          mappedBoundary;
     }
 
     return (idMap: idMap, mappedBoundary: mappedBoundary);
+  }
+
+  Future<String?> _copyAndMapMaterializedRow(
+    ({MessagesTable table, bool isForkReference}) row,
+    _CopyMaterializedRowsRequest request,
+    Map<String, String> idMap,
+  ) async {
+    final messageId = await _copyForkMessage(
+      row,
+      request.forkId,
+      request.detachedToolCallIds,
+    );
+    idMap[row.table.id] = messageId;
+
+    return row.table.id == request.boundary ? messageId : null;
   }
 
   Iterable<({MessagesTable table, bool isForkReference})> _rowsToMaterialize(
@@ -828,20 +880,101 @@ extension on ConversationRepository {
   Future<String> _copyForkMessage(
     ({MessagesTable table, bool isForkReference}) row,
     String forkId,
+    Map<String, Set<String>> detachedToolCallIds,
   ) async {
     final messageId = const UuidV7().generate();
+    final metadata = _metadataWithoutDetachedBackgroundCalls(
+      row.table,
+      detachedToolCallIds,
+    );
     final _ = await _database
         .into(_database.messages)
-        .insert(_forkMessageCompanion(row.table, messageId, forkId));
+        .insert(_forkMessageCompanion(row.table, messageId, forkId, metadata));
     await _copyForkAttachments(row.table.id, messageId);
 
     return messageId;
   }
 
+  Future<Map<String, Set<String>>> _detachedForkToolCallIds(
+    List<({MessagesTable table, bool isForkReference})> rows,
+  ) async {
+    final conversationIds = _materializedConversationIds(rows);
+    if (conversationIds.isEmpty) return const {};
+
+    return _toolCallIdsByConversation(
+      await _backgroundWorkForConversations(conversationIds),
+    );
+  }
+
+  Set<String> _materializedConversationIds(
+    List<({MessagesTable table, bool isForkReference})> rows,
+  ) => rows.map((row) => row.table.conversationId).toSet();
+
+  Future<List<BackgroundWorkTable>> _backgroundWorkForConversations(
+    Set<String> conversationIds,
+  ) => (_database.select(
+    _database.backgroundWorks,
+  )..where((table) => table.conversationId.isIn(conversationIds))).get();
+
+  Map<String, Set<String>> _toolCallIdsByConversation(
+    List<BackgroundWorkTable> activeWork,
+  ) {
+    final activeIdsByConversation = <String, Set<String>>{};
+    for (final work in activeWork) {
+      final _ = activeIdsByConversation
+          .putIfAbsent(work.conversationId, () => <String>{})
+          .add(work.toolCallId);
+    }
+
+    return activeIdsByConversation;
+  }
+
+  String? _metadataWithoutDetachedBackgroundCalls(
+    MessagesTable message,
+    Map<String, Set<String>> detachedToolCallIds,
+  ) {
+    final metadataJson = message.metadata;
+    if (metadataJson == null) return null;
+    final detachedIds = detachedToolCallIds[message.conversationId];
+    if (detachedIds == null) return metadataJson;
+
+    return _filterDetachedBackgroundCalls(metadataJson, detachedIds);
+  }
+
+  String _filterDetachedBackgroundCalls(
+    String metadataJson,
+    Set<String> detachedIds,
+  ) {
+    final metadata = MessageMetadataEntity.fromJsonString(metadataJson);
+    if (metadata == null ||
+        !_hasDetachedBackgroundCall(metadata, detachedIds)) {
+      return metadataJson;
+    }
+
+    return jsonEncode(
+      _removeDetachedBackgroundCalls(metadata, detachedIds).toJson(),
+    );
+  }
+
+  bool _hasDetachedBackgroundCall(
+    MessageMetadataEntity metadata,
+    Set<String> detachedIds,
+  ) => metadata.toolCalls.any((toolCall) => detachedIds.contains(toolCall.id));
+
+  MessageMetadataEntity _removeDetachedBackgroundCalls(
+    MessageMetadataEntity metadata,
+    Set<String> detachedIds,
+  ) => metadata.copyWith(
+    toolCalls: metadata.toolCalls
+        .where((toolCall) => !detachedIds.contains(toolCall.id))
+        .toList(),
+  );
+
   MessagesCompanion _forkMessageCompanion(
     MessagesTable row,
     String messageId,
     String forkId,
+    String? metadata,
   ) => MessagesCompanion(
     id: .new(messageId),
     createdAt: .new(row.createdAt),
@@ -851,7 +984,7 @@ extension on ConversationRepository {
     messageType: .new(row.messageType),
     isUser: .new(row.isUser),
     status: .new(row.status),
-    metadata: .new(row.metadata),
+    metadata: .new(metadata),
   );
 
   Future<void> _copyForkAttachments(
@@ -1045,6 +1178,14 @@ extension on ConversationRepository {
 
   ConversationEntity _mapConversationCore(
     ConversationsTable conversationTable,
+  ) => _mapConversationFields(conversationTable).copyWith(
+    toolAccessMode: ConversationToolAccessModeStorage.decode(
+      conversationTable.toolAccessMode,
+    ),
+  );
+
+  ConversationEntity _mapConversationFields(
+    ConversationsTable conversationTable,
   ) {
     return ConversationEntity(
       id: conversationTable.id,
@@ -1077,9 +1218,10 @@ extension on ConversationRepository {
       title: .new(conversation.title),
       modelId: .new(conversation.modelId),
       agentId: .new(conversation.agentId),
-      reasoningConfigJson: .new(conversation.reasoningConfiguration?.encode()),
+      reasoningConfigJson: _reasoningConfigCompanion(conversation),
       parentConversationId: .new(conversation.parentConversationId),
       activeCompactionCheckpointId: const Value(null),
+      toolAccessMode: _toolAccessModeCompanion(conversation),
       isPinned: .new(conversation.isPinned ?? false),
     );
   }
@@ -1090,19 +1232,35 @@ extension on ConversationRepository {
     return ConversationsCompanion(
       title: .absentIfNull(conversation.title),
       modelId: .absentIfNull(conversation.modelId),
-      agentId: conversation.clearAgent
-          ? const Value(null)
-          : Value.absentIfNull(conversation.agentId),
-      reasoningConfigJson: conversation.clearReasoningConfiguration
-          ? const Value(null)
-          : Value.absentIfNull(conversation.reasoningConfiguration?.encode()),
+      agentId: _agentIdCompanionPatch(conversation),
+      reasoningConfigJson: _reasoningConfigCompanionPatch(conversation),
       activeCompactionCheckpointId: _activeCompactionCheckpointPatch(
         conversation,
       ),
+      toolAccessMode: _toolAccessModeCompanionPatch(conversation),
       isPinned: .absentIfNull(conversation.isPinned),
     );
   }
 }
+
+Value<String> _toolAccessModeCompanion(ConversationToCreate conversation) =>
+    .new(conversation.toolAccessMode.storedValue);
+
+Value<String?> _reasoningConfigCompanion(ConversationToCreate conversation) =>
+    .new(conversation.reasoningConfiguration?.encode());
+
+Value<String> _toolAccessModeCompanionPatch(ConversationPatch conversation) =>
+    Value.absentIfNull(conversation.toolAccessMode?.storedValue);
+
+Value<String?> _agentIdCompanionPatch(ConversationPatch conversation) =>
+    conversation.clearAgent
+    ? const Value(null)
+    : Value.absentIfNull(conversation.agentId);
+
+Value<String?> _reasoningConfigCompanionPatch(ConversationPatch conversation) =>
+    conversation.clearReasoningConfiguration
+    ? const Value(null)
+    : Value.absentIfNull(conversation.reasoningConfiguration?.encode());
 
 Value<String?> _activeCompactionCheckpointPatch(
   ConversationPatch conversation,

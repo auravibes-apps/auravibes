@@ -2,6 +2,7 @@ import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 
 /// App bar following the Aura design system.
 class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -41,11 +42,14 @@ class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Widget build(BuildContext context) => _AuraAppBarContent(appBar: this).child;
+  Widget build(BuildContext context) => _AuraAppBarContent(
+    appBar: this,
+    brightness: Theme.of(context).brightness,
+  ).child;
 }
 
 class _AuraAppBarContent {
-  new({required AuraAppBar appBar})
+  new({required AuraAppBar appBar, required Brightness brightness})
     : child = AppBar(
         leading: appBar.leading,
         title: switch (appBar.title) {
@@ -63,6 +67,9 @@ class _AuraAppBarContent {
         backgroundColor: DesignColors.transparent,
         centerTitle: true,
         leadingWidth: appBar.leadingWidth,
+        systemOverlayStyle: brightness == Brightness.dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
       );
 
   final Widget child;

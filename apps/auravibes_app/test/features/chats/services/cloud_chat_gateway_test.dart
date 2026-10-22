@@ -22,8 +22,11 @@ void main() {
       _workspace.serverUrl,
       httpClientOverride: MockClient((request) async {
         final body = jsonDecode(request.body) as Map<String, dynamic>;
-        requests[request.url.pathSegments.last] =
-            body['request'] as Map<String, dynamic>;
+        final requestBody = body['request'] as Map<String, dynamic>;
+        requests[requestBody['messageId'] == null
+                ? request.url.pathSegments.last
+                : 'listExactMessage'] =
+            requestBody;
 
         return http.Response(
           'Test transport stopped after request capture',
@@ -45,16 +48,19 @@ void main() {
         attachmentIds: const [],
         modelSelectionId: null,
         agentId: null,
+        languageCode: 'es',
       )),
       'continueTurn': () => gateway.continueTurn(
         requestId: 'continue',
         conversationId: 'conversation',
         expectedConversationRevision: 1,
+        languageCode: 'es',
       ),
       'continueConversation': () => gateway.continueConversation(
         requestId: 'execute',
         conversationId: 'conversation',
         expectedProjectionRevision: 1,
+        languageCode: 'es',
       ),
       'submitToolDecision': () => gateway.submitToolDecision((
         requestId: 'decision',
@@ -75,6 +81,7 @@ void main() {
         content: 'Hello',
         attachmentIds: const [],
         metadataJson: '{"action":"unchanged"}',
+        languageCode: 'es',
       )),
       'stopConversation': () => gateway.stopConversation(
         requestId: 'stop',
@@ -102,6 +109,11 @@ void main() {
         expectedConversationRevision: 7,
       ),
       'listMessages': () => gateway.listConversationMessages('conversation'),
+      'listExactMessage': () => gateway.listConversationMessages(
+        'conversation',
+        limit: 1,
+        messageId: 'older-message',
+      ),
     };
     for (final entry in operations.entries) {
       await expectLater(entry.value(), throwsA(anything));
@@ -127,6 +139,10 @@ void main() {
       requests['queueConversationMessage']!['metadataJson'],
       '{"action":"unchanged"}',
     );
+    expect(requests['queueConversationMessage']!['languageCode'], 'es');
+    expect(requests['startTurn']!['languageCode'], 'es');
+    expect(requests['continueTurn']!['languageCode'], 'es');
+    expect(requests['continueConversation']!['languageCode'], 'es');
     expect(
       requests['restoreCompactionCheckpoint'],
       containsPair('expectedConversationRevision', 7),
@@ -142,6 +158,11 @@ void main() {
       containsPair('conversationId', 'conversation'),
     );
     expect(requests['stopBackgroundWork'], containsPair('workId', 'work'));
+    expect(requests['listExactMessage'], containsPair('limit', 1));
+    expect(
+      requests['listExactMessage'],
+      containsPair('messageId', 'older-message'),
+    );
   });
 
   test('cloud subscriptions advertise supported components', () async {

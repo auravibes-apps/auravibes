@@ -70,7 +70,7 @@ void main() {
         content: skillEntity.content,
         source: skillEntity.source,
         kind: skillEntity.kind,
-        credentialReadiness: .ready,
+        connectorReadiness: .ready,
       );
       final _ = await conversationSkills.setWorkspaceSkillLoaded(
         'source',
@@ -331,13 +331,13 @@ class _ManifestBuilder(final String Function() _revision)
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async => [
     SkillManifest(
       slug: 'research',
       title: 'Research',
       description: 'Find sources',
       revision: _revision(),
-      tools: const [],
     ),
   ];
 }

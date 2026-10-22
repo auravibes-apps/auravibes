@@ -398,6 +398,7 @@ class _WorkspaceOptionsLoaded extends StatelessWidget {
              AuraDropdownOption(
                value: workspace.id,
                child: Text('${workspace.name} / ${_identity(workspace)}'),
+               identifier: 'workspace_option_${workspace.id}',
              ),
          ],
          value: _selectedWorkspaceId(workspaces, workspaceId),

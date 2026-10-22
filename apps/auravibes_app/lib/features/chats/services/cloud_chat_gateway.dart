@@ -24,6 +24,7 @@ typedef _QueueConversationMessageRequest = ({
   String content,
   List<String> attachmentIds,
   String? metadataJson,
+  String? languageCode,
 });
 
 typedef _StartTurnRequest = ({
@@ -35,6 +36,7 @@ typedef _StartTurnRequest = ({
   List<String> attachmentIds,
   String? modelSelectionId,
   String? agentId,
+  String? languageCode,
 });
 
 typedef _BeginUploadRequest = ({
@@ -113,6 +115,7 @@ mixin _CloudChatGatewayConversationApi on _CloudChatGatewayBase {
     required String requestId,
     required String conversationId,
     required int expectedProjectionRevision,
+    String? languageCode,
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueConversation(
@@ -122,6 +125,7 @@ mixin _CloudChatGatewayConversationApi on _CloudChatGatewayBase {
         conversationId: conversationId,
         expectedProjectionRevision: expectedProjectionRevision,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+        languageCode: languageCode,
       ),
     ),
   );
@@ -231,6 +235,7 @@ mixin _CloudChatGatewayTurnApi on _CloudChatGatewayBase {
     required String requestId,
     required String conversationId,
     required int expectedConversationRevision,
+    String? languageCode,
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueTurn(
@@ -240,6 +245,7 @@ mixin _CloudChatGatewayTurnApi on _CloudChatGatewayBase {
         conversationId: conversationId,
         expectedConversationRevision: expectedConversationRevision,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+        languageCode: languageCode,
       ),
     ),
   );
@@ -305,6 +311,7 @@ QueueConversationMessageRequest _queueConversationMessageRequest(
   content: request.content,
   attachmentIds: request.attachmentIds,
   metadataJson: request.metadataJson,
+  languageCode: request.languageCode,
   a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
 );
 
@@ -321,6 +328,7 @@ StartTurnRequest _startTurnRequest(
   attachmentIds: request.attachmentIds,
   modelSelectionId: request.modelSelectionId,
   agentId: request.agentId,
+  languageCode: request.languageCode,
   a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
 );
 
@@ -423,15 +431,33 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
         ),
       );
   Future<List<ConversationMessageView>> listConversationMessages(
-    String conversationId,
-  ) => CloudAppErrors.guardCall(
+    String conversationId, {
+    int limit = 500,
+    String? messageId,
+  }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.listMessages(
       .new(
         workspaceId: _workspaceId,
         conversationId: conversationId,
-        limit: 500,
+        limit: limit,
+        messageId: messageId,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+      ),
+    ),
+  );
+  Future<List<ConversationMessageSearchResult>> searchMessages({
+    required String query,
+    required int limit,
+    required int offset,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.searchMessages(
+      .new(
+        workspaceId: _workspaceId,
+        query: query,
+        limit: limit,
+        offset: offset,
       ),
     ),
   );
@@ -445,8 +471,73 @@ extension CloudChatGatewayConversationBaseOps on CloudChatGateway {
   );
 }
 
+extension CloudChatGatewayMessageBookmarkOps on CloudChatGateway {
+  Future<void> bookmarkMessage({
+    required String requestId,
+    required String conversationId,
+    required String sourceConversationId,
+    required String messageId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.bookmarkMessage(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        sourceConversationId: sourceConversationId,
+        messageId: messageId,
+      ),
+    ),
+  );
+
+  Future<void> unbookmarkMessage({
+    required String requestId,
+    required String conversationId,
+    required String sourceConversationId,
+    required String messageId,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.unbookmarkMessage(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        sourceConversationId: sourceConversationId,
+        messageId: messageId,
+      ),
+    ),
+  );
+
+  Future<List<MessageBookmarkView>> listMessageBookmarks() =>
+      CloudAppErrors.guardCall(
+        .conversation,
+        () => _client.conversation.listMessageBookmarks(
+          .new(workspaceId: _workspaceId),
+        ),
+      );
+}
+
 extension CloudChatGatewayBackgroundWorkOps on CloudChatGateway {
   Future<BackgroundWorkView> detachToolCall({
+    required String requestId,
+    required String conversationId,
+    required String toolCallId,
+  }) async {
+    try {
+      return await _guardedDetachToolCall(
+        requestId: requestId,
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+      );
+    } on CloudAppException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        _backgroundWorkDetachmentError(error),
+        stackTrace,
+      );
+    }
+  }
+
+  Future<BackgroundWorkView> _guardedDetachToolCall({
     required String requestId,
     required String conversationId,
     required String toolCallId,
@@ -487,11 +578,24 @@ extension CloudChatGatewayBackgroundWorkOps on CloudChatGateway {
   );
 }
 
+CloudAppException _backgroundWorkDetachmentError(CloudAppException error) {
+  if (error.code != ConversationErrorCode.turnConflict.name) return error;
+
+  return CloudAppException(
+    localizationKey:
+        'chats_screens.chat_conversation.background_work.'
+        'detachment_unavailable',
+    context: .conversation,
+    code: error.code,
+  );
+}
+
 extension CloudChatGatewayConversationOperations on CloudChatGateway {
   Future<ConversationSnapshot> continueConversation({
     required String requestId,
     required String conversationId,
     required int expectedProjectionRevision,
+    String? languageCode,
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueConversation(
@@ -501,6 +605,7 @@ extension CloudChatGatewayConversationOperations on CloudChatGateway {
         conversationId: conversationId,
         expectedProjectionRevision: expectedProjectionRevision,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+        languageCode: languageCode,
       ),
     ),
   );
@@ -534,6 +639,7 @@ extension CloudChatGatewayTurnOperations on CloudChatGateway {
     required String requestId,
     required String conversationId,
     required int expectedConversationRevision,
+    String? languageCode,
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueTurn(
@@ -543,6 +649,7 @@ extension CloudChatGatewayTurnOperations on CloudChatGateway {
         conversationId: conversationId,
         expectedConversationRevision: expectedConversationRevision,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+        languageCode: languageCode,
       ),
     ),
   );

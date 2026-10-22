@@ -9,9 +9,9 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/usecases/persist_tool_call_results_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
@@ -49,8 +49,8 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
             ref.read(resolveToolApprovalDecisionUsecaseProvider(workspaceId)),
         loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) =>
             ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
-        resolveEffectiveToolApprovalUsecase: ref.watch(
-          resolveEffectiveToolApprovalUsecaseProvider,
+        persistToolCallResultsUsecase: ref.watch(
+          persistToolCallResultsUsecaseProvider,
         ),
       ),
       skips: toolCallActions,

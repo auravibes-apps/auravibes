@@ -1,12 +1,19 @@
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/widgets.dart' show SizedBox;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/riverpod.dart';
+
+import '../../../helpers/test_app.dart';
 
 void main() {
   group('BuildSkillContextMessagesService', () {
@@ -71,6 +78,7 @@ void main() {
           conversationId: 'conversation',
           workspaceId: 'workspace',
           extraSkills: any(named: 'extraSkills'),
+          languageCode: any(named: 'languageCode'),
         ),
       ).thenAnswer(
         (_) async => [
@@ -79,7 +87,6 @@ void main() {
             title: title,
             description: '',
             revision: revision,
-            tools: const [],
           ),
         ],
       );
@@ -156,6 +163,7 @@ void main() {
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
           extraSkills: any(named: 'extraSkills'),
+          languageCode: any(named: 'languageCode'),
         ),
       ).thenAnswer(
         (_) async => [
@@ -164,7 +172,6 @@ void main() {
             title: 'Research',
             description: 'Use primary sources.',
             revision: 'r1',
-            tools: const [],
           ),
         ],
       );
@@ -241,6 +248,7 @@ void main() {
           conversationId: 'c',
           workspaceId: 'w',
           extraSkills: any(named: 'extraSkills'),
+          languageCode: any(named: 'languageCode'),
         ),
       ).thenAnswer(
         (_) async => [
@@ -249,7 +257,7 @@ void main() {
             title: '<a&b"c\'d>',
             description: '',
             revision: 'r1',
-            tools: [],
+            connectorToolIds: [],
           ),
         ],
       );
@@ -346,6 +354,7 @@ void main() {
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
             extraSkills: any(named: 'extraSkills'),
+            languageCode: any(named: 'languageCode'),
           ),
         ).thenAnswer(
           (_) async => [
@@ -354,14 +363,12 @@ void main() {
               title: 'Skill One',
               description: '',
               revision: 'r1',
-              tools: [],
             ),
             SkillManifest(
               slug: 'app_skill',
               title: 'App Skill',
               description: '',
               revision: 'r2',
-              tools: [],
             ),
           ],
         );
@@ -379,6 +386,169 @@ void main() {
         expect(messages[3].content, contains('App content'));
       },
     );
+
+    testWidgets('localizes built-in agent guidance and its manifest tools', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const TestableApp(child: SizedBox.shrink(), startLocale: .new('es')),
+      );
+      final _ = await tester.pumpAndSettle();
+      await _waitForSpanishTranslations(tester);
+
+      final listSkills = _MockListAvailableSkillsUsecase();
+      final listAgentSkills = _MockListConversationAgentSkillsUsecase();
+      final buildManifests = _MockBuildLoadedSkillManifestsUsecase();
+      final service = BuildSkillContextMessagesService(
+        listSkills.call,
+        listAgentSkills,
+        buildManifests,
+      );
+      const agentsSkill = AvailableSkill(
+        id: agentsSkillSlug,
+        slug: agentsSkillSlug,
+        title: agentsSkillTitle,
+        description: '',
+        content: agentsSkillContent,
+        source: .app,
+        kind: .native,
+      );
+      when(
+        () => listSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .catalog,
+        ),
+      ).thenAnswer((_) async => const []);
+      when(
+        () => listSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .loaded,
+        ),
+      ).thenAnswer((_) async => const []);
+      when(
+        () => listAgentSkills.loadSelectedAgent(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => null);
+      when(
+        () => listAgentSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => [agentsSkill]);
+      when(
+        () => buildManifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          extraSkills: any(named: 'extraSkills'),
+          languageCode: 'es',
+        ),
+      ).thenAnswer((_) async => const []);
+
+      final messages = await service.call(
+        conversationId: 'conversation',
+        workspaceId: 'workspace',
+        languageCode: 'es',
+      );
+      final content = messages.map((message) => message.content).join('\n');
+
+      expect(content, contains('Usa list_agents'));
+      expect(content, isNot(contains('Use list_agents to find configured')));
+      verify(
+        () => buildManifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          extraSkills: any(named: 'extraSkills'),
+          languageCode: 'es',
+        ),
+      ).called(1);
+    });
+
+    test('provider uses remembered locale when callers omit it', () async {
+      final listSkills = _MockListAvailableSkillsUsecase();
+      final listAgentSkills = _MockListConversationAgentSkillsUsecase();
+      final buildManifests = _MockBuildLoadedSkillManifestsUsecase();
+      const agentsSkill = AvailableSkill(
+        id: agentsSkillSlug,
+        slug: agentsSkillSlug,
+        title: agentsSkillTitle,
+        description: '',
+        content: agentsSkillContent,
+        source: .app,
+        kind: .native,
+      );
+      when(
+        () => listSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .catalog,
+        ),
+      ).thenAnswer((_) async => const []);
+      when(
+        () => listSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .loaded,
+        ),
+      ).thenAnswer((_) async => const []);
+      when(
+        () => listAgentSkills.loadSelectedAgent(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => null);
+      when(
+        () => listAgentSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => const [agentsSkill]);
+      when(
+        () => buildManifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          extraSkills: any(named: 'extraSkills'),
+          languageCode: any(named: 'languageCode'),
+        ),
+      ).thenAnswer((_) async => const []);
+      final languageRuntime = ConversationAgentLanguageRuntime()
+        ..remember('conversation', 'es');
+      final container = ProviderContainer(
+        overrides: [
+          listAvailableSkillsUsecaseProvider('workspace')
+              .overrideWith((ref) => listSkills),
+          listConversationAgentSkillsUsecaseProvider.overrideWith(
+            (ref) => listAgentSkills,
+          ),
+          buildLoadedSkillManifestsUsecaseProvider.overrideWith(
+            (ref) => buildManifests,
+          ),
+          conversationAgentLanguageRuntimeProvider.overrideWithValue(
+            languageRuntime,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final messages = await container
+          .read(buildSkillContextMessagesServiceProvider)
+          .call(conversationId: 'conversation', workspaceId: 'workspace');
+
+      final content = messages.map((message) => message.content).join('\n');
+      expect(content, contains('Usa list_agents'));
+      expect(content, isNot(contains('Use list_agents to find configured')));
+      verify(
+        () => buildManifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          extraSkills: any(named: 'extraSkills'),
+          languageCode: 'es',
+        ),
+      ).called(1);
+    });
 
     test('skips selected agent from another workspace', () async {
       final listUseCase = _MockListAvailableSkillsUsecase();
@@ -422,6 +592,17 @@ void main() {
       expect(messages, isEmpty);
     });
   });
+}
+
+Future<void> _waitForSpanishTranslations(WidgetTester tester) async {
+  final _ = await tester.runAsync(() async {
+    for (var attempt = 0; attempt < 50; attempt++) {
+      if (LocaleKeys.app_skills_agents_content.trExists()) return;
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  });
+
+  expect(LocaleKeys.app_skills_agents_content.trExists(), isTrue);
 }
 
 class _MockListAvailableSkillsUsecase extends Mock

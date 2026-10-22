@@ -44,6 +44,27 @@ void main() {
   });
   tearDownAll(_IntroFixture._sharedDatabase.close);
 
+  testWidgets('intro uses side-by-side content on medium displays', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final fixture = _IntroFixture();
+    addTearDown(fixture.dispose);
+
+    await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+    await _pumpUntilFound(tester, find.text('Welcome to AuraVibes'));
+    await _pumpUntilFound(
+      tester,
+      find.byKey(const Key('workspace_intent_local')),
+    );
+
+    expect(
+      tester.getTopLeft(find.byKey(const Key('workspace_intent_local'))).dx,
+      greaterThan(tester.getTopLeft(find.text('Welcome to AuraVibes')).dx),
+    );
+  });
+
   for (final management in [false, true]) {
     for (final failFirst in [false, true]) {
       testWidgets(
@@ -556,7 +577,7 @@ class _IntroFixture {
             },
           ),
           GoRoute(
-            path: '/workspaces/:workspaceId/more/service-connections/new',
+            path: '/workspaces/:workspaceId/service-connections/new',
             builder: (context, state) {
               return Text(
                 'service connection: ${state.uri.queryParameters['type']}',

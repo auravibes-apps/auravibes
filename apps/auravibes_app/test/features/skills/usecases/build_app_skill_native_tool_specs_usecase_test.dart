@@ -1,106 +1,52 @@
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
-import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/skill_tool_slugs.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+class _MockListAvailableSkillsUsecase extends Mock
+    implements ListAvailableSkillsUsecase;
+
 void main() {
-  group('BuildAppSkillNativeToolSpecsUsecase', () {
-    test('builds loaded service app skill tool specs', () async {
-      final listUsecase = _MockListAvailableSkillsUsecase();
-      final usecase = BuildAppSkillNativeToolSpecsUsecase(
-        (_) => listUsecase,
-        _FakeAppSkillCandidates({
-          'openai': [_candidate('model:openai-1')],
-        }),
-      );
-      when(
-        () => listUsecase.call(
-          conversationId: any(named: 'conversationId'),
-          workspaceId: any(named: 'workspaceId'),
-          filter: .loaded,
-        ),
-      ).thenAnswer((_) async => [_appSkill('openai')]);
-
-      final specs = await usecase.call(
+  test('loaded service Skills do not add Connector tool specs', () async {
+    final listUsecase = _MockListAvailableSkillsUsecase();
+    final usecase = BuildAppSkillNativeToolSpecsUsecase(
+      (_) => listUsecase,
+      null,
+    );
+    when(
+      () => listUsecase.call(
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
-      );
+        filter: .loaded,
+      ),
+    ).thenAnswer((_) async => [_appSkill('brave')]);
 
-      expect(specs, hasLength(1));
-      expect(specs.single.name, 'skill__app_template__openai__web_search');
-      _expectStrictProviderSchema(specs.single);
-      final properties = Map<String, Object?>.from(
-        specs.single.inputJsonSchema['properties']! as Map,
-      );
-      final modelSchemaValue = properties['model'];
-      if (modelSchemaValue is! Map) fail('Missing model schema.');
-      final modelSchema = Map<String, Object?>.from(modelSchemaValue);
-      final credentialSchemaValue = properties['credentialId'];
-      if (credentialSchemaValue is! Map) {
-        fail('Missing credentialId schema.');
-      }
-      final credentialSchema = Map<String, Object?>.from(credentialSchemaValue);
-      expect(modelSchema['type'], ['string', 'null']);
-      expect(credentialSchema['type'], ['string', 'null']);
-      expect(credentialSchema['enum'], ['model:openai-1', null]);
-    });
+    final specs = await usecase.call(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+    );
 
-    test('requires credentialId only with multiple credentials', () async {
+    expect(specs, isEmpty);
+  });
+
+  test(
+    'loaded Skills manager exposes its native management commands',
+    () async {
       final listUsecase = _MockListAvailableSkillsUsecase();
       final usecase = BuildAppSkillNativeToolSpecsUsecase(
         (_) => listUsecase,
-        _FakeAppSkillCandidates({
-          'openai': [
-            _candidate('model:openai-1', name: 'OpenAI key ****1234'),
-            _candidate('service:openai-2', name: 'OpenAI service ****5678'),
-          ],
-        }),
+        null,
       );
       when(
         () => listUsecase.call(
-          conversationId: any(named: 'conversationId'),
-          workspaceId: any(named: 'workspaceId'),
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
           filter: .loaded,
         ),
-      ).thenAnswer((_) async => [_appSkill('openai')]);
-
-      final specs = await usecase.call(
-        conversationId: 'conversation-1',
-        workspaceId: 'workspace-1',
-      );
-
-      _expectStrictProviderSchema(specs.single);
-      final properties = specs.single.inputJsonSchema['properties']! as Map;
-      final credentialSchema = properties['credentialId'] as Map;
-      expect(credentialSchema['type'], 'string');
-      expect(credentialSchema['enum'], ['model:openai-1', 'service:openai-2']);
-      expect(credentialSchema.toString(), isNot(contains('OpenAI key')));
-      expect(credentialSchema.toString(), isNot(contains('1234')));
-    });
-
-    test('keeps skills manager specs with loaded service app skills', () async {
-      final listUsecase = _MockListAvailableSkillsUsecase();
-      final usecase = BuildAppSkillNativeToolSpecsUsecase(
-        (_) => listUsecase,
-        _FakeAppSkillCandidates({
-          'brave': [_candidate('service:brave-1')],
-        }),
-      );
-      when(
-        () => listUsecase.call(
-          conversationId: any(named: 'conversationId'),
-          workspaceId: any(named: 'workspaceId'),
-          filter: .loaded,
-        ),
-      ).thenAnswer(
-        (_) async => [
-          _appSkill(SkillToolSlugs.skillsManager),
-          _appSkill('brave'),
-        ],
-      );
+      ).thenAnswer((_) async => [_appSkill(SkillToolSlugs.skillsManager)]);
 
       final specs = await usecase.call(
         conversationId: 'conversation-1',
@@ -109,235 +55,79 @@ void main() {
 
       expect(
         specs.map((spec) => spec.name),
-        containsAll([
-          'skill__app_native__skills_manager__list_user_skills',
-          'skill__app_template__brave__web_search',
-          'skill__app_template__brave__llm_context',
-        ]),
+        contains('skill__app_native__skills_manager__list_user_skills'),
       );
-    });
+    },
+  );
 
-    test('builds agents skill with agent discovery tool', () async {
+  test('loaded Agents Skill exposes native agent execution', () async {
+    final listUsecase = _MockListAvailableSkillsUsecase();
+    final usecase = BuildAppSkillNativeToolSpecsUsecase(
+      (_) => listUsecase,
+      null,
+    );
+    when(
+      () => listUsecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        filter: .loaded,
+      ),
+    ).thenAnswer((_) async => [_appSkill(agentsSkillSlug)]);
+
+    final specs = await usecase.call(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+    );
+
+    expect(specs.map((spec) => spec.name), [
+      'skill__app_native__agents__list_agents',
+    ]);
+  });
+
+  test(
+    'localizes the namespaced list_agents spec without changing schema',
+    () async {
       final listUsecase = _MockListAvailableSkillsUsecase();
       final usecase = BuildAppSkillNativeToolSpecsUsecase(
         (_) => listUsecase,
-        const _FakeAppSkillCandidates({}),
+        null,
       );
       when(
         () => listUsecase.call(
-          conversationId: any(named: 'conversationId'),
-          workspaceId: any(named: 'workspaceId'),
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
           filter: .loaded,
         ),
       ).thenAnswer((_) async => [_appSkill(agentsSkillSlug)]);
 
-      final specs = await usecase.call(
+      final english = await usecase.call(
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
+        languageCode: 'en',
       );
-
-      expect(specs.map((spec) => spec.name), [
-        'skill__app_native__agents__list_agents',
-      ]);
-    });
-
-    test(
-      'records model provider credential reuse for overlapping providers',
-      () {
-        final openAi = serviceSkillDefinitions.singleWhere(
-          (skill) => skill.slug == 'openai',
-        );
-        final codex = serviceSkillDefinitions.singleWhere(
-          (skill) => skill.slug == 'codex',
-        );
-        final duckDuckGo = serviceSkillDefinitions.singleWhere(
-          (skill) => skill.slug == 'duckduckgo',
-        );
-
-        expect(openAi.requiresCredential, isTrue);
-        expect(openAi.compatibleModelProviderIds, ['openai']);
-        expect(
-          openAi.compatibleModelProviderIds,
-          isNot(contains('openai-codex')),
-        );
-        expect(codex.requiresCredential, isTrue);
-        expect(codex.compatibleModelProviderIds, ['openai-codex']);
-        expect(duckDuckGo.requiresCredential, isFalse);
-        expect(duckDuckGo.compatibleModelProviderIds, isEmpty);
-      },
-    );
-
-    test('builds Codex tool spec with Codex credential candidate', () async {
-      final listUsecase = _MockListAvailableSkillsUsecase();
-      final usecase = BuildAppSkillNativeToolSpecsUsecase(
-        (_) => listUsecase,
-        _FakeAppSkillCandidates({
-          'codex': [_candidate('model:codex-1')],
-        }),
-      );
-      when(
-        () => listUsecase.call(
-          conversationId: any(named: 'conversationId'),
-          workspaceId: any(named: 'workspaceId'),
-          filter: .loaded,
-        ),
-      ).thenAnswer((_) async => [_appSkill('codex')]);
-
-      final specs = await usecase.call(
+      final spanish = await usecase.call(
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
+        languageCode: 'es',
       );
 
-      expect(specs.single.name, 'skill__app_template__codex__web_search');
-      _expectStrictProviderSchema(specs.single);
-      final properties = specs.single.inputJsonSchema['properties']! as Map;
-      final credentialSchema = properties['credentialId'] as Map;
-      expect(credentialSchema['type'], ['string', 'null']);
-      expect(credentialSchema['enum'], ['model:codex-1', null]);
-    });
-
-    test(
-      'keeps no-key tools and omits credential tools without candidates',
-      () async {
-        final listUsecase = _MockListAvailableSkillsUsecase();
-        final usecase = BuildAppSkillNativeToolSpecsUsecase(
-          (_) => listUsecase,
-          const _FakeAppSkillCandidates({}),
-        );
-        when(
-          () => listUsecase.call(
-            conversationId: any(named: 'conversationId'),
-            workspaceId: any(named: 'workspaceId'),
-            filter: .loaded,
-          ),
-        ).thenAnswer((_) async => [_appSkill('jina')]);
-
-        final specs = await usecase.call(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-        );
-
-        expect(
-          specs.map((spec) => spec.name),
-          contains('skill__app_template__jina__reader_fetch'),
-        );
-        expect(
-          specs.map((spec) => spec.name),
-          isNot(contains('skill__app_template__jina__search')),
-        );
-      },
-    );
-
-    test('omits SearXNG search without a configured instance', () async {
-      final listUsecase = _MockListAvailableSkillsUsecase();
-      final usecase = BuildAppSkillNativeToolSpecsUsecase(
-        (_) => listUsecase,
-        const _FakeAppSkillCandidates({}),
+      expect(spanish.single.name, english.single.name);
+      expect(spanish.single.name, 'skill__app_native__agents__list_agents');
+      expect(
+        spanish.single.description,
+        AgentGuidance.listAgentsToolSpecForLanguageCode('es').description,
       );
-      when(
-        () => listUsecase.call(
-          conversationId: any(named: 'conversationId'),
-          workspaceId: any(named: 'workspaceId'),
-          filter: .loaded,
-        ),
-      ).thenAnswer((_) async => [_appSkill('searxng')]);
-
-      final specs = await usecase.call(
-        conversationId: 'conversation-1',
-        workspaceId: 'workspace-1',
-      );
-
-      expect(specs, isEmpty);
-    });
-
-    test(
-      'builds SearXNG search with optional credentialId and no baseUrl input',
-      () async {
-        final listUsecase = _MockListAvailableSkillsUsecase();
-        final usecase = BuildAppSkillNativeToolSpecsUsecase(
-          (_) => listUsecase,
-          _FakeAppSkillCandidates({
-            'searxng': [_candidate('service:searxng-1')],
-          }),
-        );
-        when(
-          () => listUsecase.call(
-            conversationId: any(named: 'conversationId'),
-            workspaceId: any(named: 'workspaceId'),
-            filter: .loaded,
-          ),
-        ).thenAnswer((_) async => [_appSkill('searxng')]);
-
-        final specs = await usecase.call(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-        );
-
-        expect(specs.single.name, 'skill__app_template__searxng__search');
-        _expectStrictProviderSchema(specs.single);
-        final properties = specs.single.inputJsonSchema['properties']! as Map;
-        final credentialSchema = properties['credentialId'] as Map;
-        expect(credentialSchema['type'], ['string', 'null']);
-        expect(credentialSchema['enum'], ['service:searxng-1', null]);
-        expect(properties, isNot(contains('baseUrl')));
-      },
-    );
-  });
-}
-
-void _expectStrictProviderSchema(ToolSpec spec) {
-  final schema = spec.inputJsonSchema;
-  final properties = schema['properties']! as Map<String, Object?>;
-
-  expect(schema['additionalProperties'], false);
-  expect(schema['required'], unorderedEquals(properties.keys));
-}
-
-AvailableSkill _appSkill(String slug) {
-  return AvailableSkill(
-    id: slug,
-    slug: slug,
-    title: slug,
-    description: '',
-    content: '',
-    source: .app,
-    kind: .native,
+      expect(spanish.single.inputJsonSchema, english.single.inputJsonSchema);
+    },
   );
 }
 
-class _MockListAvailableSkillsUsecase extends Mock
-    implements ListAvailableSkillsUsecase;
-
-class const _FakeAppSkillCandidates(
-  final Map<String, List<AppSkillCredentialCandidate>> candidatesBySlug,
-) implements ListAppSkillCredentialCandidatesUsecase {
-  @override
-  Future<List<AppSkillCredentialCandidate>> call({
-    required String workspaceId,
-    required AppSkillDefinition skill,
-  }) async {
-    return candidatesBySlug[skill.slug] ?? const [];
-  }
-
-  @override
-  bool isCredentialRequired(AppSkillDefinition skill) {
-    return skill.requiresCredential ||
-        skill.tools.any((tool) => tool.requiresCredential);
-  }
-
-  @override
-  Future<bool> hasUsableNativeTool({
-    required String workspaceId,
-    required AppSkillDefinition skill,
-  }) async {
-    if (skill.tools.any((tool) => !tool.requiresCredential)) {
-      return true;
-    }
-
-    return (candidatesBySlug[skill.slug] ?? const []).isNotEmpty;
-  }
-}
-
-AppSkillCredentialCandidate _candidate(String id, {String? name}) {
-  return AppSkillCredentialCandidate(id: id, name: name ?? id);
-}
+AvailableSkill _appSkill(String slug) => AvailableSkill(
+  id: slug,
+  slug: slug,
+  title: slug,
+  description: '',
+  content: '',
+  source: .app,
+  kind: .native,
+);

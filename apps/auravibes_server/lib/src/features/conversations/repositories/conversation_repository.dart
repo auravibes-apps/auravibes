@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
@@ -31,6 +32,7 @@ String conversationTurnJobPayload(
   int? parentTurnId,
   String? parentToolCallId,
   List<String>? a2uiSupportedComponents,
+  String? languageCode,
   String? reasoningConfigJson,
   bool includeReasoningConfigSnapshot = false,
 }) => jsonEncode({
@@ -39,15 +41,105 @@ String conversationTurnJobPayload(
   'parentTurnId': ?parentTurnId,
   'parentToolCallId': ?parentToolCallId,
   'a2uiSupportedComponents': ?a2uiSupportedComponents,
+  'languageCode': ?languageCode,
   if (includeReasoningConfigSnapshot)
     'reasoningConfigJson': reasoningConfigJson,
 });
+
+String? conversationLanguageCodeForJob(String? payloadJson) {
+  if (payloadJson == null) return null;
+  try {
+    final payload = jsonDecode(payloadJson);
+
+    return payload is Map && payload['languageCode'] is String
+        ? payload['languageCode']! as String
+        : null;
+  } on FormatException {
+    return null;
+  }
+}
 
 String? conversationReasoningConfigForExecutionSettings(String settingsJson) {
   final settings = jsonDecode(settingsJson);
   return settings is Map && settings['reasoningConfigJson'] is String
       ? settings['reasoningConfigJson']! as String
       : null;
+}
+
+String? forkSafeConversationMetadataJson(
+  String? metadataJson,
+  Set<String> detachedToolCallIds,
+) {
+  if (metadataJson == null || detachedToolCallIds.isEmpty) {
+    return metadataJson;
+  }
+  dynamic decoded;
+  try {
+    decoded = jsonDecode(metadataJson);
+  } on FormatException {
+    return metadataJson;
+  }
+  if (decoded is! Map) return metadataJson;
+
+  var changed = false;
+  final sanitized = Map<String, Object?>.from(decoded);
+  final originalToolCalls = decoded['toolCalls'];
+  if (originalToolCalls is List) {
+    final toolCalls = originalToolCalls
+        .where(
+          (toolCall) =>
+              toolCall is! Map || !detachedToolCallIds.contains(toolCall['id']),
+        )
+        .toList();
+    if (toolCalls.length != originalToolCalls.length) {
+      sanitized['toolCalls'] = toolCalls;
+      changed = true;
+    }
+  }
+
+  final originalBatches = decoded['providerToolBatches'];
+  if (originalBatches is List) {
+    final batches = <Object?>[];
+    for (final batch in originalBatches) {
+      if (batch is! Map) {
+        batches.add(batch);
+        continue;
+      }
+      final sanitizedBatch = Map<String, Object?>.from(batch);
+      final originalIds = batch['toolCallIds'];
+      if (originalIds is List) {
+        final toolCallIds = originalIds
+            .where(
+              (id) => id is! String || !detachedToolCallIds.contains(id),
+            )
+            .toList();
+        if (toolCallIds.length != originalIds.length) {
+          sanitizedBatch['toolCallIds'] = toolCallIds;
+          changed = true;
+        }
+      }
+      final assistant = batch['assistant'];
+      if (assistant is Map && assistant['tool_calls'] is List) {
+        final originalCalls = assistant['tool_calls']! as List;
+        final toolCalls = originalCalls
+            .where(
+              (toolCall) =>
+                  toolCall is! Map ||
+                  !detachedToolCallIds.contains(toolCall['id']),
+            )
+            .toList();
+        if (toolCalls.length != originalCalls.length) {
+          sanitizedBatch['assistant'] = Map<String, Object?>.from(assistant)
+            ..['tool_calls'] = toolCalls;
+          changed = true;
+        }
+      }
+      batches.add(sanitizedBatch);
+    }
+    if (changed) sanitized['providerToolBatches'] = batches;
+  }
+
+  return changed ? jsonEncode(sanitized) : metadataJson;
 }
 
 String _escapeLike(String value) =>
@@ -97,6 +189,29 @@ String? conversationParentToolCallIdForExecutionSettings(String settingsJson) {
 class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
   final ObjectReferenceService _objectReferenceService =
       objectReferenceService ?? ObjectReferenceService();
+
+  Future<void> lockBackgroundWorkCapacity(
+    Session session, {
+    required Transaction transaction,
+  }) async {
+    await session.db.unsafeQuery(
+      'SELECT pg_advisory_xact_lock(hashtextextended(@lockKey, 0))',
+      parameters: QueryParameters.named({
+        'lockKey': 'conversation-background-work-capacity',
+      }),
+      transaction: transaction,
+    );
+  }
+
+  Future<int> countActiveBackgroundWork(
+    Session session, {
+    required Transaction transaction,
+  }) => BackgroundWorkRecord.db.count(
+    session,
+    where: (table) => table.status.inSet({'running', 'stopRequested'}),
+    transaction: transaction,
+  );
+
   Future<Conversation?> findConversationByStableId(
     Session session, {
     required int workspaceId,
@@ -112,6 +227,32 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     transaction: transaction,
     lockMode: lock ? LockMode.forUpdate : null,
   );
+
+  Future<ConversationToolAccessMode> effectiveToolAccessMode(
+    Session session, {
+    required Conversation conversation,
+    Transaction? transaction,
+  }) async {
+    final workspaceId = conversation.workspaceId;
+    final visited = <String>{};
+    Conversation? current = conversation;
+    while (current != null && visited.add(current.stableId)) {
+      if (current.deletedAt != null) {
+        return ConversationToolAccessMode.defaultMode;
+      }
+      final parentId = current.parentConversationStableId;
+      if (parentId == null) {
+        return ConversationToolAccessModeStorage.decode(current.toolAccessMode);
+      }
+      current = await findConversationByStableId(
+        session,
+        workspaceId: workspaceId,
+        conversationId: parentId,
+        transaction: transaction,
+      );
+    }
+    return ConversationToolAccessMode.defaultMode;
+  }
 
   Future<List<Conversation>> listConversations(
     Session session, {
@@ -282,6 +423,19 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     where: (table) =>
         table.workspaceId.equals(workspaceId) &
         table.requestId.equals(requestId),
+    transaction: transaction,
+  );
+
+  Future<ConversationTurn?> findTurnByUserMessage(
+    Session session, {
+    required int workspaceId,
+    required int userMessageId,
+    Transaction? transaction,
+  }) => ConversationTurn.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.userMessageId.equals(userMessageId),
     transaction: transaction,
   );
 
@@ -461,6 +615,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         payloadJson: conversationTurnJobPayload(
           actorUserId,
           a2uiSupportedComponents: request.a2uiSupportedComponents,
+          languageCode: request.languageCode,
           reasoningConfigJson: conversation.reasoningConfigJson,
           includeReasoningConfigSnapshot: true,
         ),
@@ -549,6 +704,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         payloadJson: conversationTurnJobPayload(
           actorUserId,
           a2uiSupportedComponents: request.a2uiSupportedComponents,
+          languageCode: request.languageCode,
           reasoningConfigJson: conversation.reasoningConfigJson,
           includeReasoningConfigSnapshot: true,
         ),
@@ -577,6 +733,8 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     required String clientMessageId,
     required String content,
     required List<int> attachmentIds,
+    String role = 'user',
+    String kind = 'text',
     String? metadataJson,
     required DateTime now,
     required Transaction transaction,
@@ -603,8 +761,8 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         workspaceId: conversation.workspaceId,
         conversationId: conversation.id!,
         stableId: clientMessageId,
-        role: 'user',
-        kind: 'text',
+        role: role,
+        kind: kind,
         status: ConversationStatuses.queued,
         content: content,
         metadataJson: jsonEncode({
@@ -685,6 +843,19 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         table.id.equals(messageId) & table.workspaceId.equals(workspaceId),
   );
 
+  Future<ConversationMessage?> findMessageByStableId(
+    Session session, {
+    required int workspaceId,
+    required String messageId,
+    Transaction? transaction,
+  }) => ConversationMessage.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.stableId.equals(messageId),
+    transaction: transaction,
+  );
+
   Future<List<ConversationMessage>> listConversationMessages(
     Session session, {
     required int workspaceId,
@@ -698,6 +869,28 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     orderBy: (table) => table.id.desc(),
     limit: limit,
   );
+
+  Future<List<ConversationMessageSearchResult>> searchMessages(
+    Session session, {
+    required int workspaceId,
+    required String query,
+    required int limit,
+    required int offset,
+  }) async {
+    final rows = await session.db.unsafeQuery(
+      _searchMessagesSql,
+      parameters: QueryParameters.named({
+        'workspaceId': workspaceId,
+        'query': query.toLowerCase(),
+        'limit': limit,
+        'offset': offset,
+      }),
+    );
+    return [
+      for (final row in rows)
+        _conversationMessageSearchResult(row.toColumnMap(), query),
+    ];
+  }
 
   Future<List<ConversationMessage>> listEffectiveMessages(
     Session session, {
@@ -721,6 +914,13 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         conversationId: conversation.forkSourceConversationId!,
         transaction: transaction,
       );
+      final detachedToolCallIdsByMessageId =
+          await listBackgroundWorkToolCallIdsByMessageId(
+            session,
+            workspaceId: workspaceId,
+            messages: inherited,
+            transaction: transaction,
+          );
       final transientToolMessageIds =
           (await listToolCallsByTurnIds(
                 session,
@@ -736,12 +936,21 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
               .map((call) => call.messageId)
               .toSet();
       messages.addAll(
-        inherited.where(
-          (message) =>
-              message.pendingOrder == null &&
-              ConversationStatuses.isMessageTerminal(message.status) &&
-              !transientToolMessageIds.contains(message.id),
-        ),
+        inherited
+            .where(
+              (message) =>
+                  message.pendingOrder == null &&
+                  ConversationStatuses.isMessageTerminal(message.status) &&
+                  !transientToolMessageIds.contains(message.id),
+            )
+            .map(
+              (message) => message.copyWith(
+                metadataJson: forkSafeConversationMetadataJson(
+                  message.metadataJson,
+                  detachedToolCallIdsByMessageId[message.id] ?? const {},
+                ),
+              ),
+            ),
       );
       final boundary = conversation.forkThroughMessageId;
       if (boundary != null) {
@@ -768,6 +977,35 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
       return created == 0 ? left.id!.compareTo(right.id!) : created;
     });
     return messages;
+  }
+
+  Future<Map<int, Set<String>>> listBackgroundWorkToolCallIdsByMessageId(
+    Session session, {
+    required int workspaceId,
+    required Iterable<ConversationMessage> messages,
+    Transaction? transaction,
+  }) async {
+    final messageIds = messages
+        .map((message) => message.id)
+        .whereType<int>()
+        .toSet();
+    if (messageIds.isEmpty) return const {};
+    final records = await BackgroundWorkRecord.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.originatingMessageId.inSet(messageIds),
+      transaction: transaction,
+    );
+    final toolCallIdsByMessageId = <int, Set<String>>{};
+    for (final record in records) {
+      final messageId = record.originatingMessageId;
+      if (messageId == null) continue;
+      (toolCallIdsByMessageId[messageId] ??= <String>{}).add(
+        record.toolCallId,
+      );
+    }
+    return toolCallIdsByMessageId;
   }
 
   Future<ConversationToolCall?> findToolCallByStableId(
@@ -831,3 +1069,51 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     lockMode: LockMode.forUpdate,
   );
 }
+
+ConversationMessageSearchResult _conversationMessageSearchResult(
+  Map<String, dynamic> columns,
+  String query,
+) {
+  final content = columns['content']! as String;
+  final matchIndex = content.toLowerCase().indexOf(query.toLowerCase());
+  final start = matchIndex > 50 ? matchIndex - 50 : 0;
+  final length = (query.length + 100).clamp(120, 356).toInt();
+  final end = content.length < start + length ? content.length : start + length;
+  final excerpt =
+      '${start > 0 ? '…' : ''}${content.substring(start, end)}'
+      '${end < content.length ? '…' : ''}';
+  return ConversationMessageSearchResult(
+    conversationId: columns['conversationId']! as String,
+    conversationTitle: columns['conversationTitle']! as String,
+    messageId: columns['messageId']! as String,
+    role: columns['role']! as String,
+    createdAt: columns['createdAt']! as DateTime,
+    excerpt: excerpt,
+  );
+}
+
+const _searchMessagesSql = r'''
+SELECT
+  conversation."stableId" AS "conversationId",
+  COALESCE(conversation."title", '') AS "conversationTitle",
+  message."stableId" AS "messageId",
+  message."role" AS role,
+  message."createdAt" AS "createdAt",
+  message."content" AS content
+FROM conversation_message AS message
+INNER JOIN conversation
+  ON conversation.id = message."conversationId"
+  AND conversation."workspaceId" = message."workspaceId"
+INNER JOIN cloud_workspace
+  ON cloud_workspace.id = message."workspaceId"
+WHERE message."workspaceId" = @workspaceId
+  AND conversation."deletedAt" IS NULL
+  AND cloud_workspace."deletedAt" IS NULL
+  AND message."role" IN ('user', 'assistant')
+  AND message."kind" = 'text'
+  AND message."pendingOrder" IS NULL
+  AND message."content" <> ''
+  AND strpos(lower(message."content"), @query) > 0
+ORDER BY message."createdAt" DESC, message."stableId" DESC
+LIMIT @limit OFFSET @offset
+''';

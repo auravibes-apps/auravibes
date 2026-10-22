@@ -11,6 +11,220 @@ import '../../test_tools/serverpod_test_tools.dart';
 
 void main() {
   withServerpod('ConversationQueueCommand', (sessionBuilder, endpoints) {
+    test('startTurn records a stable event for its user message', () async {
+      final userId = const Uuid().v4().toString();
+      final session = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final database = session.build();
+      await _insertUser(database, userId);
+      final workspace = await _workspace(database, userId);
+      final conversation = await _conversation(database, workspace.id!);
+      final request = StartTurnRequest(
+        workspaceId: workspace.id!,
+        requestId: 'start-turn-1',
+        conversationId: conversation.stableId,
+        expectedConversationRevision: conversation.revision,
+        clientMessageId: 'message-direct',
+        content: 'Direct message',
+        attachmentIds: const [],
+      );
+
+      final result = await endpoints.conversation.startTurn(session, request);
+
+      expect(result.userMessageId, 'message-direct');
+      final storedConversation = (await Conversation.db.findById(
+        database,
+        conversation.id!,
+      ))!;
+      final workspaceAfterFirstStart = (await CloudWorkspace.db.findById(
+        database,
+        workspace.id!,
+      ))!;
+      final workspaceEventsAfterFirstStart = await WorkspaceEvent.db.find(
+        database,
+        where: (table) => table.workspaceId.equals(workspace.id),
+      );
+      final auditRecordsAfterFirstStart = await WorkspaceAuditRecord.db.find(
+        database,
+        where: (table) => table.workspaceId.equals(workspace.id),
+      );
+      expect(storedConversation.eventSequence, 1);
+      expect(storedConversation.projectionRevision, 2);
+      final events = await ConversationEvent.db.find(
+        database,
+        where: (table) => table.conversationId.equals(conversation.id),
+        orderBy: (table) => table.sequence,
+      );
+      expect(events, hasLength(1));
+      expect(events.single.sequence, 1);
+      expect(events.single.eventId, 'user-message:message-direct');
+      expect(events.single.kind, ConversationEventType.messageQueued);
+      final eventPayload = jsonDecode(events.single.payloadJson) as Map;
+      expect(eventPayload['messageId'], 'message-direct');
+
+      await endpoints.conversation.startTurn(session, request);
+      final reconnect = await endpoints.conversation.startTurn(
+        session,
+        StartTurnRequest(
+          workspaceId: request.workspaceId,
+          requestId: 'start-turn-reconnect',
+          conversationId: request.conversationId,
+          expectedConversationRevision: request.expectedConversationRevision,
+          clientMessageId: request.clientMessageId,
+          content: request.content,
+          attachmentIds: request.attachmentIds,
+        ),
+      );
+      expect(reconnect.turnId, result.turnId);
+      await endpoints.conversation.startTurn(
+        session,
+        StartTurnRequest(
+          workspaceId: request.workspaceId,
+          requestId: 'start-turn-reconnect',
+          conversationId: request.conversationId,
+          expectedConversationRevision: request.expectedConversationRevision,
+          clientMessageId: request.clientMessageId,
+          content: request.content,
+          attachmentIds: request.attachmentIds,
+        ),
+      );
+      await expectLater(
+        endpoints.conversation.startTurn(
+          session,
+          StartTurnRequest(
+            workspaceId: request.workspaceId,
+            requestId: 'start-turn-conflicting-replay',
+            conversationId: request.conversationId,
+            expectedConversationRevision: request.expectedConversationRevision,
+            clientMessageId: request.clientMessageId,
+            content: 'Different payload',
+            attachmentIds: request.attachmentIds,
+          ),
+        ),
+        throwsA(
+          isA<ConversationException>().having(
+            (error) => error.code,
+            'code',
+            ConversationErrorCode.idempotencyConflict,
+          ),
+        ),
+      );
+      expect(
+        (await CloudWorkspace.db.findById(database, workspace.id!))!.sequence,
+        workspaceAfterFirstStart.sequence,
+      );
+      expect(
+        await WorkspaceEvent.db.find(
+          database,
+          where: (table) => table.workspaceId.equals(workspace.id),
+        ),
+        hasLength(workspaceEventsAfterFirstStart.length),
+      );
+      expect(
+        await WorkspaceAuditRecord.db.find(
+          database,
+          where: (table) => table.workspaceId.equals(workspace.id),
+        ),
+        hasLength(auditRecordsAfterFirstStart.length),
+      );
+      expect(
+        await ConversationEvent.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        ),
+        hasLength(1),
+      );
+      expect(
+        await ConversationTurn.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        ),
+        hasLength(1),
+      );
+      expect(
+        await ConversationMessage.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        ),
+        hasLength(2),
+      );
+    });
+
+    test('startTurn cannot jump ahead of an older queued message', () async {
+      final userId = const Uuid().v4().toString();
+      final session = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final database = session.build();
+      await _insertUser(database, userId);
+      final workspace = await _workspace(database, userId);
+      final conversation = await _conversation(database, workspace.id!);
+
+      await endpoints.conversation.queueConversationMessage(
+        session,
+        QueueConversationMessageRequest(
+          workspaceId: workspace.id!,
+          requestId: 'queue-older-message',
+          conversationId: conversation.stableId,
+          expectedProjectionRevision: conversation.projectionRevision,
+          clientMessageId: 'message-older',
+          content: 'Older pending message',
+          attachmentIds: const [],
+        ),
+      );
+
+      await expectLater(
+        endpoints.conversation.startTurn(
+          session,
+          StartTurnRequest(
+            workspaceId: workspace.id!,
+            requestId: 'start-turn-newer-message',
+            conversationId: conversation.stableId,
+            expectedConversationRevision: conversation.revision,
+            clientMessageId: 'message-newer',
+            content: 'Newer direct message',
+            attachmentIds: const [],
+          ),
+        ),
+        throwsA(
+          isA<ConversationException>().having(
+            (error) => error.code,
+            'code',
+            ConversationErrorCode.turnConflict,
+          ),
+        ),
+      );
+
+      final messages = await ConversationMessage.db.find(
+        database,
+        where: (table) => table.conversationId.equals(conversation.id),
+      );
+      expect(messages, hasLength(1));
+      expect(messages.single.stableId, 'message-older');
+      expect(messages.single.pendingOrder, 1);
+      expect(
+        await ConversationTurn.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        ),
+        isEmpty,
+      );
+      expect(
+        await ConversationEvent.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        ),
+        hasLength(1),
+      );
+    });
+
     test(
       'persists a pending message and appends a queued event',
       () async {
@@ -55,9 +269,86 @@ void main() {
           where: (table) => table.conversationId.equals(conversation.id),
         );
         expect(event!.kind, ConversationEventType.messageQueued);
-        expect(jsonDecode(event.payloadJson), {'messageId': 'message-1'});
+        final eventPayload = jsonDecode(event.payloadJson) as Map;
+        expect(eventPayload['messageId'], 'message-1');
+        expect(eventPayload['contentDigest'], isA<String>());
+        expect(eventPayload['attachmentIds'], isEmpty);
+        final replay = await endpoints.conversation.queueConversationMessage(
+          session,
+          QueueConversationMessageRequest(
+            workspaceId: workspace.id!,
+            requestId: 'queue-1-reconnect',
+            conversationId: conversation.stableId,
+            expectedProjectionRevision: 1,
+            clientMessageId: 'message-1',
+            content: 'follow-up',
+            attachmentIds: const [],
+          ),
+        );
+        final allEvents = await ConversationEvent.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        );
+        final allMessages = await ConversationMessage.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        );
+        expect(replay.pendingMessages, hasLength(1));
+        expect(allEvents, hasLength(1));
+        expect(allMessages, hasLength(1));
       },
     );
+
+    test('queued message idempotency includes its language code', () async {
+      final userId = const Uuid().v4().toString();
+      final session = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final database = session.build();
+      await _insertUser(database, userId);
+      final workspace = await _workspace(database, userId);
+      final conversation = await _conversation(database, workspace.id!);
+
+      await endpoints.conversation.queueConversationMessage(
+        session,
+        QueueConversationMessageRequest(
+          workspaceId: workspace.id!,
+          requestId: 'queue-spanish-idempotency',
+          conversationId: conversation.stableId,
+          expectedProjectionRevision: 1,
+          clientMessageId: 'message-idempotency',
+          content: 'Same message',
+          attachmentIds: const [],
+          languageCode: 'es',
+        ),
+      );
+
+      await expectLater(
+        endpoints.conversation.queueConversationMessage(
+          session,
+          QueueConversationMessageRequest(
+            workspaceId: workspace.id!,
+            requestId: 'queue-english-idempotency-replay',
+            conversationId: conversation.stableId,
+            expectedProjectionRevision: 1,
+            clientMessageId: 'message-idempotency',
+            content: 'Same message',
+            attachmentIds: const [],
+            languageCode: 'en',
+          ),
+        ),
+        throwsA(
+          isA<ConversationException>().having(
+            (error) => error.code,
+            'code',
+            ConversationErrorCode.idempotencyConflict,
+          ),
+        ),
+      );
+    });
 
     test('reorders and removes only unclaimed pending messages', () async {
       final userId = const Uuid().v4().toString();

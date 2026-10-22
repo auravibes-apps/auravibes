@@ -18,6 +18,7 @@ env:
 jobs:
   build:
     name: Build ${{ matrix.platform }}
+    # shortcut: Ubuntu archives lack the WPE API 2.0 dev package; build Linux in Debian stable until available.
     runs-on: ${{ (matrix.platform == 'ios' || matrix.platform == 'macos') && 'macos-latest' || (matrix.platform == 'windows' && 'windows-latest') || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
@@ -26,7 +27,7 @@ jobs:
 
     steps:
       - name: 📚 Git Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: 🔧 Setup Flutter workspace
         if: ${{ matrix.platform != 'windows' }}
@@ -34,12 +35,12 @@ jobs:
 
       - name: 🔧 Setup FVM (Windows)
         if: ${{ matrix.platform == 'windows' }}
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
         id: fvm-config-action
 
       - name: 🐦 Setup Flutter (Windows)
         if: ${{ matrix.platform == 'windows' }}
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
           channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
@@ -57,13 +58,13 @@ jobs:
 
       - name: 📦 Melos Bootstrap (Windows)
         if: ${{ matrix.platform == 'windows' }}
-        uses: bluefireteam/melos-action@b79b63bcd183f823740a7976cbdb4b0fc95a0eb8
+        uses: bluefireteam/melos-action@b79b63bcd183f823740a7976cbdb4b0fc95a0eb8 # v3.10.0
         with:
           run-bootstrap: true
 
       - name: ☕ Setup Java
         if: ${{ matrix.platform == 'android' }}
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with:
           distribution: temurin
           java-version: '25.0.4+101.0.LTS'
@@ -72,12 +73,6 @@ jobs:
             apps/auravibes_app/android/**/*.gradle*
             apps/auravibes_app/android/gradle.properties
             apps/auravibes_app/android/gradle/wrapper/gradle-wrapper.properties
-
-      - name: 📦 Install Linux Dependencies
-        if: ${{ matrix.platform == 'linux' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsqlite3-dev libwebkit2gtk-4.1-dev libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
       - name: 🏗️ Build Android APK
         if: ${{ matrix.platform == 'android' }}
@@ -96,18 +91,174 @@ jobs:
           xcodebuild -project macos/Runner.xcodeproj -scheme Runner
           -configuration Debug-prod -derivedDataPath build/macos
           CODE_SIGN_STYLE=Manual CODE_SIGNING_ALLOWED=NO
-          CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+          CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+          MACOSX_DEPLOYMENT_TARGET=12.0 build
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
+
+      - name: 🧪 Test iOS SQLite binary preparer
+        if: ${{ matrix.platform == 'ios' }}
+        run: bash tool/test_prepare_sqlite3_ios.sh
+
+      - name: 🔑 Resolve iOS SQLite cache identity
+        if: ${{ matrix.platform == 'ios' }}
+        id: sqlite3_identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          source tool/prepare_sqlite3_ios.sh
+          sqlite3_version="$(sqlite3_version_from_lock pubspec.lock)"
+          if ! sqlite3_ios_metadata "$sqlite3_version" >/dev/null; then
+            echo "::error::No pinned iOS SQLite binary metadata for sqlite3 $sqlite3_version."
+            exit 1
+          fi
+          flutter_version="$(awk -F'"' '$2 == "flutter" { print $4; exit }' .fvmrc)"
+          xcode_version="$(xcodebuild -version | awk '/^Xcode / { version = $2 } /^Build version / { build = $3 } END { if (version != "" && build != "") printf "%s-%s", version, build }')"
+          cache_path=".dart_tool/hooks_runner/shared/sqlite3/build"
+
+          if [[ -z "$sqlite3_version" || -z "$flutter_version" || -z "$xcode_version" ]]; then
+            echo "::error::Could not resolve sqlite3, Flutter, or Xcode version for the iOS binary cache."
+            exit 1
+          fi
+
+          mkdir -p "$cache_path"
+          {
+            printf 'sqlite3_version=%s\n' "$sqlite3_version"
+            printf 'flutter_version=%s\n' "$flutter_version"
+            printf 'xcode_version=%s\n' "$xcode_version"
+            printf 'cache_path=%s\n' "$cache_path"
+          } >> "$GITHUB_OUTPUT"
+
+      # Unique snapshots let a verified repair replace a corrupted immutable cache entry.
+      - name: ♻️ Restore verified iOS SQLite cache
+        if: ${{ matrix.platform == 'ios' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ steps.sqlite3_identity.outputs.cache_path }}
+          key: sqlite3-ios-arm64-${{ runner.os }}-${{ runner.arch }}-sqlite-${{ steps.sqlite3_identity.outputs.sqlite3_version }}-flutter-${{ steps.sqlite3_identity.outputs.flutter_version }}-xcode-${{ steps.sqlite3_identity.outputs.xcode_version }}-run-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            sqlite3-ios-arm64-${{ runner.os }}-${{ runner.arch }}-sqlite-${{ steps.sqlite3_identity.outputs.sqlite3_version }}-flutter-${{ steps.sqlite3_identity.outputs.flutter_version }}-xcode-${{ steps.sqlite3_identity.outputs.xcode_version }}-
+
+      - name: 📥 Prepare verified iOS SQLite binary
+        if: ${{ matrix.platform == 'ios' }}
+        id: prepare_sqlite3
+        run: ./tool/prepare_sqlite3_ios.sh
+
+      - name: 💾 Save verified iOS SQLite cache
+        if: ${{ success() && matrix.platform == 'ios' && steps.prepare_sqlite3.outputs.cache_state != 'hit' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ steps.sqlite3_identity.outputs.cache_path }}
+          key: sqlite3-ios-arm64-${{ runner.os }}-${{ runner.arch }}-sqlite-${{ steps.sqlite3_identity.outputs.sqlite3_version }}-flutter-${{ steps.sqlite3_identity.outputs.flutter_version }}-xcode-${{ steps.sqlite3_identity.outputs.xcode_version }}-run-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: 🏗️ Build iOS (No Codesign)
         if: ${{ matrix.platform == 'ios' }}
         run: flutter build ios --debug --no-codesign --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
-      - name: 🏗️ Build Linux
+      # shortcut: repairs target, compiler flag, WPE API, and package header path; remove when upstream fixes them.
+      - name: 🩹 Patch Linux WebView CMake compatibility
         if: ${{ matrix.platform == 'linux' }}
-        run: flutter build linux --debug --no-pub
-        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=("$PUB_CACHE"/hosted/pub.dev/flutter_inappwebview_linux_fx-*)
+          if ((${#packages[@]} == 0)); then
+            echo "flutter_inappwebview_linux_fx was not found in the pub cache" >&2
+            exit 1
+          fi
+
+          for package in "${packages[@]}"; do
+            cmake_file="$package/linux/CMakeLists.txt"
+            python3 - "$cmake_file" <<'PY'
+          from pathlib import Path
+          import sys
+
+          cmake_file = Path(sys.argv[1])
+          source = cmake_file.read_text()
+          old_target = 'set(PLUGIN_NAME "flutter_inappwebview_linux_plugin")'
+          new_target = 'set(PLUGIN_NAME "flutter_inappwebview_linux_fx_plugin")'
+          if old_target in source:
+              source = source.replace(old_target, new_target, 1)
+          elif new_target not in source:
+              raise SystemExit(f"Unexpected Linux plugin target in {cmake_file}")
+
+          old_flag = 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-literal-operator")'
+          guarded_flag = '''set(_restore_required_flags "${CMAKE_REQUIRED_FLAGS}")
+          set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror")
+          check_cxx_compiler_flag(
+            "-Wno-deprecated-literal-operator"
+            HAS_DEPRECATED_LITERAL_OPERATOR_FLAG
+          )
+          set(CMAKE_REQUIRED_FLAGS "${_restore_required_flags}")
+          unset(_restore_required_flags)
+          if(HAS_DEPRECATED_LITERAL_OPERATOR_FLAG)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-literal-operator")
+          endif()'''
+          if old_flag in source:
+              source = source.replace(old_flag, guarded_flag, 1)
+          elif "-Wno-deprecated-literal-operator" in source and "HAS_DEPRECATED_LITERAL_OPERATOR_FLAG" not in source:
+              raise SystemExit(f"Unexpected Linux compiler flag in {cmake_file}")
+
+          cmake_file.write_text(source)
+
+          source_file = cmake_file.parent / "in_app_webview/in_app_webview.cc"
+          source = source_file.read_text()
+          marker = "std::optional<std::string> InAppWebView::getMetaThemeColor() const {"
+          start = source.find(marker)
+          if start < 0:
+              raise SystemExit(f"Theme color method not found in {source_file}")
+          end = source.find("\n}\n", start)
+          if end < 0:
+              raise SystemExit(f"Theme color method end not found in {source_file}")
+          end += 2
+          method = source[start:end]
+          version_guard = "#if WEBKIT_CHECK_VERSION(2, 50, 0)"
+          fallback = "#else\n  return std::nullopt;\n#endif"
+          if version_guard not in method:
+              color_declaration = "  WebKitColor color;"
+              color_result = "  return std::string(hexColor);"
+              if color_declaration not in method or color_result not in method:
+                  raise SystemExit(f"Unexpected theme color implementation in {source_file}")
+              method = method.replace(color_declaration, f"{version_guard}\n{color_declaration}", 1)
+              method = method.replace(color_result, f"{color_result}\n{fallback}", 1)
+          if version_guard not in method or fallback not in method:
+              raise SystemExit(f"Theme color compatibility guard missing in {source_file}")
+          source_file.write_text(source[:start] + method + source[end:])
+
+          header = cmake_file.parent / "include/flutter_inappwebview_linux/flutter_inappwebview_linux_plugin.h"
+          if not header.is_file():
+              raise SystemExit(f"Linux plugin header not found in {header.parent}")
+          compat_header = cmake_file.parent / "include/flutter_inappwebview_linux_fx/flutter_inappwebview_linux_plugin.h"
+          compat_header.parent.mkdir(parents=True, exist_ok=True)
+          compat_header.write_text(header.read_text())
+          PY
+          done
+
+      - name: 🏗️ Build Linux in Debian
+        if: ${{ matrix.platform == 'linux' }}
+        run: |
+          pub_cache="${PUB_CACHE:-$HOME/.pub-cache}"
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" \
+            --volume "$FLUTTER_ROOT:$FLUTTER_ROOT" \
+            --volume "$pub_cache:$pub_cache" \
+            --env FLUTTER_ROOT \
+            --env PUB_CACHE="$pub_cache" \
+            --workdir "$GITHUB_WORKSPACE/apps/auravibes_app" \
+            debian:trixie-slim bash -euc '
+              apt-get update
+              apt-get install -y --no-install-recommends \
+                build-essential ca-certificates clang cmake git ninja-build pkgconf rustup \
+                libgtk-3-dev liblzma-dev libsqlite3-dev libepoxy-dev libwayland-dev \
+                libwebkit2gtk-4.1-dev libwpewebkit-2.0-dev libwpe-1.0-dev libwpebackend-fdo-1.0-dev \
+                libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+                libunwind-dev
+              git config --global --add safe.directory "$FLUTTER_ROOT"
+              export PATH="$FLUTTER_ROOT/bin:$PATH"
+              export PKG_CONFIG=/usr/bin/pkgconf
+              flutter build linux --debug --no-pub
+            '
 
       - name: 🧪 Test Drift web asset verifier
         if: ${{ matrix.platform == 'web' }}
@@ -121,6 +272,44 @@ jobs:
         if: ${{ matrix.platform == 'web' }}
         run: flutter build web --release --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
+
+      # shortcut: patches this locked plugin's target and header paths; remove when upstream aligns its Windows metadata.
+      - name: 🩹 Patch Windows WebView CMake compatibility
+        if: ${{ matrix.platform == 'windows' }}
+        shell: pwsh
+        run: |
+          $packages = Get-ChildItem "$env:LOCALAPPDATA\Pub\Cache\hosted\pub.dev" -Directory -Filter "flutter_inappwebview_windows_fx-*"
+          if ($packages.Count -eq 0) { throw "flutter_inappwebview_windows_fx was not found in the pub cache" }
+
+          foreach ($package in $packages) {
+            $path = Join-Path $package.FullName "windows\CMakeLists.txt"
+            $original = Get-Content $path -Raw
+            $source = $original
+            $expected = 'set(PLUGIN_NAME "flutter_inappwebview_windows_plugin")'
+            $fixed = 'set(PLUGIN_NAME "flutter_inappwebview_windows_fx_plugin")'
+            if ($source.Contains($expected)) {
+              $source = $source.Replace($expected, $fixed)
+            } elseif (-not $source.Contains($fixed)) {
+              throw "Unexpected Windows plugin target in $path"
+            }
+
+            $deprecationDefinition = 'add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)'
+            if (-not $source.Contains($deprecationDefinition)) {
+              if (-not $source.Contains($fixed)) { throw "Windows plugin target marker not found in $path" }
+              $source = $source.Replace($fixed, "$fixed`n$deprecationDefinition")
+            }
+
+            if ($source -ne $original) {
+              [IO.File]::WriteAllText($path, $source, [Text.UTF8Encoding]::new($false))
+            }
+
+            $includeRoot = Join-Path $package.FullName "windows\include"
+            $sourceHeader = Join-Path $includeRoot "flutter_inappwebview_windows\flutter_inappwebview_windows_plugin_c_api.h"
+            $fixedInclude = Join-Path $includeRoot "flutter_inappwebview_windows_fx"
+            if (-not (Test-Path $sourceHeader)) { throw "Windows plugin C API header not found at $sourceHeader" }
+            New-Item -ItemType Directory -Force -Path $fixedInclude | Out-Null
+            Copy-Item -LiteralPath $sourceHeader -Destination $fixedInclude -Force
+          }
 
       - name: 🏗️ Build Windows
         if: ${{ matrix.platform == 'windows' }}

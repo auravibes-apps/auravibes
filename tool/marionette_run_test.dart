@@ -6,6 +6,31 @@ import 'package:test/test.dart';
 import 'marionette_run.dart';
 
 void main() {
+  test('detects known Marionette launch phases', () {
+    expect(
+      detectMarionetteLaunchPhase('Fetching from https://example.invalid/pkg'),
+      'resolving dependencies',
+    );
+    expect(
+      detectMarionetteLaunchPhase('Running Xcode build...'),
+      'building app',
+    );
+    expect(detectMarionetteLaunchPhase('Xcode build done.'), 'starting app');
+    expect(detectMarionetteLaunchPhase('unrecognized output'), isNull);
+  });
+
+  test('formats Marionette launch elapsed time', () {
+    expect(formatMarionetteElapsed(const .new(seconds: 8)), '8s');
+    expect(
+      formatMarionetteElapsed(const .new(minutes: 2, seconds: 8)),
+      '2m 8s',
+    );
+    expect(
+      formatMarionetteElapsed(const .new(hours: 1, seconds: 8)),
+      '1h 0m 8s',
+    );
+  });
+
   test('extracts the VM service URI from Flutter output', () {
     expect(
       extractVmServiceUri(
@@ -18,6 +43,14 @@ void main() {
 
   test('returns null when Flutter has not printed a VM service URI', () {
     expect(extractVmServiceUri('Building macOS application...'), isNull);
+  });
+
+  test('keeps recent VM output when Unicode exceeds the UTF-16 limit', () {
+    final output = String.fromCharCodes(List.filled(4100, 0x1f30e));
+
+    expect(output.length, greaterThan(8192));
+    expect(output.runes.length, lessThan(8192));
+    expect(retainVmServiceOutputTail(output), output);
   });
 
   test('writes the VM service URI atomically with owner-only permissions', () {

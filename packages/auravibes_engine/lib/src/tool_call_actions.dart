@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:auravibes_engine/src/skills/skill_command.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 import 'package:crypto/crypto.dart';
 
@@ -46,6 +45,7 @@ typedef AgentToolCallResultUpdateRequest = ({
   AgentToolResultStatus resultStatus,
   String? responseRaw,
   String? responseContextRaw,
+  List<AgentToolResultMedia> media,
   bool outputTruncated,
   int? originalResponseBytes,
   bool fullOutputForContext,
@@ -158,12 +158,11 @@ class const ApproveToolCallService<TTool extends Object>({
       await provider.updateToolCallResult((
         messageId: messageId,
         toolCallId: toolCallId,
-        resultStatus: toolCall.name == callSkillToolName
-            ? .notConfigured
-            : .toolNotFound,
+        resultStatus: .toolNotFound,
         conversationId: conversationId,
         responseRaw: null,
         responseContextRaw: null,
+        media: const [],
         outputTruncated: false,
         originalResponseBytes: null,
         fullOutputForContext: false,
@@ -203,6 +202,7 @@ class const ApproveToolCallService<TTool extends Object>({
       resultStatus: executionResult.resultStatus,
       responseRaw: executionResult.responseRaw,
       responseContextRaw: executionResult.responseContextRaw,
+      media: executionResult.media,
       outputTruncated: executionResult.outputTruncated,
       originalResponseBytes: executionResult.originalResponseBytes,
       fullOutputForContext: executionResult.fullOutputForContext,

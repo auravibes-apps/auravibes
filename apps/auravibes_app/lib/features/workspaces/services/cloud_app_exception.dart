@@ -12,6 +12,7 @@ final class const CloudAppException({
   required final String localizationKey,
   required final CloudOperationContext context,
   final String? code,
+  final int? httpStatusCode,
 }) implements Exception {
   @override
   String toString() => 'CloudAppException($context, $code)';
@@ -44,6 +45,10 @@ abstract final class CloudAppErrors {
       localizationKey: translated.localizationKey,
       context: context,
       code: translated.code,
+      httpStatusCode: switch (error) {
+        ServerpodClientHttpException(:final statusCode) => statusCode,
+        _ => null,
+      },
     );
   }
 }

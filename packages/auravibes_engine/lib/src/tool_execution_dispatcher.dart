@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:auravibes_engine/src/tool_calls.dart';
 import 'package:auravibes_engine/src/tool_output_policy.dart';
@@ -37,9 +38,21 @@ class const AgentToolExecutionResult({
   required final AgentToolResultStatus resultStatus,
   final String? responseRaw,
   final String? responseContextRaw,
+  final List<AgentToolResultMedia> media = const [],
   final bool outputTruncated = false,
   final int? originalResponseBytes,
   final bool fullOutputForContext = false,
+});
+
+class const AgentToolExecutionOutput({
+  required final Object output,
+  final List<AgentToolResultMedia> media = const [],
+});
+
+class const AgentToolResultMedia({
+  required final Uint8List bytes,
+  required final String mimeType,
+  required final String fileName,
 });
 
 class const AgentToolExecutionFailure({
@@ -107,11 +120,15 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         return const AgentToolExecutionResult(resultStatus: .toolNotFound);
       }
 
-      final responseRaw = switch (result) {
+      final executionOutput = switch (result) {
+        final AgentToolExecutionOutput output => output,
+        final Object output => AgentToolExecutionOutput(output: output),
+      };
+      final responseRaw = switch (executionOutput.output) {
         final String value => value,
         final Map<Object?, Object?> value => jsonEncode(value),
         final List<Object?> value => jsonEncode(value),
-        _ => result.toString(),
+        final Object value => value.toString(),
       };
       final projection = projectToolOutput(
         responseRaw,
@@ -123,6 +140,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
           resultStatus: .stoppedByUser,
           responseRaw: projection.persistedText,
           responseContextRaw: _responseContext(projection),
+          media: executionOutput.media,
           outputTruncated: projection.truncated,
           originalResponseBytes: projection.truncated
               ? projection.originalBytes
@@ -135,6 +153,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         resultStatus: .success,
         responseRaw: projection.persistedText,
         responseContextRaw: _responseContext(projection),
+        media: executionOutput.media,
         outputTruncated: projection.truncated,
         originalResponseBytes: projection.truncated
             ? projection.originalBytes
@@ -165,17 +184,25 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         failurePhase: failure.failurePhase,
       ));
 
-      final projection = projectToolOutput(failure.responseRaw);
-      return AgentToolExecutionResult(
-        resultStatus: .executionError,
-        responseRaw: projection.persistedText,
-        responseContextRaw: _responseContext(projection),
-        outputTruncated: projection.truncated,
-        originalResponseBytes: projection.truncated
-            ? projection.originalBytes
-            : null,
-        fullOutputForContext: projection.fullOutputForContext,
-      );
+      try {
+        final projection = projectToolOutput(
+          failure.responseRaw,
+          policy:
+              outputPolicyForTool?.call(tool) ?? const AgentToolOutputPolicy(),
+        );
+        return AgentToolExecutionResult(
+          resultStatus: .executionError,
+          responseRaw: projection.persistedText,
+          responseContextRaw: _responseContext(projection),
+          outputTruncated: projection.truncated,
+          originalResponseBytes: projection.truncated
+              ? projection.originalBytes
+              : null,
+          fullOutputForContext: projection.fullOutputForContext,
+        );
+      } on Object {
+        return const AgentToolExecutionResult(resultStatus: .executionError);
+      }
     } on Object catch (error, stackTrace) {
       logToolExecutionError((
         conversationId: conversationId,

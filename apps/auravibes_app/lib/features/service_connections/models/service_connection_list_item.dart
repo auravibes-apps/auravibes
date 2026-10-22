@@ -2,8 +2,6 @@ import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
 
 typedef ServiceConnectionMcpCredential = ({
@@ -50,7 +48,6 @@ class const ServiceConnectionListItem({
   required final String? serviceName,
   required final ServiceConnectionListItemKind kind,
   required final String? keySuffix,
-  required final String? credentialDefinitionId,
   required final String? mcpServerId,
   required final String? authenticationType,
   required final ServiceConnectionDisplayStatus displayStatus,
@@ -71,10 +68,11 @@ class const ServiceConnectionListItem({
         serviceName: connection.modelId,
         kind: .modelProvider,
         keySuffix: connection.keySuffix,
-        credentialDefinitionId: null,
         mcpServerId: null,
         authenticationType: null,
-        displayStatus: .unknown,
+        displayStatus: connection.authMode == .oauth2 || connection.hasKey
+            ? .connected
+            : .unknown,
         expiresAt: null,
         lastRefreshedAt: null,
         lastAuthError: null,
@@ -83,29 +81,7 @@ class const ServiceConnectionListItem({
         canReconnect: false,
       );
 
-  new _fromSkillCredential({
-    required SkillCredentialEntity credential,
-    required SkillCredentialDefinitionEntity? definition,
-  }) : this(
-         id: credential.id,
-         workspaceId: credential.workspaceId,
-         name: credential.name,
-         serviceName: definition?.title,
-         kind: .skillCredential,
-         keySuffix: credential.keySuffix,
-         credentialDefinitionId: credential.credentialDefinitionId,
-         mcpServerId: null,
-         authenticationType: null,
-         displayStatus: .unknown,
-         expiresAt: null,
-         lastRefreshedAt: null,
-         lastAuthError: null,
-         metadataValues: const [],
-         canRefresh: false,
-         canReconnect: false,
-       );
-
-  new _fromAppSkillCredential({
+  new _fromConnectorConnection({
     required String id,
     required String workspaceId,
     required String name,
@@ -117,9 +93,8 @@ class const ServiceConnectionListItem({
          workspaceId: workspaceId,
          name: name,
          serviceName: serviceId,
-         kind: .skillCredential,
+         kind: .connector,
          keySuffix: keySuffix,
-         credentialDefinitionId: null,
          mcpServerId: null,
          authenticationType: null,
          displayStatus: hasSecret ? .connected : .unknown,
@@ -142,7 +117,6 @@ class const ServiceConnectionListItem({
         serviceName: _hostFromUrl(data.url) ?? data.metadata.provider,
         kind: .mcpServer,
         keySuffix: null,
-        credentialDefinitionId: null,
         mcpServerId: data.mcpServerId,
         authenticationType: data.authenticationType,
         displayStatus: _displayStatus(
@@ -172,7 +146,7 @@ class const ServiceConnectionListItem({
         lastTestSummary: data.lastTestSummary,
       );
 
-  new _fromCloudMcp(ServiceConnectionCloudMcp data)
+  new fromCloudMcp(ServiceConnectionCloudMcp data)
     : this(
         id: data.identity.id,
         workspaceId: data.identity.workspaceId,
@@ -180,7 +154,6 @@ class const ServiceConnectionListItem({
         serviceName: _hostFromUrl(data.identity.url),
         kind: .mcpServer,
         keySuffix: null,
-        credentialDefinitionId: null,
         mcpServerId: data.identity.id,
         authenticationType: data.identity.authenticationType,
         displayStatus: data.displayStatus,
@@ -194,19 +167,14 @@ class const ServiceConnectionListItem({
         lastTestSummary: data.lastTestSummary,
       );
 
-  factory fromSkillCredential({
-    required SkillCredentialEntity credential,
-    required SkillCredentialDefinitionEntity? definition,
-  }) => ._fromSkillCredential(credential: credential, definition: definition);
-
-  factory fromAppSkillCredential({
+  factory fromConnectorConnection({
     required String id,
     required String workspaceId,
     required String name,
     required String serviceId,
     required String? keySuffix,
     required bool hasSecret,
-  }) => ._fromAppSkillCredential(
+  }) => ._fromConnectorConnection(
     id: id,
     workspaceId: workspaceId,
     name: name,
@@ -222,11 +190,7 @@ class const ServiceConnectionListItem({
   bool hasActions() => canRefresh || canReconnect;
 }
 
-ServiceConnectionListItem serviceConnectionListItemFromCloudMcp(
-  ServiceConnectionCloudMcp data,
-) => ServiceConnectionListItem._fromCloudMcp(data);
-
-enum ServiceConnectionListItemKind { modelProvider, skillCredential, mcpServer }
+enum ServiceConnectionListItemKind { modelProvider, connector, mcpServer }
 
 enum ServiceConnectionDisplayStatus {
   connected,

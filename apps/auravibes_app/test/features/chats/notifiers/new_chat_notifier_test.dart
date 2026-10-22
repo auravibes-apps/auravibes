@@ -16,6 +16,7 @@ typedef _NewMessageRequest = ({
   ChatDraft draft,
   String workspaceModelSelectionId,
   String? agentId,
+  ConversationToolAccessMode toolAccessMode,
   ReasoningConfiguration? reasoningConfiguration,
 });
 
@@ -94,6 +95,18 @@ void main() {
       expect(state.modelId, isNull);
       expect(state.providerId, isNull);
       expect(state.isLoading, isFalse);
+    });
+
+    test('tool access defaults and updates both modes', () {
+      final provider = newChatProvider('ws-1');
+      expect(
+        container.read(provider).toolAccessMode,
+        ConversationToolAccessMode.defaultMode,
+      );
+      for (final mode in ConversationToolAccessMode.values) {
+        container.read(provider.notifier).setToolAccessMode(mode);
+        expect(container.read(provider).toolAccessMode, mode);
+      }
     });
 
     test('setModelId updates modelId', () {
@@ -208,6 +221,9 @@ class _FakeSendNewMessageUsecase implements SendNewMessageUsecase {
   MonitoringService get monitoringService => throw UnimplementedError();
 
   @override
+  void Function(String conversationId)? get onIterationLimit => null;
+
+  @override
   Future<ConversationEntity> call(_NewMessageRequest request) async {
     return ConversationEntity(
       id: 'new-conv',
@@ -240,6 +256,9 @@ class _ErrorSendNewMessageUsecase implements SendNewMessageUsecase {
 
   @override
   MonitoringService get monitoringService => throw UnimplementedError();
+
+  @override
+  void Function(String conversationId)? get onIterationLimit => null;
 
   @override
   Future<ConversationEntity> call(_NewMessageRequest _) async {

@@ -2,7 +2,6 @@ class const SkillAccessSummary({
   required final SkillAccessStatus status,
   required final bool instructionsAvailable,
   final List<SkillToolAccess> tools = const [],
-  final String? credentialDefinitionId,
 });
 
 enum SkillAccessStatus { notRequired, saved, missing, partial, unknown }
@@ -16,5 +15,4 @@ class const SkillToolAccess({
   final String description = '',
   final String? titleKey,
   final String? descriptionKey,
-  final String? credentialDefinitionId,
 });

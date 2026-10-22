@@ -293,6 +293,13 @@ class _FakeLocalChatAttachmentService implements LocalChatAttachmentService {
   }) => throw UnimplementedError();
 
   @override
+  Future<MessageAttachmentToCreate> copyBytesIntoAppStorage(
+    Uint8List bytes, {
+    required String fileName,
+    required String displayName,
+  }) => throw UnimplementedError();
+
+  @override
   Future<void> startVoiceRecording() => throw UnimplementedError();
 
   @override
@@ -304,6 +311,14 @@ class _FakeLocalChatAttachmentService implements LocalChatAttachmentService {
   Future<MessageAttachmentToCreate> createArchiveAttachment(
     ConversationArchiveAttachment _,
   ) => throw UnimplementedError();
+
+  @override
+  Future<MessageAttachmentToCreate> createToolResultAttachment({
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    required String toolCallId,
+  }) => throw UnimplementedError();
 
   @override
   Future<Uint8List> readAttachmentBytes(String _) => throw UnimplementedError();

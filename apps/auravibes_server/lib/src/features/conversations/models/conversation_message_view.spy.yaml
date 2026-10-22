@@ -2,6 +2,8 @@ class: ConversationMessageView
 fields:
   id: String
   conversationId: String
+  sourceConversationId: String?
+  sourceMessageId: String?
   turnId: String?
   turnRevision: int?
   role: String

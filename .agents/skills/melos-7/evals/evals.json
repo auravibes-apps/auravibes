@@ -5,24 +5,51 @@
       "id": 1,
       "prompt": "I'm working in a Melos-managed package and need to check formatting. Since the instructions say formatter output should match the pinned SDK, am I supposed to avoid running a formatter? How should I check formatting?",
       "expected_output": "The agent says formatting is allowed and recommends `fvm dart run melos run format:check` as the repository's pinned, non-mutating check. It may distinguish that check from applying formatting with `fvm dart format <paths>`. It does not infer a blanket formatter prohibition from the host-SDK guidance.",
-      "files": []
+      "files": [],
+      "checks": ["formatting"]
     },
     {
       "id": 2,
       "prompt": "I cloned AuraVibes and am about to run `fvm use`. Does it run `flutter pub get` automatically, and what changes if I pass `--skip-pub-get`?",
-      "expected_output": "The agent explains that FVM selects the project SDK and runs Pub resolution by default when switching SDKs, that this repository enables Pub-get-on-SDK-change in `.fvmrc`, and that `--skip-pub-get` skips that resolution.",
-      "files": []
+      "expected_output": "The agent explains that this repository's `.fvmrc` enables Pub resolution by default when FVM switches SDKs, and that `--skip-pub-get` skips that resolution.",
+      "files": [],
+      "checks": ["fvm_pub_resolution"]
     },
     {
       "id": 3,
       "prompt": "The root `pubspec.yaml` declares a Dart Pub workspace. Can I skip Melos bootstrap on a fresh checkout, or does CI still use it? Explain which setup commands reproduce the repository's CI path.",
-      "expected_output": "The agent distinguishes Pub workspace membership and SDK/Pub setup from the repository's Melos bootstrap. It checks the root Melos dependency and CI setup/integrity workflow, recommends `fvm use` followed by `fvm dart run melos bootstrap`, and explains bootstrap's dependency-resolution and ignored IntelliJ metadata outputs without claiming it is unnecessary or inventing committed artifacts.",
-      "files": []
+      "expected_output": "The agent explains that Pub workspace membership does not replace Melos bootstrap, which CI also runs, and recommends `fvm use` followed by `fvm dart run melos bootstrap`.",
+      "files": [],
+      "checks": ["melos_bootstrap"]
     },
     {
       "id": 4,
       "prompt": "Run the documented focused test command for this package.",
-      "expected_output": "Runs the command using root/scoped instructions without loading the complete Melos configuration skill, bootstrapping an already prepared workspace, or widening validation.",
+      "expected_output": "Runs the command using root and scoped instructions without loading the complete Melos configuration skill, bootstrapping an already prepared workspace, or widening validation.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "I need to add a package to AuraVibes. Should I put it in `melos.yaml` or root `pubspec.yaml`, and what must the member package declare?",
+      "expected_output": "The agent reads `references/workspace-configuration.md`, directs the user to root `pubspec.yaml` and its `workspace:` list, requires `resolution: workspace` in each member, and checks the current root configuration instead of copying placeholder paths.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Our Melos 8 script fails because it has both `run` and `exec`. It also needs concurrency 1. How should I write it?",
+      "expected_output": "The agent reads `references/scripts-and-cli.md`, explains that Melos 8 treats `run` and `exec` as exclusive, and places the command and concurrency under `exec.command` and `exec.concurrency`.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Run the existing `fvm dart run melos run generate:icons` script from the repository root.",
+      "expected_output": "Runs the documented script from root without loading the full Melos skill or changing configuration.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "I created a fresh isolated worktree. `fvm flutter test --no-pub` fails because the Flutter SDK link is missing. How do I prepare this checkout without racing another worktree's bootstrap?",
+      "expected_output": "Reads the pinned Flutter version from `.fvmrc`, runs `fvm use <version> --skip-pub-get`, then runs `fvm dart run melos bootstrap` through `tool/validation_lease.py` from the repository root. Does not run Pub resolution twice or claim bootstrap is redundant.",
       "files": []
     }
   ]

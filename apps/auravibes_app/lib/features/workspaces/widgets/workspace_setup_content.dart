@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_creation_draf
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_creation_draft_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_form.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -152,7 +153,7 @@ extension _WorkspaceSetupDraftActions on _WorkspaceSetupContentState {
         isDirty: () => !_completedTask && _draftHasChanges(draft),
         isSaving: _isSaving,
       ),
-      onReturn: (_) => widget.onReturn?.call(),
+      callbacks: .new(onReturn: (_) => widget.onReturn?.call()),
     );
   }
 
@@ -373,7 +374,11 @@ class const _WorkspaceIntentButton({
   @override
   Widget build(BuildContext context) => AuraButton(
     onPressed: onPressed,
-    child: TextLocale('workspace_setup.${intent.name}'),
+    child: TextLocale(switch (intent) {
+      .local => LocaleKeys.workspace_setup_local,
+      .cloud => LocaleKeys.workspace_setup_cloud,
+      .connect => LocaleKeys.workspace_setup_connect,
+    }),
     key: ValueKey('workspace_intent_${intent.name}'),
     variant: isSelected ? .primary : .outlined,
     disabled: isPending,
@@ -392,7 +397,11 @@ class const _WorkspaceSetupAuthFlow({
       onSignedIn: state._signedIn,
       onCancel: state._cancelAuth,
       target: target,
-      returnTaskLabel: 'workspace_setup.${draft.intent.name}'.tr(),
+      returnTaskLabel: (switch (draft.intent) {
+        .local => LocaleKeys.workspace_setup_local,
+        .cloud => LocaleKeys.workspace_setup_cloud,
+        .connect => LocaleKeys.workspace_setup_connect,
+      }).tr(),
     ),
   );
 }

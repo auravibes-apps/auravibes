@@ -3,6 +3,7 @@
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/models/tool_approval_decision.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
@@ -20,6 +21,12 @@ class ResolveToolApprovalDecisionUsecase({
   required final ToolsGroupsRepositoryContract toolsGroupsRepository,
   required final WorkspaceToolsRepositoryContract workspaceToolsRepository,
   final SyncSkillToolPermissionsUsecase? syncSkillToolPermissionsUsecase,
+  final SyncConnectorToolPermissionsUsecase?
+  syncConnectorToolPermissionsUsecase,
+  final Future<agent.ConversationToolAccessMode> Function(
+    String conversationId,
+  )?
+  getToolAccessMode,
 }) {
   Future<ToolApprovalDecision> call({
     required String conversationId,
@@ -36,21 +43,33 @@ class ResolveToolApprovalDecisionUsecase({
       return _notConfiguredDecision(toolCallId);
     }
 
-    return await _configuredDecision(conversationToolsRepository, (
+    final decision = await _configuredDecision(conversationToolsRepository, (
       conversationId: conversationId,
       workspaceId: workspaceId,
       toolCallId: toolCallId,
       permissionTableId: permissionTableId,
     ));
+
+    return await _applyToolAccessMode(
+      decision: decision,
+      conversationId: conversationId,
+      getToolAccessMode: getToolAccessMode,
+    );
   }
 
   Future<String?> resolvePermissionTableId({
     required String conversationId,
     required String workspaceId,
     required ResolvedTool resolvedTool,
-  }) async {
+  }) {
+    if (resolvedTool.isConnectorCommand) {
+      return _resolveConnectorPermission(
+        workspaceId,
+        resolvedTool.toolIdentifier,
+      );
+    }
     if (_isSkillTool(resolvedTool)) {
-      return await _resolveSkillPermission(
+      return _resolveSkillPermission(
         conversationId: conversationId,
         workspaceId: workspaceId,
         resolvedTool: resolvedTool,
@@ -59,25 +78,27 @@ class ResolveToolApprovalDecisionUsecase({
 
     final mcpServerId = resolvedTool.mcpServerId;
     if (mcpServerId == null) {
-      return resolvedTool.tableId;
+      return Future.value(resolvedTool.tableId);
     }
 
-    return await _resolveMcpPermission(
-      mcpServerId,
-      resolvedTool.toolIdentifier,
-    );
+    return _resolveMcpPermission(mcpServerId, resolvedTool.toolIdentifier);
   }
+
+  Future<String?> _resolveConnectorPermission(
+    String workspaceId,
+    String toolName,
+  ) =>
+      syncConnectorToolPermissionsUsecase?.permissionTableIdFor(
+        workspaceId: workspaceId,
+        toolName: toolName,
+      ) ??
+      Future.value();
 
   Future<String?> _resolveSkillPermission({
     required String conversationId,
     required String workspaceId,
     required ResolvedTool resolvedTool,
   }) {
-    if (resolvedTool.toolIdentifier == agent.callSkillToolName &&
-        resolvedTool.target == null) {
-      return Future.value();
-    }
-
     return syncSkillToolPermissionsUsecase?.permissionTableIdFor(
           conversationId: conversationId,
           workspaceId: workspaceId,
@@ -104,10 +125,22 @@ class ResolveToolApprovalDecisionUsecase({
   }
 
   bool _isSkillTool(ResolvedTool resolvedTool) =>
-      resolvedTool.isSkillCommand ||
-      resolvedTool.isSkillControl ||
-      resolvedTool.isSkillTemplate ||
-      resolvedTool.isSkillNative;
+      resolvedTool.isSkillControl || resolvedTool.isSkillNative;
+}
+
+Future<ToolApprovalDecision> _applyToolAccessMode({
+  required ToolApprovalDecision decision,
+  required String conversationId,
+  required Future<agent.ConversationToolAccessMode> Function(
+    String conversationId,
+  )?
+  getToolAccessMode,
+}) async {
+  if (!decision.needsConfirmation) return decision;
+
+  return decision.withToolAccessMode(
+    mode: await getToolAccessMode?.call(conversationId) ?? .defaultMode,
+  );
 }
 
 ToolApprovalDecision _notConfiguredDecision(String toolCallId) =>
@@ -149,10 +182,12 @@ resolveToolApprovalDecisionUsecaseProvider =
           .watch(workspaceSessionForRouteProvider(workspaceId))
           .requireValue;
 
+      final repository = ref.watch(
+        conversationToolsRepositoryProvider(workspaceId),
+      );
+
       return ResolveToolApprovalDecisionUsecase(
-        conversationToolsRepository: ref.watch(
-          conversationToolsRepositoryProvider(workspaceId),
-        ),
+        conversationToolsRepository: repository,
         toolsGroupsRepository: ref.watch(
           toolsGroupsRepositoryProvider(session),
         ),
@@ -162,5 +197,9 @@ resolveToolApprovalDecisionUsecaseProvider =
         syncSkillToolPermissionsUsecase: ref.watch(
           syncSkillToolPermissionsUsecaseProvider,
         ),
+        syncConnectorToolPermissionsUsecase: ref.watch(
+          syncConnectorToolPermissionsUsecaseProvider,
+        ),
+        getToolAccessMode: repository.getToolAccessMode,
       );
     });

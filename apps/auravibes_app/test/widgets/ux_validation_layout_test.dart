@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
 import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_health.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
@@ -30,14 +31,10 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
-import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
-import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
-import 'package:auravibes_app/features/skills/screens/skill_credential_definitions_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen.dart';
-import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -49,6 +46,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/route_recovery_view.dart';
@@ -128,10 +126,15 @@ void main() {
             _contrast(colors.onBackground, colors.background),
             greaterThanOrEqualTo(4.5),
           );
-          final chats = find.bySemanticsLabel('Chats');
-          expect(chats, findsOneWidget);
+          final selectedNavigationItem = find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics && widget.properties.selected == true,
+          );
+          expect(selectedNavigationItem, findsOneWidget);
+          final selectedSemantics = tester.getSemantics(selectedNavigationItem);
+          expect(selectedSemantics.label, 'New Chat');
           expect(
-            tester.getSemantics(chats).flagsCollection.isSelected,
+            selectedSemantics.flagsCollection.isSelected,
             ui.Tristate.isTrue,
           );
           final connections = find.bySemanticsLabel('Connections');
@@ -190,7 +193,7 @@ void main() {
                       'keyboard':
                           'Tab visible focus and Enter into '
                           'production Connections',
-                      'semantics': 'Chats selected',
+                      'semantics': 'New Chat selected',
                       'limit':
                           'Widget semantics and keyboard only; '
                           'no native screen reader measurement',
@@ -240,13 +243,6 @@ void main() {
       title: 'markdown_editor.resource_content',
       hint: 'markdown_editor.resource_hint',
       cap: 50000,
-    ),
-    (
-      route: 'SkillToolEditRoute',
-      launcher: 'skills_screen.edit_description',
-      title: 'markdown_editor.tool_description',
-      hint: 'markdown_editor.tool_hint',
-      cap: 1024,
     ),
   ]) {
     for (final locale in const ['en', 'es']) {
@@ -324,123 +320,271 @@ void main() {
       });
     }
   }
-  for (final name in _routeNames) {
-    testWidgets('production direct route $name', (tester) async {
-      final fixture = await UxValidationFixture.create(
-        empty: name == 'IntroRoute',
-      );
-      if (name == 'CloudTools') {
-        expect(
-          await fixture.database.workspaceDao.patchWorkspace(
-            fixture.workspaceId,
-            const .new(
-              type: .new(.remote),
-              url: .new('https://fixture.example'),
-              cloudAccountId: .new('fixture-account'),
-              cloudWorkspaceId: .new('7'),
-            ),
-          ),
-          isTrue,
-        );
-      }
-      final scenario = _scenario(name, fixture);
-      final router = await fixture.pump(
-        tester,
-        scenario.location,
-        accounts: switch (name) {
-          'CloudWorkspaceDetailRoute' || 'CloudTools' => _accounts,
-          'MixedAccounts' => _mixedAccounts,
-          _ => const [],
-        },
-        sessionOverride: name == 'CloudTools'
-            ? WorkspaceSession(
-                CloudWorkspaceRef(
-                  localWorkspaceId: fixture.workspaceId,
-                  serverUrl: 'https://fixture.example',
-                  accountId: 'fixture-account',
-                  cloudWorkspaceId: 7,
+  testWidgets('failed connections return to workspace start', (tester) async {
+    final fixture = await UxValidationFixture.create();
+    final router = await fixture.pump(
+      tester,
+      ServiceConnectionsRoute(workspaceId: fixture.workspaceId).location,
+      overrides: [
+        serviceConnectionsProvider(fixture.workspaceId).overrideWith(
+          (_) => Stream.error(StateError('Connections unavailable')),
+        ),
+      ],
+    );
+    expect(find.text('Retry'), findsOneWidget);
+    await tester.tap(find.text('Return to workspace'));
+    await fixture.settle(tester);
+
+    expect(find.byType(NewChatScreen), findsOneWidget);
+    expect(find.byType(ServiceConnectionsScreen), findsNothing);
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      NewChatRoute(workspaceId: fixture.workspaceId).location,
+    );
+    expect(tester.takeException(), isNull);
+    await fixture.close(tester);
+  });
+
+  for (final viewport in const [
+    (name: 'duo_closed', size: Size(466, 678)),
+    (name: 'duo_open_content', size: Size(671, 669)),
+    (name: 'duo_open', size: Size(951, 669)),
+    (name: 'desktop', size: Size(1280, 1200)),
+  ]) {
+    for (final name in _routeNames) {
+      for (final dark in [false, true]) {
+        final testName =
+            'production direct route $name ${viewport.name} '
+            '${dark ? 'dark' : 'light'}';
+        testWidgets(testName, (tester) async {
+          final fixture = await UxValidationFixture.create(
+            empty: name == 'IntroRoute',
+          );
+          if (name == 'CloudTools') {
+            expect(
+              await fixture.database.workspaceDao.patchWorkspace(
+                fixture.workspaceId,
+                const .new(
+                  type: .new(.remote),
+                  url: .new('https://fixture.example'),
+                  cloudAccountId: .new('fixture-account'),
+                  cloudWorkspaceId: .new('7'),
                 ),
-              )
-            : null,
-        dark: name == 'DarkAgents',
-        sessionFailure: name == 'FailedWorkspace'
-            ? const WorkspaceRouteFailure(invalidMirror: false)
-            : null,
-        overrides: _overrides(fixture, name),
-      );
-      expect(find.byType(scenario.screen), findsOneWidget);
-      expect(tester.takeException(), isNull);
-      if (name == 'CloudTools') {
-        expect(find.text('Design studio / Cloud'), findsOneWidget);
-        expect(find.textContaining('Tap the + button'), findsNothing);
-        expect(find.byIcon(Icons.add), findsNothing);
-        expect(
-          find.textContaining(
-            'Built-in tools can only be added in local workspaces.',
-          ),
-          findsNWidgets(2),
-        );
-        expect(
-          find.textContaining('connect a service to add its tools.'),
-          findsNWidgets(2),
-        );
+              ),
+              isTrue,
+            );
+          }
+          final scenario = _scenario(name, fixture);
+          final router = await fixture.pump(
+            tester,
+            scenario.location,
+            size: viewport.size,
+            accounts: switch (name) {
+              'CloudWorkspaceDetailRoute' || 'CloudTools' => _accounts,
+              'MixedAccounts' => _mixedAccounts,
+              _ => const [],
+            },
+            sessionOverride: name == 'CloudTools'
+                ? WorkspaceSession(
+                    CloudWorkspaceRef(
+                      localWorkspaceId: fixture.workspaceId,
+                      serverUrl: 'https://fixture.example',
+                      accountId: 'fixture-account',
+                      cloudWorkspaceId: 7,
+                    ),
+                  )
+                : null,
+            dark: dark,
+            sessionFailure: name == 'FailedWorkspace'
+                ? const WorkspaceRouteFailure(invalidMirror: false)
+                : null,
+            overrides: _overrides(fixture, name),
+          );
+          expect(find.byType(scenario.screen), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          if (name == 'CloudTools') {
+            if (viewport.name != 'duo_open') {
+              expect(find.text('Design studio / Cloud'), findsOneWidget);
+            }
+            expect(find.textContaining('Tap the + button'), findsNothing);
+            expect(find.byIcon(Icons.add), findsNothing);
+            expect(
+              find.textContaining(
+                'Built-in tools can only be added in local workspaces.',
+              ),
+              findsOneWidget,
+            );
+            expect(
+              find.textContaining('connect a service to add its tools.'),
+              findsOneWidget,
+            );
+          }
+          if (name == 'LocalEmptyTools') {
+            expect(find.textContaining('Tap the + button'), findsOneWidget);
+            expect(find.byIcon(Icons.add), findsOneWidget);
+          }
+          if (name == 'AgentsRoute' || name == 'DarkAgents') {
+            final measurement = _disabledBadgeMeasurement(tester);
+            expect(
+              measurement['ratio'],
+              greaterThanOrEqualTo(4.5),
+              reason: jsonEncode(measurement),
+            );
+          }
+          if (name == 'BuiltInSkillDetail') {
+            await tester.scrollUntilVisible(
+              find.text('reader_url_and_document_modes'),
+              350,
+              scrollable: find
+                  .descendant(
+                    of: find.byType(scenario.screen),
+                    matching: find.byType(Scrollable),
+                  )
+                  .first,
+            );
+            final slug = tester.renderObject<RenderParagraph>(
+              find.text('reader_url_and_document_modes'),
+            );
+            final family = slug.text.style?.fontFamily;
+            expect(family, isNotNull);
+            expect(
+              _captureFontMetadata.map((font) => font['family']),
+              contains(family),
+              reason:
+                  'Actual resource identifier font must be loaded for capture',
+            );
+          }
+          if (name == 'BuiltInResource') {
+            expect(find.text('Save resource'), findsNothing);
+            expect(find.text('Copy code'), findsNWidgets(2));
+          }
+          if (scenario.selection != null) {
+            expect(
+              tester
+                  .widget<AppWithResponsiveDrawer>(
+                    find.byType(AppWithResponsiveDrawer),
+                  )
+                  .selectedIndex,
+              scenario.selection,
+            );
+          }
+          expect(
+            router.routeInformationProvider.value.uri.path,
+            Uri.parse(scenario.expected ?? scenario.location).path,
+          );
+          expect(
+            find.byType(AppScreen),
+            findsWidgets,
+            reason: '$name route must apply the app side safe area',
+          );
+          if (viewport.name != 'desktop') {
+            await _capture(
+              tester,
+              '$name-${viewport.name}-${dark ? 'dark' : 'light'}',
+              router.routeInformationProvider.value.uri.toString(),
+              locale: 'en',
+              size: viewport.size,
+              scale: 1,
+              dark: dark,
+              controlMeasurements: name == 'AgentsRoute' || name == 'DarkAgents'
+                  ? _disabledBadgeMeasurement(tester)
+                  : null,
+            );
+          }
+          for (final side in const [
+            (name: 'left', padding: FakeViewPadding(left: 40)),
+            (name: 'right', padding: FakeViewPadding(right: 40)),
+          ]) {
+            tester.view
+              ..padding = side.padding
+              ..viewPadding = side.padding;
+            await tester.pump();
+            expect(
+              tester.takeException(),
+              isNull,
+              reason: '$name ${viewport.name} ${side.name} safe-area layout',
+            );
+            _expectTextInsideSideSafeArea(
+              tester,
+              viewport.size,
+              side.padding,
+              '$name ${viewport.name} ${side.name}',
+            );
+          }
+          await fixture.close(tester);
+        });
       }
-      if (name == 'LocalEmptyTools') {
-        expect(find.textContaining('Tap the + button'), findsOneWidget);
-        expect(find.byIcon(Icons.add), findsOneWidget);
-      }
-      if (name == 'AgentsRoute' || name == 'DarkAgents') {
-        final measurement = _disabledBadgeMeasurement(tester);
-        expect(
-          measurement['ratio'],
-          greaterThanOrEqualTo(4.5),
-          reason: jsonEncode(measurement),
-        );
-      }
-      if (name == 'BuiltInSkillDetail') {
-        final slug = tester.renderObject<RenderParagraph>(
-          find.text('reader_url_and_document_modes'),
-        );
-        final family = slug.text.style?.fontFamily;
-        expect(family, isNotNull);
-        expect(
-          _captureFontMetadata.map((font) => font['family']),
-          contains(family),
-          reason: 'Actual resource identifier font must be loaded for capture',
-        );
-      }
-      if (name == 'BuiltInResource') {
-        expect(find.text('Save resource'), findsNothing);
-        expect(find.text('Copy code'), findsNWidgets(2));
-      }
-      if (scenario.selection != null) {
-        expect(
-          tester
-              .widget<AppWithResponsiveDrawer>(
-                find.byType(AppWithResponsiveDrawer),
-              )
-              .selectedIndex,
-          scenario.selection,
-        );
-      }
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        Uri.parse(scenario.expected ?? scenario.location).path,
-      );
-      await _capture(
+    }
+  }
+  for (final viewport in const [
+    (name: 'duo_closed', size: Size(466, 678), keyboardInset: 250.0),
+    (name: 'duo_open', size: Size(951, 669), keyboardInset: 433.0),
+  ]) {
+    testWidgets('new chat composer stays above keyboard ${viewport.name}', (
+      tester,
+    ) async {
+      final fixture = await UxValidationFixture.create();
+      final _ = await fixture.pump(
         tester,
-        name,
-        router.routeInformationProvider.value.uri.toString(),
-        locale: 'en',
-        size: const Size(1280, 1200),
-        scale: 1,
-        dark: name == 'DarkAgents',
-        controlMeasurements: name == 'AgentsRoute' || name == 'DarkAgents'
-            ? _disabledBadgeMeasurement(tester)
-            : null,
+        NewChatRoute(workspaceId: fixture.workspaceId).location,
+        size: viewport.size,
       );
+      tester.view.viewInsets = .new(bottom: viewport.keyboardInset);
+      addTearDown(tester.view.resetViewInsets);
+      expect(await tester.pumpAndSettle(), greaterThan(0));
+
+      final composer = tester.getRect(find.byType(ChatInputWidget));
+      expect(composer.top, greaterThanOrEqualTo(0));
+      expect(
+        composer.bottom,
+        lessThanOrEqualTo(viewport.size.height - viewport.keyboardInset),
+      );
+      expect(tester.takeException(), isNull);
       await fixture.close(tester);
     });
+  }
+  for (final viewport in const [
+    (name: 'duo_closed', size: Size(466, 678), keyboardInset: 250.0),
+    (name: 'duo_open', size: Size(951, 669), keyboardInset: 433.0),
+  ]) {
+    for (final name in const [
+      'CloudAccountLoginRoute',
+      'ServiceConnectionCreateRoute',
+      'SkillResourceCreateRoute',
+    ]) {
+      testWidgets('$name form scrolls above keyboard ${viewport.name}', (
+        tester,
+      ) async {
+        final fixture = await UxValidationFixture.create();
+        final scenario = _scenario(name, fixture);
+        final _ = await fixture.pump(
+          tester,
+          scenario.location,
+          size: viewport.size,
+          overrides: _overrides(fixture, name),
+        );
+        tester.view.viewInsets = .new(bottom: viewport.keyboardInset);
+        addTearDown(tester.view.resetViewInsets);
+        await fixture.settle(tester);
+
+        final field = find
+            .descendant(
+              of: find.byType(scenario.screen),
+              matching: find.byType(EditableText),
+            )
+            .last;
+        await tester.ensureVisible(field);
+        await fixture.settle(tester);
+
+        final fieldBounds = tester.getRect(field);
+        expect(
+          fieldBounds.bottom,
+          lessThanOrEqualTo(viewport.size.height - viewport.keyboardInset),
+        );
+        expect(tester.takeException(), isNull);
+        await fixture.close(tester);
+      });
+    }
   }
   for (final name in const [
     'NewChatRoute',
@@ -451,8 +595,8 @@ void main() {
     'CloudAccountLoginRoute',
   ]) {
     for (final variant in const [
-      (width: 959.0, locale: 'en', scale: 1.0, dark: false),
-      (width: 960.0, locale: 'en', scale: 1.0, dark: false),
+      (width: 899.0, locale: 'en', scale: 1.0, dark: false),
+      (width: 900.0, locale: 'en', scale: 1.0, dark: false),
       (width: 360.0, locale: 'es', scale: 1.4, dark: false),
       (width: 1280.0, locale: 'es', scale: 1.4, dark: true),
     ]) {
@@ -489,11 +633,17 @@ void main() {
           final context = tester.element(find.byType(scenario.screen));
           expect(
             ResponsiveSlidingDrawerProvider.of(context).isDesktop,
-            variant.width >= 960,
+            variant.width >= 900,
           );
           expect(MediaQuery.disableAnimationsOf(context), isTrue);
           if ((name == 'SkillsRoute' || name == 'ToolsRoute') &&
               variant.width == 360) {
+            if (name == 'SkillsRoute') {
+              await tester.tap(
+                find.byKey(const ValueKey('app_filter_sheet')).first,
+              );
+              final _ = await tester.pumpAndSettle();
+            }
             final sort = tester.getRect(
               find.byKey(
                 ValueKey(name == 'SkillsRoute' ? 'skills-sort' : 'tools-sort'),
@@ -505,6 +655,10 @@ void main() {
               reason: 'Sort label and value must remain readable: $sort',
             );
             expect(sort.width, greaterThanOrEqualTo(200));
+            if (name == 'SkillsRoute') {
+              await tester.tapAt(const Offset(10, 10));
+              final _ = await tester.pumpAndSettle();
+            }
           }
           await _capture(
             tester,
@@ -536,44 +690,43 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
   return switch (name) {
     'CloudWorkspaceDetailRoute' => (
       location:
-          '$base/more/manage-workspaces/cloud/fixture-account/7?server-url=https%3A%2F%2Ffixture.example',
+          '$base/manage-workspaces/cloud/fixture-account/7?server-url=https%3A%2F%2Ffixture.example',
       screen: CloudWorkspaceDetailScreen,
       selection: -1,
       expected: null,
     ),
     'ServiceConnectionEditRoute' => (
-      location: '$base/more/service-connections/fixture-service',
+      location: '$base/service-connections/fixture-service',
       screen: ServiceConnectionEditScreen,
       selection: 2,
       expected: null,
     ),
     'BuiltInSkillDetail' => (
-      location: '$base/more/skills/jina',
+      location: '$base/skills/jina',
       screen: SkillDetailScreen,
       selection: 1,
       expected: null,
     ),
     'BuiltInResource' => (
-      location:
-          '$base/more/skills/jina/resources/reader_url_and_document_modes',
+      location: '$base/skills/jina/resources/reader_url_and_document_modes',
       screen: SkillResourceEditScreen,
       selection: 1,
       expected: null,
     ),
     'MixedConnections' => (
-      location: '$base/more/service-connections',
+      location: '$base/service-connections',
       screen: ServiceConnectionsScreen,
       selection: 2,
       expected: null,
     ),
     'MixedAccounts' => (
-      location: '$base/more/cloud-accounts',
+      location: '$base/cloud-accounts',
       screen: CloudAccountsScreen,
       selection: 4,
       expected: null,
     ),
     'CloudTools' || 'LocalEmptyTools' => (
-      location: '$base/more/tools',
+      location: '$base/tools',
       screen: ToolsScreen,
       selection: 2,
       expected: null,
@@ -605,7 +758,7 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
     'ChatsRoute' => (
       location: '$base/chats',
       screen: ChatsListScreen,
-      selection: 0,
+      selection: -1,
       expected: null,
     ),
     'ConversationRoute' => (
@@ -617,12 +770,6 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
     'SubAgentConversationRoute' => (
       location: '$base/chats/${f.chatId}/sub-agents/${f.childId}',
       screen: ChatConversationScreen,
-      selection: -1,
-      expected: null,
-    ),
-    'MoreRoute' => (
-      location: '$base/more',
-      screen: MoreScreen,
       selection: -1,
       expected: null,
     ),
@@ -639,148 +786,117 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
       expected: null,
     ),
     'WorkspaceManagementRoute' => (
-      location: '$base/more/manage-workspaces',
+      location: '$base/manage-workspaces',
       screen: WorkspaceManagementScreen,
       selection: -1,
       expected: null,
     ),
     'WorkspaceCreateRoute' => (
-      location: '$base/more/manage-workspaces/create',
+      location: '$base/manage-workspaces/create',
       screen: CreateWorkspaceScreen,
       selection: -1,
       expected: null,
     ),
     'CloudAccountsRoute' => (
-      location: '$base/more/cloud-accounts',
+      location: '$base/cloud-accounts',
       screen: CloudAccountsScreen,
       selection: 4,
       expected: null,
     ),
     'CloudAccountAddRoute' => (
-      location: '$base/more/cloud-accounts/add',
+      location: '$base/cloud-accounts/add',
       screen: CloudAccountAddScreen,
       selection: 4,
       expected: null,
     ),
     'CloudAccountLoginRoute' => (
-      location: '$base/more/cloud-accounts/login',
+      location: '$base/cloud-accounts/login',
       screen: CloudAccountLoginScreen,
       selection: 4,
       expected: null,
     ),
     'CloudAccountRegisterRoute' => (
-      location: '$base/more/cloud-accounts/register',
+      location: '$base/cloud-accounts/register',
       screen: CloudAccountRegisterScreen,
       selection: 4,
       expected: null,
     ),
     'CloudAccountForgotPasswordRoute' => (
-      location: '$base/more/cloud-accounts/forgot-password',
+      location: '$base/cloud-accounts/forgot-password',
       screen: CloudAccountForgotPasswordScreen,
       selection: 4,
       expected: null,
     ),
     'ModelsRoute' => (
-      location: '$base/more/models',
+      location: '$base/models',
       screen: ServiceConnectionsScreen,
       selection: 2,
-      expected: '$base/more/service-connections',
+      expected: '$base/service-connections',
     ),
     'ServiceConnectionsRoute' => (
-      location: '$base/more/service-connections',
+      location: '$base/service-connections',
       screen: ServiceConnectionsScreen,
       selection: 2,
       expected: null,
     ),
     'ServiceConnectionCreateRoute' => (
-      location:
-          '$base/more/service-connections/new?type=skillCredential&credentialDefinitionId=${f.definitionId}',
+      location: '$base/service-connections/new?type=connector&connectorId=jina',
       screen: ServiceConnectionCreateScreen,
       selection: 2,
       expected: null,
     ),
     'ToolsRoute' => (
-      location: '$base/more/tools',
+      location: '$base/tools',
       screen: ToolsScreen,
       selection: 2,
       expected: null,
     ),
     'AgentsRoute' || 'DarkAgents' => (
-      location: '$base/more/agents',
+      location: '$base/agents',
       screen: AgentsScreen,
       selection: 1,
       expected: null,
     ),
     'AgentCreateRoute' => (
-      location: '$base/more/agents/new',
+      location: '$base/agents/new',
       screen: AgentDetailScreen,
       selection: 1,
       expected: null,
     ),
     'AgentDetailRoute' => (
-      location: '$base/more/agents/${f.agentId}',
+      location: '$base/agents/${f.agentId}',
       screen: AgentDetailScreen,
       selection: 1,
       expected: null,
     ),
     'SkillsRoute' => (
-      location: '$base/more/skills',
+      location: '$base/skills',
       screen: SkillsScreen,
       selection: 1,
       expected: null,
     ),
     'SkillCreateRoute' => (
-      location: '$base/more/skills/new',
+      location: '$base/skills/new',
       screen: SkillDetailScreen,
       selection: 1,
       expected: null,
     ),
     'SkillDetailRoute' => (
-      location: '$base/more/skills/${f.skillId}',
+      location: '$base/skills/${f.skillId}',
       screen: SkillDetailScreen,
       selection: 1,
       expected: null,
     ),
     'SkillResourceCreateRoute' => (
-      location: '$base/more/skills/${f.skillId}/resources/new',
+      location: '$base/skills/${f.skillId}/resources/new',
       screen: SkillResourceEditScreen,
       selection: 1,
       expected: null,
     ),
     'SkillResourceEditRoute' => (
-      location: '$base/more/skills/${f.skillId}/resources/${f.resourceId}',
+      location: '$base/skills/${f.skillId}/resources/${f.resourceId}',
       screen: SkillResourceEditScreen,
       selection: 1,
-      expected: null,
-    ),
-    'SkillToolCreateRoute' => (
-      location: '$base/more/skills/${f.skillId}/tools/new',
-      screen: SkillToolEditScreen,
-      selection: 1,
-      expected: null,
-    ),
-    'SkillToolEditRoute' => (
-      location: '$base/more/skills/${f.skillId}/tools/${f.toolId}',
-      screen: SkillToolEditScreen,
-      selection: 1,
-      expected: null,
-    ),
-    'SkillCredentialDefinitionsRoute' => (
-      location: '$base/more/skill-credential-definitions',
-      screen: SkillCredentialDefinitionsScreen,
-      selection: 2,
-      expected: null,
-    ),
-    'SkillCredentialDefinitionCreateRoute' => (
-      location: '$base/more/skill-credential-definitions/new',
-      screen: SkillCredentialDefinitionEditScreen,
-      selection: 2,
-      expected: null,
-    ),
-    'SkillCredentialDefinitionEditRoute' => (
-      location: '$base/more/skill-credential-definitions/${f.definitionId}',
-      screen: SkillCredentialDefinitionEditScreen,
-      selection: 2,
       expected: null,
     ),
     _ => throw ArgumentError(name),
@@ -804,7 +920,6 @@ const _routeNames = [
   'ChatsRoute',
   'ConversationRoute',
   'SubAgentConversationRoute',
-  'MoreRoute',
   'SettingsRoute',
   'WorkspaceSettingsRoute',
   'WorkspaceManagementRoute',
@@ -826,11 +941,6 @@ const _routeNames = [
   'SkillDetailRoute',
   'SkillResourceCreateRoute',
   'SkillResourceEditRoute',
-  'SkillToolCreateRoute',
-  'SkillToolEditRoute',
-  'SkillCredentialDefinitionsRoute',
-  'SkillCredentialDefinitionCreateRoute',
-  'SkillCredentialDefinitionEditRoute',
 ];
 
 Future<void> _registerCaptureFont(
@@ -863,6 +973,59 @@ Future<ByteData> _sdkRoboto() async {
   }
 
   throw StateError('Flutter SDK Roboto font is unavailable for capture');
+}
+
+void _expectTextInsideSideSafeArea(
+  WidgetTester tester,
+  Size viewport,
+  FakeViewPadding padding,
+  String route,
+) {
+  final paragraphs = tester.renderObjectList<RenderParagraph>(
+    find.descendant(
+      of: find.byType(AuraScreen),
+      matching: find.byType(RichText),
+    ),
+  );
+  final viewportBounds = Offset.zero & viewport;
+  for (final paragraph in paragraphs) {
+    final bounds = MatrixUtils.transformRect(
+      paragraph.getTransformTo(null),
+      paragraph.paintBounds,
+    );
+    var visibleBounds = bounds;
+    var child = paragraph.parent ?? paragraph;
+    for (
+      var ancestor = paragraph.parent;
+      ancestor != null;
+      ancestor = ancestor.parent
+    ) {
+      final clip = ancestor.describeApproximatePaintClip(child);
+      if (clip != null) {
+        visibleBounds = visibleBounds.intersect(
+          MatrixUtils.transformRect(ancestor.getTransformTo(null), clip),
+        );
+      }
+      child = ancestor;
+    }
+    if (visibleBounds.isEmpty || !visibleBounds.overlaps(viewportBounds)) {
+      continue;
+    }
+    expect(
+      visibleBounds.left,
+      greaterThanOrEqualTo(padding.left - 1),
+      reason:
+          '$route text ${paragraph.text.toPlainText()} enters the '
+          'left unsafe area: $visibleBounds',
+    );
+    expect(
+      visibleBounds.right,
+      lessThanOrEqualTo(viewport.width - padding.right + 1),
+      reason:
+          '$route text ${paragraph.text.toPlainText()} enters the '
+          'right unsafe area: $visibleBounds',
+    );
+  }
 }
 
 Future<void> _capture(
@@ -940,13 +1103,13 @@ List<Object> _overrides(UxValidationFixture fixture, String name) {
               status: ServiceConnectionDisplayStatus.expired,
             ),
             (
-              name: 'Research credential',
-              kind: ServiceConnectionListItemKind.skillCredential,
+              name: 'Research Connector',
+              kind: ServiceConnectionListItemKind.connector,
               status: ServiceConnectionDisplayStatus.unknown,
             ),
             (
-              name: 'Saved service',
-              kind: ServiceConnectionListItemKind.skillCredential,
+              name: 'Saved Connector',
+              kind: ServiceConnectionListItemKind.connector,
               status: ServiceConnectionDisplayStatus.unknown,
             ),
           ])
@@ -957,7 +1120,6 @@ List<Object> _overrides(UxValidationFixture fixture, String name) {
               serviceName: 'Research',
               kind: item.kind,
               keySuffix: '1234',
-              credentialDefinitionId: null,
               mcpServerId: null,
               authenticationType: null,
               displayStatus: item.status,
@@ -1005,17 +1167,17 @@ List<Object> _overrides(UxValidationFixture fixture, String name) {
     return [
       serviceConnectionOperationsProvider(fixture.workspaceId).overrideWith(
         (ref) async => ServiceConnectionOperations(
-          createAppSkillCredential: ({
+          createConnectorConnection: ({
             required workspaceId,
-            required appSkillServiceId,
+            required connectorId,
             required name,
             required apiKey,
           }) async => throw UnimplementedError(),
           getGenericForEdit: (id) async => id == 'fixture-service'
               ? const GenericServiceConnectionForEdit(
                   id: 'fixture-service',
-                  name: 'Saved research service',
-                  serviceId: 'app-skill',
+                  name: 'Saved research Connector',
+                  serviceId: 'jina',
                   hasSecret: true,
                   keySuffix: '1234',
                 )

@@ -14,10 +14,7 @@ import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_usage_records_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/recent_model_selections_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/skill_credentials_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_resources_dao.dart';
-import 'package:auravibes_app/data/database/drift/daos/skill_template_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workflows_dao.dart';
@@ -36,14 +33,13 @@ import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/data/database/drift/tables/message_attachments.dart';
+import 'package:auravibes_app/data/database/drift/tables/message_bookmarks.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_usage_records.dart';
 import 'package:auravibes_app/data/database/drift/tables/recent_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/data/database/drift/tables/skill_credential_definitions.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_resources.dart';
-import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
@@ -53,7 +49,6 @@ import 'package:auravibes_app/data/database/drift/tables/workspace_model_selecti
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:uuid/v7.dart';
@@ -69,7 +64,6 @@ export 'daos/message_dao.dart';
 export 'daos/model_connections_dao.dart';
 export 'daos/model_usage_records_dao.dart';
 export 'daos/recent_model_selections_dao.dart';
-export 'daos/skill_credentials_dao.dart';
 export 'daos/workflows_dao.dart';
 export 'daos/workspace_compaction_settings_dao.dart';
 export 'daos/workspace_dao.dart';
@@ -94,14 +88,13 @@ part 'app_database.g.dart';
     AgentTools,
     Messages,
     MessageAttachments,
+    MessageBookmarks,
     Tools,
     ToolsGroups,
     ConversationTools,
     McpServers,
     WorkspaceCompactionSettings,
-    SkillCredentialDefinitions,
     Skills,
-    SkillTemplateTools,
     SkillResources,
     ConversationSkills,
     AppSkillWorkspaceSettings,
@@ -126,10 +119,7 @@ part 'app_database.g.dart';
     ConversationToolsDao,
     McpServersDao,
     WorkspaceCompactionSettingsDao,
-    SkillCredentialsDao,
-    SkillCredentialDefinitionsDao,
     SkillsDao,
-    SkillTemplateToolsDao,
     SkillResourcesDao,
     ConversationSkillsDao,
     AppSkillWorkspaceSettingsDao,
@@ -150,10 +140,7 @@ class AppDatabase extends _$AppDatabase {
   static const int _recentModelSelectionsSchemaVersion =
       _conversationPinOrderingSchemaVersion + 1;
   static const int _forkSchemaVersion = _recentModelSelectionsSchemaVersion + 1;
-  static const int _skillTemplateDefinitionSchemaVersion =
-      _forkSchemaVersion + 1;
-  static const int _skillResourceSchemaVersion =
-      _skillTemplateDefinitionSchemaVersion + 1;
+  static const int _skillResourceSchemaVersion = _forkSchemaVersion + 2;
   static const int _apiModelModalitiesSchemaVersion =
       _skillResourceSchemaVersion + 1;
   static const int _legacyStreamingStatusSchemaVersion =
@@ -178,7 +165,24 @@ class AppDatabase extends _$AppDatabase {
       _mcpTestSummarySchemaVersion + 1;
   static const int _backgroundWorkSchemaVersion =
       _toolSamplingPolicySchemaVersion + 1;
-  static const int _workflowSchemaVersion = _backgroundWorkSchemaVersion + 1;
+  static const int _autoApproveToolsSchemaVersion =
+      _backgroundWorkSchemaVersion + 1;
+  static const int _toolAccessModeSchemaVersion =
+      _autoApproveToolsSchemaVersion + 1;
+  static const int _backgroundWorkChildLinkSchemaVersion =
+      _toolAccessModeSchemaVersion + 1;
+  static const int _toolCallAttachmentSchemaVersion =
+      _backgroundWorkChildLinkSchemaVersion + 1;
+  static const int _messageBookmarkSchemaVersion =
+      _toolCallAttachmentSchemaVersion + 1;
+  static const int _connectorSkillToolReferencesSchemaVersion =
+      _messageBookmarkSchemaVersion + 1;
+  static const int _retireSkillOwnedStorageSchemaVersion =
+      _connectorSkillToolReferencesSchemaVersion + 1;
+  static const int _messageBookmarkSnapshotsSchemaVersion =
+      _retireSkillOwnedStorageSchemaVersion + 1;
+  static const int _workflowSchemaVersion =
+      _messageBookmarkSnapshotsSchemaVersion + 1;
   static const int _currentSchemaVersion = _workflowSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
@@ -224,7 +228,89 @@ extension on AppDatabase {
     await _runSkillUpgrades(m, from);
     await _upgradeModelCapabilitiesSchema(m);
     await _upgradeModelUsageSchema(m);
+    await _upgradeToolAccessModeSchema(m);
+    await _upgradeToolCallAttachmentSchema(m, from);
+    await _upgradeMessageBookmarkSchemas(m, from);
+    await _upgradeConnectorSkillToolReferencesSchema(m, from);
+    await _retireSkillOwnedStorage(from);
     await _upgradeWorkflowSchema(m, from);
+  }
+
+  Future<void> _upgradeMessageBookmarkSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._messageBookmarkSchemaVersion ||
+        !await _tableExists('messages') ||
+        await _columnExists('messages', 'is_bookmarked')) {
+      return;
+    }
+    await m.addColumn(messages, messages.isBookmarked);
+  }
+
+  Future<void> _upgradeMessageBookmarkSchemas(Migrator m, int from) async {
+    await _upgradeMessageBookmarkSchema(m, from);
+    await _upgradeMessageBookmarkSnapshotsSchema(m, from);
+  }
+
+  Future<void> _upgradeMessageBookmarkSnapshotsSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._messageBookmarkSnapshotsSchemaVersion) return;
+
+    if (!await _tableExists('message_bookmarks')) {
+      await m.createTable(messageBookmarks);
+    }
+    if (!await _tableExists('messages')) return;
+    for (final columnName in [
+      'id',
+      'conversation_id',
+      'content',
+      'is_user',
+      'created_at',
+      'is_bookmarked',
+    ]) {
+      if (!await _columnExists('messages', columnName)) return;
+    }
+
+    await customStatement('''
+      INSERT OR IGNORE INTO message_bookmarks (
+        id,
+        conversation_id,
+        content_snapshot,
+        is_user,
+        message_created_at
+      )
+      SELECT
+        id,
+        conversation_id,
+        content,
+        is_user,
+        created_at
+      FROM messages
+      WHERE is_bookmarked = 1
+    ''');
+  }
+
+  Future<void> _upgradeToolAccessModeSchema(Migrator m) async {
+    if (!await _tableExists('conversations')) return;
+    if (!await _columnExists('conversations', 'tool_access_mode')) {
+      await m.addColumn(conversations, conversations.toolAccessMode);
+    }
+    if (!await _columnExists('conversations', 'auto_approve_tools')) return;
+    await customStatement('''
+      UPDATE conversations SET tool_access_mode =
+      CASE WHEN auto_approve_tools = 1 THEN 'allow_all' ELSE 'default' END''');
+    await customStatement(
+      'ALTER TABLE conversations DROP COLUMN auto_approve_tools',
+    );
+  }
+
+  Future<void> _upgradeToolCallAttachmentSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._toolCallAttachmentSchemaVersion ||
+        !await _tableExists('message_attachments') ||
+        await _columnExists('message_attachments', 'tool_call_id')) {
+      return;
+    }
+    await m.addColumn(messageAttachments, messageAttachments.toolCallId);
   }
 
   Future<void> _upgradeModelUsageSchema(Migrator m) async {
@@ -278,6 +364,7 @@ extension on AppDatabase {
     await _runConversationUpgrades(m, from);
     await _upgradeToolSamplingPolicySchema(m);
     await _upgradeBackgroundWorkSchema(m, from);
+    await _upgradeBackgroundWorkChildLinkSchema(m, from);
   }
 
   Future<void> _upgradeBackgroundWorkSchema(Migrator m, int from) async {
@@ -285,6 +372,18 @@ extension on AppDatabase {
     if (!await _tableExists('background_works')) {
       await m.createTable(backgroundWorks);
     }
+  }
+
+  Future<void> _upgradeBackgroundWorkChildLinkSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._backgroundWorkChildLinkSchemaVersion ||
+        !await _tableExists('background_works') ||
+        await _columnExists('background_works', 'child_conversation_id')) {
+      return;
+    }
+    await m.addColumn(backgroundWorks, backgroundWorks.childConversationId);
   }
 
   Future<void> _runMcpSchemaUpgrades(Migrator m, int from) async {
@@ -340,10 +439,21 @@ extension on AppDatabase {
   }
 
   Future<void> _runSkillUpgrades(Migrator m, int from) async {
-    await _upgradeSkillTemplateDefinitionSchema(m, from);
     if (from < AppDatabase._skillResourceSchemaVersion) {
       await m.createTable(skillResources);
     }
+  }
+
+  Future<void> _upgradeConnectorSkillToolReferencesSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._connectorSkillToolReferencesSchemaVersion ||
+        !await _tableExists('skills') ||
+        await _columnExists('skills', 'connector_tool_ids_json')) {
+      return;
+    }
+    await m.addColumn(skills, skills.connectorToolIdsJson);
   }
 
   Future<void> _upgradeAgentsSchema(Migrator m, int from) async {
@@ -518,62 +628,16 @@ extension on AppDatabase {
       ''');
   }
 
-  Future<void> _upgradeSkillTemplateDefinitionSchema(
-    Migrator m,
-    int from,
-  ) async {
-    if (from >= AppDatabase._skillTemplateDefinitionSchemaVersion ||
-        !await _tableExists('skill_template_tools')) {
-      return;
-    }
-    await _addSkillTemplateDefinitionColumns(m);
-    await _backfillSkillTemplateDefinitions();
-  }
-
-  Future<void> _addSkillTemplateDefinitionColumns(Migrator m) async {
-    if (!await _columnExists('skill_template_tools', 'definition_json')) {
-      await m.addColumn(skillTemplateTools, skillTemplateTools.definitionJson);
-    }
-    if (await _columnExists(
-      'skill_template_tools',
-      'credential_definition_id',
-    )) {
-      return;
-    }
-
-    await m.addColumn(
-      skillTemplateTools,
-      skillTemplateTools.credentialDefinitionId,
-    );
-  }
-
-  Future<void> _backfillSkillTemplateDefinitions() async {
-    final rows = await select(skillTemplateTools).get();
-    for (final row in rows) {
-      if (row.definitionJson != '{}') continue;
-      await _backfillSkillTemplateDefinition(
-        row.id,
-        row.templateJson,
-        row.inputsJson,
+  Future<void> _retireSkillOwnedStorage(int from) async {
+    if (from >= AppDatabase._retireSkillOwnedStorageSchemaVersion) return;
+    if (await _tableExists('service_connections')) {
+      await customStatement(
+        'DELETE FROM service_connections WHERE kind IN (?, ?)',
+        const ['skillCredential', 'appSkillCredential'],
       );
     }
-  }
-
-  Future<void> _backfillSkillTemplateDefinition(
-    String id,
-    String templateJson,
-    String inputsJson,
-  ) async {
-    final definition = SkillTemplateDefinition.fromLegacyJson(
-      templateJson: templateJson,
-      inputsJson: inputsJson,
-    ).toJsonString();
-    final _ =
-        await (update(
-          skillTemplateTools,
-        )..where((table) => table.id.equals(id))).write(
-          SkillTemplateToolsCompanion(definitionJson: .new(definition)),
-        );
+    await customStatement('DROP TABLE IF EXISTS skill_template_tools');
+    await customStatement('DROP TABLE IF EXISTS skill_credential_definitions');
   }
 }
 

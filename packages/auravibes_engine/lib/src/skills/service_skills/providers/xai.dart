@@ -1,8 +1,8 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 
-final xAiSkill = AppSkillDefinition(
+final xAiSkill = ServiceSkillPreset(
   identifier: 'xai',
   slug: 'xai',
   title: 'xAI',
@@ -11,16 +11,14 @@ final xAiSkill = AppSkillDefinition(
 Use xAI when you need web-grounded answers or results from X. Prefer X search
 for public posts and account-related queries.
 ''',
-  requiresCredential: true,
   compatibleModelProviderIds: ['xai'],
-  kind: .template,
   tools: [
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'web_search',
       title: 'Web search',
       description: 'Answer a question using xAI web search.',
       inputJsonSchema: _webSearchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.x.ai/v1/responses',
         inputSchema: _webSearchInputSchema,
@@ -32,12 +30,12 @@ for public posts and account-related queries.
         bodyFormat: .json,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'x_search',
       title: 'X search',
       description: 'Search public X posts for a query.',
       inputJsonSchema: _xSearchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.x.ai/v1/responses',
         inputSchema: _xSearchInputSchema,

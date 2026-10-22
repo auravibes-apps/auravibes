@@ -1,0 +1,9 @@
+class: MessageBookmarkView
+fields:
+  conversationId: String
+  messageId: String
+  excerpt: String
+  isUser: bool?
+  conversationTitle: String?
+  workspaceName: String
+  createdAt: DateTime

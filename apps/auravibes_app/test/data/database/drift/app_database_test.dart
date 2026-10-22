@@ -41,7 +41,260 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 26);
+      expect(fixture.database.schemaVersion, 34);
+    });
+
+    test(
+      'migration from schema 32 keeps existing bookmark snapshots',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 32
+          ..execute('CREATE TABLE conversations (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO conversations VALUES (?)', ['conversation'])
+          ..execute('''
+          CREATE TABLE messages (
+            id TEXT PRIMARY KEY,
+            conversation_id TEXT NOT NULL,
+            content TEXT NOT NULL,
+            is_user INTEGER NOT NULL,
+            created_at INTEGER NOT NULL,
+            is_bookmarked INTEGER NOT NULL
+          )
+        ''')
+          ..execute(
+            '''
+          INSERT INTO messages VALUES (?, ?, ?, ?, ?, ?)
+        ''',
+            [
+              'saved-message',
+              'conversation',
+              'Saved excerpt',
+              1,
+              1767225600,
+              1,
+            ],
+          );
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+
+        final bookmark = await database.customSelect('''
+            SELECT id, conversation_id, content_snapshot, is_user,
+                   message_created_at
+            FROM message_bookmarks
+          ''').getSingle();
+
+        expect(bookmark.read<String>('id'), 'saved-message');
+        expect(bookmark.read<String>('conversation_id'), 'conversation');
+        expect(bookmark.read<String>('content_snapshot'), 'Saved excerpt');
+        expect(bookmark.read<bool>('is_user'), isTrue);
+        expect(
+          bookmark.read<DateTime>('message_created_at').millisecondsSinceEpoch,
+          1767225600000,
+        );
+      },
+    );
+
+    test('migration from schema 29 adds unbookmarked messages', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 29
+        ..execute('CREATE TABLE messages (id TEXT PRIMARY KEY)')
+        ..execute('INSERT INTO messages VALUES (?)', ['existing']);
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final row = await database
+          .customSelect(
+            'SELECT is_bookmarked FROM messages WHERE id = ?',
+            variables: [const Variable<String>('existing')],
+          )
+          .getSingle();
+
+      expect(row.read<bool>('is_bookmarked'), isFalse);
+    });
+
+    test('migration from schema 30 adds empty Connector references', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 30
+        ..execute('CREATE TABLE skills (id TEXT PRIMARY KEY)')
+        ..execute('INSERT INTO skills VALUES (?)', ['existing']);
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final row = await database
+          .customSelect(
+            'SELECT connector_tool_ids_json FROM skills WHERE id = ?',
+            variables: [const Variable<String>('existing')],
+          )
+          .getSingle();
+
+      expect(row.read<String>('connector_tool_ids_json'), '[]');
+    });
+
+    test('migration from schema 31 retires Skill-owned storage', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 31
+        ..execute(
+          'CREATE TABLE service_connections '
+          '(id TEXT PRIMARY KEY, kind TEXT, encrypted_auth_value TEXT)',
+        )
+        ..execute('INSERT INTO service_connections VALUES (?, ?, ?)', [
+          'skill',
+          'skillCredential',
+          'encrypted',
+        ])
+        ..execute('INSERT INTO service_connections VALUES (?, ?, ?)', [
+          'app-skill',
+          'appSkillCredential',
+          'encrypted',
+        ])
+        ..execute('INSERT INTO service_connections VALUES (?, ?, ?)', [
+          'notion',
+          'customHttp',
+          'encrypted',
+        ])
+        ..execute('CREATE TABLE skill_template_tools (id TEXT PRIMARY KEY)')
+        ..execute(
+          'CREATE TABLE skill_credential_definitions (id TEXT PRIMARY KEY)',
+        );
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final connections = await database
+          .customSelect('SELECT id, kind FROM service_connections')
+          .get();
+      final retiredTables = await database.customSelect('''
+SELECT name FROM sqlite_master WHERE type = 'table'
+AND name IN ('skill_template_tools', 'skill_credential_definitions')
+''').get();
+
+      expect(connections.map((row) => row.read<String>('id')), ['notion']);
+      expect(connections.single.read<String>('kind'), 'customHttp');
+      expect(retiredTables, isEmpty);
+    });
+
+    test(
+      'migration from schema 25 preserves conversations with mode off',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 25
+          ..execute('CREATE TABLE conversations (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO conversations VALUES (?)', ['existing']);
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final row = await database
+            .customSelect(
+              'SELECT tool_access_mode FROM conversations WHERE id = ?',
+              variables: [const Variable<String>('existing')],
+            )
+            .getSingle();
+        expect(row.read<String>('tool_access_mode'), 'default');
+      },
+    );
+
+    test(
+      'schema 26 backfills modes, removes boolean, and adds child link',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 26
+          ..execute(
+            'CREATE TABLE conversations (id TEXT PRIMARY KEY, '
+            'auto_approve_tools INTEGER NOT NULL DEFAULT 0)',
+          )
+          ..execute('CREATE TABLE background_works (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO conversations VALUES (?, ?), (?, ?)', [
+            'off',
+            0,
+            'on',
+            1,
+          ]);
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final rows = await database
+            .customSelect(
+              'SELECT tool_access_mode FROM conversations ORDER BY id',
+            )
+            .get();
+        expect(rows.map((row) => row.read<String>('tool_access_mode')), [
+          'default',
+          'allow_all',
+        ]);
+        final columns = await database
+            .customSelect('PRAGMA table_info(conversations)')
+            .get();
+        expect(
+          columns.map((row) => row.read<String>('name')),
+          isNot(contains('auto_approve_tools')),
+        );
+        final backgroundWorkColumns = await database
+            .customSelect('PRAGMA table_info(background_works)')
+            .get();
+        expect(
+          backgroundWorkColumns.map((row) => row.read<String>('name')),
+          contains('child_conversation_id'),
+        );
+      },
+    );
+
+    test('schema 26 with child link adds default tool access mode', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 26
+        ..execute('CREATE TABLE conversations (id TEXT PRIMARY KEY)')
+        ..execute(
+          'CREATE TABLE background_works (id TEXT PRIMARY KEY, '
+          'child_conversation_id TEXT)',
+        )
+        ..execute('INSERT INTO conversations VALUES (?)', ['existing']);
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final conversation = await database
+          .customSelect('SELECT tool_access_mode FROM conversations')
+          .getSingle();
+      expect(conversation.read<String>('tool_access_mode'), 'default');
+
+      final backgroundWorkColumns = await database
+          .customSelect('PRAGMA table_info(background_works)')
+          .get();
+      expect(
+        backgroundWorkColumns.map((row) => row.read<String>('name')),
+        contains('child_conversation_id'),
+      );
+    });
+
+    test('schema 27 adds background work child link', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 27
+        ..execute(
+          'CREATE TABLE conversations (id TEXT PRIMARY KEY, '
+          '''tool_access_mode TEXT NOT NULL DEFAULT 'default')''',
+        )
+        ..execute('CREATE TABLE background_works (id TEXT PRIMARY KEY)');
+      final database = _MigrationAppDatabase<_MigrationCase16>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+
+      final backgroundWorkColumns = await database
+          .customSelect('PRAGMA table_info(background_works)')
+          .get();
+      expect(
+        backgroundWorkColumns.map((row) => row.read<String>('name')),
+        contains('child_conversation_id'),
+      );
     });
 
     test('migration from schema 24 creates background work storage', () async {
@@ -64,9 +317,9 @@ void main() {
       expect(table, hasLength(1));
     });
 
-    test('migration from schema 25 creates workflow storage', () async {
-      final sqliteDb = sqlite.sqlite3.openInMemory()..userVersion = 25;
-      final database = _MigrationAppDatabase<_MigrationCase17>(
+    test('migration from schema 33 creates workflow storage', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()..userVersion = 33;
+      final database = _MigrationAppDatabase<_MigrationCase16>(
         connection: NativeDatabase.opened(sqliteDb),
       );
       addTearDown(database.close);
@@ -93,6 +346,27 @@ void main() {
       expect(foreignKeys.single.read<String>('table'), 'workspaces');
       expect(foreignKeys.single.read<String>('from'), 'workspace_id');
     });
+    test(
+      'migration from schema 25 adds tool-call attachment association',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 25
+          ..execute('CREATE TABLE message_attachments (id TEXT PRIMARY KEY)');
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+
+        final columns = await database
+            .customSelect('PRAGMA table_info(message_attachments)')
+            .get();
+
+        expect(
+          columns.map((row) => row.read<String>('name')),
+          contains('tool_call_id'),
+        );
+      },
+    );
 
     test('migration defaults advanced capabilities to false', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()
@@ -209,8 +483,6 @@ void main() {
       expect(fixture.database.modelUsageRecordsDao, isNotNull);
       expect(fixture.database.conversationToolsDao, isNotNull);
       expect(fixture.database.skillsDao, isNotNull);
-      expect(fixture.database.skillCredentialDefinitionsDao, isNotNull);
-      expect(fixture.database.skillTemplateToolsDao, isNotNull);
       expect(fixture.database.conversationSkillsDao, isNotNull);
       expect(fixture.database.appSkillWorkspaceSettingsDao, isNotNull);
       expect(fixture.database.recentModelSelectionsDao, isNotNull);
@@ -403,10 +675,7 @@ void main() {
       expect(messages, isEmpty);
     });
 
-    const migrationDefinitionTestName =
-        'migration converts legacy skill tool fragments '
-        'to a definition';
-    test(migrationDefinitionTestName, () async {
+    test('migration retires skill-owned tool and credential storage', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 11
         ..execute('''
@@ -441,23 +710,47 @@ void main() {
             '{"url":"https://example.com","method":"GET"}',
             '{"query":{"type":"string","description":"Query"}}'
           );
+        ''')
+        ..execute('''
+          CREATE TABLE service_connections (
+            id TEXT NOT NULL PRIMARY KEY,
+            kind TEXT NOT NULL
+          );
+        ''')
+        ..execute('''
+          INSERT INTO service_connections (id, kind) VALUES
+            ('skill-credential', 'skillCredential'),
+            ('app-skill-credential', 'appSkillCredential'),
+            ('connector', 'connector');
+        ''')
+        ..execute('''
+          CREATE TABLE skill_credential_definitions (
+            id TEXT NOT NULL PRIMARY KEY
+          );
         ''');
       final database = _MigrationAppDatabase<_MigrationCase8>(
         connection: NativeDatabase.opened(sqliteDb),
       );
       addTearDown(database.close);
 
-      final row = await database
+      final legacyTables = await database
           .customSelect(
-            'SELECT definition_json FROM skill_template_tools WHERE id = ?',
-            variables: [const Variable<String>('tool-1')],
+            'SELECT name FROM sqlite_master WHERE type = ? AND name IN (?, ?)',
+            variables: [
+              const Variable<String>('table'),
+              const Variable<String>('skill_template_tools'),
+              const Variable<String>('skill_credential_definitions'),
+            ],
           )
-          .getSingle();
-      final definition = row.read<String>('definition_json');
+          .get();
+      final connectionKinds = await database
+          .customSelect('SELECT kind FROM service_connections')
+          .get();
 
-      expect(definition, contains('"version":1'));
-      expect(definition, contains('"inputSchema"'));
-      expect(definition, contains('"request"'));
+      expect(legacyTables, isEmpty);
+      expect(connectionKinds.map((row) => row.read<String>('kind')), [
+        'connector',
+      ]);
     });
 
     test('migration strategy has onCreate callback', () {
@@ -907,8 +1200,6 @@ final class _MigrationCase14;
 final class _MigrationCase15;
 
 final class _MigrationCase16;
-
-final class _MigrationCase17;
 
 final class _RecreatedDatabase extends AppDatabase {
   new(QueryExecutor connection) : super(connection: connection);

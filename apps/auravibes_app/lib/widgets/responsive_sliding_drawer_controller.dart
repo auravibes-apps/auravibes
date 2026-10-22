@@ -1,18 +1,12 @@
-// Required: Existing thresholds and limits use numeric values.
-// Required: Existing test and UI helpers keep compact return flow.
-// Required: Layout helpers return widgets to isolate desktop/mobile branches.
-
-// Required: Animation listener uses empty setState to rebuild.
-// Required: Existing code repeats lookups where extraction adds noise.
-// Required: Feature widgets keep closely related private widgets together.
-
 import 'dart:async';
 
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
 import 'package:auravibes_app/widgets/responsive_shell_layout.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -62,6 +56,9 @@ class const ResponsiveSlidingDrawer({
   /// The saved expanded width is kept separately and is not changed by this
   /// presentation mode.
   final bool isDesktopCompact = false,
+
+  /// Whether the active app route has a page beneath it in its own navigator.
+  final bool Function()? canPopCurrentRoute,
   super.key,
 }) extends ConsumerStatefulWidget {
   @override
@@ -84,8 +81,7 @@ class _ResponsiveSlidingDrawerState
   static const _dividerWidth = 5.0;
   static const _dividerVisibleWidth = 4.0;
   static const _dividerIdleOpacity = 0.45;
-  static const _desktopDragAreaWidth = 10.0;
-  static const _desktopDragAreaMidpoint = 0.5;
+  static const _mobileEdgeDragAreaWidth = 20.0;
   static const _gradientMiddleOpacity = 0.5;
   static const _gradientTrailingOpacity = 0.2;
   static const _drawerFullyOpenThreshold = 0.001;
@@ -105,14 +101,25 @@ class _ResponsiveSlidingDrawerState
   bool _hasStartedDesktopDrawerWidthLoad = false;
   bool _hasResizedDesktopDrawer = false;
   bool _shouldPersistDesktopDrawerWidth = false;
+  bool? _wasDesktop;
 
   bool _isOpen = false;
 
   bool? _dragStartedWhenOpen;
   _DrawerDragDirection? _dragDirection;
+  double _backSwipeDistance = 0;
 
   bool get isDesktop =>
       ResponsiveShellLayout.isDesktop(MediaQuery.sizeOf(context).width);
+
+  bool get isDrawerOnLeft => Directionality.of(context) == TextDirection.ltr;
+
+  double get _bodyOffset {
+    final padding = MediaQuery.paddingOf(context);
+    final leadingPadding = isDrawerOnLeft ? padding.left : padding.right;
+
+    return (_currentDrawerWidth - leadingPadding) * _requiredController.value;
+  }
 
   AnimationController get _requiredController {
     final controller = _controller;
@@ -153,26 +160,47 @@ class _ResponsiveSlidingDrawerState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (isDesktop) {
-      final screenWidth = MediaQuery.sizeOf(context).width;
-      _desktopDrawerWidth ??= _desktopOpenRatio * screenWidth;
-      _desktopDrawerWidth = _requiredDesktopDrawerWidth.clamp(
-        _desktopMinDrawerWidth,
-        _desktopMaxDrawerWidth,
-      );
-      if (!_hasStartedDesktopDrawerWidthLoad) {
-        _hasStartedDesktopDrawerWidthLoad = true;
-        unawaited(_restoreDesktopDrawerWidth());
-      }
-    }
+    final desktop = isDesktop;
+    _updateDrawerPosture(desktop);
+    if (desktop) _initializeDesktopDrawerWidth();
   }
 
   @override
-  Widget build(BuildContext context) => isDesktop
-      ? _DesktopDrawerLayout(state: this)
-      : _MobileDrawerLayout(state: this);
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: ref.watch(draftExitRegistryProvider).changes,
+    builder: (context, _) => isDesktop
+        ? _DesktopDrawerLayout(state: this)
+        : _MobileDrawerLayout(state: this),
+  );
 
   void _rebuild(VoidCallback callback) => setState(callback);
+}
+
+extension _ResponsiveSlidingDrawerDependencies
+    on _ResponsiveSlidingDrawerState {
+  void _updateDrawerPosture(bool desktop) {
+    final previousDesktop = _wasDesktop;
+    _wasDesktop = desktop;
+    if (previousDesktop == null || previousDesktop == desktop) return;
+    if (desktop) {
+      _openDrawer();
+    } else {
+      _closeDrawer();
+    }
+  }
+
+  void _initializeDesktopDrawerWidth() {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    _desktopDrawerWidth ??=
+        _ResponsiveSlidingDrawerState._desktopOpenRatio * screenWidth;
+    _desktopDrawerWidth = _requiredDesktopDrawerWidth.clamp(
+      _ResponsiveSlidingDrawerState._desktopMinDrawerWidth,
+      _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth,
+    );
+    if (_hasStartedDesktopDrawerWidthLoad) return;
+    _hasStartedDesktopDrawerWidthLoad = true;
+    unawaited(_restoreDesktopDrawerWidth());
+  }
 }
 
 extension _ResponsiveSlidingDrawerPreferences on _ResponsiveSlidingDrawerState {
@@ -324,7 +352,7 @@ extension _ResponsiveSlidingDrawerAnimation on _ResponsiveSlidingDrawerState {
 extension _ResponsiveSlidingDrawerResize on _ResponsiveSlidingDrawerState {
   void _handleDividerPanUpdate(DragUpdateDetails details) {
     if (_requiredController.value < 0.99) return;
-    final delta = details.delta.dx;
+    final delta = details.delta.dx * (isDrawerOnLeft ? 1 : -1);
     final previousWidth = _requiredDesktopDrawerWidth;
 
     _applyDesktopResizeDelta(delta);
@@ -424,7 +452,8 @@ extension _ResponsiveSlidingDrawerResizeBounds
 extension _ResponsiveSlidingDrawerDrag on _ResponsiveSlidingDrawerState {
   void _handleDragEnd(DragEndDetails details) {
     if (_isResizing || _dragDirection == null) return;
-    final velocity = details.velocity.pixelsPerSecond.dx;
+    final velocity =
+        details.velocity.pixelsPerSecond.dx * (isDrawerOnLeft ? 1 : -1);
     _settleDrag(velocity);
     _resetDrag();
   }
@@ -463,7 +492,8 @@ extension _ResponsiveSlidingDrawerDrag on _ResponsiveSlidingDrawerState {
   }
 }
 
-extension _ResponsiveSlidingDrawerGesture on _ResponsiveSlidingDrawerState {
+extension _ResponsiveSlidingDrawerDeviceGesture
+    on _ResponsiveSlidingDrawerState {
   bool _isMobilePlatform(BuildContext context) {
     final platform = Theme.of(context).platform;
 
@@ -493,10 +523,10 @@ extension _ResponsiveSlidingDrawerGesture on _ResponsiveSlidingDrawerState {
     final primaryDelta = details.primaryDelta;
     if (primaryDelta == null) return;
 
-    if (!_updateDragDirection(primaryDelta)) return;
+    final delta = primaryDelta * (isDrawerOnLeft ? 1 : -1);
+    if (!_updateDragDirection(delta)) return;
     final effectiveWidth = _currentDrawerWidth;
-    final delta = primaryDelta / effectiveWidth;
-    _requiredController.value += delta;
+    _requiredController.value += delta / effectiveWidth;
   }
 
   bool _updateDragDirection(double primaryDelta) {
@@ -527,6 +557,71 @@ extension _ResponsiveSlidingDrawerGesture on _ResponsiveSlidingDrawerState {
   }
 }
 
+extension _ResponsiveSlidingDrawerBackGesture on _ResponsiveSlidingDrawerState {
+  _MobileDragCallbacks _guardedBackDragCallbacks() => (
+    onDragStart: _startBackSwipe,
+    onDragUpdate: _updateBackSwipe,
+    onDragEnd: _finishBackSwipe,
+  );
+
+  bool _isGuardedBackSwipe(BuildContext context) {
+    if (Theme.of(context).platform != TargetPlatform.iOS) return false;
+    final router = GoRouter.maybeOf(context);
+    if (router == null || !_canPopCurrentRoute(router)) return false;
+    final registry = ref.read(draftExitRegistryProvider);
+
+    return registry.hasActiveRoute(router) &&
+        !registry.canUseNativeBack(router);
+  }
+
+  bool _usesNativeBackSwipe(BuildContext context) {
+    if (Theme.of(context).platform != TargetPlatform.iOS) return false;
+    final router = GoRouter.maybeOf(context);
+    if (router == null || !_canPopCurrentRoute(router)) return false;
+    final registry = ref.read(draftExitRegistryProvider);
+
+    return !registry.hasActiveRoute(router) ||
+        registry.canUseNativeBack(router);
+  }
+
+  bool _canPopCurrentRoute(GoRouter router) =>
+      widget.canPopCurrentRoute?.call() ?? router.canPop();
+
+  void _startBackSwipe(DragStartDetails _) => _backSwipeDistance = 0;
+
+  void _updateBackSwipe(DragUpdateDetails details) {
+    _backSwipeDistance +=
+        (details.primaryDelta ?? 0) * (isDrawerOnLeft ? 1 : -1);
+  }
+
+  void _finishBackSwipe(DragEndDetails details) {
+    final backDistance = _backSwipeDistance;
+    _backSwipeDistance = 0;
+    final backVelocity =
+        details.velocity.pixelsPerSecond.dx * (isDrawerOnLeft ? 1 : -1);
+    if (backVelocity < 0 ||
+        (backDistance <
+                _ResponsiveSlidingDrawerState._mobileEdgeDragAreaWidth &&
+            backVelocity <
+                _ResponsiveSlidingDrawerState._swipeVelocityThreshold)) {
+      return;
+    }
+    unawaited(_confirmAndPopRoute());
+  }
+
+  Future<void> _confirmAndPopRoute() async {
+    final router = GoRouter.maybeOf(context);
+    if (router == null || !_canPopCurrentRoute(router)) return;
+    final registry = ref.read(draftExitRegistryProvider);
+    if (!await registry.canExitActive(router) ||
+        !mounted ||
+        !_canPopCurrentRoute(router)) {
+      return;
+    }
+    router.pop();
+  }
+}
+
 class const _DesktopDrawerLayout({
   required final _ResponsiveSlidingDrawerState state,
 }) extends StatelessWidget {
@@ -535,7 +630,6 @@ class const _DesktopDrawerLayout({
     children: [
       _DesktopDrawerBody(state: state),
       _DesktopDrawerPanel(state: state),
-      _DesktopDrawerDragArea(state: state),
       if (state._drawerFullyOpen && !state.widget.isDesktopCompact)
         _DesktopDrawerDivider(state: state),
     ],
@@ -557,13 +651,10 @@ class const _DesktopBodyPosition({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final animation = state._requiredController;
-    final drawerWidth = state._currentDrawerWidth;
-
-    return Positioned(
-      left: drawerWidth * animation.value,
+    return PositionedDirectional(
+      start: state._bodyOffset,
       top: 0,
-      right: 0,
+      end: 0,
       bottom: 0,
       child: state.widget.body,
     );
@@ -588,24 +679,20 @@ class const _DesktopPanelPosition({
     final animation = state._requiredController;
     final drawerWidth = state._currentDrawerWidth;
 
-    return Transform.translate(
-      offset: .new(-drawerWidth * (1 - animation.value), 0),
-      child: _DrawerPanelGesture(state: state),
+    return PositionedDirectional(
+      start: 0,
+      top: 0,
+      bottom: 0,
+      width: drawerWidth,
+      child: Transform.translate(
+        offset: .new(
+          (state.isDrawerOnLeft ? -1 : 1) * drawerWidth * (1 - animation.value),
+          0,
+        ),
+        child: _DrawerFocusBox(state: state),
+      ),
     );
   }
-}
-
-class const _DrawerPanelGesture({
-  required final _ResponsiveSlidingDrawerState state,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    child: _DrawerFocusBox(state: state),
-    onHorizontalDragStart: state._handleDragStart,
-    onHorizontalDragUpdate: state._handleDragUpdate,
-    onHorizontalDragEnd: state._handleDragEnd,
-    behavior: .opaque,
-  );
 }
 
 class const _DrawerFocusBox({
@@ -618,63 +705,25 @@ class const _DrawerFocusBox({
     return SizedBox(
       width: state._currentDrawerWidth,
       height: MediaQuery.sizeOf(context).height,
-      child: FocusScope(
-        child: state.widget.drawer,
-        canRequestFocus: drawerFullyOpen,
-        descendantsAreFocusable: drawerFullyOpen,
-        descendantsAreTraversable: drawerFullyOpen,
+      child: ColoredBox(
+        color: context.auraColors.surface,
+        child: FocusScope(
+          child: state.widget.drawer,
+          canRequestFocus: drawerFullyOpen,
+          descendantsAreFocusable: drawerFullyOpen,
+          descendantsAreTraversable: drawerFullyOpen,
+        ),
       ),
     );
   }
-}
-
-class const _DesktopDrawerDragArea({
-  required final _ResponsiveSlidingDrawerState state,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: state._requiredController,
-    builder: (context, _) => _DesktopDragAreaPosition(state: state),
-  );
-}
-
-class const _DesktopDragAreaPosition({
-  required final _ResponsiveSlidingDrawerState state,
-}) extends StatelessWidget {
-  double get _left =>
-      state._requiredController.value <
-          _ResponsiveSlidingDrawerState._desktopDragAreaMidpoint
-      ? 0
-      : state._currentDrawerWidth;
-
-  @override
-  Widget build(BuildContext context) => Positioned(
-    left: _left,
-    top: 0,
-    bottom: 0,
-    width: _ResponsiveSlidingDrawerState._desktopDragAreaWidth,
-    child: _DesktopDragAreaGesture(state: state),
-  );
-}
-
-class const _DesktopDragAreaGesture({
-  required final _ResponsiveSlidingDrawerState state,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onHorizontalDragStart: state._handleDragStart,
-    onHorizontalDragUpdate: state._handleDragUpdate,
-    onHorizontalDragEnd: state._handleDragEnd,
-    behavior: .opaque,
-  );
 }
 
 class const _DesktopDrawerDivider({
   required final _ResponsiveSlidingDrawerState state,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Positioned(
-    left:
+  Widget build(BuildContext context) => PositionedDirectional(
+    start:
         state._currentDrawerWidth -
         _ResponsiveSlidingDrawerState._dividerWidth / 2,
     top: 0,
@@ -795,6 +844,8 @@ class const _MobileDrawerLayout({
       _MobileDrawerBody(state: state),
       _MobileDrawerScrim(state: state),
       _MobileDrawerPanel(state: state),
+      if (state._isMobilePlatform(context))
+        _MobileDrawerEdgeDragArea(state: state),
     ],
   );
 }
@@ -814,11 +865,8 @@ class const _MobileBodyPosition({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final animation = state._requiredController;
-    final drawerWidth = state._currentDrawerWidth;
-
     return Transform.translate(
-      offset: .new(drawerWidth * animation.value, 0),
+      offset: .new((state.isDrawerOnLeft ? 1 : -1) * state._bodyOffset, 0),
       child: _MobileBodyGesture(state: state),
     );
   }
@@ -829,11 +877,44 @@ class const _MobileBodyGesture({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final callbacks = state._mobileDragCallbacks(context);
-
     return GestureDetector(
       child: state.widget.body,
       onTap: state._closeIfFullyOpenCurrent,
+      behavior: .opaque,
+    );
+  }
+}
+
+class const _MobileDrawerEdgeDragArea({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => PositionedDirectional(
+    start: 0,
+    top: MediaQuery.paddingOf(context).top + kToolbarHeight,
+    bottom: 0,
+    width: _ResponsiveSlidingDrawerState._mobileEdgeDragAreaWidth,
+    child: IgnorePointer(
+      ignoring:
+          state._requiredController.value != 0 ||
+          state._usesNativeBackSwipe(context),
+      child: _MobileDrawerEdgeDragGesture(state: state),
+    ),
+  );
+}
+
+class const _MobileDrawerEdgeDragGesture({
+  required final _ResponsiveSlidingDrawerState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isGuardedBackSwipe = state._isGuardedBackSwipe(context);
+    final callbacks = isGuardedBackSwipe
+        ? state._guardedBackDragCallbacks()
+        : state._mobileDragCallbacks(context);
+
+    return GestureDetector(
+      child: const SizedBox.expand(),
       onHorizontalDragStart: callbacks.onDragStart,
       onHorizontalDragUpdate: callbacks.onDragUpdate,
       onHorizontalDragEnd: callbacks.onDragEnd,
@@ -857,11 +938,8 @@ class const _MobileScrimPosition({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final animation = state._requiredController;
-    final drawerWidth = state._currentDrawerWidth;
-
     return Transform.translate(
-      offset: .new(drawerWidth * animation.value, 0),
+      offset: .new((state.isDrawerOnLeft ? 1 : -1) * state._bodyOffset, 0),
       child: _MobileScrimGesture(state: state),
     );
   }
@@ -923,8 +1001,8 @@ class const _MobileScrimGradient({
   required final _ResponsiveSlidingDrawerState state,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Positioned(
-    left: 0,
+  Widget build(BuildContext context) => PositionedDirectional(
+    start: 0,
     top: 0,
     bottom: 0,
     width: _ResponsiveSlidingDrawerState._scrimGradientWidth,
@@ -992,9 +1070,18 @@ class const _MobilePanelPosition({
     final animation = state._requiredController;
     final drawerWidth = state._currentDrawerWidth;
 
-    return Transform.translate(
-      offset: .new(-drawerWidth * (1 - animation.value), 0),
-      child: _MobilePanelGesture(state: state),
+    return PositionedDirectional(
+      start: 0,
+      top: 0,
+      bottom: 0,
+      width: drawerWidth,
+      child: Transform.translate(
+        offset: .new(
+          (state.isDrawerOnLeft ? -1 : 1) * drawerWidth * (1 - animation.value),
+          0,
+        ),
+        child: _MobilePanelGesture(state: state),
+      ),
     );
   }
 }

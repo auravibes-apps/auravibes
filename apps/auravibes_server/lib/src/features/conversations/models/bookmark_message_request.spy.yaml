@@ -1,0 +1,7 @@
+class: BookmarkMessageRequest
+fields:
+  workspaceId: int
+  requestId: String
+  conversationId: String
+  sourceConversationId: String
+  messageId: String

@@ -4,9 +4,14 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/data/repositories/browser_session_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/browser/models/browser_session_state.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/notifiers/agent_run_activity_notifier.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -19,6 +24,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -263,13 +269,14 @@ void main() {
   });
 
   testWidgets(
-    'updates stream indicators per conversation without changing selection',
+    'updates per-conversation activity indicators without changing selection',
     (tester) async {
       final semanticHandle = tester.ensureSemantics();
 
       final selectedConversation = _conversation(
         'chat-1',
         title: 'Selected Chat',
+        isPinned: true,
       );
       final otherConversation = _conversation('chat-2', title: 'Other Chat');
       final repository = _SeededConversationRepository([
@@ -293,37 +300,55 @@ void main() {
         );
       }
 
+      final activityNotifier = container.read(
+        agentRunActivityProvider.notifier,
+      );
       final streamingNotifier = container.read(
         conversationStreamingProvider.notifier,
       );
-      final startStreaming = streamingNotifier.start;
-      final stopStreaming = streamingNotifier.remove;
-
-      startStreaming(otherConversation.id);
+      container
+          .read(
+            conversationDraftProvider(
+              selectedConversation.workspaceId,
+              selectedConversation.id,
+            ).notifier,
+          )
+          .save(const ChatDraft(text: 'Unsent message'));
       await tester.pump();
 
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        find.byKey(const ValueKey('conversation-draft-marker-chat-1')),
+        findsOneWidget,
+      );
+      expect(find.text('Draft'), findsOneWidget);
+      expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
+      final startAgent = activityNotifier.startAgentRun;
+      final stopAgent = activityNotifier.endAgentRun;
+      final startStreaming = streamingNotifier.start;
+      final stopStreaming = streamingNotifier.remove;
+
+      startAgent(otherConversation.id);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
         findsNothing,
       );
-      expect(
-        find.bySemanticsLabel(RegExp('Assistant response in progress')),
-        findsOneWidget,
-      );
+      expect(find.bySemanticsLabel(RegExp('Agent working')), findsOneWidget);
 
       startStreaming(selectedConversation.id);
       await tester.pump();
 
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
         findsOneWidget,
       );
       final selectedTile = tester.widget<AuraTile>(
@@ -335,16 +360,29 @@ void main() {
             .first,
       );
       expect(selectedTile.variant, AuraTileVariant.selected);
+      expect(
+        tester
+            .getSemantics(
+              find
+                  .ancestor(
+                    of: find.text(selectedConversation.title),
+                    matching: find.byType(AuraTile),
+                  )
+                  .first,
+            )
+            .label,
+        contains('Draft'),
+      );
 
-      stopStreaming(otherConversation.id);
+      stopAgent(otherConversation.id);
       await tester.pump();
 
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
         findsNothing,
       );
 
@@ -352,11 +390,11 @@ void main() {
       await tester.pump();
 
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-1')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-1')),
         findsNothing,
       );
       expect(
-        find.byKey(const ValueKey('sidebar-streaming-status-chat-2')),
+        find.byKey(const ValueKey('sidebar-agent-working-status-chat-2')),
         findsNothing,
       );
       semanticHandle.dispose();
@@ -604,6 +642,66 @@ void main() {
     expect(find.byIcon(Icons.push_pin_outlined), findsOneWidget);
     expect(find.text('Test Chat'), findsOneWidget);
   });
+
+  testWidgets('shows browser icon and manages tabs from conversation menu', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final browserRepository = BrowserSessionRepository(preferences);
+    await browserRepository.save(
+      'browser-chat',
+      const BrowserSessionState(
+        tabs: [
+          BrowserTab(id: 'tab-1', url: 'https://one.example'),
+          BrowserTab(id: 'tab-2', url: 'https://two.example'),
+        ],
+        activeTabId: 'tab-2',
+      ),
+    );
+    final repository = _SeededConversationRepository([
+      _conversation('browser-chat', title: 'Browser Chat'),
+    ]);
+    addTearDown(repository.close);
+
+    await _pumpSidebarAtConversation(
+      tester,
+      conversationId: 'browser-chat',
+      repository: repository,
+    );
+
+    const browserIconKey = ValueKey('sidebar-browser-status-browser-chat');
+    expect(find.byKey(browserIconKey), findsOneWidget);
+    expect(find.text('2 tabs'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Suspend browser'));
+    final _ = await tester.pumpAndSettle();
+
+    var session = await browserRepository.load('browser-chat');
+    expect(session.isSuspended, isTrue);
+    expect(session.tabs, hasLength(2));
+    expect(find.byKey(browserIconKey), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Resume browser'));
+    final _ = await tester.pumpAndSettle();
+
+    session = await browserRepository.load('browser-chat');
+    expect(session.isSuspended, isFalse);
+    expect(find.byKey(browserIconKey), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Close all browser tabs'));
+    final _ = await tester.pumpAndSettle();
+
+    session = await browserRepository.load('browser-chat');
+    expect(session.tabs, isEmpty);
+    expect(find.byKey(browserIconKey), findsNothing);
+  });
 }
 
 class _SeededConversationRepository(
@@ -659,15 +757,18 @@ class _TestCompactionExecution(
   }
 }
 
-ConversationEntity _conversation(String id, {required String title}) =>
-    ConversationEntity(
-      id: id,
-      title: title,
-      workspaceId: 'workspace-1',
-      isPinned: false,
-      createdAt: .new(2025),
-      updatedAt: .new(2025),
-    );
+ConversationEntity _conversation(
+  String id, {
+  required String title,
+  bool isPinned = false,
+}) => ConversationEntity(
+  id: id,
+  title: title,
+  workspaceId: 'workspace-1',
+  isPinned: isPinned,
+  createdAt: .new(2025),
+  updatedAt: .new(2025),
+);
 
 Future<void> _pumpSidebarAtConversation(
   WidgetTester tester, {

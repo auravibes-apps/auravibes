@@ -19,6 +19,9 @@ class BackgroundWorks extends Table with TableMixin {
       text().references(Workspaces, #id, onDelete: .cascade)();
   TextColumn get conversationId =>
       text().references(Conversations, #id, onDelete: .cascade)();
+  @ReferenceName('backgroundWorksByChildConversation')
+  TextColumn get childConversationId =>
+      text().nullable().references(Conversations, #id, onDelete: .setNull)();
   TextColumn get originatingMessageId =>
       text().nullable().references(Messages, #id, onDelete: .setNull)();
   TextColumn get toolCallId => text()();

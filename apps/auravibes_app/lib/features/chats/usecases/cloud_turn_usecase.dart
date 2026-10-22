@@ -52,16 +52,19 @@ class const CloudTurnUsecase(final CloudChatGateway _gateway) {
   );
 
   Future<ConversationMutationResult> continueConversation(
-    String conversationId,
-  ) => _continueConversation(conversationId);
+    String conversationId, {
+    String? languageCode,
+  }) => _continueConversation(conversationId, languageCode: languageCode);
 
   Future<ConversationSnapshot> continueSharedConversation({
     required String conversationId,
     required int projectionRevision,
+    String languageCode = 'en',
   }) => _gateway.continueConversation(
     requestId: DateTime.now().microsecondsSinceEpoch.toString(),
     conversationId: conversationId,
     expectedProjectionRevision: projectionRevision,
+    languageCode: languageCode,
   );
 
   Future<ConversationSnapshot> stopSharedConversation({
@@ -90,26 +93,33 @@ extension on CloudTurnUsecase {
   }
 
   Future<ConversationMutationResult> _continueConversation(
-    String conversationId,
-  ) async {
+    String conversationId, {
+    String? languageCode,
+  }) async {
     final conversation = await _gateway.getConversation(conversationId);
     try {
-      return await _continueTurn(conversationId, conversation.revision);
+      return await _continueTurn(
+        conversationId,
+        conversation.revision,
+        languageCode,
+      );
     } on CloudAppException catch (error) {
       if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
       final latest = await _gateway.getConversation(conversationId);
 
-      return await _continueTurn(conversationId, latest.revision);
+      return await _continueTurn(conversationId, latest.revision, languageCode);
     }
   }
 
   Future<ConversationMutationResult> _continueTurn(
     String conversationId,
     int revision,
+    String? languageCode,
   ) => _gateway.continueTurn(
     requestId: DateTime.now().microsecondsSinceEpoch.toString(),
     conversationId: conversationId,
     expectedConversationRevision: revision,
+    languageCode: languageCode,
   );
 
   Future<ConversationMutationResult> _retryStaleDecision(

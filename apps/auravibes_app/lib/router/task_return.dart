@@ -57,8 +57,8 @@ abstract final class _TaskReturnValidation {
   static bool _recognized(List<String> path) =>
       _recognizedConversation(path) ||
       _recognizedWorkspaceSettings(path) ||
-      _recognizedMoreRoot(path) ||
-      _recognizedMoreChild(path);
+      _recognizedFeatureRoot(path) ||
+      _recognizedFeatureChild(path);
 
   static bool _recognizedConversation(List<String> path) => switch (path) {
     ['chat', 'new'] ||
@@ -73,35 +73,25 @@ abstract final class _TaskReturnValidation {
     _ => false,
   };
 
-  static bool _recognizedMoreRoot(List<String> path) => switch (path) {
-    ['more'] ||
+  static bool _recognizedFeatureRoot(List<String> path) => switch (path) {
     [
-      'more',
       'tools' ||
           'models' ||
           'agents' ||
           'skills' ||
           'service-connections' ||
-          'skill-credential-definitions' ||
           'manage-workspaces' ||
           'cloud-accounts',
-    ] => true,
+    ] =>
+      true,
     _ => false,
   };
 
-  static bool _recognizedMoreChild(List<String> path) => switch (path) {
-    [
-      'more',
-      'agents' ||
-          'skills' ||
-          'service-connections' ||
-          'skill-credential-definitions',
-      _,
-    ] ||
-    ['more', 'skills', _, 'tools' || 'resources', _] ||
-    ['more', 'manage-workspaces', 'create'] => true,
-    ['more', 'manage-workspaces', 'cloud', _, final id] =>
-      int.tryParse(id) != null,
+  static bool _recognizedFeatureChild(List<String> path) => switch (path) {
+    ['agents' || 'skills' || 'service-connections', _] ||
+    ['skills', _, 'tools' || 'resources', _] ||
+    ['manage-workspaces', 'create'] => true,
+    ['manage-workspaces', 'cloud', _, final id] => int.tryParse(id) != null,
     _ => false,
   };
 }

@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/repositories/recent_skill_usage_repository.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
@@ -8,6 +9,7 @@ import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manife
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -24,8 +26,59 @@ void main() {
     content: 'Use primary sources',
     source: .user,
     kind: .template,
-    credentialReadiness: .ready,
+    connectorReadiness: .ready,
   );
+
+  for (final failRead in [false, true]) {
+    test('recent history fallback with read failure=$failRead', () async {
+      final records = <LogRecord>[];
+      final subscription = Logger.root.onRecord.listen(records.add);
+      addTearDown(subscription.cancel);
+      final list = _ListSkills();
+      final manifests = _BuildManifests();
+      _stubSkills(list, skill);
+      when(
+        () => manifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => const []);
+      final repository = _RecentSkillUsageRepository(
+        const [],
+        failRead: failRead,
+      );
+      final container = _container(
+        list,
+        manifests,
+        recentRepository: repository,
+      );
+      addTearDown(container.dispose);
+
+      final state = await container.read(
+        conversationSkillSelectorProvider('workspace', 'conversation').future,
+      );
+
+      expect(state.loaded, [skill]);
+      expect(state.recentSkills, isEmpty);
+      expect(repository.readWorkspaces, ['workspace']);
+      final diagnostics = records
+          .where((record) => record.loggerName == 'conversation_skill_selector')
+          .toList();
+      if (!failRead) {
+        expect(diagnostics, isEmpty);
+
+        return;
+      }
+      expect(diagnostics, hasLength(1));
+      expect(diagnostics.single.level, Level.WARNING);
+      expect(
+        diagnostics.single.message,
+        'Recent skill history read failed. Selector uses empty history.',
+      );
+      expect(diagnostics.single.error, isNull);
+      expect(diagnostics.single.stackTrace, isNull);
+    });
+  }
 
   test('selection survives stale context and revision changes', () async {
     var revision = 'r1';
@@ -44,7 +97,6 @@ void main() {
           title: 'Research',
           description: 'Find sources',
           revision: revision,
-          tools: const [],
         ),
       ],
     );
@@ -114,6 +166,75 @@ void main() {
     );
   });
 
+  test('compares agent context revisions in the remembered locale', () async {
+    const agentsSkill = AvailableSkill(
+      id: agentsSkillSlug,
+      slug: agentsSkillSlug,
+      title: agentsSkillTitle,
+      description: '',
+      content: agentsSkillContent,
+      source: .app,
+      kind: .native,
+      connectorReadiness: .ready,
+    );
+    final list = _ListSkills();
+    final manifests = _BuildManifests();
+    _stubSkills(list, agentsSkill);
+    when(
+      () => manifests.call(
+        conversationId: 'conversation',
+        workspaceId: 'workspace',
+        languageCode: 'es',
+      ),
+    ).thenAnswer(
+      (_) async => [
+        SkillManifest(
+          slug: agentsSkillSlug,
+          title: agentsSkillTitle,
+          description: '',
+          revision: 'spanish-revision',
+        ),
+      ],
+    );
+    final languageRuntime = ConversationAgentLanguageRuntime()
+      ..remember('conversation', 'es');
+    final container = _container(
+      list,
+      manifests,
+      languageRuntime: languageRuntime,
+    );
+    addTearDown(container.dispose);
+    final provider = conversationSkillSelectorProvider(
+      'workspace',
+      'conversation',
+    );
+    final generation = container
+        .read(conversationSkillContextRuntimeProvider.notifier)
+        .begin('conversation');
+    container
+        .read(conversationSkillContextRuntimeProvider.notifier)
+        .ready(
+          'conversation',
+          generation,
+          selectedRevisions: {agentsSkillSlug: 'spanish-revision'},
+          canActivate: true,
+        );
+
+    final state = await container.read(provider.future);
+
+    expect(
+      state.contextStatusBySlug[agentsSkillSlug],
+      ConversationSkillContextStatus.ready,
+    );
+    verify(
+      () => manifests.call(
+        conversationId: 'conversation',
+        workspaceId: 'workspace',
+        languageCode: 'es',
+      ),
+    ).called(1);
+  });
+
   test(
     'orders recent skills and ignores duplicates or missing catalog entries',
     () async {
@@ -125,7 +246,7 @@ void main() {
         content: 'Use plain language',
         source: .user,
         kind: .template,
-        credentialReadiness: .ready,
+        connectorReadiness: .ready,
       );
       final list = _ListSkills();
       final manifests = _BuildManifests();
@@ -182,7 +303,7 @@ void main() {
         content: 'Use plain language',
         source: .user,
         kind: .template,
-        credentialReadiness: .ready,
+        connectorReadiness: .ready,
       );
       final list = _ListSkills();
       final manifests = _BuildManifests();
@@ -214,7 +335,6 @@ void main() {
               title: item.title,
               description: item.description,
               revision: 'r1',
-              tools: const [],
             ),
         ],
       );
@@ -260,7 +380,7 @@ void main() {
       content: '',
       source: .user,
       kind: .template,
-      credentialReadiness: .missing,
+      connectorReadiness: .missing,
     );
     final list = _ListSkills();
     final manifests = _BuildManifests();
@@ -284,7 +404,7 @@ void main() {
     );
     expect(
       state.failureBySlug['research'],
-      ConversationSkillContextFailure.missingCredentials,
+      ConversationSkillContextFailure.missingConnection,
     );
   });
 
@@ -349,6 +469,7 @@ ProviderContainer _container(
   _ListSkills list,
   _BuildManifests manifests, {
   _RecentSkillUsageRepository? recentRepository,
+  ConversationAgentLanguageRuntime? languageRuntime,
 }) => ProviderContainer(
   overrides: [
     listAvailableSkillsUsecaseProvider('workspace').overrideWith((ref) => list),
@@ -356,16 +477,24 @@ ProviderContainer _container(
     recentSkillUsageRepositoryProvider.overrideWith(
       (ref) => recentRepository ?? _RecentSkillUsageRepository(const []),
     ),
+    conversationAgentLanguageRuntimeProvider.overrideWithValue(
+      languageRuntime ?? ConversationAgentLanguageRuntime(),
+    ),
   ],
 );
 
-class _RecentSkillUsageRepository(final List<String> _slugs)
-    implements RecentSkillUsageRepository {
+class _RecentSkillUsageRepository(
+  final List<String> _slugs, {
+  final bool failRead = false,
+}) implements RecentSkillUsageRepository {
   final List<String> readWorkspaces = [];
 
   @override
   Future<List<String>> readRecentSkillSlugs(String workspaceId) async {
     readWorkspaces.add(workspaceId);
+    if (failRead) {
+      throw StateError('research Research secret-prompt credential-token');
+    }
 
     return _slugs;
   }

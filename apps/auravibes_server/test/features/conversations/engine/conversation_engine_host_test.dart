@@ -1,6 +1,7 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
+import 'package:auravibes_server/src/features/conversations/engine/server_agent_guidance.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
 import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
     as conversation_repo;
@@ -29,9 +30,7 @@ void main() {
       },
     };
     ServerResolvedTool tool(String name, Map<String, Object?> schema) {
-      final descriptor = AgentResolvedToolName.skillTemplate(
-        tableId: name,
-        skillSlug: 'fixture',
+      final descriptor = AgentResolvedToolName.connectorCommand(
         toolIdentifier: name,
       );
       return ServerResolvedTool(
@@ -116,9 +115,7 @@ void main() {
       strictToolSamplingProfile: profile,
       customize: (model, _) => (model: model, extraBody: {}),
     );
-    final descriptor = AgentResolvedToolName.skillTemplate(
-      tableId: 'cloud-search',
-      skillSlug: 'fixture',
+    final descriptor = AgentResolvedToolName.connectorCommand(
       toolIdentifier: 'search',
     );
     final tool = ServerResolvedTool(
@@ -332,7 +329,7 @@ void main() {
     );
   });
 
-  test('cloud skill context includes manifest revision and schema', () {
+  test('cloud Skill context includes Connector references only', () {
     final messages = buildCloudSkillContextMessages(
       skillCatalog: const [],
       agentSkills: [
@@ -344,28 +341,17 @@ void main() {
             title: 'Research',
             description: 'Find sources.',
             revision: 'revision-1',
-            tools: [
-              SkillManifestTool(
-                name: 'search',
-                description: 'Search sources.',
-                inputJsonSchema: const {
-                  'type': 'object',
-                  'properties': {
-                    'query': {'type': 'string'},
-                  },
-                },
-              ),
-            ],
+            connectorToolIds: const ['connector/openai/web_search'],
           ),
         ),
       ],
     );
 
     final content = messages.single['content']! as String;
-    expect(content, contains('<skill_tools>'));
-    expect(content, contains('"tools"'));
-    expect(content, contains('"name":"search"'));
-    expect(content, contains('"revision":"revision-1"'));
+    expect(content, contains('<connector_tool_refs>'));
+    expect(content, contains('connector/openai/web_search'));
+    expect(content, isNot(contains('<skill_tools>')));
+    expect(content, isNot(contains('inputJsonSchema')));
   });
 
   test('refresh retains all completed tool exchanges in order', () {
@@ -641,20 +627,46 @@ void main() {
       ),
       isFalse,
     );
-    final service = serviceSkillDefinitions.first;
-    expect(
-      cloudServiceSkillReady(
-        service,
-        const [
-          {
-            'kind': 'appSkillCredential',
-            'serviceId': 'unrelated',
-            'isEnabled': true,
-            'hasSecret': true,
-          },
-        ],
+    final service = serviceSkillDefinitions.firstWhere(
+      (skill) => skill.connectorToolIds.any((toolId) {
+        for (final connector in connectorDefinitions) {
+          for (final tool in connector.tools) {
+            if (connectorToolId(connector, tool) == toolId &&
+                tool.requiresConnection) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }),
+    );
+    final toolId = service.connectorToolIds.firstWhere((toolId) {
+      for (final connector in connectorDefinitions) {
+        for (final tool in connector.tools) {
+          if (connectorToolId(connector, tool) == toolId &&
+              tool.requiresConnection) {
+            return true;
+          }
+        }
+      }
+      return false;
+    });
+    final connector = connectorDefinitions.firstWhere(
+      (connector) => connector.tools.any(
+        (tool) => connectorToolId(connector, tool) == toolId,
       ),
-      service.tools.every((tool) => !tool.requiresCredential),
+    );
+    expect(cloudServiceSkillReady(service, const []), isFalse);
+    expect(
+      cloudServiceSkillReady(service, [
+        {
+          'kind': 'customHttp',
+          'serviceId': connector.identifier,
+          'isEnabled': true,
+          'hasSecret': true,
+        },
+      ]),
+      isTrue,
     );
   });
 
@@ -671,6 +683,24 @@ void main() {
         (service.title, service.content, service.identifier),
       ],
     );
+  });
+
+  test('selected agents skill context follows the conversation language', () {
+    final english = cloudAppSkillsForIds([agentsSkillSlug]);
+    final spanish = cloudAppSkillsForIds(
+      [agentsSkillSlug],
+      languageCode: 'es-MX',
+    );
+
+    expect(
+      english.single.content,
+      serverAgentsSkillContentForLanguageCode('en'),
+    );
+    expect(
+      spanish.single.content,
+      serverAgentsSkillContentForLanguageCode('es'),
+    );
+    expect(spanish.single.identity, agentsSkillSlug);
   });
 
   test('configuration exception exposes only safe code', () {

@@ -5,10 +5,7 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -29,25 +26,29 @@ import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspac
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_tool_catalog_item.dart';
+import 'package:auravibes_app/features/service_connections/providers/connector_tool_catalog_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
+import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen.dart';
-import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
+import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
+import 'package:auravibes_app/features/tools/widgets/tools_search_input.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/cloud_auth_protocol.dart';
-import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
+import 'package:auravibes_app/widgets/feature_destination_master.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -60,6 +61,167 @@ import '../helpers/ux_validation_fixture.dart';
 
 void main() {
   tearDownAll(UxValidationFixture.closeDatabase);
+  testWidgets('connections master stays behind a Services swipe', (
+    tester,
+  ) async {
+    final f = await UxValidationFixture.create();
+    final toolsLocation = ToolsRoute(workspaceId: f.workspaceId).location;
+    await _expectMasterPreviewDuringBack(
+      tester,
+      f,
+      masterLocation: FeatureDestinations.masterLocation(toolsLocation),
+      targetLocation: FeatureDestinations.connectionLocation(
+        f.workspaceId,
+        .services,
+      ),
+      masterTitle: 'Connections',
+      detailScreen: find.byType(ServiceConnectionsScreen),
+      absentDuringPreview: find.byType(ToolsSearchInput, skipOffstage: false),
+    );
+  });
+
+  testWidgets(
+    'same-path connection master selects the remembered destination',
+    (tester) async {
+      final f = await UxValidationFixture.create();
+      final servicesLocation = FeatureDestinations.connectionLocation(
+        f.workspaceId,
+        .services,
+      );
+      await _expectMasterPreviewDuringBack(
+        tester,
+        f,
+        masterLocation: FeatureDestinations.masterLocation(servicesLocation),
+        targetLocation: servicesLocation,
+        masterTitle: 'Connections',
+        detailScreen: find.byType(ServiceConnectionsScreen),
+      );
+    },
+  );
+
+  testWidgets('Agents and Skills master stays behind an Agents swipe', (
+    tester,
+  ) async {
+    final f = await UxValidationFixture.create();
+    final skillsLocation = SkillsRoute(workspaceId: f.workspaceId).location;
+    await _expectMasterPreviewDuringBack(
+      tester,
+      f,
+      masterLocation: FeatureDestinations.masterLocation(skillsLocation),
+      targetLocation: AgentsRoute(workspaceId: f.workspaceId).location,
+      masterTitle: 'Agents & skills',
+      detailScreen: find.byType(AgentsScreen),
+    );
+  });
+
+  testWidgets('clean production iOS detail route supports edge back', (
+    tester,
+  ) async {
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = .iOS;
+    try {
+      final f = await UxValidationFixture.create();
+      final skillList = SkillsRoute(workspaceId: f.workspaceId).location;
+      final router = await f.pump(
+        tester,
+        skillList,
+        size: const Size(466, 678),
+      );
+      final _ = router.push<void>(
+        SkillDetailRoute(
+          workspaceId: f.workspaceId,
+          skillId: f.skillId,
+        ).location,
+      );
+      await f.settle(tester);
+      expect(find.byType(SkillDetailScreen), findsOneWidget);
+      final route = ModalRoute.of(
+        tester.element(find.byType(SkillDetailScreen)),
+      );
+      expect(route?.popGestureEnabled, isTrue);
+
+      await tester.dragFrom(const Offset(12, 350), const Offset(280, 0));
+      await f.settle(tester);
+
+      expect(router.routeInformationProvider.value.uri.path, skillList);
+      await f.close(tester);
+    } finally {
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    }
+  });
+  testWidgets('compact production feature route supports iOS edge back', (
+    tester,
+  ) async {
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = .iOS;
+    try {
+      final f = await UxValidationFixture.create();
+      final agentsLocation = AgentsRoute(workspaceId: f.workspaceId).location;
+      final masterLocation = FeatureDestinations.masterLocation(agentsLocation);
+      final router = await f.pump(
+        tester,
+        NewChatRoute(workspaceId: f.workspaceId).location,
+        size: const Size(466, 678),
+      );
+      final _ = await tester.tap(find.byKey(const ValueKey('app_drawer_menu')));
+      await f.settle(tester);
+      final _ = await tester.tap(find.text('Agents & skills'));
+      await f.settle(tester);
+      expect(router.state.uri.toString(), masterLocation);
+      expect(find.byType(FeatureDestinationMaster), findsOneWidget);
+
+      final skillsLocation = SkillsRoute(workspaceId: f.workspaceId).location;
+      final _ = await tester.tap(
+        find.byKey(ValueKey('feature-destination-$skillsLocation')),
+      );
+      await f.settle(tester);
+      expect(find.byType(SkillsScreen), findsOneWidget);
+      final route = ModalRoute.of(tester.element(find.byType(SkillsScreen)));
+      expect(route?.isCurrent, isTrue);
+      expect(router.canPop(), isTrue);
+      expect(route?.popGestureEnabled, isTrue);
+      expect(
+        Theme.of(tester.element(find.byType(SkillsScreen))).platform,
+        TargetPlatform.iOS,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget.runtimeType.toString().contains(
+            'CupertinoBackGestureDetector',
+          ),
+        ),
+        findsWidgets,
+      );
+
+      final gesture = await tester.startGesture(const Offset(1, 350));
+      await gesture.moveBy(const Offset(50, 0));
+      await tester.pump();
+      expect(route?.popGestureInProgress, isTrue);
+      await gesture.moveBy(const Offset(300, 0));
+      await gesture.up();
+      await f.settle(tester);
+
+      expect(find.byType(SkillsScreen), findsNothing);
+      expect(find.byType(FeatureDestinationMaster), findsOneWidget);
+      expect(router.state.uri.toString(), masterLocation);
+
+      final _ = await tester.tap(
+        find.byKey(ValueKey('feature-destination-$skillsLocation')),
+      );
+      await f.settle(tester);
+      expect(find.byType(SkillsScreen), findsOneWidget);
+      final _ = await tester.tap(
+        find.byKey(const ValueKey('app_navigation_back')),
+      );
+      await f.settle(tester);
+      expect(find.byType(SkillsScreen), findsNothing);
+      expect(find.byType(FeatureDestinationMaster), findsOneWidget);
+      expect(router.state.uri.toString(), masterLocation);
+      await f.close(tester);
+    } finally {
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    }
+  });
   testWidgets(
     'two agents retain a shared skill when one saved agent is disabled',
     (tester) async {
@@ -510,147 +672,6 @@ void main() {
   );
 
   testWidgets(
-    'schema creation returns selected type and encrypted credential saves',
-    (tester) async {
-      final f = await UxValidationFixture.create();
-      final repository = SkillCredentialsRepository(
-        database: f.database,
-        encryptionService: .new(_SecretKeyManager()),
-      );
-      final _ = await SkillsRepository(f.database).deleteSkill(f.skillId);
-      final _ = await f.database
-          .delete(f.database.skillCredentialDefinitions)
-          .go();
-      final parent = ServiceConnectionCreateRoute(
-        workspaceId: f.workspaceId,
-        type: 'skillCredential',
-      ).location;
-      final _ = await f.pump(
-        tester,
-        parent,
-        size: const Size(1280, 1600),
-        overrides: [
-          skillCredentialsRepositoryProvider.overrideWithValue(repository),
-        ],
-      );
-      await tester.enterText(find.byType(AuraInput).first, 'Project access');
-      await tester.tap(find.text('Create credential type'));
-      await f.settle(tester);
-      expect(find.byType(SkillCredentialDefinitionEditScreen), findsOneWidget);
-      await tester.enterText(find.byType(AuraInput).at(0), 'Project schema');
-      await tester.enterText(find.byType(AuraInput).at(1), 'api_key');
-      await tester.enterText(find.byType(AuraInput).at(2), 'API key');
-      await tester.testTextInput.receiveAction(.done);
-      await f.settle(tester);
-      expect(find.byType(ServiceConnectionCreateScreen), findsOneWidget);
-      expect(find.text('Project schema'), findsOneWidget);
-      expect(find.text('Project access'), findsOneWidget);
-      await tester.enterText(find.byType(AuraInput).last, 'fixture-secret');
-      await tester.tap(find.text('Save').last);
-      for (
-        var i = 0;
-        i < 20 &&
-            find.byType(ServiceConnectionCreateScreen).evaluate().isNotEmpty;
-        i++
-      ) {
-        await f.settle(tester);
-      }
-      final definition = await SkillCredentialDefinitionsRepository(f.database)
-          .getDefinitionBySlug(f.workspaceId, 'project_schema');
-      expect(definition, isNotNull);
-      final credentials = await repository.getCredentialsForDefinition(
-        workspaceId: f.workspaceId,
-        credentialDefinitionId:
-            definition?.id ?? (throw StateError('Missing saved definition')),
-      );
-      expect(credentials.single.name, 'Project access');
-      expect(
-        (await repository.getCredentialForEdit(credentials.single.id))
-            ?.secretAttributes['api_key']
-            ?.hasValue,
-        isTrue,
-      );
-      final row = await f.database.skillCredentialsDao.getCredentialById(
-        credentials.single.id,
-      );
-      expect(row?.encryptedAuthValue, isNot(contains('fixture-secret')));
-      expect(
-        await EncryptionService(_SecretKeyManager()).decrypt(
-          row?.encryptedAuthValue ??
-              (throw StateError('Missing encrypted credential')),
-        ),
-        contains('fixture-secret'),
-      );
-      expect(credentials.single.attributes, isNot(contains('api_key')));
-      expect(tester.takeException(), isNull);
-      await f.close(tester);
-    },
-  );
-
-  testWidgets(
-    'owning skill credential action persists and refreshes retained parent',
-    (tester) async {
-      final f = await UxValidationFixture.create();
-      final repository = SkillCredentialsRepository(
-        database: f.database,
-        encryptionService: .new(_SecretKeyManager()),
-      );
-      final parent = SkillDetailRoute(
-        workspaceId: f.workspaceId,
-        skillId: f.skillId,
-      ).location;
-      final router = await f.pump(
-        tester,
-        parent,
-        size: const Size(1280, 1800),
-        overrides: [
-          skillCredentialsRepositoryProvider.overrideWithValue(repository),
-        ],
-      );
-      await tester.enterText(
-        find.byType(AuraInput).first,
-        'Unpersisted owner title',
-      );
-      final create = find.text('Add Credential').first;
-      await Scrollable.ensureVisible(tester.element(create), alignment: 0.5);
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(create);
-      await f.settle(tester);
-      expect(find.byType(ServiceConnectionCreateScreen), findsOneWidget);
-      expect(find.text('Research access'), findsOneWidget);
-      await tester.enterText(find.byType(AuraInput).first, 'Owner access');
-      await tester.enterText(find.byType(AuraInput).last, 'owner-secret');
-      await tester.tap(find.text('Save').last);
-      for (
-        var i = 0;
-        i < 20 && find.byType(SkillDetailScreen).evaluate().isEmpty;
-        i++
-      ) {
-        await f.settle(tester);
-      }
-      expect(router.routeInformationProvider.value.uri.path, parent);
-      expect(
-        tester.widget<AuraInput>(find.byType(AuraInput).first).controller?.text,
-        'Unpersisted owner title',
-      );
-      expect(
-        (await repository.getCredentialsForDefinition(
-          workspaceId: f.workspaceId,
-          credentialDefinitionId: f.definitionId,
-        )).single.name,
-        'Owner access',
-      );
-      expect(
-        (await SkillsRepository(f.database).getSkillById(f.skillId))?.title,
-        'Research notes',
-      );
-      expect(find.text('1 credential configured'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-      await f.close(tester);
-    },
-  );
-
-  testWidgets(
     'first local use creates workspace provider model and persisted message',
     (tester) async {
       svg.cache.clear();
@@ -679,7 +700,11 @@ void main() {
           sendMessageUsecaseProvider.overrideWith(
             (ref, workspaceId) => SendMessageUsecase(
               continueAgentTurn:
-                  ({required conversationId, required context}) async {
+                  ({
+                    required conversationId,
+                    required context,
+                    languageCode,
+                  }) async {
                     continued = conversationId;
                     expect(context.ackMessageIds, hasLength(1));
                     expect(
@@ -822,60 +847,7 @@ void main() {
     },
   );
 
-  testWidgets(
-    'credential dependency opens actual skill and refreshes after repair',
-    (tester) async {
-      final f = await UxValidationFixture.create();
-      final parent = SkillCredentialDefinitionEditRoute(
-        workspaceId: f.workspaceId,
-        definitionId: f.definitionId,
-      ).location;
-      final router = await f.pump(tester, parent, size: const Size(1280, 1800));
-      await tester.enterText(
-        find.byType(AuraInput).first,
-        'Unpersisted schema title',
-      );
-      await tester.tap(find.text('Research notes').last);
-      await f.settle(tester);
-      expect(find.byType(SkillDetailScreen), findsOneWidget);
-      final selected = find
-          .descendant(
-            of: find.byType(SkillDetailScreen),
-            matching: find.text('Research access'),
-          )
-          .first;
-      await Scrollable.ensureVisible(tester.element(selected), alignment: 0.5);
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(selected);
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(find.text('No credential type').last);
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Save skill'));
-      await f.settle(tester);
-      expect(find.byType(SkillCredentialDefinitionEditScreen), findsOneWidget);
-      expect(router.routeInformationProvider.value.uri.path, parent);
-      expect(
-        tester.widget<AuraInput>(find.byType(AuraInput).first).controller?.text,
-        'Unpersisted schema title',
-      );
-      expect(
-        (await SkillsRepository(f.database).getSkillById(f.skillId))
-            ?.credentialDefinitionId,
-        isNull,
-      );
-      expect(find.text('Research notes'), findsNothing);
-      expect(
-        (await SkillCredentialDefinitionsRepository(f.database)
-                .getDefinitionById(f.definitionId))
-            ?.title,
-        'Research access',
-      );
-      expect(tester.takeException(), isNull);
-      await f.close(tester);
-    },
-  );
-
-  testWidgets('staged skill creates resource and tool with retained parent', (
+  testWidgets('staged skill creates resource and links Connector tool', (
     tester,
   ) async {
     final f = await UxValidationFixture.create();
@@ -883,6 +855,18 @@ void main() {
       tester,
       SkillCreateRoute(workspaceId: f.workspaceId).location,
       size: const Size(1280, 1600),
+      overrides: [
+        connectorToolCatalogProvider.overrideWith(
+          (_) => const [
+            ConnectorToolCatalogItem(
+              toolId: 'connector/test/search',
+              connectorName: 'Research',
+              title: 'Search sources',
+              description: 'Search public sources.',
+            ),
+          ],
+        ),
+      ],
     );
     await tester.enterText(find.byType(AuraInput).first, 'Complete authoring');
     for (final field in ['Edit description', 'Edit content']) {
@@ -953,8 +937,9 @@ void main() {
       (await SkillsRepository(f.database).getSkillById(skillId))?.title,
       'Complete authoring',
     );
+    const connectorToolId = 'connector/test/search';
     await tester.scrollUntilVisible(
-      find.byTooltip('New template tool'),
+      find.text('Connector tools'),
       350,
       scrollable: find
           .descendant(
@@ -963,94 +948,34 @@ void main() {
           )
           .first,
     );
-    await tester.tap(find.byTooltip('New template tool'));
+    await tester.tap(find.text('Choose tools'));
     final _ = await tester.pumpAndSettle();
-    expect(find.byType(SkillToolEditScreen), findsOneWidget);
-    await _enter(tester, 'Title', 'New reference lookup');
-    await _enter(tester, 'URL', 'https://example.test/reference');
-    await Scrollable.ensureVisible(
-      tester.element(find.text('Edit description')),
-      alignment: 0.5,
+    final connectorToolOption = find.byType(AuraCheckboxListTile);
+    expect(connectorToolOption, findsOneWidget);
+    expect(
+      tester.widget<AuraCheckboxListTile>(connectorToolOption).value,
+      isFalse,
     );
+    await tester.tap(connectorToolOption);
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('Edit description'));
-    final _ = await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byType(EditableText).last,
-      'Find a public reference.',
+    expect(
+      tester.widget<AuraCheckboxListTile>(connectorToolOption).value,
+      isTrue,
     );
-    await tester.tap(find.byTooltip('Apply changes'));
-    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Apply'));
+    await f.settle(tester);
+    expect(find.text('Research: Search sources'), findsOneWidget);
     await tester.tap(find.byTooltip('Save skill'));
     await f.settle(tester);
 
-    expect(find.byType(SkillDetailScreen), findsOneWidget);
-    expect(
-      tester.widget<AuraInput>(find.byType(AuraInput).first).controller?.text,
-      'Unpersisted parent title',
-    );
-    final tools = await SkillTemplateToolsRepository(f.database)
-        .getSkillTools(skillId);
-    final created = tools.singleWhere(
-      (tool) => tool.title == 'New reference lookup',
-    );
-    expect(tools, hasLength(1));
-    expect(
-      (await SkillsRepository(f.database).getSkillById(skillId))?.title,
-      'Complete authoring',
-    );
-    await tester.scrollUntilVisible(
-      find.text('New reference lookup'),
-      350,
-      scrollable: find
-          .descendant(
-            of: find.byType(SkillDetailScreen),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
-    await tester.tap(find.text('New reference lookup'));
-    final _ = await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<SkillToolEditScreen>(find.byType(SkillToolEditScreen))
-          .toolId,
-      created.id,
-    );
-    await _enter(tester, 'Title', 'Updated reference lookup');
-    await tester.tap(find.byTooltip('Save skill'));
-    await f.settle(tester);
-
-    expect(
-      GoRouterState.of(tester.element(find.byType(SkillDetailScreen))).uri.path,
-      parent,
-    );
-    expect(
-      tester.widget<AuraInput>(find.byType(AuraInput).first).controller?.text,
-      'Unpersisted parent title',
-    );
-    final updated = await SkillTemplateToolsRepository(f.database)
-        .getSkillTools(skillId);
-    expect(
-      updated.singleWhere((tool) => tool.id == created.id).title,
-      'Updated reference lookup',
-    );
-    expect(updated, hasLength(1));
+    final updatedSkill = await SkillsRepository(f.database)
+        .getSkillById(skillId);
+    expect(updatedSkill?.connectorToolIds, [connectorToolId]);
+    expect(updatedSkill?.title, 'Unpersisted parent title');
     expect(
       await SkillResourcesRepository(f.database).getSkillResources(skillId),
       resources,
     );
-    await tester.scrollUntilVisible(
-      find.text('Updated reference lookup'),
-      400,
-      scrollable: find
-          .descendant(
-            of: find.byType(SkillDetailScreen),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
-    expect(find.text('Updated reference lookup'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await f.close(tester);
   });
@@ -1089,6 +1014,60 @@ void main() {
     expect(tester.takeException(), isNull);
     await f.close(tester);
   });
+}
+
+Future<void> _expectMasterPreviewDuringBack(
+  WidgetTester tester,
+  UxValidationFixture fixture, {
+  required String masterLocation,
+  required String targetLocation,
+  required String masterTitle,
+  required Finder detailScreen,
+  Finder? absentDuringPreview,
+}) async {
+  final previousPlatform = debugDefaultTargetPlatformOverride;
+  debugDefaultTargetPlatformOverride = .iOS;
+  try {
+    final router = await fixture.pump(
+      tester,
+      masterLocation,
+      size: const Size(466, 678),
+    );
+    expect(find.byType(FeatureDestinationMaster), findsOneWidget);
+    await tester.tap(
+      find.byKey(ValueKey('feature-destination-$targetLocation')),
+    );
+    await fixture.settle(tester);
+    expect(router.state.uri.toString(), targetLocation);
+    final route = ModalRoute.of(tester.element(detailScreen));
+    expect(route?.popGestureEnabled, isTrue);
+    final gesture = await tester.startGesture(const Offset(1, 350));
+    await gesture.moveBy(const Offset(50, 0));
+    await tester.pump();
+    expect(route?.popGestureInProgress, isTrue);
+    expect(
+      find.byType(FeatureDestinationMaster, skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(find.text(masterTitle, skipOffstage: false), findsWidgets);
+    if (absentDuringPreview != null) {
+      expect(
+        absentDuringPreview,
+        findsNothing,
+        reason: 'The previous page must render its master list.',
+      );
+    }
+
+    await gesture.moveBy(const Offset(300, 0));
+    await gesture.up();
+    await fixture.settle(tester);
+    expect(router.state.uri.toString(), masterLocation);
+    expect(find.byType(FeatureDestinationMaster), findsOneWidget);
+    expect(find.text(masterTitle), findsWidgets);
+    await fixture.close(tester);
+  } finally {
+    debugDefaultTargetPlatformOverride = previousPlatform;
+  }
 }
 
 Future<void> _enter(WidgetTester tester, String label, String value) async {

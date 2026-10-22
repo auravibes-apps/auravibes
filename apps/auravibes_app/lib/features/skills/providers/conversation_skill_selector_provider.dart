@@ -1,13 +1,17 @@
 import 'package:auravibes_app/domain/repositories/recent_skill_usage_repository.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/skills/providers/recent_skill_usage_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_skill_selector_provider.g.dart';
+
+final _logger = Logger('conversation_skill_selector');
 
 typedef _SkillLoadRequest = ({
   ListAvailableSkillsUsecase usecase,
@@ -26,6 +30,7 @@ typedef _SkillSelectorDependencies = ({
   BuildLoadedSkillManifestsUsecase buildManifests,
   ListAvailableSkillsUsecase listSkills,
   RecentSkillUsageRepository recentSkillUsageRepository,
+  String? languageCode,
   String workspaceId,
   String conversationId,
   ConversationSkillContextSnapshot? snapshot,
@@ -77,6 +82,9 @@ Future<ConversationSkillSelectorState> conversationSkillSelector(
   buildManifests: ref.watch(buildLoadedSkillManifestsUsecaseProvider),
   listSkills: ref.watch(listAvailableSkillsUsecaseProvider(workspaceId)),
   recentSkillUsageRepository: ref.watch(recentSkillUsageRepositoryProvider),
+  languageCode: ref
+      .watch(conversationAgentLanguageRuntimeProvider)
+      .languageCodeFor(conversationId),
   workspaceId: workspaceId,
   conversationId: conversationId,
   snapshot: ref.watch(conversationSkillContextRuntimeProvider)[conversationId],
@@ -127,6 +135,12 @@ Future<List<AvailableSkill>> _readRecentSkills(
 
     return _skillsInRecentOrder(recentSlugs, _skillIndex(request));
   } on Object {
+    // Ignore this optional read. A later selector load reads history again.
+    // Storage errors can contain user data. Do not log their details.
+    _logger.warning(
+      'Recent skill history read failed. Selector uses empty history.',
+    );
+
     return const [];
   }
 }
@@ -156,6 +170,7 @@ Future<Map<String, String>> _currentSkillRevisions(
     for (final manifest in await dependencies.buildManifests.call(
       conversationId: dependencies.conversationId,
       workspaceId: dependencies.workspaceId,
+      languageCode: dependencies.languageCode,
     )) {
       revisions[manifest.slug] = manifest.revision;
     }
@@ -247,10 +262,10 @@ ConversationSkillContextFailure? _contextFailure(
   ConversationSkillContextSnapshot? snapshot,
   String? currentRevision,
 ) {
-  if (skill.credentialReadiness == .missing) {
-    return .missingCredentials;
+  if (skill.connectorReadiness == .missing) {
+    return .missingConnection;
   }
-  if (skill.credentialReadiness == .unknown) {
+  if (skill.connectorReadiness == .unknown) {
     return .preparationFailed;
   }
   if (currentRevision == null) return .unavailableMetadata;

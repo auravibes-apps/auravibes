@@ -10,3 +10,4 @@ fields:
   modelSelectionId: String?
   agentId: String?
   a2uiSupportedComponents: List<String>?
+  languageCode: String?

@@ -103,5 +103,40 @@ void main() {
       final bodyTop = tester.getTopLeft(find.byKey(bodyKey)).dy;
       expect(bodyTop, closeTo(appBarBottom, 0.01));
     });
+
+    testWidgets('sets status bar contrast for the active theme', (
+      tester,
+    ) async {
+      for (final brightness in <Brightness>[.light, .dark]) {
+        await tester.pumpWidget(
+          AuraThemeScope(
+            theme: brightness == Brightness.light
+                ? AuraTheme.light
+                : AuraTheme.dark,
+            child: MaterialApp(
+              home: Theme(
+                data: .new(brightness: brightness),
+                child: const AuraScreen(
+                  child: SizedBox(),
+                  appBar: AuraAppBar(),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        final style = tester
+            .widget<AppBar>(find.byType(AppBar))
+            .systemOverlayStyle;
+        expect(
+          style?.statusBarBrightness,
+          brightness == Brightness.dark ? Brightness.dark : Brightness.light,
+        );
+        expect(
+          style?.statusBarIconBrightness,
+          brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+        );
+      }
+    });
   });
 }

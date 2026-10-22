@@ -1,9 +1,11 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_request_template.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart'
+    show AppSkillResourceDefinition;
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 
-final jinaSkill = AppSkillDefinition(
+final jinaSkill = ServiceSkillPreset(
   identifier: 'jina',
   slug: 'jina',
   title: 'Jina',
@@ -12,8 +14,6 @@ final jinaSkill = AppSkillDefinition(
 Use Jina for clean page reads, web-searchable content, and reranking candidate
 documents against a query.
   ''',
-  requiresCredential: true,
-  kind: .template,
   resources: const [
     AppSkillResourceDefinition(
       slug: 'reader_url_and_document_modes',
@@ -64,24 +64,26 @@ passages before calling `rerank`.
     ),
   ],
   tools: [
-    const AppSkillToolDefinition(
+    const ConnectorToolDefinition(
       slug: 'reader_fetch',
       title: 'Reader fetch',
       description: 'Fetch clean readable content from a URL.',
       inputJsonSchema: fetchInputSchema,
       urlTemplate: .new(
-        template: SkillUrlTemplate(url: 'https://r.jina.ai/{{ input.url }}'),
+        template: ConnectorRequestTemplate(
+          url: 'https://r.jina.ai/{{ input.url }}',
+        ),
         inputs: urlInputs,
       ),
     ),
-    const AppSkillToolDefinition(
+    const ConnectorToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search clean web content for a query.',
       inputJsonSchema: searchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: .new(
-        template: SkillUrlTemplate(
+        template: ConnectorRequestTemplate(
           url: 'https://s.jina.ai/',
           headers: {'authorization': 'Bearer {{ credential.apiKey }}'},
           query: {'q': '{{ input.query }}'},
@@ -90,12 +92,12 @@ passages before calling `rerank`.
         credentialDefinitions: apiKeyCredentialDefinitions,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'rerank',
       title: 'Rerank',
       description: 'Rerank candidate documents against a query.',
       inputJsonSchema: _rerankInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://api.jina.ai/v1/rerank',
         inputSchema: _rerankInputSchema,

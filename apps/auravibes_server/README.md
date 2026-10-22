@@ -31,6 +31,29 @@ worktrees. Keep other application secrets in `passwords.yaml`, or provide them
 as `SERVERPOD_PASSWORD_<key>` environment variables. Do not commit either
 credentials file.
 
+## Integration tests
+
+Set `test.database` in `config/passwords.yaml` to the same value as
+`POSTGRES_PASSWORD` in `.env`. Start the test database from the server package:
+
+```sh
+cd apps/auravibes_server
+docker compose up -d --remove-orphans postgres_test
+```
+
+Run the suite from the repository root:
+
+```sh
+fvm dart run melos run test:integration
+```
+
+Stop the test database without deleting its volume:
+
+```sh
+cd apps/auravibes_server
+docker compose stop postgres_test
+```
+
 Print the ports selected for this worktree without starting services:
 
 ```sh

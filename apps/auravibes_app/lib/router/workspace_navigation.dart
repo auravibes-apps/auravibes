@@ -14,22 +14,19 @@ abstract final class WorkspaceNavigation {
 
   static WorkspaceDestination? classify(Uri uri) => switch (path(uri)) {
     ['chat', 'new'] || ['chats', ...] => .chats,
-    ['more', 'agents', ...] || ['more', 'skills', ...] => .agentsAndSkills,
-    ['more', 'service-connections', ...] ||
-    ['more', 'skill-credential-definitions', ...] ||
-    ['more', 'tools'] ||
-    ['more', 'models'] => .connections,
+    ['agents', ...] || ['skills', ...] => .agentsAndSkills,
+    ['service-connections', ...] || ['tools'] || ['models'] => .connections,
+    ['more', 'workflows', ...] => .workflows,
     ['settings'] => .appSettings,
-    ['more', 'cloud-accounts', ...] => .cloudAccounts,
+    ['cloud-accounts', ...] => .cloudAccounts,
     _ => null,
   };
 
   /// Only these app-owned pages can recover an expired workspace session.
   static bool isAppScoped(Uri uri) => switch (path(uri)) {
     ['settings'] ||
-    ['more', 'cloud-accounts'] ||
+    ['cloud-accounts'] ||
     [
-      'more',
       'cloud-accounts',
       'add' || 'login' || 'register' || 'forgot-password',
     ] => true,
@@ -42,6 +39,7 @@ abstract final class WorkspaceNavigation {
   };
 
   static ConnectionDestination connectionView(String? view) => switch (view) {
+    'connectors' => .connectors,
     'providers' => .providers,
     'services' => .services,
     'credentials' => .credentials,
@@ -54,10 +52,18 @@ enum WorkspaceDestination {
   chats,
   agentsAndSkills,
   connections,
+  workflows,
   appSettings,
   cloudAccounts,
 }
 
 enum AgentDestination { agents, skills }
 
-enum ConnectionDestination { overview, providers, services, credentials, tools }
+enum ConnectionDestination {
+  overview,
+  connectors,
+  providers,
+  services,
+  credentials,
+  tools,
+}

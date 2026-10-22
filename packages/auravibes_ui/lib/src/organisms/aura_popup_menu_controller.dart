@@ -1,25 +1,16 @@
 import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
+import 'package:auravibes_ui/src/atoms/aura_key_down_shortcut_activator.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart' show AuraTileVariant;
 import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 
 export 'aura_popup_menu_button.dart';
 
 typedef _PopupFocusNode = ({FocusNode node, bool ownsNode});
-
-typedef _PopupMenuKeyRequest = ({
-  FocusNode node,
-  KeyEvent event,
-  FocusNode trigger,
-  bool visible,
-  VoidCallback toggle,
-  VoidCallback close,
-});
 
 /// Controller for managing the visibility of a context menu.
 class AuraPopupMenuController {
@@ -94,10 +85,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   @override
   void initState() {
     super.initState();
-    _menuFocusScopeNode = .new(
-      debugLabel: 'AuraPopupMenu menu',
-      onKeyEvent: _handleMenuKeyEvent,
-    );
+    _menuFocusScopeNode = .new(debugLabel: 'AuraPopupMenu menu');
     _initializePopupMenuFocus();
     widget.controller._state = this;
   }
@@ -161,14 +149,16 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
 
   @override
   Widget build(BuildContext context) => _AuraPopupMenuData(
+    safeAreaBottom: _viewSafeAreaBottom(context),
     visible: _visible,
     menuFocusScopeNode: _requiredMenuFocusScopeNode,
     items: widget.items,
     close: close,
     closeOutside: _closeFromOutside,
+    closeWithFocusRestore: () => close(restoreFocus: true),
     trigger: widget.child,
     focusNode: _requiredFocusNode,
-    onKeyEvent: _handleMenuKeyEvent,
+    toggle: toggle,
     groupId: this,
   ).child;
 
@@ -183,16 +173,6 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
       _visible = false;
     });
   }
-
-  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) =>
-      _handlePopupMenuKey((
-        node: node,
-        event: event,
-        trigger: _requiredFocusNode,
-        visible: _visible,
-        toggle: toggle,
-        close: () => close(restoreFocus: true),
-      ));
 }
 
 extension on _AuraPopupMenuState {
@@ -235,45 +215,32 @@ void _requestMenuFocus(_AuraPopupMenuState state) {
   state._requiredMenuFocusScopeNode.requestFocus();
 }
 
-KeyEventResult _handlePopupMenuKey(_PopupMenuKeyRequest request) {
-  final event = request.event;
-  if (event is! KeyDownEvent) return KeyEventResult.ignored;
+void _focusFirstPopupTriggerDescendant(FocusNode focusNode) {
+  for (final descendant in focusNode.descendants) {
+    if (!descendant.canRequestFocus) continue;
 
-  if (_shouldTogglePopupMenu(request, event)) {
-    request.toggle();
+    descendant.requestFocus();
 
-    return KeyEventResult.handled;
+    return;
   }
-
-  if (_shouldClosePopupMenu(request, event)) {
-    request.close();
-
-    return KeyEventResult.handled;
-  }
-
-  return KeyEventResult.ignored;
 }
 
-bool _isPopupMenuActivationKey(LogicalKeyboardKey key) =>
-    key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.space;
-
-bool _shouldTogglePopupMenu(_PopupMenuKeyRequest request, KeyDownEvent event) =>
-    request.node == request.trigger &&
-    _isPopupMenuActivationKey(event.logicalKey);
-
-bool _shouldClosePopupMenu(_PopupMenuKeyRequest request, KeyDownEvent event) =>
-    request.visible && event.logicalKey == LogicalKeyboardKey.escape;
+// SafeArea clears inherited padding, so read the view directly.
+double _viewSafeAreaBottom(BuildContext context) =>
+    MediaQueryData.fromView(View.of(context)).padding.bottom;
 
 class _AuraPopupMenuData {
   new({
+    required double safeAreaBottom,
     required bool visible,
     required FocusScopeNode menuFocusScopeNode,
     required List<AuraPopupMenuEntry> items,
     required VoidCallback close,
     required VoidCallback closeOutside,
+    required VoidCallback closeWithFocusRestore,
     required Widget trigger,
     required FocusNode focusNode,
-    required FocusOnKeyEventCallback onKeyEvent,
+    required VoidCallback toggle,
     required Object groupId,
   }) : child = PortalTarget(
          visible: visible,
@@ -283,25 +250,81 @@ class _AuraPopupMenuData {
            portal: .bottomCenter,
            shiftToWithinBound: .new(x: true, y: true),
          ),
-         portalFollower: TapRegion(
-           child: FocusScope(
-             node: menuFocusScopeNode,
-             child: _AuraPopupMenuSurface(items: items, close: close),
+         portalFollower: Padding(
+           padding: .only(bottom: safeAreaBottom),
+           child: TapRegion(
+             child: Shortcuts(
+               shortcuts: _popupMenuEscapeShortcuts(visible),
+               child: Actions(
+                 actions: _popupMenuActions(toggle, closeWithFocusRestore),
+                 child: FocusScope(
+                   node: menuFocusScopeNode,
+                   child: _AuraPopupMenuSurface(items: items, close: close),
+                 ),
+               ),
+               includeSemantics: false,
+             ),
+             behavior: .opaque,
+             onTapOutside: (_) => closeOutside(),
+             groupId: groupId,
            ),
-           behavior: .opaque,
-           onTapOutside: (_) => closeOutside(),
-           groupId: groupId,
          ),
-         child: Focus(
-           child: TapRegion(child: trigger, groupId: groupId),
-           focusNode: focusNode,
-           onKeyEvent: onKeyEvent,
-           descendantsAreFocusable: false,
+         child: Shortcuts(
+           shortcuts: _popupMenuTriggerShortcuts(visible),
+           child: Actions(
+             actions: _popupMenuActions(toggle, closeWithFocusRestore),
+             child: Focus(
+               child: TapRegion(child: trigger, groupId: groupId),
+               focusNode: focusNode,
+               onFocusChange: (focused) {
+                 if (focused) _focusFirstPopupTriggerDescendant(focusNode);
+               },
+               descendantsAreFocusable: true,
+               descendantsAreTraversable: false,
+             ),
+           ),
+           includeSemantics: false,
          ),
        );
 
   final Widget child;
 }
+
+Map<ShortcutActivator, Intent> _popupMenuTriggerShortcuts(bool visible) => {
+  const AuraKeyDownShortcutActivator(.enter): const _PopupMenuToggleIntent(),
+  const AuraKeyDownShortcutActivator(.space): const _PopupMenuToggleIntent(),
+  if (visible)
+    const AuraKeyDownShortcutActivator(.escape): const _PopupMenuCloseIntent(),
+};
+
+Map<ShortcutActivator, Intent> _popupMenuEscapeShortcuts(bool visible) =>
+    visible
+    ? const {AuraKeyDownShortcutActivator(.escape): _PopupMenuCloseIntent()}
+    : const {};
+
+Map<Type, Action<Intent>> _popupMenuActions(
+  VoidCallback toggle,
+  VoidCallback closeWithFocusRestore,
+) => {
+  _PopupMenuToggleIntent: CallbackAction<_PopupMenuToggleIntent>(
+    onInvoke: (_) {
+      toggle();
+
+      return null;
+    },
+  ),
+  _PopupMenuCloseIntent: CallbackAction<_PopupMenuCloseIntent>(
+    onInvoke: (_) {
+      closeWithFocusRestore();
+
+      return null;
+    },
+  ),
+};
+
+class const _PopupMenuToggleIntent() extends Intent;
+
+class const _PopupMenuCloseIntent() extends Intent;
 
 class _AuraPopupMenuSurface extends StatelessWidget {
   static const _minWidth = 240;

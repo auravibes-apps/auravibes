@@ -127,12 +127,13 @@ void main() {
           'is_user',
           'status',
           'metadata',
+          'is_bookmarked',
         ]),
       );
     });
 
-    test('has 9 columns', () {
-      expect(columns.length, 9);
+    test('has 10 columns', () {
+      expect(columns.length, 10);
     });
 
     test('conversation_id is not null', () {

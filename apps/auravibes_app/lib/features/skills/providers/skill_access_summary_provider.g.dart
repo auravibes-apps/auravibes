@@ -74,7 +74,7 @@ final class AssessSkillAccessUsecaseProvider
 }
 
 String _$assessSkillAccessUsecaseHash() =>
-    r'249bd1aea6c33c208862303c334278a6a895127a';
+    r'3b129609f2f07d644d987184f682972c81079b08';
 
 final class AssessSkillAccessUsecaseFamily extends $Family
     with $FunctionalFamilyOverride<AssessSkillAccessUsecase, String> {
@@ -152,7 +152,7 @@ final class SkillAccessSummaryProvider
 }
 
 String _$skillAccessSummaryHash() =>
-    r'5ec58f0bef3590a3ac94771fe14dca649b49b639';
+    r'3f666a5ea4b0114f717621428ffdf60974a90daa';
 
 final class SkillAccessSummaryFamily extends $Family
     with
@@ -177,93 +177,4 @@ final class SkillAccessSummaryFamily extends $Family
 
   @override
   String toString() => r'skillAccessSummaryProvider';
-}
-
-@ProviderFor(appSkillCredentialCandidates)
-final appSkillCredentialCandidatesProvider =
-    AppSkillCredentialCandidatesFamily._();
-
-final class AppSkillCredentialCandidatesProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<AppSkillCredentialCandidate>>,
-          List<AppSkillCredentialCandidate>,
-          FutureOr<List<AppSkillCredentialCandidate>>
-        >
-    with
-        $FutureModifier<List<AppSkillCredentialCandidate>>,
-        $FutureProvider<List<AppSkillCredentialCandidate>> {
-  AppSkillCredentialCandidatesProvider._({
-    required AppSkillCredentialCandidatesFamily super.from,
-    required (String, String) super.argument,
-  }) : super(
-         retry: null,
-         name: r'appSkillCredentialCandidatesProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
-
-  @override
-  String debugGetCreateSourceHash() => _$appSkillCredentialCandidatesHash();
-
-  @override
-  String toString() {
-    return r'appSkillCredentialCandidatesProvider'
-        ''
-        '$argument';
-  }
-
-  @$internal
-  @override
-  $FutureProviderElement<List<AppSkillCredentialCandidate>> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<List<AppSkillCredentialCandidate>> create(Ref ref) {
-    final argument = this.argument as (String, String);
-    return appSkillCredentialCandidates(ref, argument.$1, argument.$2);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is AppSkillCredentialCandidatesProvider &&
-        other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
-  }
-}
-
-String _$appSkillCredentialCandidatesHash() =>
-    r'0eba673e313c6ee736eff47010da334760df474b';
-
-final class AppSkillCredentialCandidatesFamily extends $Family
-    with
-        $FunctionalFamilyOverride<
-          FutureOr<List<AppSkillCredentialCandidate>>,
-          (String, String)
-        > {
-  AppSkillCredentialCandidatesFamily._()
-    : super(
-        retry: null,
-        name: r'appSkillCredentialCandidatesProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  AppSkillCredentialCandidatesProvider call(
-    String workspaceId,
-    String skillId,
-  ) => AppSkillCredentialCandidatesProvider._(
-    argument: (workspaceId, skillId),
-    from: this,
-  );
-
-  @override
-  String toString() => r'appSkillCredentialCandidatesProvider';
 }

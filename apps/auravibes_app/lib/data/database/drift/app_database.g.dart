@@ -4508,6 +4508,18 @@ class $ConversationsTable extends Conversations
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _toolAccessModeMeta = const VerificationMeta(
+    'toolAccessMode',
+  );
+  @override
+  late final GeneratedColumn<String> toolAccessMode = GeneratedColumn<String>(
+    'tool_access_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('default'),
+  );
   static const VerificationMeta _isPinnedMeta = const VerificationMeta(
     'isPinned',
   );
@@ -4539,6 +4551,7 @@ class $ConversationsTable extends Conversations
     forkThroughMessageId,
     forkMaterializedAt,
     activeCompactionCheckpointId,
+    toolAccessMode,
     isPinned,
   ];
   @override
@@ -4662,6 +4675,15 @@ class $ConversationsTable extends Conversations
         ),
       );
     }
+    if (data.containsKey('tool_access_mode')) {
+      context.handle(
+        _toolAccessModeMeta,
+        toolAccessMode.isAcceptableOrUnknown(
+          data['tool_access_mode']!,
+          _toolAccessModeMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_pinned')) {
       context.handle(
         _isPinnedMeta,
@@ -4733,6 +4755,10 @@ class $ConversationsTable extends Conversations
         DriftSqlType.string,
         data['${effectivePrefix}active_compaction_checkpoint_id'],
       ),
+      toolAccessMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_access_mode'],
+      )!,
       isPinned: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_pinned'],
@@ -4781,6 +4807,7 @@ class ConversationsTable extends DataClass
   /// Non-null after the source history has been materialized into this fork.
   final DateTime? forkMaterializedAt;
   final String? activeCompactionCheckpointId;
+  final String toolAccessMode;
   final bool isPinned;
   const ConversationsTable({
     required this.id,
@@ -4797,6 +4824,7 @@ class ConversationsTable extends DataClass
     this.forkThroughMessageId,
     this.forkMaterializedAt,
     this.activeCompactionCheckpointId,
+    required this.toolAccessMode,
     required this.isPinned,
   });
   @override
@@ -4838,6 +4866,7 @@ class ConversationsTable extends DataClass
         activeCompactionCheckpointId,
       );
     }
+    map['tool_access_mode'] = Variable<String>(toolAccessMode);
     map['is_pinned'] = Variable<bool>(isPinned);
     return map;
   }
@@ -4877,6 +4906,7 @@ class ConversationsTable extends DataClass
           activeCompactionCheckpointId == null && nullToAbsent
           ? const Value.absent()
           : Value(activeCompactionCheckpointId),
+      toolAccessMode: Value(toolAccessMode),
       isPinned: Value(isPinned),
     );
   }
@@ -4913,6 +4943,7 @@ class ConversationsTable extends DataClass
       activeCompactionCheckpointId: serializer.fromJson<String?>(
         json['activeCompactionCheckpointId'],
       ),
+      toolAccessMode: serializer.fromJson<String>(json['toolAccessMode']),
       isPinned: serializer.fromJson<bool>(json['isPinned']),
     );
   }
@@ -4938,6 +4969,7 @@ class ConversationsTable extends DataClass
       'activeCompactionCheckpointId': serializer.toJson<String?>(
         activeCompactionCheckpointId,
       ),
+      'toolAccessMode': serializer.toJson<String>(toolAccessMode),
       'isPinned': serializer.toJson<bool>(isPinned),
     };
   }
@@ -4957,6 +4989,7 @@ class ConversationsTable extends DataClass
     Value<String?> forkThroughMessageId = const Value.absent(),
     Value<DateTime?> forkMaterializedAt = const Value.absent(),
     Value<String?> activeCompactionCheckpointId = const Value.absent(),
+    String? toolAccessMode,
     bool? isPinned,
   }) => ConversationsTable(
     id: id ?? this.id,
@@ -4987,6 +5020,7 @@ class ConversationsTable extends DataClass
     activeCompactionCheckpointId: activeCompactionCheckpointId.present
         ? activeCompactionCheckpointId.value
         : this.activeCompactionCheckpointId,
+    toolAccessMode: toolAccessMode ?? this.toolAccessMode,
     isPinned: isPinned ?? this.isPinned,
   );
   ConversationsTable copyWithCompanion(ConversationsCompanion data) {
@@ -5021,6 +5055,9 @@ class ConversationsTable extends DataClass
       activeCompactionCheckpointId: data.activeCompactionCheckpointId.present
           ? data.activeCompactionCheckpointId.value
           : this.activeCompactionCheckpointId,
+      toolAccessMode: data.toolAccessMode.present
+          ? data.toolAccessMode.value
+          : this.toolAccessMode,
       isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
     );
   }
@@ -5044,6 +5081,7 @@ class ConversationsTable extends DataClass
           ..write(
             'activeCompactionCheckpointId: $activeCompactionCheckpointId, ',
           )
+          ..write('toolAccessMode: $toolAccessMode, ')
           ..write('isPinned: $isPinned')
           ..write(')'))
         .toString();
@@ -5065,6 +5103,7 @@ class ConversationsTable extends DataClass
     forkThroughMessageId,
     forkMaterializedAt,
     activeCompactionCheckpointId,
+    toolAccessMode,
     isPinned,
   );
   @override
@@ -5086,6 +5125,7 @@ class ConversationsTable extends DataClass
           other.forkMaterializedAt == this.forkMaterializedAt &&
           other.activeCompactionCheckpointId ==
               this.activeCompactionCheckpointId &&
+          other.toolAccessMode == this.toolAccessMode &&
           other.isPinned == this.isPinned);
 }
 
@@ -5104,6 +5144,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   final Value<String?> forkThroughMessageId;
   final Value<DateTime?> forkMaterializedAt;
   final Value<String?> activeCompactionCheckpointId;
+  final Value<String> toolAccessMode;
   final Value<bool> isPinned;
   final Value<int> rowid;
   const ConversationsCompanion({
@@ -5121,6 +5162,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.forkThroughMessageId = const Value.absent(),
     this.forkMaterializedAt = const Value.absent(),
     this.activeCompactionCheckpointId = const Value.absent(),
+    this.toolAccessMode = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -5139,6 +5181,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.forkThroughMessageId = const Value.absent(),
     this.forkMaterializedAt = const Value.absent(),
     this.activeCompactionCheckpointId = const Value.absent(),
+    this.toolAccessMode = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -5158,6 +5201,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Expression<String>? forkThroughMessageId,
     Expression<DateTime>? forkMaterializedAt,
     Expression<String>? activeCompactionCheckpointId,
+    Expression<String>? toolAccessMode,
     Expression<bool>? isPinned,
     Expression<int>? rowid,
   }) {
@@ -5182,6 +5226,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
         'fork_materialized_at': forkMaterializedAt,
       if (activeCompactionCheckpointId != null)
         'active_compaction_checkpoint_id': activeCompactionCheckpointId,
+      if (toolAccessMode != null) 'tool_access_mode': toolAccessMode,
       if (isPinned != null) 'is_pinned': isPinned,
       if (rowid != null) 'rowid': rowid,
     });
@@ -5202,6 +5247,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Value<String?>? forkThroughMessageId,
     Value<DateTime?>? forkMaterializedAt,
     Value<String?>? activeCompactionCheckpointId,
+    Value<String>? toolAccessMode,
     Value<bool>? isPinned,
     Value<int>? rowid,
   }) {
@@ -5222,6 +5268,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       forkMaterializedAt: forkMaterializedAt ?? this.forkMaterializedAt,
       activeCompactionCheckpointId:
           activeCompactionCheckpointId ?? this.activeCompactionCheckpointId,
+      toolAccessMode: toolAccessMode ?? this.toolAccessMode,
       isPinned: isPinned ?? this.isPinned,
       rowid: rowid ?? this.rowid,
     );
@@ -5284,6 +5331,9 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
         activeCompactionCheckpointId.value,
       );
     }
+    if (toolAccessMode.present) {
+      map['tool_access_mode'] = Variable<String>(toolAccessMode.value);
+    }
     if (isPinned.present) {
       map['is_pinned'] = Variable<bool>(isPinned.value);
     }
@@ -5312,495 +5362,8 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
           ..write(
             'activeCompactionCheckpointId: $activeCompactionCheckpointId, ',
           )
+          ..write('toolAccessMode: $toolAccessMode, ')
           ..write('isPinned: $isPinned, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $SkillCredentialDefinitionsTable extends SkillCredentialDefinitions
-    with
-        TableInfo<
-          $SkillCredentialDefinitionsTable,
-          SkillCredentialDefinitionsTable
-        > {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $SkillCredentialDefinitionsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    clientDefault: () => const UuidV7().generate(),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
-    'workspaceId',
-  );
-  @override
-  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
-    'workspace_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspaces (id) ON DELETE CASCADE',
-    ),
-  );
-  static const VerificationMeta _titleMeta = const VerificationMeta('title');
-  @override
-  late final GeneratedColumn<String> title = GeneratedColumn<String>(
-    'title',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
-  @override
-  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
-    'slug',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _attributesJsonMeta = const VerificationMeta(
-    'attributesJson',
-  );
-  @override
-  late final GeneratedColumn<String> attributesJson = GeneratedColumn<String>(
-    'attributes_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    createdAt,
-    updatedAt,
-    workspaceId,
-    title,
-    slug,
-    attributesJson,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'skill_credential_definitions';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<SkillCredentialDefinitionsTable> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    if (data.containsKey('workspace_id')) {
-      context.handle(
-        _workspaceIdMeta,
-        workspaceId.isAcceptableOrUnknown(
-          data['workspace_id']!,
-          _workspaceIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_workspaceIdMeta);
-    }
-    if (data.containsKey('title')) {
-      context.handle(
-        _titleMeta,
-        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_titleMeta);
-    }
-    if (data.containsKey('slug')) {
-      context.handle(
-        _slugMeta,
-        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_slugMeta);
-    }
-    if (data.containsKey('attributes_json')) {
-      context.handle(
-        _attributesJsonMeta,
-        attributesJson.isAcceptableOrUnknown(
-          data['attributes_json']!,
-          _attributesJsonMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_attributesJsonMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {workspaceId, title},
-    {workspaceId, slug},
-  ];
-  @override
-  SkillCredentialDefinitionsTable map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return SkillCredentialDefinitionsTable(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-      workspaceId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}workspace_id'],
-      )!,
-      title: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}title'],
-      )!,
-      slug: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}slug'],
-      )!,
-      attributesJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}attributes_json'],
-      )!,
-    );
-  }
-
-  @override
-  $SkillCredentialDefinitionsTable createAlias(String alias) {
-    return $SkillCredentialDefinitionsTable(attachedDatabase, alias);
-  }
-}
-
-class SkillCredentialDefinitionsTable extends DataClass
-    implements Insertable<SkillCredentialDefinitionsTable> {
-  /// Primary key column as string.
-  final String id;
-
-  /// When was created timestamp.
-  final DateTime createdAt;
-
-  /// When was last updated timestamp.
-  final DateTime updatedAt;
-  final String workspaceId;
-  final String title;
-  final String slug;
-  final String attributesJson;
-  const SkillCredentialDefinitionsTable({
-    required this.id,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.workspaceId,
-    required this.title,
-    required this.slug,
-    required this.attributesJson,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    map['workspace_id'] = Variable<String>(workspaceId);
-    map['title'] = Variable<String>(title);
-    map['slug'] = Variable<String>(slug);
-    map['attributes_json'] = Variable<String>(attributesJson);
-    return map;
-  }
-
-  SkillCredentialDefinitionsCompanion toCompanion(bool nullToAbsent) {
-    return SkillCredentialDefinitionsCompanion(
-      id: Value(id),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      workspaceId: Value(workspaceId),
-      title: Value(title),
-      slug: Value(slug),
-      attributesJson: Value(attributesJson),
-    );
-  }
-
-  factory SkillCredentialDefinitionsTable.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return SkillCredentialDefinitionsTable(
-      id: serializer.fromJson<String>(json['id']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      workspaceId: serializer.fromJson<String>(json['workspaceId']),
-      title: serializer.fromJson<String>(json['title']),
-      slug: serializer.fromJson<String>(json['slug']),
-      attributesJson: serializer.fromJson<String>(json['attributesJson']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'workspaceId': serializer.toJson<String>(workspaceId),
-      'title': serializer.toJson<String>(title),
-      'slug': serializer.toJson<String>(slug),
-      'attributesJson': serializer.toJson<String>(attributesJson),
-    };
-  }
-
-  SkillCredentialDefinitionsTable copyWith({
-    String? id,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    String? workspaceId,
-    String? title,
-    String? slug,
-    String? attributesJson,
-  }) => SkillCredentialDefinitionsTable(
-    id: id ?? this.id,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    workspaceId: workspaceId ?? this.workspaceId,
-    title: title ?? this.title,
-    slug: slug ?? this.slug,
-    attributesJson: attributesJson ?? this.attributesJson,
-  );
-  SkillCredentialDefinitionsTable copyWithCompanion(
-    SkillCredentialDefinitionsCompanion data,
-  ) {
-    return SkillCredentialDefinitionsTable(
-      id: data.id.present ? data.id.value : this.id,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      workspaceId: data.workspaceId.present
-          ? data.workspaceId.value
-          : this.workspaceId,
-      title: data.title.present ? data.title.value : this.title,
-      slug: data.slug.present ? data.slug.value : this.slug,
-      attributesJson: data.attributesJson.present
-          ? data.attributesJson.value
-          : this.attributesJson,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillCredentialDefinitionsTable(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('workspaceId: $workspaceId, ')
-          ..write('title: $title, ')
-          ..write('slug: $slug, ')
-          ..write('attributesJson: $attributesJson')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    createdAt,
-    updatedAt,
-    workspaceId,
-    title,
-    slug,
-    attributesJson,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is SkillCredentialDefinitionsTable &&
-          other.id == this.id &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.workspaceId == this.workspaceId &&
-          other.title == this.title &&
-          other.slug == this.slug &&
-          other.attributesJson == this.attributesJson);
-}
-
-class SkillCredentialDefinitionsCompanion
-    extends UpdateCompanion<SkillCredentialDefinitionsTable> {
-  final Value<String> id;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String> workspaceId;
-  final Value<String> title;
-  final Value<String> slug;
-  final Value<String> attributesJson;
-  final Value<int> rowid;
-  const SkillCredentialDefinitionsCompanion({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.workspaceId = const Value.absent(),
-    this.title = const Value.absent(),
-    this.slug = const Value.absent(),
-    this.attributesJson = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  SkillCredentialDefinitionsCompanion.insert({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    required String workspaceId,
-    required String title,
-    required String slug,
-    required String attributesJson,
-    this.rowid = const Value.absent(),
-  }) : workspaceId = Value(workspaceId),
-       title = Value(title),
-       slug = Value(slug),
-       attributesJson = Value(attributesJson);
-  static Insertable<SkillCredentialDefinitionsTable> custom({
-    Expression<String>? id,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? workspaceId,
-    Expression<String>? title,
-    Expression<String>? slug,
-    Expression<String>? attributesJson,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (workspaceId != null) 'workspace_id': workspaceId,
-      if (title != null) 'title': title,
-      if (slug != null) 'slug': slug,
-      if (attributesJson != null) 'attributes_json': attributesJson,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  SkillCredentialDefinitionsCompanion copyWith({
-    Value<String>? id,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-    Value<String>? workspaceId,
-    Value<String>? title,
-    Value<String>? slug,
-    Value<String>? attributesJson,
-    Value<int>? rowid,
-  }) {
-    return SkillCredentialDefinitionsCompanion(
-      id: id ?? this.id,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      workspaceId: workspaceId ?? this.workspaceId,
-      title: title ?? this.title,
-      slug: slug ?? this.slug,
-      attributesJson: attributesJson ?? this.attributesJson,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (workspaceId.present) {
-      map['workspace_id'] = Variable<String>(workspaceId.value);
-    }
-    if (title.present) {
-      map['title'] = Variable<String>(title.value);
-    }
-    if (slug.present) {
-      map['slug'] = Variable<String>(slug.value);
-    }
-    if (attributesJson.present) {
-      map['attributes_json'] = Variable<String>(attributesJson.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillCredentialDefinitionsCompanion(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('workspaceId: $workspaceId, ')
-          ..write('title: $title, ')
-          ..write('slug: $slug, ')
-          ..write('attributesJson: $attributesJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5918,34 +5481,18 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _credentialDefinitionIdMeta =
-      const VerificationMeta('credentialDefinitionId');
+  static const VerificationMeta _connectorToolIdsJsonMeta =
+      const VerificationMeta('connectorToolIdsJson');
   @override
-  late final GeneratedColumn<String> credentialDefinitionId =
+  late final GeneratedColumn<String> connectorToolIdsJson =
       GeneratedColumn<String>(
-        'credential_definition_id',
+        'connector_tool_ids_json',
         aliasedName,
-        true,
+        false,
         type: DriftSqlType.string,
         requiredDuringInsert: false,
-        defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES skill_credential_definitions (id) ON DELETE SET NULL',
-        ),
+        defaultValue: const Constant('[]'),
       );
-  static const VerificationMeta _isCredentialOptionalMeta =
-      const VerificationMeta('isCredentialOptional');
-  @override
-  late final GeneratedColumn<bool> isCredentialOptional = GeneratedColumn<bool>(
-    'is_credential_optional',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_credential_optional" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
   static const VerificationMeta _isEnabledMeta = const VerificationMeta(
     'isEnabled',
   );
@@ -5973,8 +5520,7 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
     slug,
     description,
     content,
-    credentialDefinitionId,
-    isCredentialOptional,
+    connectorToolIdsJson,
     isEnabled,
   ];
   @override
@@ -6050,21 +5596,12 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
     } else if (isInserting) {
       context.missing(_contentMeta);
     }
-    if (data.containsKey('credential_definition_id')) {
+    if (data.containsKey('connector_tool_ids_json')) {
       context.handle(
-        _credentialDefinitionIdMeta,
-        credentialDefinitionId.isAcceptableOrUnknown(
-          data['credential_definition_id']!,
-          _credentialDefinitionIdMeta,
-        ),
-      );
-    }
-    if (data.containsKey('is_credential_optional')) {
-      context.handle(
-        _isCredentialOptionalMeta,
-        isCredentialOptional.isAcceptableOrUnknown(
-          data['is_credential_optional']!,
-          _isCredentialOptionalMeta,
+        _connectorToolIdsJsonMeta,
+        connectorToolIdsJson.isAcceptableOrUnknown(
+          data['connector_tool_ids_json']!,
+          _connectorToolIdsJsonMeta,
         ),
       );
     }
@@ -6132,13 +5669,9 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
         DriftSqlType.string,
         data['${effectivePrefix}content'],
       )!,
-      credentialDefinitionId: attachedDatabase.typeMapping.read(
+      connectorToolIdsJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}credential_definition_id'],
-      ),
-      isCredentialOptional: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_credential_optional'],
+        data['${effectivePrefix}connector_tool_ids_json'],
       )!,
       isEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
@@ -6174,8 +5707,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
   final String slug;
   final String description;
   final String content;
-  final String? credentialDefinitionId;
-  final bool isCredentialOptional;
+  final String connectorToolIdsJson;
   final bool isEnabled;
   const SkillsTable({
     required this.id,
@@ -6188,8 +5720,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     required this.slug,
     required this.description,
     required this.content,
-    this.credentialDefinitionId,
-    required this.isCredentialOptional,
+    required this.connectorToolIdsJson,
     required this.isEnabled,
   });
   @override
@@ -6211,12 +5742,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     map['slug'] = Variable<String>(slug);
     map['description'] = Variable<String>(description);
     map['content'] = Variable<String>(content);
-    if (!nullToAbsent || credentialDefinitionId != null) {
-      map['credential_definition_id'] = Variable<String>(
-        credentialDefinitionId,
-      );
-    }
-    map['is_credential_optional'] = Variable<bool>(isCredentialOptional);
+    map['connector_tool_ids_json'] = Variable<String>(connectorToolIdsJson);
     map['is_enabled'] = Variable<bool>(isEnabled);
     return map;
   }
@@ -6233,10 +5759,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
       slug: Value(slug),
       description: Value(description),
       content: Value(content),
-      credentialDefinitionId: credentialDefinitionId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(credentialDefinitionId),
-      isCredentialOptional: Value(isCredentialOptional),
+      connectorToolIdsJson: Value(connectorToolIdsJson),
       isEnabled: Value(isEnabled),
     );
   }
@@ -6261,11 +5784,8 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
       slug: serializer.fromJson<String>(json['slug']),
       description: serializer.fromJson<String>(json['description']),
       content: serializer.fromJson<String>(json['content']),
-      credentialDefinitionId: serializer.fromJson<String?>(
-        json['credentialDefinitionId'],
-      ),
-      isCredentialOptional: serializer.fromJson<bool>(
-        json['isCredentialOptional'],
+      connectorToolIdsJson: serializer.fromJson<String>(
+        json['connectorToolIdsJson'],
       ),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
     );
@@ -6288,10 +5808,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
       'slug': serializer.toJson<String>(slug),
       'description': serializer.toJson<String>(description),
       'content': serializer.toJson<String>(content),
-      'credentialDefinitionId': serializer.toJson<String?>(
-        credentialDefinitionId,
-      ),
-      'isCredentialOptional': serializer.toJson<bool>(isCredentialOptional),
+      'connectorToolIdsJson': serializer.toJson<String>(connectorToolIdsJson),
       'isEnabled': serializer.toJson<bool>(isEnabled),
     };
   }
@@ -6307,8 +5824,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     String? slug,
     String? description,
     String? content,
-    Value<String?> credentialDefinitionId = const Value.absent(),
-    bool? isCredentialOptional,
+    String? connectorToolIdsJson,
     bool? isEnabled,
   }) => SkillsTable(
     id: id ?? this.id,
@@ -6321,10 +5837,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     slug: slug ?? this.slug,
     description: description ?? this.description,
     content: content ?? this.content,
-    credentialDefinitionId: credentialDefinitionId.present
-        ? credentialDefinitionId.value
-        : this.credentialDefinitionId,
-    isCredentialOptional: isCredentialOptional ?? this.isCredentialOptional,
+    connectorToolIdsJson: connectorToolIdsJson ?? this.connectorToolIdsJson,
     isEnabled: isEnabled ?? this.isEnabled,
   );
   SkillsTable copyWithCompanion(SkillsCompanion data) {
@@ -6343,12 +5856,9 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
           ? data.description.value
           : this.description,
       content: data.content.present ? data.content.value : this.content,
-      credentialDefinitionId: data.credentialDefinitionId.present
-          ? data.credentialDefinitionId.value
-          : this.credentialDefinitionId,
-      isCredentialOptional: data.isCredentialOptional.present
-          ? data.isCredentialOptional.value
-          : this.isCredentialOptional,
+      connectorToolIdsJson: data.connectorToolIdsJson.present
+          ? data.connectorToolIdsJson.value
+          : this.connectorToolIdsJson,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
     );
   }
@@ -6366,8 +5876,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
           ..write('slug: $slug, ')
           ..write('description: $description, ')
           ..write('content: $content, ')
-          ..write('credentialDefinitionId: $credentialDefinitionId, ')
-          ..write('isCredentialOptional: $isCredentialOptional, ')
+          ..write('connectorToolIdsJson: $connectorToolIdsJson, ')
           ..write('isEnabled: $isEnabled')
           ..write(')'))
         .toString();
@@ -6385,8 +5894,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
     slug,
     description,
     content,
-    credentialDefinitionId,
-    isCredentialOptional,
+    connectorToolIdsJson,
     isEnabled,
   );
   @override
@@ -6403,8 +5911,7 @@ class SkillsTable extends DataClass implements Insertable<SkillsTable> {
           other.slug == this.slug &&
           other.description == this.description &&
           other.content == this.content &&
-          other.credentialDefinitionId == this.credentialDefinitionId &&
-          other.isCredentialOptional == this.isCredentialOptional &&
+          other.connectorToolIdsJson == this.connectorToolIdsJson &&
           other.isEnabled == this.isEnabled);
 }
 
@@ -6419,8 +5926,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
   final Value<String> slug;
   final Value<String> description;
   final Value<String> content;
-  final Value<String?> credentialDefinitionId;
-  final Value<bool> isCredentialOptional;
+  final Value<String> connectorToolIdsJson;
   final Value<bool> isEnabled;
   final Value<int> rowid;
   const SkillsCompanion({
@@ -6434,8 +5940,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     this.slug = const Value.absent(),
     this.description = const Value.absent(),
     this.content = const Value.absent(),
-    this.credentialDefinitionId = const Value.absent(),
-    this.isCredentialOptional = const Value.absent(),
+    this.connectorToolIdsJson = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -6450,8 +5955,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     required String slug,
     required String description,
     required String content,
-    this.credentialDefinitionId = const Value.absent(),
-    this.isCredentialOptional = const Value.absent(),
+    this.connectorToolIdsJson = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -6472,8 +5976,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     Expression<String>? slug,
     Expression<String>? description,
     Expression<String>? content,
-    Expression<String>? credentialDefinitionId,
-    Expression<bool>? isCredentialOptional,
+    Expression<String>? connectorToolIdsJson,
     Expression<bool>? isEnabled,
     Expression<int>? rowid,
   }) {
@@ -6488,10 +5991,8 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
       if (slug != null) 'slug': slug,
       if (description != null) 'description': description,
       if (content != null) 'content': content,
-      if (credentialDefinitionId != null)
-        'credential_definition_id': credentialDefinitionId,
-      if (isCredentialOptional != null)
-        'is_credential_optional': isCredentialOptional,
+      if (connectorToolIdsJson != null)
+        'connector_tool_ids_json': connectorToolIdsJson,
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (rowid != null) 'rowid': rowid,
     });
@@ -6508,8 +6009,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     Value<String>? slug,
     Value<String>? description,
     Value<String>? content,
-    Value<String?>? credentialDefinitionId,
-    Value<bool>? isCredentialOptional,
+    Value<String>? connectorToolIdsJson,
     Value<bool>? isEnabled,
     Value<int>? rowid,
   }) {
@@ -6524,9 +6024,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
       slug: slug ?? this.slug,
       description: description ?? this.description,
       content: content ?? this.content,
-      credentialDefinitionId:
-          credentialDefinitionId ?? this.credentialDefinitionId,
-      isCredentialOptional: isCredentialOptional ?? this.isCredentialOptional,
+      connectorToolIdsJson: connectorToolIdsJson ?? this.connectorToolIdsJson,
       isEnabled: isEnabled ?? this.isEnabled,
       rowid: rowid ?? this.rowid,
     );
@@ -6569,14 +6067,9 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
     if (content.present) {
       map['content'] = Variable<String>(content.value);
     }
-    if (credentialDefinitionId.present) {
-      map['credential_definition_id'] = Variable<String>(
-        credentialDefinitionId.value,
-      );
-    }
-    if (isCredentialOptional.present) {
-      map['is_credential_optional'] = Variable<bool>(
-        isCredentialOptional.value,
+    if (connectorToolIdsJson.present) {
+      map['connector_tool_ids_json'] = Variable<String>(
+        connectorToolIdsJson.value,
       );
     }
     if (isEnabled.present) {
@@ -6601,8 +6094,7 @@ class SkillsCompanion extends UpdateCompanion<SkillsTable> {
           ..write('slug: $slug, ')
           ..write('description: $description, ')
           ..write('content: $content, ')
-          ..write('credentialDefinitionId: $credentialDefinitionId, ')
-          ..write('isCredentialOptional: $isCredentialOptional, ')
+          ..write('connectorToolIdsJson: $connectorToolIdsJson, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -9647,6 +9139,21 @@ class $MessagesTable extends Messages
       'CHECK ("is_user" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _isBookmarkedMeta = const VerificationMeta(
+    'isBookmarked',
+  );
+  @override
+  late final GeneratedColumn<bool> isBookmarked = GeneratedColumn<bool>(
+    'is_bookmarked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_bookmarked" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   late final GeneratedColumnWithTypeConverter<MessageTableStatus, String>
   status = GeneratedColumn<String>(
@@ -9676,6 +9183,7 @@ class $MessagesTable extends Messages
     content,
     messageType,
     isUser,
+    isBookmarked,
     status,
     metadata,
   ];
@@ -9733,6 +9241,15 @@ class $MessagesTable extends Messages
     } else if (isInserting) {
       context.missing(_isUserMeta);
     }
+    if (data.containsKey('is_bookmarked')) {
+      context.handle(
+        _isBookmarkedMeta,
+        isBookmarked.isAcceptableOrUnknown(
+          data['is_bookmarked']!,
+          _isBookmarkedMeta,
+        ),
+      );
+    }
     if (data.containsKey('metadata')) {
       context.handle(
         _metadataMeta,
@@ -9778,6 +9295,10 @@ class $MessagesTable extends Messages
         DriftSqlType.bool,
         data['${effectivePrefix}is_user'],
       )!,
+      isBookmarked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_bookmarked'],
+      )!,
       status: $MessagesTable.$converterstatus.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -9819,6 +9340,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
   final String content;
   final MessagesTableType messageType;
   final bool isUser;
+  final bool isBookmarked;
   final MessageTableStatus status;
   final String? metadata;
   const MessagesTable({
@@ -9829,6 +9351,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     required this.content,
     required this.messageType,
     required this.isUser,
+    required this.isBookmarked,
     required this.status,
     this.metadata,
   });
@@ -9846,6 +9369,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
       );
     }
     map['is_user'] = Variable<bool>(isUser);
+    map['is_bookmarked'] = Variable<bool>(isBookmarked);
     {
       map['status'] = Variable<String>(
         $MessagesTable.$converterstatus.toSql(status),
@@ -9866,6 +9390,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
       content: Value(content),
       messageType: Value(messageType),
       isUser: Value(isUser),
+      isBookmarked: Value(isBookmarked),
       status: Value(status),
       metadata: metadata == null && nullToAbsent
           ? const Value.absent()
@@ -9888,6 +9413,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
         serializer.fromJson<String>(json['messageType']),
       ),
       isUser: serializer.fromJson<bool>(json['isUser']),
+      isBookmarked: serializer.fromJson<bool>(json['isBookmarked']),
       status: $MessagesTable.$converterstatus.fromJson(
         serializer.fromJson<String>(json['status']),
       ),
@@ -9907,6 +9433,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
         $MessagesTable.$convertermessageType.toJson(messageType),
       ),
       'isUser': serializer.toJson<bool>(isUser),
+      'isBookmarked': serializer.toJson<bool>(isBookmarked),
       'status': serializer.toJson<String>(
         $MessagesTable.$converterstatus.toJson(status),
       ),
@@ -9922,6 +9449,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     String? content,
     MessagesTableType? messageType,
     bool? isUser,
+    bool? isBookmarked,
     MessageTableStatus? status,
     Value<String?> metadata = const Value.absent(),
   }) => MessagesTable(
@@ -9932,6 +9460,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     content: content ?? this.content,
     messageType: messageType ?? this.messageType,
     isUser: isUser ?? this.isUser,
+    isBookmarked: isBookmarked ?? this.isBookmarked,
     status: status ?? this.status,
     metadata: metadata.present ? metadata.value : this.metadata,
   );
@@ -9948,6 +9477,9 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
           ? data.messageType.value
           : this.messageType,
       isUser: data.isUser.present ? data.isUser.value : this.isUser,
+      isBookmarked: data.isBookmarked.present
+          ? data.isBookmarked.value
+          : this.isBookmarked,
       status: data.status.present ? data.status.value : this.status,
       metadata: data.metadata.present ? data.metadata.value : this.metadata,
     );
@@ -9963,6 +9495,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
           ..write('content: $content, ')
           ..write('messageType: $messageType, ')
           ..write('isUser: $isUser, ')
+          ..write('isBookmarked: $isBookmarked, ')
           ..write('status: $status, ')
           ..write('metadata: $metadata')
           ..write(')'))
@@ -9978,6 +9511,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     content,
     messageType,
     isUser,
+    isBookmarked,
     status,
     metadata,
   );
@@ -9992,6 +9526,7 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
           other.content == this.content &&
           other.messageType == this.messageType &&
           other.isUser == this.isUser &&
+          other.isBookmarked == this.isBookmarked &&
           other.status == this.status &&
           other.metadata == this.metadata);
 }
@@ -10004,6 +9539,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
   final Value<String> content;
   final Value<MessagesTableType> messageType;
   final Value<bool> isUser;
+  final Value<bool> isBookmarked;
   final Value<MessageTableStatus> status;
   final Value<String?> metadata;
   final Value<int> rowid;
@@ -10015,6 +9551,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     this.content = const Value.absent(),
     this.messageType = const Value.absent(),
     this.isUser = const Value.absent(),
+    this.isBookmarked = const Value.absent(),
     this.status = const Value.absent(),
     this.metadata = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -10027,6 +9564,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     required String content,
     required MessagesTableType messageType,
     required bool isUser,
+    this.isBookmarked = const Value.absent(),
     required MessageTableStatus status,
     this.metadata = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -10043,6 +9581,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     Expression<String>? content,
     Expression<String>? messageType,
     Expression<bool>? isUser,
+    Expression<bool>? isBookmarked,
     Expression<String>? status,
     Expression<String>? metadata,
     Expression<int>? rowid,
@@ -10055,6 +9594,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
       if (content != null) 'content': content,
       if (messageType != null) 'message_type': messageType,
       if (isUser != null) 'is_user': isUser,
+      if (isBookmarked != null) 'is_bookmarked': isBookmarked,
       if (status != null) 'status': status,
       if (metadata != null) 'metadata': metadata,
       if (rowid != null) 'rowid': rowid,
@@ -10069,6 +9609,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     Value<String>? content,
     Value<MessagesTableType>? messageType,
     Value<bool>? isUser,
+    Value<bool>? isBookmarked,
     Value<MessageTableStatus>? status,
     Value<String?>? metadata,
     Value<int>? rowid,
@@ -10081,6 +9622,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
       content: content ?? this.content,
       messageType: messageType ?? this.messageType,
       isUser: isUser ?? this.isUser,
+      isBookmarked: isBookmarked ?? this.isBookmarked,
       status: status ?? this.status,
       metadata: metadata ?? this.metadata,
       rowid: rowid ?? this.rowid,
@@ -10113,6 +9655,9 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     if (isUser.present) {
       map['is_user'] = Variable<bool>(isUser.value);
     }
+    if (isBookmarked.present) {
+      map['is_bookmarked'] = Variable<bool>(isBookmarked.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(
         $MessagesTable.$converterstatus.toSql(status.value),
@@ -10137,6 +9682,7 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
           ..write('content: $content, ')
           ..write('messageType: $messageType, ')
           ..write('isUser: $isUser, ')
+          ..write('isBookmarked: $isBookmarked, ')
           ..write('status: $status, ')
           ..write('metadata: $metadata, ')
           ..write('rowid: $rowid')
@@ -10198,6 +9744,17 @@ class $MessageAttachmentsTable extends MessageAttachments
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'REFERENCES messages (id) ON DELETE CASCADE',
     ),
+  );
+  static const VerificationMeta _toolCallIdMeta = const VerificationMeta(
+    'toolCallId',
+  );
+  @override
+  late final GeneratedColumn<String> toolCallId = GeneratedColumn<String>(
+    'tool_call_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _localPathMeta = const VerificationMeta(
     'localPath',
@@ -10272,6 +9829,7 @@ class $MessageAttachmentsTable extends MessageAttachments
     createdAt,
     updatedAt,
     messageId,
+    toolCallId,
     localPath,
     fileName,
     displayName,
@@ -10313,6 +9871,15 @@ class $MessageAttachmentsTable extends MessageAttachments
       );
     } else if (isInserting) {
       context.missing(_messageIdMeta);
+    }
+    if (data.containsKey('tool_call_id')) {
+      context.handle(
+        _toolCallIdMeta,
+        toolCallId.isAcceptableOrUnknown(
+          data['tool_call_id']!,
+          _toolCallIdMeta,
+        ),
+      );
     }
     if (data.containsKey('local_path')) {
       context.handle(
@@ -10391,6 +9958,10 @@ class $MessageAttachmentsTable extends MessageAttachments
         DriftSqlType.string,
         data['${effectivePrefix}message_id'],
       )!,
+      toolCallId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_call_id'],
+      ),
       localPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}local_path'],
@@ -10435,6 +10006,7 @@ class MessageAttachmentsTable extends DataClass
   /// When was last updated timestamp.
   final DateTime updatedAt;
   final String messageId;
+  final String? toolCallId;
   final String localPath;
   final String fileName;
   final String displayName;
@@ -10446,6 +10018,7 @@ class MessageAttachmentsTable extends DataClass
     required this.createdAt,
     required this.updatedAt,
     required this.messageId,
+    this.toolCallId,
     required this.localPath,
     required this.fileName,
     required this.displayName,
@@ -10460,6 +10033,9 @@ class MessageAttachmentsTable extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['message_id'] = Variable<String>(messageId);
+    if (!nullToAbsent || toolCallId != null) {
+      map['tool_call_id'] = Variable<String>(toolCallId);
+    }
     map['local_path'] = Variable<String>(localPath);
     map['file_name'] = Variable<String>(fileName);
     map['display_name'] = Variable<String>(displayName);
@@ -10475,6 +10051,9 @@ class MessageAttachmentsTable extends DataClass
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       messageId: Value(messageId),
+      toolCallId: toolCallId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolCallId),
       localPath: Value(localPath),
       fileName: Value(fileName),
       displayName: Value(displayName),
@@ -10494,6 +10073,7 @@ class MessageAttachmentsTable extends DataClass
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       messageId: serializer.fromJson<String>(json['messageId']),
+      toolCallId: serializer.fromJson<String?>(json['toolCallId']),
       localPath: serializer.fromJson<String>(json['localPath']),
       fileName: serializer.fromJson<String>(json['fileName']),
       displayName: serializer.fromJson<String>(json['displayName']),
@@ -10510,6 +10090,7 @@ class MessageAttachmentsTable extends DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'messageId': serializer.toJson<String>(messageId),
+      'toolCallId': serializer.toJson<String?>(toolCallId),
       'localPath': serializer.toJson<String>(localPath),
       'fileName': serializer.toJson<String>(fileName),
       'displayName': serializer.toJson<String>(displayName),
@@ -10524,6 +10105,7 @@ class MessageAttachmentsTable extends DataClass
     DateTime? createdAt,
     DateTime? updatedAt,
     String? messageId,
+    Value<String?> toolCallId = const Value.absent(),
     String? localPath,
     String? fileName,
     String? displayName,
@@ -10535,6 +10117,7 @@ class MessageAttachmentsTable extends DataClass
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     messageId: messageId ?? this.messageId,
+    toolCallId: toolCallId.present ? toolCallId.value : this.toolCallId,
     localPath: localPath ?? this.localPath,
     fileName: fileName ?? this.fileName,
     displayName: displayName ?? this.displayName,
@@ -10548,6 +10131,9 @@ class MessageAttachmentsTable extends DataClass
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       messageId: data.messageId.present ? data.messageId.value : this.messageId,
+      toolCallId: data.toolCallId.present
+          ? data.toolCallId.value
+          : this.toolCallId,
       localPath: data.localPath.present ? data.localPath.value : this.localPath,
       fileName: data.fileName.present ? data.fileName.value : this.fileName,
       displayName: data.displayName.present
@@ -10566,6 +10152,7 @@ class MessageAttachmentsTable extends DataClass
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('messageId: $messageId, ')
+          ..write('toolCallId: $toolCallId, ')
           ..write('localPath: $localPath, ')
           ..write('fileName: $fileName, ')
           ..write('displayName: $displayName, ')
@@ -10582,6 +10169,7 @@ class MessageAttachmentsTable extends DataClass
     createdAt,
     updatedAt,
     messageId,
+    toolCallId,
     localPath,
     fileName,
     displayName,
@@ -10597,6 +10185,7 @@ class MessageAttachmentsTable extends DataClass
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.messageId == this.messageId &&
+          other.toolCallId == this.toolCallId &&
           other.localPath == this.localPath &&
           other.fileName == this.fileName &&
           other.displayName == this.displayName &&
@@ -10611,6 +10200,7 @@ class MessageAttachmentsCompanion
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String> messageId;
+  final Value<String?> toolCallId;
   final Value<String> localPath;
   final Value<String> fileName;
   final Value<String> displayName;
@@ -10623,6 +10213,7 @@ class MessageAttachmentsCompanion
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.messageId = const Value.absent(),
+    this.toolCallId = const Value.absent(),
     this.localPath = const Value.absent(),
     this.fileName = const Value.absent(),
     this.displayName = const Value.absent(),
@@ -10636,6 +10227,7 @@ class MessageAttachmentsCompanion
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     required String messageId,
+    this.toolCallId = const Value.absent(),
     required String localPath,
     required String fileName,
     this.displayName = const Value.absent(),
@@ -10654,6 +10246,7 @@ class MessageAttachmentsCompanion
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? messageId,
+    Expression<String>? toolCallId,
     Expression<String>? localPath,
     Expression<String>? fileName,
     Expression<String>? displayName,
@@ -10667,6 +10260,7 @@ class MessageAttachmentsCompanion
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (messageId != null) 'message_id': messageId,
+      if (toolCallId != null) 'tool_call_id': toolCallId,
       if (localPath != null) 'local_path': localPath,
       if (fileName != null) 'file_name': fileName,
       if (displayName != null) 'display_name': displayName,
@@ -10682,6 +10276,7 @@ class MessageAttachmentsCompanion
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String>? messageId,
+    Value<String?>? toolCallId,
     Value<String>? localPath,
     Value<String>? fileName,
     Value<String>? displayName,
@@ -10695,6 +10290,7 @@ class MessageAttachmentsCompanion
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       messageId: messageId ?? this.messageId,
+      toolCallId: toolCallId ?? this.toolCallId,
       localPath: localPath ?? this.localPath,
       fileName: fileName ?? this.fileName,
       displayName: displayName ?? this.displayName,
@@ -10719,6 +10315,9 @@ class MessageAttachmentsCompanion
     }
     if (messageId.present) {
       map['message_id'] = Variable<String>(messageId.value);
+    }
+    if (toolCallId.present) {
+      map['tool_call_id'] = Variable<String>(toolCallId.value);
     }
     if (localPath.present) {
       map['local_path'] = Variable<String>(localPath.value);
@@ -10751,12 +10350,497 @@ class MessageAttachmentsCompanion
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('messageId: $messageId, ')
+          ..write('toolCallId: $toolCallId, ')
           ..write('localPath: $localPath, ')
           ..write('fileName: $fileName, ')
           ..write('displayName: $displayName, ')
           ..write('mimeType: $mimeType, ')
           ..write('modality: $modality, ')
           ..write('sizeBytes: $sizeBytes, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MessageBookmarksTable extends MessageBookmarks
+    with TableInfo<$MessageBookmarksTable, MessageBookmarksTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MessageBookmarksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES conversations (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _contentSnapshotMeta = const VerificationMeta(
+    'contentSnapshot',
+  );
+  @override
+  late final GeneratedColumn<String> contentSnapshot = GeneratedColumn<String>(
+    'content_snapshot',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isUserMeta = const VerificationMeta('isUser');
+  @override
+  late final GeneratedColumn<bool> isUser = GeneratedColumn<bool>(
+    'is_user',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_user" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _messageCreatedAtMeta = const VerificationMeta(
+    'messageCreatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> messageCreatedAt =
+      GeneratedColumn<DateTime>(
+        'message_created_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    conversationId,
+    contentSnapshot,
+    isUser,
+    messageCreatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'message_bookmarks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MessageBookmarksTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('content_snapshot')) {
+      context.handle(
+        _contentSnapshotMeta,
+        contentSnapshot.isAcceptableOrUnknown(
+          data['content_snapshot']!,
+          _contentSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentSnapshotMeta);
+    }
+    if (data.containsKey('is_user')) {
+      context.handle(
+        _isUserMeta,
+        isUser.isAcceptableOrUnknown(data['is_user']!, _isUserMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_isUserMeta);
+    }
+    if (data.containsKey('message_created_at')) {
+      context.handle(
+        _messageCreatedAtMeta,
+        messageCreatedAt.isAcceptableOrUnknown(
+          data['message_created_at']!,
+          _messageCreatedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_messageCreatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MessageBookmarksTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MessageBookmarksTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      )!,
+      contentSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_snapshot'],
+      )!,
+      isUser: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_user'],
+      )!,
+      messageCreatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}message_created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MessageBookmarksTable createAlias(String alias) {
+    return $MessageBookmarksTable(attachedDatabase, alias);
+  }
+}
+
+class MessageBookmarksTable extends DataClass
+    implements Insertable<MessageBookmarksTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String conversationId;
+  final String contentSnapshot;
+  final bool isUser;
+  final DateTime messageCreatedAt;
+  const MessageBookmarksTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.conversationId,
+    required this.contentSnapshot,
+    required this.isUser,
+    required this.messageCreatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['conversation_id'] = Variable<String>(conversationId);
+    map['content_snapshot'] = Variable<String>(contentSnapshot);
+    map['is_user'] = Variable<bool>(isUser);
+    map['message_created_at'] = Variable<DateTime>(messageCreatedAt);
+    return map;
+  }
+
+  MessageBookmarksCompanion toCompanion(bool nullToAbsent) {
+    return MessageBookmarksCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      conversationId: Value(conversationId),
+      contentSnapshot: Value(contentSnapshot),
+      isUser: Value(isUser),
+      messageCreatedAt: Value(messageCreatedAt),
+    );
+  }
+
+  factory MessageBookmarksTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MessageBookmarksTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      conversationId: serializer.fromJson<String>(json['conversationId']),
+      contentSnapshot: serializer.fromJson<String>(json['contentSnapshot']),
+      isUser: serializer.fromJson<bool>(json['isUser']),
+      messageCreatedAt: serializer.fromJson<DateTime>(json['messageCreatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'conversationId': serializer.toJson<String>(conversationId),
+      'contentSnapshot': serializer.toJson<String>(contentSnapshot),
+      'isUser': serializer.toJson<bool>(isUser),
+      'messageCreatedAt': serializer.toJson<DateTime>(messageCreatedAt),
+    };
+  }
+
+  MessageBookmarksTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? conversationId,
+    String? contentSnapshot,
+    bool? isUser,
+    DateTime? messageCreatedAt,
+  }) => MessageBookmarksTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    conversationId: conversationId ?? this.conversationId,
+    contentSnapshot: contentSnapshot ?? this.contentSnapshot,
+    isUser: isUser ?? this.isUser,
+    messageCreatedAt: messageCreatedAt ?? this.messageCreatedAt,
+  );
+  MessageBookmarksTable copyWithCompanion(MessageBookmarksCompanion data) {
+    return MessageBookmarksTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      contentSnapshot: data.contentSnapshot.present
+          ? data.contentSnapshot.value
+          : this.contentSnapshot,
+      isUser: data.isUser.present ? data.isUser.value : this.isUser,
+      messageCreatedAt: data.messageCreatedAt.present
+          ? data.messageCreatedAt.value
+          : this.messageCreatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessageBookmarksTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('contentSnapshot: $contentSnapshot, ')
+          ..write('isUser: $isUser, ')
+          ..write('messageCreatedAt: $messageCreatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    conversationId,
+    contentSnapshot,
+    isUser,
+    messageCreatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MessageBookmarksTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.conversationId == this.conversationId &&
+          other.contentSnapshot == this.contentSnapshot &&
+          other.isUser == this.isUser &&
+          other.messageCreatedAt == this.messageCreatedAt);
+}
+
+class MessageBookmarksCompanion extends UpdateCompanion<MessageBookmarksTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> conversationId;
+  final Value<String> contentSnapshot;
+  final Value<bool> isUser;
+  final Value<DateTime> messageCreatedAt;
+  final Value<int> rowid;
+  const MessageBookmarksCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.contentSnapshot = const Value.absent(),
+    this.isUser = const Value.absent(),
+    this.messageCreatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MessageBookmarksCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String conversationId,
+    required String contentSnapshot,
+    required bool isUser,
+    required DateTime messageCreatedAt,
+    this.rowid = const Value.absent(),
+  }) : conversationId = Value(conversationId),
+       contentSnapshot = Value(contentSnapshot),
+       isUser = Value(isUser),
+       messageCreatedAt = Value(messageCreatedAt);
+  static Insertable<MessageBookmarksTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? conversationId,
+    Expression<String>? contentSnapshot,
+    Expression<bool>? isUser,
+    Expression<DateTime>? messageCreatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (contentSnapshot != null) 'content_snapshot': contentSnapshot,
+      if (isUser != null) 'is_user': isUser,
+      if (messageCreatedAt != null) 'message_created_at': messageCreatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MessageBookmarksCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? conversationId,
+    Value<String>? contentSnapshot,
+    Value<bool>? isUser,
+    Value<DateTime>? messageCreatedAt,
+    Value<int>? rowid,
+  }) {
+    return MessageBookmarksCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      conversationId: conversationId ?? this.conversationId,
+      contentSnapshot: contentSnapshot ?? this.contentSnapshot,
+      isUser: isUser ?? this.isUser,
+      messageCreatedAt: messageCreatedAt ?? this.messageCreatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (contentSnapshot.present) {
+      map['content_snapshot'] = Variable<String>(contentSnapshot.value);
+    }
+    if (isUser.present) {
+      map['is_user'] = Variable<bool>(isUser.value);
+    }
+    if (messageCreatedAt.present) {
+      map['message_created_at'] = Variable<DateTime>(messageCreatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessageBookmarksCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('contentSnapshot: $contentSnapshot, ')
+          ..write('isUser: $isUser, ')
+          ..write('messageCreatedAt: $messageCreatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11836,871 +11920,6 @@ class WorkspaceCompactionSettingsCompanion
           ..write('usagePercentageThreshold: $usagePercentageThreshold, ')
           ..write('remainingTokenThreshold: $remainingTokenThreshold, ')
           ..write('modelOverridesJson: $modelOverridesJson, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $SkillTemplateToolsTable extends SkillTemplateTools
-    with TableInfo<$SkillTemplateToolsTable, SkillTemplateToolsTable> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $SkillTemplateToolsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    clientDefault: () => const UuidV7().generate(),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _skillIdMeta = const VerificationMeta(
-    'skillId',
-  );
-  @override
-  late final GeneratedColumn<String> skillId = GeneratedColumn<String>(
-    'skill_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES skills (id) ON DELETE CASCADE',
-    ),
-  );
-  @override
-  late final GeneratedColumnWithTypeConverter<
-    SkillTemplateToolTypeTable,
-    String
-  >
-  templateType =
-      GeneratedColumn<String>(
-        'template_type',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      ).withConverter<SkillTemplateToolTypeTable>(
-        $SkillTemplateToolsTable.$convertertemplateType,
-      );
-  static const VerificationMeta _titleMeta = const VerificationMeta('title');
-  @override
-  late final GeneratedColumn<String> title = GeneratedColumn<String>(
-    'title',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _descriptionMeta = const VerificationMeta(
-    'description',
-  );
-  @override
-  late final GeneratedColumn<String> description = GeneratedColumn<String>(
-    'description',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(''),
-  );
-  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
-  @override
-  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
-    'slug',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _definitionJsonMeta = const VerificationMeta(
-    'definitionJson',
-  );
-  @override
-  late final GeneratedColumn<String> definitionJson = GeneratedColumn<String>(
-    'definition_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('{}'),
-  );
-  static const VerificationMeta _templateJsonMeta = const VerificationMeta(
-    'templateJson',
-  );
-  @override
-  late final GeneratedColumn<String> templateJson = GeneratedColumn<String>(
-    'template_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _inputsJsonMeta = const VerificationMeta(
-    'inputsJson',
-  );
-  @override
-  late final GeneratedColumn<String> inputsJson = GeneratedColumn<String>(
-    'inputs_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _credentialDefinitionIdMeta =
-      const VerificationMeta('credentialDefinitionId');
-  @override
-  late final GeneratedColumn<String> credentialDefinitionId =
-      GeneratedColumn<String>(
-        'credential_definition_id',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-        defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES skill_credential_definitions (id) ON DELETE SET NULL',
-        ),
-      );
-  static const VerificationMeta _requiresCredentialMeta =
-      const VerificationMeta('requiresCredential');
-  @override
-  late final GeneratedColumn<bool> requiresCredential = GeneratedColumn<bool>(
-    'requires_credential',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("requires_credential" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
-    'isEnabled',
-  );
-  @override
-  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
-    'is_enabled',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_enabled" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    createdAt,
-    updatedAt,
-    skillId,
-    templateType,
-    title,
-    description,
-    slug,
-    definitionJson,
-    templateJson,
-    inputsJson,
-    credentialDefinitionId,
-    requiresCredential,
-    isEnabled,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'skill_template_tools';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<SkillTemplateToolsTable> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    if (data.containsKey('skill_id')) {
-      context.handle(
-        _skillIdMeta,
-        skillId.isAcceptableOrUnknown(data['skill_id']!, _skillIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_skillIdMeta);
-    }
-    if (data.containsKey('title')) {
-      context.handle(
-        _titleMeta,
-        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_titleMeta);
-    }
-    if (data.containsKey('description')) {
-      context.handle(
-        _descriptionMeta,
-        description.isAcceptableOrUnknown(
-          data['description']!,
-          _descriptionMeta,
-        ),
-      );
-    }
-    if (data.containsKey('slug')) {
-      context.handle(
-        _slugMeta,
-        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_slugMeta);
-    }
-    if (data.containsKey('definition_json')) {
-      context.handle(
-        _definitionJsonMeta,
-        definitionJson.isAcceptableOrUnknown(
-          data['definition_json']!,
-          _definitionJsonMeta,
-        ),
-      );
-    }
-    if (data.containsKey('template_json')) {
-      context.handle(
-        _templateJsonMeta,
-        templateJson.isAcceptableOrUnknown(
-          data['template_json']!,
-          _templateJsonMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_templateJsonMeta);
-    }
-    if (data.containsKey('inputs_json')) {
-      context.handle(
-        _inputsJsonMeta,
-        inputsJson.isAcceptableOrUnknown(data['inputs_json']!, _inputsJsonMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_inputsJsonMeta);
-    }
-    if (data.containsKey('credential_definition_id')) {
-      context.handle(
-        _credentialDefinitionIdMeta,
-        credentialDefinitionId.isAcceptableOrUnknown(
-          data['credential_definition_id']!,
-          _credentialDefinitionIdMeta,
-        ),
-      );
-    }
-    if (data.containsKey('requires_credential')) {
-      context.handle(
-        _requiresCredentialMeta,
-        requiresCredential.isAcceptableOrUnknown(
-          data['requires_credential']!,
-          _requiresCredentialMeta,
-        ),
-      );
-    }
-    if (data.containsKey('is_enabled')) {
-      context.handle(
-        _isEnabledMeta,
-        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {skillId, title},
-    {skillId, slug},
-  ];
-  @override
-  SkillTemplateToolsTable map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return SkillTemplateToolsTable(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-      skillId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}skill_id'],
-      )!,
-      templateType: $SkillTemplateToolsTable.$convertertemplateType.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}template_type'],
-        )!,
-      ),
-      title: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}title'],
-      )!,
-      description: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}description'],
-      )!,
-      slug: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}slug'],
-      )!,
-      definitionJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}definition_json'],
-      )!,
-      templateJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}template_json'],
-      )!,
-      inputsJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}inputs_json'],
-      )!,
-      credentialDefinitionId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}credential_definition_id'],
-      ),
-      requiresCredential: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}requires_credential'],
-      )!,
-      isEnabled: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_enabled'],
-      )!,
-    );
-  }
-
-  @override
-  $SkillTemplateToolsTable createAlias(String alias) {
-    return $SkillTemplateToolsTable(attachedDatabase, alias);
-  }
-
-  static JsonTypeConverter2<SkillTemplateToolTypeTable, String, String>
-  $convertertemplateType = const EnumNameConverter<SkillTemplateToolTypeTable>(
-    SkillTemplateToolTypeTable.values,
-  );
-}
-
-class SkillTemplateToolsTable extends DataClass
-    implements Insertable<SkillTemplateToolsTable> {
-  /// Primary key column as string.
-  final String id;
-
-  /// When was created timestamp.
-  final DateTime createdAt;
-
-  /// When was last updated timestamp.
-  final DateTime updatedAt;
-  final String skillId;
-  final SkillTemplateToolTypeTable templateType;
-  final String title;
-  final String description;
-  final String slug;
-  final String definitionJson;
-  final String templateJson;
-  final String inputsJson;
-  final String? credentialDefinitionId;
-  final bool requiresCredential;
-  final bool isEnabled;
-  const SkillTemplateToolsTable({
-    required this.id,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.skillId,
-    required this.templateType,
-    required this.title,
-    required this.description,
-    required this.slug,
-    required this.definitionJson,
-    required this.templateJson,
-    required this.inputsJson,
-    this.credentialDefinitionId,
-    required this.requiresCredential,
-    required this.isEnabled,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    map['skill_id'] = Variable<String>(skillId);
-    {
-      map['template_type'] = Variable<String>(
-        $SkillTemplateToolsTable.$convertertemplateType.toSql(templateType),
-      );
-    }
-    map['title'] = Variable<String>(title);
-    map['description'] = Variable<String>(description);
-    map['slug'] = Variable<String>(slug);
-    map['definition_json'] = Variable<String>(definitionJson);
-    map['template_json'] = Variable<String>(templateJson);
-    map['inputs_json'] = Variable<String>(inputsJson);
-    if (!nullToAbsent || credentialDefinitionId != null) {
-      map['credential_definition_id'] = Variable<String>(
-        credentialDefinitionId,
-      );
-    }
-    map['requires_credential'] = Variable<bool>(requiresCredential);
-    map['is_enabled'] = Variable<bool>(isEnabled);
-    return map;
-  }
-
-  SkillTemplateToolsCompanion toCompanion(bool nullToAbsent) {
-    return SkillTemplateToolsCompanion(
-      id: Value(id),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      skillId: Value(skillId),
-      templateType: Value(templateType),
-      title: Value(title),
-      description: Value(description),
-      slug: Value(slug),
-      definitionJson: Value(definitionJson),
-      templateJson: Value(templateJson),
-      inputsJson: Value(inputsJson),
-      credentialDefinitionId: credentialDefinitionId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(credentialDefinitionId),
-      requiresCredential: Value(requiresCredential),
-      isEnabled: Value(isEnabled),
-    );
-  }
-
-  factory SkillTemplateToolsTable.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return SkillTemplateToolsTable(
-      id: serializer.fromJson<String>(json['id']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      skillId: serializer.fromJson<String>(json['skillId']),
-      templateType: $SkillTemplateToolsTable.$convertertemplateType.fromJson(
-        serializer.fromJson<String>(json['templateType']),
-      ),
-      title: serializer.fromJson<String>(json['title']),
-      description: serializer.fromJson<String>(json['description']),
-      slug: serializer.fromJson<String>(json['slug']),
-      definitionJson: serializer.fromJson<String>(json['definitionJson']),
-      templateJson: serializer.fromJson<String>(json['templateJson']),
-      inputsJson: serializer.fromJson<String>(json['inputsJson']),
-      credentialDefinitionId: serializer.fromJson<String?>(
-        json['credentialDefinitionId'],
-      ),
-      requiresCredential: serializer.fromJson<bool>(json['requiresCredential']),
-      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'skillId': serializer.toJson<String>(skillId),
-      'templateType': serializer.toJson<String>(
-        $SkillTemplateToolsTable.$convertertemplateType.toJson(templateType),
-      ),
-      'title': serializer.toJson<String>(title),
-      'description': serializer.toJson<String>(description),
-      'slug': serializer.toJson<String>(slug),
-      'definitionJson': serializer.toJson<String>(definitionJson),
-      'templateJson': serializer.toJson<String>(templateJson),
-      'inputsJson': serializer.toJson<String>(inputsJson),
-      'credentialDefinitionId': serializer.toJson<String?>(
-        credentialDefinitionId,
-      ),
-      'requiresCredential': serializer.toJson<bool>(requiresCredential),
-      'isEnabled': serializer.toJson<bool>(isEnabled),
-    };
-  }
-
-  SkillTemplateToolsTable copyWith({
-    String? id,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    String? skillId,
-    SkillTemplateToolTypeTable? templateType,
-    String? title,
-    String? description,
-    String? slug,
-    String? definitionJson,
-    String? templateJson,
-    String? inputsJson,
-    Value<String?> credentialDefinitionId = const Value.absent(),
-    bool? requiresCredential,
-    bool? isEnabled,
-  }) => SkillTemplateToolsTable(
-    id: id ?? this.id,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    skillId: skillId ?? this.skillId,
-    templateType: templateType ?? this.templateType,
-    title: title ?? this.title,
-    description: description ?? this.description,
-    slug: slug ?? this.slug,
-    definitionJson: definitionJson ?? this.definitionJson,
-    templateJson: templateJson ?? this.templateJson,
-    inputsJson: inputsJson ?? this.inputsJson,
-    credentialDefinitionId: credentialDefinitionId.present
-        ? credentialDefinitionId.value
-        : this.credentialDefinitionId,
-    requiresCredential: requiresCredential ?? this.requiresCredential,
-    isEnabled: isEnabled ?? this.isEnabled,
-  );
-  SkillTemplateToolsTable copyWithCompanion(SkillTemplateToolsCompanion data) {
-    return SkillTemplateToolsTable(
-      id: data.id.present ? data.id.value : this.id,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      skillId: data.skillId.present ? data.skillId.value : this.skillId,
-      templateType: data.templateType.present
-          ? data.templateType.value
-          : this.templateType,
-      title: data.title.present ? data.title.value : this.title,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
-      slug: data.slug.present ? data.slug.value : this.slug,
-      definitionJson: data.definitionJson.present
-          ? data.definitionJson.value
-          : this.definitionJson,
-      templateJson: data.templateJson.present
-          ? data.templateJson.value
-          : this.templateJson,
-      inputsJson: data.inputsJson.present
-          ? data.inputsJson.value
-          : this.inputsJson,
-      credentialDefinitionId: data.credentialDefinitionId.present
-          ? data.credentialDefinitionId.value
-          : this.credentialDefinitionId,
-      requiresCredential: data.requiresCredential.present
-          ? data.requiresCredential.value
-          : this.requiresCredential,
-      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillTemplateToolsTable(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('skillId: $skillId, ')
-          ..write('templateType: $templateType, ')
-          ..write('title: $title, ')
-          ..write('description: $description, ')
-          ..write('slug: $slug, ')
-          ..write('definitionJson: $definitionJson, ')
-          ..write('templateJson: $templateJson, ')
-          ..write('inputsJson: $inputsJson, ')
-          ..write('credentialDefinitionId: $credentialDefinitionId, ')
-          ..write('requiresCredential: $requiresCredential, ')
-          ..write('isEnabled: $isEnabled')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    createdAt,
-    updatedAt,
-    skillId,
-    templateType,
-    title,
-    description,
-    slug,
-    definitionJson,
-    templateJson,
-    inputsJson,
-    credentialDefinitionId,
-    requiresCredential,
-    isEnabled,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is SkillTemplateToolsTable &&
-          other.id == this.id &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.skillId == this.skillId &&
-          other.templateType == this.templateType &&
-          other.title == this.title &&
-          other.description == this.description &&
-          other.slug == this.slug &&
-          other.definitionJson == this.definitionJson &&
-          other.templateJson == this.templateJson &&
-          other.inputsJson == this.inputsJson &&
-          other.credentialDefinitionId == this.credentialDefinitionId &&
-          other.requiresCredential == this.requiresCredential &&
-          other.isEnabled == this.isEnabled);
-}
-
-class SkillTemplateToolsCompanion
-    extends UpdateCompanion<SkillTemplateToolsTable> {
-  final Value<String> id;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String> skillId;
-  final Value<SkillTemplateToolTypeTable> templateType;
-  final Value<String> title;
-  final Value<String> description;
-  final Value<String> slug;
-  final Value<String> definitionJson;
-  final Value<String> templateJson;
-  final Value<String> inputsJson;
-  final Value<String?> credentialDefinitionId;
-  final Value<bool> requiresCredential;
-  final Value<bool> isEnabled;
-  final Value<int> rowid;
-  const SkillTemplateToolsCompanion({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.skillId = const Value.absent(),
-    this.templateType = const Value.absent(),
-    this.title = const Value.absent(),
-    this.description = const Value.absent(),
-    this.slug = const Value.absent(),
-    this.definitionJson = const Value.absent(),
-    this.templateJson = const Value.absent(),
-    this.inputsJson = const Value.absent(),
-    this.credentialDefinitionId = const Value.absent(),
-    this.requiresCredential = const Value.absent(),
-    this.isEnabled = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  SkillTemplateToolsCompanion.insert({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    required String skillId,
-    required SkillTemplateToolTypeTable templateType,
-    required String title,
-    this.description = const Value.absent(),
-    required String slug,
-    this.definitionJson = const Value.absent(),
-    required String templateJson,
-    required String inputsJson,
-    this.credentialDefinitionId = const Value.absent(),
-    this.requiresCredential = const Value.absent(),
-    this.isEnabled = const Value.absent(),
-    this.rowid = const Value.absent(),
-  }) : skillId = Value(skillId),
-       templateType = Value(templateType),
-       title = Value(title),
-       slug = Value(slug),
-       templateJson = Value(templateJson),
-       inputsJson = Value(inputsJson);
-  static Insertable<SkillTemplateToolsTable> custom({
-    Expression<String>? id,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? skillId,
-    Expression<String>? templateType,
-    Expression<String>? title,
-    Expression<String>? description,
-    Expression<String>? slug,
-    Expression<String>? definitionJson,
-    Expression<String>? templateJson,
-    Expression<String>? inputsJson,
-    Expression<String>? credentialDefinitionId,
-    Expression<bool>? requiresCredential,
-    Expression<bool>? isEnabled,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (skillId != null) 'skill_id': skillId,
-      if (templateType != null) 'template_type': templateType,
-      if (title != null) 'title': title,
-      if (description != null) 'description': description,
-      if (slug != null) 'slug': slug,
-      if (definitionJson != null) 'definition_json': definitionJson,
-      if (templateJson != null) 'template_json': templateJson,
-      if (inputsJson != null) 'inputs_json': inputsJson,
-      if (credentialDefinitionId != null)
-        'credential_definition_id': credentialDefinitionId,
-      if (requiresCredential != null) 'requires_credential': requiresCredential,
-      if (isEnabled != null) 'is_enabled': isEnabled,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  SkillTemplateToolsCompanion copyWith({
-    Value<String>? id,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-    Value<String>? skillId,
-    Value<SkillTemplateToolTypeTable>? templateType,
-    Value<String>? title,
-    Value<String>? description,
-    Value<String>? slug,
-    Value<String>? definitionJson,
-    Value<String>? templateJson,
-    Value<String>? inputsJson,
-    Value<String?>? credentialDefinitionId,
-    Value<bool>? requiresCredential,
-    Value<bool>? isEnabled,
-    Value<int>? rowid,
-  }) {
-    return SkillTemplateToolsCompanion(
-      id: id ?? this.id,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      skillId: skillId ?? this.skillId,
-      templateType: templateType ?? this.templateType,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      slug: slug ?? this.slug,
-      definitionJson: definitionJson ?? this.definitionJson,
-      templateJson: templateJson ?? this.templateJson,
-      inputsJson: inputsJson ?? this.inputsJson,
-      credentialDefinitionId:
-          credentialDefinitionId ?? this.credentialDefinitionId,
-      requiresCredential: requiresCredential ?? this.requiresCredential,
-      isEnabled: isEnabled ?? this.isEnabled,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (skillId.present) {
-      map['skill_id'] = Variable<String>(skillId.value);
-    }
-    if (templateType.present) {
-      map['template_type'] = Variable<String>(
-        $SkillTemplateToolsTable.$convertertemplateType.toSql(
-          templateType.value,
-        ),
-      );
-    }
-    if (title.present) {
-      map['title'] = Variable<String>(title.value);
-    }
-    if (description.present) {
-      map['description'] = Variable<String>(description.value);
-    }
-    if (slug.present) {
-      map['slug'] = Variable<String>(slug.value);
-    }
-    if (definitionJson.present) {
-      map['definition_json'] = Variable<String>(definitionJson.value);
-    }
-    if (templateJson.present) {
-      map['template_json'] = Variable<String>(templateJson.value);
-    }
-    if (inputsJson.present) {
-      map['inputs_json'] = Variable<String>(inputsJson.value);
-    }
-    if (credentialDefinitionId.present) {
-      map['credential_definition_id'] = Variable<String>(
-        credentialDefinitionId.value,
-      );
-    }
-    if (requiresCredential.present) {
-      map['requires_credential'] = Variable<bool>(requiresCredential.value);
-    }
-    if (isEnabled.present) {
-      map['is_enabled'] = Variable<bool>(isEnabled.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillTemplateToolsCompanion(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('skillId: $skillId, ')
-          ..write('templateType: $templateType, ')
-          ..write('title: $title, ')
-          ..write('description: $description, ')
-          ..write('slug: $slug, ')
-          ..write('definitionJson: $definitionJson, ')
-          ..write('templateJson: $templateJson, ')
-          ..write('inputsJson: $inputsJson, ')
-          ..write('credentialDefinitionId: $credentialDefinitionId, ')
-          ..write('requiresCredential: $requiresCredential, ')
-          ..write('isEnabled: $isEnabled, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15503,6 +14722,20 @@ class $BackgroundWorksTable extends BackgroundWorks
       'REFERENCES conversations (id) ON DELETE CASCADE',
     ),
   );
+  static const VerificationMeta _childConversationIdMeta =
+      const VerificationMeta('childConversationId');
+  @override
+  late final GeneratedColumn<String> childConversationId =
+      GeneratedColumn<String>(
+        'child_conversation_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES conversations (id) ON DELETE SET NULL',
+        ),
+      );
   static const VerificationMeta _originatingMessageIdMeta =
       const VerificationMeta('originatingMessageId');
   @override
@@ -15602,6 +14835,7 @@ class $BackgroundWorksTable extends BackgroundWorks
     updatedAt,
     workspaceId,
     conversationId,
+    childConversationId,
     originatingMessageId,
     toolCallId,
     toolKind,
@@ -15659,6 +14893,15 @@ class $BackgroundWorksTable extends BackgroundWorks
       );
     } else if (isInserting) {
       context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('child_conversation_id')) {
+      context.handle(
+        _childConversationIdMeta,
+        childConversationId.isAcceptableOrUnknown(
+          data['child_conversation_id']!,
+          _childConversationIdMeta,
+        ),
+      );
     }
     if (data.containsKey('originating_message_id')) {
       context.handle(
@@ -15758,6 +15001,10 @@ class $BackgroundWorksTable extends BackgroundWorks
         DriftSqlType.string,
         data['${effectivePrefix}conversation_id'],
       )!,
+      childConversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}child_conversation_id'],
+      ),
       originatingMessageId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}originating_message_id'],
@@ -15811,6 +15058,7 @@ class BackgroundWorkTable extends DataClass
   final DateTime updatedAt;
   final String workspaceId;
   final String conversationId;
+  final String? childConversationId;
   final String? originatingMessageId;
   final String toolCallId;
   final String toolKind;
@@ -15825,6 +15073,7 @@ class BackgroundWorkTable extends DataClass
     required this.updatedAt,
     required this.workspaceId,
     required this.conversationId,
+    this.childConversationId,
     this.originatingMessageId,
     required this.toolCallId,
     required this.toolKind,
@@ -15842,6 +15091,9 @@ class BackgroundWorkTable extends DataClass
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['workspace_id'] = Variable<String>(workspaceId);
     map['conversation_id'] = Variable<String>(conversationId);
+    if (!nullToAbsent || childConversationId != null) {
+      map['child_conversation_id'] = Variable<String>(childConversationId);
+    }
     if (!nullToAbsent || originatingMessageId != null) {
       map['originating_message_id'] = Variable<String>(originatingMessageId);
     }
@@ -15868,6 +15120,9 @@ class BackgroundWorkTable extends DataClass
       updatedAt: Value(updatedAt),
       workspaceId: Value(workspaceId),
       conversationId: Value(conversationId),
+      childConversationId: childConversationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(childConversationId),
       originatingMessageId: originatingMessageId == null && nullToAbsent
           ? const Value.absent()
           : Value(originatingMessageId),
@@ -15898,6 +15153,9 @@ class BackgroundWorkTable extends DataClass
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       workspaceId: serializer.fromJson<String>(json['workspaceId']),
       conversationId: serializer.fromJson<String>(json['conversationId']),
+      childConversationId: serializer.fromJson<String?>(
+        json['childConversationId'],
+      ),
       originatingMessageId: serializer.fromJson<String?>(
         json['originatingMessageId'],
       ),
@@ -15919,6 +15177,7 @@ class BackgroundWorkTable extends DataClass
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'workspaceId': serializer.toJson<String>(workspaceId),
       'conversationId': serializer.toJson<String>(conversationId),
+      'childConversationId': serializer.toJson<String?>(childConversationId),
       'originatingMessageId': serializer.toJson<String?>(originatingMessageId),
       'toolCallId': serializer.toJson<String>(toolCallId),
       'toolKind': serializer.toJson<String>(toolKind),
@@ -15936,6 +15195,7 @@ class BackgroundWorkTable extends DataClass
     DateTime? updatedAt,
     String? workspaceId,
     String? conversationId,
+    Value<String?> childConversationId = const Value.absent(),
     Value<String?> originatingMessageId = const Value.absent(),
     String? toolCallId,
     String? toolKind,
@@ -15950,6 +15210,9 @@ class BackgroundWorkTable extends DataClass
     updatedAt: updatedAt ?? this.updatedAt,
     workspaceId: workspaceId ?? this.workspaceId,
     conversationId: conversationId ?? this.conversationId,
+    childConversationId: childConversationId.present
+        ? childConversationId.value
+        : this.childConversationId,
     originatingMessageId: originatingMessageId.present
         ? originatingMessageId.value
         : this.originatingMessageId,
@@ -15976,6 +15239,9 @@ class BackgroundWorkTable extends DataClass
       conversationId: data.conversationId.present
           ? data.conversationId.value
           : this.conversationId,
+      childConversationId: data.childConversationId.present
+          ? data.childConversationId.value
+          : this.childConversationId,
       originatingMessageId: data.originatingMessageId.present
           ? data.originatingMessageId.value
           : this.originatingMessageId,
@@ -16005,6 +15271,7 @@ class BackgroundWorkTable extends DataClass
           ..write('updatedAt: $updatedAt, ')
           ..write('workspaceId: $workspaceId, ')
           ..write('conversationId: $conversationId, ')
+          ..write('childConversationId: $childConversationId, ')
           ..write('originatingMessageId: $originatingMessageId, ')
           ..write('toolCallId: $toolCallId, ')
           ..write('toolKind: $toolKind, ')
@@ -16024,6 +15291,7 @@ class BackgroundWorkTable extends DataClass
     updatedAt,
     workspaceId,
     conversationId,
+    childConversationId,
     originatingMessageId,
     toolCallId,
     toolKind,
@@ -16042,6 +15310,7 @@ class BackgroundWorkTable extends DataClass
           other.updatedAt == this.updatedAt &&
           other.workspaceId == this.workspaceId &&
           other.conversationId == this.conversationId &&
+          other.childConversationId == this.childConversationId &&
           other.originatingMessageId == this.originatingMessageId &&
           other.toolCallId == this.toolCallId &&
           other.toolKind == this.toolKind &&
@@ -16058,6 +15327,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
   final Value<DateTime> updatedAt;
   final Value<String> workspaceId;
   final Value<String> conversationId;
+  final Value<String?> childConversationId;
   final Value<String?> originatingMessageId;
   final Value<String> toolCallId;
   final Value<String> toolKind;
@@ -16073,6 +15343,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
     this.updatedAt = const Value.absent(),
     this.workspaceId = const Value.absent(),
     this.conversationId = const Value.absent(),
+    this.childConversationId = const Value.absent(),
     this.originatingMessageId = const Value.absent(),
     this.toolCallId = const Value.absent(),
     this.toolKind = const Value.absent(),
@@ -16089,6 +15360,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
     this.updatedAt = const Value.absent(),
     required String workspaceId,
     required String conversationId,
+    this.childConversationId = const Value.absent(),
     this.originatingMessageId = const Value.absent(),
     required String toolCallId,
     required String toolKind,
@@ -16109,6 +15381,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
     Expression<DateTime>? updatedAt,
     Expression<String>? workspaceId,
     Expression<String>? conversationId,
+    Expression<String>? childConversationId,
     Expression<String>? originatingMessageId,
     Expression<String>? toolCallId,
     Expression<String>? toolKind,
@@ -16125,6 +15398,8 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (workspaceId != null) 'workspace_id': workspaceId,
       if (conversationId != null) 'conversation_id': conversationId,
+      if (childConversationId != null)
+        'child_conversation_id': childConversationId,
       if (originatingMessageId != null)
         'originating_message_id': originatingMessageId,
       if (toolCallId != null) 'tool_call_id': toolCallId,
@@ -16144,6 +15419,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
     Value<DateTime>? updatedAt,
     Value<String>? workspaceId,
     Value<String>? conversationId,
+    Value<String?>? childConversationId,
     Value<String?>? originatingMessageId,
     Value<String>? toolCallId,
     Value<String>? toolKind,
@@ -16160,6 +15436,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
       updatedAt: updatedAt ?? this.updatedAt,
       workspaceId: workspaceId ?? this.workspaceId,
       conversationId: conversationId ?? this.conversationId,
+      childConversationId: childConversationId ?? this.childConversationId,
       originatingMessageId: originatingMessageId ?? this.originatingMessageId,
       toolCallId: toolCallId ?? this.toolCallId,
       toolKind: toolKind ?? this.toolKind,
@@ -16189,6 +15466,11 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
     }
     if (conversationId.present) {
       map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (childConversationId.present) {
+      map['child_conversation_id'] = Variable<String>(
+        childConversationId.value,
+      );
     }
     if (originatingMessageId.present) {
       map['originating_message_id'] = Variable<String>(
@@ -16230,6 +15512,7 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
           ..write('updatedAt: $updatedAt, ')
           ..write('workspaceId: $workspaceId, ')
           ..write('conversationId: $conversationId, ')
+          ..write('childConversationId: $childConversationId, ')
           ..write('originatingMessageId: $originatingMessageId, ')
           ..write('toolCallId: $toolCallId, ')
           ..write('toolKind: $toolKind, ')
@@ -16677,8 +15960,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ApiModelsTable apiModels = $ApiModelsTable(this);
   late final $AgentsTable agents = $AgentsTable(this);
   late final $ConversationsTable conversations = $ConversationsTable(this);
-  late final $SkillCredentialDefinitionsTable skillCredentialDefinitions =
-      $SkillCredentialDefinitionsTable(this);
   late final $SkillsTable skills = $SkillsTable(this);
   late final $AgentSkillsTable agentSkills = $AgentSkillsTable(this);
   late final $McpServersTable mcpServers = $McpServersTable(this);
@@ -16688,12 +15969,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MessagesTable messages = $MessagesTable(this);
   late final $MessageAttachmentsTable messageAttachments =
       $MessageAttachmentsTable(this);
+  late final $MessageBookmarksTable messageBookmarks = $MessageBookmarksTable(
+    this,
+  );
   late final $ConversationToolsTable conversationTools =
       $ConversationToolsTable(this);
   late final $WorkspaceCompactionSettingsTable workspaceCompactionSettings =
       $WorkspaceCompactionSettingsTable(this);
-  late final $SkillTemplateToolsTable skillTemplateTools =
-      $SkillTemplateToolsTable(this);
   late final $SkillResourcesTable skillResources = $SkillResourcesTable(this);
   late final $ConversationSkillsTable conversationSkills =
       $ConversationSkillsTable(this);
@@ -16798,14 +16080,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final McpServersDao mcpServersDao = McpServersDao(this as AppDatabase);
   late final WorkspaceCompactionSettingsDao workspaceCompactionSettingsDao =
       WorkspaceCompactionSettingsDao(this as AppDatabase);
-  late final SkillCredentialsDao skillCredentialsDao = SkillCredentialsDao(
-    this as AppDatabase,
-  );
-  late final SkillCredentialDefinitionsDao skillCredentialDefinitionsDao =
-      SkillCredentialDefinitionsDao(this as AppDatabase);
   late final SkillsDao skillsDao = SkillsDao(this as AppDatabase);
-  late final SkillTemplateToolsDao skillTemplateToolsDao =
-      SkillTemplateToolsDao(this as AppDatabase);
   late final SkillResourcesDao skillResourcesDao = SkillResourcesDao(
     this as AppDatabase,
   );
@@ -16831,7 +16106,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     apiModels,
     agents,
     conversations,
-    skillCredentialDefinitions,
     skills,
     agentSkills,
     mcpServers,
@@ -16840,9 +16114,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     agentTools,
     messages,
     messageAttachments,
+    messageBookmarks,
     conversationTools,
     workspaceCompactionSettings,
-    skillTemplateTools,
     skillResources,
     conversationSkills,
     appSkillWorkspaceSettings,
@@ -16931,23 +16205,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         'workspaces',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [
-        TableUpdate('skill_credential_definitions', kind: UpdateKind.delete),
-      ],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'workspaces',
-        limitUpdateKind: UpdateKind.delete,
-      ),
       result: [TableUpdate('skills', kind: UpdateKind.delete)],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'skill_credential_definitions',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('skills', kind: UpdateKind.update)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -17038,6 +16296,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         'conversations',
         limitUpdateKind: UpdateKind.delete,
       ),
+      result: [TableUpdate('message_bookmarks', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
       result: [TableUpdate('conversation_tools', kind: UpdateKind.delete)],
     ),
     WritePropagation(
@@ -17055,20 +16320,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       result: [
         TableUpdate('workspace_compaction_settings', kind: UpdateKind.delete),
       ],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'skills',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('skill_template_tools', kind: UpdateKind.delete)],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'skill_credential_definitions',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('skill_template_tools', kind: UpdateKind.update)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -17120,6 +16371,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('background_works', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('background_works', kind: UpdateKind.update)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -17221,31 +16479,6 @@ final class $$WorkspacesTableReferences
     ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_conversationsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<
-    $SkillCredentialDefinitionsTable,
-    List<SkillCredentialDefinitionsTable>
-  >
-  _skillCredentialDefinitionsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.skillCredentialDefinitions,
-        aliasName: 'workspaces__id__skill_credential_definitions__workspace_id',
-      );
-
-  $$SkillCredentialDefinitionsTableProcessedTableManager
-  get skillCredentialDefinitionsRefs {
-    final manager = $$SkillCredentialDefinitionsTableTableManager(
-      $_db,
-      $_db.skillCredentialDefinitions,
-    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _skillCredentialDefinitionsRefsTable($_db),
-    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -17537,33 +16770,6 @@ class $$WorkspacesTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
-    return f(composer);
-  }
-
-  Expression<bool> skillCredentialDefinitionsRefs(
-    Expression<bool> Function($$SkillCredentialDefinitionsTableFilterComposer f)
-    f,
-  ) {
-    final $$SkillCredentialDefinitionsTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.workspaceId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableFilterComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
     return f(composer);
   }
 
@@ -17937,35 +17143,6 @@ class $$WorkspacesTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> skillCredentialDefinitionsRefs<T extends Object>(
-    Expression<T> Function(
-      $$SkillCredentialDefinitionsTableAnnotationComposer a,
-    )
-    f,
-  ) {
-    final $$SkillCredentialDefinitionsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.workspaceId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
   Expression<T> skillsRefs<T extends Object>(
     Expression<T> Function($$SkillsTableAnnotationComposer a) f,
   ) {
@@ -18190,7 +17367,6 @@ class $$WorkspacesTableTableManager
             bool serviceConnectionsRefs,
             bool agentsRefs,
             bool conversationsRefs,
-            bool skillCredentialDefinitionsRefs,
             bool skillsRefs,
             bool mcpServersRefs,
             bool toolsGroupsRefs,
@@ -18269,7 +17445,6 @@ class $$WorkspacesTableTableManager
                 serviceConnectionsRefs = false,
                 agentsRefs = false,
                 conversationsRefs = false,
-                skillCredentialDefinitionsRefs = false,
                 skillsRefs = false,
                 mcpServersRefs = false,
                 toolsGroupsRefs = false,
@@ -18285,8 +17460,6 @@ class $$WorkspacesTableTableManager
                     if (serviceConnectionsRefs) db.serviceConnections,
                     if (agentsRefs) db.agents,
                     if (conversationsRefs) db.conversations,
-                    if (skillCredentialDefinitionsRefs)
-                      db.skillCredentialDefinitions,
                     if (skillsRefs) db.skills,
                     if (mcpServersRefs) db.mcpServers,
                     if (toolsGroupsRefs) db.toolsGroups,
@@ -18358,27 +17531,6 @@ class $$WorkspacesTableTableManager
                                 table,
                                 p0,
                               ).conversationsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.workspaceId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (skillCredentialDefinitionsRefs)
-                        await $_getPrefetchedData<
-                          WorkspacesTable,
-                          $WorkspacesTable,
-                          SkillCredentialDefinitionsTable
-                        >(
-                          currentTable: table,
-                          referencedTable: $$WorkspacesTableReferences
-                              ._skillCredentialDefinitionsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$WorkspacesTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skillCredentialDefinitionsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.workspaceId == item.id,
@@ -18577,7 +17729,6 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool serviceConnectionsRefs,
         bool agentsRefs,
         bool conversationsRefs,
-        bool skillCredentialDefinitionsRefs,
         bool skillsRefs,
         bool mcpServersRefs,
         bool toolsGroupsRefs,
@@ -21559,6 +20710,7 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       Value<String?> forkThroughMessageId,
       Value<DateTime?> forkMaterializedAt,
       Value<String?> activeCompactionCheckpointId,
+      Value<String> toolAccessMode,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -21578,6 +20730,7 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String?> forkThroughMessageId,
       Value<DateTime?> forkMaterializedAt,
       Value<String?> activeCompactionCheckpointId,
+      Value<String> toolAccessMode,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -21682,6 +20835,29 @@ final class $$ConversationsTableReferences
   }
 
   static MultiTypedResultKey<
+    $MessageBookmarksTable,
+    List<MessageBookmarksTable>
+  >
+  _messageBookmarksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.messageBookmarks,
+    aliasName: 'conversations__id__message_bookmarks__conversation_id',
+  );
+
+  $$MessageBookmarksTableProcessedTableManager get messageBookmarksRefs {
+    final manager = $$MessageBookmarksTableTableManager(
+      $_db,
+      $_db.messageBookmarks,
+    ).filter((f) => f.conversationId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _messageBookmarksRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
     $ConversationToolsTable,
     List<ConversationToolsTable>
   >
@@ -21772,6 +20948,29 @@ final class $$ConversationsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$BackgroundWorksTable, List<BackgroundWorkTable>>
+  _backgroundWorksByChildConversationTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.backgroundWorks,
+        aliasName: 'conversations__id__background_works__child_conversation_id',
+      );
+
+  $$BackgroundWorksTableProcessedTableManager
+  get backgroundWorksByChildConversation {
+    final manager =
+        $$BackgroundWorksTableTableManager($_db, $_db.backgroundWorks).filter(
+          (f) =>
+              f.childConversationId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _backgroundWorksByChildConversationTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ConversationsTableFilterComposer
@@ -21830,6 +21029,11 @@ class $$ConversationsTableFilterComposer
 
   ColumnFilters<String> get activeCompactionCheckpointId => $composableBuilder(
     column: $table.activeCompactionCheckpointId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolAccessMode => $composableBuilder(
+    column: $table.toolAccessMode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -21956,6 +21160,31 @@ class $$ConversationsTableFilterComposer
     return f(composer);
   }
 
+  Expression<bool> messageBookmarksRefs(
+    Expression<bool> Function($$MessageBookmarksTableFilterComposer f) f,
+  ) {
+    final $$MessageBookmarksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.messageBookmarks,
+      getReferencedColumn: (t) => t.conversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessageBookmarksTableFilterComposer(
+            $db: $db,
+            $table: $db.messageBookmarks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<bool> conversationToolsRefs(
     Expression<bool> Function($$ConversationToolsTableFilterComposer f) f,
   ) {
@@ -22055,6 +21284,31 @@ class $$ConversationsTableFilterComposer
     );
     return f(composer);
   }
+
+  Expression<bool> backgroundWorksByChildConversation(
+    Expression<bool> Function($$BackgroundWorksTableFilterComposer f) f,
+  ) {
+    final $$BackgroundWorksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.childConversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableFilterComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ConversationsTableOrderingComposer
@@ -22116,6 +21370,11 @@ class $$ConversationsTableOrderingComposer
         column: $table.activeCompactionCheckpointId,
         builder: (column) => ColumnOrderings(column),
       );
+
+  ColumnOrderings<String> get toolAccessMode => $composableBuilder(
+    column: $table.toolAccessMode,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<bool> get isPinned => $composableBuilder(
     column: $table.isPinned,
@@ -22268,6 +21527,11 @@ class $$ConversationsTableAnnotationComposer
         builder: (column) => column,
       );
 
+  GeneratedColumn<String> get toolAccessMode => $composableBuilder(
+    column: $table.toolAccessMode,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isPinned =>
       $composableBuilder(column: $table.isPinned, builder: (column) => column);
 
@@ -22389,6 +21653,31 @@ class $$ConversationsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> messageBookmarksRefs<T extends Object>(
+    Expression<T> Function($$MessageBookmarksTableAnnotationComposer a) f,
+  ) {
+    final $$MessageBookmarksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.messageBookmarks,
+      getReferencedColumn: (t) => t.conversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessageBookmarksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.messageBookmarks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> conversationToolsRefs<T extends Object>(
     Expression<T> Function($$ConversationToolsTableAnnotationComposer a) f,
   ) {
@@ -22491,6 +21780,31 @@ class $$ConversationsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> backgroundWorksByChildConversation<T extends Object>(
+    Expression<T> Function($$BackgroundWorksTableAnnotationComposer a) f,
+  ) {
+    final $$BackgroundWorksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.backgroundWorks,
+      getReferencedColumn: (t) => t.childConversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BackgroundWorksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.backgroundWorks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ConversationsTableTableManager
@@ -22512,10 +21826,12 @@ class $$ConversationsTableTableManager
             bool agentId,
             bool parentConversationId,
             bool messagesRefs,
+            bool messageBookmarksRefs,
             bool conversationToolsRefs,
             bool conversationSkillsRefs,
             bool modelUsageRecordsRefs,
             bool backgroundWorksRefs,
+            bool backgroundWorksByChildConversation,
           })
         > {
   $$ConversationsTableTableManager(_$AppDatabase db, $ConversationsTable table)
@@ -22546,6 +21862,7 @@ class $$ConversationsTableTableManager
                 Value<DateTime?> forkMaterializedAt = const Value.absent(),
                 Value<String?> activeCompactionCheckpointId =
                     const Value.absent(),
+                Value<String> toolAccessMode = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion(
@@ -22563,6 +21880,7 @@ class $$ConversationsTableTableManager
                 forkThroughMessageId: forkThroughMessageId,
                 forkMaterializedAt: forkMaterializedAt,
                 activeCompactionCheckpointId: activeCompactionCheckpointId,
+                toolAccessMode: toolAccessMode,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -22583,6 +21901,7 @@ class $$ConversationsTableTableManager
                 Value<DateTime?> forkMaterializedAt = const Value.absent(),
                 Value<String?> activeCompactionCheckpointId =
                     const Value.absent(),
+                Value<String> toolAccessMode = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion.insert(
@@ -22600,6 +21919,7 @@ class $$ConversationsTableTableManager
                 forkThroughMessageId: forkThroughMessageId,
                 forkMaterializedAt: forkMaterializedAt,
                 activeCompactionCheckpointId: activeCompactionCheckpointId,
+                toolAccessMode: toolAccessMode,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -22618,19 +21938,23 @@ class $$ConversationsTableTableManager
                 agentId = false,
                 parentConversationId = false,
                 messagesRefs = false,
+                messageBookmarksRefs = false,
                 conversationToolsRefs = false,
                 conversationSkillsRefs = false,
                 modelUsageRecordsRefs = false,
                 backgroundWorksRefs = false,
+                backgroundWorksByChildConversation = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (messagesRefs) db.messages,
+                    if (messageBookmarksRefs) db.messageBookmarks,
                     if (conversationToolsRefs) db.conversationTools,
                     if (conversationSkillsRefs) db.conversationSkills,
                     if (modelUsageRecordsRefs) db.modelUsageRecords,
                     if (backgroundWorksRefs) db.backgroundWorks,
+                    if (backgroundWorksByChildConversation) db.backgroundWorks,
                   ],
                   addJoins:
                       <
@@ -22712,6 +22036,27 @@ class $$ConversationsTableTableManager
                                 table,
                                 p0,
                               ).messagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.conversationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (messageBookmarksRefs)
+                        await $_getPrefetchedData<
+                          ConversationsTable,
+                          $ConversationsTable,
+                          MessageBookmarksTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ConversationsTableReferences
+                              ._messageBookmarksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ConversationsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).messageBookmarksRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.conversationId == item.id,
@@ -22802,6 +22147,27 @@ class $$ConversationsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (backgroundWorksByChildConversation)
+                        await $_getPrefetchedData<
+                          ConversationsTable,
+                          $ConversationsTable,
+                          BackgroundWorkTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ConversationsTableReferences
+                              ._backgroundWorksByChildConversationTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ConversationsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).backgroundWorksByChildConversation,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.childConversationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -22828,608 +22194,12 @@ typedef $$ConversationsTableProcessedTableManager =
         bool agentId,
         bool parentConversationId,
         bool messagesRefs,
+        bool messageBookmarksRefs,
         bool conversationToolsRefs,
         bool conversationSkillsRefs,
         bool modelUsageRecordsRefs,
         bool backgroundWorksRefs,
-      })
-    >;
-typedef $$SkillCredentialDefinitionsTableCreateCompanionBuilder =
-    SkillCredentialDefinitionsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String workspaceId,
-      required String title,
-      required String slug,
-      required String attributesJson,
-      Value<int> rowid,
-    });
-typedef $$SkillCredentialDefinitionsTableUpdateCompanionBuilder =
-    SkillCredentialDefinitionsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> workspaceId,
-      Value<String> title,
-      Value<String> slug,
-      Value<String> attributesJson,
-      Value<int> rowid,
-    });
-
-final class $$SkillCredentialDefinitionsTableReferences
-    extends
-        BaseReferences<
-          _$AppDatabase,
-          $SkillCredentialDefinitionsTable,
-          SkillCredentialDefinitionsTable
-        > {
-  $$SkillCredentialDefinitionsTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
-      db.workspaces.createAlias(
-        'skill_credential_definitions__workspace_id__workspaces__id',
-      );
-
-  $$WorkspacesTableProcessedTableManager get workspaceId {
-    final $_column = $_itemColumn<String>('workspace_id')!;
-
-    final manager = $$WorkspacesTableTableManager(
-      $_db,
-      $_db.workspaces,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static MultiTypedResultKey<$SkillsTable, List<SkillsTable>> _skillsRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
-    db.skills,
-    aliasName:
-        'skill_credential_definitions__id__skills__credential_definition_id',
-  );
-
-  $$SkillsTableProcessedTableManager get skillsRefs {
-    final manager = $$SkillsTableTableManager($_db, $_db.skills).filter(
-      (f) => f.credentialDefinitionId.id.sqlEquals($_itemColumn<String>('id')!),
-    );
-
-    final cache = $_typedResult.readTableOrNull(_skillsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<
-    $SkillTemplateToolsTable,
-    List<SkillTemplateToolsTable>
-  >
-  _skillTemplateToolsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.skillTemplateTools,
-        aliasName: 'skill_credential_definitions__id__skill_template_tools__credential_definition_id',
-      );
-
-  $$SkillTemplateToolsTableProcessedTableManager get skillTemplateToolsRefs {
-    final manager =
-        $$SkillTemplateToolsTableTableManager(
-          $_db,
-          $_db.skillTemplateTools,
-        ).filter(
-          (f) => f.credentialDefinitionId.id.sqlEquals(
-            $_itemColumn<String>('id')!,
-          ),
-        );
-
-    final cache = $_typedResult.readTableOrNull(
-      _skillTemplateToolsRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$SkillCredentialDefinitionsTableFilterComposer
-    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
-  $$SkillCredentialDefinitionsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get attributesJson => $composableBuilder(
-    column: $table.attributesJson,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$WorkspacesTableFilterComposer get workspaceId {
-    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableFilterComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<bool> skillsRefs(
-    Expression<bool> Function($$SkillsTableFilterComposer f) f,
-  ) {
-    final $$SkillsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.credentialDefinitionId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableFilterComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> skillTemplateToolsRefs(
-    Expression<bool> Function($$SkillTemplateToolsTableFilterComposer f) f,
-  ) {
-    final $$SkillTemplateToolsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skillTemplateTools,
-      getReferencedColumn: (t) => t.credentialDefinitionId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillTemplateToolsTableFilterComposer(
-            $db: $db,
-            $table: $db.skillTemplateTools,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$SkillCredentialDefinitionsTableOrderingComposer
-    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
-  $$SkillCredentialDefinitionsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get attributesJson => $composableBuilder(
-    column: $table.attributesJson,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$WorkspacesTableOrderingComposer get workspaceId {
-    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableOrderingComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$SkillCredentialDefinitionsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
-  $$SkillCredentialDefinitionsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumn<String> get title =>
-      $composableBuilder(column: $table.title, builder: (column) => column);
-
-  GeneratedColumn<String> get slug =>
-      $composableBuilder(column: $table.slug, builder: (column) => column);
-
-  GeneratedColumn<String> get attributesJson => $composableBuilder(
-    column: $table.attributesJson,
-    builder: (column) => column,
-  );
-
-  $$WorkspacesTableAnnotationComposer get workspaceId {
-    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<T> skillsRefs<T extends Object>(
-    Expression<T> Function($$SkillsTableAnnotationComposer a) f,
-  ) {
-    final $$SkillsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.credentialDefinitionId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<T> skillTemplateToolsRefs<T extends Object>(
-    Expression<T> Function($$SkillTemplateToolsTableAnnotationComposer a) f,
-  ) {
-    final $$SkillTemplateToolsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skillTemplateTools,
-          getReferencedColumn: (t) => t.credentialDefinitionId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillTemplateToolsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillTemplateTools,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-}
-
-class $$SkillCredentialDefinitionsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $SkillCredentialDefinitionsTable,
-          SkillCredentialDefinitionsTable,
-          $$SkillCredentialDefinitionsTableFilterComposer,
-          $$SkillCredentialDefinitionsTableOrderingComposer,
-          $$SkillCredentialDefinitionsTableAnnotationComposer,
-          $$SkillCredentialDefinitionsTableCreateCompanionBuilder,
-          $$SkillCredentialDefinitionsTableUpdateCompanionBuilder,
-          (
-            SkillCredentialDefinitionsTable,
-            $$SkillCredentialDefinitionsTableReferences,
-          ),
-          SkillCredentialDefinitionsTable,
-          PrefetchHooks Function({
-            bool workspaceId,
-            bool skillsRefs,
-            bool skillTemplateToolsRefs,
-          })
-        > {
-  $$SkillCredentialDefinitionsTableTableManager(
-    _$AppDatabase db,
-    $SkillCredentialDefinitionsTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$SkillCredentialDefinitionsTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
-          createOrderingComposer: () =>
-              $$SkillCredentialDefinitionsTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
-          createComputedFieldComposer: () =>
-              $$SkillCredentialDefinitionsTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<String> workspaceId = const Value.absent(),
-                Value<String> title = const Value.absent(),
-                Value<String> slug = const Value.absent(),
-                Value<String> attributesJson = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => SkillCredentialDefinitionsCompanion(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                workspaceId: workspaceId,
-                title: title,
-                slug: slug,
-                attributesJson: attributesJson,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                required String workspaceId,
-                required String title,
-                required String slug,
-                required String attributesJson,
-                Value<int> rowid = const Value.absent(),
-              }) => SkillCredentialDefinitionsCompanion.insert(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                workspaceId: workspaceId,
-                title: title,
-                slug: slug,
-                attributesJson: attributesJson,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable<
-                    $SkillCredentialDefinitionsTable,
-                    SkillCredentialDefinitionsTable
-                  >(table),
-                  $$SkillCredentialDefinitionsTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({
-                workspaceId = false,
-                skillsRefs = false,
-                skillTemplateToolsRefs = false,
-              }) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (skillsRefs) db.skills,
-                    if (skillTemplateToolsRefs) db.skillTemplateTools,
-                  ],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (workspaceId) {
-                          state = state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.workspaceId,
-                            referencedTable:
-                                $$SkillCredentialDefinitionsTableReferences
-                                    ._workspaceIdTable(db),
-                            referencedColumn:
-                                $$SkillCredentialDefinitionsTableReferences
-                                    ._workspaceIdTable(db)
-                                    .id,
-                          ) as T;
-                        }
-
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (skillsRefs)
-                        await $_getPrefetchedData<
-                          SkillCredentialDefinitionsTable,
-                          $SkillCredentialDefinitionsTable,
-                          SkillsTable
-                        >(
-                          currentTable: table,
-                          referencedTable:
-                              $$SkillCredentialDefinitionsTableReferences
-                                  ._skillsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$SkillCredentialDefinitionsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skillsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.credentialDefinitionId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (skillTemplateToolsRefs)
-                        await $_getPrefetchedData<
-                          SkillCredentialDefinitionsTable,
-                          $SkillCredentialDefinitionsTable,
-                          SkillTemplateToolsTable
-                        >(
-                          currentTable: table,
-                          referencedTable:
-                              $$SkillCredentialDefinitionsTableReferences
-                                  ._skillTemplateToolsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$SkillCredentialDefinitionsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skillTemplateToolsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.credentialDefinitionId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$SkillCredentialDefinitionsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $SkillCredentialDefinitionsTable,
-      SkillCredentialDefinitionsTable,
-      $$SkillCredentialDefinitionsTableFilterComposer,
-      $$SkillCredentialDefinitionsTableOrderingComposer,
-      $$SkillCredentialDefinitionsTableAnnotationComposer,
-      $$SkillCredentialDefinitionsTableCreateCompanionBuilder,
-      $$SkillCredentialDefinitionsTableUpdateCompanionBuilder,
-      (
-        SkillCredentialDefinitionsTable,
-        $$SkillCredentialDefinitionsTableReferences,
-      ),
-      SkillCredentialDefinitionsTable,
-      PrefetchHooks Function({
-        bool workspaceId,
-        bool skillsRefs,
-        bool skillTemplateToolsRefs,
+        bool backgroundWorksByChildConversation,
       })
     >;
 typedef $$SkillsTableCreateCompanionBuilder = SkillsCompanion Function({
@@ -23443,8 +22213,7 @@ typedef $$SkillsTableCreateCompanionBuilder = SkillsCompanion Function({
   required String slug,
   required String description,
   required String content,
-  Value<String?> credentialDefinitionId,
-  Value<bool> isCredentialOptional,
+  Value<String> connectorToolIdsJson,
   Value<bool> isEnabled,
   Value<int> rowid,
 });
@@ -23459,8 +22228,7 @@ typedef $$SkillsTableUpdateCompanionBuilder = SkillsCompanion Function({
   Value<String> slug,
   Value<String> description,
   Value<String> content,
-  Value<String?> credentialDefinitionId,
-  Value<bool> isCredentialOptional,
+  Value<String> connectorToolIdsJson,
   Value<bool> isEnabled,
   Value<int> rowid,
 });
@@ -23486,29 +22254,6 @@ final class $$SkillsTableReferences
     );
   }
 
-  static $SkillCredentialDefinitionsTable _credentialDefinitionIdTable(
-    _$AppDatabase db,
-  ) => db.skillCredentialDefinitions.createAlias(
-    'skills__credential_definition_id__skill_credential_definitions__id',
-  );
-
-  $$SkillCredentialDefinitionsTableProcessedTableManager?
-  get credentialDefinitionId {
-    final $_column = $_itemColumn<String>('credential_definition_id');
-    if ($_column == null) return null;
-    final manager = $$SkillCredentialDefinitionsTableTableManager(
-      $_db,
-      $_db.skillCredentialDefinitions,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(
-      _credentialDefinitionIdTable($_db),
-    );
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
   static MultiTypedResultKey<$AgentSkillsTable, List<AgentSkillsTable>>
   _agentSkillsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.agentSkills,
@@ -23522,30 +22267,6 @@ final class $$SkillsTableReferences
         );
 
     final cache = $_typedResult.readTableOrNull(_agentSkillsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<
-    $SkillTemplateToolsTable,
-    List<SkillTemplateToolsTable>
-  >
-  _skillTemplateToolsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.skillTemplateTools,
-        aliasName: 'skills__id__skill_template_tools__skill_id',
-      );
-
-  $$SkillTemplateToolsTableProcessedTableManager get skillTemplateToolsRefs {
-    final manager = $$SkillTemplateToolsTableTableManager(
-      $_db,
-      $_db.skillTemplateTools,
-    ).filter((f) => f.skillId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _skillTemplateToolsRefsTable($_db),
-    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -23653,8 +22374,8 @@ class $$SkillsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get isCredentialOptional => $composableBuilder(
-    column: $table.isCredentialOptional,
+  ColumnFilters<String> get connectorToolIdsJson => $composableBuilder(
+    column: $table.connectorToolIdsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -23686,30 +22407,6 @@ class $$SkillsTableFilterComposer
     return composer;
   }
 
-  $$SkillCredentialDefinitionsTableFilterComposer get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableFilterComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-
   Expression<bool> agentSkillsRefs(
     Expression<bool> Function($$AgentSkillsTableFilterComposer f) f,
   ) {
@@ -23726,31 +22423,6 @@ class $$SkillsTableFilterComposer
           }) => $$AgentSkillsTableFilterComposer(
             $db: $db,
             $table: $db.agentSkills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> skillTemplateToolsRefs(
-    Expression<bool> Function($$SkillTemplateToolsTableFilterComposer f) f,
-  ) {
-    final $$SkillTemplateToolsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skillTemplateTools,
-      getReferencedColumn: (t) => t.skillId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillTemplateToolsTableFilterComposer(
-            $db: $db,
-            $table: $db.skillTemplateTools,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -23865,8 +22537,8 @@ class $$SkillsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isCredentialOptional => $composableBuilder(
-    column: $table.isCredentialOptional,
+  ColumnOrderings<String> get connectorToolIdsJson => $composableBuilder(
+    column: $table.connectorToolIdsJson,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -23895,30 +22567,6 @@ class $$SkillsTableOrderingComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
-    return composer;
-  }
-
-  $$SkillCredentialDefinitionsTableOrderingComposer get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableOrderingComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableOrderingComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
     return composer;
   }
 }
@@ -23961,8 +22609,8 @@ class $$SkillsTableAnnotationComposer
   GeneratedColumn<String> get content =>
       $composableBuilder(column: $table.content, builder: (column) => column);
 
-  GeneratedColumn<bool> get isCredentialOptional => $composableBuilder(
-    column: $table.isCredentialOptional,
+  GeneratedColumn<String> get connectorToolIdsJson => $composableBuilder(
+    column: $table.connectorToolIdsJson,
     builder: (column) => column,
   );
 
@@ -23992,31 +22640,6 @@ class $$SkillsTableAnnotationComposer
     return composer;
   }
 
-  $$SkillCredentialDefinitionsTableAnnotationComposer
-  get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-
   Expression<T> agentSkillsRefs<T extends Object>(
     Expression<T> Function($$AgentSkillsTableAnnotationComposer a) f,
   ) {
@@ -24039,32 +22662,6 @@ class $$SkillsTableAnnotationComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
-    return f(composer);
-  }
-
-  Expression<T> skillTemplateToolsRefs<T extends Object>(
-    Expression<T> Function($$SkillTemplateToolsTableAnnotationComposer a) f,
-  ) {
-    final $$SkillTemplateToolsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skillTemplateTools,
-          getReferencedColumn: (t) => t.skillId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillTemplateToolsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillTemplateTools,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
     return f(composer);
   }
 
@@ -24135,9 +22732,7 @@ class $$SkillsTableTableManager
           SkillsTable,
           PrefetchHooks Function({
             bool workspaceId,
-            bool credentialDefinitionId,
             bool agentSkillsRefs,
-            bool skillTemplateToolsRefs,
             bool skillResourcesRefs,
             bool conversationSkillsRefs,
           })
@@ -24165,8 +22760,7 @@ class $$SkillsTableTableManager
                 Value<String> slug = const Value.absent(),
                 Value<String> description = const Value.absent(),
                 Value<String> content = const Value.absent(),
-                Value<String?> credentialDefinitionId = const Value.absent(),
-                Value<bool> isCredentialOptional = const Value.absent(),
+                Value<String> connectorToolIdsJson = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SkillsCompanion(
@@ -24180,8 +22774,7 @@ class $$SkillsTableTableManager
                 slug: slug,
                 description: description,
                 content: content,
-                credentialDefinitionId: credentialDefinitionId,
-                isCredentialOptional: isCredentialOptional,
+                connectorToolIdsJson: connectorToolIdsJson,
                 isEnabled: isEnabled,
                 rowid: rowid,
               ),
@@ -24197,8 +22790,7 @@ class $$SkillsTableTableManager
                 required String slug,
                 required String description,
                 required String content,
-                Value<String?> credentialDefinitionId = const Value.absent(),
-                Value<bool> isCredentialOptional = const Value.absent(),
+                Value<String> connectorToolIdsJson = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SkillsCompanion.insert(
@@ -24212,8 +22804,7 @@ class $$SkillsTableTableManager
                 slug: slug,
                 description: description,
                 content: content,
-                credentialDefinitionId: credentialDefinitionId,
-                isCredentialOptional: isCredentialOptional,
+                connectorToolIdsJson: connectorToolIdsJson,
                 isEnabled: isEnabled,
                 rowid: rowid,
               ),
@@ -24228,9 +22819,7 @@ class $$SkillsTableTableManager
           prefetchHooksCallback:
               ({
                 workspaceId = false,
-                credentialDefinitionId = false,
                 agentSkillsRefs = false,
-                skillTemplateToolsRefs = false,
                 skillResourcesRefs = false,
                 conversationSkillsRefs = false,
               }) {
@@ -24238,7 +22827,6 @@ class $$SkillsTableTableManager
                   db: db,
                   explicitlyWatchedTables: [
                     if (agentSkillsRefs) db.agentSkills,
-                    if (skillTemplateToolsRefs) db.skillTemplateTools,
                     if (skillResourcesRefs) db.skillResources,
                     if (conversationSkillsRefs) db.conversationSkills,
                   ],
@@ -24269,17 +22857,6 @@ class $$SkillsTableTableManager
                                 .id,
                           ) as T;
                         }
-                        if (credentialDefinitionId) {
-                          state = state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.credentialDefinitionId,
-                            referencedTable: $$SkillsTableReferences
-                                ._credentialDefinitionIdTable(db),
-                            referencedColumn: $$SkillsTableReferences
-                                ._credentialDefinitionIdTable(db)
-                                .id,
-                          ) as T;
-                        }
 
                         return state;
                       },
@@ -24303,27 +22880,6 @@ class $$SkillsTableTableManager
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.workspaceSkillId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (skillTemplateToolsRefs)
-                        await $_getPrefetchedData<
-                          SkillsTable,
-                          $SkillsTable,
-                          SkillTemplateToolsTable
-                        >(
-                          currentTable: table,
-                          referencedTable: $$SkillsTableReferences
-                              ._skillTemplateToolsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$SkillsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skillTemplateToolsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.skillId == item.id,
                               ),
                           typedResults: items,
                         ),
@@ -24391,9 +22947,7 @@ typedef $$SkillsTableProcessedTableManager =
       SkillsTable,
       PrefetchHooks Function({
         bool workspaceId,
-        bool credentialDefinitionId,
         bool agentSkillsRefs,
-        bool skillTemplateToolsRefs,
         bool skillResourcesRefs,
         bool conversationSkillsRefs,
       })
@@ -27197,6 +25751,7 @@ typedef $$MessagesTableCreateCompanionBuilder = MessagesCompanion Function({
   required String content,
   required MessagesTableType messageType,
   required bool isUser,
+  Value<bool> isBookmarked,
   required MessageTableStatus status,
   Value<String?> metadata,
   Value<int> rowid,
@@ -27209,6 +25764,7 @@ typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
   Value<String> content,
   Value<MessagesTableType> messageType,
   Value<bool> isUser,
+  Value<bool> isBookmarked,
   Value<MessageTableStatus> status,
   Value<String?> metadata,
   Value<int> rowid,
@@ -27319,6 +25875,11 @@ class $$MessagesTableFilterComposer
 
   ColumnFilters<bool> get isUser => $composableBuilder(
     column: $table.isUser,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -27446,6 +26007,11 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -27509,6 +26075,11 @@ class $$MessagesTableAnnotationComposer
 
   GeneratedColumn<bool> get isUser =>
       $composableBuilder(column: $table.isUser, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBookmarked => $composableBuilder(
+    column: $table.isBookmarked,
+    builder: (column) => column,
+  );
 
   GeneratedColumnWithTypeConverter<MessageTableStatus, String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
@@ -27630,6 +26201,7 @@ class $$MessagesTableTableManager
                 Value<String> content = const Value.absent(),
                 Value<MessagesTableType> messageType = const Value.absent(),
                 Value<bool> isUser = const Value.absent(),
+                Value<bool> isBookmarked = const Value.absent(),
                 Value<MessageTableStatus> status = const Value.absent(),
                 Value<String?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -27641,6 +26213,7 @@ class $$MessagesTableTableManager
                 content: content,
                 messageType: messageType,
                 isUser: isUser,
+                isBookmarked: isBookmarked,
                 status: status,
                 metadata: metadata,
                 rowid: rowid,
@@ -27654,6 +26227,7 @@ class $$MessagesTableTableManager
                 required String content,
                 required MessagesTableType messageType,
                 required bool isUser,
+                Value<bool> isBookmarked = const Value.absent(),
                 required MessageTableStatus status,
                 Value<String?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -27665,6 +26239,7 @@ class $$MessagesTableTableManager
                 content: content,
                 messageType: messageType,
                 isUser: isUser,
+                isBookmarked: isBookmarked,
                 status: status,
                 metadata: metadata,
                 rowid: rowid,
@@ -27795,6 +26370,7 @@ typedef $$MessageAttachmentsTableCreateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       required String messageId,
+      Value<String?> toolCallId,
       required String localPath,
       required String fileName,
       Value<String> displayName,
@@ -27809,6 +26385,7 @@ typedef $$MessageAttachmentsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<String> messageId,
+      Value<String?> toolCallId,
       Value<String> localPath,
       Value<String> fileName,
       Value<String> displayName,
@@ -27870,6 +26447,11 @@ class $$MessageAttachmentsTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -27951,6 +26533,11 @@ class $$MessageAttachmentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get localPath => $composableBuilder(
     column: $table.localPath,
     builder: (column) => ColumnOrderings(column),
@@ -28022,6 +26609,11 @@ class $$MessageAttachmentsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get localPath =>
       $composableBuilder(column: $table.localPath, builder: (column) => column);
@@ -28104,6 +26696,7 @@ class $$MessageAttachmentsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> messageId = const Value.absent(),
+                Value<String?> toolCallId = const Value.absent(),
                 Value<String> localPath = const Value.absent(),
                 Value<String> fileName = const Value.absent(),
                 Value<String> displayName = const Value.absent(),
@@ -28116,6 +26709,7 @@ class $$MessageAttachmentsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 messageId: messageId,
+                toolCallId: toolCallId,
                 localPath: localPath,
                 fileName: fileName,
                 displayName: displayName,
@@ -28130,6 +26724,7 @@ class $$MessageAttachmentsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 required String messageId,
+                Value<String?> toolCallId = const Value.absent(),
                 required String localPath,
                 required String fileName,
                 Value<String> displayName = const Value.absent(),
@@ -28142,6 +26737,7 @@ class $$MessageAttachmentsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 messageId: messageId,
+                toolCallId: toolCallId,
                 localPath: localPath,
                 fileName: fileName,
                 displayName: displayName,
@@ -28217,6 +26813,377 @@ typedef $$MessageAttachmentsTableProcessedTableManager =
       (MessageAttachmentsTable, $$MessageAttachmentsTableReferences),
       MessageAttachmentsTable,
       PrefetchHooks Function({bool messageId})
+    >;
+typedef $$MessageBookmarksTableCreateCompanionBuilder =
+    MessageBookmarksCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String conversationId,
+      required String contentSnapshot,
+      required bool isUser,
+      required DateTime messageCreatedAt,
+      Value<int> rowid,
+    });
+typedef $$MessageBookmarksTableUpdateCompanionBuilder =
+    MessageBookmarksCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> conversationId,
+      Value<String> contentSnapshot,
+      Value<bool> isUser,
+      Value<DateTime> messageCreatedAt,
+      Value<int> rowid,
+    });
+
+final class $$MessageBookmarksTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $MessageBookmarksTable,
+          MessageBookmarksTable
+        > {
+  $$MessageBookmarksTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) => db
+      .conversations
+      .createAlias('message_bookmarks__conversation_id__conversations__id');
+
+  $$ConversationsTableProcessedTableManager get conversationId {
+    final $_column = $_itemColumn<String>('conversation_id')!;
+
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MessageBookmarksTableFilterComposer
+    extends Composer<_$AppDatabase, $MessageBookmarksTable> {
+  $$MessageBookmarksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentSnapshot => $composableBuilder(
+    column: $table.contentSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isUser => $composableBuilder(
+    column: $table.isUser,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get messageCreatedAt => $composableBuilder(
+    column: $table.messageCreatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ConversationsTableFilterComposer get conversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessageBookmarksTableOrderingComposer
+    extends Composer<_$AppDatabase, $MessageBookmarksTable> {
+  $$MessageBookmarksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentSnapshot => $composableBuilder(
+    column: $table.contentSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isUser => $composableBuilder(
+    column: $table.isUser,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get messageCreatedAt => $composableBuilder(
+    column: $table.messageCreatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ConversationsTableOrderingComposer get conversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessageBookmarksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MessageBookmarksTable> {
+  $$MessageBookmarksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get contentSnapshot => $composableBuilder(
+    column: $table.contentSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isUser =>
+      $composableBuilder(column: $table.isUser, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get messageCreatedAt => $composableBuilder(
+    column: $table.messageCreatedAt,
+    builder: (column) => column,
+  );
+
+  $$ConversationsTableAnnotationComposer get conversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessageBookmarksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MessageBookmarksTable,
+          MessageBookmarksTable,
+          $$MessageBookmarksTableFilterComposer,
+          $$MessageBookmarksTableOrderingComposer,
+          $$MessageBookmarksTableAnnotationComposer,
+          $$MessageBookmarksTableCreateCompanionBuilder,
+          $$MessageBookmarksTableUpdateCompanionBuilder,
+          (MessageBookmarksTable, $$MessageBookmarksTableReferences),
+          MessageBookmarksTable,
+          PrefetchHooks Function({bool conversationId})
+        > {
+  $$MessageBookmarksTableTableManager(
+    _$AppDatabase db,
+    $MessageBookmarksTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MessageBookmarksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MessageBookmarksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MessageBookmarksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> conversationId = const Value.absent(),
+                Value<String> contentSnapshot = const Value.absent(),
+                Value<bool> isUser = const Value.absent(),
+                Value<DateTime> messageCreatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MessageBookmarksCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                conversationId: conversationId,
+                contentSnapshot: contentSnapshot,
+                isUser: isUser,
+                messageCreatedAt: messageCreatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String conversationId,
+                required String contentSnapshot,
+                required bool isUser,
+                required DateTime messageCreatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => MessageBookmarksCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                conversationId: conversationId,
+                contentSnapshot: contentSnapshot,
+                isUser: isUser,
+                messageCreatedAt: messageCreatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$MessageBookmarksTable, MessageBookmarksTable>(
+                    table,
+                  ),
+                  $$MessageBookmarksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({conversationId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (conversationId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.conversationId,
+                        referencedTable: $$MessageBookmarksTableReferences
+                            ._conversationIdTable(db),
+                        referencedColumn: $$MessageBookmarksTableReferences
+                            ._conversationIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MessageBookmarksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MessageBookmarksTable,
+      MessageBookmarksTable,
+      $$MessageBookmarksTableFilterComposer,
+      $$MessageBookmarksTableOrderingComposer,
+      $$MessageBookmarksTableAnnotationComposer,
+      $$MessageBookmarksTableCreateCompanionBuilder,
+      $$MessageBookmarksTableUpdateCompanionBuilder,
+      (MessageBookmarksTable, $$MessageBookmarksTableReferences),
+      MessageBookmarksTable,
+      PrefetchHooks Function({bool conversationId})
     >;
 typedef $$ConversationToolsTableCreateCompanionBuilder =
     ConversationToolsCompanion Function({
@@ -29088,625 +28055,6 @@ typedef $$WorkspaceCompactionSettingsTableProcessedTableManager =
       ),
       WorkspaceCompactionSettingsTable,
       PrefetchHooks Function({bool workspaceId})
-    >;
-typedef $$SkillTemplateToolsTableCreateCompanionBuilder =
-    SkillTemplateToolsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String skillId,
-      required SkillTemplateToolTypeTable templateType,
-      required String title,
-      Value<String> description,
-      required String slug,
-      Value<String> definitionJson,
-      required String templateJson,
-      required String inputsJson,
-      Value<String?> credentialDefinitionId,
-      Value<bool> requiresCredential,
-      Value<bool> isEnabled,
-      Value<int> rowid,
-    });
-typedef $$SkillTemplateToolsTableUpdateCompanionBuilder =
-    SkillTemplateToolsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> skillId,
-      Value<SkillTemplateToolTypeTable> templateType,
-      Value<String> title,
-      Value<String> description,
-      Value<String> slug,
-      Value<String> definitionJson,
-      Value<String> templateJson,
-      Value<String> inputsJson,
-      Value<String?> credentialDefinitionId,
-      Value<bool> requiresCredential,
-      Value<bool> isEnabled,
-      Value<int> rowid,
-    });
-
-final class $$SkillTemplateToolsTableReferences
-    extends
-        BaseReferences<
-          _$AppDatabase,
-          $SkillTemplateToolsTable,
-          SkillTemplateToolsTable
-        > {
-  $$SkillTemplateToolsTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $SkillsTable _skillIdTable(_$AppDatabase db) =>
-      db.skills.createAlias('skill_template_tools__skill_id__skills__id');
-
-  $$SkillsTableProcessedTableManager get skillId {
-    final $_column = $_itemColumn<String>('skill_id')!;
-
-    final manager = $$SkillsTableTableManager(
-      $_db,
-      $_db.skills,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_skillIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $SkillCredentialDefinitionsTable _credentialDefinitionIdTable(
-    _$AppDatabase db,
-  ) => db.skillCredentialDefinitions.createAlias(
-    'skill_template_tools__credential_definition_id__skill_credential_definitions__id',
-  );
-
-  $$SkillCredentialDefinitionsTableProcessedTableManager?
-  get credentialDefinitionId {
-    final $_column = $_itemColumn<String>('credential_definition_id');
-    if ($_column == null) return null;
-    final manager = $$SkillCredentialDefinitionsTableTableManager(
-      $_db,
-      $_db.skillCredentialDefinitions,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(
-      _credentialDefinitionIdTable($_db),
-    );
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
-class $$SkillTemplateToolsTableFilterComposer
-    extends Composer<_$AppDatabase, $SkillTemplateToolsTable> {
-  $$SkillTemplateToolsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnWithTypeConverterFilters<
-    SkillTemplateToolTypeTable,
-    SkillTemplateToolTypeTable,
-    String
-  >
-  get templateType => $composableBuilder(
-    column: $table.templateType,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
-  ColumnFilters<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get definitionJson => $composableBuilder(
-    column: $table.definitionJson,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get templateJson => $composableBuilder(
-    column: $table.templateJson,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get inputsJson => $composableBuilder(
-    column: $table.inputsJson,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get requiresCredential => $composableBuilder(
-    column: $table.requiresCredential,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isEnabled => $composableBuilder(
-    column: $table.isEnabled,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$SkillsTableFilterComposer get skillId {
-    final $$SkillsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.skillId,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableFilterComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$SkillCredentialDefinitionsTableFilterComposer get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableFilterComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-}
-
-class $$SkillTemplateToolsTableOrderingComposer
-    extends Composer<_$AppDatabase, $SkillTemplateToolsTable> {
-  $$SkillTemplateToolsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get templateType => $composableBuilder(
-    column: $table.templateType,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get definitionJson => $composableBuilder(
-    column: $table.definitionJson,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get templateJson => $composableBuilder(
-    column: $table.templateJson,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get inputsJson => $composableBuilder(
-    column: $table.inputsJson,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get requiresCredential => $composableBuilder(
-    column: $table.requiresCredential,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isEnabled => $composableBuilder(
-    column: $table.isEnabled,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$SkillsTableOrderingComposer get skillId {
-    final $$SkillsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.skillId,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableOrderingComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$SkillCredentialDefinitionsTableOrderingComposer get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableOrderingComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableOrderingComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-}
-
-class $$SkillTemplateToolsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $SkillTemplateToolsTable> {
-  $$SkillTemplateToolsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumnWithTypeConverter<SkillTemplateToolTypeTable, String>
-  get templateType => $composableBuilder(
-    column: $table.templateType,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get title =>
-      $composableBuilder(column: $table.title, builder: (column) => column);
-
-  GeneratedColumn<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get slug =>
-      $composableBuilder(column: $table.slug, builder: (column) => column);
-
-  GeneratedColumn<String> get definitionJson => $composableBuilder(
-    column: $table.definitionJson,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get templateJson => $composableBuilder(
-    column: $table.templateJson,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get inputsJson => $composableBuilder(
-    column: $table.inputsJson,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get requiresCredential => $composableBuilder(
-    column: $table.requiresCredential,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isEnabled =>
-      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
-
-  $$SkillsTableAnnotationComposer get skillId {
-    final $$SkillsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.skillId,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$SkillCredentialDefinitionsTableAnnotationComposer
-  get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-}
-
-class $$SkillTemplateToolsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $SkillTemplateToolsTable,
-          SkillTemplateToolsTable,
-          $$SkillTemplateToolsTableFilterComposer,
-          $$SkillTemplateToolsTableOrderingComposer,
-          $$SkillTemplateToolsTableAnnotationComposer,
-          $$SkillTemplateToolsTableCreateCompanionBuilder,
-          $$SkillTemplateToolsTableUpdateCompanionBuilder,
-          (SkillTemplateToolsTable, $$SkillTemplateToolsTableReferences),
-          SkillTemplateToolsTable,
-          PrefetchHooks Function({bool skillId, bool credentialDefinitionId})
-        > {
-  $$SkillTemplateToolsTableTableManager(
-    _$AppDatabase db,
-    $SkillTemplateToolsTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$SkillTemplateToolsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$SkillTemplateToolsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$SkillTemplateToolsTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<String> skillId = const Value.absent(),
-                Value<SkillTemplateToolTypeTable> templateType =
-                    const Value.absent(),
-                Value<String> title = const Value.absent(),
-                Value<String> description = const Value.absent(),
-                Value<String> slug = const Value.absent(),
-                Value<String> definitionJson = const Value.absent(),
-                Value<String> templateJson = const Value.absent(),
-                Value<String> inputsJson = const Value.absent(),
-                Value<String?> credentialDefinitionId = const Value.absent(),
-                Value<bool> requiresCredential = const Value.absent(),
-                Value<bool> isEnabled = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => SkillTemplateToolsCompanion(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                skillId: skillId,
-                templateType: templateType,
-                title: title,
-                description: description,
-                slug: slug,
-                definitionJson: definitionJson,
-                templateJson: templateJson,
-                inputsJson: inputsJson,
-                credentialDefinitionId: credentialDefinitionId,
-                requiresCredential: requiresCredential,
-                isEnabled: isEnabled,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                required String skillId,
-                required SkillTemplateToolTypeTable templateType,
-                required String title,
-                Value<String> description = const Value.absent(),
-                required String slug,
-                Value<String> definitionJson = const Value.absent(),
-                required String templateJson,
-                required String inputsJson,
-                Value<String?> credentialDefinitionId = const Value.absent(),
-                Value<bool> requiresCredential = const Value.absent(),
-                Value<bool> isEnabled = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => SkillTemplateToolsCompanion.insert(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                skillId: skillId,
-                templateType: templateType,
-                title: title,
-                description: description,
-                slug: slug,
-                definitionJson: definitionJson,
-                templateJson: templateJson,
-                inputsJson: inputsJson,
-                credentialDefinitionId: credentialDefinitionId,
-                requiresCredential: requiresCredential,
-                isEnabled: isEnabled,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable<
-                    $SkillTemplateToolsTable,
-                    SkillTemplateToolsTable
-                  >(table),
-                  $$SkillTemplateToolsTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({skillId = false, credentialDefinitionId = false}) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (skillId) {
-                          state = state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.skillId,
-                            referencedTable: $$SkillTemplateToolsTableReferences
-                                ._skillIdTable(db),
-                            referencedColumn:
-                                $$SkillTemplateToolsTableReferences
-                                    ._skillIdTable(db)
-                                    .id,
-                          ) as T;
-                        }
-                        if (credentialDefinitionId) {
-                          state = state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.credentialDefinitionId,
-                            referencedTable: $$SkillTemplateToolsTableReferences
-                                ._credentialDefinitionIdTable(db),
-                            referencedColumn:
-                                $$SkillTemplateToolsTableReferences
-                                    ._credentialDefinitionIdTable(db)
-                                    .id,
-                          ) as T;
-                        }
-
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$SkillTemplateToolsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $SkillTemplateToolsTable,
-      SkillTemplateToolsTable,
-      $$SkillTemplateToolsTableFilterComposer,
-      $$SkillTemplateToolsTableOrderingComposer,
-      $$SkillTemplateToolsTableAnnotationComposer,
-      $$SkillTemplateToolsTableCreateCompanionBuilder,
-      $$SkillTemplateToolsTableUpdateCompanionBuilder,
-      (SkillTemplateToolsTable, $$SkillTemplateToolsTableReferences),
-      SkillTemplateToolsTable,
-      PrefetchHooks Function({bool skillId, bool credentialDefinitionId})
     >;
 typedef $$SkillResourcesTableCreateCompanionBuilder =
     SkillResourcesCompanion Function({
@@ -31687,6 +30035,7 @@ typedef $$BackgroundWorksTableCreateCompanionBuilder =
       Value<DateTime> updatedAt,
       required String workspaceId,
       required String conversationId,
+      Value<String?> childConversationId,
       Value<String?> originatingMessageId,
       required String toolCallId,
       required String toolKind,
@@ -31704,6 +30053,7 @@ typedef $$BackgroundWorksTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<String> workspaceId,
       Value<String> conversationId,
+      Value<String?> childConversationId,
       Value<String?> originatingMessageId,
       Value<String> toolCallId,
       Value<String> toolKind,
@@ -31757,6 +30107,25 @@ final class $$BackgroundWorksTableReferences
       $_db.conversations,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ConversationsTable _childConversationIdTable(_$AppDatabase db) =>
+      db.conversations.createAlias(
+        'background_works__child_conversation_id__conversations__id',
+      );
+
+  $$ConversationsTableProcessedTableManager? get childConversationId {
+    final $_column = $_itemColumn<String>('child_conversation_id');
+    if ($_column == null) return null;
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_childConversationIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -31870,6 +30239,29 @@ class $$BackgroundWorksTableFilterComposer
     final $$ConversationsTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableFilterComposer get childConversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.childConversationId,
       referencedTable: $db.conversations,
       getReferencedColumn: (t) => t.id,
       builder:
@@ -32018,6 +30410,29 @@ class $$BackgroundWorksTableOrderingComposer
     return composer;
   }
 
+  $$ConversationsTableOrderingComposer get childConversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.childConversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   $$MessagesTableOrderingComposer get originatingMessageId {
     final $$MessagesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -32135,6 +30550,29 @@ class $$BackgroundWorksTableAnnotationComposer
     return composer;
   }
 
+  $$ConversationsTableAnnotationComposer get childConversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.childConversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   $$MessagesTableAnnotationComposer get originatingMessageId {
     final $$MessagesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -32175,6 +30613,7 @@ class $$BackgroundWorksTableTableManager
           PrefetchHooks Function({
             bool workspaceId,
             bool conversationId,
+            bool childConversationId,
             bool originatingMessageId,
           })
         > {
@@ -32198,6 +30637,7 @@ class $$BackgroundWorksTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> workspaceId = const Value.absent(),
                 Value<String> conversationId = const Value.absent(),
+                Value<String?> childConversationId = const Value.absent(),
                 Value<String?> originatingMessageId = const Value.absent(),
                 Value<String> toolCallId = const Value.absent(),
                 Value<String> toolKind = const Value.absent(),
@@ -32213,6 +30653,7 @@ class $$BackgroundWorksTableTableManager
                 updatedAt: updatedAt,
                 workspaceId: workspaceId,
                 conversationId: conversationId,
+                childConversationId: childConversationId,
                 originatingMessageId: originatingMessageId,
                 toolCallId: toolCallId,
                 toolKind: toolKind,
@@ -32230,6 +30671,7 @@ class $$BackgroundWorksTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 required String workspaceId,
                 required String conversationId,
+                Value<String?> childConversationId = const Value.absent(),
                 Value<String?> originatingMessageId = const Value.absent(),
                 required String toolCallId,
                 required String toolKind,
@@ -32245,6 +30687,7 @@ class $$BackgroundWorksTableTableManager
                 updatedAt: updatedAt,
                 workspaceId: workspaceId,
                 conversationId: conversationId,
+                childConversationId: childConversationId,
                 originatingMessageId: originatingMessageId,
                 toolCallId: toolCallId,
                 toolKind: toolKind,
@@ -32269,6 +30712,7 @@ class $$BackgroundWorksTableTableManager
               ({
                 workspaceId = false,
                 conversationId = false,
+                childConversationId = false,
                 originatingMessageId = false,
               }) {
                 return PrefetchHooks(
@@ -32312,6 +30756,17 @@ class $$BackgroundWorksTableTableManager
                                 .id,
                           ) as T;
                         }
+                        if (childConversationId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.childConversationId,
+                            referencedTable: $$BackgroundWorksTableReferences
+                                ._childConversationIdTable(db),
+                            referencedColumn: $$BackgroundWorksTableReferences
+                                ._childConversationIdTable(db)
+                                .id,
+                          ) as T;
+                        }
                         if (originatingMessageId) {
                           state = state.withJoin(
                             currentTable: table,
@@ -32350,6 +30805,7 @@ typedef $$BackgroundWorksTableProcessedTableManager =
       PrefetchHooks Function({
         bool workspaceId,
         bool conversationId,
+        bool childConversationId,
         bool originatingMessageId,
       })
     >;
@@ -32708,12 +31164,6 @@ class $AppDatabaseManager {
       $$AgentsTableTableManager(_db, _db.agents);
   $$ConversationsTableTableManager get conversations =>
       $$ConversationsTableTableManager(_db, _db.conversations);
-  $$SkillCredentialDefinitionsTableTableManager
-  get skillCredentialDefinitions =>
-      $$SkillCredentialDefinitionsTableTableManager(
-        _db,
-        _db.skillCredentialDefinitions,
-      );
   $$SkillsTableTableManager get skills =>
       $$SkillsTableTableManager(_db, _db.skills);
   $$AgentSkillsTableTableManager get agentSkills =>
@@ -32730,6 +31180,8 @@ class $AppDatabaseManager {
       $$MessagesTableTableManager(_db, _db.messages);
   $$MessageAttachmentsTableTableManager get messageAttachments =>
       $$MessageAttachmentsTableTableManager(_db, _db.messageAttachments);
+  $$MessageBookmarksTableTableManager get messageBookmarks =>
+      $$MessageBookmarksTableTableManager(_db, _db.messageBookmarks);
   $$ConversationToolsTableTableManager get conversationTools =>
       $$ConversationToolsTableTableManager(_db, _db.conversationTools);
   $$WorkspaceCompactionSettingsTableTableManager
@@ -32738,8 +31190,6 @@ class $AppDatabaseManager {
         _db,
         _db.workspaceCompactionSettings,
       );
-  $$SkillTemplateToolsTableTableManager get skillTemplateTools =>
-      $$SkillTemplateToolsTableTableManager(_db, _db.skillTemplateTools);
   $$SkillResourcesTableTableManager get skillResources =>
       $$SkillResourcesTableTableManager(_db, _db.skillResources);
   $$ConversationSkillsTableTableManager get conversationSkills =>

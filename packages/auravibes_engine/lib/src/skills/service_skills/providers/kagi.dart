@@ -1,13 +1,13 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
-import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
+import 'package:auravibes_engine/src/connectors/connector_tool_definition.dart';
+import 'package:auravibes_engine/src/connectors/models/connector_request_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
+import 'package:auravibes_engine/src/skills/service_skills/service_skill_preset.dart';
 
 const _authorizationHeader = 'Bot {{ credential.apiKey }}';
 const _contentTypeHeader = 'content-type';
 const _jsonContentType = 'application/json';
 
-final kagiSkill = AppSkillDefinition(
+final kagiSkill = ServiceSkillPreset(
   identifier: 'kagi',
   slug: 'kagi',
   title: 'Kagi',
@@ -16,17 +16,15 @@ final kagiSkill = AppSkillDefinition(
 Use Kagi for high-quality search results, concise grounded answers,
 enrichment, and summarization.
   ''',
-  requiresCredential: true,
-  kind: .template,
   tools: [
-    const AppSkillToolDefinition(
+    const ConnectorToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search the web with Kagi.',
       inputJsonSchema: searchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: .new(
-        template: SkillUrlTemplate(
+        template: ConnectorRequestTemplate(
           url: 'https://kagi.com/api/v1/search',
           headers: {'authorization': _authorizationHeader},
           query: {'q': '{{ input.query }}'},
@@ -35,12 +33,12 @@ enrichment, and summarization.
         credentialDefinitions: apiKeyCredentialDefinitions,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'fastgpt',
       title: 'FastGPT',
       description: 'Answer a question using Kagi references.',
       inputJsonSchema: _fastGptInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://kagi.com/api/v0/fastgpt',
         inputSchema: _fastGptInputSchema,
@@ -55,14 +53,14 @@ enrichment, and summarization.
         bodyFormat: .json,
       ),
     ),
-    const AppSkillToolDefinition(
+    const ConnectorToolDefinition(
       slug: 'enrich',
       title: 'Enrich',
       description: 'Find enriched web information for a query.',
       inputJsonSchema: searchInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: .new(
-        template: SkillUrlTemplate(
+        template: ConnectorRequestTemplate(
           url: 'https://kagi.com/api/v0/enrich/web',
           headers: {'authorization': _authorizationHeader},
           query: {'q': '{{ input.query }}'},
@@ -71,12 +69,12 @@ enrichment, and summarization.
         credentialDefinitions: apiKeyCredentialDefinitions,
       ),
     ),
-    AppSkillToolDefinition(
+    ConnectorToolDefinition(
       slug: 'summarize',
       title: 'Summarize',
       description: 'Summarize content from a URL.',
       inputJsonSchema: _summarizeInputSchema,
-      requiresCredential: true,
+      requiresConnection: true,
       urlTemplate: declarativeTemplate(
         url: 'https://kagi.com/api/v0/summarize',
         inputSchema: _summarizeInputSchema,

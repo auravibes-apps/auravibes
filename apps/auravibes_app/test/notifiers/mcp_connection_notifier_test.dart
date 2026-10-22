@@ -421,6 +421,34 @@ void main() {
       expect(spec?.inputJsonSchema, isEmpty);
     });
 
+    test('getToolSpec hides app-only MCP tools from the model', () {
+      final notifier = container.read(mcpConnectionProvider.notifier)
+        ..state = [
+          McpConnectionState(
+            server: _server,
+            status: .connected,
+            client: _FakeMcpManagerClient(),
+            tools: const [
+              McpToolInfo(
+                toolName: 'refresh',
+                description: 'Refresh view',
+                inputSchema: {},
+                metadata: {
+                  'ui': {
+                    'visibility': ['app'],
+                  },
+                },
+              ),
+            ],
+          ),
+        ];
+
+      expect(
+        notifier.getToolSpec(mcpServerId: 'server-1', toolName: 'refresh'),
+        isNull,
+      );
+    });
+
     test('disconnectMcpServer sets disconnected and clears client', () {
       final notifier = container.read(mcpConnectionProvider.notifier)
         ..state = [_connectedState()];
@@ -1063,6 +1091,51 @@ void main() {
       expect(fakeService.calledToolIdentifiers, ['sum']);
     });
 
+    test(
+      'only returns raw result data for tools with an MCP App resource',
+      () async {
+        final fakeService = _SuccessfulMcpManagerService();
+        final testContainer = await createInitializedContainer(fakeService);
+        addTearDown(testContainer.dispose);
+        final notifier = testContainer.read(mcpConnectionProvider.notifier)
+          ..state = [
+            McpConnectionState(
+              server: _server,
+              status: .connected,
+              client: _FakeMcpManagerClient(),
+              tools: const [
+                _toolInfo,
+                McpToolInfo(
+                  toolName: 'weather',
+                  description: 'Weather app',
+                  inputSchema: {},
+                  metadata: {
+                    'ui': {'resourceUri': 'ui://weather/view'},
+                  },
+                ),
+              ],
+            ),
+          ];
+
+        final ordinaryTool = await notifier.callToolWithAppData(
+          mcpServerId: 'server-1',
+          toolIdentifier: 'sum',
+          arguments: const {},
+        );
+        final appTool = await notifier.callToolWithAppData(
+          mcpServerId: 'server-1',
+          toolIdentifier: 'weather',
+          arguments: const {},
+        );
+
+        expect(ordinaryTool.modelText, 'tool result');
+        expect(ordinaryTool.appData, isEmpty);
+        expect(appTool.modelText, 'tool result');
+        expect(appTool.appData, contains('_meta'));
+        expect(fakeService.includeAppDataCalls, [false, true]);
+      },
+    );
+
     test('token updates are persisted for added MCP credential', () async {
       final tokenController = StreamController<OAuthTokenEntity>();
       addTearDown(tokenController.close);
@@ -1222,6 +1295,7 @@ class _SuccessfulMcpManagerService extends McpManagerService {
 
   final connectedServers = <McpServerToCreate>[];
   final calledToolIdentifiers = <String>[];
+  final includeAppDataCalls = <bool>[];
   int disconnectCount = 0;
   int getToolsCount = 0;
   List<McpToolInfo> discoveredTools = const [_toolInfo];
@@ -1272,10 +1346,32 @@ class _SuccessfulMcpManagerService extends McpManagerService {
     McpManagerClient client, {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
+    required McpToolElicitationContext elicitation,
   }) async {
     calledToolIdentifiers.add(toolIdentifier);
 
     return 'tool result';
+  }
+
+  @override
+  Future<({String modelText, Map<String, Object?> appData})> callToolOutput(
+    McpToolOutputRequest request,
+  ) async {
+    includeAppDataCalls.add(request.includeAppData);
+
+    return (
+      modelText: 'tool result',
+      appData: request.includeAppData
+          ? const {
+              'content': [
+                {'type': 'text', 'text': 'tool result'},
+              ],
+              '_meta': {
+                'ui': {'resourceUri': 'ui://weather/view'},
+              },
+            }
+          : const <String, Object?>{},
+    );
   }
 }
 

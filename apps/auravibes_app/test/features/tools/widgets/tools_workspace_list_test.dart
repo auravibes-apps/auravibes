@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -12,6 +13,7 @@ import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_permission_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_workspace_list_widget.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
@@ -56,6 +58,7 @@ ToolsGroupWithTools _groupWithTools({
   String id = 'group-1',
   bool isEnabled = true,
   String? mcpServerId,
+  McpConnectionState? mcpConnectionState,
 }) {
   return ToolsGroupWithTools(
     group: .new(
@@ -69,8 +72,20 @@ ToolsGroupWithTools _groupWithTools({
       mcpServerId: mcpServerId,
     ),
     tools: tools,
+    mcpConnectionState: mcpConnectionState,
   );
 }
+
+McpServerEntity _mcpServer(String id, String name) => McpServerEntity(
+  id: id,
+  workspaceId: _workspaceId,
+  name: name,
+  url: 'https://$id.example.test',
+  transport: const McpTransportTypeStreamableHttp(),
+  authenticationType: const McpAuthenticationTypeNone(),
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
+);
 
 class _LoadingNotifier extends GroupedToolsNotifier {
   final _completer = Completer<List<ToolsGroupWithTools>>();
@@ -282,8 +297,7 @@ void main() {
           ),
         ),
         GoRoute(
-          path:
-              '/workspaces/:workspaceId/more/service-connections/:connectionId',
+          path: '/workspaces/:workspaceId/service-connections/:connectionId',
           builder: (_, state) =>
               Text('Source ${state.pathParameters['connectionId']}'),
         ),
@@ -833,4 +847,72 @@ void main() {
     expect(notifier.removedIds.skip(beforeSecondRetry).toList(), ['fail-2']);
     expect(find.byType(AlertDialog), findsNothing);
   });
+
+  testWidgets(
+    'renders grouped workspace tool states at wide and compact sizes',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(960, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final groups = [
+        _defaultGroup([
+          _tool(
+            id: 'read-file',
+            toolId: 'read_file',
+            description: 'Read workspace files',
+          ),
+          _tool(
+            id: 'write-file',
+            toolId: 'write_file',
+            description: 'Write workspace files',
+            isEnabled: false,
+          ),
+        ]),
+        _groupWithTools(
+          tools: [_tool(id: 'search-issues', toolId: 'search_issues')],
+          name: 'GitHub',
+          id: 'github',
+          mcpServerId: 'github-server',
+          mcpConnectionState: .new(
+            server: _mcpServer('github-server', 'GitHub'),
+            status: .error,
+          ),
+        ),
+        _groupWithTools(
+          tools: [
+            _tool(id: 'list-events', toolId: 'list_events', isEnabled: false),
+          ],
+          name: 'Calendar',
+          id: 'calendar',
+          isEnabled: false,
+          mcpServerId: 'calendar-server',
+          mcpConnectionState: .new(
+            server: _mcpServer('calendar-server', 'Calendar'),
+            status: .connected,
+          ),
+        ),
+      ];
+
+      await _pumpListApp(tester, [
+        groupedToolsProvider(_workspaceId)
+            .overrideWith(() => _DataNotifier(groups)),
+      ]);
+      final _ = await tester.pumpAndSettle();
+      expect(find.byTooltip('Reconnect'), findsOneWidget);
+
+      await expectLater(
+        find.byType(ToolsWorkspaceListWidget),
+        matchesGoldenFile('goldens/tools_workspace_list.png'),
+      );
+      expect(find.text('GitHub'), findsOneWidget);
+      expect(find.text('Calendar'), findsOneWidget);
+
+      await tester.binding.setSurfaceSize(const Size(420, 900));
+      final _ = await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(ToolsWorkspaceListWidget),
+        matchesGoldenFile('goldens/tools_workspace_list_compact.png'),
+      );
+    },
+    tags: ['golden'],
+  );
 }

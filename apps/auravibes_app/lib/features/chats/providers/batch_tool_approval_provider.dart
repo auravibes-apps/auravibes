@@ -7,7 +7,6 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -22,9 +21,6 @@ final batchToolApprovalUsecaseProvider = Provider<BatchToolApprovalActions>(
     toolResolver: const ToolResolverService(),
     loadToolSpecs: (workspaceId) =>
         ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
-    effectiveToolApproval: ref.watch(
-      resolveEffectiveToolApprovalUsecaseProvider,
-    ),
     resolveCloudTurn: (workspaceId) =>
         ref.read(cloudTurnUsecaseProvider(workspaceId).future),
     onToolCallChanged: () => ref.invalidate(pendingToolCallsProvider),

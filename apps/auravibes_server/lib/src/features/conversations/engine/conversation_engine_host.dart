@@ -12,10 +12,12 @@ import '../../model_connections/usecases/model_connection_usecases.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../../workspace_state/workspace_secret_resolver.dart';
 import '../domain/conversation_values.dart';
+import '../repositories/conversation_repository.dart' as conversation_repo;
 import 'conversation_host_effects.dart';
 import 'a2ui_protocol.dart';
 import 'server_tool_executor.dart';
 import 'server_tool_runtime.dart';
+import 'server_agent_guidance.dart';
 
 class const ConversationEngineResult({
   required final String content,
@@ -59,6 +61,13 @@ String _toolResultForContext(ConversationToolCall call) {
   final result = call.resultJson ?? call.status;
   return projectToolOutput(result).text;
 }
+
+bool _isDetachedBackgroundToolCall(
+  ConversationToolCall call,
+  Map<int, Set<String>> detachedToolCallIdsByMessageId,
+) =>
+    detachedToolCallIdsByMessageId[call.messageId]?.contains(call.stableId) ??
+    false;
 
 typedef ConversationProviderTransport =
     Future<ProviderTransportResponse> Function(Map<String, dynamic> body);
@@ -105,6 +114,7 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
   required Iterable<String> activeSkillIds,
   required bool isChildConversation,
   Set<String>? a2uiSupportedComponents,
+  String? languageCode,
 }) async {
   final resources = await WorkspaceResource.db.find(
     session,
@@ -124,18 +134,6 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
         },
       )
       .toList(growable: false);
-  final templateTools = resources
-      .where(
-        (resource) =>
-            resource.resourceKind == WorkspaceResourceKind.skillTemplateTool,
-      )
-      .map(
-        (resource) => {
-          'id': resource.resourceId,
-          ..._jsonObject(resource.data),
-        },
-      )
-      .toList(growable: false);
   final appSkillSettings = resources
       .where(
         (resource) =>
@@ -143,41 +141,45 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
       )
       .map((resource) => _jsonObject(resource.data))
       .toList(growable: false);
-  final serviceConnections = resources
-      .where(
-        (resource) =>
-            resource.resourceKind == WorkspaceResourceKind.serviceConnection,
-      )
-      .map(
-        (resource) => {
-          'id': resource.resourceId,
-          ..._jsonObject(resource.data),
-        },
-      )
-      .toList(growable: false);
+  final modelConnections = await WorkspaceModelConnection.db.find(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
+  );
+  final serviceConnections = [
+    ...resources
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.serviceConnection,
+        )
+        .map(
+          (resource) => {
+            'id': resource.resourceId,
+            ..._jsonObject(resource.data),
+          },
+        ),
+    for (final connection in modelConnections)
+      {
+        'id': connection.connectionId,
+        'name': connection.name,
+        'kind': 'modelProvider',
+        'providerId': connection.providerId,
+        'hasSecret': connection.hasSecret,
+      },
+  ];
   final candidates = _cloudSkillCatalogCandidates(
     userSkills: userSkills,
-    templateTools: templateTools,
     serviceConnections: serviceConnections,
     appSkillSettings: appSkillSettings,
     isChildConversation: isChildConversation,
     a2uiSupportedComponents: a2uiSupportedComponents,
-  );
-  final candidateIds = candidates.map((candidate) => candidate.id).toSet();
-  final tools = materializeCloudSkillTools(
-    selectedSkillIds: candidateIds,
-    userSkills: userSkills,
-    templateTools: templateTools,
-    appSkillSettings: appSkillSettings,
-    serviceConnections: serviceConnections,
-    isChildConversation: isChildConversation,
   );
   final entries = <SkillCatalogEntry>[];
   for (final candidate in candidates) {
     final manifest = await buildCloudSkillManifest(
       slug: candidate.slug,
       userSkills: userSkills,
-      tools: tools,
+      languageCode: languageCode,
     );
     if (manifest == null) continue;
     entries.add(
@@ -197,7 +199,6 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
 
 List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
   required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<Map<String, dynamic>> templateTools,
   required Iterable<Map<String, dynamic>> serviceConnections,
   required Iterable<Map<String, dynamic>> appSkillSettings,
   required bool isChildConversation,
@@ -206,7 +207,6 @@ List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
   final candidates = <_CloudSkillCatalogCandidate>[
     ..._cloudUserSkillCatalogCandidates(
       userSkills: userSkills,
-      templateTools: templateTools,
       serviceConnections: serviceConnections,
     ),
     if (!isChildConversation &&
@@ -218,7 +218,6 @@ List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
         description: '',
       ),
     ..._cloudServiceSkillCatalogCandidates(
-      appSkillSettings: appSkillSettings,
       serviceConnections: serviceConnections,
     ),
   ];
@@ -242,7 +241,6 @@ List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
 
 Iterable<_CloudSkillCatalogCandidate> _cloudUserSkillCatalogCandidates({
   required Iterable<Map<String, dynamic>> userSkills,
-  required Iterable<Map<String, dynamic>> templateTools,
   required Iterable<Map<String, dynamic>> serviceConnections,
 }) sync* {
   for (final skill in userSkills) {
@@ -252,7 +250,7 @@ Iterable<_CloudSkillCatalogCandidate> _cloudUserSkillCatalogCandidates({
     if (id is! String ||
         slug is! String ||
         title is! String ||
-        !cloudUserSkillReady(skill, templateTools, serviceConnections)) {
+        !cloudUserSkillReady(skill, serviceConnections)) {
       continue;
     }
     yield (
@@ -265,13 +263,10 @@ Iterable<_CloudSkillCatalogCandidate> _cloudUserSkillCatalogCandidates({
 }
 
 Iterable<_CloudSkillCatalogCandidate> _cloudServiceSkillCatalogCandidates({
-  required Iterable<Map<String, dynamic>> appSkillSettings,
   required Iterable<Map<String, dynamic>> serviceConnections,
 }) => serviceSkillDefinitions
     .where(
-      (skill) =>
-          cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
-          cloudServiceSkillReady(skill, serviceConnections),
+      (skill) => cloudServiceSkillReady(skill, serviceConnections),
     )
     .map(
       (skill) => (
@@ -408,14 +403,17 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
   return exchanges;
 }
 
-List<AgentSkill> cloudAppSkillsForIds(Iterable<String> skillIds) {
+List<AgentSkill> cloudAppSkillsForIds(
+  Iterable<String> skillIds, {
+  String? languageCode,
+}) {
   final appSkills = <AgentSkill>[];
   for (final skillId in skillIds) {
     if (skillId == agentsSkillSlug) {
       appSkills.add(
-        const AgentSkill(
+        AgentSkill(
           title: agentsSkillTitle,
-          content: agentsSkillContent,
+          content: serverAgentsSkillContentForLanguageCode(languageCode),
           identity: agentsSkillSlug,
         ),
       );
@@ -486,6 +484,9 @@ final class const ServerConversationEngineHost({
     if (conversation == null) {
       throw const ConversationEngineConfigurationException('conversation');
     }
+    final languageCode = conversation_repo.conversationLanguageCodeForJob(
+      job.payloadJson,
+    );
     final a2uiComponents = cloudA2uiSupportedComponents(
       job.payloadJson,
       isChildConversation: conversation.parentConversationStableId != null,
@@ -556,6 +557,7 @@ final class const ServerConversationEngineHost({
       session,
       workspaceId: job.workspaceId,
       conversationStableId: conversation.stableId,
+      languageCode: languageCode,
     );
     final resumedCalls = await ConversationToolCall.db.find(
       session,
@@ -586,6 +588,7 @@ final class const ServerConversationEngineHost({
                 name: call.name,
                 arguments: _jsonObject(call.argumentsJson),
                 userFacingDescription: call.userFacingDescription,
+                languageCode: languageCode,
               ),
             ),
           ),
@@ -655,10 +658,22 @@ final class const ServerConversationEngineHost({
             ) &
             table.status.notEquals('running'),
       );
+      final inheritedDetachedToolCallIdsByMessageId =
+          await _inheritedDetachedBackgroundToolCallIds(
+            session,
+            workspaceId: job.workspaceId,
+            conversationId: job.conversationId,
+            messages: messages,
+          );
       toolExchanges.addAll(
         persistedProviderToolExchanges(
           messages: messages,
-          calls: resolvedCalls,
+          calls: resolvedCalls.where(
+            (call) => !_isDetachedBackgroundToolCall(
+              call,
+              inheritedDetachedToolCallIdsByMessageId,
+            ),
+          ),
         ),
       );
       requestMessages = await _refreshedRequestMessages(
@@ -673,6 +688,7 @@ final class const ServerConversationEngineHost({
         session,
         workspaceId: job.workspaceId,
         conversationStableId: conversation.stableId,
+        languageCode: languageCode,
       );
     }
     ModelResponse providerResponse;
@@ -806,7 +822,10 @@ final class const ServerConversationEngineHost({
         'outputTruncated': outputCharacters > debugOutput.length,
         'modelOutput': debugOutput.toString(),
       });
-      final requests = _toolRequests(providerResponse.raw);
+      final requests = _toolRequests(
+        providerResponse.raw,
+        languageCode: languageCode,
+      );
       if (requests.isEmpty) break;
       final assistantToolMessage = _assistantToolMessage(providerResponse.raw);
       final userFacingDescription = normalizeToolCallUserFacingDescription(
@@ -819,6 +838,7 @@ final class const ServerConversationEngineHost({
             name: request.name,
             arguments: request.arguments,
             userFacingDescription: userFacingDescription,
+            languageCode: languageCode,
           ),
       ];
       await persistProviderToolBatch(
@@ -910,6 +930,7 @@ final class const ServerConversationEngineHost({
         session,
         workspaceId: job.workspaceId,
         conversationStableId: conversation.stableId,
+        languageCode: languageCode,
       );
     }
     await response.close();
@@ -1054,6 +1075,9 @@ final class const ServerConversationEngineHost({
       job.conversationId,
     );
     if (conversation == null) return const [];
+    final languageCode = conversation_repo.conversationLanguageCodeForJob(
+      job.payloadJson,
+    );
     final selections = await WorkspaceResource.db.find(
       session,
       where: (table) =>
@@ -1080,6 +1104,7 @@ final class const ServerConversationEngineHost({
       activeSkillIds: {...conversationSkillIds, ...agentContext.skillIds},
       isChildConversation: conversation.parentConversationStableId != null,
       a2uiSupportedComponents: a2uiSupportedComponents,
+      languageCode: languageCode,
     );
     final messages = [
       {'role': 'system', 'content': toolCallNarrationInstruction},
@@ -1091,6 +1116,7 @@ final class const ServerConversationEngineHost({
           job.workspaceId,
           agentContext.skillIds,
           isChildConversation: conversation.parentConversationStableId != null,
+          languageCode: languageCode,
         ),
       ),
     ];
@@ -1145,6 +1171,7 @@ final class const ServerConversationEngineHost({
     int workspaceId,
     Iterable<String> skillIds, {
     required bool isChildConversation,
+    String? languageCode,
   }) async {
     final skills = <AgentSkill>[];
     for (final skillId in skillIds) {
@@ -1181,17 +1208,33 @@ final class const ServerConversationEngineHost({
               resource.resourceKind == WorkspaceResourceKind.skillSetting,
         )
         .map((resource) => _jsonObject(resource.data));
-    final serviceConnections = appResources
-        .where(
-          (resource) =>
-              resource.resourceKind == WorkspaceResourceKind.serviceConnection,
-        )
-        .map(
-          (resource) => {
-            'id': resource.resourceId,
-            ..._jsonObject(resource.data),
-          },
-        );
+    final appModelConnections = await WorkspaceModelConnection.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
+    );
+    final serviceConnections = [
+      ...appResources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                WorkspaceResourceKind.serviceConnection,
+          )
+          .map(
+            (resource) => {
+              'id': resource.resourceId,
+              ..._jsonObject(resource.data),
+            },
+          ),
+      for (final connection in appModelConnections)
+        {
+          'id': connection.connectionId,
+          'name': connection.name,
+          'kind': 'modelProvider',
+          'providerId': connection.providerId,
+          'hasSecret': connection.hasSecret,
+        },
+    ];
     final enabledAppSkillIds = skillIds.where((skillId) {
       if (skillId == agentsSkillSlug) {
         return cloudAppSkillEnabled(agentsSkillSlug, appSettings);
@@ -1203,10 +1246,11 @@ final class const ServerConversationEngineHost({
           )
           .firstOrNull;
       return definition != null &&
-          cloudAppSkillEnabled(definition.identifier, appSettings) &&
           cloudServiceSkillReady(definition, serviceConnections);
     });
-    skills.addAll(cloudAppSkillsForIds(enabledAppSkillIds));
+    skills.addAll(
+      cloudAppSkillsForIds(enabledAppSkillIds, languageCode: languageCode),
+    );
     final userSkills = appResources
         .where(
           (resource) =>
@@ -1220,25 +1264,6 @@ final class const ServerConversationEngineHost({
           },
         )
         .toList(growable: false);
-    final targets = materializeCloudSkillTools(
-      selectedSkillIds: skillIds.toSet(),
-      userSkills: userSkills,
-      templateTools: appResources
-          .where(
-            (resource) =>
-                resource.resourceKind ==
-                WorkspaceResourceKind.skillTemplateTool,
-          )
-          .map(
-            (resource) => {
-              'id': resource.resourceId,
-              ..._jsonObject(resource.data),
-            },
-          ),
-      appSkillSettings: appSettings,
-      serviceConnections: serviceConnections,
-      isChildConversation: isChildConversation,
-    );
     final withManifests = <AgentSkill>[];
     for (final skill in skills) {
       final user = userSkills
@@ -1253,7 +1278,7 @@ final class const ServerConversationEngineHost({
           : await buildCloudSkillManifest(
               slug: slug,
               userSkills: userSkills,
-              tools: targets,
+              languageCode: languageCode,
             );
       withManifests.add(
         AgentSkill(
@@ -1297,8 +1322,20 @@ final class const ServerConversationEngineHost({
             messages.map((message) => message.id).whereType<int>().toSet(),
           ),
     );
+    final inheritedDetachedToolCallIdsByMessageId =
+        await _inheritedDetachedBackgroundToolCallIds(
+          session,
+          workspaceId: job.workspaceId,
+          conversationId: job.conversationId,
+          messages: messages,
+        );
     final toolCallsByMessageId = <int, List<ConversationToolCall>>{};
-    for (final toolCall in toolCalls) {
+    for (final toolCall in toolCalls.where(
+      (call) => !_isDetachedBackgroundToolCall(
+        call,
+        inheritedDetachedToolCallIdsByMessageId,
+      ),
+    )) {
       (toolCallsByMessageId[toolCall.messageId] ??= []).add(toolCall);
     }
     final range = selectConversationCompactionRange(
@@ -1355,7 +1392,13 @@ final class const ServerConversationEngineHost({
     return ConversationCompactionResult(
       summary: appendDurableSkillActivations(
         summary,
-        await _durableSkillActivations(session, job.workspaceId, range),
+        await _durableSkillActivations(
+          session,
+          job.workspaceId,
+          range,
+          excludedToolCallIdsByMessageId:
+              inheritedDetachedToolCallIdsByMessageId,
+        ),
       ),
       range: range,
       providerId: config.providerId,
@@ -1366,8 +1409,9 @@ final class const ServerConversationEngineHost({
   Future<List<String>> _durableSkillActivations(
     Session session,
     int workspaceId,
-    AgentCompactionRangeSelected range,
-  ) async {
+    AgentCompactionRangeSelected range, {
+    required Map<int, Set<String>> excludedToolCallIdsByMessageId,
+  }) async {
     final messageIds = range.messageIds.map(int.parse).toSet();
     if (messageIds.isEmpty) return const [];
     final calls = await ConversationToolCall.db.find(
@@ -1379,13 +1423,45 @@ final class const ServerConversationEngineHost({
       orderBy: (table) => table.id,
     );
     final latestBySkill = <String, String>{};
-    for (final call in calls) {
+    for (final call in calls.where(
+      (call) => !_isDetachedBackgroundToolCall(
+        call,
+        excludedToolCallIdsByMessageId,
+      ),
+    )) {
       final result = call.resultJson;
       if (result == null || !result.startsWith('<skill_content ')) continue;
       latestBySkill[_activationSkillKey(call)] = result;
     }
 
     return latestBySkill.values.toList(growable: false);
+  }
+
+  Future<Map<int, Set<String>>> _inheritedDetachedBackgroundToolCallIds(
+    Session session, {
+    required int workspaceId,
+    required int conversationId,
+    required Iterable<ConversationMessage> messages,
+  }) async {
+    final inheritedMessageIds = messages
+        .where((message) => message.conversationId != conversationId)
+        .map((message) => message.id)
+        .whereType<int>()
+        .toSet();
+    if (inheritedMessageIds.isEmpty) return const {};
+    final workRecords = await BackgroundWorkRecord.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.originatingMessageId.inSet(inheritedMessageIds),
+    );
+    final toolCallIdsByMessageId = <int, Set<String>>{};
+    for (final work in workRecords) {
+      final messageId = work.originatingMessageId;
+      if (messageId == null) continue;
+      (toolCallIdsByMessageId[messageId] ??= <String>{}).add(work.toolCallId);
+    }
+    return toolCallIdsByMessageId;
   }
 
   Future<_ProviderConfig> _loadConfig(
@@ -1694,7 +1770,10 @@ Uri providerRequestUri(String providerId, Uri baseUri) {
   return baseUri.replace(path: '$path/$endpoint', query: null);
 }
 
-List<ServerToolRequest> _toolRequests(Map<String, dynamic>? raw) {
+List<ServerToolRequest> _toolRequests(
+  Map<String, dynamic>? raw, {
+  String? languageCode,
+}) {
   final choices = raw?['choices'];
   if (choices is! List || choices.isEmpty || choices.first is! Map) {
     return const [];
@@ -1718,6 +1797,7 @@ List<ServerToolRequest> _toolRequests(Map<String, dynamic>? raw) {
           id: value['id']! as String,
           name: function['name']! as String,
           arguments: arguments,
+          languageCode: languageCode,
         );
       })
       .toList(growable: false);

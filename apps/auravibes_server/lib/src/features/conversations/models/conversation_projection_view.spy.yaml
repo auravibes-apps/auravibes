@@ -5,6 +5,7 @@ fields:
   executionState: String
   projectionRevision: int
   sequence: int
+  toolAccessMode: String, default='default'
   modelId: String?
   agentId: String?
   reasoningConfigJson: String?

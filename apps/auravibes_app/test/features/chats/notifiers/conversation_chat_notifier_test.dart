@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -583,6 +584,91 @@ void main() {
       expect(patched, isEmpty);
       sub.close();
     });
+
+    for (final isCloud in [false, true]) {
+      test('persists both tool access modes for cloud=$isCloud', () async {
+        final patches = <ConversationPatch>[];
+        final gateway = _CloudChatGateway();
+        var current = conversation;
+        when(() => gateway.updateConversation(any()))
+            .thenAnswer((invocation) async {
+              final request =
+                  invocation.positionalArguments.single
+                      as UpdateConversationRequest;
+              current = current.copyWith(
+                toolAccessMode: ConversationToolAccessModeStorage.decode(
+                  request.toolAccessMode ?? current.toolAccessMode.storedValue,
+                ),
+              );
+
+              return ConversationSummary(
+                id: current.id,
+                title: current.title,
+                isPinned: current.isPinned,
+                toolAccessMode: current.toolAccessMode.storedValue,
+                revision: current.revision + 1,
+                createdAt: current.createdAt,
+                updatedAt: current.updatedAt,
+              );
+            });
+        final container = ProviderContainer(
+          overrides: [
+            conversationByIdStreamProvider.overrideWith(
+              (ref, _) => Stream.value(conversation),
+            ),
+            conversationRepositoryProvider.overrideWithValue(
+              _FakeConversationRepository(
+                onPatch: (id, patch) {
+                  patches.add(patch);
+
+                  return current.copyWith(
+                    toolAccessMode:
+                        patch.toolAccessMode ?? current.toolAccessMode,
+                  );
+                },
+              ),
+            ),
+            cloudConversationUsecaseProvider.overrideWithValue(
+              isCloud ? .new(gateway) : null,
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+        final provider = conversationChatProvider('ws-1', 'conv-1');
+        final sub = container.listen(provider, (_, _) {
+          final _ = Object();
+        });
+        addTearDown(sub.close);
+        final _ = await container.read(provider.future);
+        for (final mode in [
+          ConversationToolAccessMode.allowAll,
+          ConversationToolAccessMode.defaultMode,
+        ]) {
+          await container.read(provider.notifier).setToolAccessMode(mode);
+          expect(
+            (container.read(provider).requireValue as ConversationFound)
+                .conversation
+                .toolAccessMode,
+            mode,
+          );
+        }
+        if (isCloud) {
+          final requests = verify(
+            () => gateway.updateConversation(captureAny()),
+          ).captured.cast<UpdateConversationRequest>();
+          expect(requests.map((request) => request.toolAccessMode), [
+            'allow_all',
+            'default',
+          ]);
+          expect(patches, isEmpty);
+        } else {
+          expect(patches.map((patch) => patch.toolAccessMode), [
+            ConversationToolAccessMode.allowAll,
+            ConversationToolAccessMode.defaultMode,
+          ]);
+        }
+      });
+    }
 
     test('rename updates a cloud conversation', () async {
       final gateway = _CloudChatGateway();

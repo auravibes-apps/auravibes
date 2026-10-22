@@ -236,7 +236,7 @@ abstract final class _WorkflowEditorExitGuardBinder {
     guard
       ..bind(
         readers: (isDirty: isDirty, isSaving: isSaving),
-        confirm: UnsavedChangesDialog.confirm,
+        callbacks: const .new(confirm: UnsavedChangesDialog.confirm),
       )
       ..update(isDirty: state.isDirty, isSaving: isSaving());
   }

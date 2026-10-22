@@ -10,10 +10,13 @@ import 'package:auravibes_app/features/agents/usecases/delete_agent_usecase.dart
 import 'package:auravibes_app/features/agents/usecases/duplicate_agent_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_usecase.dart';
 import 'package:auravibes_app/features/agents/widgets/agent_availability_summary.dart';
-import 'package:auravibes_app/features/agents/widgets/agents_skills_tabs.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/adaptive_master_detail_layout.dart';
+import 'package:auravibes_app/widgets/app_filter_sheet_button.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
+import 'package:auravibes_app/widgets/feature_destination_app_bar.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/sheets/spring_bottom_sheet.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -38,14 +41,13 @@ class const AgentsScreen({required final String workspaceId, super.key})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final agentsAsync = ref.watch(agentListProvider(workspaceId));
+    final destinations = FeatureDestinations.agents(workspaceId);
 
-    return AuraScreen(
-      child: _AgentsContent(agentsAsync: agentsAsync, workspaceId: workspaceId),
-      appBar: _AgentsAppBar(
-        workspaceId: workspaceId,
-        onCreate: () => _openCreate(context, ref),
-      ),
+    return _AgentsScreenLayout(
+      agentsAsync: ref.watch(agentListProvider(workspaceId)),
+      destinations: destinations,
+      workspaceId: workspaceId,
+      onCreate: () => _openCreate(context, ref),
     );
   }
 
@@ -59,13 +61,43 @@ class const AgentsScreen({required final String workspaceId, super.key})
     String agentId,
   ) async {
     final changed = await context.push<bool>(
-      '/workspaces/$workspaceId/more/agents/$agentId',
+      '/workspaces/$workspaceId/agents/$agentId',
     );
     if (changed == true) {
       final _ = ref.invalidate(agentsProvider(workspaceId));
       await ref.read(agentListProvider(workspaceId).notifier).refresh();
     }
   }
+}
+
+class const _AgentsScreenLayout({
+  required final AsyncValue<AgentListState> agentsAsync,
+  required final List<FeatureNavigationDestination> destinations,
+  required final String workspaceId,
+  required final VoidCallback onCreate,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AppScreen(
+    child: _AgentsResponsiveLayout(
+      agentsAsync: agentsAsync,
+      destinations: destinations,
+      workspaceId: workspaceId,
+    ),
+    appBar: _AgentsAppBar(destinations: destinations, onCreate: onCreate),
+  );
+}
+
+class const _AgentsResponsiveLayout({
+  required final AsyncValue<AgentListState> agentsAsync,
+  required final List<FeatureNavigationDestination> destinations,
+  required final String workspaceId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AdaptiveMasterDetailLayout(
+    destinations: destinations,
+    selectedLocation: destinations.firstOrNull?.location ?? '',
+    child: _AgentsContent(agentsAsync: agentsAsync, workspaceId: workspaceId),
+  );
 }
 
 class _AgentsContent extends StatelessWidget {
@@ -94,16 +126,18 @@ class _AgentsContent extends StatelessWidget {
 }
 
 class const _AgentsAppBar({
-  required final String workspaceId,
+  required final List<FeatureNavigationDestination> destinations,
   required final VoidCallback onCreate,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight * 2);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
-    return AuraAppBarWithDrawer(
-      title: const TextLocale(LocaleKeys.agents_title),
+    return FeatureDestinationAppBar(
+      destinations: destinations,
+      selectedLocation: destinations.firstOrNull?.location ?? '',
+      masterTitleKey: LocaleKeys.navigation_agents_skills,
       actions: [
         AuraIconButton(
           icon: Icons.add,
@@ -111,7 +145,6 @@ class const _AgentsAppBar({
           tooltip: LocaleKeys.agents_create.tr(context: context),
         ),
       ],
-      bottom: AgentsSkillsTabs(workspaceId: workspaceId, value: .agents),
     );
   }
 }
@@ -226,7 +259,7 @@ Future<void> _updateVisibility(
 
 Future<void> _openAndRefresh(_AgentActionContext action, String agentId) async {
   final changed = await action.context.push<bool>(
-    '/workspaces/${action.workspaceId}/more/agents/$agentId',
+    '/workspaces/${action.workspaceId}/agents/$agentId',
   );
   if (changed != true) return;
   await _refreshAgents(action);
@@ -268,6 +301,7 @@ class const _AgentsSearchList({
     final notifier = ref.read(agentListProvider(workspaceId).notifier);
 
     return _AgentSearchContent(
+      workspaceId: workspaceId,
       state: state,
       notifier: notifier,
       controller: controller,
@@ -288,12 +322,14 @@ typedef _AgentInteractions = ({
 
 class _AgentSearchContent extends StatelessWidget {
   new({
+    required String workspaceId,
     required AgentListState state,
     required AgentListNotifier notifier,
     required TextEditingController controller,
     required _AgentInteractions interactions,
   }) : _child = _AgentSearchBody(
          controls: _AgentSearchControls(
+           workspaceId: workspaceId,
            controller: controller,
            notifier: notifier,
            state: state,
@@ -389,6 +425,7 @@ class const _AgentPagination({
 }
 
 class const _AgentSearchControls({
+  required final String workspaceId,
   required final TextEditingController controller,
   required final AgentListNotifier notifier,
   required final AgentListState state,
@@ -399,19 +436,91 @@ class const _AgentSearchControls({
 
     return Padding(
       padding: EdgeInsets.only(left: spacing, top: spacing, right: spacing),
-      child: AuraColumn(
-        children: [
-          _AgentSearchInput(
-            controller: controller,
-            onChanged: notifier.setSearch,
-          ),
-          _AgentFilters(state: state, notifier: notifier),
-        ],
-        spacing: .sm,
+      child: _AgentSearchControlsContent(
+        workspaceId: workspaceId,
+        controller: controller,
+        notifier: notifier,
+        state: state,
       ),
     );
   }
 }
+
+class const _AgentSearchControlsContent({
+  required final String workspaceId,
+  required final TextEditingController controller,
+  required final AgentListNotifier notifier,
+  required final AgentListState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _AgentSearchControlsLayout(
+      workspaceId: workspaceId,
+      controller: controller,
+      notifier: notifier,
+      state: state,
+      isCompact: constraints.maxWidth < AppFilterSheetButton.breakpoint,
+    ),
+  );
+}
+
+class const _AgentSearchControlsLayout({
+  required final String workspaceId,
+  required final TextEditingController controller,
+  required final AgentListNotifier notifier,
+  required final AgentListState state,
+  required final bool isCompact,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _AgentSearchInput(controller: controller, onChanged: notifier.setSearch),
+      _AgentResponsiveFilters(
+        workspaceId: workspaceId,
+        notifier: notifier,
+        state: state,
+        isCompact: isCompact,
+      ),
+    ],
+    spacing: .sm,
+  );
+}
+
+class const _AgentResponsiveFilters({
+  required final String workspaceId,
+  required final AgentListNotifier notifier,
+  required final AgentListState state,
+  required final bool isCompact,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => isCompact
+      ? AppFilterSheetButton(
+          activeFilterCount: _agentActiveFilterCount(state),
+          filtersBuilder: (_) =>
+              _AgentFilterSheetFields(workspaceId: workspaceId),
+          onClearFilters: notifier.clearFilters,
+        )
+      : _AgentFilters(state: state, notifier: notifier);
+}
+
+class const _AgentFilterSheetFields({required final String workspaceId})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = agentListProvider(workspaceId);
+    final state = switch (ref.watch(provider)) {
+      AsyncData(:final value) => value,
+      AsyncLoading(:final value?) => value,
+      AsyncLoading() || AsyncError() => null,
+    };
+    if (state == null) return const SizedBox.shrink();
+
+    return _AgentFilters(state: state, notifier: ref.read(provider.notifier));
+  }
+}
+
+int _agentActiveFilterCount(AgentListState state) =>
+    (state.type == null ? 0 : 1) + (state.status == null ? 0 : 1);
 
 class const _AgentSearchInput({
   required final TextEditingController controller,
@@ -437,7 +546,7 @@ class const _AgentFilters({
     children: [
       Expanded(
         child: _AgentFilter(
-          labelKey: LocaleKeys.agents_filter_type,
+          type: .type,
           onChanged: _setType,
           options: _typeOptions,
           value: _typeFilterValue(state.type),
@@ -446,7 +555,7 @@ class const _AgentFilters({
       const SizedBox(width: 8),
       Expanded(
         child: _AgentFilter(
-          labelKey: LocaleKeys.agents_filter_status,
+          type: .status,
           onChanged: _setStatus,
           options: _statusOptions,
           value: _statusFilterValue(state.status),
@@ -481,7 +590,7 @@ String _statusFilterValue(AgentListStatus? status) => switch (status) {
 };
 
 class const _AgentFilter({
-  required final String labelKey,
+  required final _AgentFilterType type,
   required final ValueChanged<String?> onChanged,
   required final List<AuraDropdownOption<String>> options,
   required final String value,
@@ -491,9 +600,14 @@ class const _AgentFilter({
     options: options,
     value: value,
     onChanged: onChanged,
-    label: TextLocale(labelKey),
+    label: TextLocale(switch (type) {
+      .type => LocaleKeys.agents_filter_type,
+      .status => LocaleKeys.agents_filter_status,
+    }),
   );
 }
+
+enum _AgentFilterType { type, status }
 
 const _typeOptions = <AuraDropdownOption<String>>[
   AuraDropdownOption(
@@ -664,7 +778,7 @@ class const _AgentListItem({
   Widget build(BuildContext _) => LayoutBuilder(
     builder: (context, constraints) => _AgentListItemLayout(
       agent: agent,
-      isCompact: constraints.maxWidth < DesignBreakpoints.sm,
+      isCompact: constraints.maxWidth < DesignBreakpoints.md,
       onTap: onTap,
       onSelection: onSelection,
       onVisibilityChanged: onVisibilityChanged,

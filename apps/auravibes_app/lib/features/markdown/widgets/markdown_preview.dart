@@ -1,7 +1,7 @@
 import 'dart:async' show unawaited;
 
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/utils/open_system_browser.dart';
+import 'package:auravibes_app/widgets/confirmed_external_link.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -10,33 +10,18 @@ import 'package:material_ui/material_ui.dart';
 class const MarkdownPreview({required final String text, super.key})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => GptMarkdown(
-    text,
-    onLinkTap: (url, _) => unawaited(_openExternalLink(context, url)),
+  Widget build(BuildContext context) =>
+      GptMarkdown(text, onLinkTap: (url, _) => _onLinkTap(context, url));
+
+  static void _onLinkTap(BuildContext context, String url) => unawaited(
+    ConfirmedExternalLink.open(
+      context: context,
+      url: url,
+      confirm: (uri) => _confirmExternalLink(context, uri),
+      onLaunchFailure: () => _showExternalLinkError(context),
+    ),
   );
 }
-
-Future<void> _openExternalLink(BuildContext context, String url) async {
-  final uri = Uri.tryParse(url);
-  if (uri == null || !_isSafeExternalUri(uri)) return;
-
-  final confirmed = await _confirmExternalLink(context, uri);
-  if (confirmed != true || !context.mounted) return;
-
-  await _launchExternalLink(context, uri);
-}
-
-bool _isSafeExternalUri(Uri uri) =>
-    uri.isAbsolute &&
-    uri.hasAuthority &&
-    _hasHttpScheme(uri) &&
-    _hasSafeHost(uri);
-
-bool _hasHttpScheme(Uri uri) =>
-    const {'http', 'https'}.contains(uri.scheme.toLowerCase());
-
-bool _hasSafeHost(Uri uri) =>
-    uri.hasAuthority && uri.host.isNotEmpty && uri.userInfo.isEmpty;
 
 Future<bool?> _confirmExternalLink(BuildContext context, Uri uri) =>
     AuraDialogs.confirm(
@@ -54,15 +39,6 @@ AuraConfirmDialogActions _externalLinkActions() => .new(
   confirmLabel: Text(LocaleKeys.markdown_editor_external_link_open.tr()),
   cancelLabel: Text(LocaleKeys.common_cancel.tr()),
 );
-
-Future<void> _launchExternalLink(BuildContext context, Uri uri) async {
-  try {
-    await OpenSystemBrowser.call(uri);
-  } on Object {
-    if (!context.mounted) return;
-    _showExternalLinkError(context);
-  }
-}
 
 void _showExternalLinkError(BuildContext context) {
   unawaited(AuraHaptics.error());

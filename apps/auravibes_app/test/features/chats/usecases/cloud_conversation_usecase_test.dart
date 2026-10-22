@@ -53,6 +53,71 @@ void main() {
     registerFallbackValue(_StopConversationRequestFake());
   });
 
+  test(
+    'gateway forwards mode in create and nullable update requests',
+    () async {
+      final stateGateway = _WorkspaceGateway();
+      final client = _Client();
+      final endpoint = _ConversationEndpoint();
+      when(() => stateGateway.workspace).thenReturn(_workspace);
+      when(() => stateGateway.client).thenReturn(client);
+      when(() => client.conversation).thenReturn(endpoint);
+      final usecase = CloudConversationUsecase(.new(stateGateway));
+      final now = DateTime.utc(2026);
+      final summary = ConversationSummary(
+        id: 'conversation',
+        title: 'Conversation',
+        isPinned: false,
+        toolAccessMode: 'allow_all',
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      );
+      when(() => endpoint.create(captureAny()))
+          .thenAnswer((_) async => summary);
+      when(() => endpoint.update(captureAny()))
+          .thenAnswer((_) async => summary);
+      final _ = await usecase.create(
+        const ConversationToCreate(
+          title: 'Conversation',
+          workspaceId: 'local',
+          toolAccessMode: .allowAll,
+        ),
+      );
+      final create =
+          verify(() => endpoint.create(captureAny())).captured.single
+              as CreateConversationRequest;
+      expect(create.toolAccessMode, 'allow_all');
+      expect(create.workspaceId, _workspace.cloudWorkspaceId);
+      final conversation = ConversationEntity(
+        id: summary.id,
+        title: summary.title,
+        workspaceId: 'local',
+        isPinned: false,
+        createdAt: now,
+        updatedAt: now,
+        revision: 1,
+        toolAccessMode: .allowAll,
+      );
+      for (final mode in [
+        ConversationToolAccessMode.allowAll,
+        ConversationToolAccessMode.defaultMode,
+        null,
+      ]) {
+        final _ = await usecase.update(
+          conversation,
+          .new(toolAccessMode: mode),
+        );
+        final update =
+            verify(() => endpoint.update(captureAny())).captured.single
+                as UpdateConversationRequest;
+        expect(update.toolAccessMode, mode?.storedValue);
+        expect(update.workspaceId, _workspace.cloudWorkspaceId);
+        expect(update.expectedRevision, conversation.revision);
+      }
+    },
+  );
+
   test('forks a cloud conversation with a fresh target ID', () async {
     final gateway = _Gateway();
     final now = DateTime(2026);

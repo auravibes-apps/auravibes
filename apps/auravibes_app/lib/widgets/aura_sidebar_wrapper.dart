@@ -6,6 +6,8 @@ import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
 import 'package:auravibes_app/router/workspace_navigation.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
+import 'package:auravibes_app/widgets/feature_destination_shell_scope.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -35,7 +37,7 @@ export 'app_with_responsive_drawer.dart';
 List<AuraNavigationData> _navigationItems(BuildContext context) => [
   _navigationItem(
     context,
-    LocaleKeys.navigation_chats,
+    LocaleKeys.menu_new_chat,
     const Icon(Icons.chat_outlined),
   ),
   _navigationItem(
@@ -47,6 +49,11 @@ List<AuraNavigationData> _navigationItems(BuildContext context) => [
     context,
     LocaleKeys.navigation_connections,
     const Icon(Icons.link),
+  ),
+  _navigationItem(
+    context,
+    LocaleKeys.workflows_screen_title,
+    const Icon(Icons.account_tree_outlined),
   ),
   _navigationItem(
     context,
@@ -117,6 +124,7 @@ class _SidebarNavigationContent extends HookConsumerWidget {
       navigationShell: navigationShell,
       workspaceId: workspaceId,
       route: route,
+      router: router,
       tapOwner: (context: context, ref: ref, pending: pending),
     );
   }
@@ -127,26 +135,33 @@ class _SidebarNavigationView extends StatelessWidget {
     required this.navigationShell,
     required this.workspaceId,
     required this.route,
+    required this.router,
     required this.tapOwner,
   });
 
   final StatefulNavigationShell navigationShell;
   final String workspaceId;
   final Uri route;
+  final GoRouter router;
   final _NavigationTapOwner tapOwner;
 
   @override
   Widget build(BuildContext context) => AppWithResponsiveDrawer(
     child: navigationShell,
     navigationItems: _navigationItems(context),
-    onNavigationTap: _navigationTapHandler(
-      tapOwner,
-      navigationShell,
-      workspaceId,
-    ),
+    onNavigationTap: _navigationTapHandler(tapOwner, workspaceId),
     selectedIndex: _selectedNavigationIndex(route),
     workspaceId: workspaceId,
+    canPopCurrentRoute: _canPopCurrentRoute,
   );
+
+  bool _canPopCurrentRoute() {
+    if (_canPopWorkspaceRoute(navigationShell.currentIndex, route)) {
+      return true;
+    }
+
+    return router.state.extra is FeatureDestinationStackPush && router.canPop();
+  }
 }
 
 typedef _WorkspaceRouteOwner = ({
@@ -187,16 +202,34 @@ void _rememberWorkspaceRoute(_WorkspaceRouteOwner owner, Uri route) {
 }
 
 int _selectedNavigationIndex(Uri route) =>
-    WorkspaceNavigation.isConversation(route)
-    ? -1
-    : WorkspaceNavigation.classify(route)?.index ?? -1;
+    switch (WorkspaceNavigation.path(route)) {
+      ['chat', 'new'] => WorkspaceDestination.chats.index,
+      ['chats', ...] => -1,
+      _ => WorkspaceNavigation.classify(route)?.index ?? -1,
+    };
+
+// GoRouter.canPop can report history from a different stateful-shell branch.
+bool _canPopWorkspaceRoute(int branchIndex, Uri route) {
+  final path = WorkspaceNavigation.path(route);
+  final navigatorKey = switch (path.firstOrNull) {
+    'agents' || 'skills' => agentsSkillsFeatureNavigatorKey,
+    'service-connections' || 'tools' => connectionsFeatureNavigatorKey,
+    _ => switch (branchIndex) {
+      0 => workspaceChatsNavigatorKey,
+      1 => workspaceFeatureNavigatorKey,
+      2 => workspaceSettingsNavigatorKey,
+      _ => null,
+    },
+  };
+
+  return navigatorKey?.currentState?.canPop() ?? false;
+}
 
 typedef _NavigationTap = ({
   BuildContext context,
   WidgetRef ref,
   int index,
   ValueNotifier<bool> pending,
-  StatefulNavigationShell navigationShell,
   String workspaceId,
 });
 
@@ -208,7 +241,6 @@ typedef _NavigationTapOwner = ({
 
 ValueChanged<int> _navigationTapHandler(
   _NavigationTapOwner owner,
-  StatefulNavigationShell navigationShell,
   String workspaceId,
 ) =>
     (index) => unawaited(
@@ -217,7 +249,6 @@ ValueChanged<int> _navigationTapHandler(
         ref: owner.ref,
         index: index,
         pending: owner.pending,
-        navigationShell: navigationShell,
         workspaceId: workspaceId,
       )),
     );
@@ -234,7 +265,7 @@ Future<void> _handleNavigationTap(_NavigationTap tap) async {
 Future<void> _navigateFromNavigationTap(
   _NavigationTap tap,
   GoRouter router,
-  String? target,
+  String target,
 ) async {
   tap.pending.value = true;
   try {
@@ -247,33 +278,52 @@ Future<void> _navigateFromNavigationTap(
 Future<void> _approveAndNavigate(
   _NavigationTap tap,
   GoRouter router,
-  String? target,
+  String target,
 ) async {
   final registry = tap.ref.read(draftExitRegistryProvider);
   if (!await _approveNavigationExit(tap.context, router, registry)) return;
 
-  _navigateToTarget(router, target, tap.navigationShell);
+  router.go(target);
 }
 
 bool _shouldIgnoreNavigationTap(_NavigationTap tap) {
-  if (tap.workspaceId.isEmpty || tap.pending.value) return true;
-
-  return tap.index == WorkspaceDestination.chats.index &&
-      tap.navigationShell.currentIndex == 0;
+  return tap.workspaceId.isEmpty || tap.pending.value;
 }
 
-String? _navigationTarget(_NavigationTap tap) {
-  final navigation = tap.ref.read(
-    workspaceNavigationProvider(tap.workspaceId).notifier,
-  );
+WorkspaceNavigationNotifier _workspaceNavigation(_NavigationTap tap) =>
+    tap.ref.read(workspaceNavigationProvider(tap.workspaceId).notifier);
 
-  return switch (WorkspaceDestination.values[tap.index]) {
-    .chats => null,
-    .agentsAndSkills => navigation.agentsLocation(),
-    .connections => navigation.connectionsLocation(),
-    .appSettings => SettingsRoute(workspaceId: tap.workspaceId).location,
-    .cloudAccounts => CloudAccountsRoute(workspaceId: tap.workspaceId).location,
-  };
+String _navigationTarget(_NavigationTap tap) {
+  return _NavigationTargets.forTap(tap);
+}
+
+abstract final class _NavigationTargets {
+  static String forTap(_NavigationTap tap) {
+    final destination = WorkspaceDestination.values[tap.index];
+    final workspaceId = tap.workspaceId;
+    final navigation = _workspaceNavigation(tap);
+
+    return switch (destination) {
+      .chats => _newChatLocation(workspaceId),
+      .agentsAndSkills => _featureLocation(navigation.agentsLocation),
+      .connections => _featureLocation(navigation.connectionsLocation),
+      .workflows => WorkflowsRoute(workspaceId: workspaceId).location,
+      .appSettings => _settingsLocation(workspaceId),
+      .cloudAccounts => _cloudAccountsLocation(workspaceId),
+    };
+  }
+
+  static String _newChatLocation(String workspaceId) =>
+      NewChatRoute(workspaceId: workspaceId).location;
+
+  static String _settingsLocation(String workspaceId) =>
+      SettingsRoute(workspaceId: workspaceId).location;
+
+  static String _cloudAccountsLocation(String workspaceId) =>
+      CloudAccountsRoute(workspaceId: workspaceId).location;
+
+  static String _featureLocation(String Function() location) =>
+      FeatureDestinations.masterLocation(location());
 }
 
 Future<bool> _approveNavigationExit(
@@ -285,16 +335,4 @@ Future<bool> _approveNavigationExit(
   registry.releaseApprovals();
 
   return false;
-}
-
-void _navigateToTarget(
-  GoRouter router,
-  String? target,
-  StatefulNavigationShell navigationShell,
-) {
-  if (target == null) {
-    navigationShell.goBranch(0);
-  } else {
-    router.go(target);
-  }
 }

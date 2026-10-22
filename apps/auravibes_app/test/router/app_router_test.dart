@@ -92,6 +92,15 @@ void main() {
       expect(route.location, '/workspaces/ws-1/chats/c1');
     });
 
+    test('location includes message query for bookmarks', () {
+      final route = ConversationRoute(
+        workspaceId: 'ws-1',
+        chatId: 'c1',
+        messageId: 'message-1',
+      );
+      expect(route.location, '/workspaces/ws-1/chats/c1?message-id=message-1');
+    });
+
     test('with special characters in chatId', () {
       final route = ConversationRoute(
         workspaceId: 'ws-1',
@@ -99,6 +108,20 @@ void main() {
       );
       expect(route.chatId, 'abc-123_def');
       expect(route.location, contains('abc-123_def'));
+    });
+  });
+
+  group('MessageBookmarksRoute', () {
+    test('location includes the selected conversation query', () {
+      final route = MessageBookmarksRoute(
+        workspaceId: 'ws-1',
+        conversationId: 'conversation-1',
+      );
+
+      expect(
+        route.location,
+        '/workspaces/ws-1/bookmarks?conversation-id=conversation-1',
+      );
     });
   });
 
@@ -210,7 +233,7 @@ void main() {
 
     test('location is full correct path', () {
       final route = ToolsRoute(workspaceId: 'ws-1');
-      expect(route.location, '/workspaces/ws-1/more/tools');
+      expect(route.location, '/workspaces/ws-1/tools');
     });
   });
 
@@ -227,19 +250,19 @@ void main() {
 
     test('location is full correct path', () {
       final route = ServiceConnectionsRoute(workspaceId: 'ws-1');
-      expect(route.location, '/workspaces/ws-1/more/service-connections');
+      expect(route.location, '/workspaces/ws-1/service-connections');
     });
 
-    test('create route includes credential definition query params', () {
+    test('create route includes Connector query params', () {
       final route = ServiceConnectionCreateRoute(
         workspaceId: 'ws-1',
-        type: 'skillCredential',
-        credentialDefinitionId: 'def-1',
+        type: 'connector',
+        connectorId: 'jina',
       );
       expect(
         route.location,
-        '/workspaces/ws-1/more/service-connections/new'
-        '?type=skillCredential&credentialDefinitionId=def-1',
+        '/workspaces/ws-1/service-connections/new'
+        '?type=connector&connectorId=jina',
       );
     });
   });
@@ -265,35 +288,35 @@ void main() {
     test('cloud accounts route location is correct', () {
       expect(
         CloudAccountsRoute(workspaceId: 'ws-1').location,
-        '/workspaces/ws-1/more/cloud-accounts',
+        '/workspaces/ws-1/cloud-accounts',
       );
     });
 
     test('add account route location is correct', () {
       expect(
         CloudAccountAddRoute(workspaceId: 'ws-1').location,
-        '/workspaces/ws-1/more/cloud-accounts/add',
+        '/workspaces/ws-1/cloud-accounts/add',
       );
     });
 
     test('login route location is correct', () {
       expect(
         CloudAccountLoginRoute(workspaceId: 'ws-1').location,
-        '/workspaces/ws-1/more/cloud-accounts/login',
+        '/workspaces/ws-1/cloud-accounts/login',
       );
     });
 
     test('register route location is correct', () {
       expect(
         CloudAccountRegisterRoute(workspaceId: 'ws-1').location,
-        '/workspaces/ws-1/more/cloud-accounts/register',
+        '/workspaces/ws-1/cloud-accounts/register',
       );
     });
 
     test('forgot password route location is correct', () {
       expect(
         CloudAccountForgotPasswordRoute(workspaceId: 'ws-1').location,
-        '/workspaces/ws-1/more/cloud-accounts/forgot-password',
+        '/workspaces/ws-1/cloud-accounts/forgot-password',
       );
     });
 
@@ -301,10 +324,10 @@ void main() {
       expect(
         CloudAccountAddRoute(
           workspaceId: 'ws-1',
-          returnPath: '/workspaces/ws-1/more/manage-workspaces',
+          returnPath: '/workspaces/ws-1/manage-workspaces',
         ).location,
-        '/workspaces/ws-1/more/cloud-accounts/add'
-        '?return-path=%2Fworkspaces%2Fws-1%2Fmore%2Fmanage-workspaces',
+        '/workspaces/ws-1/cloud-accounts/add'
+        '?return-path=%2Fworkspaces%2Fws-1%2Fmanage-workspaces',
       );
     });
 
@@ -312,10 +335,10 @@ void main() {
       expect(
         CloudAccountForgotPasswordRoute(
           workspaceId: 'ws-1',
-          returnPath: '/workspaces/ws-1/more/cloud-accounts',
+          returnPath: '/workspaces/ws-1/cloud-accounts',
         ).location,
-        '/workspaces/ws-1/more/cloud-accounts/forgot-password'
-        '?return-path=%2Fworkspaces%2Fws-1%2Fmore%2Fcloud-accounts',
+        '/workspaces/ws-1/cloud-accounts/forgot-password'
+        '?return-path=%2Fworkspaces%2Fws-1%2Fcloud-accounts',
       );
     });
   });
@@ -324,7 +347,7 @@ void main() {
     test('cloud workspace hub route location is correct', () {
       expect(
         WorkspaceCreateRoute(workspaceId: 'ws-1').location,
-        '/workspaces/ws-1/more/manage-workspaces/create',
+        '/workspaces/ws-1/manage-workspaces/create',
       );
     });
 
@@ -335,7 +358,7 @@ void main() {
           cloudAccountId: 'account-1',
           cloudWorkspaceId: 42,
         ).location,
-        '/workspaces/ws-1/more/manage-workspaces/cloud/account-1/42',
+        '/workspaces/ws-1/manage-workspaces/cloud/account-1/42',
       );
     });
   });
@@ -478,17 +501,14 @@ void main() {
   group('ToolsRoute', () {
     test('location is correct with different workspace', () {
       final route = ToolsRoute(workspaceId: 'ws-tools');
-      expect(route.location, '/workspaces/ws-tools/more/tools');
+      expect(route.location, '/workspaces/ws-tools/tools');
     });
   });
 
   group('ServiceConnectionsRoute', () {
     test('location is correct with different workspace', () {
       final route = ServiceConnectionsRoute(workspaceId: 'ws-connections');
-      expect(
-        route.location,
-        '/workspaces/ws-connections/more/service-connections',
-      );
+      expect(route.location, '/workspaces/ws-connections/service-connections');
     });
   });
 

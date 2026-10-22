@@ -7,21 +7,33 @@ import 'dart:convert';
 import 'dart:ui' show Offset, PointerDeviceKind, Tristate;
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
+import 'package:auravibes_app/features/chats/screens/message_bookmarks_screen.dart';
+import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
@@ -30,20 +42,21 @@ import 'package:auravibes_app/features/skills/models/conversation_skill_action.d
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
-import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
+import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         A2uiChatAction,
+        AgentIterationDecision,
         AgentToolOutputPolicy,
-        AppSkillDefinitionKind,
         ChatMessage,
         defaultToolOutputBytes,
         maxPersistedToolOutputBytes,
@@ -66,15 +79,21 @@ import 'package:rxdart/rxdart.dart' show CompositeSubscription;
 
 import '../../../helpers/test_provider_scope.dart';
 
+Finder _auraButtonFor(Finder child) =>
+    find.ancestor(of: child, matching: find.byType(AuraIconButton));
+
 Widget buildSubject({
   required List<String> messages,
   required List<Object> overrides,
+  List<MessageBookmarkEntity> bookmarks = const [],
   Map<String, MessageEntity>? messageEntitiesById,
   String conversationId = 'conv-1',
   List<PendingToolCall> pendingToolCalls = const [],
+  WorkspaceSession? workspaceSession,
   bool showThinking = false,
   bool isStopRequested = false,
   Future<void> Function(MessageEntity message)? onRetryMessage,
+  ValueChanged<SidebarToolResultTab>? onOpenToolResult,
   ConversationEntity? conversation,
   AuraTheme? theme,
   Locale locale = const Locale('en'),
@@ -83,11 +102,14 @@ Widget buildSubject({
   return _ChatMessagesTestSubject(
     conversationId: conversationId,
     messages: messages,
+    bookmarks: bookmarks,
     overrides: overrides,
     pendingToolCalls: pendingToolCalls,
+    workspaceSession: workspaceSession,
     showThinking: showThinking,
     isStopRequested: isStopRequested,
     onRetryMessage: onRetryMessage,
+    onOpenToolResult: onOpenToolResult,
     messageEntitiesById: messageEntitiesById,
     conversation: conversation,
     theme: theme,
@@ -106,6 +128,7 @@ Widget _scaffoldedApp(BuildContext context, Widget child) => MaterialApp(
 void main() {
   MessageEntity _createMessage({
     String id = 'msg-1',
+    String conversationId = 'conv-1',
     String content = 'Hello',
     bool isUser = true,
     MessageStatus status = MessageStatus.sent,
@@ -115,7 +138,7 @@ void main() {
   }) {
     return MessageEntity(
       id: id,
-      conversationId: 'conv-1',
+      conversationId: conversationId,
       content: content,
       messageType: messageType,
       isUser: isUser,
@@ -415,7 +438,7 @@ void main() {
         await tester.pump();
         expect(find.byTooltip('Copy message'), findsOneWidget);
         final button = tester.widget<AuraIconButton>(
-          find.byType(AuraIconButton),
+          _auraButtonFor(find.byIcon(Icons.copy_outlined)),
         );
 
         model.update(DataPath('/answer'), 'Latest answer');
@@ -425,7 +448,7 @@ void main() {
 
         model.update(DataPath('/answer'), '');
         await tester.pump();
-        expect(find.byType(AuraIconButton), findsNothing);
+        expect(find.byTooltip('Copy message'), findsNothing);
       },
     );
 
@@ -504,7 +527,7 @@ void main() {
                   .contextFor('msg-1:main')
                   .dataModel;
               final button = tester.widget<AuraIconButton>(
-                find.byType(AuraIconButton),
+                _auraButtonFor(find.byIcon(Icons.check)),
               );
               model.update(DataPath('/active'), 30);
               button.onPressed!();
@@ -595,6 +618,206 @@ void main() {
         closeTo(scrollable.position.minScrollExtent, .5),
       );
       expect(find.byKey(const ValueKey('chat_jump_to_latest')), findsNothing);
+    });
+
+    testWidgets('opens and highlights the requested message', (tester) async {
+      final messages = [
+        for (var index = 0; index < 40; index++)
+          _createMessage(
+            id: 'message-$index',
+            content: List.filled(8, 'Message $index').join('\n'),
+          ),
+      ];
+      final messageEntitiesById = {
+        for (final message in messages) message.id: message,
+      };
+      final router = GoRouter(
+        initialLocation: '/chat?messageId=message-0',
+        routes: [
+          GoRoute(
+            path: '/chat',
+            builder: (_, _) => Scaffold(
+              body: ChatPrimaryScrollController(
+                child: buildSubject(
+                  messages: [for (final message in messages) message.id],
+                  messageEntitiesById: messageEntitiesById,
+                  overrides: [..._messageOverrides(messageEntitiesById)],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(tester, MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('focused_message_message-0')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('loads requested message outside the current cloud snapshot', (
+      tester,
+    ) async {
+      final recent = _createMessage(id: 'recent', content: 'Recent message');
+      final bookmarked = _createMessage(
+        id: 'bookmarked',
+        content: 'Older bookmarked message',
+      );
+      final messages = {'recent': recent};
+      final router = GoRouter(
+        initialLocation: '/chat?messageId=bookmarked',
+        routes: [
+          GoRoute(
+            path: '/chat',
+            builder: (_, _) => Scaffold(
+              body: ChatPrimaryScrollController(
+                child: buildSubject(
+                  messages: ['recent'],
+                  messageEntitiesById: messages,
+                  overrides: [
+                    ..._messageOverrides(messages),
+                    fetchConversationMessageByIdProvider.overrideWith(
+                      (ref, request) async => bookmarked,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(tester, MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Older bookmarked message'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('focused_message_bookmarked')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('shows an error when requested message cannot load', (
+      tester,
+    ) async {
+      final recent = _createMessage(id: 'recent', content: 'Recent message');
+      final messages = {'recent': recent};
+      final router = GoRouter(
+        initialLocation: '/chat?messageId=bookmarked',
+        routes: [
+          GoRoute(
+            path: '/chat',
+            builder: (_, _) => Scaffold(
+              body: ChatPrimaryScrollController(
+                child: buildSubject(
+                  messages: ['recent'],
+                  messageEntitiesById: messages,
+                  overrides: [
+                    ..._messageOverrides(messages),
+                    fetchConversationMessageByIdProvider.overrideWith(
+                      (ref, request) async =>
+                          throw StateError('Message fetch failed.'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(tester, MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('The cloud service is unavailable. Try again.'),
+        findsOneWidget,
+      );
+      expect(find.text('Recent message'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('shows bookmark actions for sent text and image messages', (
+      tester,
+    ) async {
+      final messages = [
+        _createMessage(id: 'text'),
+        _createMessage(id: 'image', messageType: .image),
+        _createMessage(id: 'pending', status: .unfinished),
+      ];
+      final entities = {for (final message in messages) message.id: message};
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [for (final message in messages) message.id],
+          messageEntitiesById: entities,
+          overrides: _messageOverrides(entities),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('bookmark_message_text')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('bookmark_message_image')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('bookmark_message_pending')),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('bookmark action persists sent message', (tester) async {
+      final message = _createMessage(id: 'text');
+      final messages = {'text': message};
+      final messageRepository = _MockMessageRepository();
+      when(
+        () => messageRepository.bookmarkMessage(
+          workspaceId: 'ws-1',
+          conversationId: 'conv-1',
+          messageId: 'text',
+        ),
+      ).thenAnswer((_) async => true);
+      final usecase = MessageBookmarkUseCase(
+        workspaceRepository: _MockWorkspaceRepository(),
+        messageRepository: messageRepository,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['text'],
+          messageEntitiesById: messages,
+          overrides: [
+            ..._messageOverrides(messages),
+            messageBookmarkUseCaseProvider.overrideWith((ref) => usecase),
+          ],
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('bookmark_message_text')));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => messageRepository.bookmarkMessage(
+          workspaceId: 'ws-1',
+          conversationId: 'conv-1',
+          messageId: 'text',
+        ),
+      ).called(1);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('dragging chat history retains composer focus', (tester) async {
@@ -800,7 +1023,11 @@ void main() {
       expect(find.byType(SelectionArea), findsOneWidget);
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
       expect(
-        tester.widget<AuraIconButton>(find.byType(AuraIconButton)).tooltip,
+        tester
+            .widget<AuraIconButton>(
+              _auraButtonFor(find.byIcon(Icons.copy_outlined)),
+            )
+            .tooltip,
         'Copy message',
       );
       expect(
@@ -812,15 +1039,14 @@ void main() {
       );
     });
 
-    testWidgets('aligns user copy action with the user bubble', (tester) async {
+    testWidgets('aligns user timestamp before the copy action', (tester) async {
+      final message = _createMessage(content: 'Hello AI');
       await pumpAndInit(
         tester,
         buildSubject(
           messages: ['msg-1'],
           overrides: [
-            messageConversationByIdProvider.overrideWith(
-              (ref, id) => _createMessage(content: 'Hello AI'),
-            ),
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
               (ref, _) async => const ConversationBusyState(
@@ -833,11 +1059,24 @@ void main() {
       );
 
       final bubbleRight = tester.getTopRight(find.byType(AuraMessageBubble)).dx;
-      final copyActionRight = tester
-          .getTopRight(find.byTooltip('Copy message'))
-          .dx;
+      final bookmarkAction = find.byKey(
+        const ValueKey('bookmark_message_msg-1'),
+      );
+      final copyAction = find.byTooltip('Copy message');
+      final timestamp = find.text(
+        RelativeTimeFormatter.format(message.createdAt),
+      );
 
-      expect(copyActionRight, closeTo(bubbleRight, 1));
+      expect(tester.getTopRight(bookmarkAction).dx, closeTo(bubbleRight, 1));
+      expect(timestamp, findsOneWidget);
+      expect(
+        tester.getTopRight(timestamp).dx,
+        lessThan(tester.getTopLeft(copyAction).dx),
+      );
+      expect(
+        tester.getCenter(timestamp).dy,
+        closeTo(tester.getCenter(copyAction).dy, 1),
+      );
     });
 
     testWidgets('uses a visible selection color for user messages', (
@@ -924,7 +1163,11 @@ void main() {
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
       expect(find.byType(SelectionArea), findsOneWidget);
       expect(
-        tester.widget<AuraIconButton>(find.byType(AuraIconButton)).tooltip,
+        tester
+            .widget<AuraIconButton>(
+              _auraButtonFor(find.byIcon(Icons.copy_outlined)),
+            )
+            .tooltip,
         'Copy message',
       );
       await tester.tap(find.byIcon(Icons.copy_outlined));
@@ -933,7 +1176,9 @@ void main() {
       expect(copiedText, 'Hello AI');
       expect(find.byIcon(Icons.check), findsOneWidget);
       expect(
-        tester.widget<AuraIconButton>(find.byType(AuraIconButton)).tooltip,
+        tester
+            .widget<AuraIconButton>(_auraButtonFor(find.byIcon(Icons.check)))
+            .tooltip,
         'Message copied',
       );
     });
@@ -1042,7 +1287,9 @@ void main() {
           overrides: _messageOverrides({
             'markdown-link': _createMessage(
               id: 'markdown-link',
-              content: '[Open docs](https://example.com)',
+              content:
+                  '[Open docs](https://example.com) '
+                  '[Open HTTP](http://example.org)',
               isUser: false,
             ),
             'autolink': _createMessage(
@@ -1059,13 +1306,22 @@ void main() {
       expect(find.textContaining('Host: example.com'), findsOneWidget);
       await tester.tap(find.text('Open link'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Open HTTP'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Host: example.org'), findsOneWidget);
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('https://example.org'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Host: example.org'), findsOneWidget);
       await tester.tap(find.text('Open link'));
       await tester.pumpAndSettle();
 
-      expect(launchedUrls, ['https://example.com', 'https://example.org']);
+      expect(launchedUrls, [
+        'https://example.com',
+        'http://example.org',
+        'https://example.org',
+      ]);
     });
 
     testWidgets('does not open Markdown link without confirmation', (
@@ -1122,6 +1378,7 @@ void main() {
               id: 'unsafe-links',
               content:
                   '[Unsafe](javascript:alert(1)) '
+                  '[Missing authority](https:/missing-authority) '
                   '[Missing host](https:///missing-host) '
                   '[Deceptive](https://accounts.example@attacker.example/sso)',
               isUser: false,
@@ -1131,6 +1388,8 @@ void main() {
       );
 
       await tester.tap(find.text('Unsafe'));
+      await tester.pump();
+      await tester.tap(find.text('Missing authority'));
       await tester.pump();
       await tester.tap(find.text('Missing host'));
       await tester.pump();
@@ -1247,7 +1506,9 @@ void main() {
       expect(find.byIcon(Icons.copy_outlined), findsNWidgets(2));
     });
 
-    testWidgets('keeps text-only assistant metadata inline', (tester) async {
+    testWidgets('aligns assistant timestamp after the copy action', (
+      tester,
+    ) async {
       final message = _createMessage(
         content: 'Text-only answer',
         isUser: false,
@@ -1274,8 +1535,18 @@ void main() {
 
       expect(find.text('Text-only answer'), findsOneWidget);
       expect(find.byKey(const ValueKey('message_footer_msg-1')), findsNothing);
-      expect(find.byTooltip('Copy message'), findsOneWidget);
-      expect(find.text(relativeTime), findsOneWidget);
+      final copyAction = find.byTooltip('Copy message');
+      final timestamp = find.text(relativeTime);
+      expect(copyAction, findsOneWidget);
+      expect(timestamp, findsOneWidget);
+      expect(
+        tester.getTopLeft(timestamp).dx,
+        greaterThan(tester.getTopRight(copyAction).dx),
+      );
+      expect(
+        tester.getCenter(timestamp).dy,
+        closeTo(tester.getCenter(copyAction).dy, 1),
+      );
     });
 
     testWidgets('renders one thinking indicator while generation is active', (
@@ -1501,7 +1772,7 @@ void main() {
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
     });
 
-    testWidgets('keeps unfinished A2UI controls without final actions', (
+    testWidgets('keeps unfinished A2UI controls and queues cap notice', (
       tester,
     ) async {
       final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
@@ -1553,6 +1824,8 @@ void main() {
           ),
           overrides: [
             chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            sendMessageUsecaseProvider('ws-1')
+                .overrideWithValue(_IterationLimitSendMessageUsecase()),
             ..._messageOverrides({message.id: message}),
           ],
         ),
@@ -1573,6 +1846,19 @@ void main() {
       expect(
         find.byKey(const ValueKey('message_footer_pending-form')),
         findsNothing,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('a2ui_submit_pending-form:main')),
+      );
+      await tester.pump();
+      await tester.pump();
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(ChatMessagesWidget)),
+        listen: false,
+      );
+      expect(
+        container.read(conversationIterationLimitProvider('conv-1')),
+        isTrue,
       );
       expect(tester.takeException(), isNull);
     });
@@ -1666,7 +1952,7 @@ void main() {
         description: 'Find sources',
         content: 'Use primary sources',
         kind: .template,
-        credentialReadiness: .ready,
+        connectorReadiness: .ready,
       );
       var loadCalls = 0;
       var sendCalls = 0;
@@ -2167,6 +2453,7 @@ void main() {
       testWidgets('discloses $name in expanded activity details', (
         tester,
       ) async {
+        SidebarToolResultTab? openedTab;
         final projection = projectToolOutput(source, policy: policy);
         final toolCall = MessageToolCallEntity(
           id: 'tc-truncated',
@@ -2190,6 +2477,7 @@ void main() {
           buildSubject(
             messages: [message.id],
             overrides: _messageOverrides({message.id: message}),
+            onOpenToolResult: (tab) => openedTab = tab,
           ),
         );
         await revealActivityToolCalls(tester);
@@ -2218,15 +2506,13 @@ void main() {
         await tester.tap(find.text('Show more'));
         await tester.pumpAndSettle();
 
+        expect(openedTab?.id, 'tc-truncated');
         expect(
-          find.descendant(
-            of: find.byType(Dialog),
-            matching: find.bySemanticsLabel(text),
-          ),
-          findsOneWidget,
+          openedTab?.content,
+          ToolMetadataDecoder.decode(projection.persistedText),
         );
-        await tester.tap(find.text('Close'));
-        await tester.pumpAndSettle();
+        expect(openedTab?.status, text);
+        expect(find.byType(Dialog), findsNothing);
         semantics.dispose();
       });
     }
@@ -2336,6 +2622,7 @@ void main() {
           metadata: MessageMetadataEntity(toolCalls: [toolCall]),
         );
         final semantics = tester.ensureSemantics();
+        SidebarToolResultTab? openedTab;
         String? copiedText;
         tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
           SystemChannels.platform,
@@ -2359,6 +2646,7 @@ void main() {
           buildSubject(
             messages: [message.id],
             overrides: _messageOverrides({message.id: message}),
+            onOpenToolResult: (tab) => openedTab = tab,
           ),
         );
         await revealActivityToolCalls(tester);
@@ -2374,20 +2662,13 @@ void main() {
         await tester.tap(find.text('Show more'));
         await tester.pumpAndSettle();
 
-        final modal = find.byType(Dialog);
-        expect(
-          find.descendant(of: modal, matching: find.text(responseRaw)),
-          findsOneWidget,
-        );
-        expect(
-          find.descendant(
-            of: modal,
-            matching: find.bySemanticsLabel(contextStatus),
-          ),
-          findsOneWidget,
-        );
-        await tester.tap(find.text('Close'));
-        await tester.pumpAndSettle();
+        expect(openedTab, (
+          id: 'tc-inspect-short',
+          title: 'built_in_1_read_file',
+          content: responseRaw,
+          status: contextStatus,
+        ));
+        expect(find.byType(Dialog), findsNothing);
         expect(find.text(modelResponse), findsOneWidget);
 
         await tester.tap(find.byTooltip('Copy tool response'));
@@ -2432,6 +2713,7 @@ void main() {
           'Respuesta de la herramienta: $originalBytes bytes. Solo se recortó '
           'el contexto del modelo a $defaultToolOutputBytes bytes; la '
           'respuesta completa sigue guardada.';
+      SidebarToolResultTab? openedTab;
       final semantics = tester.ensureSemantics();
 
       await pumpAndInit(
@@ -2440,6 +2722,7 @@ void main() {
           messages: [message.id],
           locale: const Locale('es'),
           overrides: _messageOverrides({message.id: message}),
+          onOpenToolResult: (tab) => openedTab = tab,
         ),
       );
       await revealActivityToolCalls(tester);
@@ -2458,13 +2741,8 @@ void main() {
       await tester.tap(find.text('Ver más'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.descendant(
-          of: find.byType(Dialog),
-          matching: find.bySemanticsLabel(expectedStatus),
-        ),
-        findsOneWidget,
-      );
+      expect(openedTab?.status, expectedStatus);
+      expect(find.byType(Dialog), findsNothing);
       semantics.dispose();
     });
 
@@ -2559,352 +2837,6 @@ void main() {
       final status = tester.getRect(find.text('Completed'));
       expect(status.right, greaterThan(row.center.dx));
       expect(row.right - status.right, lessThan(100));
-    });
-
-    testWidgets('shows saved skill and tool titles in activity rows', (
-      tester,
-    ) async {
-      await tester.binding.setSurfaceSize(const Size(320, 500));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      final semantics = tester.ensureSemantics();
-      const toolCall = MessageToolCallEntity(
-        id: 'tc-skill',
-        name: 'call_skill_tool',
-        argumentsRaw: '{"skill":"research","tool":"search_web"}',
-        resultStatus: ToolCallResultStatus.disabledInWorkspace,
-      );
-      final message = _createMessage(
-        content: '',
-        isUser: false,
-        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
-      );
-
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          messages: ['msg-1'],
-          overrides: [
-            messageConversationByIdProvider.overrideWith((ref, id) => message),
-            isMessageStreamingProvider.overrideWith((ref, id) => false),
-            conversationBusyStateProvider.overrideWith(
-              (ref, _) async => const ConversationBusyState(
-                isStreaming: false,
-                hasPendingTools: false,
-              ),
-            ),
-            workspaceSkillsProvider('ws-1').overrideWith(
-              (ref) async => const [
-                WorkspaceSkill(
-                  id: 'skill-1',
-                  slug: 'research',
-                  title: 'Research Assistant',
-                  description: '',
-                  source: SkillSource.user,
-                  kind: SkillKind.template,
-                  isEnabled: true,
-                ),
-              ],
-            ),
-            skillTemplateToolsProvider('ws-1', 'skill-1').overrideWith(
-              (ref) async => [
-                SkillTemplateToolEntity(
-                  id: 'tool-1',
-                  skillId: 'skill-1',
-                  templateType: SkillTemplateToolType.url,
-                  title: 'Search the web',
-                  description: 'Searches the web.',
-                  slug: 'search_web',
-                  isEnabled: true,
-                  requiresCredential: false,
-                  createdAt: DateTime(2026),
-                  updatedAt: DateTime(2026),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-      await revealActivityToolCalls(tester);
-      await tester.pump();
-      await tester.pump();
-
-      final label = tester.widget<Text>(
-        find.byKey(const ValueKey('activity_tool_label_tc-skill')),
-      );
-      expect(
-        label.textSpan?.toPlainText(),
-        contains('Research Assistant / Search the web'),
-      );
-      expect(label.textSpan?.toPlainText(), contains('Searches the web.'));
-      expect(find.text('Call Skill Tool'), findsNothing);
-      final status = tester.widget<Text>(
-        find.byKey(const ValueKey('activity_tool_status_tc-skill')),
-      );
-      expect(status.maxLines, 1);
-      expect(status.overflow, TextOverflow.ellipsis);
-      expect(
-        tester
-            .getSemantics(find.byKey(const ValueKey('activity_tool_tc-skill')))
-            .label,
-        contains(
-          'Research Assistant / Search the web Searches the web. '
-          'Disabled in workspace',
-        ),
-      );
-      expect(tester.takeException(), isNull);
-      semantics.dispose();
-    });
-
-    testWidgets('opens the owning skill from a separate activity action', (
-      tester,
-    ) async {
-      const toolCall = MessageToolCallEntity(
-        id: 'tc-open-skill',
-        name: 'call_skill_tool',
-        argumentsRaw: '{"skill":"research","tool":"search_web"}',
-        resultStatus: ToolCallResultStatus.success,
-      );
-      final message = _createMessage(
-        content: '',
-        isUser: false,
-        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
-      );
-      Widget? mainChat;
-      final router = GoRouter(
-        initialLocation: '/workspaces/ws-1/chats/conv-1',
-        routes: [
-          GoRoute(
-            path: '/workspaces/:workspaceId/chats/:chatId',
-            builder: (_, _) => mainChat ?? const SizedBox.shrink(),
-          ),
-          GoRoute(
-            path: '/workspaces/:workspaceId/more/skills/:skillId',
-            builder: (_, state) => Material(
-              child: Text('Skill details ${state.pathParameters['skillId']}'),
-            ),
-          ),
-        ],
-      );
-      addTearDown(router.dispose);
-
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          messages: ['msg-1'],
-          messageEntitiesById: {message.id: message},
-          overrides: [
-            ..._messageOverrides({message.id: message}),
-            workspaceSkillsProvider('ws-1').overrideWith(
-              (ref) async => const [
-                WorkspaceSkill(
-                  id: 'skill-1',
-                  slug: 'research',
-                  title: 'Research Assistant',
-                  description: '',
-                  source: SkillSource.user,
-                  kind: SkillKind.template,
-                  isEnabled: true,
-                ),
-              ],
-            ),
-            skillTemplateToolsProvider('ws-1', 'skill-1').overrideWith(
-              (ref) async => [
-                SkillTemplateToolEntity(
-                  id: 'tool-1',
-                  skillId: 'skill-1',
-                  templateType: SkillTemplateToolType.url,
-                  title: 'Search the web',
-                  description: 'Searches the web.',
-                  slug: 'search_web',
-                  isEnabled: true,
-                  requiresCredential: false,
-                  createdAt: DateTime(2026),
-                  updatedAt: DateTime(2026),
-                ),
-              ],
-            ),
-          ],
-          appBuilder: (context, child) {
-            mainChat = ChatPrimaryScrollController(child: child);
-
-            return MaterialApp.router(
-              routerConfig: router,
-              locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-            );
-          },
-        ),
-      );
-      await revealActivityToolCalls(tester);
-      await tester.pump();
-
-      expect(
-        find.byKey(const ValueKey('activity_open_skill_tc-open-skill')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('activity_tool_details_tc-open-skill')),
-        findsNothing,
-      );
-      await tester.tap(
-        find.byKey(const ValueKey('activity_open_skill_tc-open-skill')),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Skill details skill-1'), findsOneWidget);
-    });
-
-    testWidgets('shows app skill and tool titles in activity rows', (
-      tester,
-    ) async {
-      const registry = AppSkillRegistry();
-      final appSkill = registry.getAll().firstWhere(
-        (skill) => skill.tools.isNotEmpty,
-      );
-      final tool = appSkill.tools.first;
-      final toolCall = MessageToolCallEntity(
-        id: 'tc-app-skill',
-        name: 'call_skill_tool',
-        argumentsRaw: jsonEncode({'skill': appSkill.slug, 'tool': tool.slug}),
-        resultStatus: ToolCallResultStatus.success,
-      );
-      final message = _createMessage(
-        content: '',
-        isUser: false,
-        metadata: MessageMetadataEntity(toolCalls: [toolCall]),
-      );
-
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          messages: ['msg-1'],
-          overrides: [
-            messageConversationByIdProvider.overrideWith((ref, id) => message),
-            isMessageStreamingProvider.overrideWith((ref, id) => false),
-            conversationBusyStateProvider.overrideWith(
-              (ref, _) async => const ConversationBusyState(
-                isStreaming: false,
-                hasPendingTools: false,
-              ),
-            ),
-            workspaceSkillsProvider('ws-1').overrideWith(
-              (ref) async => [
-                WorkspaceSkill(
-                  source: .app,
-                  id: appSkill.identifier,
-                  slug: appSkill.slug,
-                  title: appSkill.title,
-                  description: appSkill.description,
-                  kind: appSkill.kind == AppSkillDefinitionKind.template
-                      ? .template
-                      : .native,
-                  isEnabled: true,
-                  titleKey: appSkill.titleKey,
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-      await revealActivityToolCalls(tester);
-      await tester.pump();
-      await tester.pump();
-
-      final labelFinder = find.byKey(
-        const ValueKey('activity_tool_label_tc-app-skill'),
-      );
-      final context = tester.element(labelFinder);
-      final skillTitle =
-          appSkill.titleKey?.tr(context: context) ?? appSkill.title;
-      final toolTitle = tool.titleKey?.tr(context: context) ?? tool.title;
-      final toolDescription =
-          tool.descriptionKey?.tr(context: context) ?? tool.description;
-      final label = tester.widget<Text>(labelFinder);
-      expect(
-        label.textSpan?.toPlainText(),
-        contains('$skillTitle / $toolTitle'),
-      );
-      expect(label.textSpan?.toPlainText(), contains(toolDescription));
-      expect(
-        find.byKey(const ValueKey('activity_open_skill_tc-app-skill')),
-        findsOneWidget,
-      );
-      expect(find.text('Completed'), findsOneWidget);
-      expect(find.text('Call Skill Tool'), findsNothing);
-    });
-
-    testWidgets('uses slug and generic fallbacks when metadata is missing', (
-      tester,
-    ) async {
-      const skillToolCall = MessageToolCallEntity(
-        id: 'tc-missing-tool',
-        name: 'call_skill_tool',
-        argumentsRaw: '{"skill":"research","tool":"missing_tool"}',
-        resultStatus: ToolCallResultStatus.success,
-      );
-      const malformedToolCall = MessageToolCallEntity(
-        id: 'tc-malformed-skill',
-        name: 'call_skill_tool',
-        argumentsRaw: '{"skill":"research"}',
-        resultStatus: ToolCallResultStatus.success,
-      );
-      final message = _createMessage(
-        content: '',
-        isUser: false,
-        metadata: const MessageMetadataEntity(
-          toolCalls: [skillToolCall, malformedToolCall],
-        ),
-      );
-
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          messages: ['msg-1'],
-          overrides: [
-            messageConversationByIdProvider.overrideWith((ref, id) => message),
-            isMessageStreamingProvider.overrideWith((ref, id) => false),
-            conversationBusyStateProvider.overrideWith(
-              (ref, _) async => const ConversationBusyState(
-                isStreaming: false,
-                hasPendingTools: false,
-              ),
-            ),
-            workspaceSkillsProvider('ws-1').overrideWith(
-              (ref) async => const [
-                WorkspaceSkill(
-                  source: .user,
-                  id: 'skill-1',
-                  slug: 'research',
-                  title: 'Research Assistant',
-                  description: '',
-                  kind: .template,
-                  isEnabled: true,
-                ),
-              ],
-            ),
-            skillTemplateToolsProvider(
-              'ws-1',
-              'skill-1',
-            ).overrideWith((ref) async => []),
-          ],
-        ),
-      );
-      await revealActivityToolCalls(tester);
-      await tester.pump();
-      await tester.pump();
-
-      final missingToolLabel = tester.widget<Text>(
-        find.byKey(const ValueKey('activity_tool_label_tc-missing-tool')),
-      );
-      expect(
-        missingToolLabel.textSpan?.toPlainText(),
-        contains('Research Assistant / Missing Tool'),
-      );
-      final malformedToolLabel = tester.widget<Text>(
-        find.byKey(const ValueKey('activity_tool_label_tc-malformed-skill')),
-      );
-      expect(malformedToolLabel.textSpan?.toPlainText(), 'Call Skill Tool');
     });
 
     testWidgets('reveals a finished activity run in three compact levels', (
@@ -5112,6 +5044,399 @@ void main() {
     });
 
     testWidgets(
+      'preserves activity disclosures across routes, refreshes, and conversations',
+      (tester) async {
+        const firstTool = MessageToolCallEntity(
+          id: 'tc-shared-1',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{"path":"details"}',
+          responseRaw: 'First tool details',
+          resultStatus: ToolCallResultStatus.success,
+        );
+        const secondTool = MessageToolCallEntity(
+          id: 'tc-shared-2',
+          name: 'built_in_1_calculator',
+          argumentsRaw: '{"expression":"1 + 1"}',
+          responseRaw: 'Second tool details',
+          resultStatus: ToolCallResultStatus.success,
+        );
+        final transcripts = <String, Map<String, MessageEntity>>{
+          'conv-1': {
+            'run-shared': _createMessage(
+              id: 'run-shared',
+              conversationId: 'conv-1',
+              content: 'Conv one answer',
+              isUser: false,
+              metadata: const MessageMetadataEntity(
+                thinking: 'Conv one thought',
+                toolCalls: [firstTool, secondTool],
+              ),
+            ),
+            'boundary-1': _createMessage(
+              id: 'boundary-1',
+              conversationId: 'conv-1',
+              content: 'Conversation boundary',
+            ),
+            'run-other': _createMessage(
+              id: 'run-other',
+              conversationId: 'conv-1',
+              content: 'Other answer',
+              isUser: false,
+              metadata: const MessageMetadataEntity(
+                thinking: 'Other run thought',
+                toolCalls: [firstTool],
+              ),
+            ),
+          },
+          'conv-2': {
+            'run-shared': _createMessage(
+              id: 'run-shared',
+              conversationId: 'conv-2',
+              content: 'Conv two answer',
+              isUser: false,
+              metadata: const MessageMetadataEntity(
+                thinking: 'Conv two thought',
+                toolCalls: [firstTool, secondTool],
+              ),
+            ),
+          },
+        };
+
+        Widget chatPage(String conversationId, String revision) {
+          return KeyedSubtree(
+            key: ValueKey('$conversationId:$revision'),
+            child: ChatPrimaryScrollController(
+              child: AuraThemeScope(
+                theme: AuraTheme.light,
+                child: Theme(
+                  data: ThemeData(),
+                  child: AuraLegacyMaterialBridge(
+                    child: Material(
+                      child: ChatMessagesWidget(
+                        workspaceId: 'ws-1',
+                        conversationId: conversationId,
+                        messages: transcripts[conversationId]!.keys.toList(),
+                        onOpenToolResult: (_) =>
+                            fail('Unexpected tool result tab'),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        final router = GoRouter(
+          initialLocation: '/chat/conv-1',
+          routes: [
+            GoRoute(
+              path: '/chat/:conversationId',
+              builder: (context, state) => chatPage(
+                state.pathParameters['conversationId']!,
+                state.uri.queryParameters['revision'] ?? '0',
+              ),
+            ),
+            GoRoute(
+              path: '/other',
+              builder: (context, state) => const SizedBox.shrink(),
+            ),
+          ],
+        );
+        addTearDown(router.dispose);
+
+        Future<void> navigate(String location) async {
+          router.go(location);
+          await tester.pumpAndSettle();
+        }
+
+        Future<void> toggleActivity(String runId) async {
+          final trace = find.byKey(ValueKey('activity_trace_toggle_$runId'));
+          final pressable = find.descendant(
+            of: trace,
+            matching: find.byType(AuraPressable),
+          );
+          tester.widget<AuraPressable>(pressable).onPressed!.call();
+          await tester.pump();
+        }
+
+        await pumpAndInit(
+          tester,
+          TestProviderScope(
+            overrides: [
+              conversationSelectedProvider('conv-1')
+                  .overrideWithValue('conv-1'),
+              conversationSelectedProvider('conv-2')
+                  .overrideWithValue('conv-2'),
+              conversationRepositoryProvider.overrideWithValue(
+                _MockConversationRepository(),
+              ),
+              conversationByIdStreamProvider.overrideWith(
+                (ref, request) => Stream<ConversationEntity?>.value(null),
+              ),
+              childConversationsStreamProvider.overrideWith(
+                (ref, request) =>
+                    Stream<List<ConversationEntity>>.value(const []),
+              ),
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => transcripts[id.conversationId]?[id.messageId],
+              ),
+              isMessageStreamingProvider.overrideWith((ref, id) => false),
+              pendingToolCallsProvider.overrideWith((ref, _) => const []),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: false,
+                  hasPendingTools: false,
+                ),
+              ),
+              messageBookmarksProvider.overrideWith(
+                (ref, _) => Stream.value(const []),
+              ),
+              workspaceSessionForRouteProvider('ws-1').overrideWithValue(
+                const AsyncData(
+                  WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
+                ),
+              ),
+            ],
+            child: EasyLocalization(
+              child: Builder(
+                builder: (context) => MaterialApp.router(
+                  routerConfig: router,
+                  locale: context.locale,
+                  localizationsDelegates: [
+                    ...GlobalMaterialLocalizations.delegates,
+                    sdk_localizations.GlobalMaterialLocalizations.delegate,
+                    ...context.localizationDelegates,
+                  ],
+                  supportedLocales: context.supportedLocales,
+                ),
+              ),
+              supportedLocales: const [Locale('en'), Locale('es')],
+              path: 'assets/i18n',
+              fallbackLocale: const Locale('en'),
+              startLocale: const Locale('en'),
+              useOnlyLangCode: true,
+              useFallbackTranslations: true,
+            ),
+          ),
+        );
+
+        final firstTrace = find.byKey(
+          const ValueKey('activity_trace_toggle_run-shared'),
+        );
+        expect(find.text('Conv one thought'), findsNothing);
+        expect(find.text('Other run thought'), findsNothing);
+        expect(firstTrace, findsOneWidget);
+
+        await toggleActivity('run-shared');
+        expect(find.text('Conv one thought'), findsOneWidget);
+        final toolListToggle = find.byKey(
+          const ValueKey('activity_tool_list_toggle_run-shared'),
+        );
+        await tester.ensureVisible(toolListToggle);
+        await tester.tap(toolListToggle);
+        await tester.pump();
+        final firstToolRow = find.byKey(
+          const ValueKey('activity_tool_tc-shared-1'),
+        );
+        await tester.ensureVisible(firstToolRow);
+        tester.widget<AuraPressable>(firstToolRow).onPressed!.call();
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('activity_tool_details_tc-shared-1')),
+          findsOneWidget,
+        );
+
+        await navigate('/other');
+        await navigate('/chat/conv-1');
+        expect(find.text('Conv one thought'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('activity_tool_list_toggle_run-shared')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('activity_tool_details_tc-shared-1')),
+          findsOneWidget,
+        );
+        expect(find.text('Other run thought'), findsNothing);
+
+        await toggleActivity('run-shared');
+        expect(find.text('Conv one thought'), findsNothing);
+        await navigate('/other');
+        await navigate('/chat/conv-1');
+        expect(find.text('Conv one thought'), findsNothing);
+
+        await toggleActivity('run-shared');
+        await navigate('/chat/conv-2');
+        expect(find.text('Conv two thought'), findsNothing);
+        expect(find.text('Conv one thought'), findsNothing);
+        await toggleActivity('run-shared');
+        expect(find.text('Conv two thought'), findsOneWidget);
+
+        await navigate('/chat/conv-1');
+        expect(find.text('Conv one thought'), findsOneWidget);
+        expect(find.text('Conv two thought'), findsNothing);
+        expect(find.text('Other run thought'), findsNothing);
+        await navigate('/chat/conv-2');
+        expect(find.text('Conv two thought'), findsOneWidget);
+
+        transcripts['conv-1'] = {
+          ...transcripts['conv-1']!,
+          'boundary-2': _createMessage(
+            id: 'boundary-2',
+            conversationId: 'conv-1',
+            content: 'Second conversation boundary',
+          ),
+          'run-new': _createMessage(
+            id: 'run-new',
+            conversationId: 'conv-1',
+            content: 'New answer',
+            isUser: false,
+            metadata: const MessageMetadataEntity(
+              thinking: 'New run thought',
+              toolCalls: [firstTool],
+            ),
+          ),
+        };
+        await navigate('/chat/conv-1?revision=1');
+        expect(find.text('Conv one thought'), findsOneWidget);
+        expect(find.text('New run thought'), findsNothing);
+        expect(find.text('Other run thought'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'offers background work only while the running tool is eligible',
+      (tester) async {
+        const toolCall = MessageToolCallEntity(
+          id: 'tc-background',
+          name: 'built_in_1_calculator',
+          argumentsRaw: '{"expression": "1 + 1"}',
+          resultStatus: ToolCallResultStatus.running,
+        );
+        final message = _createMessage(
+          content: '',
+          isUser: false,
+          status: MessageStatus.unfinished,
+          metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+        );
+        final eligibility = StreamController<bool>();
+        addTearDown(eligibility.close);
+        final conversation = ConversationEntity(
+          id: 'conv-1',
+          title: 'Chat',
+          workspaceId: 'ws-1',
+          isPinned: false,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        );
+
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: ['msg-1'],
+            conversation: conversation,
+            overrides: [
+              conversationByIdStreamProvider(
+                'ws-1',
+                conversationId: 'conv-1',
+              ).overrideWith((ref) => Stream.value(conversation)),
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => message,
+              ),
+              isMessageStreamingProvider.overrideWith((ref, id) => true),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: true,
+                  hasPendingTools: true,
+                ),
+              ),
+              toolBackgroundEligibilityProvider.overrideWith(
+                (ref, request) => eligibility.stream,
+              ),
+            ],
+          ),
+        );
+
+        const action = ValueKey('activity_run_in_background_tc-background');
+        expect(find.byKey(action), findsNothing);
+
+        eligibility.add(true);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(find.byKey(action), findsOneWidget);
+
+        eligibility.add(false);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(find.byKey(action), findsNothing);
+
+        eligibility.add(true);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(find.byKey(action), findsOneWidget);
+      },
+    );
+
+    testWidgets('does not offer background work in a child conversation', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-child-background',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{"expression": "1 + 1"}',
+        resultStatus: ToolCallResultStatus.running,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        status: MessageStatus.unfinished,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+      final conversation = ConversationEntity(
+        id: 'conv-1',
+        title: 'Child chat',
+        workspaceId: 'ws-1',
+        isPinned: false,
+        createdAt: DateTime(2025),
+        updatedAt: DateTime(2025),
+        parentConversationId: 'parent-1',
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          conversation: conversation,
+          overrides: [
+            conversationByIdStreamProvider(
+              'ws-1',
+              conversationId: 'conv-1',
+            ).overrideWith((ref) => Stream.value(conversation)),
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => true),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: true,
+                hasPendingTools: true,
+              ),
+            ),
+            toolBackgroundEligibilityProvider.overrideWith(
+              (ref, request) => Stream<bool>.value(true),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(
+          const ValueKey('activity_run_in_background_tc-child-background'),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets(
       'reopens a stable live run for an appended tool and collapses on completion',
       (tester) async {
         const firstToolCall = MessageToolCallEntity(
@@ -6016,6 +6341,321 @@ void main() {
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 
+    testWidgets('shows loaded cloud target offline', (tester) async {
+      const targetRequest = (
+        workspaceId: 'ws-1',
+        conversationId: 'conv-1',
+        messageId: 'msg-2',
+      );
+      final earlierMessage = _createMessage(
+        id: 'msg-1',
+        content: 'Earlier message',
+      );
+      final targetMessage = _createMessage(
+        id: 'msg-2',
+        content: 'Matched message',
+        isUser: false,
+      );
+      final laterMessage = _createMessage(
+        id: 'msg-3',
+        content: 'Later message',
+      );
+      final messages = {
+        earlierMessage.id: earlierMessage,
+        targetMessage.id: targetMessage,
+        laterMessage.id: laterMessage,
+      };
+      Widget? chat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/chats/conv-1?message-id=msg-2',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            pageBuilder: (context, state) => MaterialPage<void>(
+              child: chat ?? const SizedBox.shrink(),
+              arguments: state.uri.queryParameters,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: messages.keys.toList(),
+          messageEntitiesById: messages,
+          overrides: [
+            conversationMessageTargetMessagesProvider(targetRequest)
+                .overrideWithValue(
+                  AsyncError(StateError('offline'), StackTrace.current),
+                ),
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messages[id.messageId]!,
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+          workspaceSession: const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'ws-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account-1',
+              cloudWorkspaceId: 1,
+            ),
+          ),
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          appBuilder: (context, child) {
+            chat = ChatPrimaryScrollController(child: child);
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+      );
+
+      expect(find.text('Matched message'), findsOneWidget);
+      expect(find.text('Later message'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.label == 'Search match',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('offers retry when a cloud search target fails to load', (
+      tester,
+    ) async {
+      const request = (
+        workspaceId: 'ws-1',
+        conversationId: 'conv-1',
+        messageId: 'msg-2',
+      );
+      Widget? chat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/chats/conv-1?message-id=msg-2',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            pageBuilder: (context, state) => MaterialPage<void>(
+              child: chat ?? const SizedBox.shrink(),
+              arguments: state.uri.queryParameters,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: const [],
+          overrides: [
+            conversationMessageTargetMessagesProvider(request)
+                .overrideWithValue(
+                  AsyncError(StateError('offline'), StackTrace.current),
+                ),
+          ],
+          workspaceSession: const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'ws-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account-1',
+              cloudWorkspaceId: 1,
+            ),
+          ),
+          appBuilder: (context, child) {
+            chat = ChatPrimaryScrollController(child: child);
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+      );
+
+      expect(
+        find.text(
+          'Could not load this message. Check your connection and try again.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
+    testWidgets('shows unavailable state when cloud search target is missing', (
+      tester,
+    ) async {
+      const request = (
+        workspaceId: 'ws-1',
+        conversationId: 'conv-1',
+        messageId: 'msg-2',
+      );
+      Widget? chat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/chats/conv-1?message-id=msg-2',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            pageBuilder: (context, state) => MaterialPage<void>(
+              child: chat ?? const SizedBox.shrink(),
+              arguments: state.uri.queryParameters,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: const [],
+          overrides: [
+            conversationMessageTargetMessagesProvider(request)
+                .overrideWithValue(
+                  AsyncError(
+                    const CloudAppException(
+                      localizationKey: 'cloud_errors_not_found',
+                      context: CloudOperationContext.conversation,
+                      code: 'notFound',
+                    ),
+                    StackTrace.current,
+                  ),
+                ),
+          ],
+          workspaceSession: const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'ws-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account-1',
+              cloudWorkspaceId: 1,
+            ),
+          ),
+          appBuilder: (context, child) {
+            chat = ChatPrimaryScrollController(child: child);
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+      );
+
+      expect(find.text('This message is no longer available.'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
+    });
+
+    testWidgets('opening a saved deleted message shows its unavailable state', (
+      tester,
+    ) async {
+      const deletedMessageId = 'deleted-message';
+      final workspace = WorkspaceEntity(
+        id: 'ws-1',
+        name: 'Local workspace',
+        type: WorkspaceType.local,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      );
+      final workspaceRepository = _MockWorkspaceRepository();
+      when(() => workspaceRepository.getAllWorkspaces())
+          .thenAnswer((_) async => [workspace]);
+      final bookmark = MessageBookmarkEntity(
+        details: .new(
+          messageId: deletedMessageId,
+          conversationId: 'conv-1',
+          excerpt: 'Saved message excerpt',
+          workspaceName: workspace.name,
+          createdAt: DateTime(2026),
+          isUser: true,
+        ),
+        workspace: const MessageBookmarkWorkspace(workspaceId: 'ws-1'),
+      );
+      Widget? chat;
+      final router = GoRouter(
+        initialLocation: '/workspaces/ws-1/saved-messages',
+        routes: [
+          GoRoute(
+            path: '/workspaces/:workspaceId/saved-messages',
+            builder: (_, state) => Scaffold(
+              body: MessageBookmarksScreen(
+                workspaceId: state.pathParameters['workspaceId']!,
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            pageBuilder: (_, state) => MaterialPage<void>(
+              child: chat ?? const SizedBox.shrink(),
+              arguments: state.uri.queryParameters,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: const [],
+          bookmarks: [bookmark],
+          overrides: [
+            cloudMessageBookmarksProvider.overrideWith((ref) async => const []),
+            messageBookmarkUseCaseProvider.overrideWith(
+              (ref) => MessageBookmarkUseCase(
+                workspaceRepository: workspaceRepository,
+                messageRepository: _MockMessageRepository(),
+              ),
+            ),
+            fetchConversationMessageByIdProvider.overrideWith(
+              (ref, request) async => null,
+            ),
+          ],
+          appBuilder: (context, child) {
+            chat = ChatPrimaryScrollController(child: child);
+
+            return MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Saved message excerpt'));
+      await tester.pumpAndSettle();
+
+      expect(router.state.uri.path, '/workspaces/ws-1/chats/conv-1');
+      expect(router.state.uri.queryParameters['message-id'], deletedMessageId);
+      expect(find.text('This message is no longer available.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('renders provider error details without localization', (
       tester,
     ) async {
@@ -6105,16 +6745,30 @@ void main() {
 
 class _MockConversationRepository extends Mock
     implements ConversationRepository;
+class _MockMessageRepository extends Mock implements MessageRepository;
+class _MockWorkspaceRepository extends Mock implements WorkspaceRepository;
+
+class _IterationLimitSendMessageUsecase extends Fake
+    implements SendMessageUsecase {
+  @override
+  Future<AgentIterationDecision?> call({
+    required String conversationId,
+    required ChatDraft draft,
+  }) async => AgentIterationDecision.iterationLimitReached;
+}
 
 class const _ChatMessagesTestSubject({
   required final String conversationId,
   required final List<String> messages,
   required final List<Object> overrides,
+  required final List<MessageBookmarkEntity> bookmarks,
   required final List<PendingToolCall> pendingToolCalls,
+  final WorkspaceSession? workspaceSession,
   final Map<String, MessageEntity>? messageEntitiesById,
   final bool showThinking = false,
   final bool isStopRequested = false,
   final Future<void> Function(MessageEntity message)? onRetryMessage,
+  final ValueChanged<SidebarToolResultTab>? onOpenToolResult,
   final ConversationEntity? conversation,
   final AuraTheme? theme,
   final Locale locale = const Locale('en'),
@@ -6136,9 +6790,17 @@ class const _ChatMessagesTestSubject({
         ),
         pendingToolCallsProvider.overrideWith((ref, _) => pendingToolCalls),
         workspaceSessionForRouteProvider('ws-1').overrideWithValue(
-          const AsyncData(
-            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
+          AsyncData(
+            workspaceSession ??
+                const WorkspaceSession(
+                  LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+                ),
           ),
+        ),
+        conversationBackgroundWorksProvider(conversationId)
+            .overrideWith((ref) => Stream.value(const [])),
+        messageBookmarksProvider.overrideWith(
+          (ref, _) => Stream.value(bookmarks),
         ),
         ...overrides.cast(),
       ],
@@ -6155,6 +6817,9 @@ class const _ChatMessagesTestSubject({
                       workspaceId: 'ws-1',
                       conversationId: conversationId,
                       messages: messages,
+                      onOpenToolResult:
+                          onOpenToolResult ??
+                          (_) => fail('Unexpected tool result tab'),
                       messageEntitiesById: messageEntitiesById,
                       pendingToolCalls: pendingToolCalls,
                       showThinking: showThinking,

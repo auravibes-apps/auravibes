@@ -22,9 +22,16 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
     @JsonKey(includeIfNull: false) String? argumentsDigest,
     @JsonKey(includeIfNull: false) String? turnId,
     @JsonKey(includeIfNull: false) int? turnRevision,
+    @Default(false) bool backgroundEligible,
+
+    /// Null preserves legacy pending approvals; false marks fresh model calls.
+    @JsonKey(includeIfNull: false) bool? approvalRequested,
 
     /// The raw response from tool execution, if successful.
     String? responseRaw,
+
+    /// App-only result data that is never sent to the model.
+    @JsonKey(includeIfNull: false) Map<String, Object?>? appData,
 
     /// The bounded response projection used in model context, when different.
     @JsonKey(includeIfNull: false) String? responseContextRaw,
@@ -82,6 +89,9 @@ extension MessageToolCallEntityHelpers on MessageToolCallEntity {
   /// Whether this tool call is waiting for permission.
   bool get isAwaitingApproval => resultStatus == null;
 
+  bool get hasPendingApproval =>
+      isAwaitingApproval && approvalRequested != false;
+
   /// Whether this tool call is currently running.
   bool get isRunning => resultStatus?.agentLifecycle.isPending ?? false;
 
@@ -120,6 +130,7 @@ abstract class MessageAttachmentEntity with _$MessageAttachmentEntity {
     required int sizeBytes,
     required DateTime createdAt,
     required DateTime updatedAt,
+    String? toolCallId,
   }) = _MessageAttachmentEntity;
 }
 
@@ -135,6 +146,7 @@ abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
     required String mimeType,
     required MessageAttachmentModality modality,
     required int sizeBytes,
+    String? toolCallId,
   }) = _MessageAttachmentToCreate;
 }
 
@@ -241,6 +253,10 @@ abstract class const MessageEntity._() with _$MessageEntity {
     /// Timestamp when the message was last updated.
     required DateTime updatedAt,
 
+    /// Canonical source IDs for cloud messages materialized into a fork.
+    String? sourceConversationId,
+    String? sourceMessageId,
+
     /// Additional metadata for the message (JSON).
     MessageMetadataEntity? metadata,
 
@@ -268,6 +284,10 @@ abstract class const MessageEntity._() with _$MessageEntity {
       metadata?.modelMetadata[MessageMetadataEntity
               .agentTranscriptContextMetadataKey] ==
           true;
+
+  bool get isBookmarkEligible =>
+      status == MessageStatus.sent &&
+      (messageType == MessageType.text || messageType == MessageType.image);
 
   bool isForConversation(String conversationId) =>
       this.conversationId == conversationId;

@@ -15,9 +15,12 @@ import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
+import 'package:auravibes_app/features/chats/models/background_work_continuation_preview.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_continuation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
@@ -32,7 +35,10 @@ import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.da
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_continuation_status.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_detach_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
@@ -40,8 +46,10 @@ import 'package:auravibes_app/features/skills/providers/conversation_skill_selec
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -53,6 +61,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/src/framework.dart' show Override;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -74,7 +83,25 @@ void main() {
     registerFallbackValue(_ContinueConversationRequestFake());
   });
 
+  test('iteration-limit notifier queues only capped decisions', () {
+    final provider = conversationIterationLimitProvider(_chatId);
+    final uncappedContainer = ProviderContainer();
+    addTearDown(uncappedContainer.dispose);
+    uncappedContainer
+        .read(provider.notifier)
+        .markIfIterationLimitReached(.done);
+    expect(uncappedContainer.read(provider), isFalse);
+
+    final cappedContainer = ProviderContainer();
+    addTearDown(cappedContainer.dispose);
+    cappedContainer
+        .read(provider.notifier)
+        .markIfIterationLimitReached(.iterationLimitReached);
+    expect(cappedContainer.read(provider), isTrue);
+  });
+
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('plugins.flutter.io/path_provider'),
@@ -278,6 +305,7 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
+          ..._emptyBackgroundWorkOverrides(),
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(repo),
           conversationChatProvider(
@@ -304,6 +332,7 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
+          ..._emptyBackgroundWorkOverrides(),
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
@@ -333,6 +362,7 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
+          ..._emptyBackgroundWorkOverrides(),
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
@@ -364,6 +394,7 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
+          ..._emptyBackgroundWorkOverrides(),
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
@@ -437,6 +468,7 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
+          ..._emptyBackgroundWorkOverrides(),
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
@@ -619,6 +651,7 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
+                  ..._emptyBackgroundWorkOverrides(),
                   conversationSkillSelectorProvider(
                     _workspaceId,
                     _chatId,
@@ -733,7 +766,52 @@ void main() {
         .called(1);
   });
 
-  testWidgets('passes running compaction state to chat input', (tester) async {
+  testWidgets('opens saved messages scoped to the loaded conversation', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/conversation',
+          builder: (_, _) => const ChatConversationScreen(
+            workspaceId: _workspaceId,
+            chatId: _chatId,
+          ),
+        ),
+        GoRoute(
+          path: '/workspaces/:workspaceId/bookmarks',
+          builder: (_, state) => Text(
+            'Bookmarks ${state.pathParameters['workspaceId']} '
+            '${state.uri.queryParameters['conversation-id']}',
+          ),
+        ),
+      ],
+      initialLocation: '/conversation',
+    );
+    addTearDown(router.dispose);
+
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: const Stream.empty(),
+      router: router,
+    );
+
+    final bookmarksButton = find.byTooltip('Saved messages');
+    expect(bookmarksButton, findsOneWidget);
+    await tester.tap(bookmarksButton);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Bookmarks ws-1 chat-1'), findsOneWidget);
+    expect(
+      router.routeInformationProvider.value.uri.toString(),
+      '/workspaces/ws-1/bookmarks?conversation-id=chat-1',
+    );
+  });
+
+  testWidgets('passes compaction and tool access state to chat input', (
+    tester,
+  ) async {
     final conversation = ConversationEntity(
       id: _chatId,
       title: 'Chat',
@@ -741,6 +819,7 @@ void main() {
       isPinned: false,
       createdAt: .new(2026),
       updatedAt: .new(2026),
+      toolAccessMode: .allowAll,
     );
 
     await tester.runAsync(() async {
@@ -750,6 +829,7 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
+                  ..._emptyBackgroundWorkOverrides(),
                   conversationSkillSelectorProvider(
                     _workspaceId,
                     _chatId,
@@ -837,6 +917,31 @@ void main() {
 
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isCompacting, isTrue);
+    expect(input.toolAccessMode, ConversationToolAccessMode.allowAll);
+    expect(input.onToolAccessModeChanged, isNotNull);
+    final control = find.byKey(const ValueKey<String>('chat_tool_access_mode'));
+    await tester.tap(control);
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text('Default'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<ChatInputWidget>(find.byType(ChatInputWidget))
+          .toolAccessMode,
+      ConversationToolAccessMode.defaultMode,
+    );
+    await tester.tap(control);
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text('Allow all'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<ChatInputWidget>(find.byType(ChatInputWidget))
+          .toolAccessMode,
+      ConversationToolAccessMode.allowAll,
+    );
   });
 
   testWidgets('shows and updates active sub-agent status in chat controls', (
@@ -852,6 +957,7 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
+        ..._emptyBackgroundWorkOverrides(),
         conversationSkillSelectorProvider(_workspaceId, _chatId).overrideWith(
           (ref) async =>
               const ConversationSkillSelectorState(loaded: [], loadable: []),
@@ -1010,6 +1116,7 @@ void main() {
     final refreshCompleter = Completer<ConversationBusyState>();
     final container = ProviderContainer(
       overrides: [
+        ..._emptyBackgroundWorkOverrides(),
         conversationSkillSelectorProvider(_workspaceId, _chatId).overrideWith(
           (ref) async =>
               const ConversationSkillSelectorState(loaded: [], loadable: []),
@@ -1041,8 +1148,9 @@ void main() {
           if (refresh == 0) {
             return Future.value(
               const ConversationBusyState(
-                isStreaming: true,
+                isStreaming: false,
                 hasPendingTools: false,
+                isAgentWorking: true,
               ),
             );
           }
@@ -1105,6 +1213,11 @@ void main() {
       tester.widget<ChatInputWidget>(find.byType(ChatInputWidget)).isBusy,
       isTrue,
     );
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(find.byType(ChatThinkingIndicator), findsOneWidget);
 
     container.read(_busyRefreshProvider.notifier).refresh();
     await tester.pump();
@@ -1113,9 +1226,14 @@ void main() {
       tester.widget<ChatInputWidget>(find.byType(ChatInputWidget)).isBusy,
       isTrue,
     );
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(find.byType(ChatThinkingIndicator), findsOneWidget);
   });
 
-  testWidgets('shows rate-limit retry countdown and marks input busy', (
+  testWidgets('shows retry and iteration-limit notices and marks input busy', (
     tester,
   ) async {
     final conversation = ConversationEntity(
@@ -1135,6 +1253,7 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
+                  ..._emptyBackgroundWorkOverrides(),
                   conversationSkillSelectorProvider(
                     _workspaceId,
                     _chatId,
@@ -1164,11 +1283,14 @@ void main() {
                     (ref, _) async => const ConversationBusyState(
                       isStreaming: false,
                       hasPendingTools: false,
+                      isAgentWorking: true,
                     ),
                   ),
                   conversationRateLimitRetryProvider.overrideWith(
                     () => _StaticRateLimitRetryNotifier(retryAt),
                   ),
+                  conversationIterationLimitProvider(_chatId)
+                      .overrideWith(_StaticIterationLimitNotifier.new),
                   chatMessagesProvider.overrideWith(
                     (ref, _) => Stream.value(const <MessageEntity>[]),
                   ),
@@ -1194,6 +1316,8 @@ void main() {
                     workspaceId: _workspaceId,
                     chatId: _chatId,
                   ),
+                  builder: (_, child) =>
+                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,
                   supportedLocales: context.supportedLocales,
@@ -1216,6 +1340,14 @@ void main() {
     await tester.pump();
 
     expect(find.textContaining('Rate limit reached'), findsOneWidget);
+    expect(
+      find.text(
+        'The agent reached its iteration limit. Partial output and completed '
+        'tool results are available.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Continue agent'), findsOneWidget);
     expect(find.text('Waiting to retry'), findsOneWidget);
     final retryText = tester.widget<Text>(
       find.textContaining('Rate limit reached'),
@@ -1226,6 +1358,185 @@ void main() {
     );
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isBusy, isTrue);
+    expect(
+      find.byKey(const ValueKey<String>('chat_stop_generation')),
+      findsOneWidget,
+    );
+    expect(find.byType(ChatThinkingIndicator), findsNothing);
+
+    tester
+        .state<NavigatorState>(find.byType(Navigator))
+        .pushReplacement<void, void>(
+          MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
+        );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Continue agent'), findsOneWidget);
+    _activateSnackBarAction(tester, 'Continue agent');
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('stops continuation if route unmounts during cloud lookup', (
+    tester,
+  ) async {
+    final usecaseCompleter = Completer<CloudTurnUsecase?>();
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: const Stream.empty(),
+      usecaseFuture: usecaseCompleter.future,
+      iterationLimitReached: true,
+    );
+
+    expect(find.text('Continue agent'), findsOneWidget);
+    _activateSnackBarAction(tester, 'Continue agent');
+    await tester.pump();
+
+    tester
+        .state<NavigatorState>(find.byType(Navigator))
+        .pushReplacement<void, void>(
+          MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
+        );
+    final _ = await tester.pumpAndSettle();
+    usecaseCompleter.complete(null);
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('stops retry if route unmounts during cloud lookup', (
+    tester,
+  ) async {
+    final usecaseCompleter = Completer<CloudTurnUsecase?>();
+    final retryableMessage = MessageEntity(
+      id: 'retry-user-message',
+      conversationId: _chatId,
+      content: 'Original prompt',
+      messageType: .text,
+      isUser: true,
+      status: .unfinished,
+      createdAt: .utc(2026),
+      updatedAt: .utc(2026),
+    );
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: const Stream.empty(),
+      chatMessages: [retryableMessage],
+      usecaseFuture: usecaseCompleter.future,
+    );
+
+    final retryButton = find.byKey(
+      const ValueKey('retry_message_retry-user-message'),
+    );
+    expect(retryButton, findsOneWidget);
+    await tester.tap(retryButton);
+    await tester.pump();
+
+    tester
+        .state<NavigatorState>(find.byType(Navigator))
+        .pushReplacement<void, void>(
+          MaterialPageRoute<void>(builder: (_) => const SizedBox.shrink()),
+        );
+    final _ = await tester.pumpAndSettle();
+    usecaseCompleter.complete(null);
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'does not mount background status widgets when no work is available',
+    (tester) async {
+      await _pumpCloudConversationScreen(
+        tester,
+        initialState: _cloudState(projectionRevision: 42),
+        updates: const Stream.empty(),
+      );
+
+      expect(find.byType(BackgroundWorkDetachControls), findsNothing);
+      expect(find.byType(BackgroundWorkContinuationStatus), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'shows saved background results without another conversation status',
+    (tester) async {
+      const result = 'Background work finished.';
+      final work = BackgroundWorkView(
+        id: 'work-1',
+        workspaceId: 7,
+        conversationId: _chatId,
+        toolCallId: 'tool-call-1',
+        toolKind: 'skillNative',
+        status: 'completed',
+        statusPreview: BackgroundWorkContinuationPreview.queued,
+        resultContent: result,
+        resultByteLength: result.length,
+        createdAt: .utc(2026),
+        updatedAt: .utc(2026),
+      );
+
+      await _pumpCloudConversationScreen(
+        tester,
+        initialState: _cloudState(projectionRevision: 42),
+        updates: const Stream.empty(),
+        backgroundWorks: [work],
+      );
+
+      expect(find.text('View result'), findsOneWidget);
+      await tester.tap(find.text('View result'));
+      final settledDuration = await tester.pumpAndSettle();
+      expect(
+        find.text(result),
+        findsOneWidget,
+        reason:
+            'Background result dialog did not settle after $settledDuration.',
+      );
+    },
+  );
+
+  testWidgets('shows recovery when cloud conversation stream fails', (
+    tester,
+  ) async {
+    var streamSubscriptions = 0;
+    final updates = Stream<CloudConversationState>.multi((controller) {
+      if (streamSubscriptions++ == 0) {
+        controller.addError(
+          const CloudConversationStreamFailure(
+            localizationKey: LocaleKeys.cloud_errors_unavailable,
+          ),
+        );
+      } else {
+        controller.add(_cloudState(projectionRevision: 43));
+      }
+      unawaited(controller.close());
+    });
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: updates,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(
+      find.text('The cloud service is unavailable. Try again.'),
+      findsOneWidget,
+    );
+    expect(find.text('Retry'), findsOneWidget);
+    expect(streamSubscriptions, 1);
+
+    await tester.tap(find.text('Retry'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.text('The cloud service is unavailable. Try again.'),
+      findsNothing,
+    );
+    expect(streamSubscriptions, 2);
   });
 
   testWidgets(
@@ -1517,6 +1828,32 @@ void main() {
     secondRequest.finish();
   });
 
+  testWidgets('shows partial child status in the active-child chooser', (
+    tester,
+  ) async {
+    final container = await _pumpActiveSubAgentStatusWidget(
+      tester,
+      childConversations: [
+        _childConversation('partial', 'Partial child'),
+        _childConversation('running', 'Running child'),
+      ],
+    );
+    final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
+    final partialRequest = runtime.start(parentId: _chatId, childId: 'partial');
+    final runningRequest = runtime.start(parentId: _chatId, childId: 'running');
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_active_sub_agents')),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    partialRequest.finish(status: .partial);
+    await tester.pump();
+
+    expect(find.text('Partial'), findsOneWidget);
+    runningRequest.finish();
+  });
+
   testWidgets('keeps live and terminal status details safe in chooser', (
     tester,
   ) async {
@@ -1694,9 +2031,13 @@ Future<void> _pumpCloudConversationScreen(
   WidgetTester tester, {
   required CloudConversationState initialState,
   required Stream<CloudConversationState> updates,
+  List<MessageEntity> chatMessages = const [],
+  List<BackgroundWorkView> backgroundWorks = const [],
   CloudTurnUsecase? usecase,
   Future<CloudTurnUsecase?>? usecaseFuture,
+  bool iterationLimitReached = false,
   String? parentId,
+  GoRouter? router,
 }) async {
   await tester.binding.setSurfaceSize(const Size(800, 1200));
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -1717,8 +2058,37 @@ Future<void> _pumpCloudConversationScreen(
       EasyLocalization(
         child: Builder(
           builder: (context) {
+            final TransitionBuilder? appBuilder = iterationLimitReached
+                ? (_, child) =>
+                      AuraSnackBarHost(child: child ?? const SizedBox.shrink())
+                : null;
+            final Widget app = router == null
+                ? MaterialApp(
+                    home: ChatConversationScreen(
+                      workspaceId: _workspaceId,
+                      chatId: _chatId,
+                      showInputComposer: parentId == null,
+                    ),
+                    builder: appBuilder,
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                  )
+                : MaterialApp.router(
+                    routerConfig: router,
+                    builder: appBuilder,
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                  );
+
             return TestProviderScope(
               overrides: [
+                ..._emptyBackgroundWorkOverrides(),
+                backgroundWorkContinuationsProvider((
+                  workspaceId: _workspaceId,
+                  conversationId: _chatId,
+                )).overrideWith((ref) async => backgroundWorks),
                 if (parentId != null)
                   conversationByIdStreamProvider(
                     _workspaceId,
@@ -1766,6 +2136,9 @@ Future<void> _pumpCloudConversationScreen(
                     hasPendingTools: false,
                   ),
                 ),
+                if (iterationLimitReached)
+                  conversationIterationLimitProvider(_chatId)
+                      .overrideWith(_StaticIterationLimitNotifier.new),
                 cloudConversationStateProvider.overrideWith((ref, _) async* {
                   yield initialState;
                   yield* updates;
@@ -1777,7 +2150,7 @@ Future<void> _pumpCloudConversationScreen(
                   'model-1',
                 ).overrideWithValue(AsyncData(_cloudModelSelection())),
                 chatMessagesProvider.overrideWith(
-                  (ref, _) => Stream.value(const <MessageEntity>[]),
+                  (ref, _) => Stream.value(chatMessages),
                 ),
                 chatMessageIdsProvider.overrideWith(
                   (ref, _) => const <String>[],
@@ -1793,16 +2166,7 @@ Future<void> _pumpCloudConversationScreen(
                 agentsProvider(_workspaceId)
                     .overrideWith((ref) => Stream.value(const [])),
               ],
-              child: MaterialApp(
-                home: ChatConversationScreen(
-                  workspaceId: _workspaceId,
-                  chatId: _chatId,
-                  showInputComposer: parentId == null,
-                ),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              ),
+              child: app,
             );
           },
         ),
@@ -1820,6 +2184,15 @@ Future<void> _pumpCloudConversationScreen(
   await tester.pump();
   await tester.pump();
 }
+
+List<Override> _emptyBackgroundWorkOverrides() => [
+  conversationBackgroundWorksProvider(_chatId)
+      .overrideWith((ref) => Stream.value(const [])),
+  cloudConversationBackgroundWorksProvider((
+    workspaceId: _workspaceId,
+    conversationId: _chatId,
+  )).overrideWith((ref) async => const []),
+];
 
 Future<_CloudConversationEndpoint>
 _expectCloudContinueToBeIgnoredWhenStateBecomesBusy(
@@ -1968,12 +2341,36 @@ class _ResultChatNotifier(final ConversationResult result)
     String workspaceId,
     String conversationId,
   ) async => result;
+
+  @override
+  Future<void> setToolAccessMode(ConversationToolAccessMode mode) async {
+    final current = state.requireValue as ConversationFound;
+    state = AsyncData(
+      ConversationFound(current.conversation.copyWith(toolAccessMode: mode)),
+    );
+  }
 }
 
 class _StaticRateLimitRetryNotifier(final DateTime retryDeadline)
     extends ConversationRateLimitRetryNotifier {
   @override
   Map<String, DateTime> build() => {_chatId: retryDeadline};
+}
+
+void _activateSnackBarAction(WidgetTester tester, String label) {
+  final action = tester.widget<GestureDetector>(
+    find
+        .ancestor(of: find.text(label), matching: find.byType(GestureDetector))
+        .first,
+  );
+  final onTap = action.onTap;
+  if (onTap == null) fail('Expected snackbar action to have a tap handler');
+  onTap();
+}
+
+class _StaticIterationLimitNotifier extends ConversationIterationLimitNotifier {
+  @override
+  bool build() => true;
 }
 
 class _BusyRefreshNotifier extends Notifier<int> {

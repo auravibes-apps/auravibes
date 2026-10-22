@@ -19,16 +19,6 @@ void main() {
   var adapter = CloudSkillSettingsAdapter(gateway);
 
   setUpAll(() {
-    registerFallbackValue(WorkspaceSecretKind.skillCredential);
-    registerFallbackValue(WorkspaceSecretScope.workspace);
-    registerFallbackValue((
-      requestId: '',
-      secretKind: WorkspaceSecretKind.skillCredential,
-      scope: WorkspaceSecretScope.workspace,
-      resourceId: '',
-      secret: null,
-      expectedRevision: null,
-    ));
     registerFallbackValue(
       CompactConversationRequest(
         workspaceId: 0,
@@ -204,37 +194,6 @@ void main() {
       operations.single.data,
       '{"id":"conversation-1:agents","conversationId":"conversation-1",'
       '"skillId":"agents","source":"app"}',
-    );
-  });
-
-  test('writes credential only through secret endpoint', () async {
-    when(() => gateway.putSecret(any())).thenAnswer(
-      (_) async => PutWorkspaceSecretResponse(
-        configured: true,
-        revision: 2,
-        sequence: 2,
-      ),
-    );
-
-    await adapter.putCredentialSecret(
-      credentialId: 'credential-1',
-      secret: '{"token":"secret"}',
-      expectedRevision: 1,
-    );
-
-    final submittedSecret =
-        verify(() => gateway.putSecret(captureAny())).captured.single
-            as WorkspaceSecretInput;
-    expect(submittedSecret.secret, '{"token":"secret"}');
-    expect(submittedSecret.secretKind, WorkspaceSecretKind.skillCredential);
-    expect(submittedSecret.scope, WorkspaceSecretScope.workspace);
-    expect(submittedSecret.resourceId, 'credential-1');
-    expect(submittedSecret.expectedRevision, 1);
-    final _ = verifyNever(
-      () => gateway.patch(
-        requestId: any(named: 'requestId'),
-        operations: any(named: 'operations'),
-      ),
     );
   });
 

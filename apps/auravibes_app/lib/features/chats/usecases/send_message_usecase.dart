@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_chat_attachment_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
@@ -26,6 +27,7 @@ import 'package:riverpod/src/providers/provider.dart';
 typedef ContinueAgentTurn = Future<AgentIterationDecision> Function({
   required String conversationId,
   required AgentIterationContext context,
+  String? languageCode,
 });
 
 class SendMessageUsecase {
@@ -54,7 +56,7 @@ class SendMessageUsecase {
   final Future<void> Function(String conversationId, ChatDraft draft)?
   cloudSend;
 
-  Future<void> call({
+  Future<AgentIterationDecision?> call({
     required String conversationId,
     required ChatDraft draft,
   }) => _send(conversationId, draft);
@@ -83,9 +85,10 @@ class SendMessageUsecase {
     );
   }
 
-  Future<void> continueFromUserMessage({
+  Future<AgentIterationDecision> continueFromUserMessage({
     required String conversationId,
     required String messageId,
+    String? languageCode,
   }) => _withConversationActivity(
     conversationActivityGate,
     conversationId,
@@ -93,12 +96,14 @@ class SendMessageUsecase {
       conversationId: conversationId,
       messageId: messageId,
       origin: .userMessage,
+      languageCode: languageCode,
     ),
   );
 
-  Future<void> retryUserMessage({
+  Future<AgentIterationDecision> retryUserMessage({
     required String conversationId,
     required String messageId,
+    String languageCode = 'en',
   }) => _withConversationActivity(
     conversationActivityGate,
     conversationId,
@@ -106,43 +111,53 @@ class SendMessageUsecase {
       this,
       conversationId: conversationId,
       messageId: messageId,
+      languageCode: languageCode,
     ),
   );
 
-  Future<void> _continueFromUserMessage({
+  Future<AgentIterationDecision> _continueFromUserMessage({
     required String conversationId,
     required String messageId,
     required AgentIterationOrigin origin,
+    String? languageCode,
   }) async {
     final continueTurn = continueAgentTurn;
     if (continueTurn == null) {
       throw StateError('Local agent runtime unavailable');
     }
-    final _ = await continueTurn(
+
+    return await continueTurn(
       conversationId: conversationId,
       context: AgentIterationContext(
         origin: origin,
         ackMessageIds: [messageId],
       ),
+      languageCode: languageCode,
     );
   }
 
-  Future<void> _send(String conversationId, ChatDraft draft) async {
-    if (draft.isEmpty) return;
+  Future<AgentIterationDecision?> _send(
+    String conversationId,
+    ChatDraft draft,
+  ) async {
+    if (draft.isEmpty) return null;
     if (cloudSend case final send?) {
       await send(conversationId, draft);
 
-      return;
+      return null;
     }
 
-    await _withConversationActivity(
+    return await _withConversationActivity(
       conversationActivityGate,
       conversationId,
       () => _sendLocal(conversationId, draft),
     );
   }
 
-  Future<void> _sendLocal(String conversationId, ChatDraft draft) async {
+  Future<AgentIterationDecision?> _sendLocal(
+    String conversationId,
+    ChatDraft draft,
+  ) async {
     final getBusyState = getConversationBusyStateUsecase;
     final queue = sendQueueRuntime;
     if (getBusyState == null || queue == null) {
@@ -153,13 +168,13 @@ class SendMessageUsecase {
     if (busyState.isBusy) {
       final _ = queue.enqueue(conversationId: conversationId, draft: draft);
 
-      return;
+      return null;
     }
 
-    await _sendNow(conversationId: conversationId, draft: draft);
+    return await _sendNow(conversationId: conversationId, draft: draft);
   }
 
-  Future<void> _sendNow({
+  Future<AgentIterationDecision> _sendNow({
     required String conversationId,
     required ChatDraft draft,
   }) async {
@@ -168,10 +183,11 @@ class SendMessageUsecase {
       draft: draft,
     );
     try {
-      await _continueFromUserMessage(
+      return await _continueFromUserMessage(
         conversationId: conversationId,
         messageId: createdMessage.id,
         origin: .userMessage,
+        languageCode: draft.languageCode,
       );
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
@@ -197,10 +213,11 @@ Future<T> _withConversationActivity<T>(
   return gate.runActivity(conversationId, action);
 }
 
-Future<void> _retryUserMessage(
+Future<AgentIterationDecision> _retryUserMessage(
   SendMessageUsecase usecase, {
   required String conversationId,
   required String messageId,
+  required String languageCode,
 }) async {
   final repository =
       usecase.messageRepository ??
@@ -209,31 +226,74 @@ Future<void> _retryUserMessage(
   if (!_isRetryableUserMessage(message, conversationId)) {
     throw StateError('Message cannot be retried');
   }
-  await usecase._continueFromUserMessage(
+
+  return await usecase._continueFromUserMessage(
     conversationId: conversationId,
     messageId: messageId,
     origin: .manualContinue,
+    languageCode: languageCode,
   );
 }
+
+typedef _FirstMessageCallbacks = ({
+  void Function(Object error, StackTrace stackTrace) onContinueError,
+  void Function(String conversationId)? onIterationLimit,
+});
+
+typedef _FirstMessageRequest = ({
+  SendMessageUsecase usecase,
+  String conversationId,
+  String messageId,
+  String? languageCode,
+  _FirstMessageCallbacks callbacks,
+});
 
 Future<void> _createAndContinueFirstMessage(
   SendMessageUsecase usecase, {
   required String conversationId,
   required ChatDraft draft,
-  required void Function(Object error, StackTrace stackTrace) onContinueError,
+  required _FirstMessageCallbacks callbacks,
 }) async {
   final createdMessage = await usecase.createUserMessage(
     conversationId: conversationId,
     draft: draft,
   );
   unawaited(
-    usecase
-        .continueFromUserMessage(
-          conversationId: conversationId,
-          messageId: createdMessage.id,
-        )
-        .catchError(onContinueError),
+    _continueFirstMessage((
+      usecase: usecase,
+      conversationId: conversationId,
+      messageId: createdMessage.id,
+      languageCode: draft.languageCode,
+      callbacks: callbacks,
+    )),
   );
+}
+
+Future<void> _continueFirstMessage(_FirstMessageRequest request) async {
+  try {
+    final decision = await request.usecase.continueFromUserMessage(
+      conversationId: request.conversationId,
+      messageId: request.messageId,
+      languageCode: request.languageCode,
+    );
+    _reportFirstMessageIterationLimit(
+      request.callbacks,
+      request.conversationId,
+      decision,
+    );
+  } on Object catch (error, stackTrace) {
+    request.callbacks.onContinueError(error, stackTrace);
+  }
+}
+
+void _reportFirstMessageIterationLimit(
+  _FirstMessageCallbacks callbacks,
+  String conversationId,
+  AgentIterationDecision decision,
+) {
+  if (decision == .iterationLimitReached) {
+    callbacks.onIterationLimit?.call(conversationId);
+  }
 }
 
 bool _isRetryableUserMessage(MessageEntity? message, String conversationId) {
@@ -254,6 +314,7 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
     required String conversationId,
     required ChatDraft draft,
     required void Function(Object error, StackTrace stackTrace) onContinueError,
+    void Function(String conversationId)? onIterationLimit,
   }) async {
     if (draft.isEmpty) return;
     if (cloudSend case final send?) {
@@ -269,7 +330,10 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
         this,
         conversationId: conversationId,
         draft: draft,
-        onContinueError: onContinueError,
+        callbacks: (
+          onContinueError: onContinueError,
+          onIterationLimit: onIterationLimit,
+        ),
       ),
     );
   }
@@ -307,7 +371,17 @@ sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
     final agentService = ref.watch(auraAgentServiceProvider);
 
     return SendMessageUsecase(
-      continueAgentTurn: agentService.agent.continueTurn,
+      continueAgentTurn:
+          ({required conversationId, required context, languageCode}) async {
+            ref
+                .read(conversationAgentLanguageRuntimeProvider)
+                .remember(conversationId, languageCode);
+
+            return await agentService.agent.continueTurn(
+              conversationId: conversationId,
+              context: context,
+            );
+          },
       messageRepository: ref.watch(messageRepositoryProvider),
       getConversationBusyStateUsecase: ref.watch(
         getConversationBusyStateUsecaseProvider,

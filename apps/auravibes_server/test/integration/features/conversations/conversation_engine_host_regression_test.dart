@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
-import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
     as conversation_repo;
 import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
@@ -26,8 +26,9 @@ import '../../test_tools/serverpod_test_tools.dart';
 
 Future<_Fixture> _prepareConversationFixture(
   TestSessionBuilder sessionBuilder,
-  TestEndpoints endpoints,
-) async {
+  TestEndpoints endpoints, {
+  String? languageCode,
+}) async {
   final userId = const Uuid().v4().toString();
   final session = sessionBuilder.copyWith(
     authentication: AuthenticationOverride.authenticationInfo(
@@ -81,6 +82,7 @@ Future<_Fixture> _prepareConversationFixture(
       clientMessageId: 'message-1',
       content: 'Continue.',
       attachmentIds: const [],
+      languageCode: languageCode,
     ),
   );
   await endpoints.conversation.continueConversation(
@@ -90,6 +92,7 @@ Future<_Fixture> _prepareConversationFixture(
       requestId: 'continue-1',
       conversationId: conversation.stableId,
       expectedProjectionRevision: 2,
+      languageCode: languageCode,
     ),
   );
   final turn = (await ConversationTurn.db.findFirstRow(
@@ -124,10 +127,16 @@ void main() {
     sessionBuilder,
     endpoints,
   ) {
-    Future<_Fixture> prepare() =>
-        _prepareConversationFixture(sessionBuilder, endpoints);
+    Future<_Fixture> prepare({String? languageCode}) =>
+        _prepareConversationFixture(
+          sessionBuilder,
+          endpoints,
+          languageCode: languageCode,
+        );
 
     Future<void> configureProvider(_Fixture fixture) async {
+      fixture.database.passwords['workspaceSecretKey'] =
+          'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
       final now = DateTime.now().toUtc();
       await WorkspaceModelConnection.db.insertRow(
         fixture.database,
@@ -214,6 +223,388 @@ void main() {
     }
 
     test(
+      'claimed continuation clears the queued marker without losing the result',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        final message = fixture.messages.singleWhere(
+          (candidate) => candidate.role == 'user',
+        );
+        const workId = 'background-work-queued-marker';
+        const toolCallId = 'background-call-queued-marker';
+        final toolCall = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            turnId: fixture.turn.id!,
+            messageId: message.id!,
+            stableId: toolCallId,
+            name: 'skill__app_native__agents__run_sub_agent',
+            argumentsJson: '{}',
+            argumentsDigest: 'digest',
+            backgroundEligible: true,
+            backgroundWorkStableId: workId,
+            status: 'runningInBackground',
+            revision: 2,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await BackgroundWorkRecord.db.insertRow(
+          fixture.database,
+          BackgroundWorkRecord(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            conversationToolCallId: toolCall.id!,
+            originatingMessageId: message.id,
+            stableId: workId,
+            toolCallId: toolCallId,
+            toolKind: 'skillNative',
+            status: 'completed',
+            statusPreview: BackgroundWorkPreviews.queuedForContinuation,
+            resultContent: '{"answer":"saved"}',
+            resultByteLength: 18,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.updateRow(
+          fixture.database,
+          message.copyWith(
+            metadataJson: jsonEncode({
+              'isBackgroundWorkCompletion': true,
+              'backgroundWorkId': workId,
+            }),
+          ),
+        );
+
+        await runConversationWorker(
+          fixture.database,
+          isActive: () => true,
+          worker: ConversationWorker(host: const _CompletingHost()),
+        );
+
+        final stored = await BackgroundWorkRecord.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(workId),
+        );
+        expect(stored?.status, 'completed');
+        expect(stored?.statusPreview, 'Completed');
+        expect(stored?.resultContent, '{"answer":"saved"}');
+        final continuationEvents = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId),
+          orderBy: (table) => table.sequence,
+        );
+        expect(
+          _backgroundWorkStatusPreviews(continuationEvents, workId),
+          [
+            BackgroundWorkPreviews.continuationInProgress,
+            'Completed',
+          ],
+        );
+      },
+    );
+
+    test(
+      'retrying a continuation keeps its completed result inspectable',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        final message = fixture.messages.singleWhere(
+          (candidate) => candidate.role == 'user',
+        );
+        const workId = 'background-work-retry-marker';
+        const toolCallId = 'background-call-retry-marker';
+        final toolCall = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            turnId: fixture.turn.id!,
+            messageId: message.id!,
+            stableId: toolCallId,
+            name: 'skill__app_native__agents__run_sub_agent',
+            argumentsJson: '{}',
+            argumentsDigest: 'digest',
+            backgroundEligible: true,
+            backgroundWorkStableId: workId,
+            status: 'runningInBackground',
+            revision: 2,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await BackgroundWorkRecord.db.insertRow(
+          fixture.database,
+          BackgroundWorkRecord(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            conversationToolCallId: toolCall.id!,
+            originatingMessageId: message.id,
+            stableId: workId,
+            toolCallId: toolCallId,
+            toolKind: 'skillNative',
+            status: 'completed',
+            statusPreview: BackgroundWorkPreviews.queuedForContinuation,
+            resultContent: '{"answer":"saved before retry"}',
+            resultByteLength: 31,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.updateRow(
+          fixture.database,
+          message.copyWith(
+            metadataJson: jsonEncode({
+              'isBackgroundWorkCompletion': true,
+              'backgroundWorkId': workId,
+            }),
+          ),
+        );
+
+        await runConversationWorker(
+          fixture.database,
+          isActive: () => true,
+          worker: ConversationWorker(host: const _TransientFailingHost()),
+        );
+
+        final stored = await BackgroundWorkRecord.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(workId),
+        );
+        final retriedJob = await ConversationJob.db.findById(
+          fixture.database,
+          fixture.job.id!,
+        );
+        expect(retriedJob?.status, ConversationJobStatuses.queued);
+        expect(
+          stored?.statusPreview,
+          BackgroundWorkPreviews.queuedForContinuation,
+        );
+        expect(stored?.resultContent, '{"answer":"saved before retry"}');
+        final continuationEvents = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId),
+        );
+        expect(
+          _backgroundWorkStatusPreviews(continuationEvents, workId),
+          [
+            BackgroundWorkPreviews.continuationInProgress,
+            BackgroundWorkPreviews.queuedForContinuation,
+          ],
+        );
+        final visibleWorks = await endpoints.conversation.listBackgroundWorks(
+          fixture.session,
+          ListBackgroundWorksRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: 'conversation-1',
+          ),
+        );
+        expect(visibleWorks.single.id, workId);
+      },
+    );
+
+    test(
+      'cloud detachment is rejected at the global limit and recovers capacity',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        final message = fixture.messages.first;
+        final activeWorks = <BackgroundWorkRecord>[];
+        for (
+          var index = 0;
+          index < ConversationLimits.maxConcurrentDetachedWork;
+          index++
+        ) {
+          final workId = 'background-capacity-$index';
+          final toolCall = await ConversationToolCall.db.insertRow(
+            fixture.database,
+            ConversationToolCall(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+              turnId: fixture.turn.id!,
+              messageId: message.id!,
+              stableId: 'background-capacity-call-$index',
+              name: 'skill__app_native__agents__run_sub_agent',
+              argumentsJson: '{}',
+              argumentsDigest: 'digest',
+              backgroundEligible: true,
+              backgroundWorkStableId: workId,
+              status: 'runningInBackground',
+              resultJson: jsonEncode({
+                'status': 'running_in_background',
+                'work_id': workId,
+              }),
+              revision: 2,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          activeWorks.add(
+            await BackgroundWorkRecord.db.insertRow(
+              fixture.database,
+              BackgroundWorkRecord(
+                workspaceId: fixture.workspaceId,
+                conversationId: fixture.conversationId,
+                conversationToolCallId: toolCall.id!,
+                originatingMessageId: message.id,
+                stableId: workId,
+                toolCallId: toolCall.stableId,
+                toolKind: 'skillNative',
+                status: 'running',
+                createdAt: now,
+                updatedAt: now,
+              ),
+            ),
+          );
+        }
+        final target = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            turnId: fixture.turn.id!,
+            messageId: message.id!,
+            stableId: 'background-capacity-target',
+            name: 'skill__app_native__agents__run_sub_agent',
+            argumentsJson: '{}',
+            argumentsDigest: 'digest',
+            backgroundEligible: true,
+            status: 'running',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final useCases = ConversationUseCases(
+          conversation_repo.ConversationRepository(),
+        );
+        final request = DetachToolCallRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'detach-over-capacity',
+          conversationId: 'conversation-1',
+          toolCallId: target.stableId,
+        );
+
+        await expectLater(
+          useCases.detachToolCall(
+            fixture.database,
+            userId: fixture.userId,
+            request: request,
+          ),
+          throwsA(
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'code',
+              ConversationErrorCode.turnConflict,
+            ),
+          ),
+        );
+        final unchangedTarget = await ConversationToolCall.db.findById(
+          fixture.database,
+          target.id!,
+        );
+        expect(unchangedTarget?.status, 'running');
+        expect(unchangedTarget?.backgroundWorkStableId, isNull);
+
+        await BackgroundWorkRecord.db.updateRow(
+          fixture.database,
+          activeWorks.first.copyWith(status: 'completed'),
+        );
+        final admitted = await useCases.detachToolCall(
+          fixture.database,
+          userId: fixture.userId,
+          request: request.copyWith(requestId: 'detach-after-capacity'),
+        );
+
+        expect(admitted.status, 'running');
+        expect(admitted.statusPreview, isNull);
+        expect(
+          await BackgroundWorkRecord.db.count(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.status.equals('running'),
+          ),
+          ConversationLimits.maxConcurrentDetachedWork,
+        );
+      },
+    );
+
+    test('cloud stop request is scoped and idempotent', () async {
+      final fixture = await prepare();
+      final now = DateTime.now().toUtc();
+      final message = fixture.messages.first;
+      const workId = 'background-work-stop';
+      const toolCallId = 'background-call-stop';
+      const acknowledgement = '{"status":"running_in_background"}';
+      final call = await ConversationToolCall.db.insertRow(
+        fixture.database,
+        ConversationToolCall(
+          workspaceId: fixture.workspaceId,
+          conversationId: fixture.conversationId,
+          turnId: fixture.turn.id!,
+          messageId: message.id!,
+          stableId: toolCallId,
+          name: 'skill__app_native__agents__run_sub_agent',
+          argumentsJson: '{}',
+          argumentsDigest: 'digest',
+          backgroundEligible: true,
+          backgroundWorkStableId: workId,
+          status: 'runningInBackground',
+          resultJson: acknowledgement,
+          revision: 2,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await BackgroundWorkRecord.db.insertRow(
+        fixture.database,
+        BackgroundWorkRecord(
+          workspaceId: fixture.workspaceId,
+          conversationId: fixture.conversationId,
+          conversationToolCallId: call.id!,
+          originatingMessageId: message.id!,
+          stableId: workId,
+          toolCallId: toolCallId,
+          toolKind: 'skillNative',
+          status: 'running',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final request = StopBackgroundWorkRequest(
+        requestId: 'stop-background-work',
+        workspaceId: fixture.workspaceId,
+        conversationId: 'conversation-1',
+        workId: workId,
+      );
+      final requested = await endpoints.conversation.stopBackgroundWork(
+        fixture.session,
+        request,
+      );
+      expect(requested.status, 'stopRequested');
+      final retried = await endpoints.conversation.stopBackgroundWork(
+        fixture.session,
+        request.copyWith(requestId: 'stop-background-work-retry'),
+      );
+      expect(retried.status, 'stopRequested');
+      final storedCall = await ConversationToolCall.db.findById(
+        fixture.database,
+        call.id!,
+      );
+      expect(storedCall?.resultJson, acknowledgement);
+      expect(storedCall?.backgroundWorkStableId, workId);
+    });
+
+    test(
       'resumed all-denied calls are sent to the provider as a terminal exchange',
       () async {
         final fixture = await prepare();
@@ -268,31 +659,32 @@ void main() {
         );
 
         final messages = requests.single['messages'] as List;
-        expect(
-          messages,
-          contains(
-            {
-              'role': 'assistant',
-              'content': null,
-              'tool_calls': [
-                {
-                  'id': 'call-denied',
-                  'type': 'function',
-                  'function': {'name': 'tool', 'arguments': '{}'},
-                },
-              ],
-            },
-          ),
+        final deniedAssistantMessage = messages.whereType<Map>().singleWhere(
+          (message) =>
+              message['role'] == 'assistant' && message['tool_calls'] is List,
+        );
+        expect(deniedAssistantMessage['content'], isNull);
+        final deniedToolCalls = deniedAssistantMessage['tool_calls'] as List;
+        expect(deniedToolCalls, hasLength(1));
+        final deniedToolCall = Map<String, Object?>.from(
+          deniedToolCalls.single as Map,
+        );
+        expect(deniedToolCall['id'], 'call-denied');
+        expect(deniedToolCall['type'], 'function');
+        final deniedFunction = Map<String, Object?>.from(
+          deniedToolCall['function']! as Map,
+        );
+        expect(deniedFunction['name'], 'tool');
+        expect(deniedFunction['arguments'], '{}');
+
+        final deniedToolReply = messages.whereType<Map>().singleWhere(
+          (message) =>
+              message['role'] == 'tool' &&
+              message['tool_call_id'] == 'call-denied',
         );
         expect(
-          messages,
-          contains(
-            {
-              'role': 'tool',
-              'tool_call_id': 'call-denied',
-              'content': '{"error":"Tool approval was denied."}',
-            },
-          ),
+          deniedToolReply['content'],
+          '{"error":"Tool approval was denied."}',
         );
       },
     );
@@ -358,10 +750,14 @@ void main() {
     );
 
     test(
-      'skill activation does not change provider tool schemas',
+      'Skill activation references Connector tools without loading tool specs',
       () async {
         final fixture = await prepare();
         final now = DateTime.now().toUtc();
+        final connector = connectorDefinitions.singleWhere(
+          (candidate) => candidate.identifier == 'duckduckgo',
+        );
+        final toolId = connectorToolId(connector, connector.tools.single);
         await WorkspaceResource.db.insertRow(
           fixture.database,
           WorkspaceResource(
@@ -369,31 +765,13 @@ void main() {
             resourceKind: WorkspaceResourceKind.skill,
             resourceId: 'research',
             data: jsonEncode({
+              'id': 'research',
               'slug': 'research',
               'title': 'Research',
               'description': 'Use primary sources.',
-              'content': 'Use primary sources.',
+              'content': 'Search primary sources.',
+              'connectorToolIds': [toolId],
               'isEnabled': true,
-            }),
-            revision: 1,
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
-        await WorkspaceResource.db.insertRow(
-          fixture.database,
-          WorkspaceResource(
-            workspaceId: fixture.workspaceId,
-            resourceKind: WorkspaceResourceKind.skillTemplateTool,
-            resourceId: 'research-search',
-            data: jsonEncode({
-              'skillId': 'research',
-              'skillSlug': 'research',
-              'toolSlug': 'search',
-              'isEnabled': true,
-              'requiresCredential': false,
-              'inputsJson': '[]',
-              'templateJson': '{}',
             }),
             revision: 1,
             createdAt: now,
@@ -401,13 +779,10 @@ void main() {
           ),
         );
         final runtime = ServerToolRuntime();
-        final controls = await runtime.loadTools(
+        final before = await runtime.loadTools(
           fixture.database,
           workspaceId: fixture.workspaceId,
           conversationStableId: 'conversation-1',
-        );
-        final activate = controls.singleWhere(
-          (tool) => tool.spec.name == activateSkillToolName,
         );
         final revision = (await buildCloudSkillCatalog(
           fixture.database,
@@ -415,8 +790,9 @@ void main() {
           activeSkillIds: const {},
           isChildConversation: false,
         )).singleWhere((entry) => entry.slug == 'research').revision;
-
-        final beforeSpecs = [for (final tool in controls) tool.spec];
+        final activate = before.singleWhere(
+          (tool) => tool.spec.name == activateSkillToolName,
+        );
         final result = await const ServerToolExecutorService().call(
           fixture.database,
           fixture.turn,
@@ -427,37 +803,150 @@ void main() {
             arguments: {'slug': 'research', 'revision': revision},
           ),
         );
-
         expect(result, isA<SkillActivationResult>());
-        expect(result.toString(), contains('<skill_content'));
-        expect(
-          await WorkspaceResource.db.findFirstRow(
-            fixture.database,
-            where: (table) =>
-                table.workspaceId.equals(fixture.workspaceId) &
-                table.resourceKind.equals(
-                  WorkspaceResourceKind.conversationSkillSelection,
-                ) &
-                table.resourceId.equals('conversation-1:research'),
-          ),
-          isNotNull,
-        );
-        final selectedTools = await runtime.loadTools(
+        expect(result.toString(), contains(toolId));
+
+        final after = await runtime.loadTools(
           fixture.database,
           workspaceId: fixture.workspaceId,
           conversationStableId: 'conversation-1',
         );
-        expect([for (final tool in selectedTools) tool.spec], beforeSpecs);
+        final connectorTools = [
+          for (final tool in before)
+            if (tool.descriptor.kind == AgentResolvedToolKind.connectorCommand)
+              tool.spec,
+        ];
         expect(
-          selectedTools.map((tool) => tool.spec.name),
-          containsAll(skillCommandToolNames),
+          [
+            for (final tool in after)
+              if (tool.descriptor.kind ==
+                  AgentResolvedToolKind.connectorCommand)
+                tool.spec,
+          ],
+          orderedEquals(connectorTools),
         );
+        final names = after.map((tool) => tool.spec.name);
+        expect(names, contains(executeConnectorToolName));
+        expect(names, isNot(contains(toolId)));
         expect(
-          selectedTools.any((tool) => tool.spec.name.startsWith('skill__')),
-          isFalse,
+          names.where((name) => name.startsWith('skill__user__')),
+          isEmpty,
         );
       },
     );
+
+    test('agents activation preserves the conversation language', () async {
+      const languageCode = 'es-MX';
+      final fixture = await prepare(languageCode: languageCode);
+      final spanishManifest = await buildCloudSkillManifest(
+        slug: agentsSkillSlug,
+        userSkills: const [],
+        languageCode: languageCode,
+      );
+      expect(spanishManifest, isNotNull);
+      final runtime = ServerToolRuntime(
+        executor: (session, turn, tool, request) =>
+            const ServerToolExecutorService().call(
+              session,
+              turn,
+              tool,
+              request,
+            ),
+      );
+      final controls = await runtime.loadTools(
+        fixture.database,
+        workspaceId: fixture.workspaceId,
+        conversationStableId: 'conversation-1',
+        languageCode: languageCode,
+      );
+      final activate = controls.singleWhere(
+        (tool) => tool.spec.name == activateSkillToolName,
+      );
+      final runSubAgentBefore = controls.singleWhere(
+        (tool) => tool.descriptor.toolIdentifier == runSubAgentToolName,
+      );
+
+      final activated = await const ServerToolExecutorService().call(
+        fixture.database,
+        fixture.turn,
+        activate,
+        ServerToolRequest(
+          id: 'activate-agents-spanish',
+          name: activateSkillToolName,
+          arguments: {
+            'slug': agentsSkillSlug,
+            'revision': spanishManifest!.revision,
+          },
+          languageCode: languageCode,
+        ),
+      );
+
+      expect(activated, isA<SkillActivationResult>());
+      expect(activated.toString(), contains('Usa list_agents'));
+      expect(activated.toString(), isNot(contains('Use list_agents')));
+      final selectedTools = await runtime.loadTools(
+        fixture.database,
+        workspaceId: fixture.workspaceId,
+        conversationStableId: 'conversation-1',
+        languageCode: languageCode,
+      );
+      final runSubAgentAfter = selectedTools.singleWhere(
+        (tool) => tool.descriptor.toolIdentifier == runSubAgentToolName,
+      );
+      expect(runSubAgentAfter.spec.name, runSubAgentBefore.spec.name);
+      expect(
+        runSubAgentAfter.spec.inputJsonSchema,
+        runSubAgentBefore.spec.inputJsonSchema,
+      );
+
+      final listAgents = selectedTools.singleWhere(
+        (tool) => tool.descriptor.toolIdentifier == listAgentsToolName,
+      );
+      final now = DateTime.now().toUtc();
+      await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: WorkspaceResourceKind.toolPermission,
+          resourceId: 'agents-list-agents-permission',
+          data: jsonEncode({
+            'toolId': listAgents.descriptor.tableId,
+            'permissionMode': 'alwaysAllow',
+            'isEnabled': true,
+          }),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final disposition = await runtime.handle(
+        fixture.database,
+        turn: fixture.turn,
+        messageId: fixture.messages
+            .singleWhere(
+              (message) => message.id == fixture.turn.assistantMessageId,
+            )
+            .id!,
+        request: ServerToolRequest(
+          id: 'list-agents-through-call-skill',
+          name: listAgents.spec.name,
+          arguments: const {},
+          languageCode: languageCode,
+        ),
+      );
+      final dispatchedCall = await ConversationToolCall.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.stableId.equals('list-agents-through-call-skill'),
+      );
+      expect(disposition, ServerToolDisposition.completed);
+      expect(dispatchedCall?.status, 'success');
+      expect(dispatchedCall?.resultJson, contains('agentes configurados'));
+      expect(
+        dispatchedCall?.resultJson,
+        isNot(contains('Configured agents')),
+      );
+    });
 
     test(
       'activates content-only A2UI and loads static resources after selection',
@@ -567,128 +1056,9 @@ void main() {
     );
 
     test(
-      'historical direct skill call replays without exposing its schema',
-      () async {
-        final fixture = await prepare();
-        final assistant = fixture.messages.singleWhere(
-          (message) => message.id == fixture.turn.assistantMessageId,
-        );
-        final now = DateTime.now().toUtc();
-        Future<void> insert(
-          WorkspaceResourceKind kind,
-          String id,
-          Map<String, Object?> data,
-        ) => WorkspaceResource.db
-            .insertRow(
-              fixture.database,
-              WorkspaceResource(
-                workspaceId: fixture.workspaceId,
-                resourceKind: kind,
-                resourceId: id,
-                data: jsonEncode(data),
-                revision: 1,
-                createdAt: now,
-                updatedAt: now,
-              ),
-            )
-            .then((_) {});
-        await insert(WorkspaceResourceKind.skill, 'research', const {
-          'id': 'research',
-          'slug': 'research',
-          'title': 'Research',
-          'content': 'Search primary sources.',
-          'isEnabled': true,
-        });
-        await insert(
-          WorkspaceResourceKind.skillTemplateTool,
-          'research-search',
-          const {
-            'id': 'research-search',
-            'skillId': 'research',
-            'skillSlug': 'research',
-            'toolSlug': 'search',
-            'description': 'Search.',
-            'isEnabled': true,
-            'requiresCredential': false,
-            'inputsJson': '[]',
-            'templateJson': '{}',
-          },
-        );
-        await insert(
-          WorkspaceResourceKind.conversationSkillSelection,
-          'conversation-1:research',
-          const {'conversationId': 'conversation-1', 'skillId': 'research'},
-        );
-        await insert(
-          WorkspaceResourceKind.toolPermission,
-          'research-search-permission',
-          const {
-            'toolId': 'research-search',
-            'permissionMode': 'alwaysAllow',
-            'isEnabled': true,
-          },
-        );
-        await ConversationToolCall.db.insertRow(
-          fixture.database,
-          ConversationToolCall(
-            workspaceId: fixture.workspaceId,
-            conversationId: fixture.conversationId,
-            turnId: fixture.turn.id!,
-            messageId: assistant.id!,
-            stableId: 'historical-direct-call',
-            name: 'skill__user__research__search',
-            argumentsJson: '{}',
-            argumentsDigest: 'historical',
-            status: 'approved',
-            decision: 'approve',
-            revision: 1,
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
-        var executions = 0;
-        final runtime = ServerToolRuntime(
-          executor: (_, _, tool, request) async {
-            executions++;
-            expect(tool.descriptor.toolIdentifier, 'search');
-            expect(request.id, 'historical-direct-call');
-            return {'ok': true};
-          },
-        );
-
-        final advertised = await runtime.loadTools(
-          fixture.database,
-          workspaceId: fixture.workspaceId,
-          conversationStableId: 'conversation-1',
-        );
-        expect(
-          advertised.any((tool) => tool.spec.name.startsWith('skill__')),
-          isFalse,
-        );
-        await runtime.handle(
-          fixture.database,
-          turn: fixture.turn,
-          messageId: assistant.id!,
-          request: const ServerToolRequest(
-            id: 'historical-direct-call',
-            name: 'skill__user__research__search',
-            arguments: {},
-          ),
-        );
-
-        final persisted = await ConversationToolCall.db.findFirstRow(
-          fixture.database,
-          where: (table) => table.stableId.equals('historical-direct-call'),
-        );
-        expect(executions, 1);
-        expect(persisted?.status, 'success');
-        expect(persisted?.resultJson, contains('ok'));
-      },
-    );
-
-    test(
       'unloaded tool is terminally unavailable before its stale descriptor executes',
       () async {
+        const staleToolName = 'mcp_server-1_server_tool';
         final fixture = await prepare();
         final assistant = fixture.messages.singleWhere(
           (message) => message.id == fixture.turn.assistantMessageId,
@@ -702,7 +1072,7 @@ void main() {
             turnId: fixture.turn.id!,
             messageId: assistant.id!,
             stableId: 'call-approved',
-            name: 'tool',
+            name: staleToolName,
             argumentsJson: '{}',
             argumentsDigest: 'digest',
             status: 'approved',
@@ -719,7 +1089,7 @@ void main() {
             resourceKind: WorkspaceResourceKind.tool,
             resourceId: 'server-1',
             data: jsonEncode({
-              'name': 'mcp_server-1_server_tool',
+              'name': staleToolName,
               'isEnabled': true,
             }),
             revision: 1,
@@ -731,7 +1101,7 @@ void main() {
           fixture.database,
           workspaceId: fixture.workspaceId,
           conversationStableId: 'conversation-1',
-        )).firstWhere((tool) => tool.spec.name == 'mcp_server-1_server_tool');
+        )).firstWhere((tool) => tool.spec.name == staleToolName);
         await WorkspaceResource.db.updateRow(
           fixture.database,
           tool.copyWith(deletedAt: DateTime.now().toUtc()),
@@ -766,12 +1136,16 @@ void main() {
     );
 
     test(
-      'unloaded dispatched skill is rejected before executor side effects',
+      'Connector tool IDs require the shared execution command',
       () async {
         final fixture = await prepare();
         final assistant = fixture.messages.singleWhere(
           (message) => message.id == fixture.turn.assistantMessageId,
         );
+        final connector = connectorDefinitions.singleWhere(
+          (candidate) => candidate.identifier == 'duckduckgo',
+        );
+        final toolId = connectorToolId(connector, connector.tools.single);
         var executions = 0;
         final runtime = ServerToolRuntime(
           executor: (_, _, _, _) async {
@@ -780,113 +1154,58 @@ void main() {
           },
         );
 
-        expect(
-          await runtime.handle(
-            fixture.database,
-            turn: fixture.turn,
-            messageId: assistant.id!,
-            request: const ServerToolRequest(
-              id: 'call-unloaded-skill',
-              name: callSkillToolName,
-              arguments: {
-                'skill': 'research',
-                'tool': 'search',
-                'args': <String, Object?>{},
-                'revision': 'stale',
-              },
-            ),
+        final advertisedNames = (await runtime.loadTools(
+          fixture.database,
+          workspaceId: fixture.workspaceId,
+          conversationStableId: 'conversation-1',
+        )).map((tool) => tool.spec.name);
+        expect(advertisedNames, contains(executeConnectorToolName));
+        expect(advertisedNames, isNot(contains(toolId)));
+        await runtime.handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: ServerToolRequest(
+            id: 'call-direct-connector-tool',
+            name: toolId,
+            arguments: const {'query': 'search'},
           ),
-          ServerToolDisposition.completed,
         );
 
         final call = await ConversationToolCall.db.findFirstRow(
           fixture.database,
-          where: (table) => table.stableId.equals('call-unloaded-skill'),
+          where: (table) => table.stableId.equals('call-direct-connector-tool'),
         );
         expect(executions, 0);
-        expect(call?.status, 'executionError');
-        expect(call?.resultJson, contains('not loaded'));
+        expect(call?.status, 'toolNotFound');
       },
     );
 
     test(
-      'dispatched skill uses underlying denied permission before execution',
+      'Connector command denial blocks executor side effects',
       () async {
         final fixture = await prepare();
         final assistant = fixture.messages.singleWhere(
           (message) => message.id == fixture.turn.assistantMessageId,
         );
         final now = DateTime.now().toUtc();
-        const skill = {
-          'id': 'research',
-          'slug': 'research',
-          'title': 'Research',
-          'content': 'Search primary sources.',
-          'isEnabled': true,
-        };
-        const template = {
-          'id': 'research-search',
-          'skillId': 'research',
-          'skillSlug': 'research',
-          'toolSlug': 'search',
-          'description': 'Search.',
-          'isEnabled': true,
-          'requiresCredential': false,
-          'inputsJson': '[]',
-          'templateJson': '{}',
-        };
-        Future<void> insert(
-          WorkspaceResourceKind kind,
-          String id,
-          Map<String, Object?> data,
-        ) => WorkspaceResource.db
-            .insertRow(
-              fixture.database,
-              WorkspaceResource(
-                workspaceId: fixture.workspaceId,
-                resourceKind: kind,
-                resourceId: id,
-                data: jsonEncode(data),
-                revision: 1,
-                createdAt: now,
-                updatedAt: now,
-              ),
-            )
-            .then((_) {});
-        await insert(WorkspaceResourceKind.skill, 'research', skill);
-        await insert(
-          WorkspaceResourceKind.skillTemplateTool,
-          'research-search',
-          template,
-        );
-        await insert(
-          WorkspaceResourceKind.conversationSkillSelection,
-          'conversation-1:research',
-          const {'conversationId': 'conversation-1', 'skillId': 'research'},
-        );
-        await insert(
-          WorkspaceResourceKind.toolPermission,
-          'research-search-permission',
-          const {
-            'toolId': 'research-search',
-            'permissionMode': 'alwaysDeny',
-            'isEnabled': true,
-          },
-        );
-        final tools = materializeCloudSkillTools(
-          selectedSkillIds: const {'research'},
-          userSkills: const [skill],
-          templateTools: const [template],
-          appSkillSettings: const [],
-          isChildConversation: false,
-        );
-        final manifest = await buildCloudSkillManifest(
-          slug: 'research',
-          userSkills: const [skill],
-          tools: tools,
+        await WorkspaceResource.db.insertRow(
+          fixture.database,
+          WorkspaceResource(
+            workspaceId: fixture.workspaceId,
+            resourceKind: WorkspaceResourceKind.toolPermission,
+            resourceId: 'connector-command-deny',
+            data: jsonEncode({
+              'toolId': executeConnectorToolName,
+              'permissionMode': 'alwaysDeny',
+              'isEnabled': true,
+            }),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
         );
         var executions = 0;
-
         await ServerToolRuntime(
           executor: (_, _, _, _) async {
             executions++;
@@ -897,20 +1216,19 @@ void main() {
           turn: fixture.turn,
           messageId: assistant.id!,
           request: ServerToolRequest(
-            id: 'call-denied-skill',
-            name: callSkillToolName,
-            arguments: {
-              'skill': 'research',
-              'tool': 'search',
-              'args': <String, Object?>{},
-              'revision': manifest!.revision,
+            id: 'call-denied-connector-command',
+            name: executeConnectorToolName,
+            arguments: const {
+              'toolId': 'connector/duckduckgo/search',
+              'args': {'query': 'search'},
             },
           ),
         );
 
         final call = await ConversationToolCall.db.findFirstRow(
           fixture.database,
-          where: (table) => table.stableId.equals('call-denied-skill'),
+          where: (table) =>
+              table.stableId.equals('call-denied-connector-command'),
         );
         expect(executions, 0);
         expect(
@@ -921,157 +1239,54 @@ void main() {
     );
 
     test(
-      'approved dispatched skill resumes with authoritative nested arguments',
+      'shared Connector executor returns recoverable error without Connection',
       () async {
         final fixture = await prepare();
         final assistant = fixture.messages.singleWhere(
           (message) => message.id == fixture.turn.assistantMessageId,
         );
         final now = DateTime.now().toUtc();
-        Future<void> insert(
-          WorkspaceResourceKind kind,
-          String id,
-          Map<String, Object?> data,
-        ) => WorkspaceResource.db
-            .insertRow(
-              fixture.database,
-              WorkspaceResource(
-                workspaceId: fixture.workspaceId,
-                resourceKind: kind,
-                resourceId: id,
-                data: jsonEncode(data),
-                revision: 1,
-                createdAt: now,
-                updatedAt: now,
-              ),
-            )
-            .then((_) {});
-        const skill = {
-          'id': 'research',
-          'slug': 'research',
-          'title': 'Research',
-          'content': 'Search primary sources.',
-          'isEnabled': true,
-        };
-        const template = {
-          'id': 'research-search',
-          'skillId': 'research',
-          'skillSlug': 'research',
-          'toolSlug': 'search',
-          'description': 'Search.',
-          'isEnabled': true,
-          'requiresCredential': false,
-          'inputsJson': '[{"name":"query","type":"string","required":true}]',
-          'templateJson': '{"url":"https://example.com?q={{query}}"}',
-        };
-        await insert(WorkspaceResourceKind.skill, 'research', skill);
-        await insert(
-          WorkspaceResourceKind.skillTemplateTool,
-          'research-search',
-          template,
+        await WorkspaceResource.db.insertRow(
+          fixture.database,
+          WorkspaceResource(
+            workspaceId: fixture.workspaceId,
+            resourceKind: WorkspaceResourceKind.toolPermission,
+            resourceId: 'connector-command-allow',
+            data: jsonEncode({
+              'toolId': executeConnectorToolName,
+              'permissionMode': 'alwaysAllow',
+              'isEnabled': true,
+            }),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
         );
-        await insert(
-          WorkspaceResourceKind.conversationSkillSelection,
-          'conversation-1:research',
-          const {'conversationId': 'conversation-1', 'skillId': 'research'},
-        );
-        final tools = materializeCloudSkillTools(
-          selectedSkillIds: const {'research'},
-          userSkills: const [skill],
-          templateTools: const [template],
-          appSkillSettings: const [],
-          isChildConversation: false,
-        );
-        final manifest = await buildCloudSkillManifest(
-          slug: 'research',
-          userSkills: const [skill],
-          tools: tools,
-        );
-        final wrapperArguments = {
-          'skill': 'research',
-          'tool': 'search',
-          'args': <String, Object?>{'query': 'nested query'},
-          'revision': manifest!.revision,
-        };
-        Map<String, dynamic>? executedArguments;
-        final claimsReached = Completer<void>();
-        final releaseClaims = Completer<void>();
-        var claimWaiters = 0;
-        var executorInvocations = 0;
         final runtime = ServerToolRuntime(
-          beforeApprovedClaim: () async {
-            claimWaiters++;
-            if (claimWaiters == 2) claimsReached.complete();
-            await releaseClaims.future;
-          },
-          executor: (_, _, tool, request) async {
-            executorInvocations++;
-            expect(tool.descriptor.fullName, 'skill__user__research__search');
-            expect(request.userFacingDescription, isNull);
-            executedArguments = request.arguments;
-            return {'ok': true};
-          },
+          executor: const ServerToolExecutorService().call,
         );
 
-        expect(
-          await runtime.handle(
-            fixture.database,
-            turn: fixture.turn,
-            messageId: assistant.id!,
-            request: ServerToolRequest(
-              id: 'approved-nested-args',
-              name: callSkillToolName,
-              arguments: wrapperArguments,
-              userFacingDescription: 'Search the selected skill.',
-            ),
-          ),
-          ServerToolDisposition.awaitingApproval,
-        );
-        final pending = (await ConversationToolCall.db.findFirstRow(
-          fixture.database,
-          where: (table) => table.stableId.equals('approved-nested-args'),
-        ))!;
-        expect(pending.name, 'skill__user__research__search');
-        expect(jsonDecode(pending.argumentsJson), wrapperArguments);
-        expect(pending.userFacingDescription, 'Search the selected skill.');
-        await ConversationToolCall.db.updateRow(
-          fixture.database,
-          pending.copyWith(
-            status: 'approved',
-            decision: 'approve',
-            updatedAt: DateTime.now().toUtc(),
-          ),
-        );
-
-        Future<ServerToolDisposition> resume() => runtime.handle(
+        await runtime.handle(
           fixture.database,
           turn: fixture.turn,
           messageId: assistant.id!,
-          request: ServerToolRequest(
-            id: 'approved-nested-args',
-            name: callSkillToolName,
-            arguments: wrapperArguments,
-            userFacingDescription: 'Search the selected skill.',
+          request: const ServerToolRequest(
+            id: 'execute-without-connection',
+            name: executeConnectorToolName,
+            arguments: {
+              'toolId': 'connector/brave/web_search',
+              'args': {'query': 'research'},
+            },
           ),
         );
-        final firstResume = resume();
-        final secondResume = resume();
-        await claimsReached.future;
-        releaseClaims.complete();
-        final dispositions = await Future.wait([firstResume, secondResume]);
-        expect(
-          dispositions,
-          everyElement(ServerToolDisposition.completed),
-        );
 
-        expect(executedArguments, {'query': 'nested query'});
-
-        expect(executorInvocations, 1);
-        final completed = await ConversationToolCall.db.findFirstRow(
+        final call = await ConversationToolCall.db.findFirstRow(
           fixture.database,
-          where: (table) => table.stableId.equals('approved-nested-args'),
+          where: (table) => table.stableId.equals('execute-without-connection'),
         );
-        expect(completed?.status, 'success');
+        expect(call?.status, 'executionError');
+        expect(call?.resultJson, contains('connection_required'));
+        expect(call?.resultJson, contains('"recoverable":true'));
       },
     );
 
@@ -1091,6 +1306,22 @@ void main() {
             resourceId: 'server-1',
             data: jsonEncode({
               'name': 'mcp_server-1_server_tool',
+              'isEnabled': true,
+            }),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await WorkspaceResource.db.insertRow(
+          fixture.database,
+          WorkspaceResource(
+            workspaceId: fixture.workspaceId,
+            resourceKind: WorkspaceResourceKind.toolPermission,
+            resourceId: 'server-1-permission',
+            data: jsonEncode({
+              'toolId': 'server-1',
+              'permissionMode': 'alwaysAllow',
               'isEnabled': true,
             }),
             revision: 1,
@@ -1351,26 +1582,6 @@ void main() {
             updatedAt: now,
           ),
         );
-        await WorkspaceResource.db.insertRow(
-          fixture.database,
-          WorkspaceResource(
-            workspaceId: fixture.workspaceId,
-            resourceKind: WorkspaceResourceKind.skillTemplateTool,
-            resourceId: 'research-search',
-            data: jsonEncode({
-              'skillId': 'research',
-              'skillSlug': 'research',
-              'toolSlug': 'search',
-              'isEnabled': true,
-              'requiresCredential': false,
-              'inputsJson': '[]',
-              'templateJson': '{}',
-            }),
-            revision: 1,
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
         final activate = (await ServerToolRuntime().loadTools(
           fixture.database,
           workspaceId: fixture.workspaceId,
@@ -1584,7 +1795,7 @@ void main() {
           request: SubmitToolDecisionRequest(
             workspaceId: fixture.workspaceId,
             requestId: 'approve-child-confirmation',
-            conversationId: 'conversation-1',
+            conversationId: childId,
             turnId: pausedTurn.requestId,
             toolCallId: 'child-confirmation',
             argumentsDigest: (await ConversationToolCall.db.findFirstRow(
@@ -1609,96 +1820,642 @@ void main() {
     );
   });
 
-  // Detach writes while a tool call is suspended, which overlaps database
-  // operations that the rollback proxy cannot handle with savepoints enabled.
+  // Workspace deletion and a detached executor can overlap database writes.
+  // Use a fresh database without the rollback proxy's single-transaction limit.
   withServerpod(
-    'ConversationBackgroundWork',
+    'ConversationEngineHostRegression concurrent workspace removal',
     (sessionBuilder, endpoints) {
       Future<_Fixture> prepare() =>
           _prepareConversationFixture(sessionBuilder, endpoints);
 
       test(
-        'cloud detach preserves its acknowledgement and runs past turn stop',
+        'workspace removal hides late detached output and leaves queued work idle',
         () async {
           final fixture = await prepare();
           final now = DateTime.now().toUtc();
-          const skill = {
-            'id': 'research',
-            'slug': 'research',
-            'title': 'Research',
-            'content': 'Search primary sources.',
-            'isEnabled': true,
-          };
-          const template = {
-            'id': 'research-search',
-            'skillId': 'research',
-            'skillSlug': 'research',
-            'toolSlug': 'search',
-            'description': 'Search.',
-            'isEnabled': true,
-            'requiresCredential': false,
-            'inputsJson': '[]',
-            'templateJson': '{}',
-          };
-          Future<void> insert(
-            WorkspaceResourceKind kind,
-            String id,
-            Map<String, Object?> data,
-          ) => WorkspaceResource.db
-              .insertRow(
-                fixture.database,
-                WorkspaceResource(
-                  workspaceId: fixture.workspaceId,
-                  resourceKind: kind,
-                  resourceId: id,
-                  data: jsonEncode(data),
-                  revision: 1,
-                  createdAt: now,
-                  updatedAt: now,
-                ),
-              )
-              .then((_) {});
-
-          await insert(WorkspaceResourceKind.skill, 'research', skill);
-          await insert(
-            WorkspaceResourceKind.skillTemplateTool,
-            'research-search',
-            template,
+          await WorkspaceResource.db.insertRow(
+            fixture.database,
+            WorkspaceResource(
+              workspaceId: fixture.workspaceId,
+              resourceKind: WorkspaceResourceKind.toolPermission,
+              resourceId: 'run-sub-agent-permission',
+              data: jsonEncode({
+                'toolId': 'skill__app_native__agents__$runSubAgentToolName',
+                'permissionMode': 'alwaysAllow',
+                'isEnabled': true,
+              }),
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
           );
-          await insert(
-            WorkspaceResourceKind.conversationSkillSelection,
-            'conversation-1:research',
-            const {'conversationId': 'conversation-1', 'skillId': 'research'},
-          );
-          await insert(
-            WorkspaceResourceKind.toolPermission,
-            'research-search-permission',
-            const {
-              'toolId': 'research-search',
-              'permissionMode': 'alwaysAllow',
-              'isEnabled': true,
+          final entered = Completer<void>();
+          final release = Completer<void>();
+          final runtime = ServerToolRuntime(
+            executor: (_, _, _, _) async {
+              entered.complete();
+              await release.future;
+              return {'secret': 'late output'};
             },
           );
+          final callTool =
+              (await runtime.loadTools(
+                fixture.database,
+                workspaceId: fixture.workspaceId,
+                conversationStableId: 'conversation-1',
+              )).singleWhere(
+                (candidate) =>
+                    candidate.descriptor.toolIdentifier == runSubAgentToolName,
+              );
+          final assistant = fixture.messages.singleWhere(
+            (message) => message.id == fixture.turn.assistantMessageId,
+          );
+          final handling = runtime.handle(
+            fixture.database,
+            turn: fixture.turn,
+            messageId: assistant.id!,
+            request: ServerToolRequest(
+              id: 'background-workspace-removal-call',
+              name: callTool.spec.name,
+              arguments: {
+                'title': 'Research',
+                'prompt': 'Search primary sources.',
+                'agentId': null,
+              },
+            ),
+          );
+          await entered.future.timeout(const Duration(seconds: 2));
 
-          final manifest = await buildCloudSkillManifest(
-            slug: 'research',
-            userSkills: const [skill],
-            tools: materializeCloudSkillTools(
-              selectedSkillIds: const {'research'},
-              userSkills: const [skill],
-              templateTools: const [template],
-              appSkillSettings: const [],
-              isChildConversation: false,
+          final work = await endpoints.conversation.detachToolCall(
+            fixture.session,
+            DetachToolCallRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'detach-before-workspace-removal',
+              conversationId: 'conversation-1',
+              toolCallId: 'background-workspace-removal-call',
+            ),
+          );
+          await handling.timeout(const Duration(seconds: 2));
+          final acknowledgement = jsonEncode({
+            'status': 'running_in_background',
+            'work_id': work.id,
+          });
+          final call = (await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.stableId.equals('background-workspace-removal-call'),
+          ))!;
+
+          final conversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationId,
+          ))!;
+          await endpoints.conversation.queueConversationMessage(
+            fixture.session,
+            QueueConversationMessageRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'queue-behind-detached-work',
+              conversationId: 'conversation-1',
+              expectedProjectionRevision: conversation.projectionRevision,
+              clientMessageId: 'message-behind-detached-work',
+              content: 'Continue after the search.',
+              attachmentIds: const [],
             ),
           );
 
+          await endpoints.cloudWorkspace.deleteWorkspace(
+            fixture.session,
+            DeleteCloudWorkspaceRequest(
+              workspaceId: fixture.workspaceId,
+              confirmationName: 'Workspace',
+              requestId: 'delete-workspace-with-background-work',
+              expectedWorkspaceRevision: 1,
+            ),
+          );
+
+          var storedWork = (await BackgroundWorkRecord.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.stableId.equals(work.id),
+          ))!;
+          expect(storedWork.status, 'stopRequested');
+          expect(storedWork.resultContent, isNull);
+          final eventSequenceAfterRemoval = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationId,
+          ))!.eventSequence;
+
+          release.complete();
+          for (var attempt = 0; attempt < 40; attempt++) {
+            storedWork = (await BackgroundWorkRecord.db.findFirstRow(
+              fixture.database,
+              where: (table) => table.stableId.equals(work.id),
+            ))!;
+            if (storedWork.status != 'stopRequested') break;
+            await Future<void>.delayed(const Duration(milliseconds: 50));
+          }
+
+          expect(storedWork.status, 'failed');
+          expect(storedWork.statusPreview, 'Outcome unknown');
+          expect(storedWork.errorCode, 'outcome_unknown');
+          expect(storedWork.resultContent, isNull);
+          expect(storedWork.resultByteLength, 0);
+          final completionEvents = await ConversationEvent.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationId) &
+                table.eventId.equals('background-work-completion:${work.id}'),
+          );
+          final completionMessages = await ConversationMessage.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationId) &
+                table.stableId.equals('background_work:${work.id}'),
+          );
+          final queuedMessage = await ConversationMessage.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.conversationId.equals(fixture.conversationId) &
+                table.stableId.equals('message-behind-detached-work'),
+          );
+          final turns = await ConversationTurn.db.find(
+            fixture.database,
+            where: (table) =>
+                table.conversationId.equals(fixture.conversationId),
+          );
+          final jobs = await ConversationJob.db.find(
+            fixture.database,
+            where: (table) => table.turnId.equals(fixture.turn.id),
+          );
+          final immutableCall = (await ConversationToolCall.db.findById(
+            fixture.database,
+            call.id!,
+          ))!;
+          final finalConversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationId,
+          ))!;
+
+          expect(completionEvents, isEmpty);
+          expect(completionMessages, isEmpty);
+          expect(queuedMessage?.status, ConversationStatuses.queued);
+          expect(turns, hasLength(1));
+          expect(jobs, hasLength(1));
+          expect(finalConversation.eventSequence, eventSequenceAfterRemoval);
+          expect(immutableCall.status, 'runningInBackground');
+          expect(immutableCall.resultJson, acknowledgement);
+        },
+      );
+    },
+    ephemeralDatabase: true,
+    rollbackDatabase: RollbackDatabase.disabled,
+  );
+
+  // Concurrent detaches and reconciliation need independent sessions and
+  // committed writes; the rollback proxy serializes only one transaction.
+  withServerpod(
+    'ConversationBackgroundWork concurrent operations',
+    (sessionBuilder, endpoints) {
+      Future<_Fixture> prepare() =>
+          _prepareConversationFixture(sessionBuilder, endpoints);
+
+      test(
+        'concurrent detaches across conversations share one global capacity',
+        () async {
+          final fixtures = <_Fixture>[];
+          final requestCount = ConversationLimits.maxConcurrentDetachedWork + 2;
+          for (var index = 0; index < requestCount; index++) {
+            fixtures.add(await prepare());
+          }
+          final useCases = ConversationUseCases(
+            conversation_repo.ConversationRepository(),
+          );
+          final requests =
+              <
+                ({
+                  _Fixture fixture,
+                  DetachToolCallRequest request,
+                })
+              >[];
+          final now = DateTime.now().toUtc();
+          for (var index = 0; index < fixtures.length; index++) {
+            final fixture = fixtures[index];
+            final message = fixture.messages.first;
+            final toolCall = await ConversationToolCall.db.insertRow(
+              fixture.database,
+              ConversationToolCall(
+                workspaceId: fixture.workspaceId,
+                conversationId: fixture.conversationId,
+                turnId: fixture.turn.id!,
+                messageId: message.id!,
+                stableId: 'background-global-capacity-$index',
+                name: 'skill__app_native__agents__run_sub_agent',
+                argumentsJson: '{}',
+                argumentsDigest: 'digest',
+                backgroundEligible: true,
+                status: 'running',
+                revision: 1,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+            requests.add((
+              fixture: fixture,
+              request: DetachToolCallRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'detach-global-capacity-$index',
+                conversationId: 'conversation-1',
+                toolCallId: toolCall.stableId,
+              ),
+            ));
+          }
+
+          Future<Object> attemptDetach(
+            _Fixture fixture,
+            DetachToolCallRequest request,
+          ) async {
+            try {
+              return await useCases.detachToolCall(
+                fixture.session.build(),
+                userId: fixture.userId,
+                request: request,
+              );
+            } on ConversationException catch (error) {
+              return error;
+            }
+          }
+
+          final outcomes = await Future.wait([
+            for (final item in requests)
+              attemptDetach(item.fixture, item.request),
+          ]);
+          final admitted = outcomes.whereType<BackgroundWorkView>();
+          final rejected = outcomes.whereType<ConversationException>();
+
+          expect(
+            admitted,
+            hasLength(ConversationLimits.maxConcurrentDetachedWork),
+          );
+          expect(rejected, hasLength(requestCount - admitted.length));
+          expect(
+            rejected.map((error) => error.code),
+            everyElement(ConversationErrorCode.turnConflict),
+          );
+          expect(
+            await BackgroundWorkRecord.db.count(
+              fixtures.first.database,
+              where: (table) =>
+                  table.workspaceId.inSet(
+                    fixtures.map((fixture) => fixture.workspaceId).toSet(),
+                  ) &
+                  table.status.equals('running'),
+            ),
+            ConversationLimits.maxConcurrentDetachedWork,
+          );
+        },
+      );
+
+      test(
+        'restart reconciliation appends every unknown outcome once without replay',
+        () async {
+          final fixture = await prepare();
+          final now = DateTime.now().toUtc();
+          final message = fixture.messages.first;
+          final workIds = [
+            'background-work-restart-a',
+            'background-work-restart-b',
+          ];
+          final calls = <ConversationToolCall>[];
+          for (var index = 0; index < workIds.length; index++) {
+            final workId = workIds[index];
+            final callId = 'background-call-restart-$index';
+            final acknowledgement = jsonEncode({
+              'status': 'running_in_background',
+              'work_id': workId,
+            });
+            final call = await ConversationToolCall.db.insertRow(
+              fixture.database,
+              ConversationToolCall(
+                workspaceId: fixture.workspaceId,
+                conversationId: fixture.conversationId,
+                turnId: fixture.turn.id!,
+                messageId: message.id!,
+                stableId: callId,
+                name: 'skill__app_native__agents__run_sub_agent',
+                argumentsJson: '{}',
+                argumentsDigest: 'digest',
+                backgroundEligible: true,
+                backgroundWorkStableId: workId,
+                status: 'runningInBackground',
+                resultJson: acknowledgement,
+                revision: 2,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+            calls.add(call);
+            await BackgroundWorkRecord.db.insertRow(
+              fixture.database,
+              BackgroundWorkRecord(
+                workspaceId: fixture.workspaceId,
+                conversationId: fixture.conversationId,
+                conversationToolCallId: call.id!,
+                originatingMessageId: message.id!,
+                stableId: workId,
+                toolCallId: callId,
+                toolKind: 'skillNative',
+                runtimeServerId: fixture.database.serverpod.serverId,
+                status: 'running',
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+          }
+
+          final beforeQueue = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationId,
+          ))!;
+          await endpoints.conversation.queueConversationMessage(
+            fixture.session,
+            QueueConversationMessageRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'queue-before-parent-stop',
+              conversationId: 'conversation-1',
+              expectedProjectionRevision: beforeQueue.projectionRevision,
+              clientMessageId: 'queued-after-parent-stop',
+              content: 'Continue after the current work.',
+              attachmentIds: const [],
+            ),
+          );
+          final beforeStop = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationId,
+          ))!;
+          await ConversationUseCases(
+            conversation_repo.ConversationRepository(),
+          ).stopConversation(
+            fixture.database,
+            userId: fixture.userId,
+            request: StopConversationRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'stop-before-restart-reconciliation',
+              conversationId: 'conversation-1',
+              expectedProjectionRevision: beforeStop.projectionRevision,
+            ),
+          );
+
+          final runtime = ServerToolRuntime();
+          final reconciliationSessions = [
+            fixture.session.build(),
+            fixture.session.build(),
+          ];
+          await Future.wait([
+            for (final session in reconciliationSessions)
+              runtime.reconcileInterruptedBackgroundWork(
+                session,
+                startedAt: now.add(const Duration(seconds: 1)),
+              ),
+          ]);
+
+          final completed = await BackgroundWorkRecord.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationId) &
+                table.stableId.inSet(workIds.toSet()),
+          );
+          final events = await ConversationEvent.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationId) &
+                table.kind.equals(
+                  ConversationEventType.backgroundWorkCompleted,
+                ),
+            orderBy: (table) => table.sequence,
+          );
+          final completionMessages = await ConversationMessage.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationId) &
+                table.stableId.inSet(
+                  workIds.map((id) => 'background_work:$id').toSet(),
+                ),
+          );
+          final storedCalls = await ConversationToolCall.db.find(
+            fixture.database,
+            where: (table) =>
+                table.id.inSet(calls.map((call) => call.id!).toSet()),
+          );
+          final turns = await ConversationTurn.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationId),
+          );
+          final queuedMessage = await ConversationMessage.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.conversationId.equals(fixture.conversationId) &
+                table.stableId.equals('queued-after-parent-stop'),
+          );
+
+          expect(completed, hasLength(2));
+          expect(
+            completed.map((work) => (work.status, work.errorCode)),
+            everyElement(('failed', 'outcome_unknown')),
+          );
+          expect(
+            completed.map((work) => work.statusPreview),
+            everyElement(BackgroundWorkPreviews.queuedForContinuation),
+          );
+          expect(events, hasLength(2));
+          expect(events[0].sequence, lessThan(events[1].sequence));
+          expect(
+            events.map((event) => event.eventId).toSet(),
+            workIds.map((id) => 'background-work-completion:$id').toSet(),
+          );
+          expect(completionMessages, hasLength(2));
+          expect(
+            completionMessages.map((message) => message.status),
+            everyElement(ConversationStatuses.queued),
+          );
+          expect(
+            completionMessages.map((message) => message.stableId).toSet(),
+            workIds.map((id) => 'background_work:$id').toSet(),
+          );
+          expect(
+            completionMessages.map((message) => message.content),
+            everyElement(contains('outcome is unknown')),
+          );
+          for (var index = 0; index < calls.length; index++) {
+            final storedCall = storedCalls.singleWhere(
+              (call) => call.id == calls[index].id,
+            );
+            expect(storedCall.status, 'runningInBackground');
+            expect(
+              storedCall.resultJson,
+              jsonEncode({
+                'status': 'running_in_background',
+                'work_id': workIds[index],
+              }),
+            );
+          }
+          expect(turns, hasLength(1));
+          expect(turns.single.cancellationRequestedAt, isNotNull);
+          expect(queuedMessage?.status, ConversationStatuses.queued);
+        },
+      );
+    },
+    ephemeralDatabase: true,
+    rollbackDatabase: RollbackDatabase.disabled,
+  );
+
+  // Both resumes claim one approved call at once on independent sessions.
+  // The rollback test proxy supports only one concurrent transaction.
+  withServerpod(
+    'ConversationEngineHostRegression concurrent skill resumes',
+    (sessionBuilder, endpoints) {
+      test(
+        'approved Connector command resumes once with recorded arguments',
+        () async {
+          final fixture = await _prepareConversationFixture(
+            sessionBuilder,
+            endpoints,
+          );
+          final assistant = fixture.messages.singleWhere(
+            (message) => message.id == fixture.turn.assistantMessageId,
+          );
+          final arguments = <String, Object?>{
+            'toolId': 'connector/duckduckgo/search',
+            'args': {'query': 'nested query'},
+          };
+          Object? executedArguments;
+          final claimsReached = Completer<void>();
+          final releaseClaims = Completer<void>();
+          var claimWaiters = 0;
+          var executorInvocations = 0;
+          final runtime = ServerToolRuntime(
+            beforeApprovedClaim: () async {
+              claimWaiters++;
+              if (claimWaiters == 2) claimsReached.complete();
+              await releaseClaims.future;
+            },
+            executor: (_, _, tool, request) async {
+              executorInvocations++;
+              expect(tool.descriptor.toolIdentifier, executeConnectorToolName);
+              expect(request.name, executeConnectorToolName);
+              executedArguments = request.arguments;
+              return {'ok': true};
+            },
+          );
+
+          final request = ServerToolRequest(
+            id: 'approved-connector-command',
+            name: executeConnectorToolName,
+            arguments: arguments,
+            userFacingDescription: 'Search with the Connector.',
+          );
+          expect(
+            await runtime.handle(
+              fixture.database,
+              turn: fixture.turn,
+              messageId: assistant.id!,
+              request: request,
+            ),
+            ServerToolDisposition.awaitingApproval,
+          );
+          final pending = (await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.stableId.equals('approved-connector-command'),
+          ))!;
+          expect(pending.name, executeConnectorToolName);
+          expect(jsonDecode(pending.argumentsJson), arguments);
+          expect(pending.userFacingDescription, request.userFacingDescription);
+          await ConversationToolCall.db.updateRow(
+            fixture.database,
+            pending.copyWith(
+              status: 'approved',
+              decision: 'approve',
+              updatedAt: DateTime.now().toUtc(),
+            ),
+          );
+
+          Future<ServerToolDisposition> resume(Session session) =>
+              runtime.handle(
+                session,
+                turn: fixture.turn,
+                messageId: assistant.id!,
+                request: request,
+              );
+          final firstResume = resume(fixture.session.build());
+          final secondResume = resume(fixture.session.build());
+          await claimsReached.future;
+          releaseClaims.complete();
+          expect(
+            await Future.wait([firstResume, secondResume]),
+            everyElement(ServerToolDisposition.completed),
+          );
+
+          expect(executedArguments, arguments);
+          expect(executorInvocations, 1);
+          final completed = await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.stableId.equals('approved-connector-command'),
+          );
+          expect(completed?.status, 'success');
+        },
+      );
+    },
+    ephemeralDatabase: true,
+    rollbackDatabase: RollbackDatabase.disabled,
+  );
+
+  // Background-eligible template calls execute on a separate session. These
+  // tests need committed fixture writes and real transaction isolation.
+  withServerpod(
+    'ConversationBackgroundWork',
+    (sessionBuilder, endpoints) {
+      Future<_Fixture> prepare({String? languageCode}) =>
+          _prepareConversationFixture(
+            sessionBuilder,
+            endpoints,
+            languageCode: languageCode,
+          );
+
+      test(
+        'cloud detach preserves its acknowledgement and runs past turn stop',
+        () async {
+          final fixture = await prepare(languageCode: 'es');
+          final now = DateTime.now().toUtc();
+          await WorkspaceResource.db.insertRow(
+            fixture.database,
+            WorkspaceResource(
+              workspaceId: fixture.workspaceId,
+              resourceKind: WorkspaceResourceKind.toolPermission,
+              resourceId: 'run-sub-agent-permission',
+              data: jsonEncode({
+                'toolId': 'skill__app_native__agents__$runSubAgentToolName',
+                'permissionMode': 'alwaysAllow',
+                'isEnabled': true,
+              }),
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
           final entered = Completer<void>();
           final release = Completer<void>();
           bool? cancelledAfterDetach;
           final runtime = ServerToolRuntime(
             executor: (_, _, tool, request) async {
-              expect(tool.spec.name, 'skill__user__research__search');
-              expect(request.name, 'skill__user__research__search');
+              expect(tool.descriptor.toolIdentifier, runSubAgentToolName);
+              expect(request.name, tool.spec.name);
               entered.complete();
               await release.future;
               cancelledAfterDetach = await request.isCancelled?.call();
@@ -1711,7 +2468,8 @@ void main() {
                 workspaceId: fixture.workspaceId,
                 conversationStableId: 'conversation-1',
               )).singleWhere(
-                (candidate) => candidate.spec.name == callSkillToolName,
+                (candidate) =>
+                    candidate.descriptor.toolIdentifier == runSubAgentToolName,
               );
           final assistant = fixture.messages.singleWhere(
             (message) => message.id == fixture.turn.assistantMessageId,
@@ -1724,11 +2482,11 @@ void main() {
               id: 'background-cloud-call',
               name: callTool.spec.name,
               arguments: {
-                'skill': 'research',
-                'tool': 'search',
-                'args': <String, Object?>{},
-                'revision': manifest!.revision,
+                'title': 'Research',
+                'prompt': 'Search primary sources.',
+                'agentId': null,
               },
+              languageCode: 'es',
             ),
           );
           await entered.future.timeout(const Duration(seconds: 2));
@@ -1811,6 +2569,40 @@ void main() {
           }
           expect(cancelledAfterDetach, isFalse);
           expect(completed?.status, 'completed');
+          expect(
+            completed?.statusPreview,
+            BackgroundWorkPreviews.queuedForContinuation,
+          );
+          final visibleWorks = await endpoints.conversation.listBackgroundWorks(
+            fixture.session,
+            ListBackgroundWorksRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: 'conversation-1',
+            ),
+          );
+          expect(visibleWorks.single.id, work.id);
+          expect(visibleWorks.single.resultContent, contains('"ok":true'));
+          final completionEvents = await ConversationEvent.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationId) &
+                table.eventId.equals('background-work-completion:${work.id}'),
+          );
+          final completionMessages = await ConversationMessage.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationId) &
+                table.stableId.equals('background_work:${work.id}'),
+          );
+          expect(completionEvents, hasLength(1));
+          expect(
+            jsonDecode(completionEvents.single.payloadJson)['languageCode'],
+            'es',
+          );
+          expect(completionMessages, hasLength(1));
+          expect(completionMessages.single.status, ConversationStatuses.queued);
           expect(completed?.resultContent, contains('"ok":true'));
           final immutableCall = (await ConversationToolCall.db.findById(
             fixture.database,
@@ -1818,6 +2610,15 @@ void main() {
           ))!;
           expect(immutableCall.status, 'runningInBackground');
           expect(immutableCall.resultJson, acknowledgement);
+          final turns = await ConversationTurn.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationId),
+            orderBy: (table) => table.acceptedSequence,
+          );
+          expect(turns, hasLength(1));
+          expect(turns.single.status, ConversationStatuses.cancelled);
         },
       );
 
@@ -1836,7 +2637,7 @@ void main() {
             turnId: fixture.turn.id!,
             messageId: message.id!,
             stableId: toolCallId,
-            name: 'skill__user__research__search',
+            name: 'skill__app_native__agents__run_sub_agent',
             argumentsJson: '{}',
             argumentsDigest: 'digest',
             backgroundEligible: true,
@@ -1857,7 +2658,7 @@ void main() {
             originatingMessageId: message.id!,
             stableId: workId,
             toolCallId: toolCallId,
-            toolKind: 'skillTemplate',
+            toolKind: 'skillNative',
             status: 'running',
             createdAt: now,
             updatedAt: now,
@@ -1887,6 +2688,71 @@ void main() {
         expect(storedCall?.resultJson, acknowledgement);
         expect(storedCall?.backgroundWorkStableId, workId);
       });
+
+      test(
+        'historical direct Connector tool call is no longer executable',
+        () async {
+          final fixture = await prepare();
+          final assistant = fixture.messages.singleWhere(
+            (message) => message.id == fixture.turn.assistantMessageId,
+          );
+          final now = DateTime.now().toUtc();
+          final connector = connectorDefinitions.singleWhere(
+            (candidate) => candidate.identifier == 'duckduckgo',
+          );
+          final toolId = connectorToolId(connector, connector.tools.single);
+          await ConversationToolCall.db.insertRow(
+            fixture.database,
+            ConversationToolCall(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+              turnId: fixture.turn.id!,
+              messageId: assistant.id!,
+              stableId: 'historical-direct-call',
+              name: toolId,
+              argumentsJson: '{"query":"search"}',
+              argumentsDigest: 'historical',
+              status: 'approved',
+              decision: 'approve',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          var executions = 0;
+          final runtime = ServerToolRuntime(
+            executor: (_, _, _, _) async {
+              executions++;
+              return {'unexpected': true};
+            },
+          );
+
+          final advertisedNames = (await runtime.loadTools(
+            fixture.database,
+            workspaceId: fixture.workspaceId,
+            conversationStableId: 'conversation-1',
+          )).map((tool) => tool.spec.name);
+          expect(advertisedNames, contains(executeConnectorToolName));
+          expect(advertisedNames, isNot(contains(toolId)));
+          await runtime.handle(
+            fixture.database,
+            turn: fixture.turn,
+            messageId: assistant.id!,
+            request: ServerToolRequest(
+              id: 'historical-direct-call',
+              name: toolId,
+              arguments: const {'query': 'search'},
+            ),
+          );
+
+          final persisted = await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.stableId.equals('historical-direct-call'),
+          );
+          expect(executions, 0);
+          expect(persisted?.status, 'toolNotFound');
+        },
+      );
     },
     ephemeralDatabase: true,
     rollbackDatabase: RollbackDatabase.disabled,
@@ -1936,6 +2802,26 @@ class const _CompletingHost() implements ConversationEngineHost {
     outputTokens: 0,
     totalTokens: 0,
   );
+
+  @override
+  Future<ConversationCompactionResult> compact(
+    Session session, {
+    required ConversationJob job,
+    required List<ConversationMessage> messages,
+    Future<void>? leaseLost,
+  }) => throw UnimplementedError();
+}
+
+class const _TransientFailingHost() implements ConversationEngineHost {
+  @override
+  Future<ConversationEngineResult> executeTurn(
+    Session session, {
+    required ConversationJob job,
+    required ConversationTurn turn,
+    required List<ConversationMessage> messages,
+    required ConversationProgressPublisher liveTurns,
+    Future<void>? leaseLost,
+  }) => throw const ProviderTransientFailureException('offline retry fixture');
 
   @override
   Future<ConversationCompactionResult> compact(
@@ -2003,6 +2889,21 @@ class _Fixture({
   required final ConversationJob job,
   required var List<ConversationMessage> messages,
 });
+
+List<String?> _backgroundWorkStatusPreviews(
+  List<ConversationEvent> events,
+  String workId,
+) {
+  final previews = <String?>[];
+  for (final event in events) {
+    final payload = jsonDecode(event.payloadJson);
+    if (payload is! Map<String, dynamic> || payload['workId'] != workId) {
+      continue;
+    }
+    previews.add(payload['statusPreview'] as String?);
+  }
+  return previews;
+}
 
 class const _ImmediateAdmissionGate() implements ConversationAdmissionGate {
   @override

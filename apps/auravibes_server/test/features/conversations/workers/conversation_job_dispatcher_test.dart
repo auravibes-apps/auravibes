@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/workers/conversation_job_dispatcher.dart';
 import 'package:test/test.dart';
 
@@ -75,6 +76,68 @@ void main() {
     expect(calls, 2);
     expect(maxActiveDrains, 1);
     await dispatcher.stop();
+    await wakes.close();
+  });
+
+  test('bounds a cross-conversation continuation backlog', () async {
+    final wakes = StreamController<void>(sync: true);
+    final firstTurn = Completer<void>();
+    final releaseFirstTurn = Completer<void>();
+    final drainedAll = Completer<void>();
+    final workItems = [
+      for (var index = 0; index < 32; index++)
+        for (var ordinal = 0; ordinal < 4; ordinal++)
+          (conversationId: 'conversation-$index', ordinal: ordinal),
+    ];
+    final drained = <({String conversationId, int ordinal})>[];
+    var activeTurns = 0;
+    var maxActiveTurns = 0;
+    var nextWorkItem = 0;
+    final dispatcher = ConversationJobDispatcher(
+      drain: (isActive) async {
+        while (nextWorkItem < workItems.length && isActive()) {
+          activeTurns++;
+          if (activeTurns > maxActiveTurns) maxActiveTurns = activeTurns;
+          if (nextWorkItem == 0) {
+            firstTurn.complete();
+            await releaseFirstTurn.future;
+          }
+          drained.add(workItems[nextWorkItem++]);
+          activeTurns--;
+        }
+        if (nextWorkItem == workItems.length && !drainedAll.isCompleted) {
+          drainedAll.complete();
+        }
+      },
+      onError: (_, _) {},
+    );
+    dispatcher.start(wakeups: wakes.stream, isActive: () => true);
+    await firstTurn.future;
+
+    for (var wakeup = 0; wakeup < workItems.length; wakeup++) {
+      wakes.add(null);
+    }
+    expect(activeTurns, 1);
+    releaseFirstTurn.complete();
+    await drainedAll.future;
+    await dispatcher.stop();
+
+    expect(
+      ConversationLimits.maxConcurrentBackgroundContinuations,
+      1,
+    );
+    expect(
+      maxActiveTurns,
+      ConversationLimits.maxConcurrentBackgroundContinuations,
+    );
+    expect(drained, workItems);
+    expect(drained.toSet(), hasLength(workItems.length));
+    for (var conversation = 0; conversation < 32; conversation++) {
+      final items = drained
+          .where((item) => item.conversationId == 'conversation-$conversation')
+          .toList();
+      expect(items.map((item) => item.ordinal), [0, 1, 2, 3]);
+    }
     await wakes.close();
   });
 

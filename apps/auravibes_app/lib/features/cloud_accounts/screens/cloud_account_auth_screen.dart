@@ -6,8 +6,8 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/task_return.dart';
 import 'package:auravibes_app/router/workspace_navigation.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
-import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -44,6 +44,7 @@ class const CloudAccountAuthScreen({
       .chats => LocaleKeys.navigation_chats,
       .agentsAndSkills => LocaleKeys.navigation_agents_skills,
       .connections => LocaleKeys.navigation_connections,
+      .workflows => LocaleKeys.workflows_screen_title,
       .appSettings => LocaleKeys.settings_screen_title,
       .cloudAccounts => LocaleKeys.cloud_accounts_title,
       null =>
@@ -124,7 +125,7 @@ class const _CloudAccountAuthScreenScaffold({
   required final _CloudAccountAuthScreenViewData data,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
+  Widget build(BuildContext context) => AppScreen(
     child: ListView(
       padding: const EdgeInsets.all(16)
           .copyWith(bottom: BottomPadding.of(context)),

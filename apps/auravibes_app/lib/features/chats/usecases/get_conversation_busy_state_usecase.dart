@@ -12,6 +12,7 @@ export '../models/conversation_busy_state.dart';
 class const GetConversationBusyStateUsecase({
   required final MessageRepository messageRepository,
   required final ConversationStreamingRuntime conversationStreamingRuntime,
+  required final AgentWorkRuntime agentWorkRuntime,
 }) {
   Future<ConversationBusyState> call({
     required String conversationId,
@@ -24,6 +25,7 @@ class const GetConversationBusyStateUsecase({
     return ConversationBusyState(
       isStreaming: conversationStreamingRuntime.isStreaming(conversationId),
       hasPendingTools: _hasPendingTools(messages),
+      isAgentWorking: agentWorkRuntime.isWorking(conversationId),
       isCompacting: isCompacting,
     );
   }
@@ -55,5 +57,6 @@ final getConversationBusyStateUsecaseProvider =
         conversationStreamingRuntime: ref.watch(
           conversationStreamingRuntimeProvider,
         ),
+        agentWorkRuntime: ref.watch(agentWorkRuntimeProvider),
       );
     });
