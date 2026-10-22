@@ -11,7 +11,7 @@
     {
       "id": 2,
       "prompt": "I cloned AuraVibes and am about to run `fvm use`. Does it run `flutter pub get` automatically, and what changes if I pass `--skip-pub-get`?",
-      "expected_output": "The agent explains that FVM selects the project SDK and runs Pub resolution by default when switching SDKs, that this repository enables Pub-get-on-SDK-change in `.fvmrc`, and that `--skip-pub-get` skips that resolution.",
+      "expected_output": "The agent explains that this repository's `.fvmrc` enables Pub resolution by default when FVM switches SDKs, and that `--skip-pub-get` skips that resolution.",
       "files": [],
       "checks": ["fvm_pub_resolution"]
     },

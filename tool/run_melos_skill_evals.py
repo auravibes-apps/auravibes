@@ -157,17 +157,38 @@ def _fvm_pub_resolution(root: Path, expected_output: str) -> list[str]:
         failures.append(
             "Melos setup guidance does not explain default Pub resolution and the skip flag."
         )
+    describes_fvmrc_resolution = ".fvmrc" in expected_output and _matches_any(
+        expected_output,
+        (
+            r"\.fvmrc.{0,100}(?:enables?|makes?|sets?|turns on).{0,60}(?:pub (?:get|resolution)|pub-get-on-sdk-change)",
+            r"(?:pub (?:get|resolution)).{0,100}(?:enabled|configured|set) by "
+            r"(?:(?:the|this) )?repository's \.fvmrc",
+            r"(?:pub (?:get|resolution)).{0,100}(?:enabled|configured|set) by \.fvmrc",
+        ),
+    )
+    describes_default_resolution = _matches_any(
+        expected_output,
+        (
+            r"\bfvm.{0,100}runs? pub (?:get|resolution) by default.{0,100}(?:switch|change).{0,40}sdk",
+            r"\bwhen fvm (?:switches|changes).{0,100}sdk.{0,100}pub (?:get|resolution).{0,40}by default",
+            r"\bpub (?:get|resolution).{0,80}by default.{0,100}fvm.{0,60}(?:switch|change).{0,40}sdk",
+            r"\.fvmrc.{0,80}(?:makes|enables?|sets?).{0,60}pub (?:get|resolution).{0,60}run(?:s|ning)? when fvm (?:switches|changes).{0,40}sdk",
+        ),
+    )
+    contradicts_fvmrc_resolution = _matches_any(
+        expected_output,
+        (
+            r"\.fvmrc.{0,80}(?:does not|doesn't|never|will not|won't|cannot|can't).{0,40}(?:enable|make|set|turn on).{0,60}(?:pub|resolution)",
+            r"(?:pub (?:get|resolution)).{0,80}(?:not enabled|not configured|not set).{0,50}"
+            r"(?:by|in) (?:(?:the|this) )?repository's \.fvmrc",
+            r"(?:pub (?:get|resolution)).{0,80}(?:not enabled|not configured|not set).{0,30}(?:by|in) \.fvmrc",
+            r"\.fvmrc.{0,80}(?:disables?|turns off) pub (?:get|resolution)",
+            r"fvm.{0,80}(?:does not|doesn't|never|will not|won't) run pub (?:get|resolution) by default",
+        ),
+    )
     if (
-        ".fvmrc" not in expected_output
-        or not _matches_any(
-            expected_output,
-            (
-                r"\bfvm.{0,100}runs? pub (?:get|resolution) by default.{0,100}(?:switch|change).{0,40}sdk",
-                r"\bwhen fvm (?:switches|changes).{0,100}sdk.{0,100}pub (?:get|resolution).{0,40}by default",
-                r"\bpub (?:get|resolution).{0,80}by default.{0,100}fvm.{0,60}(?:switch|change).{0,40}sdk",
-                r"\.fvmrc.{0,80}(?:makes|enables?|sets?).{0,60}pub (?:get|resolution).{0,60}run(?:s|ning)? when fvm (?:switches|changes).{0,40}sdk",
-            ),
-        )
+        not describes_default_resolution
+        or not describes_fvmrc_resolution
         or not _matches_any(
             expected_output,
             (
@@ -175,13 +196,7 @@ def _fvm_pub_resolution(root: Path, expected_output: str) -> list[str]:
                 r"\b(?:skip(?:s)?|bypass(?:es)?|disable(?:s|d)?|avoid(?:s)?).{0,60}pub (?:get|resolution).{0,60}--skip-pub-get",
             ),
         )
-        or _matches_any(
-            expected_output,
-            (
-                r"\.fvmrc.{0,80}(?:disables?|turns off) pub (?:get|resolution)",
-                r"fvm.{0,80}(?:does not|doesn't|never|will not|won't) run pub (?:get|resolution) by default",
-            ),
-        )
+        or contradicts_fvmrc_resolution
     ):
         failures.append(
             "The expected output must explain .fvmrc default Pub resolution and how --skip-pub-get skips it."
@@ -232,7 +247,8 @@ def _melos_bootstrap(root: Path, expected_output: str) -> list[str]:
             expected_output,
             (
                 r"pub workspace.{0,100}(?:does not|doesn't|cannot|can't|is not|isn't).{0,80}(?:replace|substitute for).{0,40}(?:melos )?bootstrap",
-                r"(?:melos )?bootstrap.{0,80}(?:is |remains )?(?:still )?(?:required|needed)",
+                r"pub workspace.{0,80}(?:separate|different) (?:from|than).{0,40}(?:melos )?bootstrap",
+                r"(?:melos )?bootstrap.{0,80}(?:is |remains )?separate from pub workspace",
             ),
         )
         or not _matches_any(
@@ -240,6 +256,7 @@ def _melos_bootstrap(root: Path, expected_output: str) -> list[str]:
             (
                 r"\bci.{0,80}(?:runs?|uses?).{0,60}(?:melos )?bootstrap",
                 r"(?:melos )?bootstrap.{0,80}(?:runs?|is used).{0,60}\bci\b",
+                r"(?:melos )?bootstrap.{0,80}\bci\b.{0,30}(?:also )?runs?",
             ),
         )
         or _matches_any(

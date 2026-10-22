@@ -47,7 +47,9 @@ class MelosSkillEvalTest(unittest.TestCase):
             "Never format source files; run the format check only."
         )
         cases["evals"][1]["expected_output"] = (
-            "The `.fvmrc` disables Pub resolution, and `--skip-pub-get` enables it."
+            "FVM runs Pub resolution by default when switching SDKs, but this "
+            "repository's `.fvmrc` does not enable Pub resolution. "
+            "`--skip-pub-get` skips that resolution."
         )
         cases["evals"][2]["expected_output"] = (
             "CI still runs Melos bootstrap. Pub workspace membership does not "
@@ -62,6 +64,21 @@ class MelosSkillEvalTest(unittest.TestCase):
             [(result.case_id, result.passed) for result in results],
             [(1, False), (2, False), (3, False)],
         )
+
+    def test_requires_expected_output_to_distinguish_workspace_from_bootstrap(self):
+        cases_path = self.root / ".agents/skills/melos-7/evals/evals.json"
+        cases = json.loads(cases_path.read_text())
+        cases["evals"][2]["expected_output"] = (
+            "CI still runs Melos bootstrap, which remains required. Run `fvm use`, "
+            "then `fvm dart run melos bootstrap`."
+        )
+        cases_path.write_text(json.dumps(cases))
+
+        results = evaluate_skill_evals(self.root)
+
+        self.assertTrue(results[0].passed)
+        self.assertTrue(results[1].passed)
+        self.assertFalse(results[2].passed)
 
     def test_requires_expected_output_for_behavior_scenarios(self):
         cases_path = self.root / ".agents/skills/melos-7/evals/evals.json"
@@ -143,7 +160,7 @@ class MelosSkillEvalTest(unittest.TestCase):
         )
         skill = skill.replace(
             "The repository's `.fvmrc` enables Pub resolution by default when FVM changes SDKs.",
-            "When FVM switches SDKs, Pub resolution runs by default. This repository's `.fvmrc` enables that setting.",
+            "When FVM switches SDKs, Pub resolution runs by default; the repository's `.fvmrc` enables Pub resolution by default.",
         )
         skill_path.write_text(skill)
 
@@ -175,8 +192,8 @@ class MelosSkillEvalTest(unittest.TestCase):
                             "id": 2,
                             "prompt": "What does FVM do with Pub?",
                             "expected_output": (
-                                "FVM runs Pub resolution by default when switching "
-                                "SDKs; this repo's `.fvmrc` enables it. "
+                                "This repo's `.fvmrc` enables Pub resolution by "
+                                "default when FVM switches SDKs. "
                                 "`--skip-pub-get` skips that resolution."
                             ),
                             "files": [],
