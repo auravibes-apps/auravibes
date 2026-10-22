@@ -138,12 +138,12 @@ class const AppAllowedToolsDataProvider({
     required String toolCallId,
     required ResolvedTool tool,
     required Map<String, dynamic> arguments,
-  }) => resolvedToolService((
+  }) => resolvedToolService.call(
     conversationId: conversationId,
     toolCallId: toolCallId,
     tool: tool,
     arguments: arguments,
-  ));
+  );
 
   @override
   Future<agent.AgentIterationDecision> getAgentIterationDecision({

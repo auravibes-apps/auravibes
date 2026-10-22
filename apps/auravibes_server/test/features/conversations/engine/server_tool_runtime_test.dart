@@ -515,16 +515,12 @@ void main() {
   test('materializes localized sub-agent guidance with stable schemas', () {
     final tools = materializeCloudSkillTools(
       selectedSkillIds: const {agentsSkillSlug},
-      userSkills: const [],
-      templateTools: const [],
       appSkillSettings: const [],
       isChildConversation: false,
       languageCode: 'es-MX',
     );
     final englishTools = materializeCloudSkillTools(
       selectedSkillIds: const {agentsSkillSlug},
-      userSkills: const [],
-      templateTools: const [],
       appSkillSettings: const [],
       isChildConversation: false,
       languageCode: 'en',
@@ -560,13 +556,11 @@ void main() {
     final english = await buildCloudSkillManifest(
       slug: agentsSkillSlug,
       userSkills: const [],
-      tools: const [],
       languageCode: 'en',
     );
     final spanish = await buildCloudSkillManifest(
       slug: agentsSkillSlug,
       userSkills: const [],
-      tools: const [],
       languageCode: 'es-MX',
     );
 

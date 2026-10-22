@@ -253,8 +253,14 @@ void main() {
           workspaceId: any(named: 'workspaceId'),
         ),
       ).thenAnswer((_) async => catalog);
-      when(() => resolvedToolService.call(any()))
-          .thenAnswer((_) async => 'done');
+      when(
+        () => resolvedToolService.call(
+          conversationId: any(named: 'conversationId'),
+          tool: any(named: 'tool'),
+          arguments: any(named: 'arguments'),
+          toolCallId: any(named: 'toolCallId'),
+        ),
+      ).thenAnswer((_) async => 'done');
       when(
         () => resolvedToolService.takeMcpAppResultData(
           conversationId: 'child',

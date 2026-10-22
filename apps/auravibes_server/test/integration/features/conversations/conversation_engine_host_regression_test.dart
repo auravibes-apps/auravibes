@@ -127,8 +127,12 @@ void main() {
     sessionBuilder,
     endpoints,
   ) {
-    Future<_Fixture> prepare() =>
-        _prepareConversationFixture(sessionBuilder, endpoints);
+    Future<_Fixture> prepare({String? languageCode}) =>
+        _prepareConversationFixture(
+          sessionBuilder,
+          endpoints,
+          languageCode: languageCode,
+        );
 
     Future<void> configureProvider(_Fixture fixture) async {
       fixture.database.passwords['workspaceSecretKey'] =
@@ -832,20 +836,11 @@ void main() {
     );
 
     test('agents activation preserves the conversation language', () async {
-      final fixture = await prepare();
       const languageCode = 'es-MX';
-      final spanishTools = materializeCloudSkillTools(
-        selectedSkillIds: const {agentsSkillSlug},
-        userSkills: const [],
-        templateTools: const [],
-        appSkillSettings: const [],
-        isChildConversation: false,
-        languageCode: languageCode,
-      );
+      final fixture = await prepare(languageCode: languageCode);
       final spanishManifest = await buildCloudSkillManifest(
         slug: agentsSkillSlug,
         userSkills: const [],
-        tools: spanishTools,
         languageCode: languageCode,
       );
       expect(spanishManifest, isNotNull);
@@ -862,6 +857,7 @@ void main() {
         fixture.database,
         workspaceId: fixture.workspaceId,
         conversationStableId: 'conversation-1',
+        languageCode: languageCode,
       );
       final activate = controls.singleWhere(
         (tool) => tool.spec.name == activateSkillToolName,
@@ -892,6 +888,7 @@ void main() {
         fixture.database,
         workspaceId: fixture.workspaceId,
         conversationStableId: 'conversation-1',
+        languageCode: languageCode,
       );
       final runSubAgentAfter = selectedTools.singleWhere(
         (tool) => tool.descriptor.toolIdentifier == runSubAgentToolName,
@@ -902,9 +899,6 @@ void main() {
         runSubAgentBefore.spec.inputJsonSchema,
       );
 
-      final callSkill = selectedTools.singleWhere(
-        (tool) => tool.spec.name == callSkillToolName,
-      );
       final listAgents = selectedTools.singleWhere(
         (tool) => tool.descriptor.toolIdentifier == listAgentsToolName,
       );
@@ -935,13 +929,8 @@ void main() {
             .id!,
         request: ServerToolRequest(
           id: 'list-agents-through-call-skill',
-          name: callSkillToolName,
-          arguments: {
-            'skill': agentsSkillSlug,
-            'tool': listAgentsToolName,
-            'args': const <String, Object?>{},
-            'revision': spanishManifest.revision,
-          },
+          name: listAgents.spec.name,
+          arguments: const {},
           languageCode: languageCode,
         ),
       );

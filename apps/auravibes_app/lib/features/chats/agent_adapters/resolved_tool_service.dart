@@ -6,11 +6,13 @@ import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
 import 'package:auravibes_app/features/chats/notifiers/mcp_elicitation_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/service_connections/usecases/connector_command_usecase.dart';
@@ -94,6 +96,7 @@ class ResolvedToolService {
     SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
     BrowserSkillToolRunner? browserSkillToolRunner,
     ConnectorCommandUsecase? connectorCommandUsecase,
+    ConversationAgentLanguageRuntime? conversationLanguageRuntime,
   }) : _delegate = agent.ResolvedToolRunner<ResolvedTool>(
          provider: AppResolvedToolProvider(
            agentCancellationRuntime: agentCancellationRuntime,
@@ -111,6 +114,7 @@ class ResolvedToolService {
            onSkillsManagerToolSuccess: onSkillsManagerToolSuccess,
            browserSkillToolRunner: browserSkillToolRunner,
            connectorCommandUsecase: connectorCommandUsecase,
+           conversationLanguageRuntime: conversationLanguageRuntime,
          ),
        );
   new _cloud() : _delegate = null;
@@ -196,6 +200,7 @@ class const AppResolvedToolProvider({
   final SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
   final BrowserSkillToolRunner? browserSkillToolRunner,
   final ConnectorCommandUsecase? connectorCommandUsecase,
+  final ConversationAgentLanguageRuntime? conversationLanguageRuntime,
 }) implements agent.ResolvedToolProvider<ResolvedTool> {
   @override
   agent.AgentResolvedToolExecution<ResolvedTool> toExecution(
@@ -274,7 +279,13 @@ class const AppResolvedToolProvider({
 
   @override
   Future<Object?> runSkillControlTool(agent.SkillControlToolRequest input) =>
-      _runSkillControlRequest(this, input);
+      _runSkillControlRequest(
+        this,
+        input,
+        languageCode: conversationLanguageRuntime?.languageCodeFor(
+          input.conversationId,
+        ),
+      );
 
   @override
   Future<Object?> runSkillNativeTool(agent.SkillNativeToolRequest input) {
@@ -286,6 +297,9 @@ class const AppResolvedToolProvider({
         skillSlug: input.skillSlug,
         toolSlug: input.toolSlug,
         arguments: input.arguments,
+        languageCode: conversationLanguageRuntime?.languageCodeFor(
+          input.conversationId,
+        ),
         provider: this,
       ),
     );
@@ -294,19 +308,22 @@ class const AppResolvedToolProvider({
 
 Future<Object?> _runSkillControlRequest(
   AppResolvedToolProvider provider,
-  _SkillControlToolRequest request,
-) {
+  _SkillControlToolRequest request, {
+  String? languageCode,
+}) {
   final usecase = _skillCommandUsecase(
     _skillCommandDependencies(provider),
     _skillCommandResources(provider),
   );
 
-  return usecase.call((
+  final commandRequest = (
     conversationId: request.conversationId,
     workspaceId: request.workspaceId,
     commandName: request.toolIdentifier,
     arguments: request.arguments,
-  ));
+  );
+
+  return usecase.call(commandRequest, languageCode: languageCode);
 }
 
 _SkillCommandDependencies _skillCommandDependencies(
@@ -611,6 +628,7 @@ class const _SkillNativeToolRequest({
   required final String toolSlug,
   required final Map<String, dynamic> arguments,
   required final AppResolvedToolProvider provider,
+  final String? languageCode,
 });
 
 Future<Object?> _runSubAgentTool({required _SkillNativeToolRequest request}) {
@@ -625,15 +643,20 @@ Future<Object?> _runSubAgentTool({required _SkillNativeToolRequest request}) {
 Future<Object?> _runSubAgentToolWithRunner(
   _SkillNativeToolRequest request,
   agent.SubAgentRunner runner,
-) {
+) async {
   if (request.toolSlug == agent.listAgentsToolName) {
-    return runner.listAgents(request.workspaceId, arguments: request.arguments);
+    final result = await runner.listAgents(
+      request.workspaceId,
+      arguments: request.arguments,
+    );
+
+    return AgentGuidance.localizeListAgentsResult(result, request.languageCode);
   }
   if (request.toolSlug != agent.runSubAgentToolName) {
     throw StateError('Unknown sub-agent tool: ${request.toolSlug}');
   }
 
-  return _runCancellableSubAgent(request, runner);
+  return await _runCancellableSubAgent(request, runner);
 }
 
 Future<Object?> _runCancellableSubAgent(
@@ -660,10 +683,21 @@ Future<Object?> _startSubAgentOperation(
   workspaceId: request.workspaceId,
   arguments: request.arguments,
   onChildStarted: ({required childId, required parentId}) =>
-      _recordStartedSubAgent(childStartedId, childId),
+      _recordStartedSubAgent(
+        childStartedId,
+        childId,
+        request.languageCode,
+        request.provider.conversationLanguageRuntime,
+      ),
 );
 
-void _recordStartedSubAgent(Completer<String> childStartedId, String childId) {
+void _recordStartedSubAgent(
+  Completer<String> childStartedId,
+  String childId,
+  String? languageCode,
+  ConversationAgentLanguageRuntime? languageRuntime,
+) {
+  languageRuntime?.remember(childId, languageCode);
   if (!childStartedId.isCompleted) childStartedId.complete(childId);
 }
 
@@ -834,6 +868,7 @@ Future<void> _requireSkillNativeTool(
   final specs = await buildSpecs.call(
     conversationId: request.conversationId,
     workspaceId: request.workspaceId,
+    languageCode: request.languageCode,
   );
   if (!specs.any((spec) => spec.name == toolName)) {
     throw StateError('App skill tool is not currently available: $toolName');
@@ -1036,6 +1071,9 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
             .read(browserSessionProvider(workspaceId, conversationId).notifier)
             .runSkillTool(toolSlug, arguments),
     connectorCommandUsecase: ref.watch(connectorCommandUsecaseProvider),
+    conversationLanguageRuntime: ref.watch(
+      conversationAgentLanguageRuntimeProvider,
+    ),
   );
 });
 

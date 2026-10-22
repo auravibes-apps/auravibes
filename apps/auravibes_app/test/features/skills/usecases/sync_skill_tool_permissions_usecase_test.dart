@@ -56,7 +56,6 @@ void main() {
         () => fixture.dynamicSpecs.call(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
-          languageCode: any(named: 'languageCode'),
         ),
       ).thenAnswer((_) async => dynamic);
       when(

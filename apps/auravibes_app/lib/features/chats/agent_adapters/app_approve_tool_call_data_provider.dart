@@ -186,12 +186,12 @@ class const AppApproveToolCallDataProvider({
     required String toolCallId,
     required ResolvedTool tool,
     required Map<String, dynamic> arguments,
-  }) => runResolvedToolUsecase((
+  }) => runResolvedToolUsecase.call(
     conversationId: conversationId,
     toolCallId: toolCallId,
     tool: tool,
     arguments: arguments,
-  ));
+  );
 
   @override
   Future<void> markToolCallRunning({

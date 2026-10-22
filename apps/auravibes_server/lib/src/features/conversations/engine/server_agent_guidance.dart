@@ -68,5 +68,4 @@ ToolSpec _localizedToolSpec(ToolSpec source, String description) => ToolSpec(
   name: source.name,
   description: description,
   inputJsonSchema: Map<String, Object?>.from(source.inputJsonSchema),
-  requiresCredential: source.requiresCredential,
 );

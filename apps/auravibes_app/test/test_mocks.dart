@@ -208,6 +208,7 @@ class NoopSyncSkillToolPermissionsUsecase extends Fake
     required String conversationId,
     required String workspaceId,
     required String toolName,
+    String? languageCode,
   }) async => null;
 }
 

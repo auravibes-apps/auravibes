@@ -48,10 +48,15 @@ String conversationTurnJobPayload(
 
 String? conversationLanguageCodeForJob(String? payloadJson) {
   if (payloadJson == null) return null;
-  final payload = jsonDecode(payloadJson);
-  return payload is Map && payload['languageCode'] is String
-      ? payload['languageCode']! as String
-      : null;
+  try {
+    final payload = jsonDecode(payloadJson);
+
+    return payload is Map && payload['languageCode'] is String
+        ? payload['languageCode']! as String
+        : null;
+  } on FormatException {
+    return null;
+  }
 }
 
 String? conversationReasoningConfigForExecutionSettings(String settingsJson) {

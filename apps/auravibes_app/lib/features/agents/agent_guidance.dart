@@ -97,7 +97,6 @@ abstract final class AgentGuidance {
         name: source.name,
         description: description,
         inputJsonSchema: Map<String, Object?>.from(source.inputJsonSchema),
-        requiresCredential: source.requiresCredential,
       );
 
   static bool _usesSpanish(String? languageCode) {

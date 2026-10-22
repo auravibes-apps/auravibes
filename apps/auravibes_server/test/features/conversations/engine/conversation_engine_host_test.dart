@@ -1,6 +1,7 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
+import 'package:auravibes_server/src/features/conversations/engine/server_agent_guidance.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
 import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
     as conversation_repo;
@@ -682,6 +683,24 @@ void main() {
         (service.title, service.content, service.identifier),
       ],
     );
+  });
+
+  test('selected agents skill context follows the conversation language', () {
+    final english = cloudAppSkillsForIds([agentsSkillSlug]);
+    final spanish = cloudAppSkillsForIds(
+      [agentsSkillSlug],
+      languageCode: 'es-MX',
+    );
+
+    expect(
+      english.single.content,
+      serverAgentsSkillContentForLanguageCode('en'),
+    );
+    expect(
+      spanish.single.content,
+      serverAgentsSkillContentForLanguageCode('es'),
+    );
+    expect(spanish.single.identity, agentsSkillSlug);
   });
 
   test('configuration exception exposes only safe code', () {

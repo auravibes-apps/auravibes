@@ -7,6 +7,7 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../domain/conversation_values.dart';
 import 'conversation_host_effects.dart';
+import 'server_agent_guidance.dart';
 import 'background_work_result_reader.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
@@ -164,6 +165,7 @@ List<ServerResolvedTool> fixedCloudConnectorCommandTools() =>
 Future<SkillManifest?> buildCloudSkillManifest({
   required String slug,
   required Iterable<Map<String, dynamic>> userSkills,
+  String? languageCode,
 }) async {
   final userSkill = userSkills
       .where((skill) => skill['slug'] == slug && skill['isEnabled'] != false)
@@ -179,8 +181,10 @@ Future<SkillManifest?> buildCloudSkillManifest({
   };
   final instructions = switch ((userSkill?['content'], appSkill)) {
     (final String value, _) => value,
+    _ when slug == agentsSkillSlug => serverAgentsSkillContentForLanguageCode(
+      languageCode,
+    ),
     (_, final AppSkillDefinition value) => value.content,
-    _ when slug == agentsSkillSlug => agentsSkillContent,
     _ => null,
   };
   if (title == null || instructions == null) return null;
@@ -331,14 +335,17 @@ List<ServerResolvedTool> materializeCloudSkillTools({
   required Set<String> selectedSkillIds,
   required Iterable<Map<String, dynamic>> appSkillSettings,
   required bool isChildConversation,
+  String? languageCode,
 }) {
   final tools = <ServerResolvedTool>[];
   if (!isChildConversation &&
       cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)) {
+    final runSubAgent = serverRunSubAgentToolSpecForLanguageCode(languageCode);
+    final listAgents = serverListAgentsToolSpecForLanguageCode(languageCode);
     tools.addAll(
       [
-        runSubAgentToolSpec,
-        if (selectedSkillIds.contains(agentsSkillSlug)) listAgentsToolSpec,
+        runSubAgent,
+        if (selectedSkillIds.contains(agentsSkillSlug)) listAgents,
       ].map(
         (spec) => _nativeTool(
           skillSlug: agentsSkillSlug,
@@ -534,6 +541,7 @@ class const ServerToolRequest({
   required final String name,
   required final Map<String, dynamic> arguments,
   final String? userFacingDescription,
+  final String? languageCode,
   final Future<bool> Function()? isCancelled,
 });
 
@@ -562,6 +570,7 @@ class ServerToolRuntime({
     Session session, {
     required int workspaceId,
     required String conversationStableId,
+    String? languageCode,
   }) async {
     final resources = await WorkspaceResource.db.find(
       session,
@@ -620,19 +629,17 @@ class ServerToolRuntime({
               resource.resourceKind == WorkspaceResourceKind.skillSetting,
         )
         .map(_data);
-    final agentTools =
-        conversation != null &&
-            conversation.parentConversationStableId == null &&
-            cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)
-        ? [
-            _nativeTool(
-              skillSlug: agentsSkillSlug,
-              toolIdentifier: runSubAgentToolName,
-              description: runSubAgentToolSpec.description,
-              inputJsonSchema: runSubAgentToolSpec.inputJsonSchema,
+    final agentTools = materializeCloudSkillTools(
+      selectedSkillIds: conversation == null
+          ? const <String>{}
+          : cloudAuthorizedSkillIds(
+              conversation: conversation,
+              resources: resources,
             ),
-          ]
-        : const <ServerResolvedTool>[];
+      appSkillSettings: appSkillSettings,
+      isChildConversation: conversation?.parentConversationStableId != null,
+      languageCode: languageCode,
+    );
 
     return [
       ...genericTools,
@@ -700,6 +707,7 @@ class ServerToolRuntime({
             session,
             workspaceId: turn.workspaceId,
             conversationStableId: conversation.stableId,
+            languageCode: request.languageCode,
           );
     var tool = currentTools
         .where((candidate) => candidate.spec.name == request.name)
@@ -741,6 +749,7 @@ class ServerToolRuntime({
         arguments: storedArguments,
         userFacingDescription:
             existing.userFacingDescription ?? request.userFacingDescription,
+        languageCode: request.languageCode,
       );
     }
 
@@ -922,6 +931,7 @@ class ServerToolRuntime({
       id: executionRequest.id,
       name: executionRequest.name,
       arguments: executionRequest.arguments,
+      languageCode: executionRequest.languageCode,
     );
     if (call.backgroundEligible) {
       return _runCancellableTool(
@@ -997,6 +1007,7 @@ class ServerToolRuntime({
       name: request.name,
       arguments: request.arguments,
       userFacingDescription: request.userFacingDescription,
+      languageCode: request.languageCode,
       isCancelled: () => _isCancellableToolCancelled(
         executionSession,
         turn: turn,

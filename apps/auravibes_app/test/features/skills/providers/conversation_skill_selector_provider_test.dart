@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/repositories/recent_skill_usage_repository.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
@@ -163,6 +164,75 @@ void main() {
       resumedState.contextStatusBySlug['research'],
       ConversationSkillContextStatus.added,
     );
+  });
+
+  test('compares agent context revisions in the remembered locale', () async {
+    const agentsSkill = AvailableSkill(
+      id: agentsSkillSlug,
+      slug: agentsSkillSlug,
+      title: agentsSkillTitle,
+      description: '',
+      content: agentsSkillContent,
+      source: .app,
+      kind: .native,
+      connectorReadiness: .ready,
+    );
+    final list = _ListSkills();
+    final manifests = _BuildManifests();
+    _stubSkills(list, agentsSkill);
+    when(
+      () => manifests.call(
+        conversationId: 'conversation',
+        workspaceId: 'workspace',
+        languageCode: 'es',
+      ),
+    ).thenAnswer(
+      (_) async => [
+        SkillManifest(
+          slug: agentsSkillSlug,
+          title: agentsSkillTitle,
+          description: '',
+          revision: 'spanish-revision',
+        ),
+      ],
+    );
+    final languageRuntime = ConversationAgentLanguageRuntime()
+      ..remember('conversation', 'es');
+    final container = _container(
+      list,
+      manifests,
+      languageRuntime: languageRuntime,
+    );
+    addTearDown(container.dispose);
+    final provider = conversationSkillSelectorProvider(
+      'workspace',
+      'conversation',
+    );
+    final generation = container
+        .read(conversationSkillContextRuntimeProvider.notifier)
+        .begin('conversation');
+    container
+        .read(conversationSkillContextRuntimeProvider.notifier)
+        .ready(
+          'conversation',
+          generation,
+          selectedRevisions: {agentsSkillSlug: 'spanish-revision'},
+          canActivate: true,
+        );
+
+    final state = await container.read(provider.future);
+
+    expect(
+      state.contextStatusBySlug[agentsSkillSlug],
+      ConversationSkillContextStatus.ready,
+    );
+    verify(
+      () => manifests.call(
+        conversationId: 'conversation',
+        workspaceId: 'workspace',
+        languageCode: 'es',
+      ),
+    ).called(1);
   });
 
   test(
@@ -399,12 +469,16 @@ ProviderContainer _container(
   _ListSkills list,
   _BuildManifests manifests, {
   _RecentSkillUsageRepository? recentRepository,
+  ConversationAgentLanguageRuntime? languageRuntime,
 }) => ProviderContainer(
   overrides: [
     listAvailableSkillsUsecaseProvider('workspace').overrideWith((ref) => list),
     buildLoadedSkillManifestsUsecaseProvider.overrideWith((ref) => manifests),
     recentSkillUsageRepositoryProvider.overrideWith(
       (ref) => recentRepository ?? _RecentSkillUsageRepository(const []),
+    ),
+    conversationAgentLanguageRuntimeProvider.overrideWithValue(
+      languageRuntime ?? ConversationAgentLanguageRuntime(),
     ),
   ],
 );

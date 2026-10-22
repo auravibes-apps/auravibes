@@ -78,6 +78,11 @@ void main() {
     );
   });
 
+  test('malformed turn job payload falls back to the default language', () {
+    expect(conversationLanguageCodeForJob('{'), isNull);
+    expect(conversationLanguageCodeForJob('{"languageCode":4}'), isNull);
+  });
+
   test('turn job payload snapshots provider default explicitly', () {
     expect(
       jsonDecode(
