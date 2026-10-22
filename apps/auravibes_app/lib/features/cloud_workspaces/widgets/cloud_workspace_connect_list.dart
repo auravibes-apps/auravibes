@@ -267,16 +267,13 @@ class const _AvailableWorkspaceMenu({
         'workspace_available_menu_${account.serverUrl}_'
         '${account.accountId}_${workspace.id}';
 
-    return Semantics(
-      key: ValueKey<String>(selectorId),
-      child: AuraPopupMenuButton(
-        items: [
-          if (onDetails != null) _detailsItem(),
-          if (onCopyId != null) _copyIdItem(),
-        ],
-        identifier: selectorId,
-        tooltip: LocaleKeys.common_show_more.tr(),
-      ),
+    return AuraPopupMenuButton(
+      items: [
+        if (onDetails != null) _detailsItem(),
+        if (onCopyId != null) _copyIdItem(),
+      ],
+      identifier: selectorId,
+      tooltip: LocaleKeys.common_show_more.tr(),
     );
   }
 
