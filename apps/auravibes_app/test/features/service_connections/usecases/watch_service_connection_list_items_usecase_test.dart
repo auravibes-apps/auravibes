@@ -1,11 +1,9 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_catalog_item.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/usecases/watch_service_connection_list_items_usecase.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -25,39 +23,27 @@ void main() {
     setUp(() => clearAppDatabase(database));
     tearDownAll(database.close);
 
-    test('returns model, skill, and MCP rows together', () async {
+    test('returns model and MCP rows together', () async {
       final fixture = await _createFixture(database);
-      final definition =
-          await SkillCredentialDefinitionsRepository(fixture.database)
-              .createDefinition(
-                fixture.workspace.id,
-                const SkillCredentialDefinitionToCreate(
-                  title: 'GitHub Token',
-                  attributesJson: '{"token":{"description":"API token"}}',
-                ),
-              );
-      final _ =
-          await SkillCredentialsRepository(
-            database: fixture.database,
-            encryptionService: fixture.encryptionService,
-          ).createCredential(
-            fixture.workspace.id,
-            .new(
-              credentialDefinitionId: definition.id,
-              name: 'Main Token',
-              attributes: const {'token': 'secret-value'},
-            ),
-          );
-      final _ = await fixture.database
-          .into(fixture.database.serviceConnections)
-          .insertReturning(
-            ServiceConnectionsCompanion.insert(
+      final _ = await fixture.database.modelConnectionsDao
+          .insertModelConnection(
+            .insert(
               name: 'OpenAI Main',
               serviceId: 'openai',
               kind: .modelProvider,
               authenticationType: .apiKey,
               encryptedAuthValue: const Value('encrypted-key'),
               keySuffix: const Value('et-key'),
+              workspaceId: fixture.workspace.id,
+            ),
+          );
+      final _ = await fixture.database.modelConnectionsDao
+          .insertModelConnection(
+            .insert(
+              name: 'OpenAI OAuth',
+              serviceId: 'openai',
+              kind: .modelProvider,
+              authenticationType: .oauth2,
               workspaceId: fixture.workspace.id,
             ),
           );
@@ -76,10 +62,18 @@ void main() {
       final items = await usecase(fixture.workspace.id).first;
 
       expect(items.map((item) => item.name), [
-        'Main Token',
         'Notion',
         'OpenAI Main',
+        'OpenAI OAuth',
       ]);
+      expect(
+        items.singleWhere((item) => item.name == 'OpenAI Main').displayStatus,
+        ServiceConnectionDisplayStatus.connected,
+      );
+      expect(
+        items.singleWhere((item) => item.name == 'OpenAI OAuth').displayStatus,
+        ServiceConnectionDisplayStatus.connected,
+      );
       final mcpItem = items.singleWhere(
         (item) => item.kind == ServiceConnectionListItemKind.mcpServer,
       );
@@ -198,31 +192,119 @@ void main() {
       );
     });
 
-    test('includes local app-skill credentials', () async {
-      final fixture = await _createFixture(database);
-      final _ = await fixture.database
-          .into(fixture.database.serviceConnections)
-          .insert(
-            ServiceConnectionsCompanion.insert(
-              name: 'SearXNG instance',
-              serviceId: 'searxng',
-              kind: .appSkillCredential,
-              authenticationType: .apiKey,
-              encryptedAuthValue: const Value('ciphertext'),
-              keySuffix: const Value('ample.com'),
-              workspaceId: fixture.workspace.id,
-            ),
-          );
+    test(
+      'shows each Connector once with offering-based filters and safe status',
+      () async {
+        final fixture = await _createFixture(database);
+        final _ = await fixture.database
+            .into(fixture.database.serviceConnections)
+            .insert(
+              ServiceConnectionsCompanion.insert(
+                name: 'OpenAI tools',
+                serviceId: 'openai',
+                kind: .customHttp,
+                authenticationType: .apiKey,
+                encryptedAuthValue: const Value('do-not-expose-this-secret'),
+                workspaceId: fixture.workspace.id,
+              ),
+            );
+        final _ = await fixture.database
+            .into(fixture.database.serviceConnections)
+            .insert(
+              ServiceConnectionsCompanion.insert(
+                name: 'Google models',
+                serviceId: 'google',
+                kind: .modelProvider,
+                authenticationType: .apiKey,
+                encryptedAuthValue: const Value('encrypted-model-key'),
+                workspaceId: fixture.workspace.id,
+              ),
+            );
+        final usecase = _createUsecase(fixture);
+        final offerings = [
+          const ConnectorCatalogOffering(
+            id: 'openai',
+            name: 'OpenAI',
+            offersModels: true,
+          ),
+          const ConnectorCatalogOffering(
+            id: 'openai',
+            name: 'OpenAI',
+            offersTools: true,
+          ),
+          const ConnectorCatalogOffering(
+            id: 'anthropic',
+            name: 'Anthropic',
+            offersModels: true,
+          ),
+          const ConnectorCatalogOffering(
+            id: 'gemini',
+            name: 'Gemini / Google',
+            offersModels: true,
+            serviceIds: ['google'],
+            modelProviderIds: ['google'],
+          ),
+          const ConnectorCatalogOffering(
+            id: 'gemini',
+            name: 'Gemini / Google',
+            offersTools: true,
+            serviceIds: ['gemini', 'google'],
+          ),
+          const ConnectorCatalogOffering(
+            id: 'exa',
+            name: 'Exa',
+            offersTools: true,
+          ),
+        ];
 
-      final items = await _createUsecase(fixture)(fixture.workspace.id).first;
+        final all = await usecase
+            .watchConnectorCatalog(fixture.workspace.id, offerings: offerings)
+            .first;
+        final tools = await usecase
+            .watchConnectorCatalog(
+              fixture.workspace.id,
+              offerings: offerings,
+              filter: .tools,
+            )
+            .first;
+        final models = await usecase
+            .watchConnectorCatalog(
+              fixture.workspace.id,
+              offerings: offerings,
+              filter: .models,
+            )
+            .first;
 
-      final item = items.single;
-      expect(item.name, 'SearXNG instance');
-      expect(item.serviceName, 'searxng');
-      expect(item.kind, ServiceConnectionListItemKind.skillCredential);
-      expect(item.keySuffix, 'ample.com');
-      expect(item.displayStatus, ServiceConnectionDisplayStatus.connected);
-    });
+        expect(all.map((connector) => connector.id), [
+          'anthropic',
+          'exa',
+          'gemini',
+          'openai',
+        ]);
+        final openai = all.singleWhere((connector) => connector.id == 'openai');
+        expect(openai.offersModels, isTrue);
+        expect(openai.offersTools, isTrue);
+        expect(openai.isConnected, isTrue);
+        expect(openai.connectionCount, 1);
+        expect(openai.toString(), isNot(contains('do-not-expose-this-secret')));
+        final gemini = all.singleWhere((connector) => connector.id == 'gemini');
+        expect(gemini.offersModels, isTrue);
+        expect(gemini.offersTools, isTrue);
+        expect(gemini.isConnected, isTrue);
+        expect(gemini.connectionCount, 1);
+        expect(gemini.modelProviderIds, ['google']);
+        expect(tools.map((connector) => connector.id), [
+          'exa',
+          'gemini',
+          'openai',
+        ]);
+        expect(models.map((connector) => connector.id), [
+          'anthropic',
+          'gemini',
+          'openai',
+        ]);
+      },
+    );
   });
 }
 
@@ -280,11 +362,6 @@ WatchServiceConnectionListItemsUsecase _createUsecase(
 }) {
   return WatchServiceConnectionListItemsUsecase(
     fixture.database,
-    .new(
-      database: fixture.database,
-      encryptionService: fixture.encryptionService,
-    ),
-    .new(fixture.database),
     .new(
       database: fixture.database,
       encryptionService: fixture.encryptionService,

@@ -1,21 +1,17 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
-import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,99 +24,6 @@ import '../helpers/test_app.dart';
 void main() {
   final database = AppDatabase(connection: NativeDatabase.memory());
   tearDownAll(database.close);
-  testWidgets('pushed credential returns to chat and retains parent draft', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(1000, 1400));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final workspace = await WorkspaceRepository(database)
-        .createWorkspace(const .new(name: 'Credential parent', type: .local));
-    final definition = await SkillCredentialDefinitionsRepository(database)
-        .createDefinition(
-          workspace.id,
-          const .new(
-            title: 'Test type',
-            attributesJson: '{"secret":{"description":"Key"}}',
-          ),
-        );
-    final chat = NewChatRoute(workspaceId: workspace.id).location;
-    final router = GoRouter(routes: $appRoutes, initialLocation: chat);
-    addTearDown(router.dispose);
-    SkillCredentialToCreate? created;
-    await tester.runAsync(
-      () => tester.pumpWidget(
-        TestableApp(
-          child: AuraThemeScope(
-            theme: .light,
-            child: Portal(child: Router.withConfig(config: router)),
-          ),
-          overrides: [
-            appDatabaseProvider.overrideWithValue(database),
-            routerProvider.overrideWithValue(router),
-            chatModelConnectionsProvider(workspace.id)
-                .overrideWith((ref) => Stream.value([])),
-            listModelsGroupedByProviderProvider(workspaceId: workspace.id)
-                .overrideWith((ref) => Stream.value({})),
-            skillCredentialOperationsProvider(workspace.id).overrideWithValue(
-              .new(
-                create: (workspaceId, value) async {
-                  expect(workspaceId, workspace.id);
-                  created = value;
-
-                  return .new(
-                    id: 'created-credential',
-                    workspaceId: workspaceId,
-                    credentialDefinitionId: value.credentialDefinitionId,
-                    name: value.name,
-                    attributes: value.attributes,
-                    isEnabled: true,
-                    createdAt: .new(2026),
-                    updatedAt: .new(2026),
-                  );
-                },
-                getForEdit: (_) => throw UnimplementedError(),
-                update: (_, _) => throw UnimplementedError(),
-                delete: (_) => throw UnimplementedError(),
-              ),
-            ),
-          ],
-          workspaceId: workspace.id,
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-    await tester.enterText(
-      find
-          .descendant(
-            of: find.byType(ChatInputWidget),
-            matching: find.byType(EditableText),
-          )
-          .first,
-      'Retain the parent draft',
-    );
-    final _ = FeatureDestinations.push<void>(
-      tester.element(find.byType(NewChatScreen)),
-      ServiceConnectionCreateRoute(
-        workspaceId: workspace.id,
-        type: 'skillCredential',
-        credentialDefinitionId: definition.id,
-      ).location,
-    );
-    final _ = await tester.pumpAndSettle();
-    expect(find.text('Test type'), findsOneWidget);
-    await tester.enterText(find.byType(AuraInput).first, 'Created connection');
-    await tester.enterText(find.byType(AuraInput).last, 'fixture-secret');
-    await tester.tap(find.text('Save'));
-    final _ = await tester.pumpAndSettle();
-    expect(created?.credentialDefinitionId, definition.id);
-    expect(created?.name, 'Created connection');
-    expect(find.text('Retain the parent draft'), findsOneWidget);
-    expect(find.text('Continue to chat'), findsNothing);
-    expect(router.routeInformationProvider.value.uri.path, chat);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 10));
-  });
-
   for (final action in ['save', 'cancel']) {
     for (final direct in [false, true]) {
       testWidgets('first chat $action returns to real chat direct=$direct', (

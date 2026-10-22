@@ -2166,7 +2166,7 @@ ConversationSkillSelectorState _skillSelectorState(int count) =>
             content: '',
             source: .user,
             kind: .template,
-            credentialReadiness: .ready,
+            connectorReadiness: .ready,
           ),
       ],
       loadable: const [],

@@ -69,7 +69,7 @@ class ConversationSkillContextRuntime
 enum ConversationSkillContextPhase { preparing, ready, needsContext, error }
 
 enum ConversationSkillContextFailure {
-  missingCredentials,
+  missingConnection,
   unavailableMetadata,
   preparationFailed,
 }

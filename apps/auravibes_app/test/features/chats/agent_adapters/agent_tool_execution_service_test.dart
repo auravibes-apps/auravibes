@@ -13,12 +13,10 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentIterationDecision,
-        AgentResolvedToolName,
         AgentToolPermissionResult,
         AgentToolToCall,
         LoadLatestMessageToolCallsResult,
-        SkillCommandTarget,
-        callSkillToolName;
+        activateSkillToolName;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
@@ -192,24 +190,28 @@ void main() {
           ..logToolExecutionError((
             conversationId: 'conversation-1',
             toolCallId: 'call-1',
-            tool: ResolvedTool.skillCommand(commandName: callSkillToolName),
+            tool: ResolvedTool.skillControl(
+              toolIdentifier: activateSkillToolName,
+            ),
             error: UnsupportedError(
               'App skill tool has no executor: browser_read_page '
               'apiKey=secret',
             ),
             stackTrace: StackTrace.current,
-            failurePhase: 'callSkillTool.skillNative',
+            failurePhase: 'activateSkill',
           ))
           ..logToolExecutionError((
             conversationId: 'conversation-1',
             toolCallId: 'call-2',
-            tool: ResolvedTool.skillCommand(commandName: callSkillToolName),
+            tool: ResolvedTool.skillControl(
+              toolIdentifier: activateSkillToolName,
+            ),
             error: TimeoutException(
               'Waiting for WebView.',
               const Duration(seconds: 8),
             ),
             stackTrace: StackTrace.current,
-            failurePhase: 'callSkillTool.skillNative',
+            failurePhase: 'activateSkill',
           ));
         await Future<void>.delayed(.zero);
         await subscription.cancel();
@@ -221,10 +223,7 @@ void main() {
         final timeoutMessage = messages.singleWhere(
           (message) => message.contains('errorType=TimeoutException'),
         );
-        expect(
-          unsupportedMessage,
-          contains('failurePhase=callSkillTool.skillNative'),
-        );
+        expect(unsupportedMessage, contains('failurePhase=activateSkill'));
         expect(
           unsupportedMessage,
           contains('App skill tool has no executor: browser_read_page'),
@@ -234,30 +233,13 @@ void main() {
       },
     );
 
-    group('effective approval targets', () {
-      AppAllowedToolsDataProvider providerWith(
-        ResolveSkillCommandTarget? resolveSkillTarget,
-      ) {
-        return AppAllowedToolsDataProvider(
-          messageRepository: messageRepository,
-          loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
-          resolvedToolService: .new(
-            agentCancellationRuntime: agentCancellationRuntime,
-            mcpToolCaller: ({
-              required mcpServerId,
-              required toolIdentifier,
-              required arguments,
-              onElicitation,
-            }) async => 'unused',
-          ),
-          toolDecisionService: getAgentIterationDecisionUsecase,
-          agentCancellationRuntime: agentCancellationRuntime,
-          resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
-          resolveSkillCommandTarget: resolveSkillTarget,
+    group('approval targets', () {
+      test('passes native Skill tool to approval unchanged', () async {
+        final directTool = ResolvedTool.skillNative(
+          tableId: 'list_agents',
+          skillSlug: 'agents',
+          toolIdentifier: 'list_agents',
         );
-      }
-
-      test('throws when no approval resolver is configured', () async {
         final provider = AppAllowedToolsDataProvider(
           messageRepository: messageRepository,
           loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
@@ -272,210 +254,8 @@ void main() {
           ),
           toolDecisionService: getAgentIterationDecisionUsecase,
           agentCancellationRuntime: agentCancellationRuntime,
+          resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
         );
-
-        await expectLater(
-          provider.resolveToolApprovalDecision((
-            conversationId: 'conversation-1',
-            workspaceId: 'workspace-1',
-            toolCallId: 'tool-call-1',
-            resolvedTool: .mcp(
-              tableId: 'tool-1',
-              toolIdentifier: 'sum',
-              mcp: (
-                mcpServerId: 'server-1',
-                mcpSlug: 'server-1',
-                outputSchemaJson: null,
-              ),
-            ),
-            argumentsRaw: '{}',
-          )),
-          throwsA(isA<StateError>()),
-        );
-      });
-
-      test('returns notConfigured for malformed skill arguments', () async {
-        final provider = providerWith(null);
-
-        final decision = await provider.resolveToolApprovalDecision((
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          toolCallId: 'tool-call-1',
-          resolvedTool: .skillCommand(commandName: callSkillToolName),
-          argumentsRaw: '{not-json',
-        ));
-
-        expect(
-          decision.permissionResult,
-          AgentToolPermissionResult.notConfigured,
-        );
-      });
-
-      test(
-        'returns notConfigured when skill target resolver is absent',
-        () async {
-          final provider = providerWith(null);
-
-          final decision = await provider.resolveToolApprovalDecision((
-            conversationId: 'conversation-1',
-            workspaceId: 'workspace-1',
-            toolCallId: 'tool-call-1',
-            resolvedTool: .skillCommand(commandName: callSkillToolName),
-            argumentsRaw:
-                '{"skill":"duckduckgo","tool":"search",'
-                '"args":{},"revision":"rev-1"}',
-          ));
-
-          expect(
-            decision.permissionResult,
-            AgentToolPermissionResult.notConfigured,
-          );
-        },
-      );
-
-      test(
-        'passes exact resolved call_skill_tool target to approval',
-        () async {
-          final wrapper = ResolvedTool.skillCommand(
-            commandName: callSkillToolName,
-          );
-          SkillCommandTarget? resolvedCommand;
-          final provider = providerWith(({
-            required conversationId,
-            required workspaceId,
-            required command,
-          }) async {
-            resolvedCommand = command;
-
-            return AgentResolvedToolName.skillAppTemplate(
-              tableId: 'search',
-              skillSlug: 'duckduckgo',
-              toolIdentifier: 'search',
-            );
-          });
-          when(
-            () => resolveToolApprovalDecision(
-              conversationId: 'conversation-1',
-              workspaceId: 'workspace-1',
-              toolCallId: 'tool-call-1',
-              resolvedTool: any(named: 'resolvedTool'),
-            ),
-          ).thenAnswer(
-            (_) async => const ToolApprovalDecision(
-              toolCallId: 'tool-call-1',
-              permissionResult: .granted,
-            ),
-          );
-
-          final decision = await provider.resolveToolApprovalDecision((
-            conversationId: 'conversation-1',
-            workspaceId: 'workspace-1',
-            toolCallId: 'tool-call-1',
-            resolvedTool: wrapper,
-            argumentsRaw:
-                '{"skill":"duckduckgo","tool":"search",'
-                '"args":{},"revision":"rev-1"}',
-          ));
-
-          final approvalTool =
-              verify(
-                    () => resolveToolApprovalDecision(
-                      conversationId: 'conversation-1',
-                      workspaceId: 'workspace-1',
-                      toolCallId: 'tool-call-1',
-                      resolvedTool: captureAny(named: 'resolvedTool'),
-                    ),
-                  ).captured.single
-                  as ResolvedTool;
-          expect(
-            approvalTool.fullName,
-            'skill__app_template__duckduckgo__search',
-          );
-          expect(resolvedCommand?.skill, 'duckduckgo');
-          expect(resolvedCommand?.tool, 'search');
-          expect(decision.permissionResult, AgentToolPermissionResult.granted);
-        },
-      );
-
-      test('returns notConfigured for malformed call_skill_tool', () async {
-        var resolvedTarget = false;
-        final provider = providerWith(({
-          required conversationId,
-          required workspaceId,
-          required command,
-        }) async {
-          resolvedTarget = true;
-
-          return AgentResolvedToolName.skillNative(
-            tableId: 'search',
-            skillSlug: 'duckduckgo',
-            toolIdentifier: 'search',
-          );
-        });
-
-        final decision = await provider.resolveToolApprovalDecision((
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          toolCallId: 'tool-call-1',
-          resolvedTool: .skillCommand(commandName: callSkillToolName),
-          argumentsRaw: '{"skill":"duckduckgo"}',
-        ));
-
-        expect(
-          decision.permissionResult,
-          AgentToolPermissionResult.notConfigured,
-        );
-        expect(resolvedTarget, isFalse);
-        final _ = verifyNever(
-          () => resolveToolApprovalDecision(
-            conversationId: any(named: 'conversationId'),
-            workspaceId: any(named: 'workspaceId'),
-            toolCallId: any(named: 'toolCallId'),
-            resolvedTool: any(named: 'resolvedTool'),
-          ),
-        );
-      });
-
-      test('returns notConfigured for unresolved call_skill_tool', () async {
-        final provider = providerWith(
-          ({
-            required conversationId,
-            required workspaceId,
-            required command,
-          }) async => null,
-        );
-
-        final decision = await provider.resolveToolApprovalDecision((
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          toolCallId: 'tool-call-1',
-          resolvedTool: .skillCommand(commandName: callSkillToolName),
-          argumentsRaw:
-              '{"skill":"duckduckgo","tool":"search",'
-              '"args":{},"revision":"rev-1"}',
-        ));
-
-        expect(
-          decision.permissionResult,
-          AgentToolPermissionResult.notConfigured,
-        );
-        final _ = verifyNever(
-          () => resolveToolApprovalDecision(
-            conversationId: any(named: 'conversationId'),
-            workspaceId: any(named: 'workspaceId'),
-            toolCallId: any(named: 'toolCallId'),
-            resolvedTool: any(named: 'resolvedTool'),
-          ),
-        );
-      });
-
-      test('passes direct tool to approval unchanged', () async {
-        final directTool = ResolvedTool.skillNative(
-          tableId: 'search',
-          skillSlug: 'duckduckgo',
-          toolIdentifier: 'search',
-        );
-        final provider = providerWith(null);
         when(
           () => resolveToolApprovalDecision(
             conversationId: 'conversation-1',

@@ -82,11 +82,13 @@ class const AddModelProviderWidget({
   final VoidCallback? onCreated,
   final VoidCallback? onCancel,
   final bool showHeader = true,
+  final String? initialModelProviderId,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final content = _AddModelProviderContent(
       workspaceId: workspaceId,
+      initialModelProviderId: initialModelProviderId,
       showHeader: showHeader,
       routeExitGuard: routeExitGuard,
       onCreated: onCreated,
@@ -94,17 +96,30 @@ class const AddModelProviderWidget({
     );
     if (routeExitGuard != null) return content;
 
-    return PopScope(
+    return _StandaloneAddModelProvider(
+      workspaceId: workspaceId,
       child: content,
-      canPop: !_watchHasUnsavedModelProviderChanges(ref, workspaceId),
-      onPopInvokedWithResult: _modelProviderPopCallback((
-        context: context,
-        ref: ref,
-        workspaceId: workspaceId,
-        onCancel: onCancel,
-      )),
+      onCancel: onCancel,
     );
   }
+}
+
+class const _StandaloneAddModelProvider({
+  required final String workspaceId,
+  required final Widget child,
+  final VoidCallback? onCancel,
+}) extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => PopScope(
+    child: child,
+    canPop: !_watchHasUnsavedModelProviderChanges(ref, workspaceId),
+    onPopInvokedWithResult: _modelProviderPopCallback((
+      context: context,
+      ref: ref,
+      workspaceId: workspaceId,
+      onCancel: onCancel,
+    )),
+  );
 }
 
 PopInvokedWithResultCallback<Object?> _modelProviderPopCallback(
@@ -146,6 +161,7 @@ bool _readHasUnsavedModelProviderChanges(WidgetRef ref, String workspaceId) =>
 
 class const _AddModelProviderContent({
   required final String workspaceId,
+  required final String? initialModelProviderId,
   required final bool showHeader,
   final DraftExitGuard? routeExitGuard,
   final VoidCallback? onCreated,
@@ -155,6 +171,7 @@ class const _AddModelProviderContent({
   Widget build(BuildContext context, WidgetRef ref) {
     final runtime = _useAddModelProviderRuntime(ref, workspaceId);
     final session = ref.watch(workspaceSessionForRouteProvider(workspaceId));
+    _useInitialModelProviderSelection(ref, workspaceId, initialModelProviderId);
 
     return _AddModelProviderContentView(
       runtime: runtime,
@@ -168,6 +185,47 @@ class const _AddModelProviderContent({
       onCancel: onCancel,
     );
   }
+}
+
+void _useInitialModelProviderSelection(
+  WidgetRef ref,
+  String workspaceId,
+  String? initialModelProviderId,
+) {
+  final providers = ref.watch(
+    apiModelProvidersProvider(workspaceId: workspaceId),
+  );
+  final modelProviderState = ref.read(
+    addModelProviderStateProvider(workspaceId).notifier,
+  );
+  final initialModelApplied = useRef(false);
+  useEffect(() {
+    _applyInitialModelProviderSelection(
+      modelProviderState,
+      initialModelProviderId,
+      providers,
+      initialModelApplied,
+    );
+
+    return null;
+  });
+}
+
+void _applyInitialModelProviderSelection(
+  AddModelProviderState modelProviderState,
+  String? initialModelProviderId,
+  AsyncValue<List<ApiModelProviderEntity>> providers,
+  ObjectRef<bool> initialModelApplied,
+) {
+  if (initialModelProviderId == null || initialModelApplied.value) return;
+  final availableProviders = providers.value;
+  if (availableProviders == null) return;
+  if (availableProviders.any(
+    (provider) => provider.id == initialModelProviderId,
+  )) {
+    modelProviderState.setModel(initialModelProviderId);
+  }
+  initialModelApplied.value = true;
 }
 
 class const _AddModelProviderContentView({

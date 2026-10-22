@@ -4,12 +4,9 @@ import 'package:auravibes_app/data/repositories/conversation_tools_repository.da
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
-import 'package:auravibes_app/features/skills/models/available_skill.dart';
-import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -62,34 +59,6 @@ class _FakeBuildDynamicSkillToolSpecsUsecase(final List<ToolSpec> _result)
   }) async => _result;
 }
 
-class _FakeBuildSkillTemplateToolSpecsUsecase
-    implements BuildSkillTemplateToolSpecsUsecase {
-  List<ToolSpec> result = const [];
-
-  @override
-  Future<WorkspaceSession> Function(String workspaceId)? get workspaceSession =>
-      null;
-
-  @override
-  Future<List<ToolSpec>> call({
-    required String conversationId,
-    required String workspaceId,
-    List<AvailableSkill> extraSkills = const [],
-  }) async => result;
-}
-
-class _FakeBuildAppSkillNativeToolSpecsUsecase
-    implements BuildAppSkillNativeToolSpecsUsecase {
-  List<ToolSpec> result = const [];
-
-  @override
-  Future<List<ToolSpec>> call({
-    required String conversationId,
-    required String workspaceId,
-    List<AvailableSkill> extraSkills = const [],
-  }) async => result;
-}
-
 class _CapturingRepo({
   required final Future<List<WorkspaceToolEntity>> Function(String, String)
   onGetTools,
@@ -121,7 +90,12 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result.map((spec) => spec.name), [runSubAgentToolName]);
+      expect(result.map((spec) => spec.name), [
+        listConnectorConnectionsToolName,
+        listConnectorToolsToolName,
+        executeConnectorToolName,
+        runSubAgentToolName,
+      ]);
     });
 
     test('hides agent tools from child conversations', () async {
@@ -178,10 +152,49 @@ void main() {
           workspaceId: 'ws-1',
         );
 
-        expect(result.map((spec) => spec.name), [runSubAgentToolName]);
+        expect(result.map((spec) => spec.name), [
+          listConnectorConnectionsToolName,
+          listConnectorToolsToolName,
+          executeConnectorToolName,
+          runSubAgentToolName,
+        ]);
         verify(
           () => syncUsecase.call(conversationId: 'conv-1', workspaceId: 'ws-1'),
         ).called(1);
+      },
+    );
+
+    test(
+      'syncs Connector command permissions before loading the catalog',
+      () async {
+        final syncConnectorUsecase = _MockSyncConnectorToolPermissionsUsecase();
+        final events = <String>[];
+        when(() => syncConnectorUsecase.call(workspaceId: 'ws-1'))
+            .thenAnswer((_) {
+              events.add('sync');
+
+              return Future<void>.value();
+            });
+        final usecase = LoadConversationToolSpecsUsecase(
+          conversationToolsRepository: _CapturingRepo(
+            onGetTools: (_, _) async {
+              events.add('load');
+
+              return [];
+            },
+          ),
+          buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+          buildDynamicSkillToolSpecsUsecase:
+              _FakeBuildDynamicSkillToolSpecsUsecase([]),
+          syncSkillToolPermissionsUsecase:
+              NoopSyncSkillToolPermissionsUsecase(),
+          syncConnectorToolPermissionsUsecase: syncConnectorUsecase,
+        );
+
+        final _ = await usecase(conversationId: 'conv-1', workspaceId: 'ws-1');
+
+        expect(events, ['sync', 'load']);
+        verify(() => syncConnectorUsecase.call(workspaceId: 'ws-1')).called(1);
       },
     );
 
@@ -200,7 +213,12 @@ void main() {
         workspaceId: 'ws-1',
       );
 
-      expect(result.map((spec) => spec.name), [runSubAgentToolName]);
+      expect(result.map((spec) => spec.name), [
+        listConnectorConnectionsToolName,
+        listConnectorToolsToolName,
+        executeConnectorToolName,
+        runSubAgentToolName,
+      ]);
       final _ = verifyNever(
         () => syncUsecase.call(conversationId: 'conv-1', workspaceId: 'ws-1'),
       );
@@ -225,7 +243,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result, hasLength(2));
+      expect(result, hasLength(5));
       expect(result.firstOrNull?.name, 'tool-1');
     });
 
@@ -325,7 +343,15 @@ void main() {
 
         expect(
           names,
-          containsAll({...skillCommandToolNames, runSubAgentToolName}),
+          containsAll({
+            ...skillCommandToolNames,
+            ...connectorToolCommandNames,
+            runSubAgentToolName,
+          }),
+        );
+        expect(
+          catalog.resolve(executeConnectorToolName)?.isConnectorCommand,
+          isTrue,
         );
         expect(names, containsAll(externalTargets.keys));
         expect(names.toSet(), hasLength(catalog.specs.length));
@@ -345,7 +371,7 @@ void main() {
         );
         for (final name in skillCommandToolNames) {
           final target = catalog.resolve(name);
-          expect(target?.isSkillCommand, isTrue);
+          expect(target?.isSkillControl, isTrue);
           expect(target?.toolIdentifier, name);
         }
         final subAgentTarget = catalog.resolve(runSubAgentToolName);
@@ -406,7 +432,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result, hasLength(4));
+      expect(result, hasLength(7));
     });
 
     test('constructor stores dependencies', () {
@@ -501,75 +527,49 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
+        listConnectorConnectionsToolName,
+        listConnectorToolsToolName,
+        executeConnectorToolName,
         activateSkillToolName,
         runSubAgentToolName,
       ]);
     });
 
-    test('skill load state does not change provider tool schemas', () async {
-      final dynamicSkillSpecs = _FakeBuildDynamicSkillToolSpecsUsecase(
-        buildSkillCommandToolSpecs(),
-      );
-      final templateSkillSpecs = _FakeBuildSkillTemplateToolSpecsUsecase();
-      final nativeSkillSpecs = _FakeBuildAppSkillNativeToolSpecsUsecase();
-      final researchSearchSpec = ToolSpec(
-        name: 'skill__user__research__search',
-        description: 'Search primary sources.',
-        inputJsonSchema: const {'type': 'object'},
-      );
-      final researchFetchSpec = ToolSpec(
-        name: 'skill__user__research__fetch',
-        description: 'Fetch a primary source.',
-        inputJsonSchema: const {'type': 'object'},
-      );
-      final braveSearchSpec = ToolSpec(
-        name: 'skill__app_template__brave__search',
-        description: 'Search with Brave.',
-        inputJsonSchema: const {'type': 'object'},
-      );
-      templateSkillSpecs.result = [researchSearchSpec];
-      nativeSkillSpecs.result = [braveSearchSpec];
-      final usecase = LoadConversationToolSpecsUsecase(
-        conversationToolsRepository: _FakeConversationToolsRepository([
-          for (final name in [
-            researchSearchSpec.name,
-            researchFetchSpec.name,
-            braveSearchSpec.name,
-          ])
-            WorkspaceToolEntity(
-              id: name,
-              workspaceId: 'workspace-1',
-              toolId: name,
-              isEnabled: true,
-              permissionMode: .alwaysAsk,
-              createdAt: .new(2026),
-              updatedAt: .new(2026),
-            ),
-        ]),
-        buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
-        buildDynamicSkillToolSpecsUsecase: dynamicSkillSpecs,
-        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
-        buildSkillTemplateToolSpecsUsecase: templateSkillSpecs,
-        buildAppSkillNativeToolSpecsUsecase: nativeSkillSpecs,
-      );
+    test(
+      'Skill guidance does not add tool specs to the provider catalog',
+      () async {
+        final usecase = LoadConversationToolSpecsUsecase(
+          conversationToolsRepository: _FakeConversationToolsRepository([]),
+          buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+          buildDynamicSkillToolSpecsUsecase:
+              _FakeBuildDynamicSkillToolSpecsUsecase(
+                buildSkillCommandToolSpecs(),
+              ),
+          syncSkillToolPermissionsUsecase:
+              NoopSyncSkillToolPermissionsUsecase(),
+        );
 
-      final first = await usecase.call(
-        conversationId: 'conversation-1',
-        workspaceId: 'workspace-1',
-      );
+        final first = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+        final second = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
 
-      templateSkillSpecs.result = [researchSearchSpec, researchFetchSpec];
-      nativeSkillSpecs.result = const [];
-
-      final second = await usecase.call(
-        conversationId: 'conversation-1',
-        workspaceId: 'workspace-1',
-      );
-
-      expect(first, second);
-      expect(first.map((spec) => spec.name), contains(callSkillToolName));
-      expect(first.any((spec) => spec.name.startsWith('skill__')), isFalse);
-    });
+        expect(first, second);
+        expect(
+          first.map((spec) => spec.name),
+          containsAll(skillCommandToolNames),
+        );
+        expect(first.any((spec) => spec.name.startsWith('skill__')), isFalse);
+        expect(
+          first.map((spec) => spec.name),
+          contains(executeConnectorToolName),
+        );
+      },
+    );
 
     test('keeps dynamic skill control specs available for the agent', () async {
       final skillSpecs = [
@@ -579,8 +579,8 @@ void main() {
           inputJsonSchema: {},
         ),
         ToolSpec(
-          name: SkillToolNames.listCredentials,
-          description: 'list credentials',
+          name: loadSkillResourceToolName,
+          description: 'load Skill resource',
           inputJsonSchema: {},
         ),
       ];
@@ -599,13 +599,40 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
+        listConnectorConnectionsToolName,
+        listConnectorToolsToolName,
+        executeConnectorToolName,
         activateSkillToolName,
-        SkillToolNames.listCredentials,
+        loadSkillResourceToolName,
         runSubAgentToolName,
       ]);
     });
+
+    test('loads connector execution without loading a skill', () async {
+      final usecase = LoadConversationToolSpecsUsecase(
+        conversationToolsRepository: _FakeConversationToolsRepository([]),
+        buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase(const []),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
+      );
+
+      final result = await usecase(
+        conversationId: 'conv-1',
+        workspaceId: 'ws-1',
+      );
+
+      expect(
+        result.map((spec) => spec.name),
+        contains(executeConnectorToolName),
+      );
+      expect(result.any((spec) => spec.name.startsWith('skill__')), isFalse);
+    });
   });
 }
+
+class _MockSyncConnectorToolPermissionsUsecase extends Mock
+    implements SyncConnectorToolPermissionsUsecase;
 
 class _CapturingBuildCombined({
   required final Future<List<ToolCatalogCandidate<ResolvedTool>>> Function(

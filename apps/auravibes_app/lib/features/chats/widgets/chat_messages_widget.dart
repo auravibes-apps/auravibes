@@ -53,7 +53,6 @@ import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_ann
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
-import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
@@ -72,7 +71,6 @@ import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/confirmed_external_link.dart';
-import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 
 final _a2uiLogger = Logger('chat_a2ui_actions');
@@ -131,11 +129,7 @@ List<String> _messageIdsWithTargetContext({
   ];
 }
 
-typedef _ActivityToolDisplay = ({
-  String displayName,
-  String? description,
-  VoidCallback? openSkillDetails,
-});
+typedef _ActivityToolDisplay = ({String displayName, String? description});
 
 class const ChatPrimaryScrollController({
   required final Widget child,
@@ -773,8 +767,8 @@ Future<void> _submitSkillSuggestion(
     case .stale ||
         .unavailable ||
         .unauthorized ||
-        .credentialsMissing ||
-        .credentialsUnknown:
+        .connectionMissing ||
+        .connectionUnknown:
       _showConversationSkillPicker(context, workspaceId, conversationId);
   }
 }
@@ -2412,14 +2406,12 @@ class const _AssistantActivityRun({
               String displayName,
               String? description,
               bool showArguments,
-              VoidCallback? openSkillDetails,
               VoidCallback? openSubAgent,
               VoidCallback? onRunInBackground,
             })
           >[];
       for (final item in entry.toolCalls) {
         final display = _activityToolDisplay(
-          context: context,
           ref: ref,
           workspaceId: workspaceId,
           toolCall: item.toolCall,
@@ -2431,7 +2423,6 @@ class const _AssistantActivityRun({
           displayName: display.displayName,
           description: display.description,
           showArguments: !item.hideArguments,
-          openSkillDetails: display.openSkillDetails,
           openSubAgent: _openSubAgent(
             context: context,
             ref: ref,
@@ -2516,7 +2507,6 @@ class const _AssistantActivityRun({
                 }),
               );
             },
-            openSkillDetails: activityToolCall.openSkillDetails,
             openSubAgent: activityToolCall.openSubAgent,
             onRunInBackground: activityToolCall.onRunInBackground,
             onOpenToolResult: onOpenToolResult,
@@ -2810,64 +2800,18 @@ String _toolCallDisplayName(
 );
 
 _ActivityToolDisplay _activityToolDisplay({
-  required BuildContext context,
   required WidgetRef ref,
   required String workspaceId,
   required MessageToolCallEntity toolCall,
 }) {
-  final target = SkillToolCallDisplay.parseTarget(toolCall);
-  if (target == null) {
-    return (
-      displayName: _toolCallDisplayName(
-        ref.watch(toolDisplayNameProvider(workspaceId, toolCall.name)),
-        toolCall.name,
-      ),
-      description: SkillToolCallDisplay.description(
-        context: context,
-        titles: null,
-        userFacingDescription: toolCall.userFacingDescription,
-      ),
-      openSkillDetails: null,
-    );
-  }
-
-  final titlesAsync = ref.watch(
-    skillToolCallDisplayTitlesProvider(
-      workspaceId,
-      target.skillSlug,
-      target.toolSlug,
-    ),
-  );
-  final titles = titlesAsync.maybeWhen(
-    data: (value) => value,
-    orElse: () => null,
-  );
-  final skillId = titles?.skillId;
-
   return (
-    displayName: SkillToolCallDisplay.displayName(
-      context: context,
-      titles: titles,
-      target: target,
+    displayName: _toolCallDisplayName(
+      ref.watch(toolDisplayNameProvider(workspaceId, toolCall.name)),
+      toolCall.name,
     ),
-    description: SkillToolCallDisplay.description(
-      context: context,
-      titles: titles,
-      userFacingDescription: toolCall.userFacingDescription,
+    description: normalizeToolCallUserFacingDescription(
+      toolCall.userFacingDescription,
     ),
-    openSkillDetails: skillId == null || skillId.isEmpty
-        ? null
-        : () {
-            unawaited(
-              FeatureDestinations.push<void>(
-                context,
-                SkillDetailRoute(
-                  workspaceId: workspaceId,
-                  skillId: skillId,
-                ).location,
-              ),
-            );
-          },
   );
 }
 
@@ -3166,7 +3110,6 @@ class const _ActivityToolCallRow({
   required final Future<void> Function() onToggle,
   required final VoidCallback? openSubAgent,
   required final VoidCallback? onRunInBackground,
-  required final VoidCallback? openSkillDetails,
   required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
   super.key,
 }) extends StatelessWidget {
@@ -3184,7 +3127,6 @@ class const _ActivityToolCallRow({
     final statusColor = _statusColor(context);
     final onOpenSubAgent = openSubAgent;
     final onBackground = onRunInBackground;
-    final onOpenSkillDetails = openSkillDetails;
     final statusBadge = _ActivityToolStatusBadge(
       label: statusKey.tr(),
       color: statusColor,
@@ -3284,21 +3226,6 @@ class const _ActivityToolCallRow({
                       LocaleKeys
                           .chats_screens_chat_conversation_view_sub_agent_run,
                     ),
-                    AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
-                  ],
-                  spacing: .xs,
-                  mainAxisSize: .min,
-                ),
-                variant: .ghost,
-                size: .small,
-              ),
-            if (onOpenSkillDetails != null)
-              AuraButton(
-                key: ValueKey('activity_open_skill_${toolCall.id}'),
-                onPressed: onOpenSkillDetails,
-                child: const AuraRow(
-                  children: [
-                    TextLocale(LocaleKeys.related_lists_view_skill),
                     AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
                   ],
                   spacing: .xs,

@@ -10,11 +10,11 @@ void main() {
     String body, {
     Map<String, String> credentials = const {},
     bool sse = true,
-    Map<String, SkillCredentialAttributeDefinition> credentialDefinitions =
+    Map<String, ConnectorCredentialAttributeDefinition> credentialDefinitions =
         const {},
   }) =>
-      SkillTemplateExecutor(
-            const ResolveSkillUrlTemplate(),
+      ConnectorToolTemplateExecutor(
+            const ResolveConnectorRequestTemplate(),
             (_) => CancelableOperation.fromFuture(
               Future.value(
                 UrlResponse(
@@ -33,8 +33,10 @@ void main() {
           .call(
             inputs: const {},
             credentials: credentials,
-            definition: SkillTemplateDefinition(
-              request: const SkillUrlTemplate(url: 'https://example.com'),
+            definition: ConnectorToolRequestDefinition(
+              request: const ConnectorRequestTemplate(
+                url: 'https://example.com',
+              ),
               inputs: const {},
               credentialDefinitions: credentialDefinitions,
             ),
@@ -87,7 +89,7 @@ void main() {
       'account account-id',
       credentials: const {'account': 'account-id'},
       credentialDefinitions: const {
-        'account': SkillCredentialAttributeDefinition(
+        'account': ConnectorCredentialAttributeDefinition(
           description: 'Account identifier',
           secret: false,
         ),
@@ -101,14 +103,14 @@ void main() {
     final response = Completer<UrlResponse>();
     final credentials = {'apiKey': 'old-secret'};
     final operation =
-        SkillTemplateExecutor(
-          const ResolveSkillUrlTemplate(),
+        ConnectorToolTemplateExecutor(
+          const ResolveConnectorRequestTemplate(),
           (_) => CancelableOperation.fromFuture(response.future),
         ).call(
           inputs: const {},
           credentials: credentials,
-          definition: const SkillTemplateDefinition(
-            request: SkillUrlTemplate(url: 'https://example.com'),
+          definition: const ConnectorToolRequestDefinition(
+            request: ConnectorRequestTemplate(url: 'https://example.com'),
             inputs: {},
           ),
         );
@@ -135,7 +137,7 @@ void main() {
     'event: error\ndata:\n\n',
   ]) {
     test('rejects terminal SSE event: $body', () async {
-      await expectLater(execute(body), throwsA(isA<SkillStreamFailure>()));
+      await expectLater(execute(body), throwsA(isA<ConnectorStreamFailure>()));
     });
   }
 
@@ -154,7 +156,7 @@ void main() {
         await expectLater(
           execute(body),
           throwsA(
-            isA<SkillStreamFailure>()
+            isA<ConnectorStreamFailure>()
                 .having((error) => error.terminalType, 'terminalType', terminal)
                 .having((error) => error.partialText, 'partialText', partial)
                 .having(
@@ -181,7 +183,7 @@ void main() {
       await expectLater(
         execute(body),
         throwsA(
-          isA<SkillStreamFailure>().having(
+          isA<ConnectorStreamFailure>().having(
             (error) => error.partialText,
             'partialText',
             'Partial answer',
@@ -201,7 +203,7 @@ void main() {
     await expectLater(
       execute(body, credentials: {'key': 'secret-value'}),
       throwsA(
-        isA<SkillStreamFailure>()
+        isA<ConnectorStreamFailure>()
             .having(
               (error) => error.partialText.length,
               'length',

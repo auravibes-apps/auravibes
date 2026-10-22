@@ -54,7 +54,7 @@ void main() {
       id: 'connection',
       name: 'GitHub',
       serviceId: 'github',
-      secretKind: .skillCredential,
+      secretKind: .provider,
       scope: .user,
       secret: 'secret',
     );
@@ -121,7 +121,7 @@ void main() {
         serviceId: 'github',
         hasSecret: true,
         scope: .workspace,
-        kind: 'appSkillCredential',
+        kind: 'customHttp',
         secretRevision: 7,
       ),
       update: const GenericServiceConnectionUpdate(
@@ -165,7 +165,7 @@ void main() {
           serviceId: 'github',
           hasSecret: true,
           scope: .workspace,
-          kind: 'appSkillCredential',
+          kind: 'customHttp',
           secretRevision: 7,
         ),
         update: const GenericServiceConnectionUpdate(

@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/src/prompt_messages.dart';
 import 'package:auravibes_engine/src/skills/skill_command.dart';
-import 'package:auravibes_engine/src/skills/skill_credentials.dart';
 import 'package:crypto/crypto.dart';
 import 'package:toon_dart/toon_dart.dart';
 
@@ -70,17 +69,22 @@ String buildSkillRevision({
   required String title,
   required String description,
   required String instructions,
-  required Iterable<SkillManifestTool> tools,
+  Iterable<String> connectorToolIds = const [],
 }) {
-  final sortedTools = tools.toList()
-    ..sort((left, right) => left.name.compareTo(right.name));
+  final sortedConnectorToolIds =
+      connectorToolIds
+          .map((id) => id.trim())
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
   final canonical = _canonicalJson({
     'identity': identity,
     'slug': slug,
     'title': title,
     'description': description,
     'instructions': instructions,
-    'tools': [for (final tool in sortedTools) tool.toJson()],
+    'connectorToolIds': sortedConnectorToolIds,
   });
   return sha256.convert(utf8.encode(jsonEncode(canonical))).toString();
 }
@@ -99,24 +103,24 @@ Object? _canonicalJson(Object? value) => switch (value) {
 SkillActivationResult buildSkillActivationResult({
   required SkillManifest manifest,
   required String content,
-  Iterable<SkillCredentialOption> credentials = const [],
   Iterable<SkillResourceSummary> resources = const [],
 }) {
   final slug = _xmlAttributeEscape.convert(manifest.slug);
   final title = _xmlAttributeEscape.convert(manifest.title);
   final revision = _xmlAttributeEscape.convert(manifest.revision);
-  final tools = _xmlTextEscape.convert(_skillToolsJson(manifest));
-  final credentialOptions = _xmlTextEscape.convert(
-    _skillCredentialsToon(credentials),
+  final connectorToolRefs = _xmlTextEscape.convert(
+    jsonEncode(manifest.connectorToolIds),
   );
   final resourceOptions = _xmlTextEscape.convert(
     _skillResourcesToon(resources),
   );
+  final connectorToolRefsXml = manifest.connectorToolIds.isEmpty
+      ? ''
+      : '<connector_tool_refs>$connectorToolRefs</connector_tool_refs>';
   return SkillActivationResult(
     '<skill_content slug="$slug" title="$title" revision="$revision">'
     '${_xmlCdata(content)}'
-    '<skill_tools>$tools</skill_tools>'
-    '<skill_credentials>$credentialOptions</skill_credentials>'
+    '$connectorToolRefsXml'
     '<skill_resources>$resourceOptions</skill_resources>'
     '</skill_content>',
   );
@@ -137,22 +141,6 @@ SkillResourceResult buildSkillResourceResult({
 
 String _xmlCdata(String value) =>
     '<![CDATA[${value.replaceAll(']]>', ']]]]><![CDATA[>')}]]>';
-
-String _skillToolsJson(
-  SkillManifest manifest, {
-  bool includeRevision = false,
-}) => jsonEncode({
-  if (includeRevision) 'revision': manifest.revision,
-  'tools': manifest.tools.map((tool) => tool.toJson()).toList(growable: false),
-});
-
-String _skillCredentialsToon(Iterable<SkillCredentialOption> credentials) {
-  final sorted = credentials.toList()
-    ..sort((left, right) => left.credentialId.compareTo(right.credentialId));
-  return toonEncode({
-    'options': sorted.map((credential) => credential.toJson()).toList(),
-  });
-}
 
 String _skillResourcesToon(Iterable<SkillResourceSummary> resources) {
   final sorted = resources.toList()
@@ -235,17 +223,18 @@ class const BuildSkillContextMessages() {
 
   String _skillXml(AgentSkill skill) {
     final manifest = skill.manifest;
-    final tools = manifest == null
-        ? ''
-        : _xmlTextEscape.convert(
-            _skillToolsJson(manifest, includeRevision: true),
-          );
-    final manifestXml = manifest == null
-        ? ''
-        : '<skill_tools>$tools</skill_tools>';
+    final manifestXml = manifest == null ? '' : _skillManifestXml(manifest);
 
     return '<skill><name>${_xmlTextEscape.convert(skill.title)}</name>'
         '<content>${_xmlTextEscape.convert(skill.content)}</content>'
         '$manifestXml</skill>';
+  }
+
+  String _skillManifestXml(SkillManifest manifest) {
+    final connectorToolRefs = manifest.connectorToolIds.isEmpty
+        ? ''
+        : '<connector_tool_refs>${_xmlTextEscape.convert(jsonEncode(manifest.connectorToolIds))}</connector_tool_refs>';
+
+    return connectorToolRefs;
   }
 }

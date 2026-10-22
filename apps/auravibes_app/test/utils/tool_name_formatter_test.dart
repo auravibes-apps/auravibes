@@ -38,7 +38,7 @@ void main() {
 
     test('formats skill display name', () {
       final parsed = ToolNameFormatter.parse(
-        'skill__user__research_tools__search_web',
+        'skill__app_native__research_tools__search_web',
       );
 
       expect(

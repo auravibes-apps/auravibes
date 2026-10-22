@@ -54,7 +54,7 @@ void main() {
       when(
         () => deleteUsecase(
           connectionId: 'connection-1',
-          kind: ServiceConnectionListItemKind.skillCredential,
+          kind: ServiceConnectionListItemKind.connector,
         ),
       ).thenAnswer((_) => Future<void>.value());
       final usecase = ServiceConnectionsActionUsecase(
@@ -67,7 +67,7 @@ void main() {
       await expectLater(
         usecase.deleteConnection(
           connectionId: 'connection-1',
-          kind: .skillCredential,
+          kind: .connector,
         ),
         completes,
       );
@@ -75,7 +75,7 @@ void main() {
       verify(
         () => deleteUsecase(
           connectionId: 'connection-1',
-          kind: ServiceConnectionListItemKind.skillCredential,
+          kind: ServiceConnectionListItemKind.connector,
         ),
       ).called(1);
     });

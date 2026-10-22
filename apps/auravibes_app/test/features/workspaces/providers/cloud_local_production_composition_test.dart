@@ -27,9 +27,10 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
@@ -176,15 +177,6 @@ void main() {
         skillsRepositoryProvider.overrideWith(
           (_) => _local('skills repository'),
         ),
-        skillTemplateToolsRepositoryProvider.overrideWith(
-          (_) => _local('skill tools repository'),
-        ),
-        skillCredentialDefinitionsRepositoryProvider.overrideWith(
-          (_) => _local('credential definitions repository'),
-        ),
-        skillCredentialsRepositoryProvider.overrideWith(
-          (_) => _local('skill credential store'),
-        ),
         conversationSkillsRepositoryProvider.overrideWith(
           (_) => _local('conversation skills repository'),
         ),
@@ -280,8 +272,8 @@ void main() {
       isA<CloudAgentToolsRepository>(),
     );
     expect(
-      container.read(skillCredentialOperationsProvider('mirror-a')),
-      isNotNull,
+      container.read(cloudSkillStoreProvider('mirror-a')),
+      isA<CloudSkillStore>(),
     );
     expect(
       await container.read(workspaceSkillsProvider('mirror-a').future),
@@ -374,10 +366,7 @@ void main() {
       container.read(agentToolsRepositoryProvider('local-a')),
       isA<AgentToolsRepository>(),
     );
-    expect(
-      container.read(skillCredentialOperationsProvider('local-a')),
-      isNotNull,
-    );
+    expect(container.read(cloudSkillStoreProvider('local-a')), isNull);
     expect(
       container.read(workspaceCompactionSettingsRepositoryProvider),
       isNotNull,

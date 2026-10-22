@@ -53,8 +53,6 @@ enum ServiceConnectionKindTable(final String value) {
   mcpServer('mcp_server'),
   gmail('gmail'),
   customHttp('custom_http'),
-  skillCredential('skill_credential'),
-  appSkillCredential('app_skill_credential'),
 }
 
 enum ServiceAuthenticationTypeTable(final String value) {

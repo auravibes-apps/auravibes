@@ -250,9 +250,6 @@ String _selectedLocation(
   List<FeatureNavigationDestination> destinations,
 ) {
   final location = _withoutMasterQuery(currentUri);
-  if (_isCredentialDefinitionsRoute(location)) {
-    return destinations.lastOrNull?.location ?? '';
-  }
   final selected = _selectedDestination(location, destinations).firstOrNull;
 
   return selected?.location ?? destinations.firstOrNull?.location ?? '';
@@ -268,9 +265,6 @@ Uri _withoutMasterQuery(Uri uri) {
     queryParameters: queryParameters.isEmpty ? null : queryParameters,
   );
 }
-
-bool _isCredentialDefinitionsRoute(Uri uri) =>
-    uri.pathSegments.contains('skill-credential-definitions');
 
 Iterable<FeatureNavigationDestination> _selectedDestination(
   Uri location,
@@ -290,6 +284,11 @@ bool _matchesDestination(
   }
   if (!location.path.startsWith('${destinationUri.path}/')) return false;
 
-  return destinationUri.queryParameters['view'] ==
-      location.queryParameters['view'];
+  final nestedView = switch (location.queryParameters['type']) {
+    'connector' => 'connectors',
+    'modelProvider' => 'providers',
+    _ => location.queryParameters['view'],
+  };
+
+  return destinationUri.queryParameters['view'] == nestedView;
 }

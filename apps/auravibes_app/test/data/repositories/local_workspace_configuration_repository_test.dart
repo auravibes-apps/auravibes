@@ -74,7 +74,7 @@ void main() {
           ServiceConnectionsCompanion.insert(
             name: 'Skill credential',
             serviceId: 'private',
-            kind: .skillCredential,
+            kind: .customHttp,
             authenticationType: .apiKey,
             encryptedAuthValue: const Value('encrypted-skill-secret'),
             workspaceId: source.id,

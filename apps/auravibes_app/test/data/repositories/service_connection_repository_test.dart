@@ -68,19 +68,19 @@ void main() {
       expect(secret.toString(), isNot(contains('secret-value')));
     });
 
-    test('lists app skill and compatible model provider candidates', () async {
+    test('lists matching Connector and model provider candidates', () async {
       await _insertWorkspace(database, 'workspace-1');
       await _insertWorkspace(database, 'workspace-2');
       final encryption = EncryptionService(_FakeSecretKeyManager());
       final repository = ServiceConnectionRepository(database, encryption);
 
-      final appCredentialId = await _insertConnection(
+      final connectorId = await _insertConnection(
         database,
         encryption,
         workspaceId: 'workspace-1',
         name: 'SearXNG instance',
         serviceId: 'searxng',
-        kind: .appSkillCredential,
+        kind: .customHttp,
         secretValue: 'https://search.example.com',
         keySuffix: 'e.com',
       );
@@ -131,18 +131,18 @@ void main() {
         kind: .modelProvider,
       );
 
-      final candidates = await repository.listAppSkillCredentialCandidates((
+      final candidates = await repository.listConnectorConnectionCandidates((
         workspaceId: 'workspace-1',
-        appSkillServiceId: 'searxng',
+        connectorId: 'searxng',
         compatibleModelProviderIds: const ['openai'],
       ));
 
       expect(candidates.map((candidate) => candidate.id), [
-        appCredentialId,
+        connectorId,
         modelCredentialId,
       ]);
       expect(candidates.map((candidate) => candidate.name), [
-        'Service skill searxng: SearXNG instance ****e.com',
+        'Connector searxng: SearXNG instance ****e.com',
         'Model provider openai: OpenAI key ****enai',
       ]);
       expect(candidates.map((candidate) => candidate.serviceId), [
@@ -151,64 +151,65 @@ void main() {
       ]);
     });
 
-    test('generic edit preserves, replaces, and clears local secret', () async {
-      await _insertWorkspace(database, 'workspace-1');
-      final encryption = EncryptionService(_FakeSecretKeyManager());
-      final repository = ServiceConnectionRepository(database, encryption);
-      final id = await _insertConnection(
-        database,
-        encryption,
-        workspaceId: 'workspace-1',
-        name: 'Old',
-        serviceId: 'github',
-        kind: .appSkillCredential,
-        secretValue: 'old-secret',
-      );
-
-      await repository.updateAppSkillCredential((
-        id: id,
-        workspaceId: 'workspace-1',
-        name: 'Preserved',
-        clearSecret: false,
-        secret: null,
-      ));
-      expect(
-        (await repository.readSecret(
-          id,
-        ) as ServiceConnectionSecretApiKey).apiKey,
-        'old-secret',
-      );
-
-      await repository.updateAppSkillCredential((
-        id: id,
-        workspaceId: 'workspace-1',
-        name: 'Replaced',
-        clearSecret: false,
-        secret: 'new-secret',
-      ));
-      expect(
-        (await repository.readSecret(
-          id,
-        ) as ServiceConnectionSecretApiKey).apiKey,
-        'new-secret',
-      );
-
-      await repository.updateAppSkillCredential((
-        id: id,
-        workspaceId: 'workspace-1',
-        name: 'Cleared',
-        clearSecret: true,
-        secret: null,
-      ));
-      await expectLater(repository.readSecret(id), throwsFormatException);
-      expect(
-        (await repository.getAppSkillCredentialForEdit(
-          id,
+    test(
+      'Connector edit preserves, replaces, and clears local secret',
+      () async {
+        await _insertWorkspace(database, 'workspace-1');
+        final encryption = EncryptionService(_FakeSecretKeyManager());
+        final repository = ServiceConnectionRepository(database, encryption);
+        final connection = await repository.createConnectorConnection((
           workspaceId: 'workspace-1',
-        ))?.name,
-        'Cleared',
-      );
-    });
+          name: 'Old',
+          connectorId: 'github',
+          apiKey: 'old-secret',
+        ));
+        final id = connection.id;
+
+        await repository.updateConnectorConnection((
+          id: id,
+          workspaceId: 'workspace-1',
+          name: 'Preserved',
+          clearSecret: false,
+          secret: null,
+        ));
+        expect(
+          (await repository.readSecret(
+            id,
+          ) as ServiceConnectionSecretApiKey).apiKey,
+          'old-secret',
+        );
+
+        await repository.updateConnectorConnection((
+          id: id,
+          workspaceId: 'workspace-1',
+          name: 'Replaced',
+          clearSecret: false,
+          secret: 'new-secret',
+        ));
+        expect(
+          (await repository.readSecret(
+            id,
+          ) as ServiceConnectionSecretApiKey).apiKey,
+          'new-secret',
+        );
+
+        await repository.updateConnectorConnection((
+          id: id,
+          workspaceId: 'workspace-1',
+          name: 'Cleared',
+          clearSecret: true,
+          secret: null,
+        ));
+        await expectLater(repository.readSecret(id), throwsFormatException);
+        expect(
+          (await repository.getConnectorConnectionForEdit(
+            id,
+            workspaceId: 'workspace-1',
+          ))?.name,
+          'Cleared',
+        );
+      },
+    );
 
     test('migrates a legacy secure-storage API key when read', () async {
       await _insertWorkspace(database, 'workspace-1');
@@ -270,7 +271,7 @@ void main() {
       expect(migrated.keySuffix, null);
     });
 
-    test('deletes only the app skill credential in its workspace', () async {
+    test('deletes only the Connector Connection in its workspace', () async {
       await _insertWorkspace(database, 'workspace-1');
       await _insertWorkspace(database, 'workspace-2');
       final encryption = EncryptionService(_FakeSecretKeyManager());
@@ -281,7 +282,7 @@ void main() {
         workspaceId: 'workspace-1',
         name: 'SearXNG instance',
         serviceId: 'searxng',
-        kind: .appSkillCredential,
+        kind: .customHttp,
       );
       final otherWorkspaceId = await _insertConnection(
         database,
@@ -289,10 +290,13 @@ void main() {
         workspaceId: 'workspace-2',
         name: 'Other SearXNG instance',
         serviceId: 'searxng',
-        kind: .appSkillCredential,
+        kind: .customHttp,
       );
 
-      await repository.deleteAppSkillCredential(id, workspaceId: 'workspace-1');
+      await repository.deleteConnectorConnection(
+        id,
+        workspaceId: 'workspace-1',
+      );
 
       expect(await repository.getById(id), equals(null));
       expect(await repository.getById(otherWorkspaceId), isNot(equals(null)));

@@ -11,7 +11,6 @@ class const CloudServiceConnection({
   required final String kind,
   final int? secretRevision,
   final String? keySuffix,
-  final String? credentialDefinitionId,
   final bool isEnabled = true,
 }) {
   new _fromResourceFields(
@@ -27,7 +26,6 @@ class const CloudServiceConnection({
         kind: fields.kind,
         secretRevision: fields.secretRevision,
         keySuffix: fields.keySuffix,
-        credentialDefinitionId: fields.credentialDefinitionId,
         isEnabled: fields.isEnabled,
       );
 
@@ -51,7 +49,6 @@ typedef _CloudServiceConnectionFields = ({
   String kind,
   int? secretRevision,
   String? keySuffix,
-  String? credentialDefinitionId,
   bool isEnabled,
 });
 
@@ -65,7 +62,6 @@ _CloudServiceConnectionFields _cloudServiceConnectionFields(
   kind: _kind(data),
   secretRevision: _optionalInt(data, 'secretRevision'),
   keySuffix: _optionalString(data, 'keySuffix'),
-  credentialDefinitionId: _optionalString(data, 'credentialDefinitionId'),
   isEnabled: _isEnabled(data),
 );
 
@@ -84,7 +80,7 @@ WorkspaceSecretScope _scope(Map<String, dynamic> data) =>
     .fromJson(data['scope'] as String? ?? WorkspaceSecretScope.workspace.name);
 
 String _kind(Map<String, dynamic> data) =>
-    data['kind'] as String? ?? 'appSkillCredential';
+    data['kind'] as String? ?? 'customHttp';
 
 bool _isEnabled(Map<String, dynamic> data) =>
     data['isEnabled'] as bool? ?? true;

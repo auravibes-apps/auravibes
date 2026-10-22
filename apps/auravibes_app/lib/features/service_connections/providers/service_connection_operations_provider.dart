@@ -58,7 +58,7 @@ Future<ServiceConnectionOperations> _serviceConnectionOperationsForSession(
 
 typedef _CreateServiceConnection = Future<void> Function({
   required String workspaceId,
-  required String appSkillServiceId,
+  required String connectorId,
   required String name,
   required String apiKey,
 });
@@ -115,7 +115,7 @@ CloudServiceConnectionUsecases _cloudServiceConnectionUsecases(
 ServiceConnectionOperations _serviceConnectionOperations(
   _ServiceConnectionOperationCallbacks callbacks,
 ) => .new(
-  createAppSkillCredential: callbacks.create,
+  createConnectorConnection: callbacks.create,
   getGenericForEdit: callbacks.get,
   updateGeneric: callbacks.update,
   getMcpForEdit: callbacks.getMcp,
@@ -127,12 +127,12 @@ _CreateServiceConnection _cloudCreateCallback(
 ) {
   return ({
     required workspaceId,
-    required appSkillServiceId,
+    required connectorId,
     required name,
     required apiKey,
   }) => _createCloudCredential(cloud, (
     workspaceId: workspaceId,
-    appSkillServiceId: appSkillServiceId,
+    connectorId: connectorId,
     name: name,
     apiKey: apiKey,
   ));
@@ -151,15 +151,15 @@ _UpdateServiceConnection _cloudUpdateCallback(
 
 Future<void> _createCloudCredential(
   CloudServiceConnectionUsecases cloud,
-  AppSkillCredentialCreateRequest request,
+  ConnectorConnectionCreateRequest request,
 ) {
   final _ = request.workspaceId;
 
   return cloud.create(
     id: const UuidV7().generate(),
     name: request.name,
-    serviceId: request.appSkillServiceId,
-    secretKind: .skillCredential,
+    serviceId: request.connectorId,
+    secretKind: .provider,
     scope: .workspace,
     secret: request.apiKey,
   );
@@ -170,7 +170,7 @@ Future<GenericServiceConnectionForEdit?> _getCloudCredential(
   String id,
 ) async {
   final connection = await cloud.getById(id);
-  if (connection == null || connection.kind != 'appSkillCredential') {
+  if (connection == null || connection.kind != 'customHttp') {
     return null;
   }
 
@@ -204,7 +204,7 @@ CloudServiceConnection _cloudConnection(
     serviceId: connection.serviceId,
     hasSecret: connection.hasSecret,
     scope: WorkspaceSecretScope.workspace,
-    kind: 'appSkillCredential',
+    kind: 'customHttp',
     secretRevision: connection.secretRevision,
     keySuffix: connection.keySuffix,
   );
@@ -269,12 +269,12 @@ _CreateServiceConnection _localCreateCallback(
 ) {
   return ({
     required workspaceId,
-    required appSkillServiceId,
+    required connectorId,
     required name,
     required apiKey,
   }) => _createLocalCredential(local, (
     workspaceId: workspaceId,
-    appSkillServiceId: appSkillServiceId,
+    connectorId: connectorId,
     name: name,
     apiKey: apiKey,
   ));
@@ -301,9 +301,9 @@ _UpdateServiceConnection _localUpdateCallback(
 
 Future<void> _createLocalCredential(
   ServiceConnectionRepository local,
-  AppSkillCredentialCreateRequest request,
+  ConnectorConnectionCreateRequest request,
 ) async {
-  final _ = await local.createAppSkillCredential(request);
+  final _ = await local.createConnectorConnection(request);
 }
 
 Future<GenericServiceConnectionForEdit?> _getLocalCredential(
@@ -311,7 +311,7 @@ Future<GenericServiceConnectionForEdit?> _getLocalCredential(
   String id, {
   required String workspaceId,
 }) async {
-  final connection = await local.getAppSkillCredentialForEdit(
+  final connection = await local.getConnectorConnectionForEdit(
     id,
     workspaceId: workspaceId,
   );
@@ -330,7 +330,7 @@ Future<void> _updateLocalCredential(_LocalUpdateRequest request) {
   final connection = request.connection;
   final update = request.update;
 
-  return request.local.updateAppSkillCredential((
+  return request.local.updateConnectorConnection((
     id: connection.id,
     workspaceId: request.workspaceId,
     name: update.name,

@@ -6,8 +6,6 @@ part of 'agents_dao.dart';
 mixin _$AgentsDaoMixin on DatabaseAccessor<AppDatabase> {
   $WorkspacesTable get workspaces => attachedDatabase.workspaces;
   $AgentsTable get agents => attachedDatabase.agents;
-  $SkillCredentialDefinitionsTable get skillCredentialDefinitions =>
-      attachedDatabase.skillCredentialDefinitions;
   $SkillsTable get skills => attachedDatabase.skills;
   $AgentSkillsTable get agentSkills => attachedDatabase.agentSkills;
   AgentsDaoManager get managers => AgentsDaoManager(this);
@@ -20,12 +18,6 @@ class AgentsDaoManager {
       $$WorkspacesTableTableManager(_db.attachedDatabase, _db.workspaces);
   $$AgentsTableTableManager get agents =>
       $$AgentsTableTableManager(_db.attachedDatabase, _db.agents);
-  $$SkillCredentialDefinitionsTableTableManager
-  get skillCredentialDefinitions =>
-      $$SkillCredentialDefinitionsTableTableManager(
-        _db.attachedDatabase,
-        _db.skillCredentialDefinitions,
-      );
   $$SkillsTableTableManager get skills =>
       $$SkillsTableTableManager(_db.attachedDatabase, _db.skills);
   $$AgentSkillsTableTableManager get agentSkills =>
