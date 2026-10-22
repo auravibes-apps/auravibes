@@ -161,6 +161,8 @@ def _fvm_pub_resolution(root: Path, expected_output: str) -> list[str]:
         expected_output,
         (
             r"\.fvmrc.{0,100}(?:enables?|makes?|sets?|turns on).{0,60}(?:pub (?:get|resolution)|pub-get-on-sdk-change)",
+            r"\.fvmrc.{0,100}(?:sets?|has|contains).{0,60}"
+            r"\brunPubGetOnSdkChanges\s*[:=]\s*true\b",
             r"(?:pub (?:get|resolution)).{0,100}(?:enabled|configured|set) by "
             r"(?:(?:the|this) )?repository's \.fvmrc",
             r"(?:pub (?:get|resolution)).{0,100}(?:enabled|configured|set) by \.fvmrc",
@@ -173,6 +175,9 @@ def _fvm_pub_resolution(root: Path, expected_output: str) -> list[str]:
             r"\bwhen fvm (?:switches|changes).{0,100}sdk.{0,100}pub (?:get|resolution).{0,40}by default",
             r"\bpub (?:get|resolution).{0,80}by default.{0,100}fvm.{0,60}(?:switch|change).{0,40}sdk",
             r"\.fvmrc.{0,80}(?:makes|enables?|sets?).{0,60}pub (?:get|resolution).{0,60}run(?:s|ning)? when fvm (?:switches|changes).{0,40}sdk",
+            r"\bfvm use.{0,40}(?:triggers?|runs?).{0,60}"
+            r"(?:flutter )?pub (?:get|resolution).{0,40}(?:on|when|after)"
+            r".{0,30}sdk (?:changes|switch(?:es)?|change)",
         ),
     )
     contradicts_fvmrc_resolution = _matches_any(
@@ -184,6 +189,10 @@ def _fvm_pub_resolution(root: Path, expected_output: str) -> list[str]:
             r"(?:pub (?:get|resolution)).{0,80}(?:not enabled|not configured|not set).{0,30}(?:by|in) \.fvmrc",
             r"\.fvmrc.{0,80}(?:disables?|turns off) pub (?:get|resolution)",
             r"fvm.{0,80}(?:does not|doesn't|never|will not|won't) run pub (?:get|resolution) by default",
+            r"\bpub (?:get|resolution).{0,80}"
+            r"(?:does not|doesn't|never|will not|won't|cannot|can't|is not|isn't)"
+            r".{0,40}run.{0,40}by default.{0,80}(?:when )?fvm"
+            r".{0,80}(?:switch|change).{0,40}sdk",
         ),
     )
     if (
@@ -192,8 +201,8 @@ def _fvm_pub_resolution(root: Path, expected_output: str) -> list[str]:
         or not _matches_any(
             expected_output,
             (
-                r"--skip-pub-get.{0,80}\b(?:skip(?:s)?|bypass(?:es)?|disable(?:s|d)?|avoid(?:s)?)\b.{0,40}(?:pub (?:get|resolution)|that resolution)",
-                r"\b(?:skip(?:s)?|bypass(?:es)?|disable(?:s|d)?|avoid(?:s)?).{0,60}pub (?:get|resolution).{0,60}--skip-pub-get",
+                r"--skip-pub-get.{0,80}\b(?:skip(?:s)?|bypass(?:es)?|disable(?:s|d)?|avoid(?:s)?|suppress(?:es|ed|ing)?).{0,40}(?:pub (?:get|resolution)|that resolution|it)\b",
+                r"\b(?:skip(?:s)?|bypass(?:es)?|disable(?:s|d)?|avoid(?:s)?|suppress(?:es|ed|ing)?).{0,60}pub (?:get|resolution).{0,60}--skip-pub-get",
             ),
         )
         or contradicts_fvmrc_resolution

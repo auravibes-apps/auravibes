@@ -65,6 +65,38 @@ class MelosSkillEvalTest(unittest.TestCase):
             [(1, False), (2, False), (3, False)],
         )
 
+    def test_rejects_default_resolution_contradiction_with_positive_claims(self):
+        cases_path = self.root / ".agents/skills/melos-7/evals/evals.json"
+        cases = json.loads(cases_path.read_text())
+        cases["evals"][1]["expected_output"] = (
+            "FVM runs Pub resolution by default when switching SDKs, and this "
+            "repository's `.fvmrc` enables Pub resolution. However, Pub resolution "
+            "does not run by default when FVM switches SDKs. `--skip-pub-get` skips "
+            "that resolution."
+        )
+        cases_path.write_text(json.dumps(cases))
+
+        results = evaluate_skill_evals(self.root)
+
+        self.assertTrue(results[0].passed)
+        self.assertFalse(results[1].passed)
+        self.assertTrue(results[2].passed)
+
+    def test_accepts_fvm_setting_key_as_equivalent_pub_resolution_guidance(self):
+        cases_path = self.root / ".agents/skills/melos-7/evals/evals.json"
+        cases = json.loads(cases_path.read_text())
+        cases["evals"][1]["expected_output"] = (
+            "`fvm use` triggers `flutter pub get` on SDK changes because `.fvmrc` "
+            "sets `runPubGetOnSdkChanges: true`; `--skip-pub-get` suppresses it."
+        )
+        cases_path.write_text(json.dumps(cases))
+
+        results = evaluate_skill_evals(self.root)
+
+        self.assertTrue(results[0].passed)
+        self.assertTrue(results[1].passed, " ".join(results[1].failures))
+        self.assertTrue(results[2].passed)
+
     def test_requires_expected_output_to_distinguish_workspace_from_bootstrap(self):
         cases_path = self.root / ".agents/skills/melos-7/evals/evals.json"
         cases = json.loads(cases_path.read_text())
