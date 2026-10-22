@@ -1022,6 +1022,7 @@ class ServerToolRuntime({
       turn: turn,
       call: call,
       tool: tool,
+      languageCode: request.languageCode,
       execution: execution,
     );
     final detachment = _waitForBackgroundDetach(session, call.id!);
@@ -1037,6 +1038,7 @@ class ServerToolRuntime({
     required ConversationTurn turn,
     required ConversationToolCall call,
     required ServerResolvedTool tool,
+    required String? languageCode,
     required Future<Object?> execution,
   }) async {
     try {
@@ -1047,6 +1049,7 @@ class ServerToolRuntime({
           call,
           status: 'awaitingSubAgents',
           result: _boundedJson({'children': children}),
+          languageCode: languageCode,
         );
         if (detached) return ServerToolDisposition.completed;
         final waiting = await ConversationToolCall.db.findById(
@@ -1062,6 +1065,7 @@ class ServerToolRuntime({
         call,
         status: 'success',
         result: _boundedJson(result),
+        languageCode: languageCode,
       );
       return ServerToolDisposition.completed;
     } on AgentToolExecutionFailure catch (failure) {
@@ -1071,6 +1075,7 @@ class ServerToolRuntime({
         status: 'executionError',
         result: _boundedRawJson(failure.responseRaw),
         errorCode: serverToolExecutionFailureCode(failure),
+        languageCode: languageCode,
       );
       executionSession.log(
         'Conversation tool execution failed: tool=${tool.spec.name}, '
@@ -1086,6 +1091,7 @@ class ServerToolRuntime({
         status: 'cancelled',
         result: null,
         errorCode: 'cancelled',
+        languageCode: languageCode,
       );
       if (!detached) rethrow;
       return ServerToolDisposition.completed;
@@ -1096,6 +1102,7 @@ class ServerToolRuntime({
         status: 'executionError',
         result: null,
         errorCode: serverToolExecutionFailureCode(error),
+        languageCode: languageCode,
       );
       executionSession.log(
         'Conversation tool execution failed: tool=${tool.spec.name}, '
@@ -1114,6 +1121,7 @@ class ServerToolRuntime({
     ConversationToolCall call, {
     required String status,
     required String? result,
+    String? languageCode,
     String? errorCode,
   }) async {
     var backgroundCompleted = false;
@@ -1166,6 +1174,23 @@ class ServerToolRuntime({
         );
         if (turn == null) {
           throw StateError('Background work source turn is missing.');
+        }
+        var completionLanguageCode = languageCode;
+        if (completionLanguageCode == null) {
+          final turnJobs = await ConversationJob.db.find(
+            session,
+            where: (table) =>
+                table.workspaceId.equals(current.workspaceId) &
+                table.turnId.equals(turn.id!) &
+                table.kind.equals(ConversationJobKinds.turn),
+            orderBy: (table) => table.id.desc(),
+            limit: 1,
+            transaction: transaction,
+          );
+          completionLanguageCode = conversation_repo
+              .conversationLanguageCodeForJob(
+                turnJobs.firstOrNull?.payloadJson,
+              );
         }
         final activeMember = await WorkspaceMember.db.findFirstRow(
           session,
@@ -1278,6 +1303,7 @@ class ServerToolRuntime({
               'statusPreview': workPreview,
               'resultByteLength': projection?.originalBytes ?? 0,
               'errorCode': errorCode,
+              'languageCode': ?completionLanguageCode,
             }),
             createdAt: now,
           ),

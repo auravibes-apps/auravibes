@@ -2486,6 +2486,7 @@ void main() {
                 'prompt': 'Search primary sources.',
                 'agentId': null,
               },
+              languageCode: 'es',
             ),
           );
           await entered.future.timeout(const Duration(seconds: 2));

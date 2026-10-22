@@ -997,7 +997,7 @@ void main() {
         workspaceId: 'workspace-1',
         languageCode: 'es',
       ),
-    ).called(2);
+    ).called(3);
   });
 
   test('rejects app native tools absent from current specifications', () async {
