@@ -227,7 +227,11 @@ class const _NewChatActions({
       );
 
   Future<void> _openNewConversation(ChatDraft draft) async {
-    final conversation = await _startNewConversation(ref, workspaceId, draft);
+    final conversation = await _startNewConversation(
+      ref,
+      workspaceId,
+      draft.withLanguageCode(context.locale.languageCode),
+    );
     if (!context.mounted) return;
 
     draftStatus.value = false;

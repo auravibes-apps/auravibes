@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
@@ -15,6 +16,8 @@ import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -50,7 +53,10 @@ class _FakeBatchToolApprovalActions implements BatchToolApprovalActions {
 }
 
 void main() {
-  Widget buildSubject({required List<Object> overrides}) {
+  Widget buildSubject({
+    required List<Object> overrides,
+    Locale startLocale = const Locale('en'),
+  }) {
     return EasyLocalization(
       child: ProviderScope(
         overrides: overrides.cast(),
@@ -70,16 +76,20 @@ void main() {
                 ),
               ),
               locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                sdk_localizations.GlobalMaterialLocalizations.delegate,
+                ...context.localizationDelegates,
+              ],
               supportedLocales: context.supportedLocales,
             );
           },
         ),
       ),
-      supportedLocales: const [Locale('en')],
+      supportedLocales: const [Locale('en'), Locale('es')],
       path: 'assets/i18n',
       fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
+      startLocale: startLocale,
       useOnlyLangCode: true,
       useFallbackTranslations: true,
     );
@@ -272,6 +282,52 @@ void main() {
       );
       await tester.pump();
     });
+
+    testWidgets(
+      'batch approval remembers locale for each source conversation',
+      (tester) async {
+        final actions = _FakeBatchToolApprovalActions();
+        final languageRuntime = ConversationAgentLanguageRuntime();
+        final pendingCalls = [
+          _createPendingToolCall(),
+          _createPendingToolCall(
+            toolCallId: 'child-call',
+            messageId: 'child-message',
+            sourceConversationId: 'child',
+          ),
+        ];
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            startLocale: const Locale('es'),
+            overrides: [
+              batchToolApprovalUsecaseProvider.overrideWithValue(actions),
+              conversationAgentLanguageRuntimeProvider.overrideWithValue(
+                languageRuntime,
+              ),
+              pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+            ],
+          ),
+        );
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+        );
+        await tester.pump();
+
+        expect(languageRuntime.languageCodeFor('conv-1'), 'es');
+        expect(languageRuntime.languageCodeFor('child'), 'es');
+
+        actions.approveCompleter.complete(
+          const BatchToolApprovalResult(
+            claimed: [],
+            alreadyHandled: [],
+            conflicted: [],
+          ),
+        );
+        await tester.pump();
+      },
+    );
 
     testWidgets('approves a child conversation tool call in its source', (
       tester,

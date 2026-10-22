@@ -64,21 +64,19 @@ void main() {
     test('forwards the created user message id as the ack target', () async {
       final _ = await fixture.usecase.call(
         conversationId: 'conversation-1',
-        draft: const ChatDraft(text: 'Hello'),
+        draft: const ChatDraft(text: 'Hello', languageCode: 'es'),
       );
 
       expect(
         () => verify(
           () => fixture.runAgentIterationUsecase.call(
             conversationId: 'conversation-1',
-            context: const AgentIterationContext(
-              origin: .userMessage,
-              ackMessageIds: ['user-1'],
-            ),
+            context: any(named: 'context'),
           ),
         ).called(1),
         returnsNormally,
       );
+      expect(fixture.callbackLanguageCodes, ['es']);
     });
 
     test('returns iteration limit decision from foreground send', () async {
@@ -181,11 +179,47 @@ void main() {
             ),
           ),
         ).called(1);
+        expect(fixture.callbackLanguageCodes, ['en']);
         final _ = verifyNever(
           () => fixture.messageRepository.createMessage(any()),
         );
       });
     }
+
+    test(
+      'preserves the requested locale when retrying a user message',
+      () async {
+        final message = MessageEntity(
+          id: 'failed-user',
+          conversationId: 'conversation-1',
+          content: 'Original prompt',
+          messageType: .text,
+          isUser: true,
+          status: .unfinished,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
+        );
+        when(() => fixture.messageRepository.getMessageById(message.id))
+            .thenAnswer((_) async => message);
+
+        final _ = await fixture.usecase.retryUserMessage(
+          conversationId: 'conversation-1',
+          messageId: message.id,
+          languageCode: 'es',
+        );
+
+        verify(
+          () => fixture.runAgentIterationUsecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: .manualContinue,
+              ackMessageIds: ['failed-user'],
+            ),
+          ),
+        ).called(1);
+        expect(fixture.callbackLanguageCodes, ['es']);
+      },
+    );
 
     test(
       'does not dispatch a retry for a persisted non-retryable failure',
@@ -316,7 +350,7 @@ void main() {
 
       await fixture.usecase.sendFirstMessage(
         conversationId: 'conversation-1',
-        draft: const ChatDraft(text: 'Hello'),
+        draft: const ChatDraft(text: 'Hello', languageCode: 'es'),
         onContinueError: (error, stackTrace) => errors.add(error),
       );
 
@@ -330,6 +364,7 @@ void main() {
           ),
         ),
       ).called(1);
+      expect(fixture.callbackLanguageCodes, ['es']);
       expect(errors, isEmpty);
 
       completer.complete();
@@ -361,6 +396,7 @@ void main() {
 
 class _SendMessageUsecaseFixture({
   required final MockAgentLoopRunner runAgentIterationUsecase,
+  required final List<String?> callbackLanguageCodes,
   required final MockMessageRepository messageRepository,
   required final MockGetConversationBusyStateUsecase
   getConversationBusyStateUsecase,
@@ -369,6 +405,7 @@ class _SendMessageUsecaseFixture({
 }) {
   factory create() {
     final runAgentIterationUsecase = MockAgentLoopRunner();
+    final callbackLanguageCodes = <String?>[];
     final messageRepository = MockMessageRepository();
     final getConversationBusyStateUsecase =
         MockGetConversationBusyStateUsecase();
@@ -379,11 +416,20 @@ class _SendMessageUsecaseFixture({
 
     return _SendMessageUsecaseFixture(
       runAgentIterationUsecase: runAgentIterationUsecase,
+      callbackLanguageCodes: callbackLanguageCodes,
       messageRepository: messageRepository,
       getConversationBusyStateUsecase: getConversationBusyStateUsecase,
       container: container,
       usecase: .new(
-        continueAgentTurn: runAgentIterationUsecase.call,
+        continueAgentTurn:
+            ({required conversationId, required context, languageCode}) {
+              callbackLanguageCodes.add(languageCode);
+
+              return runAgentIterationUsecase.call(
+                conversationId: conversationId,
+                context: context,
+              );
+            },
         messageRepository: messageRepository,
         getConversationBusyStateUsecase: getConversationBusyStateUsecase,
         conversationActivityGate: container.read(

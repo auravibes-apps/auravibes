@@ -1,6 +1,13 @@
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show
+        agentsSkillContent,
+        agentsSkillSlug,
+        agentsSkillTitle,
+        buildSkillRevision;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -51,4 +58,53 @@ void main() {
       expect(manifests.single.revision, isNotEmpty);
     },
   );
+
+  test('agent manifest revision follows the conversation language', () async {
+    final listSkills = _MockListAvailableSkillsUsecase();
+    final usecase = BuildLoadedSkillManifestsUsecase((_) => listSkills);
+    when(
+      () => listSkills.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        filter: .loaded,
+      ),
+    ).thenAnswer(
+      (_) async => const [
+        AvailableSkill(
+          id: agentsSkillSlug,
+          slug: agentsSkillSlug,
+          title: agentsSkillTitle,
+          description: '',
+          content: agentsSkillContent,
+          source: .app,
+          kind: .native,
+        ),
+      ],
+    );
+
+    final english = await usecase.call(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+      languageCode: 'en',
+    );
+    final spanish = await usecase.call(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+      languageCode: 'es-MX',
+    );
+
+    expect(english.single.slug, agentsSkillSlug);
+    expect(spanish.single.slug, agentsSkillSlug);
+    expect(spanish.single.revision, isNot(english.single.revision));
+    expect(
+      spanish.single.revision,
+      buildSkillRevision(
+        identity: 'app:$agentsSkillSlug',
+        slug: agentsSkillSlug,
+        title: agentsSkillTitle,
+        description: '',
+        instructions: AgentGuidance.agentsSkillContentForLanguageCode('es'),
+      ),
+    );
+  });
 }

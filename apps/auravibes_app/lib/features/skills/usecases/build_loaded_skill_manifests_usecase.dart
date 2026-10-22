@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -11,6 +12,7 @@ class const BuildLoadedSkillManifestsUsecase(
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async {
     final skills = await _loadedSkills(
       conversationId: conversationId,
@@ -18,7 +20,7 @@ class const BuildLoadedSkillManifestsUsecase(
       extraSkills: extraSkills,
     );
 
-    return [for (final skill in skills) _manifest(skill)]
+    return [for (final skill in skills) _manifest(skill, languageCode)]
       ..sort((left, right) => left.slug.compareTo(right.slug));
   }
 }
@@ -38,27 +40,32 @@ extension on BuildLoadedSkillManifestsUsecase {
     return _uniqueSkills([...loadedSkills, ...extraSkills]);
   }
 
-  SkillManifest _manifest(AvailableSkill skill) {
+  SkillManifest _manifest(AvailableSkill skill, String? languageCode) {
     final connectorToolIds = _sortedConnectorToolIds(skill.connectorToolIds);
 
     return SkillManifest(
       slug: skill.slug,
       title: skill.title,
       description: skill.description,
-      revision: _revision(skill, connectorToolIds),
+      revision: _revision(skill, connectorToolIds, languageCode),
       connectorToolIds: connectorToolIds,
     );
   }
 
-  String _revision(AvailableSkill skill, List<String> connectorToolIds) =>
-      buildSkillRevision(
-        identity: _identity(skill),
-        slug: skill.slug,
-        title: skill.title,
-        description: skill.description,
-        instructions: skill.content,
-        connectorToolIds: connectorToolIds,
-      );
+  String _revision(
+    AvailableSkill skill,
+    List<String> connectorToolIds,
+    String? languageCode,
+  ) => buildSkillRevision(
+    identity: _identity(skill),
+    slug: skill.slug,
+    title: skill.title,
+    description: skill.description,
+    instructions: skill.slug == agentsSkillSlug
+        ? AgentGuidance.agentsSkillContentForLanguageCode(languageCode)
+        : skill.content,
+    connectorToolIds: connectorToolIds,
+  );
 
   String _identity(AvailableSkill skill) => '${skill.source.name}:${skill.id}';
 

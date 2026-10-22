@@ -25,6 +25,7 @@ import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
 import 'conversation_host_effects.dart';
 import 'server_tool_runtime.dart';
+import 'server_agent_guidance.dart';
 import 'background_work_result_reader.dart';
 
 String cloudServiceConnectionId(String connectionId) =>
@@ -824,6 +825,7 @@ class const ServerToolExecutorService({
     final manifest = await buildCloudSkillManifest(
       slug: target.slug,
       userSkills: state.userSkills,
+      languageCode: request.languageCode,
     );
     if (manifest == null || manifest.revision != target.revision) {
       throw FormatException(
@@ -861,7 +863,7 @@ class const ServerToolExecutorService({
     }
     return buildSkillActivationResult(
       manifest: manifest,
-      content: _skillContent(target.slug, state),
+      content: _skillContent(target.slug, state, request.languageCode),
       resources: resources,
     );
   }
@@ -1098,12 +1100,15 @@ class const ServerToolExecutorService({
       List<Map<String, dynamic>> serviceConnections,
     })
     state,
+    String? languageCode,
   ) {
     final user = state.userSkills
         .where((skill) => skill['slug'] == slug)
         .firstOrNull;
     if (user?['content'] case final String content) return content;
-    if (slug == agentsSkillSlug) return agentsSkillContent;
+    if (slug == agentsSkillSlug) {
+      return serverAgentsSkillContentForLanguageCode(languageCode);
+    }
     final app = cloudAppSkillDefinitions
         .where((skill) => skill.slug == slug || skill.identifier == slug)
         .firstOrNull;
@@ -1118,7 +1123,14 @@ class const ServerToolExecutorService({
     ServerToolRequest request,
   ) async {
     if (tool.descriptor.toolIdentifier == listAgentsToolName) {
-      return _listAgents(session, turn, request.arguments);
+      final result = await _listAgents(session, turn, request.arguments);
+
+      return {
+        ...result,
+        'hint': serverGeneralSubAgentHintForLanguageCode(
+          request.languageCode,
+        ),
+      };
     }
     if (tool.descriptor.toolIdentifier != runSubAgentToolName) {
       throw const ServerToolNotConfiguredException();
@@ -1195,6 +1207,7 @@ class const ServerToolExecutorService({
           clientMessageId: '$id:user',
           content: input.prompt.trim(),
           attachmentIds: const [],
+          languageCode: request.languageCode,
         ),
       );
       logLifecycle(
@@ -1218,6 +1231,7 @@ class const ServerToolExecutorService({
           requestId: '$id:continue',
           conversationId: child.id,
           expectedProjectionRevision: queued.conversation.projectionRevision,
+          languageCode: request.languageCode,
         ),
         parentTurnId: turn.id,
         parentToolCallId: request.id,

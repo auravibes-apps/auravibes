@@ -5,3 +5,4 @@ fields:
   conversationId: String
   expectedConversationRevision: int
   a2uiSupportedComponents: List<String>?
+  languageCode: String?
