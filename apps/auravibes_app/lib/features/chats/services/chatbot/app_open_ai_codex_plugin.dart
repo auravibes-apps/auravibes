@@ -35,10 +35,11 @@ class AppOpenAICodexPlugin({
 
 const int _maximumRetryAfterSeconds = 60;
 
-class _CodexStreamAttempt(this.body, this.context, this.attempt) {
-  final Map<String, dynamic> body;
-  final ActionFnArg<ModelResponseChunk, ModelRequest, void> context;
-  final int attempt;
+class _CodexStreamAttempt(
+  final Map<String, dynamic> body,
+  final ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  final int attempt,
+) {
   bool sentChunks = false;
 
   void sendChunk(ModelResponseChunk chunk) {
