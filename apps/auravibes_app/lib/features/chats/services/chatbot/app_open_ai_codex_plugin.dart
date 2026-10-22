@@ -35,13 +35,11 @@ class AppOpenAICodexPlugin({
 
 const int _maximumRetryAfterSeconds = 60;
 
-class _CodexStreamAttempt {
-  _CodexStreamAttempt(this.body, this.context, this.attempt);
-
+class _CodexStreamAttempt(this.body, this.context, this.attempt) {
   final Map<String, dynamic> body;
   final ActionFnArg<ModelResponseChunk, ModelRequest, void> context;
   final int attempt;
-  var sentChunks = false;
+  bool sentChunks = false;
 
   void sendChunk(ModelResponseChunk chunk) {
     sentChunks = true;
@@ -97,7 +95,7 @@ extension on AppOpenAICodexPlugin {
         streamAttempt.sendChunk,
       );
     } on GenkitException catch (error, stackTrace) {
-      return _retryStreamAfterFailure(streamAttempt, error, stackTrace);
+      return await _retryStreamAfterFailure(streamAttempt, error, stackTrace);
     }
   }
 
