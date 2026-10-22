@@ -275,6 +275,24 @@ void main() {
           ),
         );
 
+        await ConversationMessage.db.deleteRow(database, message);
+        final unavailableTargetBookmarks = await endpoints.conversation
+            .listMessageBookmarks(
+              session,
+              ListMessageBookmarksRequest(workspaceId: workspace.id!),
+            );
+        expect(unavailableTargetBookmarks, hasLength(1));
+        expect(unavailableTargetBookmarks.single.messageId, message.stableId);
+        expect(
+          unavailableTargetBookmarks.single.conversationId,
+          created.id,
+        );
+        expect(unavailableTargetBookmarks.single.isUser, isTrue);
+        expect(
+          unavailableTargetBookmarks.single.excerpt,
+          '${List.filled(160, 'x').join()}...',
+        );
+
         await endpoints.conversation.delete(
           session,
           DeleteConversationRequest(

@@ -188,7 +188,7 @@ void main() {
       },
     );
 
-    test('deleting a bookmarked message removes it from the list', () async {
+    test('keeps bookmark target after its message is deleted', () async {
       final message = await _createMessage(messages, 'source');
       expect(
         await messages.bookmarkMessage(
@@ -203,7 +203,18 @@ void main() {
         await messages.deleteMessage(message.id, conversationId: 'source'),
         isTrue,
       );
-      expect(await messages.watchBookmarkedMessages('ws-1').first, isEmpty);
+
+      final bookmarks = await messages.watchBookmarkedMessages('ws-1').first;
+
+      expect(bookmarks, hasLength(1));
+      expect(bookmarks.single.details.messageId, message.id);
+      expect(bookmarks.single.details.conversationId, 'source');
+      expect(bookmarks.single.details.excerpt, message.content);
+      expect(bookmarks.single.details.isUser, isTrue);
+      expect(
+        bookmarks.single.details.createdAt.millisecondsSinceEpoch,
+        message.createdAt.millisecondsSinceEpoch,
+      );
     });
 
     test('unbookmark removes saved message from workspace list', () async {

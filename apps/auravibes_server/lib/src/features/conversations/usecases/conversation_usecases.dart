@@ -17,6 +17,7 @@ import '../../workspaces/domain/workspace_roles.dart';
 import '../../sync/stream/sync_wakeups.dart';
 import '../conversation_event_writer.dart';
 import '../domain/conversation_values.dart';
+import '../domain/message_bookmark_view_mapper.dart';
 import '../engine/conversation_host_effects.dart';
 import '../engine/a2ui_protocol.dart';
 
@@ -104,8 +105,6 @@ class ConversationUseCases {
   };
   static const _cancelledMessageMetadata = '{"errorCode":"cancelled"}';
   static const _subAgentCancelledMessage = 'Sub-agent cancelled.';
-  static const _messageBookmarkExcerptLength = 160;
-
   final conversation_repo.ConversationRepository _repository;
   final ConversationJobPublisher _publishConversationJob;
 
@@ -1589,7 +1588,12 @@ class ConversationUseCases {
           MessageBookmark(
             workspaceId: request.workspaceId,
             userId: userId,
+            conversationId: message.conversationId,
             messageId: message.id!,
+            messageStableId: message.stableId,
+            contentSnapshot: message.content,
+            roleSnapshot: message.role,
+            messageCreatedAt: message.createdAt,
             createdAt: now,
           ),
           transaction: transaction,
@@ -1697,7 +1701,7 @@ class ConversationUseCases {
       where: (table) =>
           table.workspaceId.equals(request.workspaceId) &
           table.id.inSet(
-            messages.map((message) => message.conversationId).toSet(),
+            bookmarks.map((bookmark) => bookmark.conversationId).toSet(),
           ),
     );
     final conversationsById = {
@@ -1705,25 +1709,25 @@ class ConversationUseCases {
     };
     final result = <MessageBookmarkView>[];
     for (final bookmark in bookmarks) {
-      final message = messagesById[bookmark.messageId];
-      if (message == null) continue;
-      final conversation = conversationsById[message.conversationId];
+      final conversation = conversationsById[bookmark.conversationId];
       if (conversation == null || conversation.deletedAt != null) continue;
-      result.add(
-        MessageBookmarkView(
-          conversationId: conversation.stableId,
-          messageId: message.stableId,
-          excerpt: _messageBookmarkExcerpt(message.content),
-          isUser: switch (message.role) {
-            'user' => true,
-            'assistant' => false,
-            _ => null,
-          },
-          conversationTitle: conversation.title,
-          workspaceName: workspace.name,
-          createdAt: message.createdAt,
-        ),
+      final targetMessage = messagesById[bookmark.messageId];
+      final message = targetMessage?.conversationId == conversation.id
+          ? targetMessage
+          : null;
+      final view = mapMessageBookmarkView(
+        conversationId: conversation.stableId,
+        messageId: bookmark.messageStableId,
+        contentSnapshot: bookmark.contentSnapshot,
+        roleSnapshot: bookmark.roleSnapshot,
+        messageCreatedAtSnapshot: bookmark.messageCreatedAt,
+        content: message?.content,
+        role: message?.role,
+        createdAt: message?.createdAt,
+        conversationTitle: conversation.title,
+        workspaceName: workspace.name,
       );
+      result.add(view);
     }
     return result;
   }
@@ -4516,13 +4520,6 @@ class ConversationUseCases {
       _fail(ConversationErrorCode.validationFailed);
     }
     return visibleMessage;
-  }
-
-  String _messageBookmarkExcerpt(String content) {
-    final trimmed = content.trim();
-    final runes = trimmed.runes;
-    if (runes.length <= _messageBookmarkExcerptLength) return trimmed;
-    return '${String.fromCharCodes(runes.take(_messageBookmarkExcerptLength))}...';
   }
 
   Future<List<ConversationMessage>> _durableMessages(

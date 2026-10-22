@@ -190,25 +190,34 @@ Stream<List<QueryRow>> _watchBookmarkedMessageRows(
       .customSelect(
         '''
         SELECT conversations.workspace_id AS workspace_id,
-               messages.id AS message_id,
-               messages.conversation_id AS conversation_id,
-               messages.content AS content,
-               messages.is_user AS is_user,
-               messages.created_at AS created_at,
+               message_bookmarks.id AS message_id,
+               message_bookmarks.conversation_id AS conversation_id,
+               COALESCE(messages.content, message_bookmarks.content_snapshot)
+                 AS content,
+               COALESCE(messages.is_user, message_bookmarks.is_user) AS is_user,
+               COALESCE(
+                 messages.created_at,
+                 message_bookmarks.message_created_at
+               ) AS created_at,
                conversations.title AS conversation_title,
                workspaces.name AS workspace_name
-        FROM messages
+        FROM message_bookmarks
         INNER JOIN conversations
-          ON conversations.id = messages.conversation_id
+          ON conversations.id = message_bookmarks.conversation_id
         INNER JOIN workspaces
           ON workspaces.id = conversations.workspace_id
-        WHERE messages.is_bookmarked = 1
-          AND workspaces.type = 'local'
+        LEFT JOIN messages
+          ON messages.id = message_bookmarks.id
+        WHERE workspaces.type = 'local'
           $workspaceFilter
-        ORDER BY messages.created_at DESC, messages.id DESC
+        ORDER BY COALESCE(
+          messages.created_at,
+          message_bookmarks.message_created_at
+        ) DESC, message_bookmarks.id DESC
         ''',
         variables: [if (workspaceId != null) Variable<String>(workspaceId)],
         readsFrom: {
+          database.messageBookmarks,
           database.messages,
           database.conversations,
           database.workspaces,
@@ -271,10 +280,51 @@ extension on MessageRepository {
       return false;
     }
 
-    return await _database.messageDao.setBookmarked(
+    return await _database.transaction(
+      () => _setMessageBookmarkInTransaction(messageId, isBookmarked),
+    );
+  }
+
+  Future<bool> _setMessageBookmarkInTransaction(
+    String messageId,
+    bool isBookmarked,
+  ) async {
+    final message = await _database.messageDao.getMessageById(messageId);
+    if (message == null) return false;
+
+    final updated = await _database.messageDao.setBookmarked(
       messageId,
       isBookmarked: isBookmarked,
     );
+    if (!updated) return false;
+
+    if (isBookmarked) {
+      await _upsertMessageBookmarkSnapshot(message);
+    } else {
+      await _deleteMessageBookmarkSnapshot(messageId);
+    }
+
+    return true;
+  }
+
+  Future<void> _upsertMessageBookmarkSnapshot(MessagesTable message) async {
+    final _ = await _database
+        .into(_database.messageBookmarks)
+        .insertOnConflictUpdate(
+          MessageBookmarksCompanion.insert(
+            id: .new(message.id),
+            conversationId: message.conversationId,
+            contentSnapshot: message.content,
+            isUser: message.isUser,
+            messageCreatedAt: message.createdAt,
+          ),
+        );
+  }
+
+  Future<void> _deleteMessageBookmarkSnapshot(String messageId) async {
+    final _ = await (_database.delete(
+      _database.messageBookmarks,
+    )..where((bookmark) => bookmark.id.equals(messageId))).go();
   }
 
   Future<bool> _isBookmarkableMessage(
