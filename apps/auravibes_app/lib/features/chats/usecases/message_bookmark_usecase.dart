@@ -268,6 +268,7 @@ MessageBookmarkDetails _bookmarkDetails(MessageBookmarkView bookmark) =>
       workspaceName: bookmark.workspaceName,
       createdAt: bookmark.createdAt,
       conversationTitle: bookmark.conversationTitle,
+      isUser: bookmark.isUser,
     );
 
 MessageBookmarkWorkspace _bookmarkWorkspace(

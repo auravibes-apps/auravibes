@@ -345,13 +345,19 @@ mixin $ChatsRoute on GoRouteData {
 
 mixin $MessageBookmarksRoute on GoRouteData {
   static MessageBookmarksRoute _fromState(GoRouterState state) =>
-      MessageBookmarksRoute(workspaceId: state.pathParameters['workspaceId']!);
+      MessageBookmarksRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+        conversationId: state.uri.queryParameters['conversation-id'],
+      );
 
   MessageBookmarksRoute get _self => this as MessageBookmarksRoute;
 
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/bookmarks',
+    queryParams: {
+      if (_self.conversationId != null) 'conversation-id': _self.conversationId,
+    },
   );
 
   @override

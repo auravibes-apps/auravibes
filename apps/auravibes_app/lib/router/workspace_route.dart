@@ -462,12 +462,16 @@ class ChatsRoute({required final String workspaceId})
   }
 }
 
-class MessageBookmarksRoute({required final String workspaceId})
-    extends _AppGoRouteData
-    with $MessageBookmarksRoute {
+class MessageBookmarksRoute({
+  required final String workspaceId,
+  @TypedQueryParameter(name: 'conversation-id') final String? conversationId,
+}) extends _AppGoRouteData with $MessageBookmarksRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) =>
-      MessageBookmarksScreen(workspaceId: workspaceId);
+      MessageBookmarksScreen(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      );
 }
 
 class ConversationSearchRoute({required final String workspaceId})

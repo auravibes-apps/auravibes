@@ -18,7 +18,12 @@ abstract class MessageBookmark
     this.id,
     required this.workspaceId,
     required this.userId,
+    required this.conversationId,
     required this.messageId,
+    required this.messageStableId,
+    required this.contentSnapshot,
+    required this.roleSnapshot,
+    required this.messageCreatedAt,
     required this.createdAt,
   });
 
@@ -26,7 +31,12 @@ abstract class MessageBookmark
     int? id,
     required int workspaceId,
     required String userId,
+    required int conversationId,
     required int messageId,
+    required String messageStableId,
+    required String contentSnapshot,
+    required String roleSnapshot,
+    required DateTime messageCreatedAt,
     required DateTime createdAt,
   }) = _MessageBookmarkImpl;
 
@@ -35,7 +45,14 @@ abstract class MessageBookmark
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
       userId: jsonSerialization['userId'] as String,
+      conversationId: jsonSerialization['conversationId'] as int,
       messageId: jsonSerialization['messageId'] as int,
+      messageStableId: jsonSerialization['messageStableId'] as String,
+      contentSnapshot: jsonSerialization['contentSnapshot'] as String,
+      roleSnapshot: jsonSerialization['roleSnapshot'] as String,
+      messageCreatedAt: _is.DateTimeJsonExtension.fromJson(
+        jsonSerialization['messageCreatedAt'],
+      ),
       createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -53,7 +70,17 @@ abstract class MessageBookmark
 
   String userId;
 
+  int conversationId;
+
   int messageId;
+
+  String messageStableId;
+
+  String contentSnapshot;
+
+  String roleSnapshot;
+
+  DateTime messageCreatedAt;
 
   DateTime createdAt;
 
@@ -67,7 +94,12 @@ abstract class MessageBookmark
     int? id,
     int? workspaceId,
     String? userId,
+    int? conversationId,
     int? messageId,
+    String? messageStableId,
+    String? contentSnapshot,
+    String? roleSnapshot,
+    DateTime? messageCreatedAt,
     DateTime? createdAt,
   });
   @override
@@ -77,7 +109,12 @@ abstract class MessageBookmark
       if (id != null) 'id': id,
       'workspaceId': workspaceId,
       'userId': userId,
+      'conversationId': conversationId,
       'messageId': messageId,
+      'messageStableId': messageStableId,
+      'contentSnapshot': contentSnapshot,
+      'roleSnapshot': roleSnapshot,
+      'messageCreatedAt': messageCreatedAt.toJson(),
       'createdAt': createdAt.toJson(),
     };
   }
@@ -89,7 +126,12 @@ abstract class MessageBookmark
       if (id != null) 'id': id,
       'workspaceId': workspaceId,
       'userId': userId,
+      'conversationId': conversationId,
       'messageId': messageId,
+      'messageStableId': messageStableId,
+      'contentSnapshot': contentSnapshot,
+      'roleSnapshot': roleSnapshot,
+      'messageCreatedAt': messageCreatedAt.toJson(),
       'createdAt': createdAt.toJson(),
     };
   }
@@ -129,13 +171,23 @@ class _MessageBookmarkImpl extends MessageBookmark {
     int? id,
     required int workspaceId,
     required String userId,
+    required int conversationId,
     required int messageId,
+    required String messageStableId,
+    required String contentSnapshot,
+    required String roleSnapshot,
+    required DateTime messageCreatedAt,
     required DateTime createdAt,
   }) : super._(
          id: id,
          workspaceId: workspaceId,
          userId: userId,
+         conversationId: conversationId,
          messageId: messageId,
+         messageStableId: messageStableId,
+         contentSnapshot: contentSnapshot,
+         roleSnapshot: roleSnapshot,
+         messageCreatedAt: messageCreatedAt,
          createdAt: createdAt,
        );
 
@@ -147,14 +199,24 @@ class _MessageBookmarkImpl extends MessageBookmark {
     Object? id = _Undefined,
     int? workspaceId,
     String? userId,
+    int? conversationId,
     int? messageId,
+    String? messageStableId,
+    String? contentSnapshot,
+    String? roleSnapshot,
+    DateTime? messageCreatedAt,
     DateTime? createdAt,
   }) {
     return MessageBookmark(
       id: id is int? ? id : this.id,
       workspaceId: workspaceId ?? this.workspaceId,
       userId: userId ?? this.userId,
+      conversationId: conversationId ?? this.conversationId,
       messageId: messageId ?? this.messageId,
+      messageStableId: messageStableId ?? this.messageStableId,
+      contentSnapshot: contentSnapshot ?? this.contentSnapshot,
+      roleSnapshot: roleSnapshot ?? this.roleSnapshot,
+      messageCreatedAt: messageCreatedAt ?? this.messageCreatedAt,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -173,10 +235,38 @@ class MessageBookmarkUpdateTable extends _is.UpdateTable<MessageBookmarkTable> {
     value,
   );
 
+  _is.ColumnValue<int, int> conversationId(int value) => _is.ColumnValue(
+    table.conversationId,
+    value,
+  );
+
   _is.ColumnValue<int, int> messageId(int value) => _is.ColumnValue(
     table.messageId,
     value,
   );
+
+  _is.ColumnValue<String, String> messageStableId(String value) =>
+      _is.ColumnValue(
+        table.messageStableId,
+        value,
+      );
+
+  _is.ColumnValue<String, String> contentSnapshot(String value) =>
+      _is.ColumnValue(
+        table.contentSnapshot,
+        value,
+      );
+
+  _is.ColumnValue<String, String> roleSnapshot(String value) => _is.ColumnValue(
+    table.roleSnapshot,
+    value,
+  );
+
+  _is.ColumnValue<DateTime, DateTime> messageCreatedAt(DateTime value) =>
+      _is.ColumnValue(
+        table.messageCreatedAt,
+        value,
+      );
 
   _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
       _is.ColumnValue(
@@ -197,8 +287,28 @@ class MessageBookmarkTable extends _is.Table<int?> {
       'userId',
       this,
     );
+    conversationId = _is.ColumnInt(
+      'conversationId',
+      this,
+    );
     messageId = _is.ColumnInt(
       'messageId',
+      this,
+    );
+    messageStableId = _is.ColumnString(
+      'messageStableId',
+      this,
+    );
+    contentSnapshot = _is.ColumnString(
+      'contentSnapshot',
+      this,
+    );
+    roleSnapshot = _is.ColumnString(
+      'roleSnapshot',
+      this,
+    );
+    messageCreatedAt = _is.ColumnDateTime(
+      'messageCreatedAt',
       this,
     );
     createdAt = _is.ColumnDateTime(
@@ -213,7 +323,17 @@ class MessageBookmarkTable extends _is.Table<int?> {
 
   late final _is.ColumnString userId;
 
+  late final _is.ColumnInt conversationId;
+
   late final _is.ColumnInt messageId;
+
+  late final _is.ColumnString messageStableId;
+
+  late final _is.ColumnString contentSnapshot;
+
+  late final _is.ColumnString roleSnapshot;
+
+  late final _is.ColumnDateTime messageCreatedAt;
 
   late final _is.ColumnDateTime createdAt;
 
@@ -222,7 +342,12 @@ class MessageBookmarkTable extends _is.Table<int?> {
     id,
     workspaceId,
     userId,
+    conversationId,
     messageId,
+    messageStableId,
+    contentSnapshot,
+    roleSnapshot,
+    messageCreatedAt,
     createdAt,
   ];
 }

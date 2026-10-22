@@ -3,7 +3,12 @@ table: message_bookmark
 fields:
   workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
   userId: String
-  messageId: int, relation(parent=conversation_message, onDelete=Cascade)
+  conversationId: int, relation(parent=conversation, onDelete=Cascade)
+  messageId: int
+  messageStableId: String
+  contentSnapshot: String
+  roleSnapshot: String
+  messageCreatedAt: DateTime
   createdAt: DateTime
 indexes:
   message_bookmark_identity_idx:

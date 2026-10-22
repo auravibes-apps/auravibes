@@ -41,8 +41,60 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 32);
+      expect(fixture.database.schemaVersion, 33);
     });
+
+    test(
+      'migration from schema 32 keeps existing bookmark snapshots',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 32
+          ..execute('CREATE TABLE conversations (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO conversations VALUES (?)', ['conversation'])
+          ..execute('''
+          CREATE TABLE messages (
+            id TEXT PRIMARY KEY,
+            conversation_id TEXT NOT NULL,
+            content TEXT NOT NULL,
+            is_user INTEGER NOT NULL,
+            created_at INTEGER NOT NULL,
+            is_bookmarked INTEGER NOT NULL
+          )
+        ''')
+          ..execute(
+            '''
+          INSERT INTO messages VALUES (?, ?, ?, ?, ?, ?)
+        ''',
+            [
+              'saved-message',
+              'conversation',
+              'Saved excerpt',
+              1,
+              1767225600,
+              1,
+            ],
+          );
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+
+        final bookmark = await database.customSelect('''
+            SELECT id, conversation_id, content_snapshot, is_user,
+                   message_created_at
+            FROM message_bookmarks
+          ''').getSingle();
+
+        expect(bookmark.read<String>('id'), 'saved-message');
+        expect(bookmark.read<String>('conversation_id'), 'conversation');
+        expect(bookmark.read<String>('content_snapshot'), 'Saved excerpt');
+        expect(bookmark.read<bool>('is_user'), isTrue);
+        expect(
+          bookmark.read<DateTime>('message_created_at').millisecondsSinceEpoch,
+          1767225600000,
+        );
+      },
+    );
 
     test('migration from schema 29 adds unbookmarked messages', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()

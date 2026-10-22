@@ -1586,14 +1586,30 @@ class const _LoadedChatConversationScreen({
         child: _LoadedChatConversationLayout(data: data, sidePanel: sidePanel),
         appBar: _ChatConversationAppBar(
           data: data,
-          sidePanelVisible: sideValues.isVisible,
-          tabCount: _browserTabCount(browserSession, sideValues.toolResultTabs),
-          onSidebarToggle: actions.onToggle,
+          actions: _chatConversationAppBarActions(
+            data,
+            sideValues,
+            browserSession,
+            actions,
+          ),
         ),
       ),
     );
   }
 }
+
+_ChatConversationAppBarActions _chatConversationAppBarActions(
+  _LoadedChatConversationData data,
+  _LoadedSidePanelValues sideValues,
+  BrowserSessionState? browserSession,
+  _LoadedSidePanelActions actions,
+) => .new(
+  workspaceId: data.workspaceId,
+  conversationId: data.conversation.id,
+  sidePanelVisible: sideValues.isVisible,
+  tabCount: _browserTabCount(browserSession, sideValues.toolResultTabs),
+  onSidebarToggle: actions.onToggle,
+);
 
 int? _browserTabCount(
   BrowserSessionState? browserSession,
@@ -1645,9 +1661,7 @@ class const _LoadedChatConversationMain({
 
 class const _ChatConversationAppBar({
   required final _LoadedChatConversationData data,
-  required final bool sidePanelVisible,
-  required final int? tabCount,
-  required final VoidCallback onSidebarToggle,
+  required final _ChatConversationAppBarActions actions,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -1655,19 +1669,48 @@ class const _ChatConversationAppBar({
   @override
   Widget build(BuildContext context) => AuraAppBarWithDrawer(
     title: Text(data.conversation.title),
-    actions: [
-      ModelUsageHeaderButton(conversationId: data.conversation.id),
-      BackgroundWorkHeaderButton(
-        workspaceId: data.workspaceId,
-        conversationId: data.conversation.id,
-      ),
-      ConversationSidebarToggleButton(
-        isPanelVisible: sidePanelVisible,
-        tabCount: tabCount,
-        onPressed: onSidebarToggle,
-      ),
-    ],
+    actions: actions.widgets,
     leading: data.leading,
+  );
+}
+
+class _ChatConversationAppBarActions({
+  required String workspaceId,
+  required String conversationId,
+  required bool sidePanelVisible,
+  required int? tabCount,
+  required VoidCallback onSidebarToggle,
+}) {
+  final List<Widget> widgets = [
+    ModelUsageHeaderButton(conversationId: conversationId),
+    BackgroundWorkHeaderButton(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+    _ConversationBookmarksButton(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+    ConversationSidebarToggleButton(
+      isPanelVisible: sidePanelVisible,
+      tabCount: tabCount,
+      onPressed: onSidebarToggle,
+    ),
+  ];
+}
+
+class const _ConversationBookmarksButton({
+  required final String workspaceId,
+  required final String conversationId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.bookmark_border,
+    onPressed: () => MessageBookmarksRoute(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ).go(context),
+    tooltip: LocaleKeys.chats_screens_chats_list_saved_messages.tr(),
   );
 }
 

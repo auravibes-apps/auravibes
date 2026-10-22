@@ -65,6 +65,23 @@ void main() {
       expect(bookmarks.single.details.conversationTitle, 'Conversation source');
       expect(bookmarks.single.details.workspaceName, 'Workspace');
       expect(bookmarks.single.details.excerpt, message.content);
+      expect(bookmarks.single.details.isUser, isTrue);
+    });
+
+    test('lists assistant role for assistant bookmarks', () async {
+      final message = await _createMessage(messages, 'source', isUser: false);
+      expect(
+        await messages.bookmarkMessage(
+          workspaceId: 'ws-1',
+          conversationId: 'source',
+          messageId: message.id,
+        ),
+        isTrue,
+      );
+
+      final bookmarks = await messages.watchBookmarkedMessages('ws-1').first;
+
+      expect(bookmarks.single.details.isUser, isFalse);
     });
 
     test('truncates long excerpts with ellipsis', () async {
@@ -171,7 +188,7 @@ void main() {
       },
     );
 
-    test('deleting a bookmarked message removes it from the list', () async {
+    test('keeps bookmark target after its message is deleted', () async {
       final message = await _createMessage(messages, 'source');
       expect(
         await messages.bookmarkMessage(
@@ -186,7 +203,18 @@ void main() {
         await messages.deleteMessage(message.id, conversationId: 'source'),
         isTrue,
       );
-      expect(await messages.watchBookmarkedMessages('ws-1').first, isEmpty);
+
+      final bookmarks = await messages.watchBookmarkedMessages('ws-1').first;
+
+      expect(bookmarks, hasLength(1));
+      expect(bookmarks.single.details.messageId, message.id);
+      expect(bookmarks.single.details.conversationId, 'source');
+      expect(bookmarks.single.details.excerpt, message.content);
+      expect(bookmarks.single.details.isUser, isTrue);
+      expect(
+        bookmarks.single.details.createdAt.millisecondsSinceEpoch,
+        message.createdAt.millisecondsSinceEpoch,
+      );
     });
 
     test('unbookmark removes saved message from workspace list', () async {
@@ -216,13 +244,14 @@ void main() {
 
 Future<MessageEntity> _createMessage(
   MessageRepository repository,
-  String conversationId,
-) => repository.createMessage(
+  String conversationId, {
+  bool isUser = true,
+}) => repository.createMessage(
   .new(
     conversationId: conversationId,
     content: 'Saved response',
     messageType: .text,
-    isUser: true,
+    isUser: isUser,
     status: .sent,
   ),
 );
