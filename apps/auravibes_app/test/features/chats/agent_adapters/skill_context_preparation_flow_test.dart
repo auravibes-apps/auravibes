@@ -331,6 +331,7 @@ class _ManifestBuilder(final String Function() _revision)
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async => [
     SkillManifest(
       slug: 'research',

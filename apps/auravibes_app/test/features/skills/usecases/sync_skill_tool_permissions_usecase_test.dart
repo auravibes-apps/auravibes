@@ -62,6 +62,7 @@ void main() {
         () => fixture.nativeSpecs.call(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
+          languageCode: any(named: 'languageCode'),
         ),
       ).thenAnswer((_) async => native);
     }

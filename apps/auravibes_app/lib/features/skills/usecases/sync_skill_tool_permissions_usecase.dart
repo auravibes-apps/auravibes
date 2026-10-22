@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
@@ -45,10 +46,12 @@ class const SyncSkillToolPermissionsUsecase({
   Future<void> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     final _ = await _syncTools(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     );
   }
 
@@ -56,10 +59,12 @@ class const SyncSkillToolPermissionsUsecase({
     required String conversationId,
     required String workspaceId,
     required String toolName,
+    String? languageCode,
   }) async {
     final tools = await _syncTools(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     );
     final toolsByName = {for (final tool in tools) tool.toolId: tool};
 
@@ -72,10 +77,12 @@ extension _SyncSkillToolPermissionsUsecaseSync
   Future<List<ToolsTable>> _syncTools({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     final specs = await _loadToolSpecs(
       conversationId: conversationId,
       workspaceId: workspaceId,
+      languageCode: languageCode,
     );
 
     return _filterCurrentTools(
@@ -100,6 +107,7 @@ extension _SyncSkillToolPermissionsUsecaseSync
   Future<List<ToolSpec>> _loadToolSpecs({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     final agentSkills = await _loadAgentSkills(
       conversationId: conversationId,
@@ -108,21 +116,29 @@ extension _SyncSkillToolPermissionsUsecaseSync
 
     final specs = [
       ...await _dynamicSpecs(conversationId, workspaceId),
-      ...await _nativeSpecs(conversationId, workspaceId, agentSkills),
+      ...await _nativeSpecs(
+        conversationId,
+        workspaceId,
+        agentSkills,
+        languageCode,
+      ),
     ];
-    _addRunSubAgentSpec(specs);
+    _addRunSubAgentSpec(specs, languageCode);
 
     return specs;
   }
 
-  void _addRunSubAgentSpec(List<ToolSpec> specs) {
-    final runSubAgentSpec = _runSubAgentPermissionSpec();
+  void _addRunSubAgentSpec(List<ToolSpec> specs, String? languageCode) {
+    final runSubAgentSpec = _runSubAgentPermissionSpec(languageCode);
     if (specs.any((spec) => spec.name == runSubAgentSpec.name)) return;
 
     specs.add(runSubAgentSpec);
   }
 
-  ToolSpec _runSubAgentPermissionSpec() {
+  ToolSpec _runSubAgentPermissionSpec(String? languageCode) {
+    final localized = AgentGuidance.runSubAgentToolSpecForLanguageCode(
+      languageCode,
+    );
     final descriptor = AgentResolvedToolName.skillNative(
       tableId: runSubAgentToolName,
       skillSlug: agentsSkillSlug,
@@ -131,10 +147,8 @@ extension _SyncSkillToolPermissionsUsecaseSync
 
     return ToolSpec(
       name: descriptor.fullName,
-      description: runSubAgentToolSpec.description,
-      inputJsonSchema: Map<String, Object?>.from(
-        runSubAgentToolSpec.inputJsonSchema,
-      ),
+      description: localized.description,
+      inputJsonSchema: Map<String, Object?>.from(localized.inputJsonSchema),
     );
   }
 
@@ -150,10 +164,12 @@ extension _SyncSkillToolPermissionsUsecaseSync
     String conversationId,
     String workspaceId,
     List<AvailableSkill> extraSkills,
+    String? languageCode,
   ) => buildAppSkillNativeToolSpecs.call(
     conversationId: conversationId,
     workspaceId: workspaceId,
     extraSkills: extraSkills,
+    languageCode: languageCode,
   );
 
   Future<List<AvailableSkill>> _loadAgentSkills({

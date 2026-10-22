@@ -696,6 +696,7 @@ void Function()? _listenToA2uiActionsEffect({
         workspaceId: workspaceId,
         conversationId: conversationId,
         action: action,
+        languageCode: context.locale.languageCode,
       ),
     ),
   );
@@ -1706,6 +1707,7 @@ Future<void> _submitA2uiAction(
   required String workspaceId,
   required String conversationId,
   required ChatUiAction action,
+  required String languageCode,
 }) async {
   try {
     final iterationLimitNotifier = ref.read(
@@ -1718,6 +1720,7 @@ Future<void> _submitA2uiAction(
           draft: ChatDraft(
             text: action.messageText,
             metadataJson: action.metadataJson,
+            languageCode: languageCode,
           ),
         );
     iterationLimitNotifier.markIfIterationLimitReached(decision);

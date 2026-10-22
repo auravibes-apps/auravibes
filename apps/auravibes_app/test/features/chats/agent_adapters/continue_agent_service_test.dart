@@ -2223,6 +2223,7 @@ class _QueuedBuildSkillContextMessagesService(
   Future<List<ChatMessage>> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async => responses[calls++];
 }
 
@@ -2233,6 +2234,7 @@ class const _FakeBuildSkillContextMessagesService(
   Future<List<ChatMessage>> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
     return messages;
   }

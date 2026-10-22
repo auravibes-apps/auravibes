@@ -500,6 +500,12 @@ abstract class LocaleKeys {
   static const agents_available_delegation = 'agents.available_delegation';
   static const agents_manage_skills_for = 'agents.manage_skills_for';
   static const agents_skill_assignment_hint = 'agents.skill_assignment_hint';
+  static const agents_model_guidance_general_sub_agent_hint =
+      'agents.model_guidance.general_sub_agent_hint';
+  static const agents_model_guidance_list_agents_description =
+      'agents.model_guidance.list_agents_description';
+  static const agents_model_guidance_run_sub_agent_description =
+      'agents.model_guidance.run_sub_agent_description';
   static const chats_screens_chats_list_title =
       'chats_screens.chats_list.title';
   static const chats_screens_chats_list_add_chat =

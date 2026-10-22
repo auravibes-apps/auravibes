@@ -13,6 +13,7 @@ import '../../../generated/protocol.dart';
 import '../../objects/object_store.dart';
 import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
+import '../repositories/conversation_repository.dart' as conversation_repo;
 import 'a2ui_protocol.dart' as a2ui_protocol;
 
 const maxConcurrentProviderTurns = 32;
@@ -736,7 +737,12 @@ class const ConversationDurableJobs() {
         requestId: '${parent.requestId}:$kind',
         kind: kind,
         status: ConversationJobStatuses.queued,
-        payloadJson: jsonEncode(payload),
+        payloadJson: jsonEncode({
+          ...payload,
+          'languageCode': ?conversation_repo.conversationLanguageCodeForJob(
+            parent.payloadJson,
+          ),
+        }),
         attempt: 0,
         maxAttempts: 3,
         availableAt: now,

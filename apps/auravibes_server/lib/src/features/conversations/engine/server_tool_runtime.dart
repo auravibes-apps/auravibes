@@ -7,6 +7,7 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../domain/conversation_values.dart';
 import 'conversation_host_effects.dart';
+import 'server_agent_guidance.dart';
 import 'background_work_result_reader.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
@@ -164,6 +165,7 @@ List<ServerResolvedTool> fixedCloudConnectorCommandTools() =>
 Future<SkillManifest?> buildCloudSkillManifest({
   required String slug,
   required Iterable<Map<String, dynamic>> userSkills,
+  String? languageCode,
 }) async {
   final userSkill = userSkills
       .where((skill) => skill['slug'] == slug && skill['isEnabled'] != false)
@@ -179,8 +181,10 @@ Future<SkillManifest?> buildCloudSkillManifest({
   };
   final instructions = switch ((userSkill?['content'], appSkill)) {
     (final String value, _) => value,
+    _ when slug == agentsSkillSlug => serverAgentsSkillContentForLanguageCode(
+      languageCode,
+    ),
     (_, final AppSkillDefinition value) => value.content,
-    _ when slug == agentsSkillSlug => agentsSkillContent,
     _ => null,
   };
   if (title == null || instructions == null) return null;
@@ -331,14 +335,17 @@ List<ServerResolvedTool> materializeCloudSkillTools({
   required Set<String> selectedSkillIds,
   required Iterable<Map<String, dynamic>> appSkillSettings,
   required bool isChildConversation,
+  String? languageCode,
 }) {
   final tools = <ServerResolvedTool>[];
   if (!isChildConversation &&
       cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)) {
+    final runSubAgent = serverRunSubAgentToolSpecForLanguageCode(languageCode);
+    final listAgents = serverListAgentsToolSpecForLanguageCode(languageCode);
     tools.addAll(
       [
-        runSubAgentToolSpec,
-        if (selectedSkillIds.contains(agentsSkillSlug)) listAgentsToolSpec,
+        runSubAgent,
+        if (selectedSkillIds.contains(agentsSkillSlug)) listAgents,
       ].map(
         (spec) => _nativeTool(
           skillSlug: agentsSkillSlug,
@@ -534,6 +541,7 @@ class const ServerToolRequest({
   required final String name,
   required final Map<String, dynamic> arguments,
   final String? userFacingDescription,
+  final String? languageCode,
   final Future<bool> Function()? isCancelled,
 });
 
@@ -562,6 +570,7 @@ class ServerToolRuntime({
     Session session, {
     required int workspaceId,
     required String conversationStableId,
+    String? languageCode,
   }) async {
     final resources = await WorkspaceResource.db.find(
       session,
@@ -620,19 +629,17 @@ class ServerToolRuntime({
               resource.resourceKind == WorkspaceResourceKind.skillSetting,
         )
         .map(_data);
-    final agentTools =
-        conversation != null &&
-            conversation.parentConversationStableId == null &&
-            cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)
-        ? [
-            _nativeTool(
-              skillSlug: agentsSkillSlug,
-              toolIdentifier: runSubAgentToolName,
-              description: runSubAgentToolSpec.description,
-              inputJsonSchema: runSubAgentToolSpec.inputJsonSchema,
+    final agentTools = materializeCloudSkillTools(
+      selectedSkillIds: conversation == null
+          ? const <String>{}
+          : cloudAuthorizedSkillIds(
+              conversation: conversation,
+              resources: resources,
             ),
-          ]
-        : const <ServerResolvedTool>[];
+      appSkillSettings: appSkillSettings,
+      isChildConversation: conversation?.parentConversationStableId != null,
+      languageCode: languageCode,
+    );
 
     return [
       ...genericTools,
@@ -700,6 +707,7 @@ class ServerToolRuntime({
             session,
             workspaceId: turn.workspaceId,
             conversationStableId: conversation.stableId,
+            languageCode: request.languageCode,
           );
     var tool = currentTools
         .where((candidate) => candidate.spec.name == request.name)
@@ -741,6 +749,7 @@ class ServerToolRuntime({
         arguments: storedArguments,
         userFacingDescription:
             existing.userFacingDescription ?? request.userFacingDescription,
+        languageCode: request.languageCode,
       );
     }
 
@@ -922,6 +931,7 @@ class ServerToolRuntime({
       id: executionRequest.id,
       name: executionRequest.name,
       arguments: executionRequest.arguments,
+      languageCode: executionRequest.languageCode,
     );
     if (call.backgroundEligible) {
       return _runCancellableTool(
@@ -997,6 +1007,7 @@ class ServerToolRuntime({
       name: request.name,
       arguments: request.arguments,
       userFacingDescription: request.userFacingDescription,
+      languageCode: request.languageCode,
       isCancelled: () => _isCancellableToolCancelled(
         executionSession,
         turn: turn,
@@ -1011,6 +1022,7 @@ class ServerToolRuntime({
       turn: turn,
       call: call,
       tool: tool,
+      languageCode: request.languageCode,
       execution: execution,
     );
     final detachment = _waitForBackgroundDetach(session, call.id!);
@@ -1026,6 +1038,7 @@ class ServerToolRuntime({
     required ConversationTurn turn,
     required ConversationToolCall call,
     required ServerResolvedTool tool,
+    required String? languageCode,
     required Future<Object?> execution,
   }) async {
     try {
@@ -1036,6 +1049,7 @@ class ServerToolRuntime({
           call,
           status: 'awaitingSubAgents',
           result: _boundedJson({'children': children}),
+          languageCode: languageCode,
         );
         if (detached) return ServerToolDisposition.completed;
         final waiting = await ConversationToolCall.db.findById(
@@ -1051,6 +1065,7 @@ class ServerToolRuntime({
         call,
         status: 'success',
         result: _boundedJson(result),
+        languageCode: languageCode,
       );
       return ServerToolDisposition.completed;
     } on AgentToolExecutionFailure catch (failure) {
@@ -1060,6 +1075,7 @@ class ServerToolRuntime({
         status: 'executionError',
         result: _boundedRawJson(failure.responseRaw),
         errorCode: serverToolExecutionFailureCode(failure),
+        languageCode: languageCode,
       );
       executionSession.log(
         'Conversation tool execution failed: tool=${tool.spec.name}, '
@@ -1075,6 +1091,7 @@ class ServerToolRuntime({
         status: 'cancelled',
         result: null,
         errorCode: 'cancelled',
+        languageCode: languageCode,
       );
       if (!detached) rethrow;
       return ServerToolDisposition.completed;
@@ -1085,6 +1102,7 @@ class ServerToolRuntime({
         status: 'executionError',
         result: null,
         errorCode: serverToolExecutionFailureCode(error),
+        languageCode: languageCode,
       );
       executionSession.log(
         'Conversation tool execution failed: tool=${tool.spec.name}, '
@@ -1103,6 +1121,7 @@ class ServerToolRuntime({
     ConversationToolCall call, {
     required String status,
     required String? result,
+    String? languageCode,
     String? errorCode,
   }) async {
     var backgroundCompleted = false;
@@ -1155,6 +1174,23 @@ class ServerToolRuntime({
         );
         if (turn == null) {
           throw StateError('Background work source turn is missing.');
+        }
+        var completionLanguageCode = languageCode;
+        if (completionLanguageCode == null) {
+          final turnJobs = await ConversationJob.db.find(
+            session,
+            where: (table) =>
+                table.workspaceId.equals(current.workspaceId) &
+                table.turnId.equals(turn.id!) &
+                table.kind.equals(ConversationJobKinds.turn),
+            orderBy: (table) => table.id.desc(),
+            limit: 1,
+            transaction: transaction,
+          );
+          completionLanguageCode = conversation_repo
+              .conversationLanguageCodeForJob(
+                turnJobs.firstOrNull?.payloadJson,
+              );
         }
         final activeMember = await WorkspaceMember.db.findFirstRow(
           session,
@@ -1267,6 +1303,7 @@ class ServerToolRuntime({
               'statusPreview': workPreview,
               'resultByteLength': projection?.originalBytes ?? 0,
               'errorCode': errorCode,
+              'languageCode': ?completionLanguageCode,
             }),
             createdAt: now,
           ),

@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
@@ -66,6 +67,49 @@ void main() {
     expect(loader.calls, 1);
     expect(resourceSummaryReads, 1);
   });
+
+  test(
+    'agents activation uses the conversation language and manifest',
+    () async {
+      const agentsSkill = AvailableSkill(
+        id: agentsSkillSlug,
+        slug: agentsSkillSlug,
+        title: agentsSkillTitle,
+        description: '',
+        content: agentsSkillContent,
+        source: .app,
+        kind: .native,
+      );
+      final spanishManifest = SkillManifest(
+        slug: agentsSkillSlug,
+        title: agentsSkillTitle,
+        description: '',
+        revision: 'spanish-revision',
+      );
+      final manifests = _SkillManifests([spanishManifest]);
+      final usecase = _usecase(
+        skill: agentsSkill,
+        manifest: spanishManifest,
+        skillManifests: manifests,
+      );
+
+      final result = await usecase.call(
+        _request(activateSkillToolName, const {
+          'slug': agentsSkillSlug,
+          'revision': 'spanish-revision',
+        }),
+        languageCode: 'es-MX',
+      );
+
+      expect(result, isA<SkillActivationResult>());
+      if (result is! SkillActivationResult) fail('Expected activation result.');
+      expect(
+        result.value,
+        contains(AgentGuidance.agentsSkillContentForLanguageCode('es')),
+      );
+      expect(manifests.languageCodes, ['es-MX']);
+    },
+  );
 
   test(
     'stale Skill revision fails before changing conversation selection',
@@ -164,15 +208,15 @@ RunSkillCommandUsecase _usecase({
   List<SkillManifest>? loadedManifests,
   ListSkillResourceSummaries? listSkillResourceSummaries,
   LoadSkillResourceContent? loadSkillResourceContent,
+  _SkillManifests? skillManifests,
 }) {
   final skillLoader = loader ?? _SkillLoader();
 
   return RunSkillCommandUsecase(
     listAvailableSkillsUsecase: (_) => _SkillCatalog([skill]),
     loadConversationSkillUsecase: (_) => skillLoader,
-    buildLoadedSkillManifestsUsecase: _SkillManifests(
-      loadedManifests ?? [manifest],
-    ),
+    buildLoadedSkillManifestsUsecase:
+        skillManifests ?? _SkillManifests(loadedManifests ?? [manifest]),
     listSkillResourceSummaries: listSkillResourceSummaries,
     loadSkillResourceContent: loadSkillResourceContent,
   );
@@ -209,10 +253,17 @@ class _SkillLoader implements LoadConversationSkillUsecase {
 
 class _SkillManifests(final List<SkillManifest> manifests)
     implements BuildLoadedSkillManifestsUsecase {
+  final languageCodes = <String?>[];
+
   @override
   Future<List<SkillManifest>> call({
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
-  }) async => manifests;
+    String? languageCode,
+  }) async {
+    if (extraSkills.isNotEmpty) languageCodes.add(languageCode);
+
+    return manifests;
+  }
 }

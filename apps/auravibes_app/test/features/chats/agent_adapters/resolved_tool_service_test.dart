@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -9,6 +10,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/models/connector_connection_candidate.dart';
 import 'package:auravibes_app/features/service_connections/usecases/connector_command_usecase.dart';
@@ -53,6 +55,7 @@ _MockBuildAppSkillNativeToolSpecsUsecase _currentAppSkillSpecs(
     () => specs.call(
       conversationId: any(named: 'conversationId'),
       workspaceId: any(named: 'workspaceId'),
+      languageCode: any(named: 'languageCode'),
     ),
   ).thenAnswer(
     (_) async => [
@@ -186,15 +189,20 @@ class _FakeSubAgentRequestHandle implements SubAgentRequestHandle {
   }
 }
 
-SubAgentRunner _subAgentRunner() {
+SubAgentRunner _subAgentRunner({
+  void Function(String conversationId)? onContinue,
+}) {
   return SubAgentRunner(
     agentCatalog: _FakeSubAgentCatalog(),
     conversationStore: _FakeSubAgentConversationStore(),
     messageStore: _FakeSubAgentMessageStore(),
     startRequest: ({required parentId, required childId}) =>
         _FakeSubAgentRequestHandle(),
-    continueAgentTurn: ({required conversationId, required context}) async =>
-        AgentIterationDecision.done,
+    continueAgentTurn: ({required conversationId, required context}) async {
+      onContinue?.call(conversationId);
+
+      return AgentIterationDecision.done;
+    },
   );
 }
 
@@ -904,11 +912,15 @@ void main() {
 
   test('runs and rejects sub-agent tools', () async {
     final specs = _MockBuildAppSkillNativeToolSpecsUsecase();
+    final languageRuntime = ConversationAgentLanguageRuntime()
+      ..remember('conversation-1', 'es');
+    final childLanguageCodes = <String?>[];
     final nativeToolSlugs = [listAgentsToolName, runSubAgentToolName];
     when(
       () => specs.call(
         conversationId: any(named: 'conversationId'),
         workspaceId: any(named: 'workspaceId'),
+        languageCode: any(named: 'languageCode'),
       ),
     ).thenAnswer(
       (_) async => [
@@ -933,19 +945,28 @@ void main() {
         onElicitation,
       }) async => 'mcp result',
       buildAppSkillNativeToolSpecsUsecase: specs,
-      subAgentRunner: _subAgentRunner(),
+      subAgentRunner: _subAgentRunner(
+        onContinue: (conversationId) {
+          childLanguageCodes.add(
+            languageRuntime.languageCodeFor(conversationId),
+          );
+        },
+      ),
+      conversationLanguageRuntime: languageRuntime,
     );
 
+    final listAgentsResult = await provider.runSkillNativeTool((
+      conversationId: 'conversation-1',
+      toolCallId: 'call-1',
+      workspaceId: 'workspace-1',
+      skillSlug: agentsSkillSlug,
+      toolSlug: listAgentsToolName,
+      arguments: const {},
+    ));
+    expect(listAgentsResult, contains('agent-1'));
     expect(
-      await provider.runSkillNativeTool((
-        conversationId: 'conversation-1',
-        toolCallId: 'call-1',
-        workspaceId: 'workspace-1',
-        skillSlug: agentsSkillSlug,
-        toolSlug: listAgentsToolName,
-        arguments: const {},
-      )),
-      contains('agent-1'),
+      (jsonDecode('$listAgentsResult') as Map<String, dynamic>)['hint'],
+      contains('Los agentes configurados'),
     );
     expect(
       await provider.runSkillNativeTool((
@@ -958,6 +979,7 @@ void main() {
       )),
       contains('child-1'),
     );
+    expect(childLanguageCodes, ['es']);
     await expectLater(
       () => provider.runSkillNativeTool((
         conversationId: 'conversation-1',
@@ -969,6 +991,13 @@ void main() {
       )),
       throwsA(isA<StateError>()),
     );
+    verify(
+      () => specs.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        languageCode: 'es',
+      ),
+    ).called(3);
   });
 
   test('rejects app native tools absent from current specifications', () async {

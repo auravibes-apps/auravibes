@@ -77,6 +77,7 @@ class const _FakeLoadConversationToolSpecsUsecase({
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async => (await buildCatalog(
     conversationId: conversationId,
     workspaceId: workspaceId,
@@ -86,6 +87,7 @@ class const _FakeLoadConversationToolSpecsUsecase({
   Future<List<ToolSpec>> preview({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async => (await buildCatalog(
     conversationId: conversationId,
     workspaceId: workspaceId,
@@ -95,6 +97,7 @@ class const _FakeLoadConversationToolSpecsUsecase({
   Future<ToolCatalog<ResolvedTool>> buildCatalog({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async => includeSkillControl
       ? _buildPendingToolCatalog(includeSkillControl: true)
       : _pendingToolCatalog;

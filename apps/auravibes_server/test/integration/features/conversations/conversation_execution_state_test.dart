@@ -31,6 +31,7 @@ void main() {
     Future<_ExecutionFixture> prepareExecution({
       bool continueConversation = true,
       bool seedCompletedTurn = false,
+      String? languageCode,
     }) async {
       final userId = const Uuid().v4().toString();
       final session = sessionBuilder.copyWith(
@@ -145,6 +146,7 @@ void main() {
             clientMessageId: 'message-1',
             content: 'First',
             attachmentIds: const [],
+            languageCode: languageCode,
           ),
         );
         final snapshot = await endpoints.conversation.continueConversation(
@@ -154,6 +156,7 @@ void main() {
             requestId: 'continue-1',
             conversationId: conversation.stableId,
             expectedProjectionRevision: 2,
+            languageCode: languageCode,
           ),
         );
         expect(snapshot.conversation.executionState, 'running');
@@ -255,6 +258,198 @@ void main() {
           'user-message:message-first',
           'user-message:message-second',
         ]);
+      },
+    );
+
+    test('queued message starts with its own conversation language', () async {
+      final fixture = await prepareExecution(languageCode: 'en');
+      final snapshot = await endpoints.conversation.getConversationSnapshot(
+        fixture.session,
+        GetConversationRequest(
+          workspaceId: fixture.workspaceId,
+          conversationId: fixture.conversationId,
+        ),
+      );
+      await endpoints.conversation.queueConversationMessage(
+        fixture.session,
+        QueueConversationMessageRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'queue-spanish-message',
+          conversationId: fixture.conversationId,
+          expectedProjectionRevision: snapshot.conversation.projectionRevision,
+          clientMessageId: 'message-spanish',
+          content: 'Mensaje en español',
+          attachmentIds: const [],
+          languageCode: 'es',
+        ),
+      );
+
+      final host = _CountingCompletingHost();
+      await runConversationWorker(
+        fixture.database,
+        isActive: () => true,
+        worker: ConversationWorker(host: host),
+      );
+
+      expect(host.languageCodes, ['en', 'es']);
+    });
+
+    test(
+      'legacy queued messages without a locale fall back to English',
+      () async {
+        final fixture = await prepareExecution(languageCode: 'es');
+        final snapshot = await endpoints.conversation.getConversationSnapshot(
+          fixture.session,
+          GetConversationRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+          ),
+        );
+        await endpoints.conversation.queueConversationMessage(
+          fixture.session,
+          QueueConversationMessageRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'queue-legacy-message',
+            conversationId: fixture.conversationId,
+            expectedProjectionRevision:
+                snapshot.conversation.projectionRevision,
+            clientMessageId: 'message-legacy',
+            content: 'Legacy message',
+            attachmentIds: const [],
+          ),
+        );
+
+        final host = _CountingCompletingHost();
+        await runConversationWorker(
+          fixture.database,
+          isActive: () => true,
+          worker: ConversationWorker(host: host),
+        );
+
+        expect(host.languageCodes, ['es', 'en']);
+      },
+    );
+
+    test('malformed queued message locale falls back to English', () async {
+      final fixture = await prepareExecution(languageCode: 'es');
+      final snapshot = await endpoints.conversation.getConversationSnapshot(
+        fixture.session,
+        GetConversationRequest(
+          workspaceId: fixture.workspaceId,
+          conversationId: fixture.conversationId,
+        ),
+      );
+      await endpoints.conversation.queueConversationMessage(
+        fixture.session,
+        QueueConversationMessageRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'queue-malformed-message',
+          conversationId: fixture.conversationId,
+          expectedProjectionRevision: snapshot.conversation.projectionRevision,
+          clientMessageId: 'message-malformed',
+          content: 'Malformed message locale',
+          attachmentIds: const [],
+          languageCode: 'fr-CA',
+        ),
+      );
+      final event = await ConversationEvent.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.eventId.equals('user-message:message-malformed'),
+      );
+      expect(event, isNotNull);
+      await ConversationEvent.db.updateRow(
+        fixture.database,
+        event!.copyWith(payloadJson: '{'),
+      );
+
+      final host = _CountingCompletingHost();
+      await runConversationWorker(
+        fixture.database,
+        isActive: () => true,
+        worker: ConversationWorker(host: host),
+      );
+
+      expect(host.languageCodes, ['es', 'en']);
+    });
+
+    test(
+      'background-work continuation keeps locale and defaults malformed events',
+      () async {
+        final fixture = await prepareExecution(languageCode: 'en');
+        final now = DateTime.now().toUtc();
+        const workEvents = [
+          (
+            workId: 'background-work-language',
+            payloadJson:
+                '{"workId":"background-work-language",'
+                '"languageCode":"es"}',
+          ),
+          (
+            workId: 'background-work-malformed-language',
+            payloadJson: '{',
+          ),
+        ];
+        await fixture.database.db.transaction((transaction) async {
+          var conversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationDatabaseId,
+            transaction: transaction,
+          ))!;
+          for (final workEvent in workEvents) {
+            final eventId = 'background-work-completion:${workEvent.workId}';
+            final sequence = conversation.eventSequence + 1;
+            conversation = await Conversation.db.updateRow(
+              fixture.database,
+              conversation.copyWith(
+                eventSequence: sequence,
+                projectionRevision: conversation.projectionRevision + 1,
+                updatedAt: now,
+              ),
+              transaction: transaction,
+            );
+            await ConversationEvent.db.insertRow(
+              fixture.database,
+              ConversationEvent(
+                workspaceId: fixture.workspaceId,
+                conversationId: fixture.conversationDatabaseId,
+                sequence: sequence,
+                eventId: eventId,
+                actorUserId: fixture.userId,
+                requestId: eventId,
+                kind: ConversationEventType.backgroundWorkCompleted,
+                payloadJson: workEvent.payloadJson,
+                createdAt: now,
+              ),
+              transaction: transaction,
+            );
+            await conversation_repo.ConversationRepository()
+                .insertPendingMessage(
+                  fixture.database,
+                  conversation: conversation,
+                  clientMessageId: 'background_work:${workEvent.workId}',
+                  content: 'Resume background work.',
+                  attachmentIds: const [],
+                  metadataJson: jsonEncode({
+                    'isBackgroundWorkCompletion': true,
+                    'backgroundWorkId': workEvent.workId,
+                    'eventId': eventId,
+                  }),
+                  now: now,
+                  transaction: transaction,
+                );
+          }
+        });
+
+        final host = _CountingCompletingHost();
+        await runConversationWorker(
+          fixture.database,
+          isActive: () => true,
+          worker: ConversationWorker(host: host),
+        );
+
+        expect(host.languageCodes, ['en', 'es', 'en']);
       },
     );
 
@@ -3010,6 +3205,7 @@ class _CountingCompletingHost({
 }) implements ConversationEngineHost {
   final started = Completer<void>();
   final compactionStarted = Completer<void>();
+  final languageCodes = <String>[];
   var calls = 0;
   var compactionCalls = 0;
 
@@ -3023,6 +3219,9 @@ class _CountingCompletingHost({
     Future<void>? leaseLost,
   }) async {
     calls++;
+    languageCodes.add(
+      conversation_repo.conversationLanguageCodeForJob(job.payloadJson) ?? 'en',
+    );
     if (!started.isCompleted) started.complete();
     await block?.future;
     return const ConversationEngineResult(

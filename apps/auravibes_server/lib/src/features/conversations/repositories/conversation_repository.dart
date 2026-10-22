@@ -32,6 +32,7 @@ String conversationTurnJobPayload(
   int? parentTurnId,
   String? parentToolCallId,
   List<String>? a2uiSupportedComponents,
+  String? languageCode,
   String? reasoningConfigJson,
   bool includeReasoningConfigSnapshot = false,
 }) => jsonEncode({
@@ -40,9 +41,23 @@ String conversationTurnJobPayload(
   'parentTurnId': ?parentTurnId,
   'parentToolCallId': ?parentToolCallId,
   'a2uiSupportedComponents': ?a2uiSupportedComponents,
+  'languageCode': ?languageCode,
   if (includeReasoningConfigSnapshot)
     'reasoningConfigJson': reasoningConfigJson,
 });
+
+String? conversationLanguageCodeForJob(String? payloadJson) {
+  if (payloadJson == null) return null;
+  try {
+    final payload = jsonDecode(payloadJson);
+
+    return payload is Map && payload['languageCode'] is String
+        ? payload['languageCode']! as String
+        : null;
+  } on FormatException {
+    return null;
+  }
+}
 
 String? conversationReasoningConfigForExecutionSettings(String settingsJson) {
   final settings = jsonDecode(settingsJson);
@@ -600,6 +615,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         payloadJson: conversationTurnJobPayload(
           actorUserId,
           a2uiSupportedComponents: request.a2uiSupportedComponents,
+          languageCode: request.languageCode,
           reasoningConfigJson: conversation.reasoningConfigJson,
           includeReasoningConfigSnapshot: true,
         ),
@@ -688,6 +704,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         payloadJson: conversationTurnJobPayload(
           actorUserId,
           a2uiSupportedComponents: request.a2uiSupportedComponents,
+          languageCode: request.languageCode,
           reasoningConfigJson: conversation.reasoningConfigJson,
           includeReasoningConfigSnapshot: true,
         ),

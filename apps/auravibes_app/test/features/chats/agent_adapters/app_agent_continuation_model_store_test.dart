@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
@@ -28,6 +29,51 @@ class _BuildSkillContext extends Mock
 class _LoadTools extends Mock implements LoadConversationToolSpecsUsecase;
 
 void main() {
+  test(
+    'continuation adapter reads conversation locale from app runtime',
+    () async {
+      final buildSkillContext = _BuildSkillContext();
+      final languageRuntime = ConversationAgentLanguageRuntime()
+        ..remember('conversation', 'es');
+      when(
+        () => buildSkillContext.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          languageCode: 'es',
+        ),
+      ).thenAnswer((_) async => const []);
+      final adapter = AppAgentContinuationAdapter(
+        conversationRepository: _ConversationRepository(),
+        messageRepository: _MessageRepository(),
+        modelSelectionStore: (_) async => _ModelSelectionStore(),
+        apiModelRepository: _ApiModelRepository(),
+        selectPromptMessagesUsecase: _SelectPromptMessages(),
+        buildSkillContextMessagesUsecase: buildSkillContext,
+        loadApprovalStates: ({
+          required conversationId,
+          required workspaceId,
+        }) async => const {},
+        loadConversationToolSpecsUsecase: _LoadTools(),
+        conversationLanguageRuntime: languageRuntime,
+      );
+
+      expect(
+        await adapter.buildSkillContextMessages(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+        isEmpty,
+      );
+      verify(
+        () => buildSkillContext.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          languageCode: 'es',
+        ),
+      ).called(1);
+    },
+  );
+
   test(
     'continuation resolves model store after loading conversation workspace',
     () async {

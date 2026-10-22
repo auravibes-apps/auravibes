@@ -200,6 +200,7 @@ class NoopSyncSkillToolPermissionsUsecase extends Fake
   Future<void> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) => Future<void>.value();
 
   @override
@@ -207,6 +208,7 @@ class NoopSyncSkillToolPermissionsUsecase extends Fake
     required String conversationId,
     required String workspaceId,
     required String toolName,
+    String? languageCode,
   }) async => null;
 }
 
