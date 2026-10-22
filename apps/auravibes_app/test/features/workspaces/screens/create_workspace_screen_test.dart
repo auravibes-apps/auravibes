@@ -56,6 +56,8 @@ void main() {
                       onAddCloudAccount: () => fail('Unexpected cloud account'),
                       onCreatingChanged: (creating) =>
                           expect(creating, anyOf(isTrue, isFalse)),
+                      onBack: () => fail('Unexpected back'),
+                      onSignInAccount: (_) => fail('Unexpected sign-in'),
                     ),
                   ),
                   locale: context.locale,

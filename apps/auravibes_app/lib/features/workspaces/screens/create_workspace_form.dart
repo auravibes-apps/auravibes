@@ -36,12 +36,12 @@ class CreateWorkspaceForm extends ConsumerStatefulWidget {
     required this.onCreated,
     required this.onAddCloudAccount,
     required this.onCreatingChanged,
+    required this.onBack,
+    required this.onSignInAccount,
     this.canAddCloudAccount = false,
     this.fixedIntent,
     this.onReturn,
-    this.onBack,
     this.pageBuilder,
-    this.onSignInAccount,
     this.taskId = '',
     super.key,
   });
@@ -63,9 +63,9 @@ class CreateWorkspaceForm extends ConsumerStatefulWidget {
 
   /// Safe return when this form was opened directly.
   final VoidCallback? onReturn;
-  final VoidCallback? onBack;
+  final VoidCallback onBack;
   final SetupPageBuilder? pageBuilder;
-  final ValueChanged<CloudAccountSession>? onSignInAccount;
+  final ValueChanged<CloudAccountSession> onSignInAccount;
 
   @override
   ConsumerState<CreateWorkspaceForm> createState() =>
@@ -508,11 +508,10 @@ class _WorkspaceCreationInputs extends StatelessWidget {
               error: error,
               onRetry: () => unawaited(data.state._create()),
               pending: data.state._isCreating,
-              onSignIn: switch ((
-                account: data.account,
-                callback: data.state.widget.onSignInAccount,
-              )) {
-                (:final account?, :final callback?) => () => callback(account),
+              onSignIn: switch (data.account) {
+                final account? => () => data.state.widget.onSignInAccount(
+                  account,
+                ),
                 _ => null,
               },
             ),

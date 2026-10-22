@@ -873,13 +873,13 @@ class _WorkspaceCreationForm extends StatelessWidget {
          onCreated: state._completed,
          onAddCloudAccount: state._addAccount,
          onCreatingChanged: state._setCreating,
+         onBack: state._backToIntroRouteChooser,
+         onSignInAccount: state._signInAccount,
          canAddCloudAccount:
              !state.widget.showIntroRouteChooser || draft.intent == .cloud,
          fixedIntent: state.widget.showIntroRouteChooser ? draft.intent : null,
          onReturn: state.widget.onReturn,
-         onBack: state._backToIntroRouteChooser,
          pageBuilder: state.widget.pageBuilder,
-         onSignInAccount: state._signInAccount,
          taskId: state.widget.taskId,
          key: ValueKey(
            state.widget.showIntroRouteChooser
