@@ -14,7 +14,8 @@ import unittest
 
 from validation_lease import LOCK_NAME, MINIMUM_AVAILABLE_BYTES, _worktree_git_dir
 from validation_lease import _owner_summary, _parse_arguments, _temp_directory_usage
-from validation_lease import _validation_lock_path, _validation_preflight, _write_owner
+from validation_lease import _prepend_pinned_sdk_bin, _validation_lock_path
+from validation_lease import _validation_preflight, _write_owner
 from validation_lease import read_active_owner, try_acquire
 
 
@@ -49,6 +50,37 @@ class ValidationLeaseTest(unittest.TestCase):
         )
 
         self.assertTrue(summary.startswith("label=validate:pr pid=1"))
+
+    def test_pinned_sdk_bin_precedes_host_path(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repository = Path(temp_dir)
+            sdk_bin = repository / ".fvm" / "flutter_sdk" / "bin"
+            sdk_bin.mkdir(parents=True)
+            environment = {"PATH": "/host/dart:/usr/bin"}
+
+            _prepend_pinned_sdk_bin(environment, repository)
+
+            self.assertEqual(
+                environment["PATH"],
+                f"{sdk_bin.resolve()}{os.pathsep}/host/dart:/usr/bin",
+            )
+
+    def test_pinned_sdk_bin_is_found_from_package_directory(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repository = Path(temp_dir)
+            package = repository / "packages" / "example"
+            package.mkdir(parents=True)
+            sdk_bin = repository / ".fvm" / "flutter_sdk" / "bin"
+            sdk_bin.mkdir(parents=True)
+            environment = {"PATH": "/usr/bin"}
+
+            _prepend_pinned_sdk_bin(environment, package)
+
+            self.assertTrue(
+                environment["PATH"].startswith(
+                    f"{sdk_bin.resolve()}{os.pathsep}"
+                )
+            )
 
     def test_preflight_allows_volume_at_reserve(self):
         volume = _volume_usage(Path.cwd(), MINIMUM_AVAILABLE_BYTES)
