@@ -4,8 +4,16 @@ class const ChatDraft({
   required final String text,
   final List<MessageAttachmentToCreate> attachments = const [],
   final String? metadataJson,
+  final String? languageCode,
 }) {
   bool get isEmpty => text.trim().isEmpty && attachments.isEmpty;
 
   bool hasAttachments() => attachments.isNotEmpty;
+
+  ChatDraft withLanguageCode(String languageCode) => ChatDraft(
+    text: text,
+    attachments: attachments,
+    metadataJson: metadataJson,
+    languageCode: languageCode,
+  );
 }

@@ -9,6 +9,8 @@ class _Gateway extends Mock implements CloudChatGateway;
 
 class _Snapshot extends Mock implements TurnSnapshot;
 
+class _SharedSnapshot extends Mock implements ConversationSnapshot;
+
 class _Turn extends Mock implements ConversationTurnView;
 
 class _ToolCall extends Mock implements ConversationToolCallView;
@@ -71,11 +73,12 @@ void main() {
         requestId: any(named: 'requestId'),
         conversationId: 'conversation-1',
         expectedConversationRevision: 3,
+        languageCode: 'es',
       ),
     ).thenAnswer((_) async => result);
 
     final actual = await CloudTurnUsecase(gateway)
-        .continueConversation('conversation-1');
+        .continueConversation('conversation-1', languageCode: 'es');
 
     expect(actual, same(result));
     verify(
@@ -83,9 +86,56 @@ void main() {
         requestId: any(named: 'requestId'),
         conversationId: 'conversation-1',
         expectedConversationRevision: 3,
+        languageCode: 'es',
       ),
     ).called(1);
   });
+
+  test(
+    'continues shared conversations in English unless a locale is given',
+    () async {
+      final gateway = _Gateway();
+      final snapshot = _SharedSnapshot();
+      when(
+        () => gateway.continueConversation(
+          requestId: any(named: 'requestId'),
+          conversationId: 'conversation-1',
+          expectedProjectionRevision: 4,
+          languageCode: any(named: 'languageCode'),
+        ),
+      ).thenAnswer((_) async => snapshot);
+
+      final usecase = CloudTurnUsecase(gateway);
+      final fallback = await usecase.continueSharedConversation(
+        conversationId: 'conversation-1',
+        projectionRevision: 4,
+      );
+      final spanish = await usecase.continueSharedConversation(
+        conversationId: 'conversation-1',
+        projectionRevision: 4,
+        languageCode: 'es',
+      );
+
+      expect(fallback, same(snapshot));
+      expect(spanish, same(snapshot));
+      verify(
+        () => gateway.continueConversation(
+          requestId: any(named: 'requestId'),
+          conversationId: 'conversation-1',
+          expectedProjectionRevision: 4,
+          languageCode: 'en',
+        ),
+      ).called(1);
+      verify(
+        () => gateway.continueConversation(
+          requestId: any(named: 'requestId'),
+          conversationId: 'conversation-1',
+          expectedProjectionRevision: 4,
+          languageCode: 'es',
+        ),
+      ).called(1);
+    },
+  );
 
   test('decide forwards client-observed arguments digest', () async {
     final gateway = _Gateway();

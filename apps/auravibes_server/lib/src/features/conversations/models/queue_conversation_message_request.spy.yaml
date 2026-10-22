@@ -8,4 +8,5 @@ fields:
   content: String
   attachmentIds: List<String>
   metadataJson: String?
+  languageCode: String?
   a2uiSupportedComponents: List<String>?

@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
@@ -31,12 +32,13 @@ class const BuildAppSkillNativeToolSpecsUsecase(
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
+    String? languageCode,
   }) async {
     final loadedSkills = await _loadedSkills(conversationId, workspaceId);
     final conversationState = await _conversationState(conversationId);
     final runtimeSkills = _runtimeSkills(loadedSkills, extraSkills);
 
-    return _toolSpecs(runtimeSkills, conversationState);
+    return _toolSpecs(runtimeSkills, conversationState, languageCode);
   }
 
   Future<List<AvailableSkill>> _loadedSkills(
@@ -64,12 +66,14 @@ class const BuildAppSkillNativeToolSpecsUsecase(
   List<ToolSpec> _toolSpecs(
     List<AvailableSkill> runtimeSkills,
     ({bool isUnknown, bool isSubAgent}) conversationState,
+    String? languageCode,
   ) => [
     ..._skillsManagerToolSpecs(runtimeSkills),
     ..._subAgentToolSpecs(
       runtimeSkills,
       isUnknownConversation: conversationState.isUnknown,
       isSubAgentConversation: conversationState.isSubAgent,
+      languageCode: languageCode,
     ),
     ..._browserToolSpecs(runtimeSkills),
   ];
@@ -97,6 +101,7 @@ class const BuildAppSkillNativeToolSpecsUsecase(
     List<AvailableSkill> runtimeSkills, {
     required bool isUnknownConversation,
     required bool isSubAgentConversation,
+    required String? languageCode,
   }) {
     if (!_hasAppSkill(runtimeSkills, agentsSkillSlug) ||
         isUnknownConversation ||
@@ -107,7 +112,32 @@ class const BuildAppSkillNativeToolSpecsUsecase(
     final subAgentsSkill = _appSkillRegistry.getBySlug(agentsSkillSlug);
     if (subAgentsSkill == null) return const [];
 
-    return _appSkillToolSpecs(subAgentsSkill);
+    return _localizeListAgentsToolSpecs(
+      _appSkillToolSpecs(subAgentsSkill),
+      languageCode,
+    );
+  }
+
+  List<ToolSpec> _localizeListAgentsToolSpecs(
+    List<ToolSpec> toolSpecs,
+    String? languageCode,
+  ) {
+    final localized = AgentGuidance.listAgentsToolSpecForLanguageCode(
+      languageCode,
+    );
+
+    return [
+      for (final spec in toolSpecs)
+        if (spec.name == listAgentsToolName ||
+            spec.name.endsWith('__$listAgentsToolName'))
+          ToolSpec(
+            name: spec.name,
+            description: localized.description,
+            inputJsonSchema: localized.inputJsonSchema,
+          )
+        else
+          spec,
+    ];
   }
 
   List<ToolSpec> _browserToolSpecs(List<AvailableSkill> runtimeSkills) {

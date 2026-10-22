@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
@@ -31,6 +32,7 @@ class const _SkillActivationRequest({
   required final String workspaceId,
   required final String slug,
   required final String revision,
+  final String? languageCode,
 });
 
 class const RunSkillCommandUsecase({
@@ -43,23 +45,26 @@ class const RunSkillCommandUsecase({
   final ListSkillResourceSummaries? listSkillResourceSummaries,
   final LoadSkillResourceContent? loadSkillResourceContent,
 }) {
-  Future<Object?> call(RunSkillCommandRequest request) =>
-      switch (request.commandName) {
-        activateSkillToolName => _activate(request),
-        loadSkillResourceToolName => _loadResource(request),
-        _ => throw FormatException(
-          'Unknown skill command: ${request.commandName}',
-        ),
-      };
+  Future<Object?> call(
+    RunSkillCommandRequest request, {
+    String? languageCode,
+  }) => switch (request.commandName) {
+    activateSkillToolName => _activate(request, languageCode),
+    loadSkillResourceToolName => _loadResource(request),
+    _ => throw FormatException('Unknown skill command: ${request.commandName}'),
+  };
 }
 
 extension on RunSkillCommandUsecase {
-  Future<Object?> _activate(RunSkillCommandRequest request) {
+  Future<Object?> _activate(
+    RunSkillCommandRequest request,
+    String? languageCode,
+  ) {
     final target = SkillActivationTarget.fromArguments(
       Map<String, Object?>.from(request.arguments),
     );
 
-    return _activateTarget(this, request, target);
+    return _activateTarget(this, request, target, languageCode);
   }
 
   Future<Object?> _activateSkill(
@@ -73,7 +78,11 @@ extension on RunSkillCommandUsecase {
 
     return buildSkillActivationResult(
       manifest: manifest,
-      content: skill.content,
+      content: request.slug == agentsSkillSlug
+          ? AgentGuidance.agentsSkillContentForLanguageCode(
+              request.languageCode,
+            )
+          : skill.content,
       resources: resources,
     );
   }
@@ -167,14 +176,12 @@ extension on RunSkillCommandUsecase {
     _SkillActivationRequest request,
     AvailableSkill skill,
   ) async {
-    final manifests = await buildLoadedSkillManifestsUsecase.call(
+    final manifest = (await buildLoadedSkillManifestsUsecase.call(
       conversationId: request.conversationId,
       workspaceId: request.workspaceId,
       extraSkills: [skill],
-    );
-    final manifest = manifests
-        .where((candidate) => candidate.slug == request.slug)
-        .firstOrNull;
+      languageCode: request.languageCode,
+    )).where((candidate) => candidate.slug == request.slug).firstOrNull;
     if (manifest == null) {
       throw StateError('Skill manifest unavailable: ${request.slug}');
     }
@@ -187,6 +194,7 @@ Future<Object?> _activateTarget(
   RunSkillCommandUsecase usecase,
   RunSkillCommandRequest request,
   SkillActivationTarget target,
+  String? languageCode,
 ) async {
   final skill = await usecase._availableSkill(request, target.slug);
   final manifestRequest = _SkillActivationRequest(
@@ -194,6 +202,7 @@ Future<Object?> _activateTarget(
     workspaceId: request.workspaceId,
     slug: target.slug,
     revision: target.revision,
+    languageCode: languageCode,
   );
 
   return await usecase._activateSkill(manifestRequest, skill);

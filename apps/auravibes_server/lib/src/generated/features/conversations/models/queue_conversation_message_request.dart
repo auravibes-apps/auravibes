@@ -24,6 +24,7 @@ abstract class QueueConversationMessageRequest
     required this.content,
     required this.attachmentIds,
     this.metadataJson,
+    this.languageCode,
     this.a2uiSupportedComponents,
   });
 
@@ -36,6 +37,7 @@ abstract class QueueConversationMessageRequest
     required String content,
     required List<String> attachmentIds,
     String? metadataJson,
+    String? languageCode,
     List<String>? a2uiSupportedComponents,
   }) = _QueueConversationMessageRequestImpl;
 
@@ -54,6 +56,7 @@ abstract class QueueConversationMessageRequest
         jsonSerialization['attachmentIds'],
       ),
       metadataJson: jsonSerialization['metadataJson'] as String?,
+      languageCode: jsonSerialization['languageCode'] as String?,
       a2uiSupportedComponents:
           jsonSerialization['a2uiSupportedComponents'] == null
           ? null
@@ -79,6 +82,8 @@ abstract class QueueConversationMessageRequest
 
   String? metadataJson;
 
+  String? languageCode;
+
   List<String>? a2uiSupportedComponents;
 
   /// Returns a shallow copy of this [QueueConversationMessageRequest]
@@ -93,6 +98,7 @@ abstract class QueueConversationMessageRequest
     String? content,
     List<String>? attachmentIds,
     String? metadataJson,
+    String? languageCode,
     List<String>? a2uiSupportedComponents,
   });
   @override
@@ -107,6 +113,7 @@ abstract class QueueConversationMessageRequest
       'content': content,
       'attachmentIds': attachmentIds.toJson(),
       if (metadataJson != null) 'metadataJson': metadataJson,
+      if (languageCode != null) 'languageCode': languageCode,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
@@ -124,6 +131,7 @@ abstract class QueueConversationMessageRequest
       'content': content,
       'attachmentIds': attachmentIds.toJson(),
       if (metadataJson != null) 'metadataJson': metadataJson,
+      if (languageCode != null) 'languageCode': languageCode,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
     };
@@ -148,6 +156,7 @@ class _QueueConversationMessageRequestImpl
     required String content,
     required List<String> attachmentIds,
     String? metadataJson,
+    String? languageCode,
     List<String>? a2uiSupportedComponents,
   }) : super._(
          workspaceId: workspaceId,
@@ -158,6 +167,7 @@ class _QueueConversationMessageRequestImpl
          content: content,
          attachmentIds: attachmentIds,
          metadataJson: metadataJson,
+         languageCode: languageCode,
          a2uiSupportedComponents: a2uiSupportedComponents,
        );
 
@@ -174,6 +184,7 @@ class _QueueConversationMessageRequestImpl
     String? content,
     List<String>? attachmentIds,
     Object? metadataJson = _Undefined,
+    Object? languageCode = _Undefined,
     Object? a2uiSupportedComponents = _Undefined,
   }) {
     return QueueConversationMessageRequest(
@@ -187,6 +198,7 @@ class _QueueConversationMessageRequestImpl
       attachmentIds:
           attachmentIds ?? this.attachmentIds.map((e0) => e0).toList(),
       metadataJson: metadataJson is String? ? metadataJson : this.metadataJson,
+      languageCode: languageCode is String? ? languageCode : this.languageCode,
       a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
           ? a2uiSupportedComponents
           : this.a2uiSupportedComponents?.map((e0) => e0).toList(),

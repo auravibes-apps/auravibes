@@ -68,7 +68,7 @@ final class ConversationSkillSelectorProvider
 }
 
 String _$conversationSkillSelectorHash() =>
-    r'bfb0e591d840756464b3d51e31ad44c9dc1cfe6c';
+    r'1c91740f09afe94722f410bf268edb82830e77cc';
 
 final class ConversationSkillSelectorFamily extends $Family
     with

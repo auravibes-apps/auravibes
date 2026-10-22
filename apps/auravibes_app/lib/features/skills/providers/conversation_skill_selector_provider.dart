@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/repositories/recent_skill_usage_repository.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
@@ -29,6 +30,7 @@ typedef _SkillSelectorDependencies = ({
   BuildLoadedSkillManifestsUsecase buildManifests,
   ListAvailableSkillsUsecase listSkills,
   RecentSkillUsageRepository recentSkillUsageRepository,
+  String? languageCode,
   String workspaceId,
   String conversationId,
   ConversationSkillContextSnapshot? snapshot,
@@ -80,6 +82,9 @@ Future<ConversationSkillSelectorState> conversationSkillSelector(
   buildManifests: ref.watch(buildLoadedSkillManifestsUsecaseProvider),
   listSkills: ref.watch(listAvailableSkillsUsecaseProvider(workspaceId)),
   recentSkillUsageRepository: ref.watch(recentSkillUsageRepositoryProvider),
+  languageCode: ref
+      .watch(conversationAgentLanguageRuntimeProvider)
+      .languageCodeFor(conversationId),
   workspaceId: workspaceId,
   conversationId: conversationId,
   snapshot: ref.watch(conversationSkillContextRuntimeProvider)[conversationId],
@@ -165,6 +170,7 @@ Future<Map<String, String>> _currentSkillRevisions(
     for (final manifest in await dependencies.buildManifests.call(
       conversationId: dependencies.conversationId,
       workspaceId: dependencies.workspaceId,
+      languageCode: dependencies.languageCode,
     )) {
       revisions[manifest.slug] = manifest.revision;
     }

@@ -287,6 +287,33 @@ class CiSummaryTest(unittest.TestCase):
                 "false",
                 "false",
             ),
+            (
+                "renovate.json",
+                "workflow_dispatch",
+                False,
+                all_platforms,
+                "true",
+                "true",
+                "true",
+            ),
+            (
+                "README.md",
+                "workflow_dispatch",
+                False,
+                all_platforms,
+                "true",
+                "true",
+                "false",
+            ),
+            (
+                "renovate.json",
+                "workflow_dispatch",
+                True,
+                all_platforms,
+                "true",
+                "true",
+                "false",
+            ),
         ]
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
@@ -304,8 +331,14 @@ class CiSummaryTest(unittest.TestCase):
             git("config", "user.email", "ci-summary@example.test")
             git("commit", "-qm", "base", "--allow-empty")
             base = git("rev-parse", "HEAD")
+            git("update-ref", "refs/remotes/origin/main", base)
             for path, event, unknown, platforms, code, server, renovate in cases:
                 with self.subTest(path=path, event=event, unknown=unknown):
+                    if event == "workflow_dispatch":
+                        if unknown:
+                            git("update-ref", "-d", "refs/remotes/origin/main")
+                        else:
+                            git("update-ref", "refs/remotes/origin/main", base)
                     git("reset", "--soft", base)
                     git("read-tree", base)
                     changed = repo / path
@@ -352,7 +385,20 @@ class CiSummaryTest(unittest.TestCase):
                             "renovate_config_changes": renovate,
                         },
                     )
-                    self.assertIn("CI routing", summary.read_text())
+                    routing = summary.read_text()
+                    self.assertIn("CI routing", routing)
+                    if event == "workflow_dispatch" and unknown:
+                        self.assertIn(
+                            "Comparison unavailable. Configuration changes not determined",
+                            routing,
+                        )
+                        self.assertIn("Skipped. Did not run", routing)
+                        self.assertNotIn("| Renovate validation | Scheduled", routing)
+                    elif event == "workflow_dispatch":
+                        self.assertNotIn(
+                            "Comparison unavailable. Configuration changes not determined",
+                            routing,
+                        )
 
 
 if __name__ == "__main__":

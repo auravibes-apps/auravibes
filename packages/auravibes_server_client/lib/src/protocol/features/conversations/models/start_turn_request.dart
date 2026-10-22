@@ -27,6 +27,7 @@ abstract class StartTurnRequest
     this.modelSelectionId,
     this.agentId,
     this.a2uiSupportedComponents,
+    this.languageCode,
   });
 
   factory StartTurnRequest({
@@ -40,6 +41,7 @@ abstract class StartTurnRequest
     String? modelSelectionId,
     String? agentId,
     List<String>? a2uiSupportedComponents,
+    String? languageCode,
   }) = _StartTurnRequestImpl;
 
   factory StartTurnRequest.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -62,6 +64,7 @@ abstract class StartTurnRequest
           : _isctvzjc.Protocol().deserialize<List<String>>(
               jsonSerialization['a2uiSupportedComponents'],
             ),
+      languageCode: jsonSerialization['languageCode'] as String?,
     );
   }
 
@@ -85,6 +88,8 @@ abstract class StartTurnRequest
 
   List<String>? a2uiSupportedComponents;
 
+  String? languageCode;
+
   /// Returns a shallow copy of this [StartTurnRequest]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -99,6 +104,7 @@ abstract class StartTurnRequest
     String? modelSelectionId,
     String? agentId,
     List<String>? a2uiSupportedComponents,
+    String? languageCode,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -115,6 +121,7 @@ abstract class StartTurnRequest
       if (agentId != null) 'agentId': agentId,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+      if (languageCode != null) 'languageCode': languageCode,
     };
   }
 
@@ -133,6 +140,7 @@ abstract class StartTurnRequest
       if (agentId != null) 'agentId': agentId,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
+      if (languageCode != null) 'languageCode': languageCode,
     };
   }
 
@@ -156,6 +164,7 @@ class _StartTurnRequestImpl extends StartTurnRequest {
     String? modelSelectionId,
     String? agentId,
     List<String>? a2uiSupportedComponents,
+    String? languageCode,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
@@ -167,6 +176,7 @@ class _StartTurnRequestImpl extends StartTurnRequest {
          modelSelectionId: modelSelectionId,
          agentId: agentId,
          a2uiSupportedComponents: a2uiSupportedComponents,
+         languageCode: languageCode,
        );
 
   /// Returns a shallow copy of this [StartTurnRequest]
@@ -184,6 +194,7 @@ class _StartTurnRequestImpl extends StartTurnRequest {
     Object? modelSelectionId = _Undefined,
     Object? agentId = _Undefined,
     Object? a2uiSupportedComponents = _Undefined,
+    Object? languageCode = _Undefined,
   }) {
     return StartTurnRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -202,6 +213,7 @@ class _StartTurnRequestImpl extends StartTurnRequest {
       a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
           ? a2uiSupportedComponents
           : this.a2uiSupportedComponents?.map((e0) => e0).toList(),
+      languageCode: languageCode is String? ? languageCode : this.languageCode,
     );
   }
 }

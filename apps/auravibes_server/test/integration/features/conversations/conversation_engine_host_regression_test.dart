@@ -26,8 +26,9 @@ import '../../test_tools/serverpod_test_tools.dart';
 
 Future<_Fixture> _prepareConversationFixture(
   TestSessionBuilder sessionBuilder,
-  TestEndpoints endpoints,
-) async {
+  TestEndpoints endpoints, {
+  String? languageCode,
+}) async {
   final userId = const Uuid().v4().toString();
   final session = sessionBuilder.copyWith(
     authentication: AuthenticationOverride.authenticationInfo(
@@ -81,6 +82,7 @@ Future<_Fixture> _prepareConversationFixture(
       clientMessageId: 'message-1',
       content: 'Continue.',
       attachmentIds: const [],
+      languageCode: languageCode,
     ),
   );
   await endpoints.conversation.continueConversation(
@@ -90,6 +92,7 @@ Future<_Fixture> _prepareConversationFixture(
       requestId: 'continue-1',
       conversationId: conversation.stableId,
       expectedProjectionRevision: 2,
+      languageCode: languageCode,
     ),
   );
   final turn = (await ConversationTurn.db.findFirstRow(
@@ -124,8 +127,12 @@ void main() {
     sessionBuilder,
     endpoints,
   ) {
-    Future<_Fixture> prepare() =>
-        _prepareConversationFixture(sessionBuilder, endpoints);
+    Future<_Fixture> prepare({String? languageCode}) =>
+        _prepareConversationFixture(
+          sessionBuilder,
+          endpoints,
+          languageCode: languageCode,
+        );
 
     Future<void> configureProvider(_Fixture fixture) async {
       fixture.database.passwords['workspaceSecretKey'] =
@@ -827,6 +834,119 @@ void main() {
         );
       },
     );
+
+    test('agents activation preserves the conversation language', () async {
+      const languageCode = 'es-MX';
+      final fixture = await prepare(languageCode: languageCode);
+      final spanishManifest = await buildCloudSkillManifest(
+        slug: agentsSkillSlug,
+        userSkills: const [],
+        languageCode: languageCode,
+      );
+      expect(spanishManifest, isNotNull);
+      final runtime = ServerToolRuntime(
+        executor: (session, turn, tool, request) =>
+            const ServerToolExecutorService().call(
+              session,
+              turn,
+              tool,
+              request,
+            ),
+      );
+      final controls = await runtime.loadTools(
+        fixture.database,
+        workspaceId: fixture.workspaceId,
+        conversationStableId: 'conversation-1',
+        languageCode: languageCode,
+      );
+      final activate = controls.singleWhere(
+        (tool) => tool.spec.name == activateSkillToolName,
+      );
+      final runSubAgentBefore = controls.singleWhere(
+        (tool) => tool.descriptor.toolIdentifier == runSubAgentToolName,
+      );
+
+      final activated = await const ServerToolExecutorService().call(
+        fixture.database,
+        fixture.turn,
+        activate,
+        ServerToolRequest(
+          id: 'activate-agents-spanish',
+          name: activateSkillToolName,
+          arguments: {
+            'slug': agentsSkillSlug,
+            'revision': spanishManifest!.revision,
+          },
+          languageCode: languageCode,
+        ),
+      );
+
+      expect(activated, isA<SkillActivationResult>());
+      expect(activated.toString(), contains('Usa list_agents'));
+      expect(activated.toString(), isNot(contains('Use list_agents')));
+      final selectedTools = await runtime.loadTools(
+        fixture.database,
+        workspaceId: fixture.workspaceId,
+        conversationStableId: 'conversation-1',
+        languageCode: languageCode,
+      );
+      final runSubAgentAfter = selectedTools.singleWhere(
+        (tool) => tool.descriptor.toolIdentifier == runSubAgentToolName,
+      );
+      expect(runSubAgentAfter.spec.name, runSubAgentBefore.spec.name);
+      expect(
+        runSubAgentAfter.spec.inputJsonSchema,
+        runSubAgentBefore.spec.inputJsonSchema,
+      );
+
+      final listAgents = selectedTools.singleWhere(
+        (tool) => tool.descriptor.toolIdentifier == listAgentsToolName,
+      );
+      final now = DateTime.now().toUtc();
+      await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: WorkspaceResourceKind.toolPermission,
+          resourceId: 'agents-list-agents-permission',
+          data: jsonEncode({
+            'toolId': listAgents.descriptor.tableId,
+            'permissionMode': 'alwaysAllow',
+            'isEnabled': true,
+          }),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final disposition = await runtime.handle(
+        fixture.database,
+        turn: fixture.turn,
+        messageId: fixture.messages
+            .singleWhere(
+              (message) => message.id == fixture.turn.assistantMessageId,
+            )
+            .id!,
+        request: ServerToolRequest(
+          id: 'list-agents-through-call-skill',
+          name: listAgents.spec.name,
+          arguments: const {},
+          languageCode: languageCode,
+        ),
+      );
+      final dispatchedCall = await ConversationToolCall.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.stableId.equals('list-agents-through-call-skill'),
+      );
+      expect(disposition, ServerToolDisposition.completed);
+      expect(dispatchedCall?.status, 'success');
+      expect(dispatchedCall?.resultJson, contains('agentes configurados'));
+      expect(
+        dispatchedCall?.resultJson,
+        isNot(contains('Configured agents')),
+      );
+    });
 
     test(
       'activates content-only A2UI and loads static resources after selection',
@@ -2301,13 +2421,17 @@ void main() {
   withServerpod(
     'ConversationBackgroundWork',
     (sessionBuilder, endpoints) {
-      Future<_Fixture> prepare() =>
-          _prepareConversationFixture(sessionBuilder, endpoints);
+      Future<_Fixture> prepare({String? languageCode}) =>
+          _prepareConversationFixture(
+            sessionBuilder,
+            endpoints,
+            languageCode: languageCode,
+          );
 
       test(
         'cloud detach preserves its acknowledgement and runs past turn stop',
         () async {
-          final fixture = await prepare();
+          final fixture = await prepare(languageCode: 'es');
           final now = DateTime.now().toUtc();
           await WorkspaceResource.db.insertRow(
             fixture.database,
@@ -2362,6 +2486,7 @@ void main() {
                 'prompt': 'Search primary sources.',
                 'agentId': null,
               },
+              languageCode: 'es',
             ),
           );
           await entered.future.timeout(const Duration(seconds: 2));
@@ -2472,6 +2597,10 @@ void main() {
                 table.stableId.equals('background_work:${work.id}'),
           );
           expect(completionEvents, hasLength(1));
+          expect(
+            jsonDecode(completionEvents.single.payloadJson)['languageCode'],
+            'es',
+          );
           expect(completionMessages, hasLength(1));
           expect(completionMessages.single.status, ConversationStatuses.queued);
           expect(completed?.resultContent, contains('"ok":true'));

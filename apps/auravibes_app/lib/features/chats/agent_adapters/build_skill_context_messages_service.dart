@@ -1,5 +1,7 @@
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
@@ -17,18 +19,28 @@ class const BuildSkillContextMessagesService(
   final ListConversationAgentSkillsUsecase
   _listConversationAgentSkillsUsecase, [
   final BuildLoadedSkillManifestsUsecase? _buildLoadedSkillManifestsUsecase,
+  final ConversationAgentLanguageRuntime? _conversationAgentLanguageRuntime,
 ]) {
   static const _builder = agent.BuildSkillContextMessages();
   Future<List<ChatMessage>> call({
     required String conversationId,
     required String workspaceId,
+    String? languageCode,
   }) async {
-    final context = await _loadContext(conversationId, workspaceId);
+    final context = await _loadContext(
+      conversationId,
+      workspaceId,
+      languageCode,
+    );
     final agentMessages = _builder.compose(
       agentContent: context.selectedAgent?.content,
       conversationSkills: const [],
       skillCatalog: _catalogEntries(context),
-      agentSkills: _toAgentSkills(context.agentSkills, context.manifestsBySlug),
+      agentSkills: _toAgentSkills(
+        context.agentSkills,
+        context.manifestsBySlug,
+        context.languageCode,
+      ),
     );
 
     return _toChatMessages(agentMessages);
@@ -36,6 +48,7 @@ class const BuildSkillContextMessagesService(
 }
 
 typedef _SkillContextData = ({
+  String? languageCode,
   AgentEntity? selectedAgent,
   List<AvailableSkill> catalogSkills,
   List<AvailableSkill> loadedSkills,
@@ -53,32 +66,41 @@ extension on BuildSkillContextMessagesService {
   Future<_SkillContextData> _loadContext(
     String conversationId,
     String workspaceId,
+    String? languageCode,
   ) async {
+    final selectedLanguageCode =
+        languageCode ??
+        _conversationAgentLanguageRuntime?.languageCodeFor(conversationId);
     final skills = await _loadSkills(conversationId, workspaceId);
     final selectedAgent = await _selectedAgent(conversationId, workspaceId);
     final manifests = await _manifestsForSkills(
       conversationId,
       workspaceId,
       skills,
+      selectedLanguageCode,
     );
 
-    return _contextData(selectedAgent, skills, manifests);
+    return _contextData(selectedAgent, skills, manifests, selectedLanguageCode);
   }
 
   Future<List<SkillManifest>> _manifestsForSkills(
     String conversationId,
     String workspaceId,
     _SkillContextSkills skills,
-  ) => _manifests(conversationId, workspaceId, [
-    ...skills.catalogSkills,
-    ...skills.agentSkills,
-  ]);
+    String? languageCode,
+  ) {
+    final skillIds = [...skills.catalogSkills, ...skills.agentSkills];
+
+    return _manifests(conversationId, workspaceId, skillIds, languageCode);
+  }
 
   _SkillContextData _contextData(
     AgentEntity? selectedAgent,
     _SkillContextSkills skills,
     List<SkillManifest> manifests,
+    String? languageCode,
   ) => (
+    languageCode: languageCode,
     selectedAgent: selectedAgent,
     catalogSkills: skills.catalogSkills,
     loadedSkills: skills.loadedSkills,
@@ -141,11 +163,13 @@ extension on BuildSkillContextMessagesService {
     String conversationId,
     String workspaceId,
     List<AvailableSkill> agentSkills,
+    String? languageCode,
   ) async =>
       await _buildLoadedSkillManifestsUsecase?.call(
         conversationId: conversationId,
         workspaceId: workspaceId,
         extraSkills: agentSkills,
+        languageCode: languageCode,
       ) ??
       const <SkillManifest>[];
 }
@@ -203,11 +227,14 @@ ChatMessageRole _chatMessageRole(agent.AgentChatMessageRole role) =>
 List<agent.AgentSkill> _toAgentSkills(
   List<AvailableSkill> skills,
   Map<String, SkillManifest> manifestsBySlug,
+  String? languageCode,
 ) => [
   for (final skill in skills)
     agent.AgentSkill(
       title: skill.title,
-      content: skill.content,
+      content: skill.slug == agent.agentsSkillSlug
+          ? AgentGuidance.agentsSkillContentForLanguageCode(languageCode)
+          : skill.content,
       identity: '${skill.source.name}:${skill.id}',
       manifest: manifestsBySlug[skill.slug],
     ),
@@ -226,5 +253,6 @@ final buildSkillContextMessagesServiceProvider =
                 ),
         ref.watch(listConversationAgentSkillsUsecaseProvider),
         ref.watch(buildLoadedSkillManifestsUsecaseProvider),
+        ref.watch(conversationAgentLanguageRuntimeProvider),
       );
     });

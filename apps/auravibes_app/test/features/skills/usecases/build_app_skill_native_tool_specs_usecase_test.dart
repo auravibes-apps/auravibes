@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/agents/agent_guidance.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/skill_tool_slugs.dart';
@@ -82,6 +83,43 @@ void main() {
       'skill__app_native__agents__list_agents',
     ]);
   });
+
+  test(
+    'localizes the namespaced list_agents spec without changing schema',
+    () async {
+      final listUsecase = _MockListAvailableSkillsUsecase();
+      final usecase = BuildAppSkillNativeToolSpecsUsecase(
+        (_) => listUsecase,
+        null,
+      );
+      when(
+        () => listUsecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          filter: .loaded,
+        ),
+      ).thenAnswer((_) async => [_appSkill(agentsSkillSlug)]);
+
+      final english = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        languageCode: 'en',
+      );
+      final spanish = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        languageCode: 'es',
+      );
+
+      expect(spanish.single.name, english.single.name);
+      expect(spanish.single.name, 'skill__app_native__agents__list_agents');
+      expect(
+        spanish.single.description,
+        AgentGuidance.listAgentsToolSpecForLanguageCode('es').description,
+      );
+      expect(spanish.single.inputJsonSchema, english.single.inputJsonSchema);
+    },
+  );
 }
 
 AvailableSkill _appSkill(String slug) => AvailableSkill(

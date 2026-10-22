@@ -24,6 +24,7 @@ typedef _QueueConversationMessageRequest = ({
   String content,
   List<String> attachmentIds,
   String? metadataJson,
+  String? languageCode,
 });
 
 typedef _StartTurnRequest = ({
@@ -35,6 +36,7 @@ typedef _StartTurnRequest = ({
   List<String> attachmentIds,
   String? modelSelectionId,
   String? agentId,
+  String? languageCode,
 });
 
 typedef _BeginUploadRequest = ({
@@ -113,6 +115,7 @@ mixin _CloudChatGatewayConversationApi on _CloudChatGatewayBase {
     required String requestId,
     required String conversationId,
     required int expectedProjectionRevision,
+    String? languageCode,
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueConversation(
@@ -122,6 +125,7 @@ mixin _CloudChatGatewayConversationApi on _CloudChatGatewayBase {
         conversationId: conversationId,
         expectedProjectionRevision: expectedProjectionRevision,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+        languageCode: languageCode,
       ),
     ),
   );
@@ -231,6 +235,7 @@ mixin _CloudChatGatewayTurnApi on _CloudChatGatewayBase {
     required String requestId,
     required String conversationId,
     required int expectedConversationRevision,
+    String? languageCode,
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueTurn(
@@ -240,6 +245,7 @@ mixin _CloudChatGatewayTurnApi on _CloudChatGatewayBase {
         conversationId: conversationId,
         expectedConversationRevision: expectedConversationRevision,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+        languageCode: languageCode,
       ),
     ),
   );
@@ -305,6 +311,7 @@ QueueConversationMessageRequest _queueConversationMessageRequest(
   content: request.content,
   attachmentIds: request.attachmentIds,
   metadataJson: request.metadataJson,
+  languageCode: request.languageCode,
   a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
 );
 
@@ -321,6 +328,7 @@ StartTurnRequest _startTurnRequest(
   attachmentIds: request.attachmentIds,
   modelSelectionId: request.modelSelectionId,
   agentId: request.agentId,
+  languageCode: request.languageCode,
   a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
 );
 
@@ -587,6 +595,7 @@ extension CloudChatGatewayConversationOperations on CloudChatGateway {
     required String requestId,
     required String conversationId,
     required int expectedProjectionRevision,
+    String? languageCode,
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueConversation(
@@ -596,6 +605,7 @@ extension CloudChatGatewayConversationOperations on CloudChatGateway {
         conversationId: conversationId,
         expectedProjectionRevision: expectedProjectionRevision,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+        languageCode: languageCode,
       ),
     ),
   );
@@ -629,6 +639,7 @@ extension CloudChatGatewayTurnOperations on CloudChatGateway {
     required String requestId,
     required String conversationId,
     required int expectedConversationRevision,
+    String? languageCode,
   }) => CloudAppErrors.guardCall(
     .conversation,
     () => _client.conversation.continueTurn(
@@ -638,6 +649,7 @@ extension CloudChatGatewayTurnOperations on CloudChatGateway {
         conversationId: conversationId,
         expectedConversationRevision: expectedConversationRevision,
         a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+        languageCode: languageCode,
       ),
     ),
   );

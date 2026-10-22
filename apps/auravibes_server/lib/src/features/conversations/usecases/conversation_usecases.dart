@@ -853,6 +853,7 @@ class ConversationUseCases {
       'attachmentIds': request.attachmentIds,
       'modelSelectionId': request.modelSelectionId,
       'agentId': request.agentId,
+      if (request.languageCode != null) 'languageCode': request.languageCode,
     });
     final attachmentIds = request.attachmentIds.map(_parseObjectId).toSet();
     final contentDigest = base64UrlEncode(
@@ -1043,6 +1044,7 @@ class ConversationUseCases {
     final requestHash = jsonEncode({
       'conversationId': request.conversationId,
       'expectedRevision': request.expectedConversationRevision,
+      if (request.languageCode != null) 'languageCode': request.languageCode,
     });
     final result = await _mutate(
       session,
@@ -1178,7 +1180,47 @@ class ConversationUseCases {
                 ConversationStatuses.awaitingUserAction) {
           return null;
         }
-        return (conversation: conversation, message: pending.first);
+        final message = pending.first;
+        var queuedEvent = await ConversationEvent.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(workspaceId) &
+              table.conversationId.equals(conversation.id!) &
+              table.eventId.equals('user-message:${message.stableId}') &
+              table.kind.equals(ConversationEventType.messageQueued),
+          transaction: transaction,
+        );
+        const backgroundWorkMessagePrefix = 'background_work:';
+        if (queuedEvent == null &&
+            message.stableId.startsWith(backgroundWorkMessagePrefix)) {
+          final workId = message.stableId.substring(
+            backgroundWorkMessagePrefix.length,
+          );
+          if (workId.isNotEmpty) {
+            queuedEvent = await ConversationEvent.db.findFirstRow(
+              session,
+              where: (table) =>
+                  table.workspaceId.equals(workspaceId) &
+                  table.conversationId.equals(conversation.id!) &
+                  table.eventId.equals('background-work-completion:$workId') &
+                  table.kind.equals(
+                    ConversationEventType.backgroundWorkCompleted,
+                  ),
+              transaction: transaction,
+            );
+          }
+        }
+        final queuedLanguageCode = _tryJsonMap(
+          queuedEvent?.payloadJson ?? '',
+        )['languageCode'];
+        final languageCode = queuedLanguageCode is String
+            ? queuedLanguageCode.trim()
+            : '';
+        return (
+          conversation: conversation,
+          message: message,
+          languageCode: languageCode.isEmpty ? 'en' : languageCode,
+        );
       });
       if (queued == null) return false;
 
@@ -1192,6 +1234,7 @@ class ConversationUseCases {
             conversationId: conversationId,
             expectedProjectionRevision: queued.conversation.projectionRevision,
             a2uiSupportedComponents: const [],
+            languageCode: queued.languageCode,
           ),
         );
         return true;
@@ -1201,6 +1244,27 @@ class ConversationUseCases {
         rethrow;
       }
     }
+  }
+
+  Future<String?> _languageCodeForTurn(
+    Session session, {
+    required int workspaceId,
+    required int turnId,
+    required Transaction transaction,
+  }) async {
+    final jobs = await ConversationJob.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.turnId.equals(turnId) &
+          table.kind.equals(ConversationJobKinds.turn),
+      orderBy: (table) => table.id.desc(),
+      limit: 1,
+      transaction: transaction,
+    );
+    return conversation_repo.conversationLanguageCodeForJob(
+      jobs.firstOrNull?.payloadJson,
+    );
   }
 
   Future<TurnSnapshot> getTurn(
@@ -2038,6 +2102,7 @@ class ConversationUseCases {
         'contentDigest': contentDigest,
         'attachmentIds': sortedAttachmentIds,
         'metadataDigest': ?metadataDigest,
+        if (request.languageCode != null) 'languageCode': request.languageCode,
       }),
       persist: (transaction, conversation, now) async {
         await _requireMember(
@@ -2502,6 +2567,7 @@ class ConversationUseCases {
                 parentTurnId: parentTurnId,
                 parentToolCallId: parentToolCallId,
                 a2uiSupportedComponents: request.a2uiSupportedComponents,
+                languageCode: request.languageCode,
                 reasoningConfigJson: conversation.reasoningConfigJson,
                 includeReasoningConfigSnapshot: true,
               ),
@@ -3022,6 +3088,12 @@ class ConversationUseCases {
           transaction: transaction,
         );
         if (shouldResume) {
+          final languageCode = await _languageCodeForTurn(
+            session,
+            workspaceId: request.workspaceId,
+            turnId: turn.id!,
+            transaction: transaction,
+          );
           job = await _insertJob(
             session,
             workspaceId: turn.workspaceId,
@@ -3033,6 +3105,7 @@ class ConversationUseCases {
               turn.initiatorUserId,
               executionId: execution?.stableId,
               a2uiSupportedComponents: request.a2uiSupportedComponents,
+              languageCode: languageCode,
               parentTurnId: execution == null
                   ? null
                   : conversation_repo
@@ -3420,6 +3493,13 @@ class ConversationUseCases {
     );
     if (!shouldResume || execution == null) return;
 
+    final languageCode = await _languageCodeForTurn(
+      session,
+      workspaceId: turn.workspaceId,
+      turnId: turn.id!,
+      transaction: transaction,
+    );
+
     await ConversationExecution.db.updateRow(
       session,
       execution.copyWith(
@@ -3441,6 +3521,7 @@ class ConversationUseCases {
           turn.initiatorUserId,
           executionId: execution.stableId,
           a2uiSupportedComponents: request.a2uiSupportedComponents,
+          languageCode: languageCode,
           parentTurnId: conversation_repo
               .conversationParentTurnIdForExecutionSettings(
                 execution.settingsJson,
