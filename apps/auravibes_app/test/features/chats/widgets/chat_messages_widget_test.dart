@@ -6580,9 +6580,8 @@ void main() {
         updatedAt: DateTime(2026),
       );
       final workspaceRepository = _MockWorkspaceRepository();
-      when(
-        () => workspaceRepository.getAllWorkspaces(),
-      ).thenAnswer((_) async => [workspace]);
+      when(() => workspaceRepository.getAllWorkspaces())
+          .thenAnswer((_) async => [workspace]);
       final bookmark = MessageBookmarkEntity(
         details: .new(
           messageId: deletedMessageId,
@@ -6623,9 +6622,7 @@ void main() {
           messages: const [],
           bookmarks: [bookmark],
           overrides: [
-            cloudMessageBookmarksProvider.overrideWith(
-              (ref) async => const [],
-            ),
+            cloudMessageBookmarksProvider.overrideWith((ref) async => const []),
             messageBookmarkUseCaseProvider.overrideWith(
               (ref) => MessageBookmarkUseCase(
                 workspaceRepository: workspaceRepository,
@@ -6654,10 +6651,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(router.state.uri.path, '/workspaces/ws-1/chats/conv-1');
-      expect(
-        router.state.uri.queryParameters['message-id'],
-        deletedMessageId,
-      );
+      expect(router.state.uri.queryParameters['message-id'], deletedMessageId);
       expect(find.text('This message is no longer available.'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
