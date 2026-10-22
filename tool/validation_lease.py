@@ -243,6 +243,17 @@ def _validation_lock_path():
     return _worktree_git_dir() / LOCK_NAME
 
 
+def _prepend_pinned_sdk_bin(environment, working_directory):
+    current_directory = Path(working_directory).resolve()
+    for repository_root in (current_directory, *current_directory.parents):
+        sdk_bin = repository_root / ".fvm" / "flutter_sdk" / "bin"
+        if sdk_bin.is_dir():
+            environment["PATH"] = (
+                f"{sdk_bin}{os.pathsep}{environment.get('PATH', '')}"
+            )
+            return
+
+
 def _close_lock_fd(fd, *, release=False):
     if release:
         fcntl.flock(fd, fcntl.LOCK_UN)
@@ -348,7 +359,9 @@ def main(argv=None):
 
     try:
         os.set_inheritable(lock_fd, True)
-        os.execvp(command[0], command)
+        environment = os.environ.copy()
+        _prepend_pinned_sdk_bin(environment, Path.cwd())
+        os.execvpe(command[0], command, environment)
     except OSError as error:
         print(f"Cannot start validation command: {error}", file=sys.stderr)
         _close_lock_fd(lock_fd, release=True)
