@@ -51,7 +51,7 @@ class const _WorkspaceCreateTask({required final String workspaceId})
   @override
   Widget build(BuildContext context) => WorkspaceSetupContent(
     taskId: WorkspaceCreateRoute(workspaceId: workspaceId).location,
-    onCreated: (workspace) => _openWorkspace(context, workspace.id),
+    onCompleted: (result) => _openWorkspace(context, result.workspace.id),
     onReturn: () =>
         WorkspaceManagementRoute(workspaceId: workspaceId).go(context),
   );

@@ -1,6 +1,7 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/features/intro/notifiers/intro_session_notifier.dart';
 import 'package:auravibes_app/features/workspaces/usecases/resolve_workspace_selection_usecase.dart';
 import 'package:auravibes_app/providers/workspace_route_resolver.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -8,7 +9,6 @@ import 'package:auravibes_app/utils/change_notifier_with_code_gen_extension.dart
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 export 'workspace_route_resolver.dart';
@@ -47,6 +47,7 @@ Future<String?> _resolveRedirect(Ref ref, Uri uri) async {
     uri,
     selection.workspaces,
     savedWorkspaceId: selection.savedWorkspaceId,
+    activeIntro: ref.read(introSessionProvider),
   );
 }
 

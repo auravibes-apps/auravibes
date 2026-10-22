@@ -8,10 +8,11 @@ import 'package:material_ui/material_ui.dart';
 
 /// Registers the exact route and owns the editor's system Back confirmation.
 class DraftExitScope extends ConsumerStatefulWidget {
-  const new({required this.guard, required this.child, super.key});
+  const new({required this.guard, required this.child, this.onBack, super.key});
 
   final DraftExitGuard guard;
   final Widget child;
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<DraftExitScope> createState() => _DraftExitScopeState();
@@ -36,8 +37,11 @@ class _DraftExitScopeState extends ConsumerState<DraftExitScope> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      _DraftExitScopeListener(guard: widget.guard, child: widget.child);
+  Widget build(BuildContext context) => _DraftExitScopeListener(
+    guard: widget.guard,
+    child: widget.child,
+    onBack: widget.onBack,
+  );
 
   void _registerCurrentRoute(GoRouter? router) {
     if (router == null) return;
@@ -66,32 +70,43 @@ class _DraftExitScopeState extends ConsumerState<DraftExitScope> {
 }
 
 class _DraftExitScopeListener extends StatelessWidget {
-  const new({required this.guard, required this.child});
+  const new({required this.guard, required this.child, this.onBack});
 
   final DraftExitGuard guard;
   final Widget child;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: guard,
-    builder: (context, _) => _DraftExitPopScope(guard: guard, child: child),
+    builder: (context, _) =>
+        _DraftExitPopScope(guard: guard, child: child, onBack: onBack),
   );
 }
 
 class _DraftExitPopScope extends StatelessWidget {
-  const new({required this.guard, required this.child});
+  const new({required this.guard, required this.child, this.onBack});
 
   final DraftExitGuard guard;
   final Widget child;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) => PopScope<Object?>(
     child: _DraftExitTransitionShield(guard: guard, child: child),
     canPop: guard.canPop,
-    onPopInvokedWithResult: (didPop, result) {
-      if (!didPop) unawaited(guard.pop(context, result));
-    },
+    onPopInvokedWithResult: (didPop, result) => _onPop(context, didPop, result),
   );
+
+  void _onPop(BuildContext context, bool didPop, Object? result) {
+    if (didPop) return;
+    if (onBack case final callback?) {
+      callback();
+
+      return;
+    }
+    unawaited(guard.pop(context, result));
+  }
 }
 
 class _DraftExitTransitionShield extends StatelessWidget {

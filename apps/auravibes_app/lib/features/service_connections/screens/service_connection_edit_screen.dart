@@ -20,6 +20,7 @@ import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
+import 'package:auravibes_app/widgets/setup_page_frame.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -29,6 +30,8 @@ import 'package:material_ui/material_ui.dart';
 class const ServiceConnectionEditScreen({
   required final String workspaceId,
   required final String connectionId,
+  final SetupPageBuilder? pageBuilder,
+  final VoidCallback? onReturn,
   super.key,
 }) extends ConsumerStatefulWidget {
   @override
@@ -111,20 +114,6 @@ class _ServiceConnectionEditScreenState
     );
   }
 
-  void _bindExitGuard() {
-    _exitGuard.bind(
-      readers: (
-        isDirty: () => _isDirty,
-        isSaving: () => _isSaving || _isTestingModelProvider,
-      ),
-      callbacks: .new(
-        onReturn: (context) =>
-            ServiceConnectionsRoute(workspaceId: widget.workspaceId)
-                .go(context),
-      ),
-    );
-  }
-
   void _retryLoad() {
     ref
       ..invalidate(serviceConnectionOperationsProvider(widget.workspaceId))
@@ -171,6 +160,28 @@ class _ServiceConnectionEditScreenState
       onClose: () => _exitGuard.pop(context, true),
     ));
     if (mounted) setState(() => _isSaving = false);
+  }
+}
+
+extension _ConnectionEditGuardActions on _ServiceConnectionEditScreenState {
+  void _bindExitGuard() {
+    _exitGuard.bind(
+      readers: (
+        isDirty: () => _isDirty,
+        isSaving: () => _isSaving || _isTestingModelProvider,
+      ),
+      callbacks: .new(onReturn: _returnFromEdit),
+      preferReturn: widget.onReturn != null,
+    );
+  }
+
+  void _returnFromEdit(BuildContext context) {
+    final callback = widget.onReturn;
+    if (callback != null) {
+      callback();
+    } else {
+      ServiceConnectionsRoute(workspaceId: widget.workspaceId).go(context);
+    }
   }
 }
 
@@ -743,9 +754,85 @@ class const _ConnectionEditPage({
   required final _ServiceConnectionEditScreenState owner,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AppScreen(
-    child: _ConnectionEditSnapshotView(snapshot: snapshot, owner: owner),
-    appBar: _ConnectionEditAppBar(owner: owner, state: snapshot.data),
+  Widget build(BuildContext context) {
+    final builder = owner.widget.pageBuilder;
+    if (builder != null) {
+      _initializeSetupEdit(owner, snapshot.data);
+
+      return _ConnectionEditSetupPage(
+        snapshot: snapshot,
+        owner: owner,
+        builder: builder,
+        context: context,
+      );
+    }
+
+    return AppScreen(
+      child: _ConnectionEditSnapshotView(snapshot: snapshot, owner: owner),
+      appBar: _ConnectionEditAppBar(owner: owner, state: snapshot.data),
+    );
+  }
+}
+
+class _ConnectionEditSetupPage extends StatelessWidget {
+  new({
+    required AsyncSnapshot<_ConnectionEditState> snapshot,
+    required _ServiceConnectionEditScreenState owner,
+    required SetupPageBuilder builder,
+    required BuildContext context,
+  }) : this._(snapshot, owner, builder, context, snapshot.data);
+  new _(
+    AsyncSnapshot<_ConnectionEditState> snapshot,
+    _ServiceConnectionEditScreenState owner,
+    SetupPageBuilder builder,
+    BuildContext context,
+    _ConnectionEditState? state,
+  ) : _child = builder(
+        .new(
+          key: const Key('intro_edit_connection'),
+          heading: const AuraText(
+            child: TextLocale('service_connections.edit_title'),
+            style: .heading4,
+          ),
+          description: state == null ? null : Text(_connectionEditName(state)),
+          body: state is _ModelProviderEditState
+              ? _ConnectionEditSetupFields(state: state, owner: owner)
+              : _ConnectionEditSnapshotView(snapshot: snapshot, owner: owner),
+          onBack: () => unawaited(owner._handleBack(context)),
+          pending: owner._isSaving || owner._isTestingModelProvider,
+          actions: state is _ModelProviderEditState
+              ? _ModelProviderEditSaveButton(state: state, owner: owner)
+              : null,
+        ),
+      );
+  final Widget _child;
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+void _initializeSetupEdit(
+  _ServiceConnectionEditScreenState owner,
+  _ConnectionEditState? state,
+) {
+  if (state is _ModelProviderEditState) owner._initialize(state);
+}
+
+class const _ConnectionEditSetupFields({
+  required final _ModelProviderEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _ModelProviderEditFields(
+        state: state,
+        owner: owner,
+        suffix: state.connection.keySuffix,
+      ),
+      _ModelProviderVerificationError(owner: owner),
+      _ModelProviderVerifyButton(state: state, owner: owner),
+    ],
   );
 }
 
@@ -823,8 +910,7 @@ class const _ConnectionEditLoadErrorMessage({required final Object? error})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextLocale(switch (error) {
-    ConnectionUnavailableException() =>
-      LocaleKeys.connection_setup_connection_missing,
+    ConnectionUnavailableException(:final localizationKey) => localizationKey,
     _ => LocaleKeys.service_connections_load_error,
   });
 }

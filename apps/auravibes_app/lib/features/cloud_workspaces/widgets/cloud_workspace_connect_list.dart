@@ -18,6 +18,7 @@ class const CloudWorkspaceConnectList({
   required final ValueChanged<WorkspaceEntity> onOpen,
   final ValueChanged<CloudWorkspaceSummary>? onDetails,
   final ValueChanged<String>? onCopyId,
+  final bool pending = false,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -34,6 +35,7 @@ class const CloudWorkspaceConnectList({
             onOpen: onOpen,
             onDetails: onDetails,
             onCopyId: onCopyId,
+            pending: pending,
           ),
       ],
     );
@@ -49,6 +51,7 @@ class const _AvailableCloudWorkspaceItem({
   required final ValueChanged<WorkspaceEntity> onOpen,
   final ValueChanged<CloudWorkspaceSummary>? onDetails,
   final ValueChanged<String>? onCopyId,
+  final bool pending = false,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -63,7 +66,7 @@ class const _AvailableCloudWorkspaceItem({
       onCopyId: onCopyId,
     ));
 
-    return _AvailableWorkspaceTile(data: data);
+    return _AvailableWorkspaceTile(data: data, pending: pending);
   }
 }
 
@@ -151,26 +154,72 @@ String? _accountEmailForMirror(
         ?.email ??
     request.mirror.cloudAccountId;
 
-class const _AvailableWorkspaceTile({
+class _AvailableWorkspaceTile extends StatelessWidget {
+  new({required _AvailableWorkspaceTileData data, required bool pending})
+    : _child = AuraTile(
+        child: _AvailableWorkspaceContent(data: data, pending: pending),
+        variant: .ghost,
+        trailing: data.onDetails == null && data.onCopyId == null
+            ? null
+            : _AvailableWorkspaceMenu(
+                workspace: data.workspace,
+                account: data.account,
+                onDetails: data.onDetails,
+                onCopyId: data.onCopyId,
+              ),
+      );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AvailableWorkspaceContent({
   required final _AvailableWorkspaceTileData data,
+  required final bool pending,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraTile(
-    child: _AvailableWorkspaceDetails(
-      workspace: data.workspace,
-      connectedAccountEmail: data.connectedAccountEmail,
-    ),
-    variant: .ghost,
-    trailing: _AvailableWorkspaceMenu(
-      connectedMirror: data.connectedMirror,
-      workspace: data.workspace,
-      account: data.account,
-      onConnect: data.onConnect,
-      onOpen: data.onOpen,
-      onDetails: data.onDetails,
-      onCopyId: data.onCopyId,
-    ),
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _AvailableWorkspaceDetails(
+        workspace: data.workspace,
+        connectedAccountEmail: data.connectedAccountEmail,
+      ),
+      _AvailableWorkspaceConnectButton(data: data, pending: pending),
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .start,
   );
+}
+
+class const _AvailableWorkspaceConnectButton({
+  required final _AvailableWorkspaceTileData data,
+  required final bool pending,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: _connect,
+    child: TextLocale(
+      data.connectedMirror == null
+          ? 'cloud_accounts.connect_workspace_action'
+          : 'workspace_management.open_workspaces',
+    ),
+    key: ValueKey(
+      'cloud_workspace_connect_${data.account.serverUrl}_'
+      '${data.account.accountId}_${data.workspace.id}',
+    ),
+    disabled: pending,
+  );
+
+  void _connect() {
+    final mirror = data.connectedMirror;
+    if (mirror == null) {
+      data.onConnect(data.workspace);
+    } else {
+      data.onOpen(mirror);
+    }
+  }
 }
 
 bool _isConnectedElsewhere(
@@ -207,11 +256,8 @@ class _AvailableWorkspaceDetails extends StatelessWidget {
 }
 
 class const _AvailableWorkspaceMenu({
-  required final WorkspaceEntity? connectedMirror,
   required final CloudWorkspaceSummary workspace,
   required final CloudAccountKey account,
-  required final ValueChanged<CloudWorkspaceSummary> onConnect,
-  required final ValueChanged<WorkspaceEntity> onOpen,
   final ValueChanged<CloudWorkspaceSummary>? onDetails,
   final ValueChanged<String>? onCopyId,
 }) extends StatelessWidget {
@@ -225,7 +271,6 @@ class const _AvailableWorkspaceMenu({
       items: [
         if (onDetails != null) _detailsItem(),
         if (onCopyId != null) _copyIdItem(),
-        _connectItem(),
       ],
       identifier: selectorId,
       tooltip: LocaleKeys.common_show_more.tr(),
@@ -237,26 +282,6 @@ class const _AvailableWorkspaceMenu({
       title: const TextLocale('common.details'),
       onTap: () => onDetails?.call(workspace),
     );
-  }
-
-  AuraPopupMenuItem _connectItem() {
-    return AuraPopupMenuItem(
-      title: TextLocale(
-        connectedMirror == null
-            ? LocaleKeys.workspace_management_cloud_attach
-            : LocaleKeys.workspace_management_open_workspaces,
-      ),
-      onTap: _connectOrOpen,
-    );
-  }
-
-  void _connectOrOpen() {
-    final mirror = connectedMirror;
-    if (mirror == null) {
-      onConnect(workspace);
-    } else {
-      onOpen(mirror);
-    }
   }
 
   AuraPopupMenuItem _copyIdItem() {

@@ -126,6 +126,25 @@ void main() {
       expect(result, '/intro');
     });
 
+    test('keeps active Intro after workspace commit', () {
+      final workspaces = [_workspace('saved')];
+      expect(
+        WorkspaceRouteResolver.resolveWorkspaceRedirect(
+          .parse('/intro'),
+          workspaces,
+          activeIntro: true,
+        ),
+        isNull,
+      );
+      expect(
+        WorkspaceRouteResolver.resolveWorkspaceRedirect(
+          .parse('/intro'),
+          workspaces,
+        ),
+        '/workspaces/saved/chat/new',
+      );
+    });
+
     test('uses saved workspace for a workspace-less route', () {
       final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
         .parse('/'),

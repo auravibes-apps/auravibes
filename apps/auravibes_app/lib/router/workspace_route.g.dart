@@ -236,14 +236,20 @@ extension $MyShellRouteDataExtension on MyShellRouteData {
 }
 
 mixin $NewChatRoute on GoRouteData {
-  static NewChatRoute _fromState(GoRouterState state) =>
-      NewChatRoute(workspaceId: state.pathParameters['workspaceId']!);
+  static NewChatRoute _fromState(GoRouterState state) => NewChatRoute(
+    workspaceId: state.pathParameters['workspaceId']!,
+    modelSelectionId: state.uri.queryParameters['model-selection-id'],
+  );
 
   NewChatRoute get _self => this as NewChatRoute;
 
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/chat/new',
+    queryParams: {
+      if (_self.modelSelectionId != null)
+        'model-selection-id': _self.modelSelectionId,
+    },
   );
 
   @override

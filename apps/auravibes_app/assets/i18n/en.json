@@ -37,7 +37,12 @@
   "intro_flow": {
     "welcome": {
       "title": "Welcome to AuraVibes",
-      "body": "Create a workspace first, then keep chats, tools, skills, and connections organized inside it."
+      "body": "Bring your chats, tools, skills, and connections together in AuraVibes.",
+      "ai_title": "Connect AI when you're ready",
+      "ai_body": "Choose the AI provider and model that suit your work. Connecting AI is optional; you can explore first.",
+      "page": "{} of {}",
+      "start": "Choose a workspace",
+      "skip": "Skip intro"
     },
     "choice": {
       "title": "Choose how to start",
@@ -47,7 +52,8 @@
       "cloud_create_title": "Create cloud workspace",
       "cloud_create_body": "Share, sync, and run agents even when this app is closed.",
       "cloud_connect_title": "Connect existing cloud workspace",
-      "cloud_connect_body": "Use a cloud workspace you can already access."
+      "cloud_connect_body": "Use a cloud workspace you can already access.",
+      "select_hint": "Choose a workspace to continue."
     },
     "workspace_context": {
       "title": "Workspaces keep context separate",
@@ -58,16 +64,36 @@
       "body": "This becomes the home for your first chats and AI setup.",
       "name_label": "Workspace name",
       "name_helper": "Use 3 to 20 characters.",
-      "create": "Create workspace"
+      "create": "Create workspace",
+      "local_title": "Name your local workspace",
+      "cloud_title": "Name your cloud workspace"
     },
     "ready": {
       "title": "Workspace created",
-      "body": "Your workspace is saved. Connect AI and choose a model to chat, or set up AI later."
+      "body": "Your workspace is saved. Connect AI and choose a model to chat, or set up AI later.",
+      "connected_title": "Workspace connected",
+      "joined_title": "Workspace joined"
     },
     "continue": "Continue",
     "back": "Back",
     "connect_primary": "Connect AI",
-    "connect_skip": "Skip for now"
+    "connect_skip": "Skip for now",
+    "preview": {
+      "chat": "Your workspace chat",
+      "request": "Plan the next step",
+      "tools": "Tools and skills",
+      "project_a": "Client project",
+      "project_b": "Personal work",
+      "provider": "Your AI provider",
+      "model": "Your chosen model"
+    },
+    "ai": {
+      "choose_provider": "Choose a provider. Your credentials stay in its connection setup.",
+      "start_chat": "Start chatting",
+      "explore": "Explore workspace",
+      "explore_hint": "You can explore now. Chat needs an AI connection and an available model.",
+      "review_hint": "Review saved AI connections, complete authorization, or refresh models before choosing a model."
+    }
   },
   "models_screens": {
     "select_provider": "Select Provider",
@@ -1701,7 +1727,7 @@
     "create_new": "Create new account",
     "forgot_password": "Forgot password?",
     "empty": "No cloud accounts connected yet. Log in or register to use cloud workspaces.",
-    "not_configured": "Cloud server is not configured for this app build.",
+    "not_configured": "Cloud sign-in is unavailable. Return to workspace choice and use a local workspace, or try again later.",
     "load_error": "Failed to load cloud accounts.",
     "no_workspaces": "No cloud workspaces available for this account.",
     "check_email_title": "Enter verification code",
@@ -1750,7 +1776,8 @@
     "verify_email": "Verify your email",
     "password_changed": "Password changed. Log in with your new password.",
     "cancel_auth": "Cancel and return",
-    "return_to_task": "After signing in, return to {}."
+    "return_to_task": "After signing in, return to {}.",
+    "connect_workspace_action": "Connect"
   },
   "route_state": {
     "workspace_loading": "Opening workspace...",
@@ -1799,8 +1826,10 @@
     "cloud": "Create cloud",
     "connect": "Connect existing cloud",
     "add_account": "Add another account",
+    "back_to_creation": "Back to workspace creation",
     "local_body": "Store and run this workspace on this device.",
-    "sign_in_connect": "Sign in to find cloud workspaces you can access."
+    "sign_in_connect": "Sign in to find cloud workspaces you can access.",
+    "sign_in_continue": "Sign in to continue"
   },
   "chat_readiness": {
     "saved": "Connection saved",

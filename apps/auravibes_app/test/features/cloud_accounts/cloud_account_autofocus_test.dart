@@ -192,6 +192,8 @@ void main() {
     );
 
     final input = find.byType(EditableText).first;
+    final _ = await tester.ensureVisible(input);
+    final _ = await tester.pumpAndSettle();
     await tester.tap(input);
     await tester.pump();
     final focusNode = tester.widget<EditableText>(input).focusNode;

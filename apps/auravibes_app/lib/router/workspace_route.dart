@@ -482,15 +482,19 @@ class ConversationSearchRoute({required final String workspaceId})
       ConversationMessageSearchScreen(workspaceId: workspaceId);
 }
 
-class NewChatRoute({required final String workspaceId})
-    extends _AppGoRouteData
-    with $NewChatRoute {
+class NewChatRoute({
+  required final String workspaceId,
+  final String? modelSelectionId,
+}) extends _AppGoRouteData with $NewChatRoute {
   @override
   FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return NewChatScreen(workspaceId: workspaceId);
+    return NewChatScreen(
+      workspaceId: workspaceId,
+      initialModelSelectionId: modelSelectionId,
+    );
   }
 }
 

@@ -37,7 +37,12 @@
   "intro_flow": {
     "welcome": {
       "title": "Bienvenido a AuraVibes",
-      "body": "Crea primero un espacio de trabajo y luego organiza chats, herramientas, habilidades y conexiones dentro de él."
+      "body": "Reúne tus chats, herramientas, habilidades y conexiones en AuraVibes.",
+      "ai_title": "Conecta IA cuando quieras",
+      "ai_body": "Elige el proveedor de IA y el modelo que se adapten a tu trabajo. Conectar IA es opcional; puedes explorar primero.",
+      "page": "{} de {}",
+      "start": "Elegir un espacio",
+      "skip": "Omitir introducción"
     },
     "choice": {
       "title": "Elige cómo empezar",
@@ -47,7 +52,8 @@
       "cloud_create_title": "Crear espacio en la nube",
       "cloud_create_body": "Comparte, sincroniza y ejecuta agentes aunque esta app esté cerrada.",
       "cloud_connect_title": "Conectar espacio en la nube existente",
-      "cloud_connect_body": "Usa un espacio en la nube al que ya tienes acceso."
+      "cloud_connect_body": "Usa un espacio en la nube al que ya tienes acceso.",
+      "select_hint": "Elige un espacio para continuar."
     },
     "workspace_context": {
       "title": "Los espacios separan el contexto",
@@ -58,16 +64,36 @@
       "body": "Este será el hogar de tus primeros chats y configuración de IA.",
       "name_label": "Nombre del espacio",
       "name_helper": "Usa de 3 a 20 caracteres.",
-      "create": "Crear espacio"
+      "create": "Crear espacio",
+      "local_title": "Nombra tu espacio local",
+      "cloud_title": "Nombra tu espacio en la nube"
     },
     "ready": {
       "title": "Espacio creado",
-      "body": "Tu espacio está guardado. Conecta IA y elige un modelo para chatear, o configura la IA más tarde."
+      "body": "Tu espacio está guardado. Conecta IA y elige un modelo para chatear, o configura la IA más tarde.",
+      "connected_title": "Espacio conectado",
+      "joined_title": "Te uniste al espacio"
     },
     "continue": "Continuar",
     "back": "Atrás",
     "connect_primary": "Conectar IA",
-    "connect_skip": "Saltar por ahora"
+    "connect_skip": "Saltar por ahora",
+    "preview": {
+      "chat": "Chat de tu espacio",
+      "request": "Planea el siguiente paso",
+      "tools": "Herramientas y habilidades",
+      "project_a": "Proyecto de cliente",
+      "project_b": "Trabajo personal",
+      "provider": "Tu proveedor de IA",
+      "model": "Tu modelo elegido"
+    },
+    "ai": {
+      "choose_provider": "Elige un proveedor. Sus credenciales se gestionan al configurar la conexión.",
+      "start_chat": "Comenzar a chatear",
+      "explore": "Explorar espacio",
+      "explore_hint": "Puedes explorar ahora. Para chatear necesitas una conexión de IA y un modelo disponible.",
+      "review_hint": "Revisa las conexiones de IA guardadas, completa la autorización o actualiza los modelos antes de elegir uno."
+    }
   },
   "models_screens": {
     "select_provider": "Seleccionar Proveedor",
@@ -1701,7 +1727,7 @@
     "create_new": "Crear cuenta nueva",
     "forgot_password": "¿Olvidaste tu contraseña?",
     "empty": "Aún no hay cuentas en la nube conectadas. Inicia sesión o regístrate para usar espacios en la nube.",
-    "not_configured": "El servidor en la nube no está configurado para esta versión de la app.",
+    "not_configured": "El inicio de sesión en la nube no está disponible. Vuelve y usa un espacio local o inténtalo más tarde.",
     "load_error": "Error al cargar las cuentas en la nube.",
     "no_workspaces": "No hay espacios en la nube disponibles para esta cuenta.",
     "check_email_title": "Introduce el código de verificación",
@@ -1750,7 +1776,8 @@
     "verify_email": "Verifica tu correo",
     "password_changed": "Contraseña cambiada. Inicia sesión con tu nueva contraseña.",
     "cancel_auth": "Cancelar y volver",
-    "return_to_task": "Después de iniciar sesión, vuelve a {}."
+    "return_to_task": "Después de iniciar sesión, vuelve a {}.",
+    "connect_workspace_action": "Conectar"
   },
   "route_state": {
     "workspace_loading": "Abriendo espacio de trabajo...",
@@ -1799,8 +1826,10 @@
     "cloud": "Crear en la nube",
     "connect": "Conectar nube existente",
     "add_account": "Añadir otra cuenta",
+    "back_to_creation": "Volver a crear el espacio de trabajo",
     "local_body": "Guarda y ejecuta este espacio en este dispositivo.",
-    "sign_in_connect": "Inicia sesión para buscar espacios en la nube a los que tienes acceso."
+    "sign_in_connect": "Inicia sesión para buscar espacios en la nube a los que tienes acceso.",
+    "sign_in_continue": "Iniciar sesión para continuar"
   },
   "chat_readiness": {
     "saved": "Conexión guardada",

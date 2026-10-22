@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client
 import 'package:auravibes_app/features/cloud_accounts/usecases/cloud_account_usecases.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/setup_page_frame.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -22,6 +23,7 @@ class const CloudAccountRegisterForm({
   final CloudAuthTarget target = const CloudAuthTarget(),
   final ValueChanged<bool>? onPendingChanged,
   final ValueChanged<String>? onEmailChanged,
+  final SetupFormBuilder? contentBuilder,
   final ValueChanged<bool>? onCodeStepChanged,
   super.key,
 }) extends ConsumerStatefulWidget {
@@ -76,15 +78,27 @@ class _CloudAccountRegisterFormState
   Widget build(BuildContext context) {
     final isCodeStep = _registrationRequestId != null;
 
-    return AuraColumn(
+    final action = AuraButton(
+      onPressed: _registerStep,
+      child: TextLocale(
+        isCodeStep
+            ? LocaleKeys.workspace_management_cloud_finish_register
+            : LocaleKeys.workspace_management_cloud_register,
+      ),
+      isLoading: _isSubmitting,
+      disabled:
+          _isSubmitting || ref.read(cloudEmailDeliveryProvider) == .unavailable,
+    );
+    final fields = AuraColumn(
       children: [
         if (ref.watch(cloudEmailDeliveryProvider) == .unavailable)
           const TextLocale(LocaleKeys.cloud_accounts_delivery_unavailable),
         if (isCodeStep) ...[
-          const AuraText(
-            child: TextLocale(LocaleKeys.cloud_accounts_check_email_title),
-            style: AuraTextStyle.heading4,
-          ),
+          if (widget.contentBuilder == null)
+            const AuraText(
+              child: TextLocale(LocaleKeys.cloud_accounts_check_email_title),
+              style: AuraTextStyle.heading4,
+            ),
           const AuraText(
             child: TextLocale(LocaleKeys.cloud_accounts_check_email_body),
           ),
@@ -126,18 +140,7 @@ class _CloudAccountRegisterFormState
           Semantics(liveRegion: true, child: TextLocale(statusKey)),
         if (_errorKey case final errorKey?)
           AuraText(child: TextLocale(errorKey), style: AuraTextStyle.bodySmall),
-        AuraButton(
-          onPressed: _registerStep,
-          child: TextLocale(
-            isCodeStep
-                ? LocaleKeys.workspace_management_cloud_finish_register
-                : LocaleKeys.workspace_management_cloud_register,
-          ),
-          isLoading: _isSubmitting,
-          disabled:
-              _isSubmitting ||
-              ref.read(cloudEmailDeliveryProvider) == .unavailable,
-        ),
+        if (widget.contentBuilder == null) action,
         if (isCodeStep) ...[
           AuraButton(
             onPressed: _resendCode,
@@ -167,6 +170,7 @@ class _CloudAccountRegisterFormState
       spacing: .sm,
       crossAxisAlignment: CrossAxisAlignment.stretch,
     );
+    return widget.contentBuilder?.call(fields, action) ?? fields;
   }
 
   Future<void> _registerStep() async {

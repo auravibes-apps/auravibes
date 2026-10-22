@@ -1193,6 +1193,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         keyExpression: 'label',
       ),
       DynamicTranslationSite(
+        file: 'features/cloud_accounts/widgets/cloud_account_auth_content.dart',
+        method: 'TextLocale',
+        keyExpression: 'title',
+      ),
+      DynamicTranslationSite(
         file: 'features/cloud_accounts/widgets/cloud_account_forgot_password_form.dart',
         method: 'TextLocale',
         keyExpression: 'statusKey',
@@ -1226,6 +1231,43 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       ),
     ],
     keys: {..._cloudAccountsDynamicKeys},
+  ),
+
+  LocalizationDynamicRegistry(
+    family: 'intro-welcome-and-preview-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/intro/widgets/intro_welcome_pager.dart',
+        method: 'TextLocale',
+        keyExpression: 'page.title',
+      ),
+      DynamicTranslationSite(
+        file: 'features/intro/widgets/intro_welcome_pager.dart',
+        method: 'TextLocale',
+        keyExpression: 'page.body',
+      ),
+      DynamicTranslationSite(
+        file: 'features/intro/widgets/intro_welcome_pager.dart',
+        method: 'TextLocale',
+        // Store the exact source form the scanner reports for this call site.
+        // ignore: avoid_escaping_inner_quotes
+        keyExpression: '\'intro_flow.preview.\$label\'',
+      ),
+    ],
+    keys: {
+      'intro_flow.preview.chat',
+      'intro_flow.preview.model',
+      'intro_flow.preview.project_a',
+      'intro_flow.preview.project_b',
+      'intro_flow.preview.provider',
+      'intro_flow.preview.tools',
+      'intro_flow.welcome.ai_body',
+      'intro_flow.welcome.ai_title',
+      'intro_flow.welcome.body',
+      'intro_flow.welcome.title',
+      'intro_flow.workspace_context.body',
+      'intro_flow.workspace_context.title',
+    },
   ),
 
   LocalizationDynamicRegistry(
@@ -1344,6 +1386,14 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         file: 'features/service_connections/screens/service_connection_edit_screen.dart',
         method: 'TextLocale',
         keyExpression: 'localeKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/service_connections/screens/service_connection_edit_screen.dart',
+        method: 'TextLocale',
+        keyExpression:
+            'switch (error) { ConnectionUnavailableException(:final '
+            'localizationKey) => localizationKey, _ => '
+            'LocaleKeys.service_connections_load_error, }',
       ),
       DynamicTranslationSite(
         file: 'features/service_connections/screens/service_connection_edit_screen.dart',
@@ -1644,8 +1694,13 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
     sites: [
       DynamicTranslationSite(
         file: 'features/workspaces/screens/create_workspace_form.dart',
-        method: 'tr',
-        keyExpression: 'error.localizationKey',
+        method: 'TextLocale',
+        keyExpression: '_workspaceOperationErrorKey(error)',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/screens/create_workspace_form.dart',
+        method: 'TextLocale',
+        keyExpression: 'labelKey',
       ),
       DynamicTranslationSite(
         file: 'features/workspaces/screens/create_workspace_form.dart',
@@ -1655,6 +1710,7 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
     ],
     keys: {
       ..._cloudAppErrorKeys,
+      ..._cloudWorkspacesDynamicKeys,
       ..._workspaceManagementDynamicKeys,
       ..._workspaceSetupDynamicKeys,
     },
@@ -1753,10 +1809,60 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       DynamicTranslationSite(
         file: 'features/workspaces/widgets/workspace_setup_content.dart',
         method: 'TextLocale',
-        keyExpression: 'message',
+        keyExpression: 'error.localizationKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_setup_content.dart',
+        method: 'TextLocale',
+        keyExpression: 'error.localizationKey',
+        occurrence: 1,
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_setup_content.dart',
+        method: 'TextLocale',
+        keyExpression: 'error.localizationKey',
+        occurrence: 2,
       ),
     ],
-    keys: {..._cloudAppErrorKeys, ..._workspaceSetupDynamicKeys},
+    keys: {
+      ..._cloudAppErrorKeys,
+      ..._cloudWorkspacesDynamicKeys,
+      ..._workspaceSetupDynamicKeys,
+    },
+  ),
+
+  LocalizationDynamicRegistry(
+    family: 'workspace-setup-content-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_setup_content.dart',
+        method: 'TextLocale',
+        keyExpression: 'titleKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_setup_content.dart',
+        method: 'TextLocale',
+        keyExpression: 'bodyKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_setup_content.dart',
+        method: 'tr',
+        // Store the exact source form the scanner reports for this call site.
+        // ignore: avoid_escaping_inner_quotes
+        keyExpression: '\'workspace_setup.\${draft.intent.name}\'',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_setup_content.dart',
+        method: 'TextLocale',
+        keyExpression: 'labelKey',
+      ),
+    ],
+    keys: {
+      ..._cloudAccountsDynamicKeys,
+      ..._workspaceSetupDynamicKeys,
+      'intro_flow.choice.cloud_create_body',
+      'intro_flow.choice.local_body',
+    },
   ),
 
   LocalizationDynamicRegistry(

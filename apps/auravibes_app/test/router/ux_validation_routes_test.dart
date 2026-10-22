@@ -432,8 +432,14 @@ void main() {
           ),
         ],
       );
+      await tester.tap(find.byKey(const Key('intro_welcome_skip_button')));
+      await f.settle(tester);
+      await tester.tap(find.byKey(const Key('intro_route_cloud_button')));
+      await f.settle(tester);
       await tester.enterText(find.byType(AuraInput), 'Fresh cloud');
-      await tester.tap(find.byKey(const ValueKey('workspace_intent_cloud')));
+      await tester.tap(
+        find.byKey(const Key('intro_sign_in_to_continue_button')),
+      );
       await f.settle(tester);
       expect(find.byType(CloudAccountAuthContent), findsOneWidget);
       expect(await f.database.workspaceDao.getAllWorkspaces(), isEmpty);
@@ -627,8 +633,9 @@ void main() {
           ),
         ],
       );
-      await tester.enterText(find.byType(AuraInput), 'Preserved intent');
-      await tester.tap(find.byKey(const ValueKey('workspace_intent_connect')));
+      await tester.tap(find.byKey(const Key('intro_welcome_skip_button')));
+      await f.settle(tester);
+      await tester.tap(find.byKey(const Key('intro_connect_existing_button')));
       await f.settle(tester);
       await tester.tap(find.text('Session expired. Sign in again.'));
       await f.settle(tester);
@@ -640,9 +647,14 @@ void main() {
       expect(signedIn, isTrue);
       expect((await store.listAccounts()).single.key, account.key);
       expect(await f.database.workspaceDao.getAllWorkspaces(), isEmpty);
-      await tester.tap(find.byType(AuraPopupMenuButton).last);
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(find.text('Connect to this app').last);
+      await tester.tap(
+        find.byKey(
+          ValueKey(
+            'cloud_workspace_connect_${account.serverUrl}_'
+            '${account.userId}_11',
+          ),
+        ),
+      );
       for (
         var i = 0;
         i < 20 &&
@@ -652,7 +664,7 @@ void main() {
         await f.settle(tester);
       }
       expect(find.byType(IntroScreen), findsOneWidget);
-      expect(find.text('Workspace created'), findsOneWidget);
+      expect(find.text('Workspace connected'), findsOneWidget);
       final workspace =
           (await f.database.workspaceDao.getAllWorkspaces()).single;
       expect(workspace.cloudWorkspaceId, '11');
@@ -732,6 +744,10 @@ void main() {
       );
       expect(find.byType(IntroScreen), findsOneWidget);
       expect(await f.database.select(f.database.workspaces).get(), isEmpty);
+      await tester.tap(find.byKey(const Key('intro_welcome_skip_button')));
+      await f.settle(tester);
+      await tester.tap(find.byKey(const Key('intro_route_local_button')));
+      await f.settle(tester);
       await tester.enterText(find.byType(AuraInput), 'First local');
       await tester.tap(find.byKey(const Key('intro_create_workspace_button')));
       await f.settle(tester);

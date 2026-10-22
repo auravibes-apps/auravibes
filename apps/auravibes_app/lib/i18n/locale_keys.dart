@@ -42,6 +42,11 @@ abstract class LocaleKeys {
   static const quick_switcher_settings = 'quick_switcher.settings';
   static const intro_flow_welcome_title = 'intro_flow.welcome.title';
   static const intro_flow_welcome_body = 'intro_flow.welcome.body';
+  static const intro_flow_welcome_ai_title = 'intro_flow.welcome.ai_title';
+  static const intro_flow_welcome_ai_body = 'intro_flow.welcome.ai_body';
+  static const intro_flow_welcome_page = 'intro_flow.welcome.page';
+  static const intro_flow_welcome_start = 'intro_flow.welcome.start';
+  static const intro_flow_welcome_skip = 'intro_flow.welcome.skip';
   static const intro_flow_choice_title = 'intro_flow.choice.title';
   static const intro_flow_choice_body = 'intro_flow.choice.body';
   static const intro_flow_choice_local_title = 'intro_flow.choice.local_title';
@@ -54,6 +59,7 @@ abstract class LocaleKeys {
       'intro_flow.choice.cloud_connect_title';
   static const intro_flow_choice_cloud_connect_body =
       'intro_flow.choice.cloud_connect_body';
+  static const intro_flow_choice_select_hint = 'intro_flow.choice.select_hint';
   static const intro_flow_workspace_context_title =
       'intro_flow.workspace_context.title';
   static const intro_flow_workspace_context_body =
@@ -65,12 +71,31 @@ abstract class LocaleKeys {
   static const intro_flow_workspace_name_helper =
       'intro_flow.workspace.name_helper';
   static const intro_flow_workspace_create = 'intro_flow.workspace.create';
+  static const intro_flow_workspace_local_title =
+      'intro_flow.workspace.local_title';
+  static const intro_flow_workspace_cloud_title =
+      'intro_flow.workspace.cloud_title';
   static const intro_flow_ready_title = 'intro_flow.ready.title';
   static const intro_flow_ready_body = 'intro_flow.ready.body';
+  static const intro_flow_ready_connected_title =
+      'intro_flow.ready.connected_title';
+  static const intro_flow_ready_joined_title = 'intro_flow.ready.joined_title';
   static const intro_flow_continue = 'intro_flow.continue';
   static const intro_flow_back = 'intro_flow.back';
   static const intro_flow_connect_primary = 'intro_flow.connect_primary';
   static const intro_flow_connect_skip = 'intro_flow.connect_skip';
+  static const intro_flow_preview_chat = 'intro_flow.preview.chat';
+  static const intro_flow_preview_request = 'intro_flow.preview.request';
+  static const intro_flow_preview_tools = 'intro_flow.preview.tools';
+  static const intro_flow_preview_project_a = 'intro_flow.preview.project_a';
+  static const intro_flow_preview_project_b = 'intro_flow.preview.project_b';
+  static const intro_flow_preview_provider = 'intro_flow.preview.provider';
+  static const intro_flow_preview_model = 'intro_flow.preview.model';
+  static const intro_flow_ai_choose_provider = 'intro_flow.ai.choose_provider';
+  static const intro_flow_ai_start_chat = 'intro_flow.ai.start_chat';
+  static const intro_flow_ai_explore = 'intro_flow.ai.explore';
+  static const intro_flow_ai_explore_hint = 'intro_flow.ai.explore_hint';
+  static const intro_flow_ai_review_hint = 'intro_flow.ai.review_hint';
   static const models_screens_select_provider =
       'models_screens.select_provider';
   static const models_screens_select_model = 'models_screens.select_model';
@@ -2334,6 +2359,8 @@ abstract class LocaleKeys {
       'cloud_accounts.password_changed';
   static const cloud_accounts_cancel_auth = 'cloud_accounts.cancel_auth';
   static const cloud_accounts_return_to_task = 'cloud_accounts.return_to_task';
+  static const cloud_accounts_connect_workspace_action =
+      'cloud_accounts.connect_workspace_action';
   static const route_state_workspace_loading = 'route_state.workspace_loading';
   static const route_state_workspace_error = 'route_state.workspace_error';
   static const route_state_child_loading = 'route_state.child_loading';
@@ -2378,9 +2405,13 @@ abstract class LocaleKeys {
   static const workspace_setup_cloud = 'workspace_setup.cloud';
   static const workspace_setup_connect = 'workspace_setup.connect';
   static const workspace_setup_add_account = 'workspace_setup.add_account';
+  static const workspace_setup_back_to_creation =
+      'workspace_setup.back_to_creation';
   static const workspace_setup_local_body = 'workspace_setup.local_body';
   static const workspace_setup_sign_in_connect =
       'workspace_setup.sign_in_connect';
+  static const workspace_setup_sign_in_continue =
+      'workspace_setup.sign_in_continue';
   static const chat_readiness_saved = 'chat_readiness.saved';
   static const chat_readiness_continue_chat = 'chat_readiness.continue_chat';
   static const chat_readiness_loading = 'chat_readiness.loading';
