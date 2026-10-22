@@ -26,9 +26,12 @@ void _registerIntroJourneyCaptures() {
         await journey.capture('LocalKeyboard');
         tester.view.resetViewInsets();
         await journey.tapKey('intro_back_to_route_chooser_button');
-        await journey.tapKey('intro_route_cloud_button');
-        await journey.capture('CloudRequiresAccount');
-        await journey.tapKey('intro_sign_in_to_continue_button');
+        journey
+          ..accountsLoad = (() async => [_journeyAccount])
+          ..discoveryLoad = (() async => const .authenticationRequired())
+          ..container.invalidate(cloudAccountsProvider);
+        await journey.tapKey('intro_connect_existing_button');
+        await journey.tapText('cloud_accounts.session_expired');
         await journey.capture('SignIn');
         await tester.enterText(find.byType(EditableText).first, _journeyEmail);
         await tester.enterText(
@@ -99,11 +102,13 @@ void _registerIntroJourneyCaptures() {
         await journey.tapText('cloud_accounts.finish_password_reset');
         await journey.capture('PasswordChanged');
         await journey.tapText('cloud_accounts.cancel_auth');
-        expect(find.text('Design studio'), findsOneWidget);
-        await journey.capture('CloudDraftRestored');
+        await journey.tapKey('workspace_setup_back_to_creation_button');
         final accountsWaiting = Completer<List<CloudAccountSession>>();
         journey.accountsLoad = () => accountsWaiting.future;
         journey.container.invalidate(cloudAccountsProvider);
+        await journey.tapKey('intro_route_cloud_button');
+        expect(find.text('Design studio'), findsOneWidget);
+        await journey.capture('CloudDraftRestored');
         await journey.capture('CloudAccountsWaiting');
         accountsWaiting.completeError(StateError('fixture account storage'));
         await journey.capture('CloudAccountsError');
