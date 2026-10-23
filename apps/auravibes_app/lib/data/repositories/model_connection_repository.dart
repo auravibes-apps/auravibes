@@ -1135,10 +1135,15 @@ extension ModelConnectionCredentialPersistence on ModelConnectionRepository {
     ServiceConnectionTable previous,
     ModelConnectionToUpdate model,
     _ModelConnectionUpdatePayload payload,
+  ) => _updateKey(model.key) == null
+      ? _updateModelConnection(previous.id, model, payload)
+      : _replaceModelCredential(previous, model, payload);
+
+  Future<ServiceConnectionTable?> _replaceModelCredential(
+    ServiceConnectionTable previous,
+    ModelConnectionToUpdate model,
+    _ModelConnectionUpdatePayload payload,
   ) async {
-    if (_updateKey(model.key) == null) {
-      return await _updateModelConnection(previous.id, model, payload);
-    }
     final ServiceConnectionTable? updated;
     try {
       updated = await _updateModelConnection(previous.id, model, payload);
