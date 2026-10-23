@@ -7,12 +7,11 @@ list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   desktop_webview_window
   file_selector_windows
+  flutter_file_drop_windows
   flutter_inappwebview_windows_fx
   flutter_secure_storage_windows
-  irondash_engine_context
   media_kit_libs_windows_audio
   record_windows
-  super_native_extensions
   url_launcher_windows
   video_player_win
   window_to_front

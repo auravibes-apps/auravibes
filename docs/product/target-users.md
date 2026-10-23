@@ -2,6 +2,9 @@
 
 This document records intended users and product direction. It does not promise that every example integration or capability is currently supported.
 
+See the [product brief](product-brief.md) for confirmed core tasks, the first
+successful experience, and open product decisions.
+
 ## Core users
 
 Everyday people who want AI to help with personal and practical tasks. They may be new to AI or AI-savvy, but coding knowledge is not assumed. They want useful results with little friction, clear language, and focused screens. They want AI to feel capable while understanding and controlling what it can access.

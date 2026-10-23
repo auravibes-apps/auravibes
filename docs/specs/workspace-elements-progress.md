@@ -64,4 +64,28 @@ Unrun gates:
 
 The parent release/legal choices remain unresolved.
 
-No later slice (#1668–#1692) is implemented. Parent #1665 remains incomplete. Required next work starts with #1668, while independent #1685 can also begin after checking ticket ownership.
+At the initial folder checkpoint, no later slice (#1668–#1692) was implemented. Parent #1665 remains incomplete.
+
+## Whole-spec orchestration — 2026-10-23
+
+The user authorized completing all 26 children with isolated implementer worktrees, integration merges, feature-branch pushes, and a draft integration PR. Merging main, deployment, release, and production writes remain prohibited.
+
+- Integration: `feat/1665-workspace-elements`, preserving `4eee5ba18`.
+- #1667: freshly verified with 59 app regressions and the authenticated endpoint test; completion evidence posted and issue closed. Native #1668 blocking count is now zero.
+- #1668: worker `tables_1668`, branch `feat/1668-workspace-tables`, worktree `workspace-tables-1668/auravibes`. Owns complete table/text-record behavior and per-record/schema conflicts, cloud owner-only editing.
+- #1685: worker `connections_1685`, branch `feat/1685-workspace-connections`, worktree `workspace-connections-1685/auravibes`. Owns workspace Connection/admin/tool grants and shared execution gates.
+- Golden verification: all seven failing cases (11 images) reproduce at pre-feature `0d8e39b24` with identical percentages and pixel counts. See `workspace-elements-golden-baseline.md`. Snapshots remain unchanged; the rendering root cause remains open. Baseline worktree archived.
+- Native graph refreshed from GitHub; saved task-local snapshot `.scratch/workspace-elements/current-graph.json`. Only validated, integrated children will be resolved to unlock dependents.
+- Docker was stopped at restart; launched Docker Desktop and resumed this worktree's isolated test Postgres. No credentials were printed or changed.
+- Push dry-run for the integration branch succeeded. Actual push/draft PR will follow the first worker integration.
+
+Next: integrate verified #1668/#1685 through a merger subagent; refresh the ready frontier, dispatch newly unblocked children, and keep release decisions explicit. No final completion claim is warranted while any child acceptance remains open.
+
+
+### Integration and UI checkpoint
+
+- Current main (`e15aa6a9f`) merged into integration as `00fd89b1`; existing folder commit preserved.
+- Follow-up `efd5453b` restricts the new file-drop mock to widget test bindings. The existing navigation tests reproduced the upstream harness failure before this guard; 71 combined app regressions, six tooling tests, and fatal file analysis pass afterward.
+- Integration branch pushed after successful dry-run and remote SHA verification. Draft PR: https://github.com/auravibes-apps/auravibes/pull/1693 (attached to this chat). It remains draft and explicitly incomplete.
+- User explicitly approved Marionette for isolated local debug verification throughout this implementation. Read `.agents/skills/marionette-mcp/SKILL.md`; use a dedicated UI worktree, unique instance manifest, exact VM connection, and identity check. Never operate another app instance or production state.
+- Active workers remain #1668 and #1685. Merger worker `golden_baseline` is idle and reusable for integration merges; root owns this checkout between those merges.
