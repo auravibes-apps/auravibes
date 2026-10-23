@@ -46,21 +46,12 @@ class const WorkspaceStreamService() {
 
         for (final event in events) {
           cursor = event.sequence;
-          final visible = await const WorkspaceTableAccess().canSeeEvent(
+          final visible = await const WorkspaceTableAccess().visibleEvent(
             session,
             member,
             event,
           );
-          yield envelopeFor(
-            visible
-                ? event
-                : event.copyWith(
-                    resourceKind: 'workspace',
-                    resourceId: null,
-                    payloadJson: null,
-                    kind: 'workspace.changed',
-                  ),
-          );
+          yield envelopeFor(visible);
         }
 
         if (events.length < pageSize) {

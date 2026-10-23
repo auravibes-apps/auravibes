@@ -442,6 +442,55 @@ void main() {
           deniedRead.events.where((event) => event.resourceId == 'table-one'),
           isEmpty,
         );
+        final eventCursor = deniedRead.currentSequence;
+        for (var batch = 0; batch < 2; batch++) {
+          final _ = await patch([
+            for (var index = batch * 50; index < (batch + 1) * 50; index++)
+              WorkspacePatchOperation(
+                operation: .create,
+                resourceKind: .tableRecord,
+                resourceId: 'hidden-event-$index',
+                data: jsonEncode({
+                  'tableId': 'table-one',
+                  'schemaRevision': 2,
+                  'values': {'label-one': 'Private event $index'},
+                }),
+                fieldMask: const [],
+              ),
+          ]);
+        }
+        final _ = await patch([
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .folder,
+            resourceId: 'visible-after-hidden',
+            data: jsonEncode({'name': 'Visible', 'parentId': null}),
+            fieldMask: const [],
+          ),
+        ]);
+        Future<ReadWorkspaceStateResponse> eventPage(int cursor) =>
+            endpoints.workspaceState.read(
+              outsider,
+              ReadWorkspaceStateRequest(
+                workspaceId: workspace.id!,
+                pages: [],
+                eventLimit: 100,
+                afterSequence: cursor,
+              ),
+            );
+        final hiddenPage = await eventPage(eventCursor);
+        expect(hiddenPage.events, hasLength(100));
+        for (final event in hiddenPage.events) {
+          expect(event.actorUserId, isEmpty);
+          expect(event.id, isNull);
+          expect(event.publishedAt, isNull);
+          expect(event.kind, 'workspace.changed');
+          expect(event.resourceKind, 'workspace');
+          expect(event.resourceId, isNull);
+          expect(event.payloadJson, isNull);
+        }
+        final visiblePage = await eventPage(hiddenPage.events.last.sequence);
+        expect(visiblePage.events.single.resourceId, 'visible-after-hidden');
         await expectLater(
           endpoints.workspaceState.patch(
             outsider,
@@ -545,7 +594,7 @@ void main() {
             jsonDecode(readable.pages.first.resources.single.data) as Map;
         expect(readableTable['canEditRecords'], false);
         expect(readableTable.containsKey('memberAccess'), false);
-        expect(readable.pages.last.resources, hasLength(2));
+        expect(readable.pages.last.resources, hasLength(100));
         await expectLater(
           endpoints.workspaceState.patch(outsider, memberWrite),
           throwsA(isA<CloudWorkspaceException>()),
