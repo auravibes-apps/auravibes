@@ -77,7 +77,11 @@ class const _TableRow(
   Widget build(BuildContext context) => ListTile(
     leading: const Icon(Icons.table_chart_outlined),
     title: Text(table.name),
-    trailing: _Edit(table.id, () => items.onEdit(table), enabled: true),
+    trailing: _Edit(
+      table.id,
+      () => items.onEdit(table),
+      enabled: table.canManage,
+    ),
     onTap: () => items.onOpenTable(table.id),
   );
 }

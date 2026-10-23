@@ -5,13 +5,52 @@ import 'dart:typed_data';
 
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:uuid/v7.dart';
 
-class EncryptionService(final SecretKeyManager _keyManager) {
+class EncryptionService(
+  final SecretKeyManager _keyManager, {
+  FlutterSecureStorage? credentialStorage,
+}) {
   static const int _nonceLength = 12;
   static const int _macLength = 16;
   static const int _minimumPayloadLength = _nonceLength + _macLength;
   final AesGcm _algorithm = .with256bits();
+
+  final FlutterSecureStorage _credentialStorage =
+      credentialStorage ??
+      const FlutterSecureStorage(
+        iOptions: .new(
+          accessibility: KeychainAccessibility.first_unlock_this_device,
+        ),
+      );
+
+  Future<String> storeCredential(String plaintext) async {
+    final reference = 'service-credential:${const UuidV7().generate()}';
+    await _credentialStorage.write(key: reference, value: plaintext);
+
+    return reference;
+  }
+
+  Future<String> readCredential(String reference) async {
+    if (!isCredentialReference(reference)) return await decrypt(reference);
+    final value = await _credentialStorage.read(key: reference);
+    if (value == null) {
+      throw const FormatException('Service credential is unavailable.');
+    }
+
+    return value;
+  }
+
+  Future<void> deleteCredential(String? reference) async {
+    if (reference != null && isCredentialReference(reference)) {
+      await _credentialStorage.delete(key: reference);
+    }
+  }
+
+  bool isCredentialReference(String value) =>
+      value.startsWith('service-credential:');
 
   /// Encrypts a string and returns base64-encoded ciphertext.
   /// Format: [12-byte nonce][ciphertext][16-byte MAC].

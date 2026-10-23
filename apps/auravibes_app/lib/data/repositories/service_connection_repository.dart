@@ -218,17 +218,16 @@ Future<void> _updateConnectorConnection(
   ServiceConnectionRepository repository,
   ConnectorConnectionUpdateRequest request,
 ) async {
+  final existing = await _getRowById(repository, request.id);
   final companion = await _connectorConnectionUpdateCompanion(
     repository,
     request,
   );
-  final update = repository._database.update(
-    repository._database.serviceConnections,
+  final update = _connectorUpdateStatement(repository, request);
+  await _persistCredentialChange(
+    _credentialChange(repository, existing?.encryptedAuthValue, companion),
+    () => update.write(companion),
   );
-  final _ = update.where(
-    (table) => _connectorConnectionUpdateFilter(table, request),
-  );
-  final _ = await update.write(companion);
 }
 
 Expression<bool> _connectorConnectionUpdateFilter(
@@ -381,7 +380,7 @@ Future<ServiceConnectionSecret> _readSecret(
 
   final value = await _readEncryptedOrLegacySecret(repository, row, encrypted);
 
-  return ServiceConnectionAuthCodec.decodeSecret(value);
+  return _decodeStoredSecret(row, value);
 }
 
 Future<String> _readEncryptedOrLegacySecret(
@@ -391,91 +390,110 @@ Future<String> _readEncryptedOrLegacySecret(
 ) async {
   final legacyStorage = repository._legacyApiKeyStorage;
   if (!legacyStorage.isLegacyReference(storedValue)) {
-    return await repository._encryptionService.decrypt(storedValue);
+    return await _readPlatformOrEncryptedSecret(
+      repository,
+      row.id,
+      storedValue,
+    );
   }
 
-  return await _migrateLegacyApiKey(
-    repository,
-    row.id,
-    legacyStorage,
-    storedValue,
-  );
+  return await _migrateLegacyApiKey(repository, row.id, storedValue);
 }
 
 Future<String> _migrateLegacyApiKey(
   ServiceConnectionRepository repository,
   String rowId,
-  LegacyApiKeyStorage legacyStorage,
   String storedValue,
 ) async {
-  final apiKey = await _readLegacyApiKey(legacyStorage, storedValue);
-  final encoded = _encodeLegacyApiKey(apiKey);
-  final updatedRows = await _persistLegacyApiKey(
-    repository,
-    rowId,
-    apiKey,
-    encoded,
+  final legacyStorage = repository._legacyApiKeyStorage;
+  final apiKey = await legacyStorage.read(storedValue);
+  if (apiKey == null) {
+    return await _missingLegacySecret(repository, rowId, storedValue);
+  }
+  final migrated = await _migrateCredentialPayload(
+    _legacyCredentialMigration(repository, rowId, (
+      storedValue: storedValue,
+      apiKey: apiKey,
+    )),
   );
-  if (updatedRows == 1) await legacyStorage.delete(storedValue);
+  if (migrated.changed) await legacyStorage.delete(storedValue);
 
-  return encoded;
+  return migrated.value;
 }
 
-Future<String> _readLegacyApiKey(
-  LegacyApiKeyStorage storage,
+Future<String> _readPlatformOrEncryptedSecret(
+  ServiceConnectionRepository repository,
+  String rowId,
+  String storedValue,
+) async {
+  final service = repository._encryptionService;
+  final value = await service.readCredential(storedValue);
+  if (service.isCredentialReference(storedValue)) return value;
+
+  return (await _migrateCredentialPayload((
+    repository: repository,
+    rowId: rowId,
+    expectedValue: storedValue,
+    value: value,
+    keySuffix: const Value.absent(),
+  ))).value;
+}
+
+typedef _CredentialMigration = ({
+  ServiceConnectionRepository repository,
+  String rowId,
+  String expectedValue,
+  String value,
+  Value<String?> keySuffix,
+});
+
+Future<({String value, bool changed})> _migrateCredentialPayload(
+  _CredentialMigration request,
+) async {
+  final service = request.repository._encryptionService;
+  final reference = await service.storeCredential(request.value);
+  final changed = await _replaceCredentialPayload(request, reference);
+  if (changed > 0) return (value: request.value, changed: true);
+  await service.deleteCredential(reference);
+
+  return (
+    value: await _currentSecretPayload(request.repository, request.rowId),
+    changed: false,
+  );
+}
+
+Future<int> _replaceCredentialPayload(
+  _CredentialMigration request,
   String reference,
 ) async {
-  final apiKey = await storage.read(reference);
-  if (apiKey == null) {
-    throw const FormatException('Legacy API key is unavailable.');
-  }
-
-  return apiKey;
-}
-
-String _encodeLegacyApiKey(String apiKey) =>
-    ServiceConnectionAuthCodec.encodeSecret(
-      ServiceConnectionSecretApiKey(apiKey: apiKey),
+  try {
+    return await _credentialMigrationUpdate(request).write(
+      ServiceConnectionsCompanion(
+        encryptedAuthValue: .new(reference),
+        keySuffix: request.keySuffix,
+      ),
     );
+  } on Object {
+    await request.repository._encryptionService.deleteCredential(reference);
+    rethrow;
+  }
+}
 
-Future<int> _persistLegacyApiKey(
+UpdateStatement<$ServiceConnectionsTable, ServiceConnectionTable>
+_credentialMigrationUpdate(_CredentialMigration request) =>
+    request.repository._database.update(
+      request.repository._database.serviceConnections,
+    )..where(
+      (table) =>
+          table.id.equals(request.rowId) &
+          table.encryptedAuthValue.equals(request.expectedValue),
+    );
+Future<String> _currentSecretPayload(
   ServiceConnectionRepository repository,
   String rowId,
-  String apiKey,
-  String encoded,
-) async {
-  final companion = await _encryptedApiKeyCompanion(
-    repository,
-    apiKey,
-    encoded,
-  );
-
-  return await _updateServiceConnection(repository._database, rowId, companion);
-}
-
-Future<ServiceConnectionsCompanion> _encryptedApiKeyCompanion(
-  ServiceConnectionRepository repository,
-  String apiKey,
-  String encoded,
-) async {
-  final encrypted = await repository._encryptionService.encrypt(encoded);
-
-  return ServiceConnectionsCompanion(
-    encryptedAuthValue: .new(encrypted),
-    keySuffix: .new(_suffix(apiKey)),
-  );
-}
-
-Future<int> _updateServiceConnection(
-  AppDatabase database,
-  String rowId,
-  ServiceConnectionsCompanion companion,
-) {
-  final update = database.update(database.serviceConnections)
-    ..where((table) => table.id.equals(rowId));
-
-  return update.write(companion);
-}
+) async => ServiceConnectionAuthCodec.encodeSecret(
+  await _readSecret(repository, rowId),
+);
 
 Future<String?> _createMcpServiceConnection(
   ServiceConnectionRepository repository,
@@ -740,11 +758,13 @@ Future<void> _deleteOwnedMcpCredential(
   ServiceConnectionRepository repository,
   String id,
 ) async {
-  final delete = repository._database.delete(
-    repository._database.serviceConnections,
-  );
-  final _ = delete.where((table) => _ownedMcpCredentialFilter(table, id));
-  final _ = await delete.go();
+  final existing = await _getRowById(repository, id);
+  final changed = await _deleteMcpCredentialRow(repository, id);
+  if (changed > 0) {
+    await repository._encryptionService.deleteCredential(
+      existing?.encryptedAuthValue,
+    );
+  }
 }
 
 typedef _McpAuthenticationUpdateRequest = ({
@@ -889,14 +909,13 @@ Future<void> _deleteConnectorConnection(
   String id, {
   required String workspaceId,
 }) async {
-  final delete = repository._database.delete(
-    repository._database.serviceConnections,
-  );
-  final _ = delete.where(
-    (table) =>
-        _connectorConnectionFilter(table, id: id, workspaceId: workspaceId),
-  );
-  final _ = await delete.go();
+  final existing = await _getRowById(repository, id);
+  final changed = await _deleteConnectorRow(repository, id, workspaceId);
+  if (changed > 0) {
+    await repository._encryptionService.deleteCredential(
+      existing?.encryptedAuthValue,
+    );
+  }
 }
 
 Expression<bool> _ownedMcpCredentialFilter(
@@ -911,11 +930,12 @@ Future<void> _writeConnectionUpdate(
   String id,
   ServiceConnectionsCompanion companion,
 ) async {
-  final update = repository._database.update(
-    repository._database.serviceConnections,
+  final existing = await _getRowById(repository, id);
+  final update = _connectionUpdateStatement(repository, id);
+  await _persistCredentialChange(
+    _credentialChange(repository, existing?.encryptedAuthValue, companion),
+    () => update.write(companion),
   );
-  final _ = update.where((table) => table.id.equals(id));
-  final _ = await update.write(companion);
 }
 
 Future<String> _encryptedApiKey(
@@ -930,15 +950,26 @@ Future<String> _encryptedSecret(
 ) {
   final encoded = ServiceConnectionAuthCodec.encodeSecret(secret);
 
-  return repository._encryptionService.encrypt(encoded);
+  return repository._encryptionService.storeCredential(encoded);
 }
 
 Future<ServiceConnectionTable> _insertConnection(
   ServiceConnectionRepository repository,
   ServiceConnectionsCompanion companion,
-) => repository._database
-    .into(repository._database.serviceConnections)
-    .insertReturning(companion);
+) async {
+  try {
+    return await repository._database
+        .into(repository._database.serviceConnections)
+        .insertReturning(companion);
+  } on Object {
+    if (companion.encryptedAuthValue.present) {
+      await repository._encryptionService.deleteCredential(
+        companion.encryptedAuthValue.value,
+      );
+    }
+    rethrow;
+  }
+}
 
 ServiceConnectionsCompanion _baseConnectionCompanion(
   _ConnectionInsertRequest request,
@@ -1075,4 +1106,119 @@ class const McpServiceConnectionProfile({
   required final McpAuthenticationType authenticationType,
 }) {
   String serviceId() => 'mcp:$name';
+}
+
+typedef _CredentialChange = ({
+  ServiceConnectionRepository repository,
+  String? previous,
+  ServiceConnectionsCompanion companion,
+});
+Future<void> _persistCredentialChange(
+  _CredentialChange change,
+  Future<int> Function() persist,
+) async {
+  final int count;
+  try {
+    count = await persist();
+  } on Object {
+    await _cleanupCredentialChange(change, false);
+    rethrow;
+  }
+  await _cleanupCredentialChange(change, count > 0);
+}
+
+Future<void> _cleanupCredentialChange(
+  _CredentialChange change,
+  bool applied,
+) async {
+  final value = change.companion.encryptedAuthValue;
+  if (!value.present || value.value == change.previous) return;
+  await change.repository._encryptionService.deleteCredential(
+    applied ? change.previous : value.value,
+  );
+}
+
+Future<String> _missingLegacySecret(
+  ServiceConnectionRepository repository,
+  String rowId,
+  String storedValue,
+) async {
+  final current = await _requiredRowById(repository, rowId);
+  if (current.encryptedAuthValue != storedValue) {
+    return await _currentSecretPayload(repository, rowId);
+  }
+  throw const FormatException('Legacy API key is unavailable.');
+}
+
+Future<int> _deleteMcpCredentialRow(
+  ServiceConnectionRepository repository,
+  String id,
+) async {
+  final delete = repository._database.delete(
+    repository._database.serviceConnections,
+  );
+  final _ = delete.where((table) => _ownedMcpCredentialFilter(table, id));
+
+  return await delete.go();
+}
+
+Future<int> _deleteConnectorRow(
+  ServiceConnectionRepository repository,
+  String id,
+  String workspaceId,
+) async {
+  final delete = repository._database.delete(
+    repository._database.serviceConnections,
+  );
+  final _ = delete.where(
+    (table) =>
+        _connectorConnectionFilter(table, id: id, workspaceId: workspaceId),
+  );
+
+  return await delete.go();
+}
+
+UpdateStatement<$ServiceConnectionsTable, ServiceConnectionTable>
+_connectorUpdateStatement(
+  ServiceConnectionRepository repository,
+  ConnectorConnectionUpdateRequest request,
+) =>
+    repository._database.update(repository._database.serviceConnections)
+      ..where((table) => _connectorConnectionUpdateFilter(table, request));
+UpdateStatement<$ServiceConnectionsTable, ServiceConnectionTable>
+_connectionUpdateStatement(ServiceConnectionRepository repository, String id) =>
+    repository._database.update(repository._database.serviceConnections)
+      ..where((table) => table.id.equals(id));
+_CredentialMigration _legacyCredentialMigration(
+  ServiceConnectionRepository repository,
+  String rowId,
+  ({String storedValue, String apiKey}) secret,
+) => (
+  repository: repository,
+  rowId: rowId,
+  expectedValue: secret.storedValue,
+  value: _apiKeyPayload(secret.apiKey),
+  keySuffix: .new(_suffix(secret.apiKey)),
+);
+String _apiKeyPayload(String apiKey) => ServiceConnectionAuthCodec.encodeSecret(
+  ServiceConnectionSecretApiKey(apiKey: apiKey),
+);
+
+_CredentialChange _credentialChange(
+  ServiceConnectionRepository repository,
+  String? previous,
+  ServiceConnectionsCompanion companion,
+) => (repository: repository, previous: previous, companion: companion);
+
+ServiceConnectionSecret _decodeStoredSecret(
+  ServiceConnectionTable row,
+  String value,
+) {
+  try {
+    return ServiceConnectionAuthCodec.decodeSecret(value);
+  } on FormatException {
+    if (row.kind != ServiceConnectionKindTable.modelProvider) rethrow;
+
+    return ServiceConnectionSecretApiKey(apiKey: value);
+  }
 }

@@ -388,6 +388,14 @@ abstract class LocaleKeys {
       'service_connections.secret_saved';
   static const service_connections_clear_secret =
       'service_connections.clear_secret';
+  static const service_connections_member_tool_access_title =
+      'service_connections.member_tool_access.title';
+  static const service_connections_member_tool_access_none =
+      'service_connections.member_tool_access.none';
+  static const service_connections_member_tool_access_read =
+      'service_connections.member_tool_access.read';
+  static const service_connections_member_tool_access_read_write =
+      'service_connections.member_tool_access.read_write';
   static const connector_catalog_filter_label =
       'connector_catalog.filter_label';
   static const connector_catalog_filter_all = 'connector_catalog.filter_all';
@@ -2534,6 +2542,10 @@ abstract class LocaleKeys {
   static const workspace_items_item_name = 'workspace_items.item_name';
   static const workspace_items_destination = 'workspace_items.destination';
   static const workspace_items_root = 'workspace_items.root';
+  static const workspace_items_table_access = 'workspace_items.table_access';
+  static const workspace_items_access_read = 'workspace_items.access_read';
+  static const workspace_items_access_edit = 'workspace_items.access_edit';
+  static const workspace_items_access_none = 'workspace_items.access_none';
   static const workspace_items_title = 'workspace_items.title';
   static const workspace_items_folder_name = 'workspace_items.folder_name';
   static const workspace_items_create_folder = 'workspace_items.create_folder';

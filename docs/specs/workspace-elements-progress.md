@@ -171,3 +171,34 @@ The turn interruption removed live agent contexts; source changes and background
 - #1676 local folder/table regressions: 14 passed; metadata endpoint regression passed. UI implementation and DCL splitting remain active; no handoff or closure.
 - Store-policy research preparation saved outside checkout at `/tmp/auravibes-1692-policy-evidence.md`, checked 2026-10-23 against Apple, Google and Microsoft primary sources. Google main AI policy was retrieved successfully after an initial URL failure. This is preparation only, not #1692 completion or legal/store certification. Owner decisions and release gates remain unchanged.
 - Root remains tracked-clean before this documentation update. GitHub write access remains blocked pending user repair; no denied push was retried.
+
+### Connections integration checkpoint
+
+- Merger integrated verified #1685 branch `70826547185f5978017e163fd480d69a1aa55bef` as `2512149cc`, without conflicts. Integration base `f122fa5a` and original folder commit `4eee5ba18` remain ancestors.
+- Integration checks passed: 32 app regressions covering real database/platform credential migration and rollback, service secrets, cloud tool grants, discovery defaults, typed table use cases/editor, and production-router/drawer navigation; one authenticated backend grant regression covering admin configuration, member effect grants, disabled tools and removed membership. Pinned FVM 3.47.7 commands ran through this worktree's validation lease. Logs: `/tmp/auravibes-1685-merger-app.log` and `/tmp/auravibes-1685-merger-server.log`.
+- Worker evidence includes six real database migration regressions, 27 Connection screen behavior checks, postmerge authenticated grant coverage, generation, focused fatal analysis and DCL. Three Connection golden failures reproduce the documented baseline; snapshots remain unchanged.
+- Whitespace and branch ancestry checks passed. Existing untracked diagnostics remain preserved. No push, tracker write or authentication change occurred; GitHub write denial remains unresolved.
+- #1685 remains open pending final code/spec review and repository workflow resolution. This merge does not complete parent #1665. Full workspace/CI/platform gates and isolated live UI acceptance remain pending; the independent access and rename/move workers retain ownership of their slices.
+
+### Table access and combined typed UI integration
+
+- Merger integrated access branch `565593ada0a527267d61a97114c01d25385fd7f9` as `fc923aa05`, without conflicts. It contains integration base `4279263a`, Connections integration and original folder commit `4eee5ba18`.
+- Integration checks passed: 13 app regressions covering owner grant/revoke controls, read-only record browsing, typed editors/use cases and production-router/drawer navigation; two authenticated table and Connector endpoint regressions covering grant enforcement, denied replay, restricted stream identifiers, member removal, stale-grant cleanup and rejoin without automatic access. Commands used pinned FVM 3.47.7 through the root validation lease. Logs: `/tmp/auravibes-1669-merger-app.log` and `/tmp/auravibes-1669-merger-server.log`.
+- Worker checks passed: 12 app regressions, 17 server regressions, scoped strict DCL, focused fatal analysis, generation and changed-file preflight. Table grant cleanup remains transactional with membership removal and preserves schema revisions.
+- Whitespace and ancestry checks passed; existing untracked diagnostics remain preserved. No push or tracker write occurred. #1669 and #1670 remain open pending final review and root-owned live UI acceptance. Parent #1665 remains incomplete; full workspace/CI/platform validation remains pending.
+- Rename/move worker was informed that the access policy now owns resource visibility. It will add owner/admin folder capabilities in its separate worktree after merging this integration; that behavior is not claimed complete here. Connections credential-race follow-up remains separate and was not merged in this step.
+
+### Live rendering recovery and Connections integration follow-up
+
+- Approved native `cua-driver` exact-window binding succeeded for the UI-worktree executable. Focusing that isolated window changed Marionette from zero controls to 33. Refocusing after stalled actions advanced rendering consistently; no production routing fix is justified by the prior blank/stalled captures.
+- At source `f122fa5a`, ordinary Marionette controls created `Typed verification`, added a numeric `Quantity` column, saved `Numeric record` with `12.5`, and reopened both persisted values without app errors. Evidence `/tmp/auravibes-1665-ui-visible-evidence.md` and `/tmp/auravibes-1665-ui-evidence/typed-reopened-0.png`. This does not replace combined access UI verification.
+- Wide frame 1200x850 verified. Requested 420x850 later clamped to settled 843x850; do not claim native phone-width coverage. Crossing shell width reset transient selected table to root items; persisted table/record remained. Carry selection-continuity evidence into #1675.
+- Isolated `workspace-1665-visible` bridge disconnected, exact runner stopped, manifest removal verified. UI checkout fast-forwarded to `fa64fb114`; next instance `workspace-1665-connections` is compiling for current Connections verification.
+- Connections integration at `2512149cc`/checkpoint `fa64fb114` passed 32 app and one authenticated backend regression. Read-only acceptance/security review remains active; #1685 stays open while GitHub writes remain denied.
+- #1669 review found stale table grants could survive membership removal, block later schema edits, and revive on rejoin. Required fix: remove that member's table grants in the existing membership-removal transaction, with removal/rejoin and subsequent owner-edit regressions. This is authorization correctness within the existing scope, not a new sharing policy. Access worker owns the change and must preserve Connections integration.
+
+### Restored tracker access and review repair
+
+- Host authentication was independently rechecked: current identity is now `davidlondono`. `git push --dry-run origin feat/1665-workspace-elements` succeeded for `a5fbe5f7b..c881c25be`. No credential switching was performed by the agent. Prior permission blocker is cleared; actual remote publication still awaits current fixes/validation.
+- Focused Connections review found a concurrent URL-only edit/key-replacement race: the URL update could snapshot credential A, another update persist B and delete A, then the URL update restore deleted A. Connections implementer owns deterministic interleaving regression and minimal fix leaving unchanged credential fields absent. The prior integration is not final acceptance.
+- Review also requests explicit admin execution and wrapper/group denial evidence. Live latest-source Connections verification is compiling. No successor starts before accepted integration and native issue resolution.

@@ -12,6 +12,8 @@ import '../domain/workspace_resource_validation.dart';
 import '../domain/workspace_table_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
+import '../workspace_table_access.dart';
+import '../workspace_table_page_reader.dart';
 
 typedef _OperationCommitMetadata = ({
   String userId,
@@ -32,7 +34,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     required String userId,
     required ReadWorkspaceStateRequest request,
   }) async {
-    await _authorize(session, request.workspaceId, userId);
+    final member = await _authorize(session, request.workspaceId, userId);
     final workspace = await _repository.findWorkspace(
       session,
       request.workspaceId,
@@ -53,25 +55,10 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
     }
 
-    final pages = <WorkspaceResourcePage>[];
-    for (final selector in request.pages) {
-      final rows = await _repository.readPage(
-        session,
-        workspaceId: request.workspaceId,
-        kind: selector.resourceKind,
-        limit: selector.limit + 1,
-        afterResourceId: selector.afterResourceId,
-      );
-      final hasMore = rows.length > selector.limit;
-      if (hasMore) rows.removeLast();
-      pages.add(
-        WorkspaceResourcePage(
-          resourceKind: selector.resourceKind,
-          resources: rows,
-          nextResourceId: hasMore ? rows.last.resourceId : null,
-        ),
-      );
-    }
+    final pageReader = WorkspaceTablePageReader(_repository, session, member);
+    final pages = [
+      for (final selector in request.pages) await pageReader.page(selector),
+    ];
 
     final firstEvent = await _repository.firstEvent(
       session,
@@ -92,7 +79,15 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     return ReadWorkspaceStateResponse(
       pages: pages,
       currentSequence: workspace.sequence,
-      events: events,
+      events: [
+        for (final event in events)
+          if (await const WorkspaceTableAccess().canSeeEvent(
+            session,
+            member,
+            event,
+          ))
+            event,
+      ],
       earliestRetainedSequence: earliest,
       requiresSnapshot: requiresSnapshot,
     );
@@ -126,6 +121,17 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final hash = base64UrlEncode(requestHash);
 
     return session.db.transaction((transaction) async {
+      await _authorize(
+        session,
+        request.workspaceId,
+        userId,
+        transaction: transaction,
+      );
+      final workspace = await _requireLockedWorkspace(
+        session,
+        request.workspaceId,
+        transaction,
+      );
       final member = await _authorize(
         session,
         request.workspaceId,
@@ -133,6 +139,13 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         transaction: transaction,
       );
       _requirePatchRole(member.role, request.operations);
+      for (final operation in request.operations) {
+        await WorkspaceTableAccess(transaction: transaction).requireWrite(
+          session,
+          member,
+          operation,
+        );
+      }
       final receipt = await _findReceipt(
         session,
         request.workspaceId,
@@ -148,11 +161,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
 
-      final workspace = await _requireLockedWorkspace(
-        session,
-        request.workspaceId,
-        transaction,
-      );
       await guard?.call(transaction);
       return _commitOperations(
         session,
@@ -340,6 +348,19 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
 
+      if (request.scope == WorkspaceSecretScope.user &&
+          request.secretKind == WorkspaceSecretKind.provider) {
+        final connection = await _repository.findResource(
+          session,
+          workspaceId: request.workspaceId,
+          kind: WorkspaceResourceKind.serviceConnection,
+          resourceId: request.resourceId,
+          transaction: transaction,
+        );
+        if (connection != null && connection.deletedAt == null) {
+          _validationFailed();
+        }
+      }
       final owner = WorkspaceResourceValidation.secretOwnerKey(
         request.scope,
         userId,
@@ -441,7 +462,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     }
     final isServiceConnection =
         operation.resourceKind == WorkspaceResourceKind.serviceConnection &&
-        request.secretKind == WorkspaceSecretKind.provider;
+        request.secretKind == WorkspaceSecretKind.provider &&
+        request.scope == WorkspaceSecretScope.workspace;
     final deletesServiceConnection =
         isServiceConnection &&
         operation.operation == WorkspacePatchOperationKind.delete;
@@ -995,17 +1017,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     String role,
     List<WorkspacePatchOperation> operations,
   ) {
-    if (role != WorkspaceRoles.owner &&
-        operations.any(
-          (operation) =>
-              operation.resourceKind == WorkspaceResourceKind.table ||
-              operation.resourceKind == WorkspaceResourceKind.tableRecord,
-        )) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.permissionDenied,
-      );
-    }
     const memberKinds = {
+      WorkspaceResourceKind.tableRecord,
       WorkspaceResourceKind.conversation,
       WorkspaceResourceKind.conversationToolSelection,
       WorkspaceResourceKind.conversationSkillSelection,

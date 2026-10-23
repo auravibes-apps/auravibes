@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/models/providers/add_model_provider_state
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/task_return.dart';
@@ -104,6 +105,11 @@ class _ServiceConnectionCreateScreenState
 
   @override
   Widget build(BuildContext context) {
+    final access = ref.watch(workspaceAccessProvider(widget.workspaceId));
+    if (!ref.watch(canManageWorkspaceProvider(widget.workspaceId))) {
+      return _ManagementDenied(access: access);
+    }
+
     _bindCreateExitGuard(this);
 
     return DraftExitScope(
@@ -887,5 +893,20 @@ String _credentialValueLabel(BuildContext context, String? connectorId) {
 
   return LocaleKeys.service_connections_create_api_key_label.tr(
     context: context,
+  );
+}
+
+class const _ManagementDenied({required final AsyncValue<Object?> access})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AppScreen(
+    child: Center(
+      child: switch (access) {
+        AsyncLoading() => const AuraSpinner(),
+        AsyncData() || AsyncError() => const TextLocale(
+          LocaleKeys.cloud_errors_permission_denied,
+        ),
+      },
+    ),
   );
 }

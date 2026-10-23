@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/service_connections/models/cloud_service_
 import 'package:auravibes_app/features/service_connections/models/connection_unavailable_exception.dart';
 import 'package:auravibes_app/features/service_connections/models/mcp_server_for_edit.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
@@ -62,8 +63,8 @@ class _ServiceConnectionEditScreenState
   Exception? _modelProviderVerificationError;
   var _modelProviderVerificationVersion = 0;
 
-  Future<_ConnectionEditState> get _future =>
-      _futureValue ?? (throw StateError('Edit state is not initialized'));
+  Future<_ConnectionEditState> get _future => _futureValue ??=
+      _loadConnectionEditState(ref, widget.workspaceId, widget.connectionId);
 
   String? get _modelProviderVerificationErrorMessage {
     final error = _modelProviderVerificationError;
@@ -84,16 +85,6 @@ class _ServiceConnectionEditScreenState
   }
 
   @override
-  void initState() {
-    super.initState();
-    _futureValue = _loadConnectionEditState(
-      ref,
-      widget.workspaceId,
-      widget.connectionId,
-    );
-  }
-
-  @override
   void dispose() {
     _nameController.dispose();
     _modelKeyController.dispose();
@@ -106,6 +97,11 @@ class _ServiceConnectionEditScreenState
 
   @override
   Widget build(BuildContext context) {
+    final access = ref.watch(workspaceAccessProvider(widget.workspaceId));
+    if (!ref.watch(canManageWorkspaceProvider(widget.workspaceId))) {
+      return _ManagementDenied(access: access);
+    }
+
     _bindExitGuard();
 
     return DraftExitScope(
@@ -122,7 +118,7 @@ class _ServiceConnectionEditScreenState
       ref,
       widget.workspaceId,
       widget.connectionId,
-    );
+    )..ignore();
     setState(() {
       _futureValue = future;
     });
@@ -1721,4 +1717,19 @@ String _genericCredentialValueLabel(BuildContext context, String serviceId) {
   };
 
   return key.tr(context: context);
+}
+
+class const _ManagementDenied({required final AsyncValue<Object?> access})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AppScreen(
+    child: Center(
+      child: switch (access) {
+        AsyncLoading() => const AuraSpinner(),
+        AsyncData() || AsyncError() => const TextLocale(
+          LocaleKeys.cloud_errors_permission_denied,
+        ),
+      },
+    ),
+  );
 }
