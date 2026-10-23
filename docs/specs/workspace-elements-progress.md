@@ -180,6 +180,14 @@ The turn interruption removed live agent contexts; source changes and background
 - Whitespace and branch ancestry checks passed. Existing untracked diagnostics remain preserved. No push, tracker write or authentication change occurred; GitHub write denial remains unresolved.
 - #1685 remains open pending final code/spec review and repository workflow resolution. This merge does not complete parent #1665. Full workspace/CI/platform gates and isolated live UI acceptance remain pending; the independent access and rename/move workers retain ownership of their slices.
 
+### Table access and combined typed UI integration
+
+- Merger integrated access branch `565593ada0a527267d61a97114c01d25385fd7f9` as `fc923aa05`, without conflicts. It contains integration base `4279263a`, Connections integration and original folder commit `4eee5ba18`.
+- Integration checks passed: 13 app regressions covering owner grant/revoke controls, read-only record browsing, typed editors/use cases and production-router/drawer navigation; two authenticated table and Connector endpoint regressions covering grant enforcement, denied replay, restricted stream identifiers, member removal, stale-grant cleanup and rejoin without automatic access. Commands used pinned FVM 3.47.7 through the root validation lease. Logs: `/tmp/auravibes-1669-merger-app.log` and `/tmp/auravibes-1669-merger-server.log`.
+- Worker checks passed: 12 app regressions, 17 server regressions, scoped strict DCL, focused fatal analysis, generation and changed-file preflight. Table grant cleanup remains transactional with membership removal and preserves schema revisions.
+- Whitespace and ancestry checks passed; existing untracked diagnostics remain preserved. No push or tracker write occurred. #1669 and #1670 remain open pending final review and root-owned live UI acceptance. Parent #1665 remains incomplete; full workspace/CI/platform validation remains pending.
+- Rename/move worker was informed that the access policy now owns resource visibility. It will add owner/admin folder capabilities in its separate worktree after merging this integration; that behavior is not claimed complete here. Connections credential-race follow-up remains separate and was not merged in this step.
+
 ### Live rendering recovery and Connections integration follow-up
 
 - Approved native `cua-driver` exact-window binding succeeded for the UI-worktree executable. Focusing that isolated window changed Marionette from zero controls to 33. Refocusing after stalled actions advanced rendering consistently; no production routing fix is justified by the prior blank/stalled captures.
