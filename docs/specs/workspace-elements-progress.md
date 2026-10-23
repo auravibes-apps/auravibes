@@ -98,3 +98,9 @@ Next: integrate verified #1668/#1685 through a merger subagent; refresh the read
 - Next frontier: #1669 table grants, #1670 basic types, #1676 rename/move. #1670 assigned to the table worker on a new branch. #1669 worktree creation pending; matching preflight PR #1693 is this same authorized integration, with ownership coordinated here.
 - Isolated Marionette run `workspace-1665-root` created and opened a synthetic folder successfully, with screenshots under `/tmp/auravibes-1665-ui-evidence`. After switching to the second fixture workspace, drawer taps stopped navigating. A back-button probe produced a GoRouter `_TypeError` in `_findCurrentNavigators`; hot restart returned `Service connection disposed`. This smoke failure is unresolved and must be reproduced/repaired before final UI acceptance. No production/user data touched.
 - #1685 remains active. Parent #1665 remains incomplete; PR #1693 remains draft. No release or production writes authorized.
+
+### Live UI follow-up
+
+- Relaunched isolated dev app at table integration tip, instance `workspace-1665-recheck`. Confirmed exact manifest identity before interaction. Empty second workspace displayed no first-workspace folder. Created `Smoke table`, added `Persistent record`, and saved successfully through ordinary controls; no app errors during these actions. Screenshots remain in `/tmp/auravibes-1665-ui-evidence`.
+- Subsequent drawer/extension navigation stopped updating the visible tree again. No production fix is justified yet: a focused real-route widget regression (`test/router/workspace_items_navigation_test.dart`) passes drawer navigation from chat to items and back. Live runtime/automation failure remains unresolved; app functionality beyond the successful actions is not claimed verified.
+- Integration pushed and remote SHA verified at `a5fbe5f7b`; PR #1693 body updated to two completed children. First push attempt hit HTTP/2 transport failure; retry with HTTP/1.1 succeeded.
