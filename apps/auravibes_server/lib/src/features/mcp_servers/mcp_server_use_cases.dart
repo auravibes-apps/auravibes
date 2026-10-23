@@ -7,13 +7,13 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
-import '../workspaces/domain/workspace_roles.dart';
-import '../workspace_state/workspace_secret_cipher.dart';
 import '../mcp_catalog/mcp_catalog_repository.dart';
 import '../mcp_catalog/mcp_catalog_use_cases.dart';
-import 'mcp_server_headers.dart';
+import '../workspace_state/workspace_secret_cipher.dart';
+import '../workspaces/domain/workspace_roles.dart';
 import 'mcp_oauth_credentials.dart';
 import 'mcp_oauth_token_resolver.dart';
+import 'mcp_server_headers.dart';
 import 'mcp_server_policy.dart';
 import 'mcp_server_probe.dart';
 import 'mcp_server_repository.dart';
@@ -242,7 +242,7 @@ class McpServerUseCases(
               'inputSchema': jsonDecode(tool.inputSchemaJson),
               if (tool.outputSchemaJson case final schema?)
                 'outputSchema': jsonDecode(schema),
-              'isEnabled': true,
+              'isEnabled': false,
               'permissionMode': 'alwaysAsk',
             }),
             revision: 1,

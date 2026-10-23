@@ -172,7 +172,8 @@ class const ConnectorCommandUsecase({
   }) async {
     try {
       return await _dispatch(workspaceId, commandName, arguments);
-    } on AgentToolExecutionFailure catch (_, stackTrace) {
+    } on AgentToolExecutionFailure catch (failure, stackTrace) {
+      if (_authorizationFailure(failure)) rethrow;
       _throwCommandFailure(
         stackTrace,
         message: 'Connector command failed. Check the Connection and retry.',
@@ -180,13 +181,7 @@ class const ConnectorCommandUsecase({
     } on _ConnectorCommandException catch (error, stackTrace) {
       _throwFailure(error, stackTrace);
     } on FormatException catch (_, stackTrace) {
-      _throwFailure(
-        const _ConnectorCommandException(
-          code: 'invalid_arguments',
-          message: 'Arguments do not match the current Connector contract.',
-        ),
-        stackTrace,
-      );
+      _throwInvalidArguments(stackTrace);
     } on Object catch (_, stackTrace) {
       _throwCommandFailure(
         stackTrace,
@@ -377,6 +372,8 @@ class _ConnectorCommandExecution({
         tool: tool,
         arguments: arguments,
       );
+    } on AgentToolExecutionFailure {
+      rethrow;
     } on Object catch (_, stackTrace) {
       Error.throwWithStackTrace(
         const _ConnectorCommandException(
@@ -569,3 +566,15 @@ final connectorCommandUsecaseProvider = Provider<ConnectorCommandUsecase>((
     connectors: connectorDefinitions,
   );
 });
+
+Never _throwInvalidArguments(StackTrace stackTrace) =>
+    ConnectorCommandUsecase._throwFailure(
+      const _ConnectorCommandException(
+        code: 'invalid_arguments',
+        message: 'Arguments do not match the current Connector contract.',
+      ),
+      stackTrace,
+    );
+
+bool _authorizationFailure(AgentToolExecutionFailure failure) =>
+    failure.failurePhase == 'connector.authorization';

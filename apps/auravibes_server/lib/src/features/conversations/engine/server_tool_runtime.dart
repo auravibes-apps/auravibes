@@ -5,13 +5,13 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
-import 'conversation_host_effects.dart';
-import 'server_agent_guidance.dart';
-import 'background_work_result_reader.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
-import '../../sync/stream/sync_wakeups.dart';
+import 'background_work_result_reader.dart';
+import 'conversation_host_effects.dart';
+import 'server_agent_guidance.dart';
 
 enum ServerToolDisposition {
   completed,
@@ -1606,6 +1606,19 @@ class ServerToolRuntime({
       return AgentToolPermissionResult.granted;
     }
     final toolId = descriptor.tableId;
+    if (descriptor.kind == AgentResolvedToolKind.connectorCommand) {
+      final configured = await WorkspaceResource.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.resourceKind.equals(WorkspaceResourceKind.tool) &
+            table.resourceId.equals(toolId) &
+            table.deletedAt.equals(null),
+      );
+      if (configured != null && _data(configured)['isEnabled'] == false) {
+        return AgentToolPermissionResult.disabledInWorkspace;
+      }
+    }
     final permissions = await WorkspaceResource.db.find(
       session,
       where: (table) =>

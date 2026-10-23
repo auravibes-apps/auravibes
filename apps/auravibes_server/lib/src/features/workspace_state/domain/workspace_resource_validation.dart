@@ -76,6 +76,42 @@ class WorkspaceResourceValidation {
         throw const FormatException();
       }
     }
+    if (kind == WorkspaceResourceKind.serviceConnection) {
+      const fields = {
+        'id',
+        'workspaceId',
+        'name',
+        'serviceId',
+        'scope',
+        'kind',
+        'isEnabled',
+        'hasSecret',
+        'keySuffix',
+        'secretRevision',
+      };
+      if (data.keys.any((key) => !fields.contains(key)) ||
+          (data['scope'] != null && data['scope'] != 'workspace')) {
+        throw const FormatException();
+      }
+    }
+    if (kind == WorkspaceResourceKind.tool &&
+        ((data['toolId'] as String? ?? '').startsWith('connector/') ||
+            data['mcpServerId'] != null)) {
+      final rawConfig = data['config'];
+      if (rawConfig != null) {
+        if (rawConfig is! String) throw const FormatException();
+        final config = jsonDecode(rawConfig);
+        if (config is! Map ||
+            !const {
+              'none',
+              'read',
+              'readWrite',
+            }.contains(config['memberAccess'])) {
+          throw const FormatException();
+        }
+      }
+      if (data['isEnabled'] is! bool) throw const FormatException();
+    }
     if (kind != WorkspaceResourceKind.agent) return;
 
     final name = data['name'];

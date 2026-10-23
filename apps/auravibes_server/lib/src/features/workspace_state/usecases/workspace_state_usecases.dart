@@ -339,6 +339,19 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
 
+      if (request.scope == WorkspaceSecretScope.user &&
+          request.secretKind == WorkspaceSecretKind.provider) {
+        final connection = await _repository.findResource(
+          session,
+          workspaceId: request.workspaceId,
+          kind: WorkspaceResourceKind.serviceConnection,
+          resourceId: request.resourceId,
+          transaction: transaction,
+        );
+        if (connection != null && connection.deletedAt == null) {
+          _validationFailed();
+        }
+      }
       final owner = WorkspaceResourceValidation.secretOwnerKey(
         request.scope,
         userId,
@@ -440,7 +453,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     }
     final isServiceConnection =
         operation.resourceKind == WorkspaceResourceKind.serviceConnection &&
-        request.secretKind == WorkspaceSecretKind.provider;
+        request.secretKind == WorkspaceSecretKind.provider &&
+        request.scope == WorkspaceSecretScope.workspace;
     final deletesServiceConnection =
         isServiceConnection &&
         operation.operation == WorkspacePatchOperationKind.delete;

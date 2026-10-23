@@ -35,10 +35,11 @@ void main() {
 
       final tools = await repository.getWorkspaceTools('local-workspace');
 
-      expect(tools, hasLength(1));
-      expect(tools.single.id, 'mcp-tool');
-      expect(tools.single.workspaceToolsGroupId, 'group-1');
-      expect(tools.single.inputSchema, jsonEncode({'type': 'object'}));
+      final configured = tools.where((tool) => tool.id == 'mcp-tool').toList();
+      expect(configured, hasLength(1));
+      expect(configured.single.id, 'mcp-tool');
+      expect(configured.single.workspaceToolsGroupId, 'group-1');
+      expect(configured.single.inputSchema, jsonEncode({'type': 'object'}));
     },
   );
 
@@ -60,29 +61,124 @@ void main() {
     },
   );
 
-  test('returns no tools when cloud returns no resource page', () async {
-    final repository = CloudToolsRepository(
-      .value(
-        CloudWorkspaceStateGateway.forTesting(
-          workspace: const CloudWorkspaceRef(
-            localWorkspaceId: 'workspace',
-            serverUrl: 'https://example.com',
-            accountId: 'account',
-            cloudWorkspaceId: 7,
+  test(
+    'new cloud Connector tools remain disabled until explicitly granted',
+    () async {
+      final repository = CloudToolsRepository(
+        .value(
+          CloudWorkspaceStateGateway.forTesting(
+            workspace: const CloudWorkspaceRef(
+              localWorkspaceId: 'workspace',
+              serverUrl: 'https://example.com',
+              accountId: 'account',
+              cloudWorkspaceId: 7,
+            ),
+            readState: (_) async => ReadWorkspaceStateResponse(
+              pages: [],
+              currentSequence: 1,
+              events: [],
+              requiresSnapshot: false,
+            ),
+            subscribe: (_) => const Stream.empty(),
           ),
-          readState: (_) async => ReadWorkspaceStateResponse(
-            pages: [],
-            currentSequence: 1,
-            events: [],
-            requiresSnapshot: false,
-          ),
-          subscribe: (_) => const Stream.empty(),
         ),
-      ),
-    );
+      );
 
-    expect(await repository.getWorkspaceTools('workspace'), isEmpty);
-  });
+      final tools = await repository.getWorkspaceTools('workspace');
+      expect(tools, isNotEmpty);
+      expect(
+        tools.every(
+          (tool) => !tool.toolId.startsWith('connector/') || !tool.isEnabled,
+        ),
+        true,
+      );
+    },
+  );
+
+  test(
+    'cloud Connector grants persist through the existing tool repository',
+    () async {
+      final resources = <WorkspaceResource>[];
+      final repository = CloudToolsRepository.forTesting(
+        read: ({required pages}) async => ReadWorkspaceStateResponse(
+          pages: [
+            WorkspaceResourcePage(
+              resourceKind: pages.single.resourceKind,
+              resources: resources
+                  .where(
+                    (resource) =>
+                        resource.resourceKind == pages.single.resourceKind,
+                  )
+                  .toList(),
+            ),
+          ],
+          currentSequence: 1,
+          events: const [],
+          requiresSnapshot: false,
+        ),
+        patch: ({required requestId, required operations}) async {
+          final operation = operations.single;
+          final existing = resources
+              .where((resource) => resource.resourceId == operation.resourceId)
+              .firstOrNull;
+          final saved = _resource(
+            operation.resourceId,
+            Map<String, Object?>.from(
+              jsonDecode(operation.data ?? fail('Expected tool metadata'))
+                  as Map,
+            ),
+            revision: (existing?.revision ?? 0) + 1,
+          );
+          resources
+            ..removeWhere((resource) => resource.resourceId == saved.resourceId)
+            ..add(saved);
+
+          return PatchWorkspaceStateResponse(
+            resources: [saved],
+            sequence: saved.revision,
+          );
+        },
+        create: ({
+          required requestId,
+          required name,
+          required url,
+          required transport,
+          required useHttp2,
+          required description,
+          required bearerToken,
+          required verificationReceipt,
+        }) async => throw UnimplementedError(),
+        verify: ({
+          required requestId,
+          required url,
+          required transport,
+          required useHttp2,
+          required bearerToken,
+        }) async => throw UnimplementedError(),
+        delete: ({required mcpServerId}) async => throw UnimplementedError(),
+        discover: ({required mcpServerId}) async => throw UnimplementedError(),
+      );
+      const id = 'connector/brave/web_search';
+      expect(
+        (await repository.setToolEnabledById(id, isEnabled: true)).isEnabled,
+        true,
+      );
+      final _ = await repository.patchWorkspaceToolConfig(
+        'workspace',
+        id,
+        '{"memberAccess":"readWrite"}',
+      );
+      final matching = (await repository.getWorkspaceTools('workspace'))
+          .where((tool) => tool.toolId == id)
+          .toList();
+      expect(matching, hasLength(1));
+      expect(matching.single.config, '{"memberAccess":"readWrite"}');
+      expect(
+        (await repository.setToolEnabledById(id, isEnabled: false)).isEnabled,
+        false,
+      );
+    },
+  );
 
   test('updates MCP settings through workspace credential mutation', () async {
     final server = _resource(

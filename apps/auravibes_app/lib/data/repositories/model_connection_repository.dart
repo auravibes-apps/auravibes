@@ -2,6 +2,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
@@ -143,8 +144,8 @@ class ModelConnectionRepository({
       modelConnection,
       verification,
     );
-    final updated = await _updateModelConnection(
-      modelConnectionId,
+    final updated = await _persistModelCredential(
+      existing,
       modelConnection,
       payload,
     );
@@ -201,6 +202,7 @@ class ModelConnectionRepository({
     await _database.modelConnectionsDao.deleteModelConnection(
       modelConnectionId,
     );
+    await _encryptionService.deleteCredential(storedValue);
   }
 }
 
@@ -226,13 +228,13 @@ extension ModelConnectionRepositoryHelpers on ModelConnectionRepository {
     ModelProviderVerification? verification,
   ) async {
     final key = _requiredApiKey(modelConnection.key);
-    final encryptedApiKey = await _encryptApiKey(key);
     final models = await _modelsForCreate(
       modelConnection,
       provider,
       key,
       verification,
     );
+    final encryptedApiKey = await _encryptApiKey(key);
 
     return (
       modelConnection: modelConnection,
@@ -267,11 +269,12 @@ extension ModelConnectionRepositoryHelpers on ModelConnectionRepository {
     return key;
   }
 
-  Future<String> _encryptApiKey(String key) => _encryptionService.encrypt(
-    ServiceConnectionAuthCodec.encodeSecret(
-      ServiceConnectionSecretApiKey(apiKey: key),
-    ),
-  );
+  Future<String> _encryptApiKey(String key) =>
+      _encryptionService.storeCredential(
+        ServiceConnectionAuthCodec.encodeSecret(
+          ServiceConnectionSecretApiKey(apiKey: key),
+        ),
+      );
 
   Future<String> _verificationKey(
     ModelProviderVerificationRequest request,
@@ -287,7 +290,7 @@ extension ModelConnectionRepositoryHelpers on ModelConnectionRepository {
     }
     final existing = await _editableModelConnection(connectionId);
 
-    return await _existingApiKey(existing.encryptedAuthValue);
+    return await _existingApiKey(existing);
   }
 
   Future<List<WorkspaceModelSelectionToCreate>?>
@@ -393,7 +396,14 @@ extension ModelConnectionCreateValidation on ModelConnectionRepository {
 extension ModelConnectionCreatePersistence on ModelConnectionRepository {
   Future<ServiceConnectionTable> _insertApiKeyConnection(
     _ApiKeyConnectionInsertData data,
-  ) => _database.transaction(() => _insertApiKeyTransaction(data));
+  ) async {
+    try {
+      return await _database.transaction(() => _insertApiKeyTransaction(data));
+    } on Object {
+      await _encryptionService.deleteCredential(data.encryptedApiKey);
+      rethrow;
+    }
+  }
 
   Future<ServiceConnectionTable> _insertApiKeyTransaction(
     _ApiKeyConnectionInsertData data,
@@ -435,8 +445,8 @@ extension ModelConnectionOAuthCreation on ModelConnectionRepository {
     ModelConnectionToCreate modelConnection,
   ) async {
     final validated = _validatedOAuthData(modelConnection);
-    final encryptedToken = await _encryptOAuthToken(validated.token);
     final modelIds = _requiredOAuthModelIds(modelConnection.modelIds);
+    final encryptedToken = await _encryptOAuthToken(validated.token);
 
     return (
       token: validated.token,
@@ -461,7 +471,7 @@ extension ModelConnectionOAuthCreation on ModelConnectionRepository {
   }
 
   Future<String> _encryptOAuthToken(OAuthTokenEntity token) =>
-      _encryptionService.encrypt(
+      _encryptionService.storeCredential(
         ServiceConnectionAuthCodec.encodeSecret(
           ServiceConnectionSecretOAuth2(
             accessToken: token.accessToken,
@@ -490,9 +500,16 @@ extension ModelConnectionOAuthPersistence on ModelConnectionRepository {
   Future<ServiceConnectionTable> _insertOAuthConnection(
     ModelConnectionToCreate modelConnection,
     _OAuthCreateData data,
-  ) => _database.transaction(
-    () => _insertOAuthTransaction(modelConnection, data),
-  );
+  ) async {
+    try {
+      return await _database.transaction(
+        () => _insertOAuthTransaction(modelConnection, data),
+      );
+    } on Object {
+      await _encryptionService.deleteCredential(data.encryptedToken);
+      rethrow;
+    }
+  }
 
   Future<ServiceConnectionTable> _insertOAuthTransaction(
     ModelConnectionToCreate modelConnection,
@@ -629,7 +646,7 @@ extension ModelConnectionUpdateValidation on ModelConnectionRepository {
     final models = await _modelsForUpdate(existing, validation, verification);
     final encryptedKey = await _updatedEncryptedKey(
       validation.key,
-      existing.encryptedAuthValue,
+      existing.id,
     );
 
     return _updatePayloadResult((
@@ -668,10 +685,7 @@ extension ModelConnectionUpdateValidation on ModelConnectionRepository {
     ModelConnectionToUpdate modelConnection,
     ({ApiModelProvidersTable provider, String type}) provider,
   ) async {
-    final keyData = await _updateKeyData(
-      modelConnection.key,
-      existing.encryptedAuthValue,
-    );
+    final keyData = await _updateKeyData(modelConnection.key, existing);
 
     return (
       provider: provider,
@@ -686,18 +700,17 @@ extension ModelConnectionUpdateValidation on ModelConnectionRepository {
 extension ModelConnectionUpdateInputs on ModelConnectionRepository {
   Future<_UpdateKeyData> _updateKeyData(
     String? input,
-    String? encryptedKey,
+    ServiceConnectionTable existing,
   ) async {
     final key = _updateKey(input);
 
-    return (
-      key: key,
-      keyForValidation: await _keyForValidation(key, encryptedKey),
-    );
+    return (key: key, keyForValidation: await _keyForValidation(key, existing));
   }
 
-  Future<String> _keyForValidation(String? key, String? encryptedKey) =>
-      key == null ? _existingApiKey(encryptedKey) : Future.value(key);
+  Future<String> _keyForValidation(
+    String? key,
+    ServiceConnectionTable existing,
+  ) => key == null ? _existingApiKey(existing) : Future.value(key);
 
   String? _nextUpdateUrl(String? existingUrl, String? updatedUrl) =>
       updatedUrl == null ? existingUrl : _nextConnectionUrl(updatedUrl);
@@ -799,23 +812,26 @@ extension ModelConnectionUpdateSupport on ModelConnectionRepository {
     return key;
   }
 
-  Future<String> _existingApiKey(String? encryptedKey) async {
+  Future<String> _existingApiKey(ServiceConnectionTable existing) async {
+    final encryptedKey = existing.encryptedAuthValue;
     if (encryptedKey == null || encryptedKey.isEmpty) {
       throw const ModelConnectionException(
         ModelConnectionRepository._missingApiKeyMessage,
       );
     }
-
-    return _decodeApiKey(await _encryptionService.decrypt(encryptedKey));
+    final secret = await ServiceConnectionRepository(
+      _database,
+      _encryptionService,
+      _legacyApiKeyStorage,
+    ).readSecret(existing.id);
+    if (secret is ServiceConnectionSecretApiKey) return secret.apiKey;
+    throw const ModelConnectionException('Invalid model API key payload');
   }
 
-  Future<String?> _updatedEncryptedKey(
-    String? key,
-    String? existingEncryptedKey,
-  ) {
-    if (key == null) return Future.value(existingEncryptedKey);
+  Future<String?> _updatedEncryptedKey(String? key, String connectionId) {
+    if (key == null) return _currentStoredCredential(connectionId);
 
-    return _encryptionService.encrypt(
+    return _encryptionService.storeCredential(
       ServiceConnectionAuthCodec.encodeSecret(
         ServiceConnectionSecretApiKey(apiKey: key),
       ),
@@ -1013,21 +1029,6 @@ extension ModelConnectionMapping on ModelConnectionRepository {
 
     return key.lastCharacters(keySuffixLength);
   }
-
-  String _decodeApiKey(String decrypted) {
-    ServiceConnectionSecret secret;
-    try {
-      secret = ServiceConnectionAuthCodec.decodeSecret(decrypted);
-    } on FormatException {
-      return decrypted;
-    }
-
-    if (secret is ServiceConnectionSecretApiKey) {
-      return secret.apiKey;
-    }
-
-    throw const ModelConnectionException('Invalid model API key payload');
-  }
 }
 
 extension ModelConnectionEntityMapping on ModelConnectionRepository {
@@ -1127,4 +1128,53 @@ class const ModelConnectionNoTypeException(
   Exception? cause,
 ]) extends ModelConnectionException {
   this : super('ModelProvider with id "$modelId" has no type', cause);
+}
+
+extension ModelConnectionCredentialPersistence on ModelConnectionRepository {
+  Future<ServiceConnectionTable?> _persistModelCredential(
+    ServiceConnectionTable previous,
+    ModelConnectionToUpdate model,
+    _ModelConnectionUpdatePayload payload,
+  ) async {
+    if (_updateKey(model.key) == null) {
+      return await _updateModelConnection(previous.id, model, payload);
+    }
+    final ServiceConnectionTable? updated;
+    try {
+      updated = await _updateModelConnection(previous.id, model, payload);
+    } on Object {
+      await _cleanupModelCredential(
+        previous.encryptedAuthValue,
+        payload.encryptedKey,
+        false,
+      );
+      rethrow;
+    }
+    await _cleanupModelCredential(
+      previous.encryptedAuthValue,
+      payload.encryptedKey,
+      updated != null,
+    );
+
+    return updated;
+  }
+
+  Future<void> _cleanupModelCredential(
+    String? previous,
+    String? next,
+    bool applied,
+  ) async {
+    if (next == null || previous == next) return;
+    await _encryptionService.deleteCredential(applied ? previous : next);
+  }
+}
+
+extension ModelConnectionCredentialRead on ModelConnectionRepository {
+  Future<String?> _currentStoredCredential(String connectionId) async {
+    final current = await _database.modelConnectionsDao.getModelConnectionById(
+      connectionId,
+    );
+
+    return current?.encryptedAuthValue;
+  }
 }

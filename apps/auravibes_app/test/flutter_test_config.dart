@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show BindingBase;
 import 'package:flutter/services.dart' show MethodChannel, rootBundle;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:irondash_message_channel/irondash_message_channel.dart';
 import 'package:super_native_extensions/src/native/context.dart'
@@ -12,6 +13,7 @@ import 'package:super_native_extensions/src/native/context.dart'
 import '../../../tool/testing/ci_widget_test_timeout.dart';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
+  FlutterSecureStorage.setMockInitialValues({});
   WidgetController.hitTestWarningShouldBeFatal = true;
   configureCiWidgetTestTimeout();
   setUpAll(() async {

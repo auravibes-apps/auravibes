@@ -9,7 +9,9 @@ import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/drift/database_test_utils.dart';
@@ -24,6 +26,32 @@ void main() {
     final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
+    test('DB-only copies cannot recover platform credentials', () async {
+      FlutterSecureStorage.setMockInitialValues({});
+      await _insertWorkspace(database, 'workspace-1');
+      final repository = ServiceConnectionRepository(
+        database,
+        .new(_FakeSecretKeyManager()),
+      );
+      final connection = await repository.createConnectorConnection((
+        workspaceId: 'workspace-1',
+        connectorId: 'brave',
+        name: 'Search',
+        apiKey: 'synthetic-credential',
+      ));
+      expect(
+        (await repository.readSecret(
+          connection.id,
+        ) as ServiceConnectionSecretApiKey).apiKey,
+        'synthetic-credential',
+      );
+      await const FlutterSecureStorage().deleteAll();
+      await expectLater(
+        repository.readSecret(connection.id),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
     var isFirstTest = true;
     setUp(() async {
       if (isFirstTest) {
@@ -35,6 +63,43 @@ void main() {
       await clearAppDatabase(database);
     });
     tearDownAll(database.close);
+    test(
+      'failed platform migration preserves the existing credential',
+      () async {
+        await _insertWorkspace(database, 'workspace-1');
+        final encryption = EncryptionService(_FakeSecretKeyManager());
+        final id = await _insertConnection(
+          database,
+          encryption,
+          workspaceId: 'workspace-1',
+          name: 'Search',
+          serviceId: 'brave',
+          kind: .customHttp,
+          secretValue: 'legacy-encrypted-secret',
+        );
+        final storage = _MockCredentialStorage();
+        when(
+          () => storage.write(
+            key: any(named: 'key'),
+            value: any(named: 'value'),
+          ),
+        ).thenThrow(StateError('Credential store unavailable'));
+        final failed = ServiceConnectionRepository(
+          database,
+          .new(_FakeSecretKeyManager(), credentialStorage: storage),
+        );
+        await expectLater(failed.readSecret(id), throwsStateError);
+        final recovered = await ServiceConnectionRepository(
+          database,
+          encryption,
+        ).readSecret(id);
+        expect(
+          (recovered as ServiceConnectionSecretApiKey).apiKey,
+          'legacy-encrypted-secret',
+        );
+      },
+    );
+
     test('encrypts MCP headers in the active workspace only', () async {
       await _insertWorkspace(database, 'workspace-1');
       await _insertWorkspace(database, 'workspace-2');
@@ -240,7 +305,7 @@ void main() {
       }
       expect(
         ServiceConnectionAuthCodec.decodeSecret(
-          await encryption.decrypt(encryptedAuthValue),
+          await encryption.readCredential(encryptedAuthValue),
         ),
         isA<ServiceConnectionSecretApiKey>().having(
           (secret) => secret.apiKey,
@@ -390,3 +455,5 @@ class _FakeLegacyApiKeyStorage(final Map<String, String> values)
     final _ = values.remove(reference);
   }
 }
+
+class _MockCredentialStorage extends Mock implements FlutterSecureStorage;
