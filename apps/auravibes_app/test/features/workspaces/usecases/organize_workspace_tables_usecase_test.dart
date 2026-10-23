@@ -51,11 +51,7 @@ void main() {
       ]) {
         table = await tables.saveColumn(
           table: table,
-          column: WorkspaceColumn(
-            id: '',
-            name: example.type.name,
-            type: example.type,
-          ),
+          column: .new(id: '', name: example.type.name, type: example.type),
         );
         values[table.columns.last.id] = example.valid;
         invalid[table.columns.last.id] = example.invalid;
@@ -103,7 +99,7 @@ void main() {
     var table = await tables.create(name: 'List', labelName: 'Title');
     table = await tables.saveColumn(
       table: table,
-      column: WorkspaceColumn(
+      column: const .new(
         id: '',
         name: 'Status',
         type: .singleSelect,
@@ -113,7 +109,7 @@ void main() {
     final single = table.columns.last;
     table = await tables.saveColumn(
       table: table,
-      column: WorkspaceColumn(
+      column: const .new(
         id: '',
         name: 'Tags',
         type: .multiSelect,
@@ -150,7 +146,7 @@ void main() {
     await expectLater(
       tables.saveColumn(
         table: table,
-        column: WorkspaceColumn(
+        column: .new(
           id: single.id,
           name: 'Status',
           type: .singleSelect,
@@ -185,7 +181,7 @@ void main() {
       final initial = await tables.create(name: 'List', labelName: 'Title');
       final table = await tables.saveColumn(
         table: initial,
-        column: WorkspaceColumn(id: '', name: 'Done', type: .checkbox),
+        column: const .new(id: '', name: 'Done', type: .checkbox),
       );
       final column = table.columns.last;
       final record = await tables.createRecord(
@@ -222,7 +218,7 @@ void main() {
     final initial = await tables.create(name: 'List', labelName: 'Title');
     final table = await tables.saveColumn(
       table: initial,
-      column: WorkspaceColumn(id: '', name: 'Count', type: .number),
+      column: const .new(id: '', name: 'Count', type: .number),
     );
     final number = table.columns.last;
     final zero = await tables.createRecord(
@@ -513,7 +509,7 @@ void main() {
           ]) {
         typed = await tables.saveColumn(
           table: typed,
-          column: WorkspaceColumn(
+          column: .new(
             id: '',
             name: example.type.name,
             type: example.type,

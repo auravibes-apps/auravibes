@@ -41,7 +41,7 @@ class const WorkspaceColumnEditor({
         );
         final _ = await usecase.saveColumn(
           table: table,
-          column: WorkspaceColumn(
+          column: .new(
             id: column?.id ?? '',
             name: name.text,
             type: type.value,

@@ -67,7 +67,7 @@ final class WorkspaceTableUsecaseProvider
 }
 
 String _$workspaceTableUsecaseHash() =>
-    r'3886c3b26462edc4cead0cec1d2354e041bd39b7';
+    r'0effe52c07895132b271432b9382466af6094969';
 
 final class WorkspaceTableUsecaseFamily extends $Family
     with
