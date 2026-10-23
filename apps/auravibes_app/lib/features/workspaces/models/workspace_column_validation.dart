@@ -1,34 +1,20 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 
+const _maximumColumns = 100;
+const _maximumNameLength = 200;
+const _maximumTextLength = 16384;
+const _minimumPhoneDigits = 3;
+
 abstract final class WorkspaceColumnValidation {
   static void columns(List<WorkspaceColumn> columns, String labelColumnId) {
-    if (columns.isEmpty ||
-        columns.length > 100 ||
-        columns.map((column) => column.id).toSet().length != columns.length ||
-        !columns.any(
-          (column) => column.id == labelColumnId && column.type == .text,
-        )) {
-      throw const WorkspaceTableException();
-    }
-    for (final column in columns) {
-      if (column.id.isEmpty ||
-          column.name.trim().isEmpty ||
-          column.name.length > 200) {
-        throw const WorkspaceTableException();
-      }
-      final selection =
-          column.type == .singleSelect || column.type == .multiSelect;
-      if (selection
-          ? column.options.isEmpty ||
-                column.options.length > 100 ||
-                column.options.toSet().length != column.options.length ||
-                column.options.any(
-                  (option) => option.trim().isEmpty || option.length > 200,
-                )
-          : column.options.isNotEmpty) {
-        throw const WorkspaceTableException();
-      }
-    }
+    _require(columns.isNotEmpty && columns.length <= _maximumColumns);
+    _require(_uniqueIds(columns));
+    _require(
+      columns.any(
+        (column) => column.id == labelColumnId && column.type == .text,
+      ),
+    );
+    columns.forEach(_column);
   }
 
   static void values(
@@ -39,44 +25,95 @@ abstract final class WorkspaceColumnValidation {
       final column = columns
           .where((column) => column.id == entry.key)
           .firstOrNull;
-      if (column == null || !_valid(column, entry.value)) {
-        throw const WorkspaceTableException();
-      }
+      _require(column != null && _ValueValidation.valid(column, entry.value));
     }
   }
 
-  static bool _valid(WorkspaceColumn column, Object? value) =>
+  static bool _uniqueIds(List<WorkspaceColumn> columns) =>
+      columns.map((column) => column.id).toSet().length == columns.length;
+
+  static void _column(WorkspaceColumn column) {
+    _require(column.id.isNotEmpty && _name(column.name));
+    if (column.type != .singleSelect && column.type != .multiSelect) {
+      _require(column.options.isEmpty);
+
+      return;
+    }
+    _selection(column.options);
+  }
+
+  static void _selection(List<String> options) {
+    _require(options.isNotEmpty && options.length <= _maximumColumns);
+    _require(options.toSet().length == options.length);
+    _require(options.every(_name));
+  }
+
+  static bool _name(String value) =>
+      value.trim().isNotEmpty && value.length <= _maximumNameLength;
+
+  static void _require(bool valid) {
+    if (!valid) {
+      throw const WorkspaceTableException();
+    }
+  }
+}
+
+abstract final class _ValueValidation {
+  static final _email = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+  static final _phonePattern = RegExp(
+    r'^\+?[0-9 ()-]+(?:\s*(?:x|ext\.?)\s*[0-9]+)?$',
+    caseSensitive: false,
+  );
+
+  static bool valid(WorkspaceColumn column, Object? value) =>
       switch (column.type) {
-        .text => value is String && value.length <= 16384,
+        .text ||
+        .number ||
+        .checkbox ||
+        .singleSelect ||
+        .multiSelect => _basic(column, value),
+        .url => _formatted(value, _url),
+        .email => _formatted(value, _email.hasMatch),
+        .phone => _formatted(value, _phone),
+      };
+
+  static bool _basic(WorkspaceColumn column, Object? value) =>
+      switch (column.type) {
+        .text => _text(value),
         .number => value is num && value.isFinite,
         .checkbox => value is bool,
-        .singleSelect => value is String && column.options.contains(value),
-        .multiSelect =>
-          value is List &&
-              value.toSet().length == value.length &&
-              value.every(
-                (entry) => entry is String && column.options.contains(entry),
-              ),
-        .url => value is String && value.length <= 16384 && _url(value),
-        .email =>
-          value is String &&
-              value.length <= 16384 &&
-              RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value),
-        .phone =>
-          value is String &&
-              value.length <= 16384 &&
-              RegExp(
-                r'^\+?[0-9 ()-]+(?:\s*(?:x|ext\.?)\s*[0-9]+)?$',
-                caseSensitive: false,
-              ).hasMatch(value) &&
-              RegExp('[0-9]').allMatches(value).length >= 3,
+        .singleSelect => _single(column.options, value),
+        .multiSelect => _multiple(column.options, value),
+        .url || .email || .phone => false,
       };
+
+  static bool _single(List<String> options, Object? value) =>
+      value is String && options.contains(value);
+
+  static bool _formatted(Object? value, bool Function(String) matches) =>
+      value is String && _text(value) && matches(value);
+
+  static bool _text(Object? value) =>
+      value is String && value.length <= _maximumTextLength;
+
+  static bool _multiple(List<String> options, Object? value) =>
+      value is List &&
+      value.toSet().length == value.length &&
+      value.every((entry) => entry is String && options.contains(entry));
+
+  static bool _phone(String value) =>
+      _phonePattern.hasMatch(value) &&
+      RegExp('[0-9]').allMatches(value).length >= _minimumPhoneDigits;
+
   static bool _url(String value) {
     final uri = Uri.tryParse(value);
 
     return uri != null &&
-        (uri.scheme == 'https' || uri.scheme == 'http') &&
+        _webScheme(uri.scheme) &&
         uri.host.isNotEmpty &&
         !value.contains(RegExp(r'\s'));
   }
+
+  static bool _webScheme(String scheme) =>
+      scheme == 'https' || scheme == 'http';
 }

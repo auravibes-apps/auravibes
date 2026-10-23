@@ -41,15 +41,17 @@ class const WorkspaceColumnEditor({
         );
         final _ = await usecase.saveColumn(
           table: table,
-          columnId: column?.id,
-          name: name.text,
-          type: type.value,
-          options: type.value == .singleSelect || type.value == .multiSelect
-              ? options.text
-                    .split('\n')
-                    .where((option) => option.trim().isNotEmpty)
-                    .toList()
-              : const [],
+          column: WorkspaceColumn(
+            id: column?.id ?? '',
+            name: name.text,
+            type: type.value,
+            options: type.value == .singleSelect || type.value == .multiSelect
+                ? options.text
+                      .split('\n')
+                      .where((option) => option.trim().isNotEmpty)
+                      .toList()
+                : const [],
+          ),
         );
         if (context.mounted) onBack();
       } on Object catch (failure, stackTrace) {

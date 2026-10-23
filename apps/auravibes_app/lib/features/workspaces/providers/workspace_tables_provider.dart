@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/cloud_workspace_table_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
@@ -28,6 +29,13 @@ Future<OrganizeWorkspaceTablesUsecase> workspaceTableUsecase(
     );
   }
 
+  return await _cloudUsecase(ref, session);
+}
+
+Future<OrganizeWorkspaceTablesUsecase> _cloudUsecase(
+  Ref ref,
+  WorkspaceSession session,
+) async {
   final gateway = await ref.watch(
     cloudWorkspaceStateGatewayProvider(session).future,
   );

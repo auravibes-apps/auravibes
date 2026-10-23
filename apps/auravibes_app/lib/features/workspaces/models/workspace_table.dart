@@ -8,7 +8,13 @@ class const WorkspaceTable({
   required final int revision,
   required final int schemaRevision,
   final String? parentId,
-});
+}) {
+  List<WorkspaceColumn> withColumn(WorkspaceColumn column) => [
+    for (final existing in columns)
+      if (existing.id == column.id) column else existing,
+    if (!columns.any((existing) => existing.id == column.id)) column,
+  ];
+}
 
 class const WorkspaceColumn({
   required final String id,
@@ -54,6 +60,9 @@ class const WorkspaceTableException({final bool conflict = false})
   String get localizationKey => conflict
       ? LocaleKeys.cloud_errors_conflict
       : LocaleKeys.workspace_items_invalid_table;
+
+  @override
+  String toString() => localizationKey;
 }
 
 abstract interface class WorkspaceTableRepository {
