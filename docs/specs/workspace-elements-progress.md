@@ -8,7 +8,7 @@ The accepted product decisions are recorded in `docs/concepts/workspace-elements
 
 Local and cloud workspaces remain independent. Cloud content has no persistent offline cache. Connections belong to the workspace and support enabled read and edit tools. Default permissions request approval; allow-all bypasses those approval prompts, not authorization or integrity checks. Workspaces start empty. HTML/JS execution is excluded. Release policy and legal decisions remain explicit blockers in the specification.
 
-## Current slice: #1667 — create and browse folders
+## Initial folder checkpoint (historical; superseded below)
 
 Implemented but not yet marked complete:
 
@@ -104,3 +104,13 @@ Next: integrate verified #1668/#1685 through a merger subagent; refresh the read
 - Relaunched isolated dev app at table integration tip, instance `workspace-1665-recheck`. Confirmed exact manifest identity before interaction. Empty second workspace displayed no first-workspace folder. Created `Smoke table`, added `Persistent record`, and saved successfully through ordinary controls; no app errors during these actions. Screenshots remain in `/tmp/auravibes-1665-ui-evidence`.
 - Subsequent drawer/extension navigation stopped updating the visible tree again. No production fix is justified yet: a focused real-route widget regression (`test/router/workspace_items_navigation_test.dart`) passes drawer navigation from chat to items and back. Live runtime/automation failure remains unresolved; app functionality beyond the successful actions is not claimed verified.
 - Integration pushed and remote SHA verified at `a5fbe5f7b`; PR #1693 body updated to two completed children. First push attempt hit HTTP/2 transport failure; retry with HTTP/1.1 succeeded.
+
+### Active frontier checkpoint
+
+- #1669, #1670 and #1685 assigned to the authenticated user through the tracker; isolated workers retain their stated ownership.
+- #1670 implementation `f982e0cc`, worker branch tip `44d74c9aa`, includes integration `6f7f833d`; final generated/postmerge checks pending. Do not merge or close until worker final report.
+- #1669 reproduced unauthorized admin table/record reads. Current worker changes apply current grants to reads, mutations, replay receipts, and event/stream metadata. Grant/revoke and read-only UI validation remains active.
+- #1685 platform-secret tests and authenticated grant checks passed; broader UI/analyzer validation remains active.
+- #1676 is unblocked. Worktree `/Users/davidlondono/.codex/worktrees/workspace-moves-1676/auravibes` prepared from integration with pinned FVM and six-package bootstrap; no implementation assigned yet. Its preflight matched only this parent integration PR #1693, with ownership coordinated here.
+- Next table frontier after verified #1670: #1671 dates/exact money and #1672 constraints. Start only after integration/closure unlocks native dependencies.
+- Isolated recheck app disconnected and stopped; temporary manifest removal verified. Focused drawer regression and fatal file analyzer passed. Navigation smoke failure remains unresolved, separate from passing widget evidence.
