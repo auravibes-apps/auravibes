@@ -125,3 +125,11 @@ Next: integrate verified #1668/#1685 through a merger subagent; refresh the read
 - Full job logs: `/tmp/auravibes-1693-analysis.log`, `/tmp/auravibes-1693-android.log`, `/tmp/auravibes-1693-app-shard1.log`. Root repair logs use `/tmp/auravibes-1665-cleanup-*` and `/tmp/auravibes-1665-dcl-*`.
 
 Root repair verification: scoped DCL checks now pass for folder/shared changes (remaining cloud-folder sort extraction checked separately). App generation completed twice with only expected provider hash change. Final regression: 58 passed, one existing server-URL-dependent route case skipped. Fatal analysis found one missing blank line, corrected; focused rerun passed with no issues. The separate strict-mapping fixture failure remains assigned to #1670.
+
+### Production router and window approval
+
+- Added a production-router resolution regression beside the existing drawer return check; both pass, and fatal file analysis passes. Live blank/stalled rendering remains unresolved; no routing production change was inferred from it.
+- Isolated post-change dev instance `workspace-1665-quality` runs from UI worktree at `437183849`. Its identity was verified. Screenshot `quality-start-0.png` is blank except the debug banner; no app logs/errors were collected. Hot reload was invoked but the bridge timed out; completion is unconfirmed.
+- User additionally approved CUA solely to focus/resize isolated debug windows; Marionette remains the app-interaction tool. This approval persists for the implementation. No other app/window control is authorized.
+- Typed core handoff: `2c246d3c9`, branch `feat/1670-workspace-column-types`, clean, includes `437183849`. Core checks: 18 app, 16 server, seven scoped DCL files, nine fatal handwritten paths, generation. Combined UI checks remain access-worker-owned; do not close #1670 yet.
+- Merger `integration_merger` is read-only until root commits its navigation test and explicitly releases ownership. Then merge typed core provisionally, retain open acceptance, and run focused integration checks. Prepared #1676 worktree can proceed afterward because its native blocker #1668 is already closed.

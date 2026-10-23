@@ -7,6 +7,27 @@ import '../helpers/ux_validation_fixture.dart';
 void main() {
   tearDownAll(UxValidationFixture.closeDatabase);
 
+  testWidgets('production router resolves the workspace items screen', (
+    tester,
+  ) async {
+    final fixture = await UxValidationFixture.create();
+    final items = WorkspaceItemsRoute(workspaceId: fixture.workspaceId)
+        .location;
+    final router = await fixture.pump(
+      tester,
+      items,
+      size: const Size(800, 600),
+      useProductionRouter: true,
+    );
+    final input = find.byKey(const ValueKey('workspace_folder_name'));
+    for (var attempt = 0; attempt < 20 && input.evaluate().isEmpty; attempt++) {
+      await fixture.settle(tester);
+    }
+    expect(router.state.uri.path, items);
+    expect(input, findsOneWidget);
+    await fixture.close(tester);
+  });
+
   testWidgets('workspace items keep drawer navigation usable', (tester) async {
     final fixture = await UxValidationFixture.create();
     final chat = NewChatRoute(workspaceId: fixture.workspaceId).location;
