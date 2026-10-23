@@ -20,6 +20,7 @@ class const WorkspaceColumnEditor({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final draft = _ColumnActions.use(context, column);
+
     return _ColumnForm(
       editor: this,
       draft: draft,

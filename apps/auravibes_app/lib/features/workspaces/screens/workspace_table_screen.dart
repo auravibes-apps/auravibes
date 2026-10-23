@@ -62,6 +62,7 @@ class const _TableState({required final WorkspaceTableScreen screen})
     final table = ref.watch(
       workspaceTableProvider(screen.workspaceId, screen.tableId),
     );
+
     return switch (table) {
       AsyncData(:final value) => _LoadedTable(screen: screen, table: value),
       AsyncError(:final error) => _TableFailure(
@@ -99,6 +100,7 @@ class const _TableContents({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final navigation = _TableNavigationActions.use(ref, this);
+
     return _TableSelectionView(owner: this, navigation: navigation);
   }
 }
@@ -129,7 +131,7 @@ abstract final class _TableNavigationActions {
 }
 
 sealed class _Selection {
-  const _Selection();
+  const new();
 }
 
 class const _RecordSelection(final WorkspaceRecord? record) extends _Selection;
@@ -176,7 +178,7 @@ class const _RecordPage({
     table: owner.table,
     record: record,
     onBack: navigation.close,
-    key: ValueKey(record?.id ?? 'new'),
+    key: .new(record?.id ?? 'new'),
   );
 }
 
@@ -191,7 +193,7 @@ class const _ColumnPage({
     table: owner.table,
     column: column,
     onBack: navigation.close,
-    key: ValueKey(column?.id ?? 'new-column'),
+    key: .new(column?.id ?? 'new-column'),
   );
 }
 
@@ -274,6 +276,7 @@ class const _LabelEditor({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final draft = _LabelActions.use(context, table);
+
     return _LabelForm(
       draft: draft,
       onSave: () => _LabelActions.save(ref, this, draft),
@@ -383,6 +386,7 @@ class const _TableRecords({
     final records = ref.watch(
       workspaceTableRecordsProvider(workspaceId, table.id),
     );
+
     return Column(
       children: [
         if (table.canEditRecords) _CreateRecord(onRecord: onRecord),

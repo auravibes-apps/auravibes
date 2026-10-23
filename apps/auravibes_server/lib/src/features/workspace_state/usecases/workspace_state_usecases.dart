@@ -13,6 +13,7 @@ import '../domain/workspace_table_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
 import '../workspace_table_access.dart';
+import '../workspace_table_page_reader.dart';
 
 typedef _OperationCommitMetadata = ({
   String userId,
@@ -54,42 +55,10 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
     }
 
-    final pages = <WorkspaceResourcePage>[];
-    for (final selector in request.pages) {
-      final rows = <WorkspaceResource>[];
-      var cursor = selector.afterResourceId;
-      while (rows.length <= selector.limit) {
-        final candidates = await _repository.readPage(
-          session,
-          workspaceId: request.workspaceId,
-          kind: selector.resourceKind,
-          limit: _maxPageSize,
-          afterResourceId: cursor,
-        );
-        for (final row in candidates) {
-          final visible = await const WorkspaceTableAccess().visible(
-            session,
-            member,
-            row,
-          );
-          if (visible != null) rows.add(visible);
-          if (rows.length > selector.limit) break;
-        }
-        if (rows.length > selector.limit || candidates.length < _maxPageSize) {
-          break;
-        }
-        cursor = candidates.last.resourceId;
-      }
-      final hasMore = rows.length > selector.limit;
-      if (hasMore) rows.removeLast();
-      pages.add(
-        WorkspaceResourcePage(
-          resourceKind: selector.resourceKind,
-          resources: rows,
-          nextResourceId: hasMore ? rows.last.resourceId : null,
-        ),
-      );
-    }
+    final pageReader = WorkspaceTablePageReader(_repository, session, member);
+    final pages = [
+      for (final selector in request.pages) await pageReader.page(selector),
+    ];
 
     final firstEvent = await _repository.firstEvent(
       session,
@@ -171,11 +140,10 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       _requirePatchRole(member.role, request.operations);
       for (final operation in request.operations) {
-        await const WorkspaceTableAccess().requireWrite(
+        await WorkspaceTableAccess(transaction: transaction).requireWrite(
           session,
           member,
           operation,
-          transaction: transaction,
         );
       }
       final receipt = await _findReceipt(

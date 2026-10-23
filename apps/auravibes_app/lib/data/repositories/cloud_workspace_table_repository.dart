@@ -225,6 +225,7 @@ Future<Map<String, dynamic>> _currentData(
   String id,
 ) async {
   final rows = await _rows(store, .table);
+
   return CloudResourceMapper.decode(
     rows.firstWhere((row) => row.resourceId == id),
   );

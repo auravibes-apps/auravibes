@@ -1,7 +1,7 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_editor.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -18,6 +18,7 @@ class const WorkspaceRecordEditor({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final draft = _RecordActions.use(context, record);
+
     return _RecordForm(
       editor: this,
       draft: draft,
@@ -45,7 +46,7 @@ abstract final class _RecordActions {
     final usecase = await ref.read(
       workspaceTableUsecaseProvider(editor.workspaceId).future,
     );
-    final _ = await _write(usecase, editor, Map.of(draft.values.value));
+    final _ = await _write(usecase, editor, .of(draft.values.value));
     if (ref.context.mounted) editor.onBack();
   }
 

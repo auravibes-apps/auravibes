@@ -24,9 +24,12 @@ class const OrganizeWorkspaceTablesUsecase(
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
     required String name,
-  }) { _requireManage(table);
+  }) {
+    _requireManage(table);
+
     return _repository.renameLabel(table: table, name: _name(name));
   }
+
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
     required Map<String, Object?> values,
@@ -96,6 +99,7 @@ String _name(String value) {
 void _requireManage(WorkspaceTable table) {
   if (!table.canManage) throw const WorkspaceTableException(denied: true);
 }
+
 void _requireEdit(WorkspaceTable table) {
   if (!table.canEditRecords) throw const WorkspaceTableException(denied: true);
 }

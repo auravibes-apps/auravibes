@@ -12,6 +12,7 @@ class const CloudWorkspaceTableAccessRepository(
     final data = _ownerData(await _table(tableId));
     final grants = data['memberAccess'] as Map? ?? const {};
     final roster = await _roster();
+
     return [
       for (final member in roster)
         if (member.role != 'owner') _member(member, grants),
@@ -51,19 +52,22 @@ class const CloudWorkspaceTableAccessRepository(
       pages: [
         WorkspaceResourcePageRequest(
           resourceKind: .table,
-          limit: 100,
           afterResourceId: cursor,
+          limit: 100,
         ),
       ],
     );
+
     return response.pages.single;
   }
 
   Future<List<CloudWorkspaceMemberSummary>> _roster() async {
     final client = await _store.client;
     final workspaceId = await _store.cloudWorkspaceId;
-    if (client == null || workspaceId == null)
+    if (client == null || workspaceId == null) {
       throw const WorkspaceTableException();
+    }
+
     return await CloudAppErrors.guardCall(
       .state,
       () => client.cloudWorkspace.listMembers(.new(workspaceId: workspaceId)),
@@ -73,17 +77,21 @@ class const CloudWorkspaceTableAccessRepository(
 
 Map<String, dynamic> _ownerData(WorkspaceResource resource) {
   final data = CloudResourceMapper.decode(resource);
-  if (data['canManageTable'] != true)
+  if (data['canManageTable'] != true) {
     throw const WorkspaceTableException(denied: true);
+  }
+
   return data;
 }
 
-WorkspaceTableMember _member(CloudWorkspaceMemberSummary member, Map grants) =>
-    WorkspaceTableMember(
-      userId: member.userId,
-      label: member.email ?? member.userId,
-      access: grants[member.userId] as String?,
-    );
+WorkspaceTableMember _member(
+  CloudWorkspaceMemberSummary member,
+  Map<dynamic, dynamic> grants,
+) => WorkspaceTableMember(
+  userId: member.userId,
+  label: member.email ?? member.userId,
+  access: grants[member.userId] as String?,
+);
 
 Map<String, Object?> _grantData(
   Map<String, dynamic> data,
@@ -98,6 +106,7 @@ Map<String, Object?> _grantData(
   } else {
     grants[userId] = access;
   }
+
   return {...data}
     ..remove('canManageTable')
     ..remove('canEditRecords')

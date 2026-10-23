@@ -30,6 +30,7 @@ class const WorkspaceTableAccessPanel({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final draft = _AccessActions.use(context, ref, this);
+
     return _AccessContent(
       draft: draft,
       onGrant: (request) =>
@@ -53,6 +54,7 @@ abstract final class _AccessActions {
         panel.table.revision,
       ]),
     );
+
     return (
       usecase: usecase,
       members: members,
@@ -94,11 +96,14 @@ class const _AccessContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (draft.members.error case final error?)
+    if (draft.members.error case final error?) {
       return WorkspaceItemFailure(error: error);
+    }
     final members = draft.members.data;
-    if (members == null)
+    if (members == null) {
       return const Center(child: CircularProgressIndicator());
+    }
+
     return _AccessList(
       members: members,
       action: draft.action,

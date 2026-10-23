@@ -19,11 +19,13 @@ class const WorkspaceRecordField({
   Widget build(BuildContext context) {
     final text = useTextEditingController(text: value?.toString() ?? '');
     useEffect(() => _sync(text), [present]);
+
     return _RecordFieldBody(field: this, controller: text);
   }
 
   Dispose? _sync(TextEditingController text) {
     if (present) text.text = value?.toString() ?? '';
+
     return null;
   }
 }
@@ -90,10 +92,10 @@ class const _CheckboxInput({required final WorkspaceRecordField field})
 
 class const _SingleSelectInput({required final WorkspaceRecordField field})
     extends StatelessWidget {
-  String? get _selection =>
-      field.value is String && field.column.options.contains(field.value)
-      ? field.value as String
-      : null;
+  String? get _selection => switch (field.value) {
+    final String value when field.column.options.contains(value) => value,
+    _ => null,
+  };
   @override
   Widget build(BuildContext context) => AuraDropdownSelector<String>(
     options: [

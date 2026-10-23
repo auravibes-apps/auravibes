@@ -593,6 +593,70 @@ void main() {
             ),
           ),
         );
+        final ownerRead = await endpoints.workspaceState.read(
+          authenticated,
+          ReadWorkspaceStateRequest(
+            workspaceId: workspace.id!,
+            pages: [WorkspaceResourcePageRequest(resourceKind: .table, limit: 100)],
+            eventLimit: 0,
+          ),
+        );
+        final ownerTable = ownerRead.pages.single.resources.firstWhere(
+          (row) => row.resourceId == 'table-one',
+        );
+        final afterRemoval = jsonDecode(ownerTable.data) as Map<String, dynamic>;
+        expect((afterRemoval['memberAccess'] as Map).containsKey(outsiderId), false);
+        afterRemoval
+          ..remove('canManageTable')
+          ..remove('canEditRecords')
+          ..['schemaRevision'] = 3
+          ..['columns'] = [{'id': 'label-one', 'name': 'After removal', 'type': 'text'}];
+        final ownerEdit = await patch([
+          WorkspacePatchOperation(
+            operation: .update,
+            resourceKind: .table,
+            resourceId: 'table-one',
+            expectedRevision: ownerTable.revision,
+            data: jsonEncode(afterRemoval),
+            fieldMask: const [],
+          ),
+        ]);
+        final detail = await endpoints.cloudWorkspace.getWorkspaceDetail(
+          authenticated,
+          GetCloudWorkspaceDetailRequest(workspaceId: workspace.id!),
+        );
+        final invitation = await endpoints.cloudWorkspace.inviteMember(
+          authenticated,
+          InviteWorkspaceMemberRequest(
+            workspaceId: workspace.id!,
+            email: '$outsiderId@example.com',
+            role: 'member',
+            requestId: 'reinvite-table-member',
+            expectedWorkspaceRevision: detail.workspace.revision,
+          ),
+        );
+        final _ = await endpoints.cloudWorkspace.acceptInvite(
+          outsider,
+          AcceptWorkspaceInviteRequest(
+            inviteId: invitation.id,
+            requestId: 'rejoin-table-member',
+            expectedInviteRevision: invitation.revision,
+          ),
+        );
+        final rejoined = await memberRead();
+        expect(rejoined.pages.expand((page) => page.resources), isEmpty);
+        afterRemoval['memberAccess'] = {outsiderId: 'read'};
+        final _ = await patch([
+          WorkspacePatchOperation(
+            operation: .update,
+            resourceKind: .table,
+            resourceId: 'table-one',
+            expectedRevision: ownerEdit.resources.single.revision,
+            data: jsonEncode(afterRemoval),
+            fieldMask: const [],
+          ),
+        ]);
+        expect((await memberRead()).pages.first.resources.single.resourceId, 'table-one');
         await expectLater(
           endpoints.workspaceState.read(
             sessionBuilder,

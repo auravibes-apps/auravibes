@@ -1,5 +1,3 @@
-import '../../../helpers/test_app.dart';
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -13,8 +11,9 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../helpers/test_app.dart';
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();

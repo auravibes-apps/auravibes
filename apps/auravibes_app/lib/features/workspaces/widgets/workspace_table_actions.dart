@@ -14,6 +14,7 @@ abstract final class WorkspaceTableActions {
 
   static WorkspaceTableAction use(BuildContext context) {
     final state = useState<AsyncValue<void>>(const AsyncData(null));
+
     return _snapshot(state.value, (action) => _run(context, state, action));
   }
 
@@ -24,7 +25,7 @@ abstract final class WorkspaceTableActions {
     pending: state.isLoading,
     error: switch (state) {
       AsyncError(:final error) => error,
-      _ => null,
+      AsyncData() || AsyncLoading() => null,
     },
     run: run,
   );
@@ -37,6 +38,7 @@ abstract final class WorkspaceTableActions {
     if (state.value.isLoading) return;
     state.value = const AsyncLoading();
     final result = await AsyncValue.guard(action);
+    if (!context.mounted) return;
     _complete(context, state, result);
   }
 
