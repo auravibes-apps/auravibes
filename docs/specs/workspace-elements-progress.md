@@ -140,3 +140,11 @@ Root repair verification: scoped DCL checks now pass for folder/shared changes (
 - #1676 assigned locally to worker `tables_1668` in prepared `workspace-moves-1676/auravibes`, branch to start from current integration. Native blocker #1668 is closed; parent PR preflight match coordinated. GitHub claim failed because authenticated user lacks `ReplaceActorsForAssignable` permission. Do not switch credentials or bypass this; continue independent local work and record remote workflow limitation.
 - CUA exact isolated app path failed `AXError.cannotComplete`; bundle-only lookup was ambiguous with another checkout, so no input was sent to either app. App metadata inventory exposed no bindable isolated window. Window focus/resize verification remains blocked by that tool failure, not lack of user permission. No other app was controlled.
 - Quality app disconnected and exact launcher stopped; bridge stopped. Screenshot and logs retained outside checkout. Live UI acceptance remains unresolved despite passing production-router tests.
+
+### Remote-write blocker
+
+- GitHub authentication now identifies `hayward-davidlondono` without repository write permission. Push dry-run returned HTTP 403 (`Permission to auravibes-apps/auravibes.git denied`); no actual push followed. Draft PR update failed `UpdatePullRequest`; #1676 assignment failed `ReplaceActorsForAssignable`.
+- Remote integration remains last verified at `a5fbe5f7b`; local integration includes later tests, DCL repair and provisional typed core. Prepared updated PR body remains `.scratch/workspace-elements/integration-pr-body.md` and was not applied. Do not claim remote parity.
+- Asked the user asynchronously to restore host repository write access. Do not change credentials or bypass denial; local implementation and validation continue independently.
+- Typed implementer worktree archive is confirmed in app artifacts as `archived_worktree`; completed source remains merged. Golden-baseline archive was requested again; verify artifact state before claiming removal.
+- #1676 worker identified table metadata writes incorrectly incrementing schema revisions. Its rename/move implementation will preserve schemaRevision when columns/label schema do not change, with a regression proving independent record edits remain valid.
