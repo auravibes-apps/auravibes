@@ -476,6 +476,7 @@ void main() {
     () async {
       final rows = <WorkspaceResource>[];
       var canEditRecords = true;
+      var canManage = true;
       final store = CloudWorkspaceResourceStore.forTesting(
         watch: (_) => const Stream.empty(),
         patch: ({required requestId, required operations}) async {
@@ -486,12 +487,22 @@ void main() {
                   row.resourceKind == operation.resourceKind &&
                   row.resourceId == operation.resourceId,
             );
+            final payload = jsonDecode(
+              operation.data ?? (throw StateError('Missing data')),
+            ) as Map<String, dynamic>;
+            if (operation.resourceKind == .table) {
+              if (index < 0) {
+                payload['memberAccess'] = {'viewer': 'read'};
+              } else {
+                expect(payload['memberAccess'], {'viewer': 'read'});
+              }
+            }
             final now = DateTime.now().toUtc();
             final row = WorkspaceResource(
               workspaceId: 1,
               resourceKind: operation.resourceKind,
               resourceId: operation.resourceId,
-              data: operation.data ?? (throw StateError('Missing data')),
+              data: jsonEncode(payload),
               revision: index < 0 ? 1 : rows[index].revision + 1,
               createdAt: now,
               updatedAt: now,
@@ -530,7 +541,7 @@ void main() {
                     ? row.copyWith(
                         data: jsonEncode({
                           ...jsonDecode(row.data) as Map<String, dynamic>,
-                          'canManageTable': true,
+                          'canManageTable': canManage,
                           'canEditRecords': canEditRecords,
                         }),
                       )
@@ -585,6 +596,7 @@ void main() {
       expect(renamed.labelColumnId, table.labelColumnId);
       expect(renamed.columns.single.name, 'Summary');
       canEditRecords = false;
+      canManage = false;
       final readOnly = await tables.table(table.id);
       expect(
         () => tables.createRecord(
@@ -599,9 +611,24 @@ void main() {
           ),
         ),
       );
+      expect(
+        () => tables.updateMetadata(
+          table: readOnly,
+          name: 'Denied',
+          parentId: null,
+        ),
+        throwsA(
+          isA<WorkspaceTableException>().having(
+            (error) => error.denied,
+            'denied',
+            true,
+          ),
+        ),
+      );
       expect(await tables.records(table.id), hasLength(2));
       expect((await tables.list()).single.id, table.id);
       canEditRecords = true;
+      canManage = true;
       var typed = renamed;
       final typedValues = <String, Object?>{typed.labelColumnId: ''};
       for (final example

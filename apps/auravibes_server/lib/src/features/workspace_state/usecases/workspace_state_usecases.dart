@@ -9,6 +9,7 @@ import '../../mcp_servers/mcp_server_headers.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
+import '../domain/workspace_table_schema_identity.dart';
 import '../domain/workspace_table_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
@@ -1179,7 +1180,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         }
       } else {
         final metadataOnly =
-            WorkspaceTableValidation.sameSchema(
+            WorkspaceTableSchemaIdentity.matches(
               data,
               previous,
             ) &&

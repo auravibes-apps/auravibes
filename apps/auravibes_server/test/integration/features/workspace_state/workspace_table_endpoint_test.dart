@@ -134,7 +134,7 @@ void main() {
                   'id': 'label-one',
                   'name': 'Title',
                   'type': 'text',
-                  'options': [],
+                  'options': null,
                 },
               ],
             }),
@@ -595,25 +595,25 @@ void main() {
             ),
           ],
         );
-        await grant('read', 2);
+        await grant('read', 3);
         final readable = await memberRead();
         expect(readable.pages.first.resources.single.resourceId, 'table-one');
         final readableTable =
             jsonDecode(readable.pages.first.resources.single.data) as Map;
         expect(readableTable['canEditRecords'], false);
         expect(readableTable.containsKey('memberAccess'), false);
-        expect(readable.pages.last.resources, hasLength(2));
+        expect(readable.pages.last.resources, hasLength(3));
         await expectLater(
           endpoints.workspaceState.patch(outsider, memberWrite),
           throwsA(isA<CloudWorkspaceException>()),
         );
-        await grant('edit', 3);
+        await grant('edit', 4);
         final written = await endpoints.workspaceState.patch(
           outsider,
           memberWrite,
         );
         expect(written.resources.single.resourceId, 'member-record');
-        await grant(null, 4);
+        await grant(null, 5);
         final revoked = await memberRead();
         expect(revoked.pages.expand((page) => page.resources), isEmpty);
         expect(
@@ -630,7 +630,7 @@ void main() {
             ),
           ),
         );
-        await grant('edit', 5);
+        await grant('edit', 6);
         await endpoints.cloudWorkspace.removeMember(
           authenticated,
           RemoveWorkspaceMemberRequest(

@@ -8,6 +8,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -17,22 +18,9 @@ class const WorkspaceItemCreation({
   required final bool table,
   required final ValueChanged<String> onOpenTable,
   super.key,
-}) extends HookConsumerWidget {
+}) extends HookWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = WorkspaceItemFormState.use();
-    Future<void> submit() =>
-        state.run(context, () => _save(context, ref, state));
-
-    return Column(
-      children: [
-        _Input(this, state, submit),
-        _Button(this, state, submit),
-        if (state.error.value case final error?)
-          WorkspaceItemFailure(error: error),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => _Form(this, .use());
 
   Future<void> _save(
     BuildContext context,
@@ -77,6 +65,34 @@ class const WorkspaceItemCreation({
       ref.invalidate(workspaceFoldersProvider(workspaceId, parentId));
     }
   }
+}
+
+class const _Form(
+  final WorkspaceItemCreation creation,
+  final WorkspaceItemFormState state,
+) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    Future<void> submit() =>
+        state.run(context, () => creation._save(context, ref, state));
+
+    return Column(
+      children: [
+        _Input(creation, state, submit),
+        _Button(creation, state, submit),
+        _Failure(state),
+      ],
+    );
+  }
+}
+
+class const _Failure(final WorkspaceItemFormState state)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (state.error.value) {
+    final Object error => WorkspaceItemFailure(error: error),
+    null => const SizedBox.shrink(),
+  };
 }
 
 class const _Input(

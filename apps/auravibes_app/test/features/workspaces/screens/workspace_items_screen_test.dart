@@ -2,12 +2,14 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -55,6 +57,55 @@ void main() {
       );
     });
   }
+
+  testWidgets('denied metadata save preserves the editable draft', (
+    tester,
+  ) async {
+    var closed = false;
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceItemEditor(
+            workspaceId: 'one',
+            name: 'Original',
+            parentId: null,
+            parentName: null,
+            onBack: () => closed = true,
+            onSave: (name, parentId) async {
+              throw const WorkspaceTableException(denied: true);
+            },
+          ),
+          overrides: [
+            workspaceFoldersProvider.overrideWith((ref, arguments) async => []),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    final input = find.byWidgetPredicate(
+      (widget) =>
+          widget is AuraInput && widget.identifier == 'workspace_item_name',
+    );
+    await tester.enterText(input, 'Preserved draft');
+    final save = find.byWidgetPredicate(
+      (widget) =>
+          widget is AuraButton && widget.identifier == 'workspace_item_save',
+    );
+    await tester.tap(save);
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextLocale &&
+            widget.data == LocaleKeys.cloud_errors_permission_denied,
+      ),
+      findsOneWidget,
+    );
+    expect(tester.widget<AuraInput>(input).controller?.text, 'Preserved draft');
+    expect(tester.widget<AuraButton>(save).disabled, isFalse);
+    expect(closed, isFalse);
+  });
 
   testWidgets('table controls move and reopen the same records', (
     tester,
@@ -138,15 +189,25 @@ void main() {
     });
   });
 
-  testWidgets('read-only folder exposes a disabled edit control', (
-    tester,
-  ) async {
+  testWidgets('read-only items expose disabled edit controls', (tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
-            workspaceTablesProvider.overrideWith((ref, arguments) async => []),
+            workspaceTablesProvider.overrideWith(
+              (ref, arguments) async => [
+                const WorkspaceTable(
+                  id: 'read-only-table',
+                  name: 'Readable table',
+                  labelColumnId: 'label',
+                  columns: [.new(id: 'label', name: 'Title')],
+                  revision: 1,
+                  schemaRevision: 1,
+                  canManage: false,
+                ),
+              ],
+            ),
             workspaceFoldersProvider.overrideWith(
               (ref, arguments) async => [
                 const WorkspaceFolder(
@@ -171,6 +232,14 @@ void main() {
       ),
     );
     expect(button.disabled, isTrue);
+    final tableButton = tester.widget<AuraIconButton>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraIconButton &&
+            widget.identifier == 'workspace_item_edit_read-only-table',
+      ),
+    );
+    expect(tableButton.disabled, isTrue);
   });
 
   testWidgets('folder controls rename and move to another folder', (

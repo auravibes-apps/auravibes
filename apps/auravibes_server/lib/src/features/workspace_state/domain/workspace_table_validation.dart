@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 abstract final class WorkspaceTableValidation {
   static const _types = {
     'text',
@@ -11,18 +9,6 @@ abstract final class WorkspaceTableValidation {
     'email',
     'phone',
   };
-
-  static bool sameSchema(
-    Map<String, Object?> left,
-    Map<String, Object?> right,
-  ) =>
-      left['labelColumnId'] == right['labelColumnId'] &&
-      _columnSignature(left) == _columnSignature(right);
-
-  static String _columnSignature(Map<String, Object?> data) => jsonEncode([
-    for (final column in (data['columns'] as List).cast<Map>())
-      [column['id'], column['name'], column['type'], column['options'] ?? []],
-  ]);
 
   static void schema(Map<String, Object?> data) {
     final columns = data['columns'];
