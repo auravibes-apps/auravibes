@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../../generated/protocol.dart';
+import 'workspace_table_validation.dart';
 
 class const WorkspaceResourceReference(
   final WorkspaceResourceKind kind,
@@ -84,32 +85,14 @@ class WorkspaceResourceValidation {
       }
     }
     if (kind == WorkspaceResourceKind.table) {
-      final columns = data['columns'];
-      if (columns is! List ||
-          columns.length != 1 ||
-          data['schemaRevision'] is! int ||
-          (data['schemaRevision'] as int) < 1) {
-        throw const FormatException();
-      }
-      final column = columns.single;
-      if (column is! Map ||
-          column['id'] is! String ||
-          (column['id'] as String).isEmpty ||
-          column['name'] is! String ||
-          (column['name'] as String).trim().isEmpty ||
-          (column['name'] as String).length > 200 ||
-          column['type'] != 'text' ||
-          data['labelColumnId'] != column['id']) {
-        throw const FormatException();
-      }
+      WorkspaceTableValidation.schema(data);
     }
     if (kind == WorkspaceResourceKind.tableRecord) {
       final values = data['values'];
       if (data['tableId'] is! String ||
           (data['tableId'] as String).isEmpty ||
           data['schemaRevision'] is! int ||
-          values is! Map ||
-          values.values.any((value) => value is! String)) {
+          values is! Map) {
         throw const FormatException();
       }
     }

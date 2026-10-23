@@ -1,6 +1,6 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
@@ -17,7 +17,7 @@ class const CloudWorkspaceTableRepository(
     final client = await _store.client;
     final workspaceId = await _store.cloudWorkspaceId;
     if (client == null || workspaceId == null) {
-      throw const WorkspaceTableException();
+      throw const WorkspaceTableException(denied: true);
     }
     final roster = await CloudAppErrors.guardCall(
       .state,
@@ -118,9 +118,22 @@ class const CloudWorkspaceTableRepository(
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
     required String name,
+  }) => saveColumn(
+    table: table,
+    column: .new(id: table.labelColumnId, name: name),
+  );
+
+  @override
+  Future<WorkspaceTable> saveColumn({
+    required WorkspaceTable table,
+    required WorkspaceColumn column,
   }) async {
-    final current = (await _rows(.table))
-        .firstWhere((row) => row.resourceId == table.id);
+    final columns = [
+      for (final value in table.columns)
+        if (value.id == column.id) column else value,
+      if (!table.columns.any((value) => value.id == column.id)) column,
+    ];
+    final current = (await _rows(.table)).firstWhere((row) => row.resourceId == table.id);
     final grants = CloudResourceMapper.decode(current)['memberAccess'];
     await _store.update(
       kind: .table,
@@ -132,14 +145,7 @@ class const CloudWorkspaceTableRepository(
         'parentId': table.parentId,
         'labelColumnId': table.labelColumnId,
         'schemaRevision': table.schemaRevision + 1,
-        'columns': [
-          for (final column in table.columns)
-            {
-              'id': column.id,
-              'name': column.id == table.labelColumnId ? name : column.name,
-              'type': 'text',
-            },
-        ],
+        'columns': columns.map((column) => column.toJson()).toList(),
       },
     );
 
@@ -171,7 +177,7 @@ class const CloudWorkspaceTableRepository(
   @override
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
-    required Map<String, String> values,
+    required Map<String, Object?> values,
   }) async {
     final id = const UuidV7().generate();
     await _store.create(
@@ -191,7 +197,7 @@ class const CloudWorkspaceTableRepository(
   Future<WorkspaceRecord> updateRecord({
     required WorkspaceTable table,
     required WorkspaceRecord record,
-    required Map<String, String> values,
+    required Map<String, Object?> values,
   }) async {
     await _store.update(
       kind: .tableRecord,
@@ -239,10 +245,7 @@ class const CloudWorkspaceTableRepository(
       columns: [
         for (final column
             in (data['columns'] as List<dynamic>).cast<Map<String, dynamic>>())
-          WorkspaceColumn(
-            id: column['id'] as String,
-            name: column['name'] as String,
-          ),
+          WorkspaceColumn.fromJson(column),
       ],
       revision: row.revision,
       schemaRevision: data['schemaRevision'] as int,
@@ -259,7 +262,7 @@ class const CloudWorkspaceTableRepository(
     return WorkspaceRecord(
       id: row.resourceId,
       tableId: data['tableId'] as String,
-      values: (data['values'] as Map<String, dynamic>).cast<String, String>(),
+      values: (data['values'] as Map<String, dynamic>).cast<String, Object?>(),
       revision: row.revision,
     );
   }

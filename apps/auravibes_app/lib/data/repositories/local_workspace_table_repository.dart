@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/v7.dart';
@@ -93,16 +94,30 @@ class const LocalWorkspaceTableRepository(
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
     required String name,
+  }) => saveColumn(
+    table: table,
+    column: .new(id: table.labelColumnId, name: name),
+  );
+
+  @override
+  Future<WorkspaceTable> saveColumn({
+    required WorkspaceTable table,
+    required WorkspaceColumn column,
   }) => _database.transaction(() async {
     final current = await _tableRow(table.id);
     if (current.revision != table.revision ||
         current.schemaRevision != table.schemaRevision) {
       throw const WorkspaceTableException(conflict: true);
     }
-    final columns = (jsonDecode(current.columnsJson) as List<dynamic>)
-        .cast<Map<String, dynamic>>();
-    for (final column in columns) {
-      if (column['id'] == current.labelColumnId) column['name'] = name;
+    final existing = _table(current);
+    final columns = [
+      for (final value in existing.columns)
+        if (value.id == column.id) column else value,
+      if (!existing.columns.any((value) => value.id == column.id)) column,
+    ];
+    WorkspaceColumnValidation.columns(columns, existing.labelColumnId);
+    for (final record in await records(table.id)) {
+      WorkspaceColumnValidation.values(columns, record.values);
     }
     final _ =
         await (_database.update(_database.workspaceTables)..where(
@@ -112,14 +127,17 @@ class const LocalWorkspaceTableRepository(
             ))
             .write(
               WorkspaceTablesCompanion(
-                columnsJson: .new(jsonEncode(columns)),
+                columnsJson: .new(
+                  jsonEncode(columns.map((column) => column.toJson()).toList()),
+                ),
                 revision: .new(current.revision + 1),
                 schemaRevision: .new(current.schemaRevision + 1),
               ),
             );
 
-    return await this.table(current.id);
+    return await this.table(table.id);
   });
+
   @override
   Future<List<WorkspaceRecord>> records(String tableId) async {
     final _ = await _tableRow(tableId);
@@ -162,9 +180,9 @@ class const LocalWorkspaceTableRepository(
   @override
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
-    required Map<String, String> values,
+    required Map<String, Object?> values,
   }) => _database.transaction(() async {
-    await _checkSchema(table);
+    await _checkSchema(table, values);
     final id = const UuidV7().generate();
     final _ = await _database
         .into(_database.workspaceTableRecords)
@@ -183,9 +201,9 @@ class const LocalWorkspaceTableRepository(
   Future<WorkspaceRecord> updateRecord({
     required WorkspaceTable table,
     required WorkspaceRecord record,
-    required Map<String, String> values,
+    required Map<String, Object?> values,
   }) => _database.transaction(() async {
-    await _checkSchema(table);
+    await _checkSchema(table, values);
     final current = await this.record(table.id, record.id);
     if (current.revision != record.revision) {
       throw const WorkspaceTableException(conflict: true);
@@ -222,8 +240,12 @@ class const LocalWorkspaceTableRepository(
     return row;
   }
 
-  Future<void> _checkSchema(WorkspaceTable table) async {
+  Future<void> _checkSchema(
+    WorkspaceTable table,
+    Map<String, Object?> values,
+  ) async {
     final current = await _tableRow(table.id);
+    WorkspaceColumnValidation.values(_table(current).columns, values);
     if (current.schemaRevision != table.schemaRevision) {
       throw const WorkspaceTableException(conflict: true);
     }
@@ -237,10 +259,7 @@ class const LocalWorkspaceTableRepository(
       for (final column in (jsonDecode(
         row.columnsJson,
       ) as List<dynamic>).cast<Map<String, dynamic>>())
-        WorkspaceColumn(
-          id: column['id'] as String,
-          name: column['name'] as String,
-        ),
+        WorkspaceColumn.fromJson(column),
     ],
     revision: row.revision,
     schemaRevision: row.schemaRevision,
@@ -250,7 +269,7 @@ class const LocalWorkspaceTableRepository(
     id: row.id,
     tableId: row.tableId,
     values: (jsonDecode(row.valuesJson) as Map<String, dynamic>)
-        .cast<String, String>(),
+        .cast<String, Object?>(),
     revision: row.revision,
   );
 }

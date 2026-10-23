@@ -229,6 +229,152 @@ void main() {
           ),
           throwsA(isA<CloudWorkspaceException>()),
         );
+        final typedColumns = <Map<String, Object?>>[
+          {'id': 'typed-label', 'name': 'Title', 'type': 'text'},
+          {'id': 'count', 'name': 'Count', 'type': 'number'},
+          {'id': 'done', 'name': 'Done', 'type': 'checkbox'},
+          {
+            'id': 'status',
+            'name': 'Status',
+            'type': 'singleSelect',
+            'options': ['Open', 'Done'],
+          },
+          {
+            'id': 'tags',
+            'name': 'Tags',
+            'type': 'multiSelect',
+            'options': ['A', 'B'],
+          },
+          {'id': 'website', 'name': 'Website', 'type': 'url'},
+          {'id': 'email', 'name': 'Email', 'type': 'email'},
+          {'id': 'phone', 'name': 'Phone', 'type': 'phone'},
+        ];
+        final typedSchema = {
+          'name': 'Typed',
+          'labelColumnId': 'typed-label',
+          'schemaRevision': 1,
+          'columns': typedColumns,
+        };
+        await patch([
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .table,
+            resourceId: 'typed-table',
+            data: jsonEncode(typedSchema),
+            fieldMask: const [],
+          ),
+        ]);
+        final typedValues = <String, Object?>{
+          'typed-label': '',
+          'count': 0,
+          'done': false,
+          'status': 'Open',
+          'tags': ['A', 'B'],
+          'website': 'https://example.com',
+          'email': 'david@example.com',
+          'phone': '+1 (555) 123-4567 ext. 12',
+        };
+        await patch([
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .tableRecord,
+            resourceId: 'typed-record',
+            data: jsonEncode({
+              'tableId': 'typed-table',
+              'schemaRevision': 1,
+              'values': typedValues,
+            }),
+            fieldMask: const [],
+          ),
+        ]);
+        for (final invalid in <Map<String, Object?>>[
+          {'count': '0'},
+          {'done': 'false'},
+          {
+            'status': ['Open'],
+          },
+          {'tags': 'A'},
+          {
+            'tags': ['A', 'A'],
+          },
+          {'status': 'Unknown'},
+          {'website': 'javascript:alert(1)'},
+          {'email': 'missing-at'},
+          {'phone': 'call me'},
+          {'count': null},
+          {'unknown': 'field'},
+        ]) {
+          await expectLater(
+            patch([
+              WorkspacePatchOperation(
+                operation: .update,
+                resourceKind: .tableRecord,
+                resourceId: 'typed-record',
+                expectedRevision: 1,
+                data: jsonEncode({
+                  'tableId': 'typed-table',
+                  'schemaRevision': 1,
+                  'values': {...typedValues, ...invalid},
+                }),
+                fieldMask: const [],
+              ),
+            ]),
+            throwsA(
+              isA<CloudWorkspaceException>().having(
+                (error) => error.code,
+                'code',
+                CloudWorkspaceErrorCode.validationFailed,
+              ),
+            ),
+          );
+        }
+        await expectLater(
+          patch([
+            WorkspacePatchOperation(
+              operation: .update,
+              resourceKind: .table,
+              resourceId: 'typed-table',
+              expectedRevision: 1,
+              data: jsonEncode({
+                ...typedSchema,
+                'schemaRevision': 2,
+                'columns': [
+                  for (final column in typedColumns)
+                    if (column['id'] == 'status')
+                      {
+                        ...column,
+                        'options': ['Done'],
+                      }
+                    else
+                      column,
+                ],
+              }),
+              fieldMask: const [],
+            ),
+          ]),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+        final typedRead = await endpoints.workspaceState.read(
+          authenticated,
+          ReadWorkspaceStateRequest(
+            workspaceId: workspace.id!,
+            pages: [
+              WorkspaceResourcePageRequest(
+                resourceKind: .tableRecord,
+                limit: 100,
+              ),
+            ],
+            eventLimit: 0,
+          ),
+        );
+        final retained = typedRead.pages.single.resources.firstWhere(
+          (row) => row.resourceId == 'typed-record',
+        );
+        expect(
+          (jsonDecode(retained.data) as Map<String, dynamic>)['values'],
+          typedValues,
+        );
+        expect(retained.revision, 1);
         final outsiderId = const Uuid().v4().toString();
         await AuthUser.db.insertRow(
           session,

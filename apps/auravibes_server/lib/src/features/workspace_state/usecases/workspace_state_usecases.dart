@@ -9,6 +9,7 @@ import '../../mcp_servers/mcp_server_headers.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
+import '../domain/workspace_table_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
 import '../workspace_table_access.dart';
@@ -1181,6 +1182,29 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     Transaction transaction,
   ) async {
     if (operation.resourceKind == WorkspaceResourceKind.table) {
+      String? cursor;
+      while (true) {
+        final records = await _repository.readPage(
+          session,
+          workspaceId: workspaceId,
+          kind: WorkspaceResourceKind.tableRecord,
+          limit: _maxPageSize,
+          afterResourceId: cursor,
+          transaction: transaction,
+        );
+        for (final record in records) {
+          final current = jsonDecode(record.data) as Map<String, dynamic>;
+          if (current['tableId'] == operation.resourceId) {
+            WorkspaceTableValidation.values(
+              data,
+              (current['values'] as Map<String, dynamic>)
+                  .cast<String, Object?>(),
+            );
+          }
+        }
+        if (records.length < _maxPageSize) break;
+        cursor = records.last.resourceId;
+      }
       final previous = existing == null
           ? null
           : jsonDecode(existing.data) as Map<String, dynamic>;
@@ -1217,12 +1241,10 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     if (data['schemaRevision'] != schema['schemaRevision']) {
       _staleRevision();
     }
-    final columnIds = (schema['columns'] as List<dynamic>)
-        .map((column) => (column as Map<String, dynamic>)['id'])
-        .toSet();
-    if ((data['values'] as Map).keys.any((id) => !columnIds.contains(id))) {
-      throw const FormatException();
-    }
+    WorkspaceTableValidation.values(
+      schema,
+      (data['values'] as Map).cast<String, Object?>(),
+    );
     if (existing != null &&
         (jsonDecode(existing.data) as Map<String, dynamic>)['tableId'] !=
             data['tableId']) {

@@ -1958,6 +1958,22 @@
     "create_record": "Add record",
     "no_records": "No records yet. Add your first record.",
     "save_record": "Save record",
-    "invalid_table": "Choose an available table and enter valid column names and text values."
+    "invalid_table": "Choose an available table and enter valid column names and values.",
+    "create_column": "Add column",
+    "column_name": "Column name",
+    "column_type": "Column type",
+    "column_options": "Choices",
+    "options_hint": "Enter one choice per line.",
+    "save_typed_column": "Save column",
+    "has_value": "Has a value",
+    "checked": "Checked",
+    "type_text": "Text",
+    "type_number": "Number",
+    "type_checkbox": "Checkbox",
+    "type_single_select": "Single selection",
+    "type_multi_select": "Multiple selections",
+    "type_url": "URL",
+    "type_email": "Email",
+    "type_phone": "Phone"
   }
 }
