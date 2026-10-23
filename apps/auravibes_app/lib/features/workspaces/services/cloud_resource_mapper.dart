@@ -11,6 +11,8 @@ final _logger = Logger('cloud_resource_mapper');
 
 const _requiredResourceFields = <WorkspaceResourceKind, Map<String, Type>>{
   .folder: {'name': String},
+  .table: {'name': String, 'labelColumnId': String},
+  .tableRecord: {'tableId': String, 'values': Map},
   .agent: {'name': String, 'content': String, 'visibility': String},
   .agentAssociation: {'agentId': String},
   .serviceConnection: {'name': String, 'serviceId': String},

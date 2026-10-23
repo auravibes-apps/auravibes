@@ -2,6 +2,8 @@ enum: WorkspaceResourceKind
 serialized: byName
 values:
   - folder
+  - table
+  - tableRecord
   - conversation
   - message
   - attachment

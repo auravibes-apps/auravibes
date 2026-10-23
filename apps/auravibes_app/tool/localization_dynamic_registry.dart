@@ -1581,6 +1581,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
     family: 'cloud-application-error-keys',
     sites: [
       DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_item_failure.dart',
+        method: 'TextLocale',
+        keyExpression: 'CloudAppErrors.localizationKey(error)',
+      ),
+      DynamicTranslationSite(
         file: 'features/skills/screens/skills_screen.dart',
         method: 'TextLocale',
         keyExpression: 'CloudAppErrors.localizationKey(error)',

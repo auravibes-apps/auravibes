@@ -1944,6 +1944,16 @@
     "folder_name": "Nombre de la carpeta",
     "create_folder": "Crear carpeta",
     "empty": "Aún no hay carpetas. Crea una carpeta para comenzar.",
-    "invalid_folder": "Introduce un nombre de carpeta válido y elige una carpeta disponible."
+    "invalid_folder": "Introduce un nombre de carpeta válido y elige una carpeta disponible.",
+    "table": "Tabla",
+    "table_name": "Nombre de la tabla",
+    "create_table": "Crear tabla",
+    "default_label": "Nombre",
+    "label_column": "Nombre de la columna de etiqueta",
+    "save_column": "Guardar nombre de columna",
+    "create_record": "Añadir registro",
+    "no_records": "Aún no hay registros. Añade el primero.",
+    "save_record": "Guardar registro",
+    "invalid_table": "Elige una tabla disponible e introduce nombres de columna y valores de texto válidos."
   }
 }

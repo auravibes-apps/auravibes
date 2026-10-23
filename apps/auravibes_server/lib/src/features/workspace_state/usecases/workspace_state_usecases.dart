@@ -994,6 +994,16 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     String role,
     List<WorkspacePatchOperation> operations,
   ) {
+    if (role != WorkspaceRoles.owner &&
+        operations.any(
+          (operation) =>
+              operation.resourceKind == WorkspaceResourceKind.table ||
+              operation.resourceKind == WorkspaceResourceKind.tableRecord,
+        )) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.permissionDenied,
+      );
+    }
     const memberKinds = {
       WorkspaceResourceKind.conversation,
       WorkspaceResourceKind.conversationToolSelection,
@@ -1137,6 +1147,59 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     fieldMask: const [],
   );
 
+  Future<void> _validateTableOperation(
+    Session session,
+    WorkspacePatchOperation operation,
+    Map<String, Object?> data,
+    WorkspaceResource? existing,
+    int workspaceId,
+    Transaction transaction,
+  ) async {
+    if (operation.resourceKind == WorkspaceResourceKind.table) {
+      final previous = existing == null
+          ? null
+          : jsonDecode(existing.data) as Map<String, dynamic>;
+      if (previous == null) {
+        if (data['schemaRevision'] != 1) {
+          throw const FormatException();
+        }
+      } else {
+        if (data['labelColumnId'] != previous['labelColumnId'] ||
+            data['schemaRevision'] != (previous['schemaRevision'] as int) + 1) {
+          _staleRevision();
+        }
+      }
+    }
+    if (operation.resourceKind != WorkspaceResourceKind.tableRecord) {
+      return;
+    }
+    final table = await _repository.findResource(
+      session,
+      workspaceId: workspaceId,
+      kind: WorkspaceResourceKind.table,
+      resourceId: data['tableId'] as String,
+      transaction: transaction,
+    );
+    if (table == null || table.deletedAt != null) {
+      throw const FormatException();
+    }
+    final schema = jsonDecode(table.data) as Map<String, dynamic>;
+    if (data['schemaRevision'] != schema['schemaRevision']) {
+      _staleRevision();
+    }
+    final columnIds = (schema['columns'] as List<dynamic>)
+        .map((column) => (column as Map<String, dynamic>)['id'])
+        .toSet();
+    if ((data['values'] as Map).keys.any((id) => !columnIds.contains(id))) {
+      throw const FormatException();
+    }
+    if (existing != null &&
+        (jsonDecode(existing.data) as Map<String, dynamic>)['tableId'] !=
+            data['tableId']) {
+      throw const FormatException();
+    }
+  }
+
   Future<void> _validateFolderParent(
     Session session,
     int workspaceId,
@@ -1214,6 +1277,14 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             resourceId: reference.id,
             transaction: transaction,
           ),
+        );
+        await _validateTableOperation(
+          session,
+          operation,
+          decoded,
+          existing,
+          workspaceId,
+          transaction,
         );
         if (operation.resourceKind == WorkspaceResourceKind.folder) {
           await _validateFolderParent(
