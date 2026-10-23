@@ -1239,13 +1239,39 @@ void main() {
     );
 
     test(
-      'shared Connector executor returns recoverable error without Connection',
+      'admin shared Connector execution honors target group denial',
       () async {
         final fixture = await prepare();
         final assistant = fixture.messages.singleWhere(
           (message) => message.id == fixture.turn.assistantMessageId,
         );
         final now = DateTime.now().toUtc();
+        final membership = await WorkspaceMember.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.userId.equals(fixture.turn.initiatorUserId),
+        );
+        await WorkspaceMember.db.updateRow(
+          fixture.database,
+          membership!.copyWith(role: 'admin'),
+        );
+        final target = await WorkspaceResource.db.insertRow(
+          fixture.database,
+          WorkspaceResource(
+            workspaceId: fixture.workspaceId,
+            resourceKind: .tool,
+            resourceId: 'connector/brave/web_search',
+            data: jsonEncode({
+              'toolId': 'connector/brave/web_search',
+              'isEnabled': true,
+              'permissionMode': 'alwaysAllow',
+            }),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
         await WorkspaceResource.db.insertRow(
           fixture.database,
           WorkspaceResource(
@@ -1287,6 +1313,48 @@ void main() {
         expect(call?.status, 'executionError');
         expect(call?.resultJson, contains('connection_required'));
         expect(call?.resultJson, contains('"recoverable":true'));
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          target.copyWith(
+            data: jsonEncode({
+              'toolId': 'connector/brave/web_search',
+              'toolGroupId': 'connector-group',
+              'isEnabled': true,
+              'permissionMode': 'alwaysAllow',
+            }),
+          ),
+        );
+        await WorkspaceResource.db.insertRow(
+          fixture.database,
+          WorkspaceResource(
+            workspaceId: fixture.workspaceId,
+            resourceKind: .toolGroup,
+            resourceId: 'connector-group',
+            data: jsonEncode({'isEnabled': false}),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final _ = await runtime.handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: const ServerToolRequest(
+            id: 'execute-with-disabled-group',
+            name: executeConnectorToolName,
+            arguments: {
+              'toolId': 'connector/brave/web_search',
+              'args': {'query': 'research'},
+            },
+          ),
+        );
+        final denied = await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.stableId.equals('execute-with-disabled-group'),
+        );
+        expect(denied?.resultJson, contains('tool_access_denied'));
       },
     );
 

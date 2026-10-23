@@ -62,7 +62,6 @@ typedef _UpdatePayloadBuildData = ({
   _UpdateValidationData validation,
   List<WorkspaceModelSelectionToCreate>? models,
   String? encryptedKey,
-  String? existingKeySuffix,
 });
 
 String? _providerUrlForValidation(
@@ -644,16 +643,12 @@ extension ModelConnectionUpdateValidation on ModelConnectionRepository {
     ModelProviderVerification? verification,
   ) async {
     final models = await _modelsForUpdate(existing, validation, verification);
-    final encryptedKey = await _updatedEncryptedKey(
-      validation.key,
-      existing.id,
-    );
+    final encryptedKey = await _updatedEncryptedKey(validation.key);
 
     return _updatePayloadResult((
       validation: validation,
       models: models,
       encryptedKey: encryptedKey,
-      existingKeySuffix: existing.keySuffix,
     ));
   }
 
@@ -665,7 +660,7 @@ extension ModelConnectionUpdateValidation on ModelConnectionRepository {
     return (
       encryptedKey: data.encryptedKey,
       hasUrlUpdate: validation.hasUrlUpdate,
-      keySuffix: _updatedKeySuffix(validation.key, data.existingKeySuffix),
+      keySuffix: _updatedKeySuffix(validation.key),
       models: data.models,
       nextUrl: validation.nextUrl,
     );
@@ -787,8 +782,8 @@ extension ModelConnectionUpdateInputs on ModelConnectionRepository {
 }
 
 extension ModelConnectionUpdateSupport on ModelConnectionRepository {
-  String? _updatedKeySuffix(String? key, String? existingKeySuffix) =>
-      key == null ? existingKeySuffix : _keySuffix(key);
+  String? _updatedKeySuffix(String? key) =>
+      key == null ? null : _keySuffix(key);
 
   Future<({ApiModelProvidersTable provider, String type})>
   _modelProviderForUpdate(String serviceId) async {
@@ -828,8 +823,8 @@ extension ModelConnectionUpdateSupport on ModelConnectionRepository {
     throw const ModelConnectionException('Invalid model API key payload');
   }
 
-  Future<String?> _updatedEncryptedKey(String? key, String connectionId) {
-    if (key == null) return _currentStoredCredential(connectionId);
+  Future<String?> _updatedEncryptedKey(String? key) {
+    if (key == null) return Future.value();
 
     return _encryptionService.storeCredential(
       ServiceConnectionAuthCodec.encodeSecret(
@@ -1171,15 +1166,5 @@ extension ModelConnectionCredentialPersistence on ModelConnectionRepository {
   ) async {
     if (next == null || previous == next) return;
     await _encryptionService.deleteCredential(applied ? previous : next);
-  }
-}
-
-extension ModelConnectionCredentialRead on ModelConnectionRepository {
-  Future<String?> _currentStoredCredential(String connectionId) async {
-    final current = await _database.modelConnectionsDao.getModelConnectionById(
-      connectionId,
-    );
-
-    return current?.encryptedAuthValue;
   }
 }

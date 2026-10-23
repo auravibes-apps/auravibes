@@ -103,6 +103,41 @@ void main() {
   });
 
   test(
+    'URL update preserves a key replaced before its metadata write',
+    () async {
+      final gate = _BeforeUrlWrite();
+      final fixture = await _fixture(interceptor: gate);
+      addTearDown(fixture.database.close);
+      await fixture.verify();
+      final previous = (await fixture.row()).encryptedAuthValue ?? '';
+      final repository = ModelConnectionRepository(
+        database: fixture.database,
+        encryptionService: fixture.encryption,
+        modelProviderServices: fixture.models,
+      );
+      gate.beforeWrite = () async {
+        final _ = await repository.updateModelConnection(
+          fixture.id,
+          const ModelConnectionToUpdate(key: 'replacement-key'),
+        );
+        await expectLater(
+          fixture.encryption.readCredential(previous),
+          throwsA(isA<FormatException>()),
+        );
+      };
+      final _ = await repository.updateModelConnection(
+        fixture.id,
+        const ModelConnectionToUpdate(url: 'https://interleaved.example.test'),
+      );
+      expect(gate.beforeWrite, isNull);
+      expect((await fixture.row()).url, 'https://interleaved.example.test');
+      expect((await fixture.row()).keySuffix, 'nt-key');
+      await fixture.verify();
+      expect(fixture.models.lastKey, 'replacement-key');
+    },
+  );
+
+  test(
     'model migration CAS preserves a concurrent replacement and cleans orphan',
     () async {
       final fixture = await _fixture();
@@ -135,9 +170,15 @@ void main() {
   );
 }
 
-Future<_ModelCredentialFixture> _fixture({bool rawPayload = false}) async {
+Future<_ModelCredentialFixture> _fixture({
+  bool rawPayload = false,
+  QueryInterceptor? interceptor,
+}) async {
+  final connection = DatabaseConnection(NativeDatabase.memory());
   final database = AppDatabase(
-    connection: DatabaseConnection(NativeDatabase.memory()),
+    connection: interceptor == null
+        ? connection
+        : connection.interceptWith(interceptor),
   );
   final storage = _CredentialStorage();
   final encryption = EncryptionService(
@@ -175,11 +216,33 @@ Future<_ModelCredentialFixture> _fixture({bool rawPayload = false}) async {
               rawPayload ? 'legacy-key' : _payload('legacy-key'),
             ),
           ),
+          keySuffix: const .new('cy-key'),
           workspaceId: 'workspace',
         ),
       );
 
   return _ModelCredentialFixture(database, storage, encryption, row.id);
+}
+
+class _BeforeUrlWrite extends QueryInterceptor {
+  Future<void> Function()? beforeWrite;
+
+  @override
+  Future<List<Map<String, Object?>>> runSelect(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) async {
+    final callback = beforeWrite;
+    if (callback != null &&
+        statement.startsWith('UPDATE') &&
+        args.contains('https://interleaved.example.test')) {
+      beforeWrite = null;
+      await callback();
+    }
+
+    return await executor.runSelect(statement, args);
+  }
 }
 
 String _payload(String key) => ServiceConnectionAuthCodec.encodeSecret(
