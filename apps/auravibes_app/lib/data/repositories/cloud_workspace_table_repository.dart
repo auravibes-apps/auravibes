@@ -23,7 +23,7 @@ class const CloudWorkspaceTableRepository(
       .table,
     )).where((row) => row.resourceId == id).firstOrNull;
     if (row == null) {
-      throw const WorkspaceTableException();
+      throw const WorkspaceTableException(denied: true);
     }
 
     return _table(row);
@@ -69,11 +69,15 @@ class const CloudWorkspaceTableRepository(
     required WorkspaceColumn column,
   }) async {
     final columns = table.withColumn(column);
+    final current = await _currentData(_store, table.id);
     await _store.update(
       kind: .table,
       id: table.id,
       revision: table.revision,
-      data: _schemaUpdate(table, columns),
+      data: {
+        ..._schemaUpdate(table, columns),
+        'memberAccess': current['memberAccess'],
+      },
     );
 
     return await this.table(table.id);
@@ -95,7 +99,7 @@ class const CloudWorkspaceTableRepository(
         .where((record) => record.id == id)
         .firstOrNull;
     if (row == null) {
-      throw const WorkspaceTableException();
+      throw const WorkspaceTableException(denied: true);
     }
 
     return row;
@@ -156,19 +160,23 @@ Future<List<WorkspaceResource>> _rows(
   return rows;
 }
 
-WorkspaceTable _table(WorkspaceResource row) {
-  final data = CloudResourceMapper.decode(row);
-
-  return WorkspaceTable(
-    id: row.resourceId,
-    name: data['name'] as String,
-    labelColumnId: data['labelColumnId'] as String,
-    columns: _decodeColumns(data),
-    revision: row.revision,
-    schemaRevision: data['schemaRevision'] as int,
-    parentId: data['parentId'] as String?,
-  );
-}
+WorkspaceTable _table(WorkspaceResource row) =>
+    _tableFromData(row, CloudResourceMapper.decode(row));
+WorkspaceTable _tableFromData(
+  WorkspaceResource row,
+  Map<String, dynamic> data,
+) => WorkspaceTable(
+  id: row.resourceId,
+  name: data['name'] as String,
+  labelColumnId: data['labelColumnId'] as String,
+  columns: _decodeColumns(data),
+  revision: row.revision,
+  schemaRevision: data['schemaRevision'] as int,
+  parentId: data['parentId'] as String?,
+  canManage: data['canManageTable'] == true,
+  canEditRecords: data['canEditRecords'] == true,
+  supportsSharing: true,
+);
 
 WorkspaceRecord _record(WorkspaceResource row) {
   final data = CloudResourceMapper.decode(row);
@@ -211,3 +219,14 @@ List<WorkspaceColumn> _columns(List<dynamic> values) =>
 
 List<WorkspaceColumn> _decodeColumns(Map<String, Object?> data) =>
     _columns(data['columns']! as List<dynamic>);
+
+Future<Map<String, dynamic>> _currentData(
+  CloudWorkspaceResourceStore store,
+  String id,
+) async {
+  final rows = await _rows(store, .table);
+
+  return CloudResourceMapper.decode(
+    rows.firstWhere((row) => row.resourceId == id),
+  );
+}

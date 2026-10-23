@@ -331,3 +331,87 @@ final class WorkspaceTableRecordsFamily extends $Family
   @override
   String toString() => r'workspaceTableRecordsProvider';
 }
+
+@ProviderFor(workspaceTableAccessUsecase)
+final workspaceTableAccessUsecaseProvider =
+    WorkspaceTableAccessUsecaseFamily._();
+
+final class WorkspaceTableAccessUsecaseProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<ManageWorkspaceTableAccessUsecase>,
+          ManageWorkspaceTableAccessUsecase,
+          FutureOr<ManageWorkspaceTableAccessUsecase>
+        >
+    with
+        $FutureModifier<ManageWorkspaceTableAccessUsecase>,
+        $FutureProvider<ManageWorkspaceTableAccessUsecase> {
+  WorkspaceTableAccessUsecaseProvider._({
+    required WorkspaceTableAccessUsecaseFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'workspaceTableAccessUsecaseProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$workspaceTableAccessUsecaseHash();
+
+  @override
+  String toString() {
+    return r'workspaceTableAccessUsecaseProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<ManageWorkspaceTableAccessUsecase> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<ManageWorkspaceTableAccessUsecase> create(Ref ref) {
+    final argument = this.argument as String;
+    return workspaceTableAccessUsecase(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkspaceTableAccessUsecaseProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$workspaceTableAccessUsecaseHash() =>
+    r'098892fd721bddb9b45800c3618fa3a9531f8eed';
+
+final class WorkspaceTableAccessUsecaseFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<ManageWorkspaceTableAccessUsecase>,
+          String
+        > {
+  WorkspaceTableAccessUsecaseFamily._()
+    : super(
+        retry: null,
+        name: r'workspaceTableAccessUsecaseProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkspaceTableAccessUsecaseProvider call(String workspaceId) =>
+      WorkspaceTableAccessUsecaseProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'workspaceTableAccessUsecaseProvider';
+}

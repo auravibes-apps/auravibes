@@ -1946,6 +1946,10 @@
     }
   },
   "workspace_items": {
+    "table_access": "Acceso a la tabla",
+    "access_read": "Solo lectura",
+    "access_edit": "Leer y editar",
+    "access_none": "Sin acceso",
     "title": "Elementos del espacio",
     "folder_name": "Nombre de la carpeta",
     "create_folder": "Crear carpeta",

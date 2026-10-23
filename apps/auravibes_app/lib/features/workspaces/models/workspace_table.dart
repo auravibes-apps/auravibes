@@ -8,12 +8,30 @@ class const WorkspaceTable({
   required final int revision,
   required final int schemaRevision,
   final String? parentId,
+  final bool canManage = true,
+  final bool canEditRecords = true,
+  final bool supportsSharing = false,
 }) {
   List<WorkspaceColumn> withColumn(WorkspaceColumn column) => [
     for (final existing in columns)
       if (existing.id == column.id) column else existing,
     if (!columns.any((existing) => existing.id == column.id)) column,
   ];
+}
+
+class const WorkspaceTableMember({
+  required final String userId,
+  required final String label,
+  final String? access,
+});
+
+abstract interface class WorkspaceTableAccessRepository {
+  Future<List<WorkspaceTableMember>> members(String tableId);
+  Future<void> setMemberAccess({
+    required WorkspaceTable table,
+    required String userId,
+    required String? access,
+  });
 }
 
 class const WorkspaceColumn({
@@ -55,11 +73,17 @@ class const WorkspaceRecord({
   required final int revision,
 });
 
-class const WorkspaceTableException({final bool conflict = false})
-    implements Exception {
-  String get localizationKey => conflict
-      ? LocaleKeys.cloud_errors_conflict
-      : LocaleKeys.workspace_items_invalid_table;
+class const WorkspaceTableException({
+  final bool conflict = false,
+  final bool denied = false,
+}) implements Exception {
+  String get localizationKey {
+    if (denied) return LocaleKeys.cloud_errors_permission_denied;
+
+    return conflict
+        ? LocaleKeys.cloud_errors_conflict
+        : LocaleKeys.workspace_items_invalid_table;
+  }
 
   @override
   String toString() => localizationKey;

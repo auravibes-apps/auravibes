@@ -1,18 +1,14 @@
-import 'dart:async';
-
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_table_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
-
-final _logger = Logger('workspace_column_editor');
 
 class const WorkspaceColumnEditor({
   required final String workspaceId,
@@ -23,101 +19,173 @@ class const WorkspaceColumnEditor({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final name = useTextEditingController(text: column?.name ?? '');
-    final type = useState(column?.type ?? WorkspaceColumnType.text);
-    final options = useTextEditingController(
-      text: column?.options.join('\n') ?? '',
-    );
-    final pending = useState(false);
-    final error = useState<Object?>(null);
-    final isLabel = column?.id == table.labelColumnId;
-    Future<void> save() async {
-      if (pending.value) return;
-      pending.value = true;
-      error.value = null;
-      try {
-        final usecase = await ref.read(
-          workspaceTableUsecaseProvider(workspaceId).future,
-        );
-        final _ = await usecase.saveColumn(
-          table: table,
-          column: .new(
-            id: column?.id ?? '',
-            name: name.text,
-            type: type.value,
-            options: type.value == .singleSelect || type.value == .multiSelect
-                ? options.text
-                      .split('\n')
-                      .where((option) => option.trim().isNotEmpty)
-                      .toList()
-                : const [],
-          ),
-        );
-        if (context.mounted) onBack();
-      } on Object catch (failure, stackTrace) {
-        _logger.warning(
-          'Column save failed: ${failure.runtimeType}',
-          null,
-          stackTrace,
-        );
-        if (context.mounted) error.value = failure;
-      } finally {
-        if (context.mounted) pending.value = false;
-      }
-    }
+    final draft = _ColumnActions.use(context, column);
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        ListTile(
-          leading: const Icon(Icons.arrow_back),
-          title: Text(table.name),
-          onTap: pending.value ? null : onBack,
-        ),
-        AuraInput(
-          controller: name,
-          label: const TextLocale(LocaleKeys.workspace_items_column_name),
-          enabled: !pending.value,
-          identifier: 'workspace_column_name',
-        ),
-        AuraDropdownSelector<WorkspaceColumnType>(
-          options: [
-            for (final value in WorkspaceColumnType.values)
-              if (!isLabel || value == .text)
-                AuraDropdownOption(
-                  value: value,
-                  child: WorkspaceColumnTypeLabel(type: value),
-                ),
-          ],
-          value: type.value,
-          onChanged: pending.value
-              ? null
-              : (value) {
-                  if (value != null) type.value = value;
-                },
-          label: const TextLocale(LocaleKeys.workspace_items_column_type),
-          isEnabled: !pending.value,
-          identifier: 'workspace_column_type',
-        ),
-        if (type.value == .singleSelect || type.value == .multiSelect)
-          AuraInput(
-            controller: options,
-            label: const TextLocale(LocaleKeys.workspace_items_column_options),
-            hint: const TextLocale(LocaleKeys.workspace_items_options_hint),
-            enabled: !pending.value,
-            maxLines: 6,
-            identifier: 'workspace_column_options',
-          ),
-        AuraButton(
-          onPressed: () => unawaited(save()),
-          child: const TextLocale(LocaleKeys.workspace_items_save_typed_column),
-          isLoading: pending.value,
-          disabled: pending.value,
-          identifier: 'workspace_column_save',
-        ),
-        if (error.value case final failure?)
-          WorkspaceItemFailure(error: failure),
-      ],
+    return _ColumnForm(
+      editor: this,
+      draft: draft,
+      onSave: () => _ColumnActions.save(ref, this, draft),
     );
   }
+}
+
+typedef _ColumnFields = ({
+  TextEditingController name,
+  TextEditingController options,
+  ValueNotifier<WorkspaceColumnType> type,
+});
+typedef _ColumnDraft = ({_ColumnFields fields, WorkspaceTableAction action});
+
+abstract final class _ColumnActions {
+  static _ColumnDraft use(BuildContext context, WorkspaceColumn? column) =>
+      (fields: _fields(column), action: WorkspaceTableActions.use(context));
+  static Future<void> save(
+    WidgetRef ref,
+    WorkspaceColumnEditor editor,
+    _ColumnDraft draft,
+  ) async {
+    final usecase = await ref.read(
+      workspaceTableUsecaseProvider(editor.workspaceId).future,
+    );
+    final _ = await usecase.saveColumn(
+      table: editor.table,
+      column: _column(editor.column, draft.fields),
+    );
+    if (ref.context.mounted) editor.onBack();
+  }
+
+  static bool hasOptions(WorkspaceColumnType type) =>
+      type == .singleSelect || type == .multiSelect;
+  static _ColumnFields _fields(WorkspaceColumn? column) => (
+    name: useTextEditingController(text: column?.name ?? ''),
+    options: useTextEditingController(text: column?.options.join('\n') ?? ''),
+    type: useState(column?.type ?? WorkspaceColumnType.text),
+  );
+  static WorkspaceColumn _column(
+    WorkspaceColumn? column,
+    _ColumnFields fields,
+  ) => WorkspaceColumn(
+    id: column?.id ?? '',
+    name: fields.name.text,
+    type: fields.type.value,
+    options: _options(fields),
+  );
+  static List<String> _options(_ColumnFields fields) =>
+      hasOptions(fields.type.value)
+      ? fields.options.text
+            .split('\n')
+            .where((option) => option.trim().isNotEmpty)
+            .toList()
+      : const [];
+}
+
+class const _ColumnForm({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+  required final Future<void> Function() onSave,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceTableEditor(
+    table: editor.table,
+    onBack: editor.onBack,
+    action: draft.action,
+    onSave: onSave,
+    kind: .column,
+    children: [_ColumnInputs(editor: editor, draft: draft)],
+  );
+}
+
+class const _ColumnInputs({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      _ColumnName(
+        controller: draft.fields.name,
+        disabled: draft.action.pending,
+      ),
+      _ColumnDraftType(editor: editor, draft: draft),
+      _ColumnDraftOptions(fields: draft.fields, disabled: draft.action.pending),
+    ],
+  );
+}
+
+class const _ColumnDraftType({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ColumnType(
+    type: draft.fields.type,
+    disabled: draft.action.pending,
+    isLabel: editor.column?.id == editor.table.labelColumnId,
+  );
+}
+
+class const _ColumnDraftOptions({
+  required final _ColumnFields fields,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _ColumnActions.hasOptions(fields.type.value)
+      ? _ColumnOptions(controller: fields.options, disabled: disabled)
+      : const SizedBox.shrink();
+}
+
+class const _ColumnName({
+  required final TextEditingController controller,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: controller,
+    label: const TextLocale(LocaleKeys.workspace_items_column_name),
+    enabled: !disabled,
+    identifier: 'workspace_column_name',
+  );
+}
+
+class const _ColumnType({
+  required final ValueNotifier<WorkspaceColumnType> type,
+  required final bool disabled,
+  required final bool isLabel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      AuraDropdownSelector<WorkspaceColumnType>(
+        options: [
+          for (final value in WorkspaceColumnType.values.where(_allowed))
+            AuraDropdownOption(
+              value: value,
+              child: WorkspaceColumnTypeLabel(type: value),
+            ),
+        ],
+        value: type.value,
+        onChanged: disabled ? null : _change,
+        label: const TextLocale(LocaleKeys.workspace_items_column_type),
+        isEnabled: !disabled,
+        identifier: 'workspace_column_type',
+      );
+  bool _allowed(WorkspaceColumnType value) => !isLabel || value == .text;
+  void _change(WorkspaceColumnType? value) {
+    if (value != null) type.value = value;
+  }
+}
+
+class const _ColumnOptions({
+  required final TextEditingController controller,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: controller,
+    label: const TextLocale(LocaleKeys.workspace_items_column_options),
+    hint: const TextLocale(LocaleKeys.workspace_items_options_hint),
+    enabled: !disabled,
+    maxLines: 6,
+    identifier: 'workspace_column_options',
+  );
 }

@@ -24,11 +24,17 @@ class const OrganizeWorkspaceTablesUsecase(
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
     required String name,
-  }) => _repository.renameLabel(table: table, name: _name(name));
+  }) {
+    _requireManage(table);
+
+    return _repository.renameLabel(table: table, name: _name(name));
+  }
+
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
     required Map<String, Object?> values,
   }) {
+    _requireEdit(table);
     WorkspaceColumnValidation.values(table.columns, values);
 
     return _repository.createRecord(table: table, values: values);
@@ -39,6 +45,7 @@ class const OrganizeWorkspaceTablesUsecase(
     required WorkspaceRecord record,
     required Map<String, Object?> values,
   }) {
+    _requireEdit(table);
     WorkspaceColumnValidation.values(table.columns, values);
     if (record.tableId != table.id) {
       throw const WorkspaceTableException();
@@ -55,6 +62,7 @@ class const OrganizeWorkspaceTablesUsecase(
     required WorkspaceTable table,
     required WorkspaceColumn column,
   }) {
+    _requireManage(table);
     final normalized = _normalizeColumn(column);
     _checkColumnId(table, column.id);
     WorkspaceColumnValidation.columns(
@@ -86,4 +94,12 @@ String _name(String value) {
   }
 
   return trimmed;
+}
+
+void _requireManage(WorkspaceTable table) {
+  if (!table.canManage) throw const WorkspaceTableException(denied: true);
+}
+
+void _requireEdit(WorkspaceTable table) {
+  if (!table.canEditRecords) throw const WorkspaceTableException(denied: true);
 }

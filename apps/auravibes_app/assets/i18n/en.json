@@ -1946,6 +1946,10 @@
     }
   },
   "workspace_items": {
+    "table_access": "Table access",
+    "access_read": "Read only",
+    "access_edit": "Read and edit",
+    "access_none": "No access",
     "title": "Workspace items",
     "folder_name": "Folder name",
     "create_folder": "Create folder",

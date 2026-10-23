@@ -4,6 +4,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import 'sync_wakeups.dart';
+import '../../workspace_state/workspace_table_access.dart';
 
 class const WorkspaceStreamService() {
   static const pageSize = 100;
@@ -29,7 +30,11 @@ class const WorkspaceStreamService() {
     Future<bool>? pendingWakeup;
     try {
       while (true) {
-        await _requireMembership(session, request.workspaceId, userId);
+        final member = await _requireMembership(
+          session,
+          request.workspaceId,
+          userId,
+        );
         final events = await WorkspaceEvent.db.find(
           session,
           where: (table) =>
@@ -41,7 +46,21 @@ class const WorkspaceStreamService() {
 
         for (final event in events) {
           cursor = event.sequence;
-          yield envelopeFor(event);
+          final visible = await const WorkspaceTableAccess().canSeeEvent(
+            session,
+            member,
+            event,
+          );
+          yield envelopeFor(
+            visible
+                ? event
+                : event.copyWith(
+                    resourceKind: 'workspace',
+                    resourceId: null,
+                    payloadJson: null,
+                    kind: 'workspace.changed',
+                  ),
+          );
         }
 
         if (events.length < pageSize) {
@@ -72,7 +91,7 @@ class const WorkspaceStreamService() {
         createdAt: event.createdAt,
       );
 
-  Future<void> _requireMembership(
+  Future<WorkspaceMember> _requireMembership(
     Session session,
     int workspaceId,
     String userId,
@@ -89,5 +108,6 @@ class const WorkspaceStreamService() {
         code: CloudWorkspaceErrorCode.membershipRequired,
       );
     }
+    return member;
   }
 }

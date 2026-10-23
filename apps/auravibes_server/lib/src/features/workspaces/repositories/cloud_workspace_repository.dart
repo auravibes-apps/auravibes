@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../workspace_state/workspace_table_grant_cleanup.dart';
 import '../domain/workspace_roles.dart';
 
 class CloudWorkspaceRepository {
@@ -385,15 +386,18 @@ class CloudWorkspaceRepository {
     required WorkspaceMember member,
     required DateTime now,
     required Transaction transaction,
-  }) => WorkspaceMember.db.updateRow(
-    session,
-    member.copyWith(
-      revision: member.revision + 1,
-      updatedAt: now,
-      removedAt: now,
-    ),
-    transaction: transaction,
-  );
+  }) async {
+    final _ = await WorkspaceMember.db.updateRow(
+      session,
+      member.copyWith(
+        revision: member.revision + 1,
+        updatedAt: now,
+        removedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await WorkspaceTableGrantCleanup(session, transaction).remove(member, now);
+  }
 
   Future<CloudWorkspace> renameWorkspace(
     Session session, {
