@@ -136,7 +136,6 @@ class WorkspaceResourceValidation {
       return;
     }
 
-
     final name = data['name'];
     final description = data['description'];
     final content = data['content'];
