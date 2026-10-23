@@ -68,6 +68,7 @@ jobs:
         run: |
           python3 tool/classify_ci_changes_test.py
           python3 tool/ci_summary_test.py
+          python3 tool/plan_test_shards_test.py
           python3 tool/validation_lease_test.py
           python3 tool/agent_worktree_test.py
 
@@ -389,40 +390,8 @@ jobs:
           manifest="$plan_dir/changed-tests.json"
           matrix_file="$plan_dir/matrix.json"
           timing_source_file="$plan_dir/timing-source.txt"
-          timings="$RUNNER_TEMP/test-timings.json"
-          timing_download="$RUNNER_TEMP/timing-download"
-          rm -rf "$plan_dir" "$timing_download"
-          mkdir -p "$plan_dir" "$timing_download"
-          rm -f "$timings"
-          timing_run_id=""
-          while IFS= read -r run_id; do
-            [ -n "$run_id" ] || continue
-            artifact_id="$(gh api \
-              "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?name=test-timings" \
-              --jq '.artifacts[] | select(.expired == false) | .id' \
-              2>/dev/null | head -n 1 || true)"
-            [ -n "$artifact_id" ] || continue
-            if gh api \
-              "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" \
-              > "$timing_download/timings.zip" \
-              && unzip -p "$timing_download/timings.zip" '*.json' > "$timings" 2>/dev/null \
-              && [ -s "$timings" ]; then
-              timing_run_id="$run_id"
-              echo "Found test timings from main run $run_id"
-              break
-            fi
-            rm -f "$timings"
-          done < <(gh run list \
-            --workflow ci.yml \
-            --branch main \
-            --status success \
-            --limit 20 \
-            --json databaseId \
-            --jq '.[].databaseId')
-
-          if [ ! -s "$timings" ]; then
-            echo 'No usable historical test timing artifact found; using fixed shards.'
-          fi
+          rm -rf "$plan_dir"
+          mkdir -p "$plan_dir"
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             if ! dart tool/changed_test_selector.dart select \
@@ -437,26 +406,10 @@ jobs:
 
           mode="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("mode")' "$manifest")"
           reason="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("reason")' "$manifest")"
-          matrix_args=(
-            matrix
-            --manifest "$manifest"
-            --shard-package apps/auravibes_app \
-            --shard-count 3
-          )
-          if [ -s "$timings" ]; then
-            matrix_args+=(--timings "$timings")
-          fi
-          matrix="$(dart tool/changed_test_selector.dart "${matrix_args[@]}")"
-          printf '%s\n' "$matrix" > "$matrix_file"
+          bash tool/plan_test_shards.sh "$manifest" "$plan_dir"
+          matrix="$(cat "$matrix_file")"
           report_count="$(ruby -rjson -e 'puts JSON.parse(ARGF.read).fetch("include").length' <<< "$matrix")"
-          timing_source="fixed shard fallback"
-          if [ -n "$timing_run_id" ] && ruby -rjson -e '
-            rows = JSON.parse(File.read(ARGV.fetch(0))).fetch("include")
-            exit 1 unless rows.any? { |row| row["package"] == "apps/auravibes_app" && row["shardMode"] == "timed" }
-          ' "$matrix_file"; then
-            timing_source="main run $timing_run_id"
-          fi
-          printf '%s\n' "$timing_source" > "$timing_source_file"
+          timing_source="$(cat "$timing_source_file")"
 
           {
             echo "mode=$mode"

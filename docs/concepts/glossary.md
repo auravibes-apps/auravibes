@@ -1,5 +1,20 @@
 # Glossary
 
+## Workspace
+
+A place that groups conversations, agents, connections, and settings. Local
+and cloud describe where a Workspace lives, not different user concepts.
+
+## Conversation
+
+An ongoing exchange where users request work and review results, including
+messages and tool activity. A Conversation belongs to a Workspace.
+
+## Agent
+
+A reusable AI helper with instructions and selected Skills. Connections provide
+its access to services; the Agent does not own connection credentials.
+
 ## Connector
 
 An integration in the catalog, such as Notion, Gmail, or OpenAI. A Connector
