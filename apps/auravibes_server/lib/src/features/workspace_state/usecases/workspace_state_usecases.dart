@@ -1137,6 +1137,32 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     fieldMask: const [],
   );
 
+  Future<void> _validateFolderParent(
+    Session session,
+    int workspaceId,
+    String folderId,
+    String? parentId,
+    Transaction transaction,
+  ) async {
+    final visited = {folderId};
+    var current = parentId;
+    while (current != null) {
+      if (!visited.add(current)) throw const FormatException();
+      final parent = await _repository.findResource(
+        session,
+        workspaceId: workspaceId,
+        kind: WorkspaceResourceKind.folder,
+        resourceId: current,
+        transaction: transaction,
+      );
+      if (parent == null || parent.deletedAt != null) {
+        throw const FormatException();
+      }
+      final data = jsonDecode(parent.data) as Map<String, dynamic>;
+      current = data['parentId'] as String?;
+    }
+  }
+
   Future<WorkspaceResource> _applyOperation(
     Session session,
     WorkspacePatchOperation operation,
@@ -1189,6 +1215,15 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             transaction: transaction,
           ),
         );
+        if (operation.resourceKind == WorkspaceResourceKind.folder) {
+          await _validateFolderParent(
+            session,
+            workspaceId,
+            operation.resourceId,
+            decoded['parentId'] as String?,
+            transaction,
+          );
+        }
       } on FormatException {
         throw CloudWorkspaceException(
           code: CloudWorkspaceErrorCode.validationFailed,

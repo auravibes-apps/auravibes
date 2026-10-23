@@ -1,0 +1,106 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../helpers/test_app.dart';
+
+void main() {
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
+
+  for (final key in [
+    LocaleKeys.cloud_errors_permission_denied,
+    LocaleKeys.cloud_errors_unavailable,
+  ]) {
+    testWidgets('folder browsing shows $key', (tester) async {
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          TestableApp(
+            child: const WorkspaceItemsScreen(workspaceId: 'one'),
+            overrides: [
+              workspaceFoldersProvider('one', null).overrideWith((ref) async {
+                throw CloudAppException(localizationKey: key, context: .state);
+              }),
+            ],
+            workspaceId: 'one',
+          ),
+        );
+      });
+      final _ = await tester.pumpAndSettle();
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is TextLocale && widget.data == key,
+        ),
+        findsOneWidget,
+      );
+    });
+  }
+
+  testWidgets('empty workspace creates and opens a user-named folder', (
+    tester,
+  ) async {
+    final folders = OrganizeWorkspaceFoldersUsecase(_MemoryFolders());
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const WorkspaceItemsScreen(workspaceId: 'one'),
+          overrides: [
+            workspaceFolderUsecaseProvider('one')
+                .overrideWith((ref) async => folders),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.text('No folders yet. Create a folder to get started.'),
+      findsOneWidget,
+    );
+    await tester.enterText(find.byType(AuraInput), 'My documents');
+    await tester.tap(find.byType(AuraButton));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('My documents'), findsOneWidget);
+    await tester.tap(find.text('My documents'));
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.text('No folders yet. Create a folder to get started.'),
+      findsOneWidget,
+    );
+  });
+}
+
+class _MemoryFolders implements WorkspaceFolderRepository {
+  final _folders = <WorkspaceFolder>[];
+
+  @override
+  Future<List<WorkspaceFolder>> list({String? parentId}) async =>
+      _folders.where((folder) => folder.parentId == parentId).toList();
+
+  @override
+  Future<WorkspaceFolder> create({
+    required String name,
+    String? parentId,
+  }) async {
+    final folder = WorkspaceFolder(
+      id: '${_folders.length}',
+      name: name,
+      revision: 1,
+      parentId: parentId,
+    );
+    _folders.add(folder);
+
+    return folder;
+  }
+}

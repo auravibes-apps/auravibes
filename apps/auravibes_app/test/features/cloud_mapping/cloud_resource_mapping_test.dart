@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('every generic resource kind has an explicit strict fixture', () {
     final fixtures = <WorkspaceResourceKind, Map<String, Object?>>{
+      .folder: {'name': 'Folder', 'parentId': null},
       .agent: {'name': 'Agent', 'content': 'Prompt', 'visibility': 'both'},
       .agentAssociation: {'agentId': 'agent', 'skillId': 'skill'},
       .serviceConnection: {'name': 'Service', 'serviceId': 'service'},
@@ -79,6 +80,12 @@ void main() {
         throwsA(isA<CloudAppException>()),
       );
     }
+    expect(
+      () => CloudResourceMapper.decode(
+        _resource(.folder, {'name': 'Folder', 'parentId': 42}),
+      ),
+      throwsA(isA<CloudAppException>()),
+    );
     expect(
       () => CloudResourceMapper.decode(_resource(.agent, {'name': 'Agent'})),
       throwsA(isA<CloudAppException>()),

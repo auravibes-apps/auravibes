@@ -62,6 +62,11 @@ List<AuraNavigationData> _navigationItems(BuildContext context) => [
     const Icon(Icons.cloud_outlined),
     footer: true,
   ),
+  _navigationItem(
+    context,
+    LocaleKeys.workspace_items_title,
+    const Icon(Icons.folder_outlined),
+  ),
 ];
 
 AuraNavigationData _navigationItem(
@@ -304,6 +309,7 @@ abstract final class _NavigationTargets {
       .connections => _featureLocation(navigation.connectionsLocation),
       .appSettings => _settingsLocation(workspaceId),
       .cloudAccounts => _cloudAccountsLocation(workspaceId),
+      .items => WorkspaceItemsRoute(workspaceId: workspaceId).location,
     };
   }
 

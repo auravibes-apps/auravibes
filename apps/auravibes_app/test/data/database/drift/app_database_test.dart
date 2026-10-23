@@ -41,7 +41,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 33);
+      expect(fixture.database.schemaVersion, 34);
     });
 
     test(
@@ -92,6 +92,37 @@ void main() {
         expect(
           bookmark.read<DateTime>('message_created_at').millisecondsSinceEpoch,
           1767225600000,
+        );
+      },
+    );
+
+    test(
+      'migration from schema 33 preserves data and creates folders',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 33
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute("INSERT INTO workspaces VALUES ('existing')");
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final _ = await database
+            .into(database.workspaceFolders)
+            .insert(
+              WorkspaceFoldersCompanion.insert(
+                workspaceId: 'existing',
+                name: 'Documents',
+              ),
+            );
+        expect(
+          (await database.select(database.workspaceFolders).get()).single.name,
+          'Documents',
+        );
+        expect(
+          (await database.customSelect('SELECT id FROM workspaces').getSingle())
+              .read<String>('id'),
+          'existing',
         );
       },
     );

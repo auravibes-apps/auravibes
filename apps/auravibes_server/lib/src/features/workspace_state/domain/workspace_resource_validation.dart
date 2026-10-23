@@ -66,6 +66,16 @@ class WorkspaceResourceValidation {
     WorkspaceResourceKind kind,
     Map<String, Object?> data,
   ) {
+    if (kind == WorkspaceResourceKind.folder) {
+      final name = data['name'];
+      final parentId = data['parentId'];
+      if (name is! String ||
+          name.trim().isEmpty ||
+          name.length > 200 ||
+          (parentId != null && (parentId is! String || parentId.isEmpty))) {
+        throw const FormatException();
+      }
+    }
     if (kind != WorkspaceResourceKind.agent) return;
 
     final name = data['name'];
@@ -125,6 +135,9 @@ class WorkspaceResourceValidation {
     Map<String, Object?> data,
   ) {
     final fields = switch (kind) {
+      WorkspaceResourceKind.folder => const {
+        'parentId': WorkspaceResourceKind.folder,
+      },
       WorkspaceResourceKind.agentAssociation => const {
         'agentId': WorkspaceResourceKind.agent,
         'skillId': WorkspaceResourceKind.skill,

@@ -1938,5 +1938,12 @@
       "invalid": "Some values are missing or invalid. Review the form and try again.",
       "open_error": "Could not open this link. The request remains pending."
     }
+  },
+  "workspace_items": {
+    "title": "Workspace items",
+    "folder_name": "Folder name",
+    "create_folder": "Create folder",
+    "empty": "No folders yet. Create a folder to get started.",
+    "invalid_folder": "Enter a valid folder name and choose an available parent folder."
   }
 }

@@ -31,6 +31,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_route_failure.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_access_gate.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_sign_in_recovery.dart';
@@ -124,6 +125,7 @@ abstract class const _AppGoRouteData() extends GoRouteData {
         ),
         TypedStatefulShellBranch<WorkspaceFeatureBranchData>(
           routes: [
+            TypedGoRoute<WorkspaceItemsRoute>(path: 'items'),
             TypedGoRoute<WorkspaceManagementRoute>(
               path: 'manage-workspaces',
               routes: [
@@ -1172,4 +1174,15 @@ FutureOr<bool> _canExitDraft(BuildContext context, GoRouterState state) {
   if (registry.canUseNativeBack(.of(context))) return true;
 
   return registry.canExitRoute(state.uri);
+}
+
+class WorkspaceItemsRoute({required final String workspaceId})
+    extends _AppGoRouteData
+    with $WorkspaceItemsRoute {
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      WorkspaceItemsScreen(
+        workspaceId: workspaceId,
+        key: ValueKey(workspaceId),
+      );
 }

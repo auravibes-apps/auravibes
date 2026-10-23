@@ -1,4 +1,3 @@
-// Required: Existing thresholds and limits use numeric values.
 import 'package:auravibes_app/app_storage_namespace.dart';
 import 'package:auravibes_app/data/database/drift/daos/agent_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/agents_dao.dart';
@@ -43,6 +42,7 @@ import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
@@ -50,6 +50,8 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:uuid/v7.dart';
+
+// Required: Existing thresholds and limits use numeric values.
 
 export 'daos/agents_dao.dart';
 export 'daos/api_model_providers_dao.dart';
@@ -98,6 +100,7 @@ part 'app_database.g.dart';
     RecentModelSelections,
     ModelUsageRecords,
     BackgroundWorks,
+    WorkspaceFolders,
   ],
   daos: [
     WorkspaceDao,
@@ -176,8 +179,9 @@ class AppDatabase extends _$AppDatabase {
       _connectorSkillToolReferencesSchemaVersion + 1;
   static const int _messageBookmarkSnapshotsSchemaVersion =
       _retireSkillOwnedStorageSchemaVersion + 1;
-  static const int _currentSchemaVersion =
-      _messageBookmarkSnapshotsSchemaVersion;
+  static const int _workspaceFoldersSchemaVersion =
+      _messageBookmarkSnapshotsSchemaVersion + 1;
+  static const int _currentSchemaVersion = _workspaceFoldersSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -227,6 +231,9 @@ extension on AppDatabase {
     await _upgradeMessageBookmarkSchemas(m, from);
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
+    if (from < AppDatabase._workspaceFoldersSchemaVersion) {
+      await m.createTable(workspaceFolders);
+    }
   }
 
   Future<void> _upgradeMessageBookmarkSchema(Migrator m, int from) async {

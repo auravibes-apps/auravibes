@@ -1938,5 +1938,12 @@
       "invalid": "Faltan valores o algunos no son válidos. Revisa el formulario e inténtalo de nuevo.",
       "open_error": "No se pudo abrir este enlace. La solicitud sigue pendiente."
     }
+  },
+  "workspace_items": {
+    "title": "Elementos del espacio",
+    "folder_name": "Nombre de la carpeta",
+    "create_folder": "Crear carpeta",
+    "empty": "Aún no hay carpetas. Crea una carpeta para comenzar.",
+    "invalid_folder": "Introduce un nombre de carpeta válido y elige una carpeta disponible."
   }
 }

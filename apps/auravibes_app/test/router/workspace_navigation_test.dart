@@ -24,6 +24,7 @@ void main() {
         'tools',
         'service-connections',
         'cloud-accounts',
+        'items',
         'manage-workspaces',
       ]) {
         final matches = router.configuration.findMatch(
@@ -55,6 +56,7 @@ void main() {
       'tools': WorkspaceDestination.connections,
       'settings': WorkspaceDestination.appSettings,
       'cloud-accounts/login': WorkspaceDestination.cloudAccounts,
+      'items': WorkspaceDestination.items,
     };
     for (final entry in paths.entries) {
       expect(

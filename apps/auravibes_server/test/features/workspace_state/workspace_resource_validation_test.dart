@@ -238,6 +238,7 @@ void main() {
         resourceId: 'resource-1',
         workspaceId: 1,
         data: switch (kind) {
+          WorkspaceResourceKind.folder => '{"name":"Folder","parentId":null}',
           WorkspaceResourceKind.agentAssociation =>
             '{"agentId":"agent-1","toolId":"tool-1",'
                 '"permissionMode":"alwaysAsk"}',

@@ -10,6 +10,7 @@ import 'package:logging/logging.dart';
 final _logger = Logger('cloud_resource_mapper');
 
 const _requiredResourceFields = <WorkspaceResourceKind, Map<String, Type>>{
+  .folder: {'name': String},
   .agent: {'name': String, 'content': String, 'visibility': String},
   .agentAssociation: {'agentId': String},
   .serviceConnection: {'name': String, 'serviceId': String},
@@ -155,6 +156,12 @@ void _validateResourceSpecificFields(
   WorkspaceResourceKind kind,
   Map<String, dynamic> data,
 ) {
+  if (kind == WorkspaceResourceKind.folder) {
+    final parentId = data['parentId'];
+    if (parentId != null && (parentId is! String || parentId.isEmpty)) {
+      throw const FormatException();
+    }
+  }
   if (kind == WorkspaceResourceKind.agent) {
     final _ = CloudResourceMapper.visibility(data['visibility']);
   }

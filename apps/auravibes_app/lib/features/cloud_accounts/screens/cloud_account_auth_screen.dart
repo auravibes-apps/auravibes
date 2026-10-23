@@ -46,6 +46,7 @@ class const CloudAccountAuthScreen({
       .connections => LocaleKeys.navigation_connections,
       .appSettings => LocaleKeys.settings_screen_title,
       .cloudAccounts => LocaleKeys.cloud_accounts_title,
+      .items => LocaleKeys.workspace_items_title,
       null =>
         uri.pathSegments.lastOrNull == 'workspace-settings'
             ? LocaleKeys.navigation_workspace_settings
