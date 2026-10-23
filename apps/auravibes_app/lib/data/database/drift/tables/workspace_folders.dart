@@ -1,3 +1,5 @@
+// Drift generates table behavior; schema getters alone have no class weight.
+// ignore_for_file: weight-of-class
 import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:drift/drift.dart';
