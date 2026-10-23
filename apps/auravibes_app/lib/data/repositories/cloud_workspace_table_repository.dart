@@ -1,6 +1,6 @@
+import 'package:auravibes_app/data/repositories/cloud_workspace_table_access_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
@@ -9,64 +9,10 @@ class const CloudWorkspaceTableRepository(
   final CloudWorkspaceResourceStore _store,
 ) implements WorkspaceTableRepository {
   @override
-  Future<List<WorkspaceTableMember>> members(String tableId) async {
-    final table = await this.table(tableId);
-    if (!table.canManage) {
-      throw const WorkspaceTableException(denied: true);
-    }
-    final client = await _store.client;
-    final workspaceId = await _store.cloudWorkspaceId;
-    if (client == null || workspaceId == null) {
-      throw const WorkspaceTableException(denied: true);
-    }
-    final roster = await CloudAppErrors.guardCall(
-      .state,
-      () => client.cloudWorkspace.listMembers(.new(workspaceId: workspaceId)),
-    );
-    final resource = (await _rows(.table))
-        .firstWhere((row) => row.resourceId == tableId);
-    final grants =
-        CloudResourceMapper.decode(resource)['memberAccess'] as Map? ??
-        const {};
-
-    return [
-      for (final member in roster)
-        if (member.role != 'owner')
-          WorkspaceTableMember(
-            userId: member.userId,
-            label: member.email ?? member.userId,
-            access: grants[member.userId] as String?,
-          ),
-    ];
-  }
+  Future<List<WorkspaceTableMember>> members(String tableId) => CloudWorkspaceTableAccessRepository(_store).members(tableId);
 
   @override
-  Future<void> setMemberAccess({
-    required WorkspaceTable table,
-    required String userId,
-    required String? access,
-  }) async {
-    final resource = (await _rows(.table))
-        .firstWhere((row) => row.resourceId == table.id);
-    final data = CloudResourceMapper.decode(resource);
-    final grants = Map<String, Object?>.from(
-      data['memberAccess'] as Map? ?? const {},
-    );
-    if (access == null) {
-      final _ = grants.remove(userId);
-    } else {
-      grants[userId] = access;
-    }
-    data['memberAccess'] = grants;
-    final _ = data.remove('canManageTable');
-    final _ = data.remove('canEditRecords');
-    await _store.update(
-      kind: .table,
-      id: table.id,
-      revision: table.revision,
-      data: data,
-    );
-  }
+  Future<void> setMemberAccess({required WorkspaceTable table, required String userId, required String? access}) => CloudWorkspaceTableAccessRepository(_store).setMemberAccess(table: table, userId: userId, access: access);
 
   @override
   Future<List<WorkspaceTable>> list({String? parentId}) async {

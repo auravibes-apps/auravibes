@@ -2,16 +2,23 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_table_action.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 
-final _logger = Logger('workspace_table_access_panel');
+typedef _GrantRequest = ({WorkspaceTableMember member, String? access});
+typedef _Grant = ValueChanged<_GrantRequest>;
+typedef _AccessDraft = ({
+  Future<OrganizeWorkspaceTablesUsecase> usecase,
+  AsyncSnapshot<List<WorkspaceTableMember>> members,
+  WorkspaceTableAction action,
+});
 
 class const WorkspaceTableAccessPanel({
   required final String workspaceId,
@@ -21,73 +28,131 @@ class const WorkspaceTableAccessPanel({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final usecase = ref.watch(
-      workspaceTableUsecaseProvider(workspaceId).future,
-    );
-    final members = useFuture(
-      useMemoized(() async => await (await usecase).members(table.id), [
-        usecase,
-        table.revision,
-      ]),
-    );
-    final pending = useState(false);
-    final failure = useState<Object?>(null);
-    Future<void> grant(WorkspaceTableMember member, String? access) async {
-      if (pending.value) return;
-      pending.value = true;
-      failure.value = null;
-      try {
-        await (await usecase).setMemberAccess(
-          table: table,
-          userId: member.userId,
-          access: access,
-        );
-        if (context.mounted) onChanged();
-      } on Object catch (error, stackTrace) {
-        _logger.warning(
-          'Table grant failed: ${error.runtimeType}',
-          null,
-          stackTrace,
-        );
-        if (context.mounted) failure.value = error;
-      } finally {
-        if (context.mounted) pending.value = false;
-      }
-    }
-
-    if (members.error case final error?) {
-      return WorkspaceItemFailure(error: error);
-    }
-    final values = members.data;
-    if (values == null) return const Center(child: CircularProgressIndicator());
-
-    return Column(
-      children: [
-        const TextLocale(LocaleKeys.workspace_items_table_access),
-        if (failure.value case final error?) WorkspaceItemFailure(error: error),
-        for (final member in values)
-          ListTile(
-            title: Text(member.label),
-            subtitle: Wrap(
-              spacing: 8,
-              children: [
-                for (final access in [null, 'read', 'edit'])
-                  AuraButton(
-                    onPressed: () => unawaited(grant(member, access)),
-                    child: TextLocale(switch (access) {
-                      'read' => LocaleKeys.workspace_items_access_read,
-                      'edit' => LocaleKeys.workspace_items_access_edit,
-                      _ => LocaleKeys.workspace_items_access_none,
-                    }),
-                    disabled: pending.value || member.access == access,
-                    identifier:
-                        'workspace_table_access_${member.userId}_'
-                        '${access ?? 'none'}',
-                  ),
-              ],
-            ),
-          ),
-      ],
+    final draft = _AccessActions.use(context, ref, this);
+    return _AccessContent(
+      draft: draft,
+      onGrant: (request) =>
+          unawaited(_AccessActions.grant(ref, this, draft, request)),
     );
   }
 }
+
+abstract final class _AccessActions {
+  static _AccessDraft use(
+    BuildContext context,
+    WidgetRef ref,
+    WorkspaceTableAccessPanel panel,
+  ) {
+    final usecase = ref.watch(
+      workspaceTableUsecaseProvider(panel.workspaceId).future,
+    );
+    final members = useFuture(
+      useMemoized(() => _members(usecase, panel.table.id), [
+        usecase,
+        panel.table.revision,
+      ]),
+    );
+    return (
+      usecase: usecase,
+      members: members,
+      action: WorkspaceTableActions.use(context),
+    );
+  }
+
+  static Future<List<WorkspaceTableMember>> _members(
+    Future<OrganizeWorkspaceTablesUsecase> usecase,
+    String id,
+  ) async => await (await usecase).members(id);
+  static Future<void> grant(
+    WidgetRef ref,
+    WorkspaceTableAccessPanel panel,
+    _AccessDraft draft,
+    _GrantRequest request,
+  ) => draft.action.run(() async {
+    await (await draft.usecase).setMemberAccess(
+      table: panel.table,
+      userId: request.member.userId,
+      access: request.access,
+    );
+    if (ref.context.mounted) panel.onChanged();
+  });
+}
+
+class const _AccessContent({
+  required final _AccessDraft draft,
+  required final _Grant onGrant,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (draft.members.error case final error?)
+      return WorkspaceItemFailure(error: error);
+    final members = draft.members.data;
+    if (members == null)
+      return const Center(child: CircularProgressIndicator());
+    return _AccessList(
+      members: members,
+      action: draft.action,
+      onGrant: onGrant,
+    );
+  }
+}
+
+class const _AccessList({
+  required final List<WorkspaceTableMember> members,
+  required final WorkspaceTableAction action,
+  required final _Grant onGrant,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      const TextLocale(LocaleKeys.workspace_items_table_access),
+      if (action.error case final error?) WorkspaceItemFailure(error: error),
+      for (final member in members)
+        _AccessRow(member: member, pending: action.pending, onGrant: onGrant),
+    ],
+  );
+}
+
+class const _AccessRow({
+  required final WorkspaceTableMember member,
+  required final bool pending,
+  required final _Grant onGrant,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListTile(
+    title: Text(member.label),
+    subtitle: Wrap(
+      spacing: 8,
+      children: [
+        for (final access in [null, 'read', 'edit'])
+          _AccessOption(
+            member: member,
+            access: access,
+            pending: pending,
+            onGrant: onGrant,
+          ),
+      ],
+    ),
+  );
+}
+
+class const _AccessOption({
+  required final WorkspaceTableMember member,
+  required final String? access,
+  required final bool pending,
+  required final _Grant onGrant,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => onGrant((member: member, access: access)),
+    child: TextLocale(_accessLabel(access)),
+    disabled: pending || member.access == access,
+    identifier: 'workspace_table_access_${member.userId}_${access ?? 'none'}',
+  );
+}
+
+String _accessLabel(String? access) => switch (access) {
+  'read' => LocaleKeys.workspace_items_access_read,
+  'edit' => LocaleKeys.workspace_items_access_edit,
+  _ => LocaleKeys.workspace_items_access_none,
+};

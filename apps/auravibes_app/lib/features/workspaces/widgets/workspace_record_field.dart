@@ -25,26 +25,12 @@ class const WorkspaceRecordField({
     }
 
     useEffect(synchronizeText, [present]);
-    Object defaultValue() => switch (column.type) {
-      .number => 0,
-      .checkbox => false,
-      .multiSelect => <String>[],
-      _ => '',
-    };
-    void togglePresence({required bool selected}) {
-      if (selected) {
-        onChanged(defaultValue());
-      } else {
-        onUnset();
-      }
-    }
-
     return Column(
       crossAxisAlignment: .stretch,
       children: [
         AuraCheckboxListTile(
           value: present,
-          onChanged: (selected) => togglePresence(selected: selected),
+          onChanged: _togglePresence,
           title: Text(column.name),
           subtitle: const TextLocale(LocaleKeys.workspace_items_has_value),
           disabled: disabled,
@@ -62,6 +48,14 @@ class const WorkspaceRecordField({
       ],
     );
   }
+
+  void _togglePresence(bool selected) {
+    if (selected) {
+      onChanged(_defaultValue(column.type));
+    } else {
+      onUnset();
+    }
+  }
 }
 
 class const _TypedRecordInput({
@@ -73,70 +67,85 @@ class const _TypedRecordInput({
   required final ValueChanged<Object?> onChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final singleValue = switch (value) {
-      final String selected => selected,
-      _ => null,
-    };
-    final selectedValues = switch (value) {
-      final List<dynamic> selected => selected.whereType<String>().toList(),
-      _ => <String>[],
-    };
-    void toggleOption(String option, {required bool selected}) {
-      final values = selectedValues.toList();
-      if (selected) {
-        values.add(option);
-      } else {
-        final _ = values.remove(option);
-      }
-      onChanged(values);
-    }
+  Widget build(BuildContext context) => switch (column.type) {
+    .checkbox => _checkbox(),
+    .singleSelect => _singleSelect(),
+    .multiSelect => _multiSelect(),
+    _ => _text(),
+  };
 
-    return switch (column.type) {
-      .checkbox => AuraCheckboxListTile(
-        value: value == true,
-        onChanged: onChanged,
-        title: const TextLocale(LocaleKeys.workspace_items_checked),
-        disabled: disabled,
-        semanticLabel: column.name,
-      ),
-      .singleSelect => AuraDropdownSelector<String>(
-        options: [
-          for (final option in column.options)
-            AuraDropdownOption(value: option, child: Text(option)),
-        ],
-        value: column.options.contains(singleValue) ? singleValue : null,
-        onChanged: onChanged,
-        isEnabled: !disabled,
-        identifier: identifier,
-      ),
-      .multiSelect => Column(
-        children: [
-          for (final option in column.options)
-            AuraCheckboxListTile(
-              value: selectedValues.contains(option),
-              onChanged: (selected) => toggleOption(option, selected: selected),
-              title: Text(option),
-              disabled: disabled,
-              semanticLabel: '${column.name}: $option',
-            ),
-        ],
-      ),
-      _ => AuraInput(
-        controller: controller,
-        keyboardType: switch (column.type) {
-          .number => const .numberWithOptions(signed: true, decimal: true),
-          .url => TextInputType.url,
-          .email => TextInputType.emailAddress,
-          .phone => TextInputType.phone,
-          _ => TextInputType.text,
-        },
-        enabled: !disabled,
-        onChanged: (value) => onChanged(
-          column.type == .number ? num.tryParse(value) ?? value : value,
-        ),
-        identifier: identifier,
-      ),
-    };
+  Widget _checkbox() => AuraCheckboxListTile(
+    value: value == true,
+    onChanged: onChanged,
+    title: const TextLocale(LocaleKeys.workspace_items_checked),
+    disabled: disabled,
+    semanticLabel: column.name,
+  );
+
+  Widget _singleSelect() => AuraDropdownSelector<String>(
+    options: [
+      for (final option in column.options)
+        AuraDropdownOption(value: option, child: Text(option)),
+    ],
+    value: value is String && column.options.contains(value)
+        ? value as String
+        : null,
+    onChanged: onChanged,
+    isEnabled: !disabled,
+    identifier: identifier,
+  );
+
+  List<String> get _selection => switch (value) {
+    final List<dynamic> selected => selected.whereType<String>().toList(),
+    _ => [],
+  };
+
+  void _toggleOption(String option, bool selected) {
+    final values = _selection;
+    if (selected) {
+      values.add(option);
+    } else {
+      final _ = values.remove(option);
+    }
+    onChanged(values);
   }
+
+  Widget _multiSelect() => Column(
+    children: [
+      for (final option in column.options)
+        AuraCheckboxListTile(
+          value: _selection.contains(option),
+          onChanged: (selected) => _toggleOption(option, selected),
+          title: Text(option),
+          disabled: disabled,
+          semanticLabel: '${column.name}: $option',
+        ),
+    ],
+  );
+
+  Widget _text() => AuraInput(
+    controller: controller,
+    keyboardType: _keyboardType(column.type),
+    enabled: !disabled,
+    onChanged: _changeText,
+    identifier: identifier,
+  );
+
+  void _changeText(String text) =>
+      onChanged(column.type == .number ? num.tryParse(text) ?? text : text);
 }
+
+Object _defaultValue(WorkspaceColumnType type) => switch (type) {
+  .number => 0,
+  .checkbox => false,
+  .multiSelect => <String>[],
+  _ => '',
+};
+
+TextInputType _keyboardType(WorkspaceColumnType type) => switch (type) {
+  .number => const .numberWithOptions(signed: true, decimal: true),
+  .url => .url,
+  .email => .emailAddress,
+  .phone => .phone,
+  _ => .text,
+};
