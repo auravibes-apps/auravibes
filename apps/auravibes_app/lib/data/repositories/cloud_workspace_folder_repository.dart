@@ -12,32 +12,11 @@ class const CloudWorkspaceFolderRepository(
     final folders = <WorkspaceFolder>[];
     String? cursor;
     do {
-      final response = await _store.read(
-        pages: [
-          WorkspaceResourcePageRequest(
-            resourceKind: .folder,
-            afterResourceId: cursor,
-            limit: 100,
-          ),
-        ],
-      );
-      final page = response.pages.single;
-      for (final row in page.resources) {
-        final data = CloudResourceMapper.decode(row);
-        if (data['parentId'] == parentId && row.deletedAt == null) {
-          folders.add(
-            WorkspaceFolder(
-              id: row.resourceId,
-              name: data['name'] as String,
-              revision: row.revision,
-              parentId: data['parentId'] as String?,
-            ),
-          );
-        }
-      }
+      final page = await _page(cursor);
+      folders.addAll(_foldersInParent(page.resources, parentId));
       cursor = page.nextResourceId;
     } while (cursor != null);
-    folders.sort((a, b) => a.name.compareTo(b.name));
+    folders.sort(_compareNames);
 
     return folders;
   }
@@ -55,5 +34,39 @@ class const CloudWorkspaceFolderRepository(
     );
 
     return WorkspaceFolder(id: id, name: name, revision: 1, parentId: parentId);
+  }
+
+  int _compareNames(WorkspaceFolder left, WorkspaceFolder right) =>
+      left.name.compareTo(right.name);
+
+  Future<WorkspaceResourcePage> _page(String? cursor) async {
+    final request = WorkspaceResourcePageRequest(
+      resourceKind: .folder,
+      afterResourceId: cursor,
+      limit: 100,
+    );
+    final response = await _store.read(pages: [request]);
+
+    return response.pages.single;
+  }
+
+  Iterable<WorkspaceFolder> _foldersInParent(
+    List<WorkspaceResource> rows,
+    String? parentId,
+  ) => rows
+      .map(_folder)
+      .where((folder) => folder != null && folder.parentId == parentId)
+      .nonNulls;
+
+  WorkspaceFolder? _folder(WorkspaceResource row) {
+    final data = CloudResourceMapper.decode(row);
+    if (row.deletedAt != null) return null;
+
+    return WorkspaceFolder(
+      id: row.resourceId,
+      name: data['name'] as String,
+      revision: row.revision,
+      parentId: data['parentId'] as String?,
+    );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../../generated/protocol.dart';
+import 'workspace_table_validation.dart';
 
 class const WorkspaceResourceReference(
   final WorkspaceResourceKind kind,
@@ -23,7 +24,9 @@ class WorkspaceResourceValidation {
   };
 
   static void validateFieldMask(List<String> fieldMask) {
-    if (fieldMask.isNotEmpty) throw const FormatException();
+    if (fieldMask.isNotEmpty) {
+      throw const FormatException();
+    }
   }
 
   static ({String kind, String resourceKind, String resourceId}) eventFor(
@@ -40,7 +43,9 @@ class WorkspaceResourceValidation {
     required int workspaceId,
     required String data,
   }) {
-    if (dedicatedKinds.contains(kind)) throw const FormatException();
+    if (dedicatedKinds.contains(kind)) {
+      throw const FormatException();
+    }
     validateDataSize(data);
 
     final Object? decoded;
@@ -49,7 +54,9 @@ class WorkspaceResourceValidation {
     } on FormatException {
       throw const FormatException();
     }
-    if (decoded is! Map<String, dynamic>) throw const FormatException();
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException();
+    }
     _validateJson(decoded, 0);
     final id = decoded['id'];
     final payloadWorkspaceId = decoded['workspaceId'];
@@ -66,7 +73,8 @@ class WorkspaceResourceValidation {
     WorkspaceResourceKind kind,
     Map<String, Object?> data,
   ) {
-    if (kind == WorkspaceResourceKind.folder) {
+    if (kind == WorkspaceResourceKind.folder ||
+        kind == WorkspaceResourceKind.table) {
       final name = data['name'];
       final parentId = data['parentId'];
       if (name is! String ||
@@ -112,7 +120,22 @@ class WorkspaceResourceValidation {
       }
       if (data['isEnabled'] is! bool) throw const FormatException();
     }
-    if (kind != WorkspaceResourceKind.agent) return;
+    if (kind == WorkspaceResourceKind.table) {
+      WorkspaceTableValidation.schema(data);
+    }
+    if (kind == WorkspaceResourceKind.tableRecord) {
+      final values = data['values'];
+      if (data['tableId'] is! String ||
+          (data['tableId'] as String).isEmpty ||
+          data['schemaRevision'] is! int ||
+          values is! Map) {
+        throw const FormatException();
+      }
+    }
+    if (kind != WorkspaceResourceKind.agent) {
+      return;
+    }
+
 
     final name = data['name'];
     final description = data['description'];
@@ -139,7 +162,9 @@ class WorkspaceResourceValidation {
   }
 
   static void _validateJson(Object? value, int depth) {
-    if (depth > _maxJsonDepth) throw const FormatException();
+    if (depth > _maxJsonDepth) {
+      throw const FormatException();
+    }
     switch (value) {
       case String() when value.length > _maxStringLength:
         throw const FormatException();
@@ -171,8 +196,11 @@ class WorkspaceResourceValidation {
     Map<String, Object?> data,
   ) {
     final fields = switch (kind) {
-      WorkspaceResourceKind.folder => const {
+      WorkspaceResourceKind.folder || WorkspaceResourceKind.table => const {
         'parentId': WorkspaceResourceKind.folder,
+      },
+      WorkspaceResourceKind.tableRecord => const {
+        'tableId': WorkspaceResourceKind.table,
       },
       WorkspaceResourceKind.agentAssociation => const {
         'agentId': WorkspaceResourceKind.agent,
@@ -230,7 +258,9 @@ class WorkspaceResourceValidation {
     for (final MapEntry(key: field, value: targetKind) in fields.entries) {
       final value = data[field];
       if (value == null) continue;
-      if (value is! String || value.isEmpty) throw const FormatException();
+      if (value is! String || value.isEmpty) {
+        throw const FormatException();
+      }
       references.add(WorkspaceResourceReference(targetKind, value));
     }
 
@@ -243,7 +273,9 @@ class WorkspaceResourceValidation {
     Future<bool> Function(WorkspaceResourceReference reference) exists,
   ) async {
     for (final reference in references(kind, data)) {
-      if (!await exists(reference)) throw const FormatException();
+      if (!await exists(reference)) {
+        throw const FormatException();
+      }
     }
   }
 

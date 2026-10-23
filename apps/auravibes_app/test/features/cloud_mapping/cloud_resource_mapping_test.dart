@@ -9,6 +9,20 @@ void main() {
   test('every generic resource kind has an explicit strict fixture', () {
     final fixtures = <WorkspaceResourceKind, Map<String, Object?>>{
       .folder: {'name': 'Folder', 'parentId': null},
+      .table: {
+        'name': 'Data',
+        'labelColumnId': 'label',
+        'schemaRevision': 1,
+        'columns': [
+          {'id': 'label', 'name': 'Name', 'type': 'text'},
+          {'id': 'count', 'name': 'Count', 'type': 'number'},
+        ],
+      },
+      .tableRecord: {
+        'tableId': 'table',
+        'schemaRevision': 1,
+        'values': {'label': '', 'count': 0},
+      },
       .agent: {'name': 'Agent', 'content': 'Prompt', 'visibility': 'both'},
       .agentAssociation: {'agentId': 'agent', 'skillId': 'skill'},
       .serviceConnection: {'name': 'Service', 'serviceId': 'service'},

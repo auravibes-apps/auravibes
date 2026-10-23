@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/repositories/cloud_workspace_folder_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -18,14 +19,20 @@ Future<OrganizeWorkspaceFoldersUsecase> workspaceFolderUsecase(
   );
   if (!ref.mounted) throw const WorkspaceFolderException();
   if (session.cloud == null) {
+    final database = ref.watch(appDatabaseProvider);
+
     return OrganizeWorkspaceFoldersUsecase(
-      LocalWorkspaceFolderRepository(
-        ref.watch(appDatabaseProvider),
-        workspaceId,
-      ),
+      LocalWorkspaceFolderRepository(database, workspaceId),
     );
   }
 
+  return await _cloudFolderUsecase(ref, session);
+}
+
+Future<OrganizeWorkspaceFoldersUsecase> _cloudFolderUsecase(
+  Ref ref,
+  WorkspaceSession session,
+) async {
   final gateway = await ref.watch(
     cloudWorkspaceStateGatewayProvider(session).future,
   );

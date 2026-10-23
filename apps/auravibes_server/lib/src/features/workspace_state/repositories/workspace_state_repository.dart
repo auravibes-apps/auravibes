@@ -35,6 +35,7 @@ class WorkspaceStateRepository {
     required WorkspaceResourceKind kind,
     required int limit,
     String? afterResourceId,
+    Transaction? transaction,
   }) => WorkspaceResource.db.find(
     session,
     where: (t) =>
@@ -46,6 +47,7 @@ class WorkspaceStateRepository {
             : t.resourceId > afterResourceId),
     orderBy: (t) => t.resourceId,
     limit: limit,
+    transaction: transaction,
   );
 
   Future<List<WorkspaceResource>> findActiveResources(
