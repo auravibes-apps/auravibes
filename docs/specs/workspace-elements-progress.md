@@ -195,6 +195,13 @@ The turn interruption removed live agent contexts; source changes and background
 - Postmerge checks passed: eight app regressions (seven real database credential checks and one actual shared-executor wrapper/group denial check) and two cloud runtime regressions (wrapper denial prevents execution; admin execution reaches Connection resolution and honors disabled target groups). Pinned FVM 3.47.7 and the root validation lease were used. Logs: `/tmp/auravibes-1685-race-merger-app.log` and `/tmp/auravibes-1685-race-merger-server.log`.
 - Worker evidence additionally includes 27 model/repository regressions, focused fatal analysis, production DCL and format checks. No generator inputs changed. Merger whitespace and ancestry checks passed; untracked diagnostics remain preserved. No push or closure occurred; root retains live UI and final acceptance ownership.
 
+### Private event pagination repair integration
+
+- Integrated access follow-up `03c1cf72d10a239d79977650e2a3809e78b6731c` as `650f2760e`, without conflicts. Tooling fix `88d0a13e`, table access/membership cleanup, Connections repairs and original folder commit remain preserved.
+- Paged reads and streams now share event redaction. Restricted events retain pagination sequence and opaque cursor identity while clearing actor, resource, payload and internal publication metadata. This prevents a full hidden page from skipping a later visible event.
+- Postmerge authenticated endpoint and stream checks passed: four tests, including 100 hidden events followed by the visible event at sequence 101. Pinned FVM 3.47.7 ran through the root validation lease. Log: `/tmp/auravibes-1669-event-merger.log`. Worker evidence includes meaningful pagination/privacy failures before the repair, 17 server regressions, three stream checks, focused fatal analysis and strict DCL.
+- Whitespace and ancestry checks passed. No push, closure or UI action occurred; untracked diagnostics remain preserved. #1669/#1670 acceptance, full workspace/CI/platform checks and parent completion remain root-owned and pending.
+
 ### Live rendering recovery and Connections integration follow-up
 
 - Approved native `cua-driver` exact-window binding succeeded for the UI-worktree executable. Focusing that isolated window changed Marionette from zero controls to 33. Refocusing after stalled actions advanced rendering consistently; no production routing fix is justified by the prior blank/stalled captures.
