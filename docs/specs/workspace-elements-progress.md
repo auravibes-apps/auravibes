@@ -80,3 +80,12 @@ The user authorized completing all 26 children with isolated implementer worktre
 - Push dry-run for the integration branch succeeded. Actual push/draft PR will follow the first worker integration.
 
 Next: integrate verified #1668/#1685 through a merger subagent; refresh the ready frontier, dispatch newly unblocked children, and keep release decisions explicit. No final completion claim is warranted while any child acceptance remains open.
+
+
+### Integration and UI checkpoint
+
+- Current main (`e15aa6a9f`) merged into integration as `00fd89b1`; existing folder commit preserved.
+- Follow-up `efd5453b` restricts the new file-drop mock to widget test bindings. The existing navigation tests reproduced the upstream harness failure before this guard; 71 combined app regressions, six tooling tests, and fatal file analysis pass afterward.
+- Integration branch pushed after successful dry-run and remote SHA verification. Draft PR: https://github.com/auravibes-apps/auravibes/pull/1693 (attached to this chat). It remains draft and explicitly incomplete.
+- User explicitly approved Marionette for isolated local debug verification throughout this implementation. Read `.agents/skills/marionette-mcp/SKILL.md`; use a dedicated UI worktree, unique instance manifest, exact VM connection, and identity check. Never operate another app instance or production state.
+- Active workers remain #1668 and #1685. Merger worker `golden_baseline` is idle and reusable for integration merges; root owns this checkout between those merges.
