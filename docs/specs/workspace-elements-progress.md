@@ -171,3 +171,11 @@ The turn interruption removed live agent contexts; source changes and background
 - #1676 local folder/table regressions: 14 passed; metadata endpoint regression passed. UI implementation and DCL splitting remain active; no handoff or closure.
 - Store-policy research preparation saved outside checkout at `/tmp/auravibes-1692-policy-evidence.md`, checked 2026-10-23 against Apple, Google and Microsoft primary sources. Google main AI policy was retrieved successfully after an initial URL failure. This is preparation only, not #1692 completion or legal/store certification. Owner decisions and release gates remain unchanged.
 - Root remains tracked-clean before this documentation update. GitHub write access remains blocked pending user repair; no denied push was retried.
+
+### Connections integration checkpoint
+
+- Merger integrated verified #1685 branch `70826547185f5978017e163fd480d69a1aa55bef` as `2512149cc`, without conflicts. Integration base `f122fa5a` and original folder commit `4eee5ba18` remain ancestors.
+- Integration checks passed: 32 app regressions covering real database/platform credential migration and rollback, service secrets, cloud tool grants, discovery defaults, typed table use cases/editor, and production-router/drawer navigation; one authenticated backend grant regression covering admin configuration, member effect grants, disabled tools and removed membership. Pinned FVM 3.47.7 commands ran through this worktree's validation lease. Logs: `/tmp/auravibes-1685-merger-app.log` and `/tmp/auravibes-1685-merger-server.log`.
+- Worker evidence includes six real database migration regressions, 27 Connection screen behavior checks, postmerge authenticated grant coverage, generation, focused fatal analysis and DCL. Three Connection golden failures reproduce the documented baseline; snapshots remain unchanged.
+- Whitespace and branch ancestry checks passed. Existing untracked diagnostics remain preserved. No push, tracker write or authentication change occurred; GitHub write denial remains unresolved.
+- #1685 remains open pending final code/spec review and repository workflow resolution. This merge does not complete parent #1665. Full workspace/CI/platform gates and isolated live UI acceptance remain pending; the independent access and rename/move workers retain ownership of their slices.
