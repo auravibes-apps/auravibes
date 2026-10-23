@@ -1954,6 +1954,22 @@
     "create_record": "Añadir registro",
     "no_records": "Aún no hay registros. Añade el primero.",
     "save_record": "Guardar registro",
-    "invalid_table": "Elige una tabla disponible e introduce nombres de columna y valores de texto válidos."
+    "invalid_table": "Elige una tabla disponible e introduce nombres de columna y valores válidos.",
+    "create_column": "Añadir columna",
+    "column_name": "Nombre de la columna",
+    "column_type": "Tipo de columna",
+    "column_options": "Opciones",
+    "options_hint": "Introduce una opción por línea.",
+    "save_typed_column": "Guardar columna",
+    "has_value": "Tiene un valor",
+    "checked": "Marcado",
+    "type_text": "Texto",
+    "type_number": "Número",
+    "type_checkbox": "Casilla",
+    "type_single_select": "Selección única",
+    "type_multi_select": "Selección múltiple",
+    "type_url": "URL",
+    "type_email": "Correo electrónico",
+    "type_phone": "Teléfono"
   }
 }

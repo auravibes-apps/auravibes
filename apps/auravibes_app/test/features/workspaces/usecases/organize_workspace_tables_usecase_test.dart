@@ -12,6 +12,225 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'formatted columns reject malformed values without changing records',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const Value('one'),
+              name: 'One',
+              type: .local,
+            ),
+          );
+      final tables = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(database, 'one'),
+      );
+      var table = await tables.create(name: 'List', labelName: 'Title');
+      final values = <String, Object?>{};
+      final invalid = <String, Object?>{};
+      for (final example in [
+        (
+          type: WorkspaceColumnType.url,
+          valid: 'https://example.com/path?q=1',
+          invalid: 'javascript:alert(1)',
+        ),
+        (
+          type: WorkspaceColumnType.email,
+          valid: 'david@example.com',
+          invalid: 'missing-at',
+        ),
+        (
+          type: WorkspaceColumnType.phone,
+          valid: '+1 (555) 123-4567 ext. 12',
+          invalid: 'call me',
+        ),
+      ]) {
+        table = await tables.saveColumn(
+          table: table,
+          name: example.type.name,
+          type: example.type,
+        );
+        values[table.columns.last.id] = example.valid;
+        invalid[table.columns.last.id] = example.invalid;
+      }
+      final record = await tables.createRecord(table: table, values: values);
+      for (final entry in invalid.entries) {
+        await expectLater(
+          Future.sync(
+            () => tables.updateRecord(
+              table: table,
+              record: record,
+              values: {...values, entry.key: entry.value},
+            ),
+          ),
+          throwsA(isA<WorkspaceTableException>()),
+        );
+      }
+      expect((await tables.record(table.id, record.id)).values, values);
+      await expectLater(
+        Future.sync(
+          () => tables.createRecord(
+            table: table,
+            values: {table.labelColumnId: null},
+          ),
+        ),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+    },
+  );
+  test('selection cardinality and configured choices survive edits', () async {
+    final database = AppDatabase(connection: NativeDatabase.memory());
+    addTearDown(database.close);
+    final _ = await database
+        .into(database.workspaces)
+        .insert(
+          WorkspacesCompanion.insert(
+            id: const Value('one'),
+            name: 'One',
+            type: .local,
+          ),
+        );
+    final tables = OrganizeWorkspaceTablesUsecase(
+      LocalWorkspaceTableRepository(database, 'one'),
+    );
+    var table = await tables.create(name: 'List', labelName: 'Title');
+    table = await tables.saveColumn(
+      table: table,
+      name: 'Status',
+      type: .singleSelect,
+      options: ['Open', 'Done'],
+    );
+    final single = table.columns.last;
+    table = await tables.saveColumn(
+      table: table,
+      name: 'Tags',
+      type: .multiSelect,
+      options: ['A', 'B'],
+    );
+    final multiple = table.columns.last;
+    final record = await tables.createRecord(
+      table: table,
+      values: {
+        single.id: 'Open',
+        multiple.id: ['A', 'B'],
+      },
+    );
+    expect((await tables.record(table.id, record.id)).values, {
+      single.id: 'Open',
+      multiple.id: ['A', 'B'],
+    });
+    for (final invalid in <Map<String, Object?>>[
+      {
+        single.id: ['Open'],
+      },
+      {multiple.id: 'A'},
+      {single.id: 'Unknown'},
+      {
+        multiple.id: ['A', 'A'],
+      },
+    ]) {
+      await expectLater(
+        Future.sync(() => tables.createRecord(table: table, values: invalid)),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+    }
+    await expectLater(
+      tables.saveColumn(
+        table: table,
+        columnId: single.id,
+        name: 'Status',
+        type: .singleSelect,
+        options: ['Done'],
+      ),
+      throwsA(isA<WorkspaceTableException>()),
+    );
+    expect((await tables.table(table.id)).schemaRevision, table.schemaRevision);
+    expect(
+      (await tables.record(table.id, record.id)).values[single.id],
+      'Open',
+    );
+  });
+  test(
+    'checkbox columns persist false without treating it as missing',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const Value('one'),
+              name: 'One',
+              type: .local,
+            ),
+          );
+      final tables = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(database, 'one'),
+      );
+      final initial = await tables.create(name: 'List', labelName: 'Title');
+      final table = await tables.saveColumn(
+        table: initial,
+        name: 'Done',
+        type: .checkbox,
+      );
+      final column = table.columns.last;
+      final record = await tables.createRecord(
+        table: table,
+        values: {column.id: false, table.labelColumnId: ''},
+      );
+      expect((await tables.record(table.id, record.id)).values, {
+        column.id: false,
+        table.labelColumnId: '',
+      });
+      await expectLater(
+        Future.sync(
+          () => tables.createRecord(table: table, values: {column.id: 'false'}),
+        ),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+    },
+  );
+  test('number columns persist zero separately from a missing value', () async {
+    final database = AppDatabase(connection: NativeDatabase.memory());
+    addTearDown(database.close);
+    final _ = await database
+        .into(database.workspaces)
+        .insert(
+          WorkspacesCompanion.insert(
+            id: const Value('one'),
+            name: 'One',
+            type: .local,
+          ),
+        );
+    final tables = OrganizeWorkspaceTablesUsecase(
+      LocalWorkspaceTableRepository(database, 'one'),
+    );
+    final initial = await tables.create(name: 'List', labelName: 'Title');
+    final table = await tables.saveColumn(
+      table: initial,
+      name: 'Count',
+      type: .number,
+    );
+    final number = table.columns.last;
+    final zero = await tables.createRecord(
+      table: table,
+      values: {number.id: 0},
+    );
+    final missing = await tables.createRecord(table: table, values: {});
+    expect((await tables.record(table.id, zero.id)).values[number.id], 0);
+    expect(
+      (await tables.record(table.id, missing.id)).values.containsKey(number.id),
+      false,
+    );
+    expect(
+      (await tables.table(table.id)).columns.last.type,
+      WorkspaceColumnType.number,
+    );
+  });
   test('create a table and independently edit openable text records', () async {
     final database = AppDatabase(connection: NativeDatabase.memory());
     addTearDown(database.close);
@@ -269,6 +488,40 @@ void main() {
       expect(renamed.labelColumnId, table.labelColumnId);
       expect(renamed.columns.single.name, 'Summary');
       expect((await tables.list()).single.id, table.id);
+      var typed = renamed;
+      final typedValues = <String, Object?>{typed.labelColumnId: ''};
+      for (final example
+          in <
+            ({WorkspaceColumnType type, Object? value, List<String> options})
+          >[
+            (type: .number, value: 0, options: []),
+            (type: .checkbox, value: false, options: []),
+            (type: .singleSelect, value: 'A', options: ['A', 'B']),
+            (type: .multiSelect, value: ['A', 'B'], options: ['A', 'B']),
+            (type: .url, value: 'https://example.com', options: []),
+            (type: .email, value: 'david@example.com', options: []),
+            (type: .phone, value: '+1 (555) 123-4567', options: []),
+          ]) {
+        typed = await tables.saveColumn(
+          table: typed,
+          name: example.type.name,
+          type: example.type,
+          options: example.options,
+        );
+        typedValues[typed.columns.last.id] = example.value;
+      }
+      final typedRecord = await tables.createRecord(
+        table: typed,
+        values: typedValues,
+      );
+      expect(
+        (await tables.record(typed.id, typedRecord.id)).values,
+        typedValues,
+      );
+      expect(
+        (await tables.table(typed.id)).columns.map((column) => column.type),
+        containsAll(WorkspaceColumnType.values),
+      );
     },
   );
 }

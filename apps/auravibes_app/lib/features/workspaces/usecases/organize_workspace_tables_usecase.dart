@@ -1,4 +1,6 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:uuid/v7.dart';
 
 class const OrganizeWorkspaceTablesUsecase(
   final WorkspaceTableRepository _repository,
@@ -25,9 +27,9 @@ class const OrganizeWorkspaceTablesUsecase(
   }) => _repository.renameLabel(table: table, name: _name(name));
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
-    required Map<String, String> values,
+    required Map<String, Object?> values,
   }) {
-    _validateValues(table, values);
+    WorkspaceColumnValidation.values(table.columns, values);
 
     return _repository.createRecord(table: table, values: values);
   }
@@ -35,9 +37,9 @@ class const OrganizeWorkspaceTablesUsecase(
   Future<WorkspaceRecord> updateRecord({
     required WorkspaceTable table,
     required WorkspaceRecord record,
-    required Map<String, String> values,
+    required Map<String, Object?> values,
   }) {
-    _validateValues(table, values);
+    WorkspaceColumnValidation.values(table.columns, values);
     if (record.tableId != table.id) {
       throw const WorkspaceTableException();
     }
@@ -49,6 +51,33 @@ class const OrganizeWorkspaceTablesUsecase(
     );
   }
 
+  Future<WorkspaceTable> saveColumn({
+    required WorkspaceTable table,
+    required String name,
+    required WorkspaceColumnType type,
+    String? columnId,
+    List<String> options = const [],
+  }) {
+    final column = WorkspaceColumn(
+      id: columnId ?? const UuidV7().generate(),
+      name: _name(name),
+      type: type,
+      options: options.map(_name).toList(),
+    );
+    if (columnId != null &&
+        !table.columns.any((value) => value.id == columnId)) {
+      throw const WorkspaceTableException();
+    }
+    final columns = [
+      for (final existing in table.columns)
+        if (existing.id != column.id) existing,
+      column,
+    ];
+    WorkspaceColumnValidation.columns(columns, table.labelColumnId);
+
+    return _repository.saveColumn(table: table, column: column);
+  }
+
   String _name(String value) {
     final trimmed = value.trim();
     if (trimmed.isEmpty || trimmed.length > 200) {
@@ -56,13 +85,5 @@ class const OrganizeWorkspaceTablesUsecase(
     }
 
     return trimmed;
-  }
-
-  void _validateValues(WorkspaceTable table, Map<String, String> values) {
-    final ids = table.columns.map((column) => column.id).toSet();
-    if (values.keys.any((id) => !ids.contains(id)) ||
-        values.values.any((value) => value.length > 16384)) {
-      throw const WorkspaceTableException();
-    }
   }
 }

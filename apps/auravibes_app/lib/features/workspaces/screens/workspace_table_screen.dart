@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_column_editor.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -69,9 +71,13 @@ class const _TableContents({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final columnName = useTextEditingController(
-      text: table.columns.single.name,
+      text: table.columns
+          .firstWhere((column) => column.id == table.labelColumnId)
+          .name,
     );
     final editing = useState(false);
+    final editingColumn = useState(false);
+    final selectedColumn = useState<WorkspaceColumn?>(null);
     final selected = useState<WorkspaceRecord?>(null);
     final pending = useState(false);
     final error = useState<Object?>(null);
@@ -122,6 +128,22 @@ class const _TableContents({
       refresh();
     }
 
+    void closeColumn() {
+      editingColumn.value = false;
+      selectedColumn.value = null;
+      refresh();
+    }
+
+    if (editingColumn.value) {
+      return WorkspaceColumnEditor(
+        workspaceId: workspaceId,
+        table: table,
+        column: selectedColumn.value,
+        onBack: closeColumn,
+        key: ValueKey(selectedColumn.value?.id ?? 'new-column'),
+      );
+    }
+
     if (editing.value) {
       return WorkspaceRecordEditor(
         workspaceId: workspaceId,
@@ -153,6 +175,23 @@ class const _TableContents({
           disabled: pending.value,
           identifier: 'workspace_label_save',
         ),
+        AuraButton(
+          onPressed: () {
+            selectedColumn.value = null;
+            editingColumn.value = true;
+          },
+          child: const TextLocale(LocaleKeys.workspace_items_create_column),
+          identifier: 'workspace_column_create',
+        ),
+        for (final column in table.columns)
+          ListTile(
+            title: Text(column.name),
+            subtitle: WorkspaceColumnTypeLabel(type: column.type),
+            onTap: () {
+              selectedColumn.value = column;
+              editingColumn.value = true;
+            },
+          ),
         if (error.value case final failure?)
           WorkspaceItemFailure(error: failure),
         AuraButton(
@@ -171,8 +210,9 @@ class const _TableContents({
             children: [
               for (final record in value)
                 ListTile(
-                  title: Text(record.values[table.labelColumnId] ?? ''),
-                  subtitle: Text(record.id),
+                  title: Text(
+                    record.values[table.labelColumnId]?.toString() ?? '',
+                  ),
                   onTap: () {
                     selected.value = record;
                     editing.value = true;

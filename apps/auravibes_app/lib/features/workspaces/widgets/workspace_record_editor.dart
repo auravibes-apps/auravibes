@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -22,11 +23,16 @@ class const WorkspaceRecordEditor({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final value = useTextEditingController(
-      text: record?.values[table.labelColumnId] ?? '',
+    final draft = useState(
+      Map<String, Object?>.of(record?.values ?? {table.labelColumnId: ''}),
     );
     final pending = useState(false);
     final error = useState<Object?>(null);
+    void unsetColumn(String id) {
+      final updated = Map<String, Object?>.of(draft.value)..remove(id);
+      draft.value = updated;
+    }
+
     Future<void> save() async {
       if (pending.value) {
         return;
@@ -37,7 +43,7 @@ class const WorkspaceRecordEditor({
         final usecase = await ref.read(
           workspaceTableUsecaseProvider(workspaceId).future,
         );
-        final values = {table.labelColumnId: value.text};
+        final values = Map<String, Object?>.of(draft.value);
         final existing = record;
         final _ = existing == null
             ? await usecase.createRecord(table: table, values: values)
@@ -67,13 +73,20 @@ class const WorkspaceRecordEditor({
           title: Text(table.name),
           onTap: pending.value ? null : onBack,
         ),
-        if (record case final existing?) SelectableText(existing.id),
-        AuraInput(
-          controller: value,
-          label: Text(table.columns.single.name),
-          enabled: !pending.value,
-          identifier: 'workspace_record_value',
-        ),
+        for (final column in table.columns)
+          WorkspaceRecordField(
+            column: column,
+            value: draft.value[column.id],
+            present: draft.value.containsKey(column.id),
+            disabled: pending.value,
+            identifier: column.id == table.labelColumnId
+                ? 'workspace_record_value'
+                : 'workspace_record_value_${column.id}',
+            onChanged: (value) =>
+                draft.value = {...draft.value, column.id: value},
+            onUnset: () => unsetColumn(column.id),
+            key: ValueKey(column.id),
+          ),
         AuraButton(
           onPressed: () => unawaited(save()),
           child: const TextLocale(LocaleKeys.workspace_items_save_record),

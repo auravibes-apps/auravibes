@@ -2546,4 +2546,24 @@ abstract class LocaleKeys {
   static const workspace_items_no_records = 'workspace_items.no_records';
   static const workspace_items_save_record = 'workspace_items.save_record';
   static const workspace_items_invalid_table = 'workspace_items.invalid_table';
+  static const workspace_items_create_column = 'workspace_items.create_column';
+  static const workspace_items_column_name = 'workspace_items.column_name';
+  static const workspace_items_column_type = 'workspace_items.column_type';
+  static const workspace_items_column_options =
+      'workspace_items.column_options';
+  static const workspace_items_options_hint = 'workspace_items.options_hint';
+  static const workspace_items_save_typed_column =
+      'workspace_items.save_typed_column';
+  static const workspace_items_has_value = 'workspace_items.has_value';
+  static const workspace_items_checked = 'workspace_items.checked';
+  static const workspace_items_type_text = 'workspace_items.type_text';
+  static const workspace_items_type_number = 'workspace_items.type_number';
+  static const workspace_items_type_checkbox = 'workspace_items.type_checkbox';
+  static const workspace_items_type_single_select =
+      'workspace_items.type_single_select';
+  static const workspace_items_type_multi_select =
+      'workspace_items.type_multi_select';
+  static const workspace_items_type_url = 'workspace_items.type_url';
+  static const workspace_items_type_email = 'workspace_items.type_email';
+  static const workspace_items_type_phone = 'workspace_items.type_phone';
 }
