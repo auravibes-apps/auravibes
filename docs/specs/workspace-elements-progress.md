@@ -74,7 +74,7 @@ The user authorized completing all 26 children with isolated implementer worktre
 - #1667: freshly verified with 59 app regressions and the authenticated endpoint test; completion evidence posted and issue closed. Native #1668 blocking count is now zero.
 - #1668: worker `tables_1668`, branch `feat/1668-workspace-tables`, worktree `workspace-tables-1668/auravibes`. Owns complete table/text-record behavior and per-record/schema conflicts, cloud owner-only editing.
 - #1685: worker `connections_1685`, branch `feat/1685-workspace-connections`, worktree `workspace-connections-1685/auravibes`. Owns workspace Connection/admin/tool grants and shared execution gates.
-- Golden verification: all seven failing cases (11 images) reproduce at pre-feature `0d8e39b24` with identical percentages and pixel counts. See `workspace-elements-golden-baseline.md`. Snapshots remain unchanged; the rendering root cause remains open. Baseline worktree archived.
+- Golden verification: all seven failing cases (11 images) reproduce at pre-feature `0d8e39b24` with identical percentages and pixel counts. See `workspace-elements-golden-baseline.md`. Snapshots remain unchanged; the rendering root cause remains open. Baseline worktree archive requested; app returned queued, so removal remains unconfirmed.
 - Native graph refreshed from GitHub; saved task-local snapshot `.scratch/workspace-elements/current-graph.json`. Only validated, integrated children will be resolved to unlock dependents.
 - Docker was stopped at restart; launched Docker Desktop and resumed this worktree's isolated test Postgres. No credentials were printed or changed.
 - Push dry-run for the integration branch succeeded. Actual push/draft PR will follow the first worker integration.
@@ -89,3 +89,12 @@ Next: integrate verified #1668/#1685 through a merger subagent; refresh the read
 - Integration branch pushed after successful dry-run and remote SHA verification. Draft PR: https://github.com/auravibes-apps/auravibes/pull/1693 (attached to this chat). It remains draft and explicitly incomplete.
 - User explicitly approved Marionette for isolated local debug verification throughout this implementation. Read `.agents/skills/marionette-mcp/SKILL.md`; use a dedicated UI worktree, unique instance manifest, exact VM connection, and identity check. Never operate another app instance or production state.
 - Active workers remain #1668 and #1685. Merger worker `golden_baseline` is idle and reusable for integration merges; root owns this checkout between those merges.
+
+### Table integration checkpoint
+
+- #1668 completed and closed after integration at `51475ee95`; implementation `376537d06`, generated refresh `542812d6f`.
+- Worker checks passed: 85 app tests, 17 server tests including authenticated endpoints, fatal focused analysis, localization audit, changed-file validation and clean generated-artifact validation.
+- Merger checks passed: bootstrap, 55 app regressions, 14 server validation tests, whitespace and ancestry. Existing folder commit preserved.
+- Next frontier: #1669 table grants, #1670 basic types, #1676 rename/move. #1670 assigned to the table worker on a new branch. #1669 worktree creation pending; matching preflight PR #1693 is this same authorized integration, with ownership coordinated here.
+- Isolated Marionette run `workspace-1665-root` created and opened a synthetic folder successfully, with screenshots under `/tmp/auravibes-1665-ui-evidence`. After switching to the second fixture workspace, drawer taps stopped navigating. A back-button probe produced a GoRouter `_TypeError` in `_findCurrentNavigators`; hot restart returned `Service connection disposed`. This smoke failure is unresolved and must be reproduced/repaired before final UI acceptance. No production/user data touched.
+- #1685 remains active. Parent #1665 remains incomplete; PR #1693 remains draft. No release or production writes authorized.
