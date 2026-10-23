@@ -276,6 +276,26 @@ void main() {
             updatedAt: now,
           ),
         );
+        final deniedRead = await endpoints.workspaceState.read(
+          outsider,
+          ReadWorkspaceStateRequest(
+            workspaceId: workspace.id!,
+            pages: [
+              WorkspaceResourcePageRequest(resourceKind: .table, limit: 100),
+              WorkspaceResourcePageRequest(
+                resourceKind: .tableRecord,
+                limit: 100,
+              ),
+            ],
+            eventLimit: 100,
+            afterSequence: 0,
+          ),
+        );
+        expect(deniedRead.pages.expand((page) => page.resources), isEmpty);
+        expect(
+          deniedRead.events.where((event) => event.resourceId == 'table-one'),
+          isEmpty,
+        );
         await expectLater(
           endpoints.workspaceState.patch(
             outsider,
@@ -297,6 +317,108 @@ void main() {
               ],
             ),
           ),
+          throwsA(
+            isA<CloudWorkspaceException>().having(
+              (error) => error.code,
+              'code',
+              CloudWorkspaceErrorCode.permissionDenied,
+            ),
+          ),
+        );
+        final hiddenEvent = await endpoints.workspaceStream
+            .subscribe(
+              outsider,
+              WorkspaceSubscribeRequest(
+                workspaceId: workspace.id!,
+                afterSequence: 0,
+                activeTurnIds: const [],
+              ),
+            )
+            .first;
+        expect(hiddenEvent.resourceId, isNull);
+        expect(hiddenEvent.resourceKind, 'workspace');
+        expect(hiddenEvent.payloadJson, isNull);
+        Future<void> grant(String? access, int revision) async {
+          final _ = await patch([
+            WorkspacePatchOperation(
+              operation: .update,
+              resourceKind: .table,
+              resourceId: 'table-one',
+              expectedRevision: revision,
+              data: jsonEncode({
+                'name': 'My list',
+                'labelColumnId': 'label-one',
+                'schemaRevision': 2,
+                'columns': [
+                  {'id': 'label-one', 'name': 'Summary', 'type': 'text'},
+                ],
+                'memberAccess': {outsiderId: ?access},
+              }),
+              fieldMask: const [],
+            ),
+          ]);
+        }
+
+        Future<ReadWorkspaceStateResponse> memberRead() =>
+            endpoints.workspaceState.read(
+              outsider,
+              ReadWorkspaceStateRequest(
+                workspaceId: workspace.id!,
+                pages: [
+                  WorkspaceResourcePageRequest(resourceKind: .table, limit: 1),
+                  WorkspaceResourcePageRequest(
+                    resourceKind: .tableRecord,
+                    limit: 100,
+                  ),
+                ],
+                eventLimit: 100,
+                afterSequence: 0,
+              ),
+            );
+        final memberWrite = PatchWorkspaceStateRequest(
+          workspaceId: workspace.id!,
+          requestId: 'authorized-member-create',
+          operations: [
+            WorkspacePatchOperation(
+              operation: .create,
+              resourceKind: .tableRecord,
+              resourceId: 'member-record',
+              data: jsonEncode({
+                'tableId': 'table-one',
+                'schemaRevision': 2,
+                'values': {'label-one': 'Member value'},
+              }),
+              fieldMask: const [],
+            ),
+          ],
+        );
+        await grant('read', 2);
+        final readable = await memberRead();
+        expect(readable.pages.first.resources.single.resourceId, 'table-one');
+        final readableTable =
+            jsonDecode(readable.pages.first.resources.single.data) as Map;
+        expect(readableTable['canEditRecords'], false);
+        expect(readableTable.containsKey('memberAccess'), false);
+        expect(readable.pages.last.resources, hasLength(2));
+        await expectLater(
+          endpoints.workspaceState.patch(outsider, memberWrite),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+        await grant('edit', 3);
+        final written = await endpoints.workspaceState.patch(
+          outsider,
+          memberWrite,
+        );
+        expect(written.resources.single.resourceId, 'member-record');
+        await grant(null, 4);
+        final revoked = await memberRead();
+        expect(revoked.pages.expand((page) => page.resources), isEmpty);
+        expect(
+          revoked.events.where((event) => event.resourceId == 'member-record'),
+          isEmpty,
+        );
+        await expectLater(
+          endpoints.workspaceState.patch(outsider, memberWrite),
           throwsA(
             isA<CloudWorkspaceException>().having(
               (error) => error.code,

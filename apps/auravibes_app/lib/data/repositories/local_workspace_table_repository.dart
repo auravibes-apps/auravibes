@@ -10,6 +10,22 @@ class const LocalWorkspaceTableRepository(
   final String _workspaceId,
 ) implements WorkspaceTableRepository {
   @override
+  Future<List<WorkspaceTableMember>> members(String tableId) async {
+    final _ = await table(tableId);
+
+    return [];
+  }
+
+  @override
+  Future<void> setMemberAccess({
+    required WorkspaceTable table,
+    required String userId,
+    required String? access,
+  }) async {
+    throw const WorkspaceTableException();
+  }
+
+  @override
   Future<List<WorkspaceTable>> list({String? parentId}) async {
     final rows =
         await (_database.select(_database.workspaceTables)

@@ -11,6 +11,7 @@ import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
+import '../workspace_table_access.dart';
 
 typedef _OperationCommitMetadata = ({
   String userId,
@@ -31,7 +32,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     required String userId,
     required ReadWorkspaceStateRequest request,
   }) async {
-    await _authorize(session, request.workspaceId, userId);
+    final member = await _authorize(session, request.workspaceId, userId);
     final workspace = await _repository.findWorkspace(
       session,
       request.workspaceId,
@@ -54,13 +55,30 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
 
     final pages = <WorkspaceResourcePage>[];
     for (final selector in request.pages) {
-      final rows = await _repository.readPage(
-        session,
-        workspaceId: request.workspaceId,
-        kind: selector.resourceKind,
-        limit: selector.limit + 1,
-        afterResourceId: selector.afterResourceId,
-      );
+      final rows = <WorkspaceResource>[];
+      var cursor = selector.afterResourceId;
+      while (rows.length <= selector.limit) {
+        final candidates = await _repository.readPage(
+          session,
+          workspaceId: request.workspaceId,
+          kind: selector.resourceKind,
+          limit: _maxPageSize,
+          afterResourceId: cursor,
+        );
+        for (final row in candidates) {
+          final visible = await const WorkspaceTableAccess().visible(
+            session,
+            member,
+            row,
+          );
+          if (visible != null) rows.add(visible);
+          if (rows.length > selector.limit) break;
+        }
+        if (rows.length > selector.limit || candidates.length < _maxPageSize) {
+          break;
+        }
+        cursor = candidates.last.resourceId;
+      }
       final hasMore = rows.length > selector.limit;
       if (hasMore) rows.removeLast();
       pages.add(
@@ -91,7 +109,15 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     return ReadWorkspaceStateResponse(
       pages: pages,
       currentSequence: workspace.sequence,
-      events: events,
+      events: [
+        for (final event in events)
+          if (await const WorkspaceTableAccess().canSeeEvent(
+            session,
+            member,
+            event,
+          ))
+            event,
+      ],
       earliestRetainedSequence: earliest,
       requiresSnapshot: requiresSnapshot,
     );
@@ -132,6 +158,19 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         transaction: transaction,
       );
       _requirePatchRole(member.role, request.operations);
+      final workspace = await _requireLockedWorkspace(
+        session,
+        request.workspaceId,
+        transaction,
+      );
+      for (final operation in request.operations) {
+        await const WorkspaceTableAccess().requireWrite(
+          session,
+          member,
+          operation,
+          transaction: transaction,
+        );
+      }
       final receipt = await _findReceipt(
         session,
         request.workspaceId,
@@ -147,11 +186,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
 
-      final workspace = await _requireLockedWorkspace(
-        session,
-        request.workspaceId,
-        transaction,
-      );
       await guard?.call(transaction);
       return _commitOperations(
         session,
@@ -994,17 +1028,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     String role,
     List<WorkspacePatchOperation> operations,
   ) {
-    if (role != WorkspaceRoles.owner &&
-        operations.any(
-          (operation) =>
-              operation.resourceKind == WorkspaceResourceKind.table ||
-              operation.resourceKind == WorkspaceResourceKind.tableRecord,
-        )) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.permissionDenied,
-      );
-    }
     const memberKinds = {
+      WorkspaceResourceKind.tableRecord,
       WorkspaceResourceKind.conversation,
       WorkspaceResourceKind.conversationToolSelection,
       WorkspaceResourceKind.conversationSkillSelection,
@@ -1165,7 +1190,12 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         }
       } else {
         if (data['labelColumnId'] != previous['labelColumnId'] ||
-            data['schemaRevision'] != (previous['schemaRevision'] as int) + 1) {
+            data['schemaRevision'] !=
+                (previous['schemaRevision'] as int) +
+                    (jsonEncode(data['columns']) ==
+                            jsonEncode(previous['columns'])
+                        ? 0
+                        : 1)) {
           _staleRevision();
         }
       }

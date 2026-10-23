@@ -71,16 +71,17 @@ class const WorkspaceRecordEditor({
         AuraInput(
           controller: value,
           label: Text(table.columns.single.name),
-          enabled: !pending.value,
+          enabled: !pending.value && table.canEditRecords,
           identifier: 'workspace_record_value',
         ),
-        AuraButton(
-          onPressed: () => unawaited(save()),
-          child: const TextLocale(LocaleKeys.workspace_items_save_record),
-          isLoading: pending.value,
-          disabled: pending.value,
-          identifier: 'workspace_record_save',
-        ),
+        if (table.canEditRecords)
+          AuraButton(
+            onPressed: () => unawaited(save()),
+            child: const TextLocale(LocaleKeys.workspace_items_save_record),
+            isLoading: pending.value,
+            disabled: pending.value,
+            identifier: 'workspace_record_save',
+          ),
         if (error.value case final failure?)
           WorkspaceItemFailure(error: failure),
       ],

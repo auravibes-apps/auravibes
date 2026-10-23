@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_editor.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_table_access_panel.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -140,29 +141,38 @@ class const _TableContents({
           title: Text(table.name),
           onTap: onBack,
         ),
-        AuraInput(
-          controller: columnName,
-          label: const TextLocale(LocaleKeys.workspace_items_label_column),
-          enabled: !pending.value,
-          identifier: 'workspace_label_column',
-        ),
-        AuraButton(
-          onPressed: () => unawaited(renameLabel()),
-          child: const TextLocale(LocaleKeys.workspace_items_save_column),
-          isLoading: pending.value,
-          disabled: pending.value,
-          identifier: 'workspace_label_save',
-        ),
+        if (table.canManage)
+          AuraInput(
+            controller: columnName,
+            label: const TextLocale(LocaleKeys.workspace_items_label_column),
+            enabled: !pending.value,
+            identifier: 'workspace_label_column',
+          ),
+        if (table.canManage)
+          AuraButton(
+            onPressed: () => unawaited(renameLabel()),
+            child: const TextLocale(LocaleKeys.workspace_items_save_column),
+            isLoading: pending.value,
+            disabled: pending.value,
+            identifier: 'workspace_label_save',
+          ),
         if (error.value case final failure?)
           WorkspaceItemFailure(error: failure),
-        AuraButton(
-          onPressed: () {
-            selected.value = null;
-            editing.value = true;
-          },
-          child: const TextLocale(LocaleKeys.workspace_items_create_record),
-          identifier: 'workspace_record_create',
-        ),
+        if (table.canManage && table.supportsSharing)
+          WorkspaceTableAccessPanel(
+            workspaceId: workspaceId,
+            table: table,
+            onChanged: refresh,
+          ),
+        if (table.canEditRecords)
+          AuraButton(
+            onPressed: () {
+              selected.value = null;
+              editing.value = true;
+            },
+            child: const TextLocale(LocaleKeys.workspace_items_create_record),
+            identifier: 'workspace_record_create',
+          ),
         switch (records) {
           AsyncData(:final value) when value.isEmpty => const TextLocale(
             LocaleKeys.workspace_items_no_records,

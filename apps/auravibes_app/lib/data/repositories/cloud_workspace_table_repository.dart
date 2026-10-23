@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -7,6 +8,66 @@ import 'package:uuid/v7.dart';
 class const CloudWorkspaceTableRepository(
   final CloudWorkspaceResourceStore _store,
 ) implements WorkspaceTableRepository {
+  @override
+  Future<List<WorkspaceTableMember>> members(String tableId) async {
+    final table = await this.table(tableId);
+    if (!table.canManage) {
+      throw const WorkspaceTableException(denied: true);
+    }
+    final client = await _store.client;
+    final workspaceId = await _store.cloudWorkspaceId;
+    if (client == null || workspaceId == null) {
+      throw const WorkspaceTableException();
+    }
+    final roster = await CloudAppErrors.guardCall(
+      .state,
+      () => client.cloudWorkspace.listMembers(.new(workspaceId: workspaceId)),
+    );
+    final resource = (await _rows(.table))
+        .firstWhere((row) => row.resourceId == tableId);
+    final grants =
+        CloudResourceMapper.decode(resource)['memberAccess'] as Map? ??
+        const {};
+
+    return [
+      for (final member in roster)
+        if (member.role != 'owner')
+          WorkspaceTableMember(
+            userId: member.userId,
+            label: member.email ?? member.userId,
+            access: grants[member.userId] as String?,
+          ),
+    ];
+  }
+
+  @override
+  Future<void> setMemberAccess({
+    required WorkspaceTable table,
+    required String userId,
+    required String? access,
+  }) async {
+    final resource = (await _rows(.table))
+        .firstWhere((row) => row.resourceId == table.id);
+    final data = CloudResourceMapper.decode(resource);
+    final grants = Map<String, Object?>.from(
+      data['memberAccess'] as Map? ?? const {},
+    );
+    if (access == null) {
+      final _ = grants.remove(userId);
+    } else {
+      grants[userId] = access;
+    }
+    data['memberAccess'] = grants;
+    final _ = data.remove('canManageTable');
+    final _ = data.remove('canEditRecords');
+    await _store.update(
+      kind: .table,
+      id: table.id,
+      revision: table.revision,
+      data: data,
+    );
+  }
+
   @override
   Future<List<WorkspaceTable>> list({String? parentId}) async {
     return (await _rows(.table))
@@ -22,7 +83,7 @@ class const CloudWorkspaceTableRepository(
         .where((row) => row.resourceId == id)
         .firstOrNull;
     if (row == null) {
-      throw const WorkspaceTableException();
+      throw const WorkspaceTableException(denied: true);
     }
 
     return _table(row);
@@ -58,11 +119,15 @@ class const CloudWorkspaceTableRepository(
     required WorkspaceTable table,
     required String name,
   }) async {
+    final current = (await _rows(.table))
+        .firstWhere((row) => row.resourceId == table.id);
+    final grants = CloudResourceMapper.decode(current)['memberAccess'];
     await _store.update(
       kind: .table,
       id: table.id,
       revision: table.revision,
       data: {
+        'memberAccess': grants,
         'name': table.name,
         'parentId': table.parentId,
         'labelColumnId': table.labelColumnId,
@@ -97,7 +162,7 @@ class const CloudWorkspaceTableRepository(
         .where((record) => record.id == id)
         .firstOrNull;
     if (row == null) {
-      throw const WorkspaceTableException();
+      throw const WorkspaceTableException(denied: true);
     }
 
     return row;
@@ -182,6 +247,9 @@ class const CloudWorkspaceTableRepository(
       revision: row.revision,
       schemaRevision: data['schemaRevision'] as int,
       parentId: data['parentId'] as String?,
+      canManage: data['canManageTable'] == true,
+      canEditRecords: data['canEditRecords'] == true,
+      supportsSharing: true,
     );
   }
 

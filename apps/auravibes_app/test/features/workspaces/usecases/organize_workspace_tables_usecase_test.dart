@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -28,6 +29,10 @@ void main() {
       LocalWorkspaceTableRepository(database, 'one'),
     );
     final table = await tables.create(name: 'My list', labelName: 'Title');
+    expect(table.canManage, true);
+    expect(table.canEditRecords, true);
+    expect(table.supportsSharing, false);
+    expect(await tables.members(table.id), isEmpty);
     final column = table.columns.single;
     final first = await tables.createRecord(
       table: table,
@@ -174,6 +179,7 @@ void main() {
     'cloud tables create and edit records through paginated remote state',
     () async {
       final rows = <WorkspaceResource>[];
+      var canEditRecords = true;
       final store = CloudWorkspaceResourceStore.forTesting(
         watch: (_) => const Stream.empty(),
         patch: ({required requestId, required operations}) async {
@@ -220,7 +226,21 @@ void main() {
                       (row) => row.resourceId == request.afterResourceId,
                     ) +
                     1;
-          final page = matching.skip(index).take(1).toList();
+          final page = matching
+              .skip(index)
+              .take(1)
+              .map(
+                (row) => row.resourceKind == WorkspaceResourceKind.table
+                    ? row.copyWith(
+                        data: jsonEncode({
+                          ...jsonDecode(row.data) as Map<String, dynamic>,
+                          'canManageTable': true,
+                          'canEditRecords': canEditRecords,
+                        }),
+                      )
+                    : row,
+              )
+              .toList();
 
           return ReadWorkspaceStateResponse(
             pages: [
@@ -268,6 +288,22 @@ void main() {
       final renamed = await tables.renameLabel(table: table, name: 'Summary');
       expect(renamed.labelColumnId, table.labelColumnId);
       expect(renamed.columns.single.name, 'Summary');
+      canEditRecords = false;
+      final readOnly = await tables.table(table.id);
+      expect(
+        () => tables.createRecord(
+          table: readOnly,
+          values: {table.labelColumnId: 'Denied'},
+        ),
+        throwsA(
+          isA<WorkspaceTableException>().having(
+            (error) => error.denied,
+            'denied',
+            true,
+          ),
+        ),
+      );
+      expect(await tables.records(table.id), hasLength(2));
       expect((await tables.list()).single.id, table.id);
     },
   );

@@ -2530,6 +2530,10 @@ abstract class LocaleKeys {
   static const mcp_elicitation_cancel = 'mcp.elicitation.cancel';
   static const mcp_elicitation_invalid = 'mcp.elicitation.invalid';
   static const mcp_elicitation_open_error = 'mcp.elicitation.open_error';
+  static const workspace_items_table_access = 'workspace_items.table_access';
+  static const workspace_items_access_read = 'workspace_items.access_read';
+  static const workspace_items_access_edit = 'workspace_items.access_edit';
+  static const workspace_items_access_none = 'workspace_items.access_none';
   static const workspace_items_title = 'workspace_items.title';
   static const workspace_items_folder_name = 'workspace_items.folder_name';
   static const workspace_items_create_folder = 'workspace_items.create_folder';

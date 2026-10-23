@@ -3,6 +3,26 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 class const OrganizeWorkspaceTablesUsecase(
   final WorkspaceTableRepository _repository,
 ) {
+  Future<List<WorkspaceTableMember>> members(String tableId) =>
+      _repository.members(tableId);
+  Future<void> setMemberAccess({
+    required WorkspaceTable table,
+    required String userId,
+    required String? access,
+  }) {
+    if (!table.canManage ||
+        !table.supportsSharing ||
+        (access != null && access != 'read' && access != 'edit')) {
+      throw const WorkspaceTableException();
+    }
+
+    return _repository.setMemberAccess(
+      table: table,
+      userId: userId,
+      access: access,
+    );
+  }
+
   Future<List<WorkspaceTable>> list({String? parentId}) =>
       _repository.list(parentId: parentId);
   Future<WorkspaceTable> table(String id) => _repository.table(id);
@@ -22,11 +42,21 @@ class const OrganizeWorkspaceTablesUsecase(
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
     required String name,
-  }) => _repository.renameLabel(table: table, name: _name(name));
+  }) {
+    if (!table.canManage) {
+      throw const WorkspaceTableException(denied: true);
+    }
+
+    return _repository.renameLabel(table: table, name: _name(name));
+  }
+
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
     required Map<String, String> values,
   }) {
+    if (!table.canEditRecords) {
+      throw const WorkspaceTableException(denied: true);
+    }
     _validateValues(table, values);
 
     return _repository.createRecord(table: table, values: values);
@@ -37,6 +67,9 @@ class const OrganizeWorkspaceTablesUsecase(
     required WorkspaceRecord record,
     required Map<String, String> values,
   }) {
+    if (!table.canEditRecords) {
+      throw const WorkspaceTableException(denied: true);
+    }
     _validateValues(table, values);
     if (record.tableId != table.id) {
       throw const WorkspaceTableException();
