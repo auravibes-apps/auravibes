@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_form_state.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -14,98 +16,121 @@ class const WorkspaceItemEditor({
   required final String name,
   required final String? parentId,
   required final String? parentName,
-  required final Future<void> Function(String, String?) onSave,
   required final VoidCallback onBack,
+  required final Future<void> Function(String, String?) onSave,
   final String? excludedFolderId,
   super.key,
-}) extends StatefulWidget {
+}) extends HookWidget {
   @override
-  State<WorkspaceItemEditor> createState() => _WorkspaceItemEditorState();
+  Widget build(BuildContext context) => _EditorBody(
+    .new(
+      this,
+      context,
+      .use(name: name),
+      useState(parentId),
+      useState(parentName),
+    ),
+  );
 }
 
-class _WorkspaceItemEditorState extends State<WorkspaceItemEditor> {
-  late final TextEditingController _name;
-  late String? _destination;
-  late String? _destinationName;
-  bool _pending = false;
-  Object? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    final editor = widget;
-    _name = TextEditingController(text: editor.name);
-    _destination = editor.parentId;
-    _destinationName = editor.parentName;
+class const _EditorState(
+  final WorkspaceItemEditor widget,
+  final BuildContext context,
+  final WorkspaceItemFormState form,
+  final ValueNotifier<String?> destination,
+  final ValueNotifier<String?> destinationName,
+) {
+  void changeDestination(WorkspaceFolder? folder) {
+    destination.value = folder?.id;
+    destinationName.value = folder?.name;
   }
 
-  @override
-  void dispose() {
-    _name.dispose();
-    super.dispose();
-  }
+  Future<void> save() => form.run(context, () async {
+    await widget.onSave(form.name.text, destination.value);
+    if (context.mounted) widget.onBack();
+  });
+}
 
+class const _EditorBody(final _EditorState state) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.all(16),
-    children: [_header(), _nameInput(), ..._destinationWidgets(), ..._actions()],
+    children: [
+      _Header(state),
+      _NameInput(state),
+      _DestinationSection(state),
+      _Actions(state),
+    ],
   );
+}
 
-  Widget _header() => ListTile(
+class const _Header(final _EditorState state) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListTile(
     leading: const Icon(Icons.arrow_back),
     title: const TextLocale(LocaleKeys.workspace_items_edit_item),
-    onTap: _pending ? null : widget.onBack,
+    onTap: state.form.pending.value ? null : state.widget.onBack,
   );
+}
 
-  Widget _nameInput() => AuraInput(
-    controller: _name,
+class const _NameInput(final _EditorState state) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: state.form.name,
     label: const TextLocale(LocaleKeys.workspace_items_item_name),
-    enabled: !_pending,
+    enabled: !state.form.pending.value,
     identifier: 'workspace_item_name',
   );
+}
 
-  List<Widget> _destinationWidgets() => [
-    const TextLocale(LocaleKeys.workspace_items_destination),
-    if (_destinationName case final current?) Text(current),
-    _Destinations(workspaceId: widget.workspaceId, parentId: _destination,
-      excludedId: widget.excludedFolderId, enabled: !_pending,
-      onChanged: _changeDestination),
-  ];
+class const _DestinationSection(final _EditorState state)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      const TextLocale(LocaleKeys.workspace_items_destination),
+      if (state.destinationName.value case final current?) Text(current),
+      _Picker(state),
+    ],
+  );
+}
 
-  void _changeDestination(WorkspaceFolder? folder) => setState(() {
-    _destination = folder?.id;
-    _destinationName = folder?.name;
-  });
+class const _Picker(final _EditorState state) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _Destinations(
+    workspaceId: state.widget.workspaceId,
+    parentId: state.destination.value,
+    excludedId: state.widget.excludedFolderId,
+    enabled: !state.form.pending.value,
+    onChanged: state.changeDestination,
+  );
+}
 
-  List<Widget> _actions() => [
-    if (_error case final failure?) WorkspaceItemFailure(error: failure),
-    AuraButton(onPressed: () => unawaited(_save()), isLoading: _pending,
-      disabled: _pending, identifier: 'workspace_item_save',
-      child: const TextLocale(LocaleKeys.common_save)),
-    AuraButton(onPressed: widget.onBack, disabled: _pending,
-      child: const TextLocale(LocaleKeys.common_cancel)),
-  ];
+class const _Actions(final _EditorState state) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      if (state.form.error.value case final failure?)
+        WorkspaceItemFailure(error: failure),
+      _Save(state),
+      AuraButton(
+        onPressed: state.widget.onBack,
+        child: const TextLocale(LocaleKeys.common_cancel),
+        disabled: state.form.pending.value,
+      ),
+    ],
+  );
+}
 
-  Future<void> _save() async {
-    if (_pending) return;
-    _saving(true);
-    try {
-      await widget.onSave(_name.text, _destination);
-      if (mounted) widget.onBack();
-    } on Object catch (failure) {
-      if (mounted) setState(() => _error = failure);
-    } finally {
-      _saving(false);
-    }
-  }
-
-  void _saving(bool value) {
-    if (!mounted) return;
-    setState(() {
-      _pending = value;
-      if (value) _error = null;
-    });
-  }
+class const _Save(final _EditorState state) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => unawaited(state.save()),
+    child: const TextLocale(LocaleKeys.common_save),
+    isLoading: state.form.pending.value,
+    disabled: state.form.pending.value,
+    identifier: 'workspace_item_save',
+  );
 }
 
 class const _Destinations({
@@ -116,32 +141,46 @@ class const _Destinations({
   required final ValueChanged<WorkspaceFolder?> onChanged,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final folders = ref.watch(workspaceFoldersProvider(workspaceId, parentId));
+  Widget build(BuildContext context, WidgetRef ref) => Column(
+    children: [
+      ListTile(
+        leading: const Icon(Icons.home_outlined),
+        title: const TextLocale(LocaleKeys.workspace_items_root),
+        onTap: enabled ? () => onChanged(null) : null,
+      ),
+      _FolderOptions(
+        this,
+        ref.watch(workspaceFoldersProvider(workspaceId, parentId)),
+      ),
+    ],
+  );
+}
 
-    return Column(
+class const _FolderOptions(
+  final _Destinations picker,
+  final AsyncValue<List<WorkspaceFolder>> folders,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (folders) {
+    AsyncData(:final value) => Column(
       children: [
-        ListTile(
-          leading: const Icon(Icons.home_outlined),
-          title: const TextLocale(LocaleKeys.workspace_items_root),
-          onTap: enabled ? () => onChanged(null) : null,
-        ),
-        switch (folders) {
-          AsyncData(:final value) => Column(
-            children: [
-              for (final folder in value)
-                if (folder.id != excludedId)
-                  ListTile(
-                    leading: const Icon(Icons.folder_outlined),
-                    title: Text(folder.name),
-                    onTap: enabled ? () => onChanged(folder) : null,
-                  ),
-            ],
-          ),
-          AsyncError(:final error) => WorkspaceItemFailure(error: error),
-          AsyncLoading() => const CircularProgressIndicator(),
-        },
+        for (final folder in value)
+          if (folder.id != picker.excludedId) _DestinationRow(picker, folder),
       ],
-    );
-  }
+    ),
+    AsyncError(:final error) => WorkspaceItemFailure(error: error),
+    AsyncLoading() => const CircularProgressIndicator(),
+  };
+}
+
+class const _DestinationRow(
+  final _Destinations picker,
+  final WorkspaceFolder folder,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: const Icon(Icons.folder_outlined),
+    title: Text(folder.name),
+    onTap: picker.enabled ? () => picker.onChanged(folder) : null,
+  );
 }

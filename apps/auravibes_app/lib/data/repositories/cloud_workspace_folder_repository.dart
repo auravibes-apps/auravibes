@@ -88,6 +88,7 @@ class const CloudWorkspaceFolderRepository(
       name: data['name'] as String,
       revision: row.revision,
       parentId: data['parentId'] as String?,
+      canManage: data['canManageFolder'] == true,
     );
   }
 }

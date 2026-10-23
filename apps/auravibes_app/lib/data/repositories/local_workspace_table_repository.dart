@@ -467,10 +467,8 @@ class const _RecordWriter(
     await _checkSchema(_database, _workspaceId, (table: table, values: values));
     final current = await _read(table.id, record.id);
     _checkRecordRevision(current, record);
-    await _writeRecord(_database, (
-      workspaceId: _workspaceId,
-      record: current,
-    ), values);
+    final target = (workspaceId: _workspaceId, record: current);
+    await _writeRecord(_database, target, values);
 
     return await _read(table.id, record.id);
   }

@@ -1,7 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_editor.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -19,17 +17,26 @@ class const WorkspaceFolderMetadataEditor({
     name: folder.name,
     parentId: folder.parentId,
     parentName: parentName,
-    excludedFolderId: folder.id,
     onBack: onBack,
-    onSave: (name, parentId) => _save(ref, context, (name: name, parentId: parentId)),
+    onSave: (name, parentId) =>
+        _save(ref, context, (name: name, parentId: parentId)),
+    excludedFolderId: folder.id,
   );
 
-  Future<void> _save(WidgetRef ref, BuildContext context,
-      ({String name, String? parentId}) input) async {
-    final usecase = await ref.read(workspaceFolderUsecaseProvider(workspaceId).future);
-    final _ = await usecase.updateMetadata(folder: folder, name: input.name, parentId: input.parentId);
+  Future<void> _save(
+    WidgetRef ref,
+    BuildContext context,
+    ({String name, String? parentId}) input,
+  ) async {
+    final usecase = await ref.read(
+      workspaceFolderUsecaseProvider(workspaceId).future,
+    );
+    final _ = await usecase.updateMetadata(
+      folder: folder,
+      name: input.name,
+      parentId: input.parentId,
+    );
     if (!context.mounted) return;
     ref.invalidate(workspaceFoldersProvider);
   }
 }
-

@@ -5,6 +5,7 @@ class const WorkspaceFolder({
   required final String name,
   required final int revision,
   final String? parentId,
+  final bool canManage = true,
 });
 
 class const WorkspaceFolderException({final bool conflict = false})

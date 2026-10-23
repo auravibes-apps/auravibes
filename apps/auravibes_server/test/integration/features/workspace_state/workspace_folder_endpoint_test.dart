@@ -87,6 +87,11 @@ void main() {
           read.pages.single.resources.map((r) => r.resourceId),
           containsAll(['parent', 'child']),
         );
+        expect(
+          (jsonDecode(read.pages.single.resources.first.data)
+              as Map)['canManageFolder'],
+          isTrue,
+        );
         await expectLater(
           create(other.id!, 'foreign', 'parent'),
           throwsA(isA<CloudWorkspaceException>()),
@@ -109,6 +114,48 @@ void main() {
               ],
             ),
           ),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+        Future<PatchWorkspaceStateResponse> moveChild(
+          String requestId,
+          int revision,
+          String? parentId,
+        ) => endpoints.workspaceState.patch(
+          authenticated,
+          PatchWorkspaceStateRequest(
+            workspaceId: workspace.id!,
+            requestId: requestId,
+            operations: [
+              WorkspacePatchOperation(
+                operation: .update,
+                resourceKind: .folder,
+                resourceId: 'child',
+                expectedRevision: revision,
+                data: jsonEncode({
+                  'name': 'Renamed child',
+                  'parentId': parentId,
+                }),
+                fieldMask: const [],
+              ),
+            ],
+          ),
+        );
+        final moved = await moveChild('move-child', 1, null);
+        expect(
+          (moved.resources.single.resourceId, moved.resources.single.revision),
+          ('child', 2),
+        );
+        expect(
+          (jsonDecode(moved.resources.single.data) as Map)['name'],
+          'Renamed child',
+        );
+        await expectLater(
+          moveChild('stale-child', 1, 'parent'),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+        await create(other.id!, 'foreign-parent', null);
+        await expectLater(
+          moveChild('foreign-move', 2, 'foreign-parent'),
           throwsA(isA<CloudWorkspaceException>()),
         );
         final outsiderId = const Uuid().v4().toString();
@@ -159,6 +206,74 @@ void main() {
           ),
           throwsA(isA<CloudWorkspaceException>()),
         );
+        final now = DateTime.now().toUtc();
+        final member = await WorkspaceMember.db.insertRow(
+          session,
+          WorkspaceMember(
+            workspaceId: workspace.id!,
+            userId: outsiderId,
+            role: 'member',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        Future<ReadWorkspaceStateResponse> readAsMember() =>
+            endpoints.workspaceState.read(
+              outsider,
+              ReadWorkspaceStateRequest(
+                workspaceId: workspace.id!,
+                pages: [
+                  WorkspaceResourcePageRequest(
+                    resourceKind: .folder,
+                    limit: 100,
+                  ),
+                ],
+                eventLimit: 0,
+              ),
+            );
+        final memberRead = await readAsMember();
+        expect(
+          (jsonDecode(memberRead.pages.single.resources.first.data)
+              as Map)['canManageFolder'],
+          isFalse,
+        );
+        Future<PatchWorkspaceStateResponse> memberMove(String id) =>
+            endpoints.workspaceState.patch(
+              outsider,
+              PatchWorkspaceStateRequest(
+                workspaceId: workspace.id!,
+                requestId: id,
+                operations: [
+                  WorkspacePatchOperation(
+                    operation: .update,
+                    resourceKind: .folder,
+                    resourceId: 'child',
+                    expectedRevision: 2,
+                    data: jsonEncode({
+                      'name': 'Admin rename',
+                      'parentId': 'parent',
+                    }),
+                    fieldMask: const [],
+                  ),
+                ],
+              ),
+            );
+        await expectLater(
+          memberMove('member-move-denied'),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+        final _ = await WorkspaceMember.db.updateRow(
+          session,
+          member.copyWith(role: 'admin'),
+        );
+        final adminRead = await readAsMember();
+        expect(
+          (jsonDecode(adminRead.pages.single.resources.first.data)
+              as Map)['canManageFolder'],
+          isTrue,
+        );
+        expect((await memberMove('admin-move')).resources.single.revision, 3);
       },
     );
   });

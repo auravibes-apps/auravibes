@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/cloud_workspace_table_repository.dart';
-import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
-import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:drift/drift.dart' show Value;
@@ -49,12 +49,12 @@ void main() {
         parentId: destination.id,
       );
       expect(
-        (moved.id, moved.name, moved.parentId),
-        (original.id, 'Renamed', destination.id),
+        (id: moved.id, name: moved.name, parentId: moved.parentId),
+        (id: original.id, name: 'Renamed', parentId: destination.id),
       );
       expect(
-        (moved.schemaRevision, moved.labelColumnId),
-        (original.schemaRevision, original.labelColumnId),
+        (schema: moved.schemaRevision, label: moved.labelColumnId),
+        (schema: original.schemaRevision, label: original.labelColumnId),
       );
       expect((await tables.record(moved.id, record.id)).values, {
         original.labelColumnId: 'Preserved',
@@ -609,8 +609,8 @@ void main() {
       );
       final reopened = await refreshed.table(moved.id);
       expect(
-        (reopened.id, reopened.name, reopened.schemaRevision),
-        (typed.id, 'Renamed remotely', typed.schemaRevision),
+        (id: reopened.id, name: reopened.name, schema: reopened.schemaRevision),
+        (id: typed.id, name: 'Renamed remotely', schema: typed.schemaRevision),
       );
       expect(
         (await refreshed.record(moved.id, typedRecord.id)).values,

@@ -39,8 +39,13 @@ void main() {
         parentId: destination.id,
       );
       expect(
-        (moved.id, moved.name, moved.parentId, moved.revision),
-        (child.id, 'Renamed', destination.id, 2),
+        (
+          id: moved.id,
+          name: moved.name,
+          parentId: moved.parentId,
+          revision: moved.revision,
+        ),
+        (id: child.id, name: 'Renamed', parentId: destination.id, revision: 2),
       );
       expect(await folders.list(parentId: source.id), isEmpty);
       expect(
@@ -71,7 +76,7 @@ void main() {
         final _ = await database
             .into(database.workspaces)
             .insert(
-              WorkspacesCompanion.insert(id: Value(id), name: id, type: .local),
+              WorkspacesCompanion.insert(id: .new(id), name: id, type: .local),
             );
       }
       final folders = OrganizeWorkspaceFoldersUsecase(
@@ -160,6 +165,8 @@ void main() {
         watch: (_) => const Stream.empty(),
         patch: ({required requestId, required operations}) async {
           final operation = operations.single;
+          final payload =
+              operation.data ?? (throw StateError('Missing payload'));
           expect(operation.resourceKind, WorkspaceResourceKind.folder);
           final index = rows.indexWhere(
             (row) => row.resourceId == operation.resourceId,
@@ -167,9 +174,10 @@ void main() {
           if (operation.operation == .update) {
             expect(operation.expectedRevision, rows[index].revision);
             rows[index] = rows[index].copyWith(
-              data: operation.data!,
+              data: payload,
               revision: rows[index].revision + 1,
             );
+
             return PatchWorkspaceStateResponse(
               resources: [rows[index]],
               sequence: rows.length,
@@ -182,7 +190,7 @@ void main() {
               workspaceId: 1,
               resourceKind: .folder,
               resourceId: operation.resourceId,
-              data: operation.data ?? (throw StateError('Missing payload')),
+              data: payload,
               revision: 1,
               createdAt: now,
               updatedAt: now,
@@ -247,8 +255,13 @@ void main() {
       expect(await refreshed.list(parentId: parent.id), isEmpty);
       final persisted = (await refreshed.list(parentId: destination.id)).single;
       expect(
-        (persisted.id, persisted.name, persisted.parentId, persisted.revision),
-        (child.id, 'Final', destination.id, 2),
+        (
+          id: persisted.id,
+          name: persisted.name,
+          parentId: persisted.parentId,
+          revision: persisted.revision,
+        ),
+        (id: child.id, name: 'Final', parentId: destination.id, revision: 2),
       );
       expect(moved.id, child.id);
     },
@@ -288,8 +301,8 @@ void main() {
     );
     final persisted = (await folders.list(parentId: destination.id)).single;
     expect(
-      (persisted.id, persisted.name, persisted.revision),
-      (created.id, 'Renamed', 2),
+      (id: persisted.id, name: persisted.name, revision: persisted.revision),
+      (id: created.id, name: 'Renamed', revision: 2),
     );
     expect((await folders.list()).single.id, destination.id);
   });

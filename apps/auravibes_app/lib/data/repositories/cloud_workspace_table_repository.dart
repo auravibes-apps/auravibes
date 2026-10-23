@@ -65,10 +65,9 @@ class const CloudWorkspaceTableRepository(
       id: table.id,
       revision: table.revision,
       data: {
-        ..._schemaUpdate(table, table.columns),
+        ...await _currentData(_store, table.id),
         'name': name,
         'parentId': parentId,
-        'schemaRevision': table.schemaRevision,
       },
     );
 
@@ -232,3 +231,14 @@ List<WorkspaceColumn> _columns(List<dynamic> values) =>
 
 List<WorkspaceColumn> _decodeColumns(Map<String, Object?> data) =>
     _columns(data['columns']! as List<dynamic>);
+
+Future<Map<String, dynamic>> _currentData(
+  CloudWorkspaceResourceStore store,
+  String id,
+) async {
+  final rows = await _rows(store, .table);
+
+  return CloudResourceMapper.decode(
+    rows.firstWhere((row) => row.resourceId == id),
+  );
+}

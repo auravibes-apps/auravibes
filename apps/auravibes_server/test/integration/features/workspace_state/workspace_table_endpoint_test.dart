@@ -155,6 +155,26 @@ void main() {
             fieldMask: const [],
           ),
         ]);
+        await expectLater(
+          patch([
+            WorkspacePatchOperation(
+              operation: .update,
+              resourceKind: .table,
+              resourceId: 'table-one',
+              expectedRevision: 2,
+              fieldMask: const [],
+              data: jsonEncode({
+                'name': 'Tampered schema',
+                'labelColumnId': 'label-one',
+                'schemaRevision': 1,
+                'columns': [
+                  {'id': 'label-one', 'name': 'Changed schema', 'type': 'text'},
+                ],
+              }),
+            ),
+          ]),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
         final renamed = await patch([
           WorkspacePatchOperation(
             operation: .update,

@@ -1,12 +1,17 @@
+import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,6 +55,123 @@ void main() {
       );
     });
   }
+
+  testWidgets('table controls move and reopen the same records', (
+    tester,
+  ) async {
+    final database = AppDatabase(connection: NativeDatabase.memory());
+    addTearDown(database.close);
+    final _ = await database
+        .into(database.workspaces)
+        .insert(
+          WorkspacesCompanion.insert(
+            id: const .new('one'),
+            name: 'One',
+            type: .local,
+          ),
+        );
+    final folders = OrganizeWorkspaceFoldersUsecase(
+      LocalWorkspaceFolderRepository(database, 'one'),
+    );
+    final tables = OrganizeWorkspaceTablesUsecase(
+      LocalWorkspaceTableRepository(database, 'one'),
+    );
+    final destination = await folders.create(name: 'Archive');
+    final table = await tables.create(
+      name: 'Original table',
+      labelName: 'Title',
+    );
+    final record = await tables.createRecord(
+      table: table,
+      values: {table.labelColumnId: 'Preserved record'},
+    );
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const WorkspaceItemsScreen(workspaceId: 'one'),
+          overrides: [
+            workspaceTableUsecaseProvider('one')
+                .overrideWith((ref) async => tables),
+            workspaceFolderUsecaseProvider('one')
+                .overrideWith((ref) async => folders),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    final edit = find.byWidgetPredicate(
+      (widget) =>
+          widget is AuraIconButton &&
+          widget.identifier == 'workspace_item_edit_${table.id}',
+    );
+    await tester.ensureVisible(edit);
+    await tester.tap(edit);
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraInput && widget.identifier == 'workspace_item_name',
+      ),
+      'Renamed table',
+    );
+    await tester.tap(find.text('Archive'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraButton && widget.identifier == 'workspace_item_save',
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(await tables.list(), isEmpty);
+    final archive = find.text('Archive');
+    await tester.ensureVisible(archive);
+    await tester.tap(archive);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Renamed table'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Preserved record'), findsOneWidget);
+    expect((await tables.list(parentId: destination.id)).single.id, table.id);
+    expect((await tables.record(table.id, record.id)).values, {
+      table.labelColumnId: 'Preserved record',
+    });
+  });
+
+  testWidgets('read-only folder exposes a disabled edit control', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const WorkspaceItemsScreen(workspaceId: 'one'),
+          overrides: [
+            workspaceTablesProvider.overrideWith((ref, arguments) async => []),
+            workspaceFoldersProvider.overrideWith(
+              (ref, arguments) async => [
+                const WorkspaceFolder(
+                  id: 'read-only',
+                  name: 'Readable',
+                  revision: 1,
+                  canManage: false,
+                ),
+              ],
+            ),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    final button = tester.widget<AuraIconButton>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraIconButton &&
+            widget.identifier == 'workspace_item_edit_read-only',
+      ),
+    );
+    expect(button.disabled, isTrue);
+  });
 
   testWidgets('folder controls rename and move to another folder', (
     tester,
@@ -97,7 +219,8 @@ void main() {
     final _ = await tester.pumpAndSettle();
     expect((await folders.list()).map((item) => item.id), [destination.id]);
     final moved = (await folders.list(parentId: destination.id)).single;
-    expect((moved.id, moved.name), (original.id, 'Renamed'));
+    expect(moved.id, original.id);
+    expect(moved.name, 'Renamed');
   });
 
   testWidgets('empty workspace creates and opens a user-named folder', (
@@ -168,6 +291,7 @@ class _MemoryFolders implements WorkspaceFolderRepository {
       parentId: parentId,
     );
     _folders[index] = updated;
+
     return updated;
   }
 
