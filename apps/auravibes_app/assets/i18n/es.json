@@ -283,7 +283,13 @@
       "base_url_label": "URL base de la instancia"
     },
     "secret_saved": "Secreto guardado de forma segura",
-    "clear_secret": "Borrar secreto guardado"
+    "clear_secret": "Borrar secreto guardado",
+    "member_tool_access": {
+      "title": "Acceso de miembros a la herramienta",
+      "none": "Solo propietarios y administradores",
+      "read": "Los miembros pueden leer",
+      "read_write": "Los miembros pueden leer y escribir"
+    }
   },
   "connector_catalog": {
     "filter_label": "Capacidad",

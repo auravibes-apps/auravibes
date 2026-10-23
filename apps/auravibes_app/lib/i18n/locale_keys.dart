@@ -388,6 +388,14 @@ abstract class LocaleKeys {
       'service_connections.secret_saved';
   static const service_connections_clear_secret =
       'service_connections.clear_secret';
+  static const service_connections_member_tool_access_title =
+      'service_connections.member_tool_access.title';
+  static const service_connections_member_tool_access_none =
+      'service_connections.member_tool_access.none';
+  static const service_connections_member_tool_access_read =
+      'service_connections.member_tool_access.read';
+  static const service_connections_member_tool_access_read_write =
+      'service_connections.member_tool_access.read_write';
   static const connector_catalog_filter_label =
       'connector_catalog.filter_label';
   static const connector_catalog_filter_all = 'connector_catalog.filter_all';

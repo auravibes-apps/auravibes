@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/tools/widgets/mcp_error_details.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_header.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/feature_destinations.dart';
@@ -31,6 +32,7 @@ typedef _ToolsGroupCardCallbacksRequest = ({
   String workspaceId,
   WidgetRef ref,
   BuildContext context,
+  bool canManage,
 });
 typedef _McpDeleteInput = _ToolsGroupCardCallbacksRequest;
 
@@ -52,12 +54,7 @@ class const ToolsGroupCard({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isExpanded = useState(false);
-    final callbacks = _ToolsGroupCardCallbacks((
-      groupWithTools: groupWithTools,
-      workspaceId: workspaceId,
-      ref: ref,
-      context: context,
-    ));
+    final callbacks = _callbacks(context, ref);
 
     return _ToolsGroupCardLayout(
       card: this,
@@ -66,6 +63,15 @@ class const ToolsGroupCard({
       callbacks: callbacks,
     );
   }
+
+  _ToolsGroupCardCallbacks _callbacks(BuildContext context, WidgetRef ref) =>
+      _ToolsGroupCardCallbacks((
+        groupWithTools: groupWithTools,
+        workspaceId: workspaceId,
+        ref: ref,
+        context: context,
+        canManage: ref.watch(canManageWorkspaceProvider(workspaceId)),
+      ));
 }
 
 class _ToolsGroupCardCallbacks {
@@ -84,14 +90,16 @@ class _ToolsGroupCardCallbacks {
 }
 
 VoidCallback? _openConnectionAction(_ToolsGroupCardCallbacksRequest request) {
-  if (request.groupWithTools.mcpServerId == null) return null;
+  if (!request.canManage || request.groupWithTools.mcpServerId == null) {
+    return null;
+  }
 
   return () => unawaited(_openConnection(request));
 }
 
 ValueChanged<bool>? _toggleEnabledAction(
   _ToolsGroupCardCallbacksRequest request,
-) => request.groupWithTools.isDefaultGroup
+) => !request.canManage || request.groupWithTools.isDefaultGroup
     ? null
     : (enabled) => _toggleMcpGroup(
         request.groupWithTools,
@@ -101,7 +109,7 @@ ValueChanged<bool>? _toggleEnabledAction(
       );
 
 VoidCallback? _reconnectAction(_ToolsGroupCardCallbacksRequest request) =>
-    _shouldShowReconnect(request.groupWithTools)
+    request.canManage && _shouldShowReconnect(request.groupWithTools)
     ? () => _reconnectMcp(
         request.groupWithTools,
         request.workspaceId,
@@ -110,7 +118,9 @@ VoidCallback? _reconnectAction(_ToolsGroupCardCallbacksRequest request) =>
     : null;
 
 VoidCallback? _deleteAction(_ToolsGroupCardCallbacksRequest request) =>
-    request.groupWithTools.isMcpGroup ? () => _deleteMcpGroup(request) : null;
+    request.canManage && request.groupWithTools.isMcpGroup
+    ? () => _deleteMcpGroup(request)
+    : null;
 
 VoidCallback? _viewErrorAction(_ToolsGroupCardCallbacksRequest request) =>
     request.groupWithTools.hasMcpError()
@@ -124,7 +134,7 @@ VoidCallback? _viewErrorAction(_ToolsGroupCardCallbacksRequest request) =>
     : null;
 
 Future<void> _openConnection(_ToolsGroupCardCallbacksRequest request) async {
-  final (:groupWithTools, :workspaceId, :ref, :context) = request;
+  final (:groupWithTools, :workspaceId, :ref, :context, canManage: _) = request;
   final serverId = groupWithTools.mcpServerId;
   if (serverId == null) return;
 
@@ -184,7 +194,7 @@ Future<void> _reconnectMcp(
 }
 
 Future<void> _deleteMcpGroup(_McpDeleteInput input) async {
-  final (:groupWithTools, :workspaceId, :ref, :context) = input;
+  final (:groupWithTools, :workspaceId, :ref, :context, canManage: _) = input;
   final group = groupWithTools.group;
   if (group == null) return;
 
@@ -443,15 +453,11 @@ class const _ToolItemRowForSelection({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final showDeleteButton = !card.groupWithTools.isMcpGroup;
+    final isMcp = card.groupWithTools.isMcpGroup;
+    final showDeleteButton = !isMcp;
     final currentSelection = selection;
     if (currentSelection == null) {
-      return ToolItemRow(
-        tool: tool,
-        workspaceId: card.workspaceId,
-        showDeleteButton: showDeleteButton,
-        isWorking: card.isDeleting,
-      );
+      return _UnselectedToolRow(card: card, tool: tool);
     }
 
     return ToolItemRow.selectable(
@@ -459,6 +465,7 @@ class const _ToolItemRowForSelection({
       workspaceId: card.workspaceId,
       selection: currentSelection,
       showDeleteButton: showDeleteButton,
+      isMcp: isMcp,
     );
   }
 }
@@ -478,5 +485,19 @@ ToolItemSelection? _toolItemSelection(
     isSelected: card.selectedTargetKeys.contains(selectionKey),
     isWorking: card.isDeleting,
     onChanged: (value) => onSelectionChanged(selectionKey, (isSelected: value)),
+  );
+}
+
+class const _UnselectedToolRow({
+  required final ToolsGroupCard card,
+  required final WorkspaceToolEntity tool,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ToolItemRow(
+    tool: tool,
+    workspaceId: card.workspaceId,
+    showDeleteButton: !card.groupWithTools.isMcpGroup,
+    isMcp: card.groupWithTools.isMcpGroup,
+    isWorking: card.isDeleting,
   );
 }

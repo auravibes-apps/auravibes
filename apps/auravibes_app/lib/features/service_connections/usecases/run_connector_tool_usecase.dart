@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/connector_http_client_adapter.dart';
 import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -34,6 +35,7 @@ class const RunConnectorToolUsecase(
   final ListConnectorConnectionCandidatesUsecase _connectionCandidates,
   final ConnectorToolTemplateExecutor _templateExecutor,
   final OAuthCredentialService? _oauthCredentialService,
+  final SyncConnectorToolPermissionsUsecase _toolPermissions,
 ) {
   Future<Object?> call({
     required String workspaceId,
@@ -88,12 +90,9 @@ extension on RunConnectorToolUsecase {
     final target = _resolve(request.connectorId, request.toolSlug);
     final connector = target.connector;
     final tool = target.tool;
+    await _requireTarget(request.workspaceId, connector, tool);
     if (!tool.requiresConnection) {
-      return (
-        connector: connector,
-        tool: tool,
-        attributes: const <String, String>{},
-      );
+      return _publicCredential(target);
     }
 
     return await _resolveConnectedCredential(request, connector, tool);
@@ -284,5 +283,23 @@ final runConnectorToolUsecaseProvider = Provider<RunConnectorToolUsecase>((
     ref.watch(listConnectorConnectionCandidatesUsecaseProvider),
     .new(const ResolveConnectorRequestTemplate(), httpClient.execute),
     ref.watch(oauthCredentialServiceProvider),
+    ref.watch(syncConnectorToolPermissionsUsecaseProvider),
   );
 });
+
+extension ConnectorTargetAccess on RunConnectorToolUsecase {
+  Future<void> _requireTarget(
+    String workspaceId,
+    ConnectorDefinition connector,
+    ConnectorToolDefinition tool,
+  ) => _toolPermissions.requireEnabledTarget(
+    workspaceId: workspaceId,
+    toolId: connectorToolId(connector, tool),
+  );
+}
+
+_ConnectorToolCredential _publicCredential(_ConnectorToolTarget target) => (
+  connector: target.connector,
+  tool: target.tool,
+  attributes: const <String, String>{},
+);
