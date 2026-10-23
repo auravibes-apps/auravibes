@@ -10,65 +10,66 @@ class const LocalWorkspaceFolderRepository(
   @override
   Future<List<WorkspaceFolder>> list({String? parentId}) async {
     final query = _database.select(_database.workspaceFolders)
-      ..where(
-        (row) =>
-            row.workspaceId.equals(_workspaceId) &
-            row.deletedAt.isNull() &
-            (parentId == null
-                ? row.parentId.isNull()
-                : row.parentId.equals(parentId)),
-      )
+      ..where((row) => _inParent(row, parentId))
       ..orderBy([(row) => OrderingTerm.asc(row.name)]);
 
-    return (await query.get())
-        .map(
-          (row) => WorkspaceFolder(
-            id: row.id,
-            name: row.name,
-            revision: row.revision,
-            parentId: row.parentId,
-          ),
-        )
-        .toList();
+    return (await query.get()).map(_folder).toList();
   }
 
   @override
   Future<WorkspaceFolder> create({required String name, String? parentId}) =>
       _database.transaction(() async {
-        final workspace = await (_database.select(
-          _database.workspaces,
-        )..where((row) => row.id.equals(_workspaceId))).getSingleOrNull();
-        if (workspace == null || workspace.type != .local) {
-          throw const WorkspaceFolderException();
-        }
-        if (parentId != null) {
-          final parent =
-              await (_database.select(_database.workspaceFolders)..where(
-                    (row) =>
-                        row.id.equals(parentId) &
-                        row.workspaceId.equals(_workspaceId) &
-                        row.deletedAt.isNull(),
-                  ))
-                  .getSingleOrNull();
-          if (parent == null) throw const WorkspaceFolderException();
-        }
-        final id = const UuidV7().generate();
-        final _ = await _database
-            .into(_database.workspaceFolders)
-            .insert(
-              WorkspaceFoldersCompanion.insert(
-                id: .new(id),
-                workspaceId: _workspaceId,
-                name: name,
-                parentId: .new(parentId),
-              ),
-            );
+        await _validateWorkspace();
+        await _validateParent(parentId);
 
-        return WorkspaceFolder(
-          id: id,
-          name: name,
-          revision: 1,
-          parentId: parentId,
-        );
+        return await _insert(name, parentId);
       });
+
+  Expression<bool> _retainedFolder($WorkspaceFoldersTable row) =>
+      row.workspaceId.equals(_workspaceId) & row.deletedAt.isNull();
+
+  Expression<bool> _inParent($WorkspaceFoldersTable row, String? parentId) =>
+      _retainedFolder(row) &
+      (parentId == null
+          ? row.parentId.isNull()
+          : row.parentId.equals(parentId));
+
+  WorkspaceFolder _folder(WorkspaceFolderRow row) => WorkspaceFolder(
+    id: row.id,
+    name: row.name,
+    revision: row.revision,
+    parentId: row.parentId,
+  );
+
+  Future<void> _validateWorkspace() async {
+    final query = _database.select(_database.workspaces)
+      ..where((row) => row.id.equals(_workspaceId));
+    final workspace = await query.getSingleOrNull();
+    if (workspace == null || workspace.type != .local) {
+      throw const WorkspaceFolderException();
+    }
+  }
+
+  Future<void> _validateParent(String? parentId) async {
+    if (parentId == null) return;
+    final query = _database.select(_database.workspaceFolders)
+      ..where((row) => row.id.equals(parentId) & _retainedFolder(row));
+    if (await query.getSingleOrNull() == null) {
+      throw const WorkspaceFolderException();
+    }
+  }
+
+  Future<WorkspaceFolder> _insert(String name, String? parentId) async {
+    final row = WorkspaceFoldersCompanion.insert(
+      id: .new(const UuidV7().generate()),
+      workspaceId: _workspaceId,
+      name: name,
+      parentId: .new(parentId),
+    );
+    final saved = await _database
+        .into(_database.workspaceFolders)
+        .insertReturning(row);
+
+    return _folder(saved);
+  }
 }

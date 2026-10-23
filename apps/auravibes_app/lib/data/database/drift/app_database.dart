@@ -229,13 +229,21 @@ extension on AppDatabase {
     await _runCoreUpgrades(m, from);
     await _upgradeLegacyStreamingStatuses(from);
     await _runSkillUpgrades(m, from);
-    await _upgradeModelCapabilitiesSchema(m);
-    await _upgradeModelUsageSchema(m);
+    await _upgradeModelSchemas(m);
     await _upgradeToolAccessModeSchema(m);
     await _upgradeToolCallAttachmentSchema(m, from);
     await _upgradeMessageBookmarkSchemas(m, from);
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
+    await _upgradeWorkspaceItemsSchema(m, from);
+  }
+
+  Future<void> _upgradeModelSchemas(Migrator m) async {
+    await _upgradeModelCapabilitiesSchema(m);
+    await _upgradeModelUsageSchema(m);
+  }
+
+  Future<void> _upgradeWorkspaceItemsSchema(Migrator m, int from) async {
     if (from < AppDatabase._workspaceTablesSchemaVersion) {
       await m.createTable(workspaceTables);
       await m.createTable(workspaceTableRecords);

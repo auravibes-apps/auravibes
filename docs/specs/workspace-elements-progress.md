@@ -8,7 +8,7 @@ The accepted product decisions are recorded in `docs/concepts/workspace-elements
 
 Local and cloud workspaces remain independent. Cloud content has no persistent offline cache. Connections belong to the workspace and support enabled read and edit tools. Default permissions request approval; allow-all bypasses those approval prompts, not authorization or integrity checks. Workspaces start empty. HTML/JS execution is excluded. Release policy and legal decisions remain explicit blockers in the specification.
 
-## Current slice: #1667 — create and browse folders
+## Initial folder checkpoint (historical; superseded below)
 
 Implemented but not yet marked complete:
 
@@ -104,3 +104,24 @@ Next: integrate verified #1668/#1685 through a merger subagent; refresh the read
 - Relaunched isolated dev app at table integration tip, instance `workspace-1665-recheck`. Confirmed exact manifest identity before interaction. Empty second workspace displayed no first-workspace folder. Created `Smoke table`, added `Persistent record`, and saved successfully through ordinary controls; no app errors during these actions. Screenshots remain in `/tmp/auravibes-1665-ui-evidence`.
 - Subsequent drawer/extension navigation stopped updating the visible tree again. No production fix is justified yet: a focused real-route widget regression (`test/router/workspace_items_navigation_test.dart`) passes drawer navigation from chat to items and back. Live runtime/automation failure remains unresolved; app functionality beyond the successful actions is not claimed verified.
 - Integration pushed and remote SHA verified at `a5fbe5f7b`; PR #1693 body updated to two completed children. First push attempt hit HTTP/2 transport failure; retry with HTTP/1.1 succeeded.
+
+### Active frontier checkpoint
+
+- #1669, #1670 and #1685 assigned to the authenticated user through the tracker; isolated workers retain their stated ownership.
+- #1670 implementation `f982e0cc`, worker branch tip `44d74c9aa`, includes integration `6f7f833d`; final generated/postmerge checks pending. Do not merge or close until worker final report.
+- #1669 reproduced unauthorized admin table/record reads. Current worker changes apply current grants to reads, mutations, replay receipts, and event/stream metadata. Grant/revoke and read-only UI validation remains active.
+- #1685 platform-secret tests and authenticated grant checks passed; broader UI/analyzer validation remains active.
+- #1676 is unblocked. Worktree `/Users/davidlondono/.codex/worktrees/workspace-moves-1676/auravibes` prepared from integration with pinned FVM and six-package bootstrap; no implementation assigned yet. Its preflight matched only this parent integration PR #1693, with ownership coordinated here.
+- Next table frontier after verified #1670: #1671 dates/exact money and #1672 constraints. Start only after integration/closure unlocks native dependencies.
+- Isolated recheck app disconnected and stopped; temporary manifest removal verified. Focused drawer regression and fatal file analyzer passed. Navigation smoke failure remains unresolved, separate from passing widget evidence.
+
+### Hosted CI and repair checkpoint
+
+- Hosted run `39989614208` at remote `a5fbe5f7b` passed authenticated server integration, Docker smoke, integrity, code health, localization, format, responsive-shell goldens, and macOS/Windows/iOS/Linux/web builds. Android failed installing NDK `28.2.13676358` with `Premature EOF`; no Android source defect established.
+- App shard 1 failed because strict mapper fixtures omitted the new table/tableRecord kinds. Assigned to typed-column worker; root reproduced locally. Initial cleanup batch: 48 passed, one known strict-fixture failure.
+- Analysis failed DCL metrics in workspace UI/repositories/providers and shared navigation/migration methods. Root owns folder/shared cleanup; typed-column worker owns typed models/validators/repositories/strict fixtures; access worker owns combined typed/access UI refactoring. No handwritten behavior metric suppression is authorized. Drift schema declarations may use narrow documented exclusions.
+- Root cleanup preserves transaction/parent/workspace guards, paginated cloud reads, sort order and migration order. Provider generation ran; final format, fatal analysis and regression gates are active. Root tracked work must be committed before merger ownership transfers.
+- #1670 and #1669 will remain open until combined UI DCL checks pass. Typed branch may be integrated provisionally to combine the fixes, but this does not unblock later native tickets.
+- Full job logs: `/tmp/auravibes-1693-analysis.log`, `/tmp/auravibes-1693-android.log`, `/tmp/auravibes-1693-app-shard1.log`. Root repair logs use `/tmp/auravibes-1665-cleanup-*` and `/tmp/auravibes-1665-dcl-*`.
+
+Root repair verification: scoped DCL checks now pass for folder/shared changes (remaining cloud-folder sort extraction checked separately). App generation completed twice with only expected provider hash change. Final regression: 58 passed, one existing server-URL-dependent route case skipped. Fatal analysis found one missing blank line, corrected; focused rerun passed with no issues. The separate strict-mapping fixture failure remains assigned to #1670.
