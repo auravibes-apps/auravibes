@@ -6,6 +6,8 @@ import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart'
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,7 +42,11 @@ class _MockGroupedNotifier(final List<ToolsGroupWithTools> groups)
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => groups;
 }
 
-class const _Subject({required final Widget child}) extends StatelessWidget {
+class const _Subject({
+  required final Widget child,
+  final bool isCloud = false,
+  final bool isMember = false,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TestableApp(
@@ -52,11 +58,23 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
         ),
       ),
       overrides: [
+        workspaceAccessProvider(_workspaceId)
+            .overrideWith((_) async => (role: isMember ? 'member' : 'owner')),
         workspaceToolsProvider(_workspaceId)
             .overrideWith(() => _MockWorkspaceToolsNotifier([_tool()])),
         groupedToolsProvider(_workspaceId)
             .overrideWith(() => _MockGroupedNotifier([])),
       ],
+      workspaceSession: isCloud
+          ? const WorkspaceSession(
+              CloudWorkspaceRef(
+                localWorkspaceId: _workspaceId,
+                serverUrl: 'https://example.com',
+                accountId: 'account',
+                cloudWorkspaceId: 1,
+              ),
+            )
+          : null,
     );
   }
 }
@@ -73,6 +91,46 @@ void main() {
     });
     final _ = await tester.pumpAndSettle();
   }
+
+  testWidgets('cloud Connector grants stay separate from command approval', (
+    tester,
+  ) async {
+    final tool = _tool().copyWith(
+      toolId: 'connector/brave/web_search',
+      permissionMode: .alwaysAllow,
+    );
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        _Subject(
+          child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
+          isCloud: true,
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byType(AuraIconButton).last);
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Member tool access'), findsOneWidget);
+    expect(find.text('Owners and admins only'), findsOneWidget);
+    expect(find.byType(AuraButtonGroup<ToolPermissionMode>), findsNothing);
+  });
+
+  testWidgets('members cannot enable or edit workspace tools', (tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        _Subject(
+          child: ToolItemRow(tool: _tool(), workspaceId: _workspaceId),
+          isMember: true,
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    expect(tester.widget<AuraSwitch>(find.byType(AuraSwitch)).disabled, true);
+    await tester.tap(find.byType(AuraIconButton).last);
+    final _ = await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.delete_outline), findsNothing);
+    expect(find.byType(AuraButtonGroup<ToolPermissionMode>), findsNothing);
+  });
 
   testWidgets('renders enabled tool row controls', (tester) async {
     final tool = _tool();
