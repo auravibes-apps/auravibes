@@ -44,6 +44,7 @@ import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -101,6 +102,8 @@ part 'app_database.g.dart';
     ModelUsageRecords,
     BackgroundWorks,
     WorkspaceFolders,
+    WorkspaceTables,
+    WorkspaceTableRecords,
   ],
   daos: [
     WorkspaceDao,
@@ -181,7 +184,9 @@ class AppDatabase extends _$AppDatabase {
       _retireSkillOwnedStorageSchemaVersion + 1;
   static const int _workspaceFoldersSchemaVersion =
       _messageBookmarkSnapshotsSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workspaceFoldersSchemaVersion;
+  static const int _workspaceTablesSchemaVersion =
+      _workspaceFoldersSchemaVersion + 1;
+  static const int _currentSchemaVersion = _workspaceTablesSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -231,6 +236,10 @@ extension on AppDatabase {
     await _upgradeMessageBookmarkSchemas(m, from);
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
+    if (from < AppDatabase._workspaceTablesSchemaVersion) {
+      await m.createTable(workspaceTables);
+      await m.createTable(workspaceTableRecords);
+    }
     if (from < AppDatabase._workspaceFoldersSchemaVersion) {
       await m.createTable(workspaceFolders);
     }

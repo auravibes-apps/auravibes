@@ -41,7 +41,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 34);
+      expect(fixture.database.schemaVersion, 35);
     });
 
     test(
@@ -97,12 +97,36 @@ void main() {
     );
 
     test(
+      'migration from schema 34 preserves workspace and creates table storage',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 34
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        expect(await database.select(database.workspaceTables).get(), isEmpty);
+        expect(
+          await database.select(database.workspaceTableRecords).get(),
+          isEmpty,
+        );
+        expect(
+          (await database.customSelect('SELECT id FROM workspaces').getSingle())
+              .read<String>('id'),
+          'existing',
+        );
+      },
+    );
+
+    test(
       'migration from schema 33 preserves data and creates folders',
       () async {
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 33
           ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
-          ..execute("INSERT INTO workspaces VALUES ('existing')");
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
         final database = _MigrationAppDatabase<_MigrationCase16>(
           connection: NativeDatabase.opened(sqliteDb),
         );

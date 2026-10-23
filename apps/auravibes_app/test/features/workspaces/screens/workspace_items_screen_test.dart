@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
@@ -29,6 +30,9 @@ void main() {
           TestableApp(
             child: const WorkspaceItemsScreen(workspaceId: 'one'),
             overrides: [
+              workspaceTablesProvider.overrideWith(
+                (ref, arguments) async => [],
+              ),
               workspaceFoldersProvider('one', null).overrideWith((ref) async {
                 throw CloudAppException(localizationKey: key, context: .state);
               }),
@@ -56,6 +60,7 @@ void main() {
         TestableApp(
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
+            workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFolderUsecaseProvider('one')
                 .overrideWith((ref) async => folders),
           ],
@@ -68,8 +73,20 @@ void main() {
       find.text('No folders yet. Create a folder to get started.'),
       findsOneWidget,
     );
-    await tester.enterText(find.byType(AuraInput), 'My documents');
-    await tester.tap(find.byType(AuraButton));
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraInput && widget.identifier == 'workspace_folder_name',
+      ),
+      'My documents',
+    );
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraButton &&
+            widget.identifier == 'workspace_folder_create',
+      ),
+    );
     final _ = await tester.pumpAndSettle();
     expect(find.text('My documents'), findsOneWidget);
     await tester.tap(find.text('My documents'));

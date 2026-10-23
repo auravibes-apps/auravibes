@@ -2536,4 +2536,14 @@ abstract class LocaleKeys {
   static const workspace_items_empty = 'workspace_items.empty';
   static const workspace_items_invalid_folder =
       'workspace_items.invalid_folder';
+  static const workspace_items_table = 'workspace_items.table';
+  static const workspace_items_table_name = 'workspace_items.table_name';
+  static const workspace_items_create_table = 'workspace_items.create_table';
+  static const workspace_items_default_label = 'workspace_items.default_label';
+  static const workspace_items_label_column = 'workspace_items.label_column';
+  static const workspace_items_save_column = 'workspace_items.save_column';
+  static const workspace_items_create_record = 'workspace_items.create_record';
+  static const workspace_items_no_records = 'workspace_items.no_records';
+  static const workspace_items_save_record = 'workspace_items.save_record';
+  static const workspace_items_invalid_table = 'workspace_items.invalid_table';
 }

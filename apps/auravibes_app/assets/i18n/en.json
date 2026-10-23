@@ -1944,6 +1944,16 @@
     "folder_name": "Folder name",
     "create_folder": "Create folder",
     "empty": "No folders yet. Create a folder to get started.",
-    "invalid_folder": "Enter a valid folder name and choose an available parent folder."
+    "invalid_folder": "Enter a valid folder name and choose an available parent folder.",
+    "table": "Table",
+    "table_name": "Table name",
+    "create_table": "Create table",
+    "default_label": "Name",
+    "label_column": "Label column name",
+    "save_column": "Save column name",
+    "create_record": "Add record",
+    "no_records": "No records yet. Add your first record.",
+    "save_record": "Save record",
+    "invalid_table": "Choose an available table and enter valid column names and text values."
   }
 }
