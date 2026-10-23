@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show BindingBase;
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart' show ServicesBinding, rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../tool/testing/ci_widget_test_timeout.dart';
@@ -13,16 +13,17 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   configureCiWidgetTestTimeout();
   setUp(() {
     if (BindingBase.debugBindingType() == null) return;
+    final binding = ServicesBinding.instance;
+    if (binding is! TestDefaultBinaryMessengerBinding) return;
 
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockStreamHandler(
-          const .new('flutter_file_drop/events'),
-          .inline(
-            onListen: (_, events) {
-              final _ = events;
-            },
-          ),
-        );
+    binding.defaultBinaryMessenger.setMockStreamHandler(
+      const .new('flutter_file_drop/events'),
+      .inline(
+        onListen: (_, events) {
+          final _ = events;
+        },
+      ),
+    );
   });
   setUpAll(() async {
     // Pure Dart tests need real HTTP, not the widget binding's HTTP 400.
