@@ -1,4 +1,6 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:uuid/v7.dart';
 
 class const OrganizeWorkspaceTablesUsecase(
   final WorkspaceTableRepository _repository,
@@ -25,9 +27,9 @@ class const OrganizeWorkspaceTablesUsecase(
   }) => _repository.renameLabel(table: table, name: _name(name));
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
-    required Map<String, String> values,
+    required Map<String, Object?> values,
   }) {
-    _validateValues(table, values);
+    WorkspaceColumnValidation.values(table.columns, values);
 
     return _repository.createRecord(table: table, values: values);
   }
@@ -35,9 +37,9 @@ class const OrganizeWorkspaceTablesUsecase(
   Future<WorkspaceRecord> updateRecord({
     required WorkspaceTable table,
     required WorkspaceRecord record,
-    required Map<String, String> values,
+    required Map<String, Object?> values,
   }) {
-    _validateValues(table, values);
+    WorkspaceColumnValidation.values(table.columns, values);
     if (record.tableId != table.id) {
       throw const WorkspaceTableException();
     }
@@ -49,20 +51,39 @@ class const OrganizeWorkspaceTablesUsecase(
     );
   }
 
-  String _name(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty || trimmed.length > 200) {
-      throw const WorkspaceTableException();
-    }
+  Future<WorkspaceTable> saveColumn({
+    required WorkspaceTable table,
+    required WorkspaceColumn column,
+  }) {
+    final normalized = _normalizeColumn(column);
+    _checkColumnId(table, column.id);
+    WorkspaceColumnValidation.columns(
+      table.withColumn(normalized),
+      table.labelColumnId,
+    );
 
-    return trimmed;
+    return _repository.saveColumn(table: table, column: normalized);
+  }
+}
+
+void _checkColumnId(WorkspaceTable table, String id) {
+  if (id.isNotEmpty && !table.columns.any((column) => column.id == id)) {
+    throw const WorkspaceTableException();
+  }
+}
+
+WorkspaceColumn _normalizeColumn(WorkspaceColumn column) => WorkspaceColumn(
+  id: column.id.isEmpty ? const UuidV7().generate() : column.id,
+  name: _name(column.name),
+  type: column.type,
+  options: column.options.map(_name).toList(),
+);
+
+String _name(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty || trimmed.length > 200) {
+    throw const WorkspaceTableException();
   }
 
-  void _validateValues(WorkspaceTable table, Map<String, String> values) {
-    final ids = table.columns.map((column) => column.id).toSet();
-    if (values.keys.any((id) => !ids.contains(id)) ||
-        values.values.any((value) => value.length > 16384)) {
-      throw const WorkspaceTableException();
-    }
-  }
+  return trimmed;
 }

@@ -8,17 +8,50 @@ class const WorkspaceTable({
   required final int revision,
   required final int schemaRevision,
   final String? parentId,
-});
+}) {
+  List<WorkspaceColumn> withColumn(WorkspaceColumn column) => [
+    for (final existing in columns)
+      if (existing.id == column.id) column else existing,
+    if (!columns.any((existing) => existing.id == column.id)) column,
+  ];
+}
 
 class const WorkspaceColumn({
   required final String id,
   required final String name,
-});
+  final WorkspaceColumnType type = WorkspaceColumnType.text,
+  final List<String> options = const [],
+}) {
+  factory fromJson(Map<String, dynamic> data) => WorkspaceColumn(
+    id: data['id'] as String,
+    name: data['name'] as String,
+    type: WorkspaceColumnType.values.byName(data['type'] as String? ?? 'text'),
+    options: (data['options'] as List<dynamic>? ?? const []).cast<String>(),
+  );
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'type': type.name,
+    'options': options,
+  };
+}
+
+enum WorkspaceColumnType {
+  text,
+  number,
+  checkbox,
+  singleSelect,
+  multiSelect,
+  url,
+  email,
+  phone,
+}
 
 class const WorkspaceRecord({
   required final String id,
   required final String tableId,
-  required final Map<String, String> values,
+  required final Map<String, Object?> values,
   required final int revision,
 });
 
@@ -27,6 +60,9 @@ class const WorkspaceTableException({final bool conflict = false})
   String get localizationKey => conflict
       ? LocaleKeys.cloud_errors_conflict
       : LocaleKeys.workspace_items_invalid_table;
+
+  @override
+  String toString() => localizationKey;
 }
 
 abstract interface class WorkspaceTableRepository {
@@ -41,15 +77,19 @@ abstract interface class WorkspaceTableRepository {
     required WorkspaceTable table,
     required String name,
   });
+  Future<WorkspaceTable> saveColumn({
+    required WorkspaceTable table,
+    required WorkspaceColumn column,
+  });
   Future<List<WorkspaceRecord>> records(String tableId);
   Future<WorkspaceRecord> record(String tableId, String id);
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
-    required Map<String, String> values,
+    required Map<String, Object?> values,
   });
   Future<WorkspaceRecord> updateRecord({
     required WorkspaceTable table,
     required WorkspaceRecord record,
-    required Map<String, String> values,
+    required Map<String, Object?> values,
   });
 }
