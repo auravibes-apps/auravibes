@@ -82,12 +82,11 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       currentSequence: workspace.sequence,
       events: [
         for (final event in events)
-          if (await const WorkspaceTableAccess().canSeeEvent(
+          await const WorkspaceTableAccess().visibleEvent(
             session,
             member,
             event,
-          ))
-            event,
+          ),
       ],
       earliestRetainedSequence: earliest,
       requiresSnapshot: requiresSnapshot,

@@ -1,6 +1,10 @@
 import 'dart:io';
 
-Future<int> main() async {
+Future<void> main() async {
+  exitCode = await _validateChangedDart();
+}
+
+Future<int> _validateChangedDart() async {
   try {
     final rootResult = Process.runSync('git', ['rev-parse', '--show-toplevel']);
     if (rootResult.exitCode != 0) {

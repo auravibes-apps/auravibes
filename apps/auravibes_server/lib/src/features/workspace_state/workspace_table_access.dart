@@ -13,11 +13,19 @@ class const WorkspaceTableAccess({final Transaction? transaction}) {
     WorkspaceResource resource,
   ) => _TableReader(session, member, transaction).visible(resource);
 
-  Future<bool> canSeeEvent(
+  Future<WorkspaceEvent> visibleEvent(
     Session session,
     WorkspaceMember member,
     WorkspaceEvent event,
-  ) => _TableReader(session, member, transaction).canSeeEvent(event);
+  ) async {
+    final visible = await _TableReader(
+      session,
+      member,
+      transaction,
+    ).canSeeEvent(event);
+
+    return visible ? event : _hiddenEvent(event);
+  }
 
   Future<void> requireWrite(
     Session session,
@@ -221,3 +229,13 @@ WorkspaceResource _visibleFolder(WorkspaceResource resource, String role) =>
             role == WorkspaceRoles.owner || role == WorkspaceRoles.admin,
       }),
     );
+
+WorkspaceEvent _hiddenEvent(WorkspaceEvent event) => event.copyWith(
+  id: null,
+  actorUserId: '',
+  kind: 'workspace.changed',
+  resourceKind: 'workspace',
+  resourceId: null,
+  payloadJson: null,
+  publishedAt: null,
+);
