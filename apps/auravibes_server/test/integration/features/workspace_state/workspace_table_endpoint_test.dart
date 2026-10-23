@@ -118,12 +118,49 @@ void main() {
           ]),
           throwsA(isA<CloudWorkspaceException>()),
         );
-        final renamed = await patch([
+        final metadata = await patch([
           WorkspacePatchOperation(
             operation: .update,
             resourceKind: .table,
             resourceId: 'table-one',
             expectedRevision: 1,
+            data: jsonEncode({
+              'name': 'Renamed list',
+              'parentId': null,
+              'labelColumnId': 'label-one',
+              'schemaRevision': 1,
+              'columns': [
+                {
+                  'id': 'label-one',
+                  'name': 'Title',
+                  'type': 'text',
+                  'options': [],
+                },
+              ],
+            }),
+            fieldMask: const [],
+          ),
+        ]);
+        expect(metadata.resources.single.revision, 2);
+        await patch([
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .tableRecord,
+            resourceId: 'open-draft',
+            data: jsonEncode({
+              'tableId': 'table-one',
+              'schemaRevision': 1,
+              'values': {'label-one': 'Draft before rename'},
+            }),
+            fieldMask: const [],
+          ),
+        ]);
+        final renamed = await patch([
+          WorkspacePatchOperation(
+            operation: .update,
+            resourceKind: .table,
+            resourceId: 'table-one',
+            expectedRevision: 2,
             data: jsonEncode({
               'name': 'My list',
               'labelColumnId': 'label-one',
@@ -135,7 +172,7 @@ void main() {
             fieldMask: const [],
           ),
         ]);
-        expect(renamed.resources.single.revision, 2);
+        expect(renamed.resources.single.revision, 3);
         await expectLater(
           patch([
             WorkspacePatchOperation(

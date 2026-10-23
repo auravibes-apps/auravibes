@@ -1940,6 +1940,10 @@
     }
   },
   "workspace_items": {
+    "edit_item": "Editar elemento",
+    "item_name": "Nombre",
+    "destination": "Carpeta de destino",
+    "root": "Raíz del espacio de trabajo",
     "title": "Elementos del espacio",
     "folder_name": "Nombre de la carpeta",
     "create_folder": "Crear carpeta",

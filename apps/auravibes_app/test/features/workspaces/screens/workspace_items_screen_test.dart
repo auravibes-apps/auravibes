@@ -51,6 +51,55 @@ void main() {
     });
   }
 
+  testWidgets('folder controls rename and move to another folder', (
+    tester,
+  ) async {
+    final folders = OrganizeWorkspaceFoldersUsecase(_MemoryFolders());
+    final original = await folders.create(name: 'Original');
+    final destination = await folders.create(name: 'Archive');
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const WorkspaceItemsScreen(workspaceId: 'one'),
+          overrides: [
+            workspaceTablesProvider.overrideWith((ref, arguments) async => []),
+            workspaceFolderUsecaseProvider('one')
+                .overrideWith((ref) async => folders),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    final edit = find.byWidgetPredicate(
+      (widget) =>
+          widget is AuraIconButton &&
+          widget.identifier == 'workspace_item_edit_${original.id}',
+    );
+    await tester.ensureVisible(edit);
+    await tester.tap(edit);
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraInput && widget.identifier == 'workspace_item_name',
+      ),
+      'Renamed',
+    );
+    await tester.tap(find.text('Archive'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraButton && widget.identifier == 'workspace_item_save',
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect((await folders.list()).map((item) => item.id), [destination.id]);
+    final moved = (await folders.list(parentId: destination.id)).single;
+    expect((moved.id, moved.name), (original.id, 'Renamed'));
+  });
+
   testWidgets('empty workspace creates and opens a user-named folder', (
     tester,
   ) async {
@@ -104,6 +153,23 @@ class _MemoryFolders implements WorkspaceFolderRepository {
   @override
   Future<List<WorkspaceFolder>> list({String? parentId}) async =>
       _folders.where((folder) => folder.parentId == parentId).toList();
+
+  @override
+  Future<WorkspaceFolder> updateMetadata({
+    required WorkspaceFolder folder,
+    required String name,
+    required String? parentId,
+  }) async {
+    final index = _folders.indexWhere((item) => item.id == folder.id);
+    final updated = WorkspaceFolder(
+      id: folder.id,
+      name: name,
+      revision: folder.revision + 1,
+      parentId: parentId,
+    );
+    _folders[index] = updated;
+    return updated;
+  }
 
   @override
   Future<WorkspaceFolder> create({

@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_folder_metadata_editor.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_table_metadata_editor.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
@@ -24,6 +27,8 @@ class const WorkspaceItemsScreen({required final String workspaceId, super.key})
   Widget build(BuildContext context, WidgetRef ref) {
     final path = useState(<WorkspaceFolder>[]);
     final selectedTable = useState<String?>(null);
+    final editingFolder = useState<WorkspaceFolder?>(null);
+    final editingTable = useState<WorkspaceTable?>(null);
     final tableName = useTextEditingController();
     final name = useTextEditingController();
     final pending = useState(false);
@@ -101,6 +106,27 @@ class const WorkspaceItemsScreen({required final String workspaceId, super.key})
         ..invalidate(tablesProvider);
     }
 
+    if (editingFolder.value case final folder?) {
+      return AppScreen(
+        child: WorkspaceFolderMetadataEditor(
+          workspaceId: workspaceId,
+          folder: folder,
+          parentName: path.value.lastOrNull?.name,
+          onBack: () => editingFolder.value = null,
+        ),
+      );
+    }
+    if (editingTable.value case final table?) {
+      return AppScreen(
+        child: WorkspaceTableMetadataEditor(
+          workspaceId: workspaceId,
+          table: table,
+          parentName: path.value.lastOrNull?.name,
+          onBack: () => editingTable.value = null,
+        ),
+      );
+    }
+
     if (selectedTable.value case final id?) {
       return WorkspaceTableScreen(
         workspaceId: workspaceId,
@@ -161,6 +187,12 @@ class const WorkspaceItemsScreen({required final String workspaceId, super.key})
                   ListTile(
                     leading: const Icon(Icons.table_chart_outlined),
                     title: Text(table.name),
+                    trailing: AuraIconButton(
+                      icon: Icons.edit_outlined,
+                      identifier: 'workspace_item_edit_${table.id}',
+                      tooltip: LocaleKeys.workspace_items_edit_item.tr(),
+                      onPressed: () => editingTable.value = table,
+                    ),
                     onTap: pending.value
                         ? null
                         : () => selectedTable.value = table.id,
@@ -182,6 +214,12 @@ class const WorkspaceItemsScreen({required final String workspaceId, super.key})
                   ListTile(
                     leading: const Icon(Icons.folder_outlined),
                     title: Text(folder.name),
+                    trailing: AuraIconButton(
+                      icon: Icons.edit_outlined,
+                      identifier: 'workspace_item_edit_${folder.id}',
+                      tooltip: LocaleKeys.workspace_items_edit_item.tr(),
+                      onPressed: () => editingFolder.value = folder,
+                    ),
                     onTap: pending.value
                         ? null
                         : () {

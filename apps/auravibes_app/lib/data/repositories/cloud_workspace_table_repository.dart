@@ -55,6 +55,27 @@ class const CloudWorkspaceTableRepository(
   }
 
   @override
+  Future<WorkspaceTable> updateMetadata({
+    required WorkspaceTable table,
+    required String name,
+    required String? parentId,
+  }) async {
+    await _store.update(
+      kind: .table,
+      id: table.id,
+      revision: table.revision,
+      data: {
+        ..._schemaUpdate(table, table.columns),
+        'name': name,
+        'parentId': parentId,
+        'schemaRevision': table.schemaRevision,
+      },
+    );
+
+    return await this.table(table.id);
+  }
+
+  @override
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
     required String name,

@@ -1940,6 +1940,10 @@
     }
   },
   "workspace_items": {
+    "edit_item": "Edit item",
+    "item_name": "Name",
+    "destination": "Destination folder",
+    "root": "Workspace root",
     "title": "Workspace items",
     "folder_name": "Folder name",
     "create_folder": "Create folder",

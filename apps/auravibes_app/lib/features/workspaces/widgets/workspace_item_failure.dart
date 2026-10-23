@@ -9,6 +9,9 @@ class const WorkspaceItemFailure({required final Object error, super.key})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (error) {
+    WorkspaceFolderException(conflict: true) => const TextLocale(
+      LocaleKeys.cloud_errors_conflict,
+    ),
     WorkspaceFolderException() => const TextLocale(
       LocaleKeys.workspace_items_invalid_folder,
     ),

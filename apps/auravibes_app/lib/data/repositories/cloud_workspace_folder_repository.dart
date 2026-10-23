@@ -36,6 +36,27 @@ class const CloudWorkspaceFolderRepository(
     return WorkspaceFolder(id: id, name: name, revision: 1, parentId: parentId);
   }
 
+  @override
+  Future<WorkspaceFolder> updateMetadata({
+    required WorkspaceFolder folder,
+    required String name,
+    required String? parentId,
+  }) async {
+    await _store.update(
+      kind: .folder,
+      id: folder.id,
+      revision: folder.revision,
+      data: {'name': name, 'parentId': parentId},
+    );
+
+    return WorkspaceFolder(
+      id: folder.id,
+      name: name,
+      revision: folder.revision + 1,
+      parentId: parentId,
+    );
+  }
+
   int _compareNames(WorkspaceFolder left, WorkspaceFolder right) =>
       left.name.compareTo(right.name);
 

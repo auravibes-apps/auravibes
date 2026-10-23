@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_folder_updates.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/v7.dart';
@@ -24,6 +25,16 @@ class const LocalWorkspaceFolderRepository(
 
         return await _insert(name, parentId);
       });
+
+  @override
+  Future<WorkspaceFolder> updateMetadata({
+    required WorkspaceFolder folder,
+    required String name,
+    required String? parentId,
+  }) => LocalWorkspaceFolderUpdates(
+    _database,
+    _workspaceId,
+  ).update(folder, name, parentId);
 
   Expression<bool> _retainedFolder($WorkspaceFoldersTable row) =>
       row.workspaceId.equals(_workspaceId) & row.deletedAt.isNull();

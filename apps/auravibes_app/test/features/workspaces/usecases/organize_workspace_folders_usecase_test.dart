@@ -14,6 +14,99 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
+    'rename and move folders retain identity and reject stale changes',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const Value('one'),
+              name: 'One',
+              type: .local,
+            ),
+          );
+      final folders = OrganizeWorkspaceFoldersUsecase(
+        LocalWorkspaceFolderRepository(database, 'one'),
+      );
+      final source = await folders.create(name: 'Source');
+      final destination = await folders.create(name: 'Destination');
+      final child = await folders.create(name: 'Original', parentId: source.id);
+      final moved = await folders.updateMetadata(
+        folder: child,
+        name: '  Renamed  ',
+        parentId: destination.id,
+      );
+      expect(
+        (moved.id, moved.name, moved.parentId, moved.revision),
+        (child.id, 'Renamed', destination.id, 2),
+      );
+      expect(await folders.list(parentId: source.id), isEmpty);
+      expect(
+        (await folders.list(parentId: destination.id)).single.id,
+        child.id,
+      );
+      await expectLater(
+        folders.updateMetadata(
+          folder: child,
+          name: 'Stale',
+          parentId: source.id,
+        ),
+        throwsA(isA<WorkspaceFolderException>()),
+      );
+      expect(
+        (await folders.list(parentId: destination.id)).single.name,
+        'Renamed',
+      );
+    },
+  );
+
+  test(
+    'folder moves reject self, descendant and foreign destinations atomically',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      for (final id in ['one', 'two']) {
+        final _ = await database
+            .into(database.workspaces)
+            .insert(
+              WorkspacesCompanion.insert(id: Value(id), name: id, type: .local),
+            );
+      }
+      final folders = OrganizeWorkspaceFoldersUsecase(
+        LocalWorkspaceFolderRepository(database, 'one'),
+      );
+      final other = OrganizeWorkspaceFoldersUsecase(
+        LocalWorkspaceFolderRepository(database, 'two'),
+      );
+      final parent = await folders.create(name: 'Parent');
+      final child = await folders.create(name: 'Child', parentId: parent.id);
+      final foreign = await other.create(name: 'Foreign');
+      for (final destination in [parent.id, child.id, foreign.id, 'missing']) {
+        await expectLater(
+          folders.updateMetadata(
+            folder: parent,
+            name: 'Invalid',
+            parentId: destination,
+          ),
+          throwsA(isA<WorkspaceFolderException>()),
+        );
+      }
+      await expectLater(
+        other.updateMetadata(
+          folder: parent,
+          name: 'Foreign source',
+          parentId: null,
+        ),
+        throwsA(isA<WorkspaceFolderException>()),
+      );
+      expect((await folders.list()).single.name, 'Parent');
+      expect((await folders.list(parentId: parent.id)).single.id, child.id);
+    },
+  );
+
+  test(
     'create and browse nested folders without crossing workspaces',
     () async {
       final database = AppDatabase(connection: NativeDatabase.memory());
@@ -68,6 +161,20 @@ void main() {
         patch: ({required requestId, required operations}) async {
           final operation = operations.single;
           expect(operation.resourceKind, WorkspaceResourceKind.folder);
+          final index = rows.indexWhere(
+            (row) => row.resourceId == operation.resourceId,
+          );
+          if (operation.operation == .update) {
+            expect(operation.expectedRevision, rows[index].revision);
+            rows[index] = rows[index].copyWith(
+              data: operation.data!,
+              revision: rows[index].revision + 1,
+            );
+            return PatchWorkspaceStateResponse(
+              resources: [rows[index]],
+              sequence: rows.length,
+            );
+          }
           expect(operation.operation, WorkspacePatchOperationKind.create);
           final now = DateTime.now().toUtc();
           rows.add(
@@ -92,7 +199,12 @@ void main() {
             throw StateError('Unexpected credential mutation'),
         read: ({required pages, required eventLimit, afterSequence}) async {
           final request = pages.single;
-          final index = request.afterResourceId == null ? 0 : 1;
+          final index = request.afterResourceId == null
+              ? 0
+              : rows.indexWhere(
+                      (row) => row.resourceId == request.afterResourceId,
+                    ) +
+                    1;
           final page = rows.skip(index).take(1).toList();
 
           return ReadWorkspaceStateResponse(
@@ -123,6 +235,22 @@ void main() {
         (jsonDecode(rows.last.data) as Map<String, dynamic>)['parentId'],
         parent.id,
       );
+      final destination = await folders.create(name: 'Archive');
+      final moved = await folders.updateMetadata(
+        folder: child,
+        name: '  Final  ',
+        parentId: destination.id,
+      );
+      final refreshed = OrganizeWorkspaceFoldersUsecase(
+        CloudWorkspaceFolderRepository(store),
+      );
+      expect(await refreshed.list(parentId: parent.id), isEmpty);
+      final persisted = (await refreshed.list(parentId: destination.id)).single;
+      expect(
+        (persisted.id, persisted.name, persisted.parentId, persisted.revision),
+        (child.id, 'Final', destination.id, 2),
+      );
+      expect(moved.id, child.id);
     },
   );
 
@@ -146,13 +274,23 @@ void main() {
       LocalWorkspaceFolderRepository(database, 'one'),
     );
     final created = await first.create(name: 'Documents');
+    final destination = await first.create(name: 'Archive');
+    final _ = await first.updateMetadata(
+      folder: created,
+      name: 'Renamed',
+      parentId: destination.id,
+    );
     await database.close();
     final reopened = AppDatabase(connection: NativeDatabase(file));
     addTearDown(reopened.close);
     final folders = OrganizeWorkspaceFoldersUsecase(
       LocalWorkspaceFolderRepository(reopened, 'one'),
     );
-    expect((await folders.list()).single.id, created.id);
-    expect((await folders.list()).single.name, 'Documents');
+    final persisted = (await folders.list(parentId: destination.id)).single;
+    expect(
+      (persisted.id, persisted.name, persisted.revision),
+      (created.id, 'Renamed', 2),
+    );
+    expect((await folders.list()).single.id, destination.id);
   });
 }

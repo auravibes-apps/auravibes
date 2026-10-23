@@ -1157,6 +1157,28 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     Transaction transaction,
   ) async {
     if (operation.resourceKind == WorkspaceResourceKind.table) {
+      final previous = existing == null
+          ? null
+          : jsonDecode(existing.data) as Map<String, dynamic>;
+      if (previous == null) {
+        if (data['schemaRevision'] != 1) {
+          throw const FormatException();
+        }
+      } else {
+        final metadataOnly =
+            WorkspaceTableValidation.sameSchema(
+              data,
+              previous,
+            ) &&
+            data['schemaRevision'] == previous['schemaRevision'];
+        final expectedSchemaRevision =
+            (previous['schemaRevision'] as int) + (metadataOnly ? 0 : 1);
+        if (data['labelColumnId'] != previous['labelColumnId'] ||
+            data['schemaRevision'] != expectedSchemaRevision) {
+          _staleRevision();
+        }
+        if (metadataOnly) return;
+      }
       String? cursor;
       while (true) {
         final records = await _repository.readPage(
@@ -1179,19 +1201,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         }
         if (records.length < _maxPageSize) break;
         cursor = records.last.resourceId;
-      }
-      final previous = existing == null
-          ? null
-          : jsonDecode(existing.data) as Map<String, dynamic>;
-      if (previous == null) {
-        if (data['schemaRevision'] != 1) {
-          throw const FormatException();
-        }
-      } else {
-        if (data['labelColumnId'] != previous['labelColumnId'] ||
-            data['schemaRevision'] != (previous['schemaRevision'] as int) + 1) {
-          _staleRevision();
-        }
       }
     }
     if (operation.resourceKind != WorkspaceResourceKind.tableRecord) {
