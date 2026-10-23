@@ -2,7 +2,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_table_action.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_editor.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';

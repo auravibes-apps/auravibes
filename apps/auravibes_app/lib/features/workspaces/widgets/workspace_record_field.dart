@@ -18,121 +18,148 @@ class const WorkspaceRecordField({
   @override
   Widget build(BuildContext context) {
     final text = useTextEditingController(text: value?.toString() ?? '');
-    Dispose? synchronizeText() {
-      if (present) text.text = value?.toString() ?? '';
-
-      return null;
-    }
-
-    useEffect(synchronizeText, [present]);
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        AuraCheckboxListTile(
-          value: present,
-          onChanged: _togglePresence,
-          title: Text(column.name),
-          subtitle: const TextLocale(LocaleKeys.workspace_items_has_value),
-          disabled: disabled,
-          semanticLabel: column.name,
-        ),
-        if (present)
-          _TypedRecordInput(
-            column: column,
-            value: value,
-            controller: text,
-            disabled: disabled,
-            identifier: identifier,
-            onChanged: onChanged,
-          ),
-      ],
-    );
+    useEffect(() => _sync(text), [present]);
+    return _RecordFieldBody(field: this, controller: text);
   }
 
-  void _togglePresence(bool selected) {
+  Dispose? _sync(TextEditingController text) {
+    if (present) text.text = value?.toString() ?? '';
+    return null;
+  }
+}
+
+class const _RecordFieldBody({
+  required final WorkspaceRecordField field,
+  required final TextEditingController controller,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _PresenceControl(field: field),
+      if (field.present)
+        _TypedRecordInput(field: field, controller: controller),
+    ],
+  );
+}
+
+class const _PresenceControl({required final WorkspaceRecordField field})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCheckboxListTile(
+    value: field.present,
+    onChanged: _toggle,
+    title: Text(field.column.name),
+    subtitle: const TextLocale(LocaleKeys.workspace_items_has_value),
+    disabled: field.disabled,
+    semanticLabel: field.column.name,
+  );
+  void _toggle(bool selected) {
     if (selected) {
-      onChanged(_defaultValue(column.type));
+      field.onChanged(_defaultValue(field.column.type));
     } else {
-      onUnset();
+      field.onUnset();
     }
   }
 }
 
 class const _TypedRecordInput({
-  required final WorkspaceColumn column,
-  required final Object? value,
+  required final WorkspaceRecordField field,
   required final TextEditingController controller,
-  required final bool disabled,
-  required final String identifier,
-  required final ValueChanged<Object?> onChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => switch (column.type) {
-    .checkbox => _checkbox(),
-    .singleSelect => _singleSelect(),
-    .multiSelect => _multiSelect(),
-    _ => _text(),
+  Widget build(BuildContext context) => switch (field.column.type) {
+    .checkbox => _CheckboxInput(field: field),
+    .singleSelect => _SingleSelectInput(field: field),
+    .multiSelect => _MultiSelectInput(field: field),
+    _ => _TextInput(field: field, controller: controller),
   };
+}
 
-  Widget _checkbox() => AuraCheckboxListTile(
-    value: value == true,
-    onChanged: onChanged,
+class const _CheckboxInput({required final WorkspaceRecordField field})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCheckboxListTile(
+    value: field.value == true,
+    onChanged: field.onChanged,
     title: const TextLocale(LocaleKeys.workspace_items_checked),
-    disabled: disabled,
-    semanticLabel: column.name,
+    disabled: field.disabled,
+    semanticLabel: field.column.name,
   );
+}
 
-  Widget _singleSelect() => AuraDropdownSelector<String>(
+class const _SingleSelectInput({required final WorkspaceRecordField field})
+    extends StatelessWidget {
+  String? get _selection =>
+      field.value is String && field.column.options.contains(field.value)
+      ? field.value as String
+      : null;
+  @override
+  Widget build(BuildContext context) => AuraDropdownSelector<String>(
     options: [
-      for (final option in column.options)
+      for (final option in field.column.options)
         AuraDropdownOption(value: option, child: Text(option)),
     ],
-    value: value is String && column.options.contains(value)
-        ? value as String
-        : null,
-    onChanged: onChanged,
-    isEnabled: !disabled,
-    identifier: identifier,
+    value: _selection,
+    onChanged: field.onChanged,
+    isEnabled: !field.disabled,
+    identifier: field.identifier,
   );
+}
 
-  List<String> get _selection => switch (value) {
+class const _MultiSelectInput({required final WorkspaceRecordField field})
+    extends StatelessWidget {
+  List<String> get _selection => switch (field.value) {
     final List<dynamic> selected => selected.whereType<String>().toList(),
     _ => [],
   };
-
-  void _toggleOption(String option, bool selected) {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      for (final option in field.column.options)
+        _MultiOption(input: this, option: option),
+    ],
+  );
+  void _change(String option, bool selected) {
     final values = _selection;
     if (selected) {
       values.add(option);
     } else {
       final _ = values.remove(option);
     }
-    onChanged(values);
+    field.onChanged(values);
   }
+}
 
-  Widget _multiSelect() => Column(
-    children: [
-      for (final option in column.options)
-        AuraCheckboxListTile(
-          value: _selection.contains(option),
-          onChanged: (selected) => _toggleOption(option, selected),
-          title: Text(option),
-          disabled: disabled,
-          semanticLabel: '${column.name}: $option',
-        ),
-    ],
+class const _MultiOption({
+  required final _MultiSelectInput input,
+  required final String option,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCheckboxListTile(
+    value: input._selection.contains(option),
+    onChanged: (selected) => input._change(option, selected),
+    title: Text(option),
+    disabled: input.field.disabled,
+    semanticLabel: '${input.field.column.name}: $option',
   );
+}
 
-  Widget _text() => AuraInput(
+class const _TextInput({
+  required final WorkspaceRecordField field,
+  required final TextEditingController controller,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
     controller: controller,
-    keyboardType: _keyboardType(column.type),
-    enabled: !disabled,
-    onChanged: _changeText,
-    identifier: identifier,
+    keyboardType: _keyboardType(field.column.type),
+    enabled: !field.disabled,
+    onChanged: _change,
+    identifier: field.identifier,
   );
-
-  void _changeText(String text) =>
-      onChanged(column.type == .number ? num.tryParse(text) ?? text : text);
+  void _change(String text) => field.onChanged(
+    field.column.type == .number ? num.tryParse(text) ?? text : text,
+  );
 }
 
 Object _defaultValue(WorkspaceColumnType type) => switch (type) {
@@ -141,7 +168,6 @@ Object _defaultValue(WorkspaceColumnType type) => switch (type) {
   .multiSelect => <String>[],
   _ => '',
 };
-
 TextInputType _keyboardType(WorkspaceColumnType type) => switch (type) {
   .number => const .numberWithOptions(signed: true, decimal: true),
   .url => .url,

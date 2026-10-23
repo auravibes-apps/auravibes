@@ -152,6 +152,17 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final hash = base64UrlEncode(requestHash);
 
     return session.db.transaction((transaction) async {
+      await _authorize(
+        session,
+        request.workspaceId,
+        userId,
+        transaction: transaction,
+      );
+      final workspace = await _requireLockedWorkspace(
+        session,
+        request.workspaceId,
+        transaction,
+      );
       final member = await _authorize(
         session,
         request.workspaceId,
@@ -159,11 +170,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         transaction: transaction,
       );
       _requirePatchRole(member.role, request.operations);
-      final workspace = await _requireLockedWorkspace(
-        session,
-        request.workspaceId,
-        transaction,
-      );
       for (final operation in request.operations) {
         await const WorkspaceTableAccess().requireWrite(
           session,

@@ -4,25 +4,30 @@ import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 
 typedef WorkspaceTableAction = ({
-  AsyncValue<void> state,
+  bool pending,
+  Object? error,
   Future<void> Function(Future<void> Function()) run,
 });
-
-extension WorkspaceTableActionState on WorkspaceTableAction {
-  bool get pending => state.isLoading;
-  Object? get error => switch (state) {
-    AsyncError(:final error) => error,
-    _ => null,
-  };
-}
 
 abstract final class WorkspaceTableActions {
   static final _logger = Logger('workspace_table_action');
 
   static WorkspaceTableAction use(BuildContext context) {
     final state = useState<AsyncValue<void>>(const AsyncData(null));
-    return (state: state.value, run: (action) => _run(context, state, action));
+    return _snapshot(state.value, (action) => _run(context, state, action));
   }
+
+  static WorkspaceTableAction _snapshot(
+    AsyncValue<void> state,
+    Future<void> Function(Future<void> Function()) run,
+  ) => (
+    pending: state.isLoading,
+    error: switch (state) {
+      AsyncError(:final error) => error,
+      _ => null,
+    },
+    run: run,
+  );
 
   static Future<void> _run(
     BuildContext context,

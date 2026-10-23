@@ -573,6 +573,26 @@ void main() {
             ),
           ),
         );
+        await grant('edit', 5);
+        await endpoints.cloudWorkspace.removeMember(
+          authenticated,
+          RemoveWorkspaceMemberRequest(
+            workspaceId: workspace.id!,
+            userId: outsiderId,
+            requestId: 'remove-table-member',
+            expectedMemberRevision: 1,
+          ),
+        );
+        await expectLater(
+          memberRead(),
+          throwsA(
+            isA<CloudWorkspaceException>().having(
+              (error) => error.code,
+              'code',
+              CloudWorkspaceErrorCode.membershipRequired,
+            ),
+          ),
+        );
         await expectLater(
           endpoints.workspaceState.read(
             sessionBuilder,

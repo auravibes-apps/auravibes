@@ -18,22 +18,6 @@ class LocalWorkspaceTableRepository implements WorkspaceTableRepository {
   final _RecordWriter _recordWriter;
 
   @override
-  Future<List<WorkspaceTableMember>> members(String tableId) async {
-    final _ = await table(tableId);
-
-    return [];
-  }
-
-  @override
-  Future<void> setMemberAccess({
-    required WorkspaceTable table,
-    required String userId,
-    required String? access,
-  }) async {
-    throw const WorkspaceTableException();
-  }
-
-  @override
   Future<List<WorkspaceTable>> list({String? parentId}) async {
     final query = _tables(_database, _workspaceId)
       ..where((row) => _parent(row, parentId))

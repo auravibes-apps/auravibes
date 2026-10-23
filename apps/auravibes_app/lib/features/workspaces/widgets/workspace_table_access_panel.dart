@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
-import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_table_access_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_table_action.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -15,9 +15,10 @@ import 'package:material_ui/material_ui.dart';
 typedef _GrantRequest = ({WorkspaceTableMember member, String? access});
 typedef _Grant = ValueChanged<_GrantRequest>;
 typedef _AccessDraft = ({
-  Future<OrganizeWorkspaceTablesUsecase> usecase,
+  Future<ManageWorkspaceTableAccessUsecase> usecase,
   AsyncSnapshot<List<WorkspaceTableMember>> members,
   WorkspaceTableAction action,
+  BuildContext context,
 });
 
 class const WorkspaceTableAccessPanel({
@@ -32,7 +33,7 @@ class const WorkspaceTableAccessPanel({
     return _AccessContent(
       draft: draft,
       onGrant: (request) =>
-          unawaited(_AccessActions.grant(ref, this, draft, request)),
+          unawaited(_AccessActions.grant(this, draft, request)),
     );
   }
 }
@@ -44,10 +45,10 @@ abstract final class _AccessActions {
     WorkspaceTableAccessPanel panel,
   ) {
     final usecase = ref.watch(
-      workspaceTableUsecaseProvider(panel.workspaceId).future,
+      workspaceTableAccessUsecaseProvider(panel.workspaceId).future,
     );
     final members = useFuture(
-      useMemoized(() => _members(usecase, panel.table.id), [
+      useMemoized(() => _members(usecase, panel.table), [
         usecase,
         panel.table.revision,
       ]),
@@ -56,26 +57,35 @@ abstract final class _AccessActions {
       usecase: usecase,
       members: members,
       action: WorkspaceTableActions.use(context),
+      context: context,
     );
   }
 
-  static Future<List<WorkspaceTableMember>> _members(
-    Future<OrganizeWorkspaceTablesUsecase> usecase,
-    String id,
-  ) async => await (await usecase).members(id);
   static Future<void> grant(
-    WidgetRef ref,
     WorkspaceTableAccessPanel panel,
     _AccessDraft draft,
     _GrantRequest request,
   ) => draft.action.run(() async {
-    await (await draft.usecase).setMemberAccess(
-      table: panel.table,
+    await _apply(draft, panel.table, request);
+    if (draft.context.mounted) panel.onChanged();
+  });
+  static Future<void> _apply(
+    _AccessDraft draft,
+    WorkspaceTable table,
+    _GrantRequest request,
+  ) async {
+    final usecase = await draft.usecase;
+    await usecase.setMemberAccess(
+      table: table,
       userId: request.member.userId,
       access: request.access,
     );
-    if (ref.context.mounted) panel.onChanged();
-  });
+  }
+
+  static Future<List<WorkspaceTableMember>> _members(
+    Future<ManageWorkspaceTableAccessUsecase> usecase,
+    WorkspaceTable table,
+  ) async => await (await usecase).members(table);
 }
 
 class const _AccessContent({

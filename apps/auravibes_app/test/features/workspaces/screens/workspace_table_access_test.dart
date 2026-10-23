@@ -1,12 +1,14 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/cloud_workspace_table_repository.dart';
+import 'package:auravibes_app/data/repositories/cloud_workspace_table_access_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_table_access_usecase.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -136,6 +138,7 @@ void main() {
             onBack: () => fail('Unexpected back navigation'),
           ),
           overrides: [
+            workspaceTableAccessUsecaseProvider('one').overrideWith((ref) async => ManageWorkspaceTableAccessUsecase(CloudWorkspaceTableAccessRepository(.new(gateway)))),
             workspaceTableUsecaseProvider('one')
                 .overrideWith((ref) async => usecase),
           ],

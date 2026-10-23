@@ -1,7 +1,7 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_table_action.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -38,11 +38,6 @@ typedef _ColumnDraft = ({_ColumnFields fields, WorkspaceTableAction action});
 abstract final class _ColumnActions {
   static _ColumnDraft use(BuildContext context, WorkspaceColumn? column) =>
       (fields: _fields(column), action: WorkspaceTableActions.use(context));
-  static _ColumnFields _fields(WorkspaceColumn? column) => (
-    name: useTextEditingController(text: column?.name ?? ''),
-    options: useTextEditingController(text: column?.options.join('\n') ?? ''),
-    type: useState(column?.type ?? WorkspaceColumnType.text),
-  );
   static Future<void> save(
     WidgetRef ref,
     WorkspaceColumnEditor editor,
@@ -58,6 +53,13 @@ abstract final class _ColumnActions {
     if (ref.context.mounted) editor.onBack();
   }
 
+  static bool hasOptions(WorkspaceColumnType type) =>
+      type == .singleSelect || type == .multiSelect;
+  static _ColumnFields _fields(WorkspaceColumn? column) => (
+    name: useTextEditingController(text: column?.name ?? ''),
+    options: useTextEditingController(text: column?.options.join('\n') ?? ''),
+    type: useState(column?.type ?? WorkspaceColumnType.text),
+  );
   static WorkspaceColumn _column(
     WorkspaceColumn? column,
     _ColumnFields fields,
@@ -74,8 +76,6 @@ abstract final class _ColumnActions {
             .where((option) => option.trim().isNotEmpty)
             .toList()
       : const [];
-  static bool hasOptions(WorkspaceColumnType type) =>
-      type == .singleSelect || type == .multiSelect;
 }
 
 class const _ColumnForm({
@@ -105,18 +105,33 @@ class const _ColumnInputs({
         controller: draft.fields.name,
         disabled: draft.action.pending,
       ),
-      _ColumnType(
-        type: draft.fields.type,
-        disabled: draft.action.pending,
-        isLabel: editor.column?.id == editor.table.labelColumnId,
-      ),
-      if (_ColumnActions.hasOptions(draft.fields.type.value))
-        _ColumnOptions(
-          controller: draft.fields.options,
-          disabled: draft.action.pending,
-        ),
+      _ColumnDraftType(editor: editor, draft: draft),
+      _ColumnDraftOptions(fields: draft.fields, disabled: draft.action.pending),
     ],
   );
+}
+
+class const _ColumnDraftType({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ColumnType(
+    type: draft.fields.type,
+    disabled: draft.action.pending,
+    isLabel: editor.column?.id == editor.table.labelColumnId,
+  );
+}
+
+class const _ColumnDraftOptions({
+  required final _ColumnFields fields,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _ColumnActions.hasOptions(fields.type.value)
+      ? _ColumnOptions(controller: fields.options, disabled: disabled)
+      : const SizedBox.shrink();
 }
 
 class const _ColumnName({
@@ -141,12 +156,11 @@ class const _ColumnType({
   Widget build(BuildContext context) =>
       AuraDropdownSelector<WorkspaceColumnType>(
         options: [
-          for (final value in WorkspaceColumnType.values)
-            if (!isLabel || value == .text)
-              AuraDropdownOption(
-                value: value,
-                child: WorkspaceColumnTypeLabel(type: value),
-              ),
+          for (final value in WorkspaceColumnType.values.where(_allowed))
+            AuraDropdownOption(
+              value: value,
+              child: WorkspaceColumnTypeLabel(type: value),
+            ),
         ],
         value: type.value,
         onChanged: disabled ? null : _change,
@@ -154,14 +168,7 @@ class const _ColumnType({
         isEnabled: !disabled,
         identifier: 'workspace_column_type',
       );
-  List<AuraDropdownOption<WorkspaceColumnType>> get _options => [
-    for (final value in WorkspaceColumnType.values)
-      if (!isLabel || value == .text)
-        AuraDropdownOption(
-          value: value,
-          child: WorkspaceColumnTypeLabel(type: value),
-        ),
-  ];
+  bool _allowed(WorkspaceColumnType value) => !isLabel || value == .text;
   void _change(WorkspaceColumnType? value) {
     if (value != null) type.value = value;
   }

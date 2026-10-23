@@ -260,7 +260,6 @@ void main() {
     expect(table.canManage, true);
     expect(table.canEditRecords, true);
     expect(table.supportsSharing, false);
-    expect(await tables.members(table.id), isEmpty);
     final column = table.columns.single;
     final first = await tables.createRecord(
       table: table,
@@ -533,6 +532,7 @@ void main() {
       );
       expect(await tables.records(table.id), hasLength(2));
       expect((await tables.list()).single.id, table.id);
+      canEditRecords = true;
       var typed = renamed;
       final typedValues = <String, Object?>{typed.labelColumnId: ''};
       for (final example

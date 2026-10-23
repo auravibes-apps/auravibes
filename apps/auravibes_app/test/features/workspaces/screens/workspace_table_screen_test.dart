@@ -138,6 +138,8 @@ void main() {
     await tester.tap(button('workspace_record_create'));
     await flush();
     expect(find.text('Book'), findsOneWidget);
+    await tester.tap(find.text('Book'));
+    await flush();
     await tester.enterText(input('workspace_record_value'), 'First book');
     await tester.runAsync(() => tester.tap(button('workspace_record_save')));
     await flush();

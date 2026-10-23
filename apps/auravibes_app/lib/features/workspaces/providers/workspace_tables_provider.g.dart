@@ -67,7 +67,7 @@ final class WorkspaceTableUsecaseProvider
 }
 
 String _$workspaceTableUsecaseHash() =>
-    r'3886c3b26462edc4cead0cec1d2354e041bd39b7';
+    r'0effe52c07895132b271432b9382466af6094969';
 
 final class WorkspaceTableUsecaseFamily extends $Family
     with
@@ -330,4 +330,88 @@ final class WorkspaceTableRecordsFamily extends $Family
 
   @override
   String toString() => r'workspaceTableRecordsProvider';
+}
+
+@ProviderFor(workspaceTableAccessUsecase)
+final workspaceTableAccessUsecaseProvider =
+    WorkspaceTableAccessUsecaseFamily._();
+
+final class WorkspaceTableAccessUsecaseProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<ManageWorkspaceTableAccessUsecase>,
+          ManageWorkspaceTableAccessUsecase,
+          FutureOr<ManageWorkspaceTableAccessUsecase>
+        >
+    with
+        $FutureModifier<ManageWorkspaceTableAccessUsecase>,
+        $FutureProvider<ManageWorkspaceTableAccessUsecase> {
+  WorkspaceTableAccessUsecaseProvider._({
+    required WorkspaceTableAccessUsecaseFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'workspaceTableAccessUsecaseProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$workspaceTableAccessUsecaseHash();
+
+  @override
+  String toString() {
+    return r'workspaceTableAccessUsecaseProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<ManageWorkspaceTableAccessUsecase> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<ManageWorkspaceTableAccessUsecase> create(Ref ref) {
+    final argument = this.argument as String;
+    return workspaceTableAccessUsecase(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkspaceTableAccessUsecaseProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$workspaceTableAccessUsecaseHash() =>
+    r'b71bbd7a190f4cccc613d952aca623d6b696bb54';
+
+final class WorkspaceTableAccessUsecaseFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<ManageWorkspaceTableAccessUsecase>,
+          String
+        > {
+  WorkspaceTableAccessUsecaseFamily._()
+    : super(
+        retry: null,
+        name: r'workspaceTableAccessUsecaseProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkspaceTableAccessUsecaseProvider call(String workspaceId) =>
+      WorkspaceTableAccessUsecaseProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'workspaceTableAccessUsecaseProvider';
 }

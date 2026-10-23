@@ -6,7 +6,8 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 class const CloudWorkspaceTableAccessRepository(
   final CloudWorkspaceResourceStore _store,
-) {
+) implements WorkspaceTableAccessRepository {
+  @override
   Future<List<WorkspaceTableMember>> members(String tableId) async {
     final data = _ownerData(await _table(tableId));
     final grants = data['memberAccess'] as Map? ?? const {};
@@ -17,6 +18,7 @@ class const CloudWorkspaceTableAccessRepository(
     ];
   }
 
+  @override
   Future<void> setMemberAccess({
     required WorkspaceTable table,
     required String userId,

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_table_action.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';

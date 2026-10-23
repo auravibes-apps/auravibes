@@ -74,7 +74,10 @@ class const CloudWorkspaceTableRepository(
       kind: .table,
       id: table.id,
       revision: table.revision,
-      data: {..._schemaUpdate(table, columns), 'memberAccess': current['memberAccess']},
+      data: {
+        ..._schemaUpdate(table, columns),
+        'memberAccess': current['memberAccess'],
+      },
     );
 
     return await this.table(table.id);
@@ -157,22 +160,23 @@ Future<List<WorkspaceResource>> _rows(
   return rows;
 }
 
-WorkspaceTable _table(WorkspaceResource row) {
-  final data = CloudResourceMapper.decode(row);
-
-  return WorkspaceTable(
-    id: row.resourceId,
-    name: data['name'] as String,
-    labelColumnId: data['labelColumnId'] as String,
-    columns: _decodeColumns(data),
-    revision: row.revision,
-    schemaRevision: data['schemaRevision'] as int,
-    parentId: data['parentId'] as String?,
-    canManage: data['canManageTable'] == true,
-    canEditRecords: data['canEditRecords'] == true,
-    supportsSharing: true,
-  );
-}
+WorkspaceTable _table(WorkspaceResource row) =>
+    _tableFromData(row, CloudResourceMapper.decode(row));
+WorkspaceTable _tableFromData(
+  WorkspaceResource row,
+  Map<String, dynamic> data,
+) => WorkspaceTable(
+  id: row.resourceId,
+  name: data['name'] as String,
+  labelColumnId: data['labelColumnId'] as String,
+  columns: _decodeColumns(data),
+  revision: row.revision,
+  schemaRevision: data['schemaRevision'] as int,
+  parentId: data['parentId'] as String?,
+  canManage: data['canManageTable'] == true,
+  canEditRecords: data['canEditRecords'] == true,
+  supportsSharing: true,
+);
 
 WorkspaceRecord _record(WorkspaceResource row) {
   final data = CloudResourceMapper.decode(row);
@@ -216,7 +220,12 @@ List<WorkspaceColumn> _columns(List<dynamic> values) =>
 List<WorkspaceColumn> _decodeColumns(Map<String, Object?> data) =>
     _columns(data['columns']! as List<dynamic>);
 
-Future<Map<String, dynamic>> _currentData(CloudWorkspaceResourceStore store, String id) async {
+Future<Map<String, dynamic>> _currentData(
+  CloudWorkspaceResourceStore store,
+  String id,
+) async {
   final rows = await _rows(store, .table);
-  return CloudResourceMapper.decode(rows.firstWhere((row) => row.resourceId == id));
+  return CloudResourceMapper.decode(
+    rows.firstWhere((row) => row.resourceId == id),
+  );
 }
