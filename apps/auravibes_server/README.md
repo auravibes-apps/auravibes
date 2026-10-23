@@ -38,20 +38,28 @@ Set `test.database` in `config/passwords.yaml` to the same value as
 
 ```sh
 cd apps/auravibes_server
-docker compose up -d --remove-orphans postgres_test
+source ../../scripts/serverpod_worktree_env.sh
+docker compose --project-name "$AURAVIBES_SERVER_PROJECT" up -d --remove-orphans postgres_test
 ```
 
-Run the suite from the repository root:
+Run the suite from the repository root. The entrypoint owns the validation lease;
+do not add an outer lease. It checks Docker, the existing isolated database and
+port mapping, and effective Serverpod test credentials before loading tests. It
+does not start services or create credentials:
 
 ```sh
 fvm dart run melos run test:integration
+
+# Or select tests from any directory inside the worktree:
+bash "$(git rev-parse --show-toplevel)/scripts/test_server.sh" test/integration/features
 ```
 
 Stop the test database without deleting its volume:
 
 ```sh
 cd apps/auravibes_server
-docker compose stop postgres_test
+source ../../scripts/serverpod_worktree_env.sh
+docker compose --project-name "$AURAVIBES_SERVER_PROJECT" stop postgres_test
 ```
 
 Print the ports selected for this worktree without starting services:

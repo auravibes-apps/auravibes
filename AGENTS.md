@@ -39,6 +39,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 | Workspace bootstrap     | `python3 tool/validation_lease.py -- fvm dart run melos bootstrap` |
 | App/UI focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm flutter test test/path/to/file_test.dart --no-pub` from target package |
 | App fatal analyzer      | `python3 tool/validation_lease.py -- fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
+| Local server integration | `fvm dart run melos run test:integration` (entrypoint owns the lease; no outer lease) |
 | Engine focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
 | Changed Dart preflight  | `python3 tool/validation_lease.py -- fvm dart run melos run validate:changed` |
 | Validation              | `python3 tool/validation_lease.py -- fvm dart run melos run validate:quick` (same form for `validate` and `validate:ci`) |
@@ -48,7 +49,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 - Script definitions and package filters live in root `pubspec.yaml`.
 - For a new checkout or worktree, use the `fvm use` command above, then bootstrap before running `--no-pub` checks.
-- Run local test, analyzer, code generation, bootstrap, and workspace validation commands through `tool/validation_lease.py`. From a package directory, use its absolute path via `$(git rev-parse --show-toplevel)`.
+- Run local test, analyzer, code generation, bootstrap, and workspace validation commands through `tool/validation_lease.py`. Use the table’s self-leasing form for local server integration. From a package directory, use its absolute path via `$(git rev-parse --show-toplevel)`.
 - The lease serializes validation only within the current worktree. Other worktrees and clones run independently. `python3 tool/agent_worktree.py status` reports worktrees and the current worktree's active lease owner.
 - Temp-volume stats are advisory; quotas and container limits may still reject writes.
 

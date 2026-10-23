@@ -16,7 +16,7 @@ Read only section that matches current work. Root `AGENTS.md` lists each trigger
 - For Dart edits, run `validate:changed` once after edits settle for changed-file format and analysis feedback. A single-file bug can use its focused analyzer or test instead. Rerun only when later edits affect the check's scope.
 - For generator-input changes, commit locally, then run `python3 tool/validation_lease.py -- fvm dart run melos run validate:generated` from a clean worktree before pushing. Commit reported output drift and rerun.
 - Use `validate:pr` to reproduce its CI gates or when broad workspace changes justify another local pass. It runs CI formatting, import sorting, benchmark-import checks, workspace analysis, DCL, and localization audit; it skips tests, platform builds, and code-health scans. GitHub CI remains required; do not run `validate:pr` only because a PR is about to be pushed.
-- Run local validation commands through the lease. It serializes only within the current worktree; other worktrees run independently. Add a short, non-sensitive label before `--` so wait messages identify the command:
+- Run local validation commands through the lease. For the self-leasing local integration command, follow the [command table](../../AGENTS.md#commands). It serializes only within the current worktree; other worktrees run independently. Add a short, non-sensitive label before `--` so wait messages identify the command:
   `python3 tool/validation_lease.py --label validate:pr -- fvm dart run melos run validate:pr`.
 - In a fresh worktree, if analysis fails because package resolution is missing, run the workspace bootstrap through the [validation lease](../../AGENTS.md#commands), then rerun focused analysis or `validate:quick`. If bootstrap cannot complete, report analysis as blocked.
 - Format Dart changes with the pinned FVM toolchain. Host `dart format` does not verify pinned-toolchain output.
@@ -41,6 +41,8 @@ Read only section that matches current work. Root `AGENTS.md` lists each trigger
 | CI reproduction or explicit request | Run the requested CI command. |
 | Documentation, guidance, or tooling-only | Run checks for changed tools; run `python3 tool/verify_agent_harness.py` when agent guidance changes. Do not run Dart suites unless Dart files also changed. |
 | Workflow or config-only | Run syntax or action checks for changed files. Do not run unrelated Dart suites. |
+
+For parallel feature work, security-sensitive review, or interrupted validation, follow [handoffs and recovery](handoffs-and-recovery.md).
 
 ## Behavior-path review
 

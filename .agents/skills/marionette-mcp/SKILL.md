@@ -322,3 +322,18 @@ collector directly to `Logger.root`; that would bypass app log redaction.
 On normal exit the wrapper removes the temporary manifest. If a manifest is
 left after a crash, verify no matching runner is alive before removing the
 stale file or choosing another instance ID.
+
+## Blank or stalled native window
+
+When the VM connects but the native app appears blank or navigation stalls:
+
+1. Verify manifest identity and the exact app process/path before more input.
+2. Capture one screenshot, interactive tree, and app logs from that instance.
+3. Check whether its window is hidden, minimized, or obscured. Use only approved
+   native controls to focus or resize the exact window; if unavailable, give
+   manual steps. Duplicate dev bundle IDs do not identify a particular checkout.
+4. Inspect again after visibility changes. If rendering returns, record the
+   observation without claiming a proven routing cause. If it remains blank,
+   investigate the route with the captured evidence and a focused regression.
+
+Keep the existing instance isolation and control authorization boundaries.

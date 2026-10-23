@@ -60,6 +60,24 @@
       "prompt": "Codex review rejects its configured model as unsupported on this host. Make the smallest reusable repo guidance fix; do not install tools or change global configuration.",
       "expected_output": "Adds a conditional one-time retry with a host-supported model to PR guidance, reports a blocker if none is available, and runs harness verification. Does not hard-code a model name or change global configuration.",
       "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "Adopt the handoff and isolated Serverpod integration workflow in this checkout.",
+      "expected_output": "Uses the canonical handoff reference, assigns shared paths to one owner, records scoped DCL evidence for broad work, and uses the integration entrypoint without an outer lease. Does not change personal skills or duplicate feature repairs.",
+      "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "The worker was interrupted during validation. Its log ends with passing tests but no exit status.",
+      "expected_output": "Reads the canonical checkpoint and inspects existing processes and complete output before retrying. Reports missing exit evidence as incomplete; does not start duplicate validation.",
+      "files": []
+    },
+    {
+      "id": 13,
+      "prompt": "Fix one misspelled label in an existing test.",
+      "expected_output": "Makes the focused correction and runs its relevant check. Does not require broad DCL, Serverpod setup, or a parallel handoff workflow.",
+      "files": []
     }
   ]
 }
