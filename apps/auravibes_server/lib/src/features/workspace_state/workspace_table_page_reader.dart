@@ -16,15 +16,21 @@ class const WorkspaceTablePageReader(
   ) async {
     final rows = <WorkspaceResource>[];
     var cursor = selector.afterResourceId;
-    while (rows.length <= selector.limit) {
+    while (true) {
       final candidates = await _candidates(selector.resourceKind, cursor);
       await _appendVisible(rows, candidates, selector.limit);
-      if (rows.length > selector.limit || candidates.length < _batchSize) break;
+      if (_complete(rows, candidates, selector.limit)) break;
       cursor = candidates.last.resourceId;
     }
 
     return _page(selector, rows);
   }
+
+  bool _complete(
+    List<WorkspaceResource> rows,
+    List<WorkspaceResource> candidates,
+    int limit,
+  ) => rows.length > limit || candidates.length < _batchSize;
 
   Future<List<WorkspaceResource>> _candidates(
     WorkspaceResourceKind kind,

@@ -597,20 +597,28 @@ void main() {
           authenticated,
           ReadWorkspaceStateRequest(
             workspaceId: workspace.id!,
-            pages: [WorkspaceResourcePageRequest(resourceKind: .table, limit: 100)],
+            pages: [
+              WorkspaceResourcePageRequest(resourceKind: .table, limit: 100),
+            ],
             eventLimit: 0,
           ),
         );
         final ownerTable = ownerRead.pages.single.resources.firstWhere(
           (row) => row.resourceId == 'table-one',
         );
-        final afterRemoval = jsonDecode(ownerTable.data) as Map<String, dynamic>;
-        expect((afterRemoval['memberAccess'] as Map).containsKey(outsiderId), false);
+        final afterRemoval =
+            jsonDecode(ownerTable.data) as Map<String, dynamic>;
+        expect(
+          (afterRemoval['memberAccess'] as Map).containsKey(outsiderId),
+          false,
+        );
         afterRemoval
           ..remove('canManageTable')
           ..remove('canEditRecords')
           ..['schemaRevision'] = 3
-          ..['columns'] = [{'id': 'label-one', 'name': 'After removal', 'type': 'text'}];
+          ..['columns'] = [
+            {'id': 'label-one', 'name': 'After removal', 'type': 'text'},
+          ];
         final ownerEdit = await patch([
           WorkspacePatchOperation(
             operation: .update,
@@ -656,7 +664,10 @@ void main() {
             fieldMask: const [],
           ),
         ]);
-        expect((await memberRead()).pages.first.resources.single.resourceId, 'table-one');
+        expect(
+          (await memberRead()).pages.first.resources.single.resourceId,
+          'table-one',
+        );
         await expectLater(
           endpoints.workspaceState.read(
             sessionBuilder,
