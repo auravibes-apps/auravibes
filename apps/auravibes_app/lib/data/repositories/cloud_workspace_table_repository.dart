@@ -1,4 +1,3 @@
-import 'package:auravibes_app/data/repositories/cloud_workspace_table_access_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
@@ -9,25 +8,20 @@ class const CloudWorkspaceTableRepository(
   final CloudWorkspaceResourceStore _store,
 ) implements WorkspaceTableRepository {
   @override
-  Future<List<WorkspaceTableMember>> members(String tableId) => CloudWorkspaceTableAccessRepository(_store).members(tableId);
-
-  @override
-  Future<void> setMemberAccess({required WorkspaceTable table, required String userId, required String? access}) => CloudWorkspaceTableAccessRepository(_store).setMemberAccess(table: table, userId: userId, access: access);
-
-  @override
   Future<List<WorkspaceTable>> list({String? parentId}) async {
-    return (await _rows(.table))
-        .map(_table)
-        .where((table) => table.parentId == parentId)
-        .toList()
+    return (await _rows(
+        _store,
+        .table,
+      )).map(_table).where((table) => table.parentId == parentId).toList()
       ..sort((a, b) => a.name.compareTo(b.name));
   }
 
   @override
   Future<WorkspaceTable> table(String id) async {
-    final row = (await _rows(.table))
-        .where((row) => row.resourceId == id)
-        .firstOrNull;
+    final row = (await _rows(
+      _store,
+      .table,
+    )).where((row) => row.resourceId == id).firstOrNull;
     if (row == null) {
       throw const WorkspaceTableException(denied: true);
     }
@@ -74,25 +68,13 @@ class const CloudWorkspaceTableRepository(
     required WorkspaceTable table,
     required WorkspaceColumn column,
   }) async {
-    final columns = [
-      for (final value in table.columns)
-        if (value.id == column.id) column else value,
-      if (!table.columns.any((value) => value.id == column.id)) column,
-    ];
-    final current = (await _rows(.table)).firstWhere((row) => row.resourceId == table.id);
-    final grants = CloudResourceMapper.decode(current)['memberAccess'];
+    final columns = table.withColumn(column);
+    final current = await _currentData(_store, table.id);
     await _store.update(
       kind: .table,
       id: table.id,
       revision: table.revision,
-      data: {
-        'memberAccess': grants,
-        'name': table.name,
-        'parentId': table.parentId,
-        'labelColumnId': table.labelColumnId,
-        'schemaRevision': table.schemaRevision + 1,
-        'columns': columns.map((column) => column.toJson()).toList(),
-      },
+      data: {..._schemaUpdate(table, columns), 'memberAccess': current['memberAccess']},
     );
 
     return await this.table(table.id);
@@ -102,10 +84,10 @@ class const CloudWorkspaceTableRepository(
   Future<List<WorkspaceRecord>> records(String tableId) async {
     final _ = await table(tableId);
 
-    return (await _rows(.tableRecord))
-        .map(_record)
-        .where((record) => record.tableId == tableId)
-        .toList();
+    return (await _rows(
+      _store,
+      .tableRecord,
+    )).map(_record).where((record) => record.tableId == tableId).toList();
   }
 
   @override
@@ -158,58 +140,83 @@ class const CloudWorkspaceTableRepository(
 
     return await this.record(table.id, record.id);
   }
+}
 
-  Future<List<WorkspaceResource>> _rows(WorkspaceResourceKind kind) async {
-    final rows = <WorkspaceResource>[];
-    String? cursor;
-    do {
-      final response = await _store.read(
-        pages: [
-          WorkspaceResourcePageRequest(
-            resourceKind: kind,
-            afterResourceId: cursor,
-            limit: 100,
-          ),
-        ],
-      );
-      rows.addAll(
-        response.pages.single.resources.where((row) => row.deletedAt == null),
-      );
-      cursor = response.pages.single.nextResourceId;
-    } while (cursor != null);
+Future<List<WorkspaceResource>> _rows(
+  CloudWorkspaceResourceStore store,
+  WorkspaceResourceKind kind,
+) async {
+  final rows = <WorkspaceResource>[];
+  String? cursor;
+  do {
+    final response = await _page(store, kind, cursor);
+    rows.addAll(_active(response.pages.single.resources));
+    cursor = response.pages.single.nextResourceId;
+  } while (cursor != null);
 
-    return rows;
-  }
+  return rows;
+}
 
-  WorkspaceTable _table(WorkspaceResource row) {
-    final data = CloudResourceMapper.decode(row);
+WorkspaceTable _table(WorkspaceResource row) {
+  final data = CloudResourceMapper.decode(row);
 
-    return WorkspaceTable(
-      id: row.resourceId,
-      name: data['name'] as String,
-      labelColumnId: data['labelColumnId'] as String,
-      columns: [
-        for (final column
-            in (data['columns'] as List<dynamic>).cast<Map<String, dynamic>>())
-          WorkspaceColumn.fromJson(column),
-      ],
-      revision: row.revision,
-      schemaRevision: data['schemaRevision'] as int,
-      parentId: data['parentId'] as String?,
-      canManage: data['canManageTable'] == true,
-      canEditRecords: data['canEditRecords'] == true,
-      supportsSharing: true,
-    );
-  }
+  return WorkspaceTable(
+    id: row.resourceId,
+    name: data['name'] as String,
+    labelColumnId: data['labelColumnId'] as String,
+    columns: _decodeColumns(data),
+    revision: row.revision,
+    schemaRevision: data['schemaRevision'] as int,
+    parentId: data['parentId'] as String?,
+    canManage: data['canManageTable'] == true,
+    canEditRecords: data['canEditRecords'] == true,
+    supportsSharing: true,
+  );
+}
 
-  WorkspaceRecord _record(WorkspaceResource row) {
-    final data = CloudResourceMapper.decode(row);
+WorkspaceRecord _record(WorkspaceResource row) {
+  final data = CloudResourceMapper.decode(row);
 
-    return WorkspaceRecord(
-      id: row.resourceId,
-      tableId: data['tableId'] as String,
-      values: (data['values'] as Map<String, dynamic>).cast<String, Object?>(),
-      revision: row.revision,
-    );
-  }
+  return WorkspaceRecord(
+    id: row.resourceId,
+    tableId: data['tableId'] as String,
+    values: (data['values'] as Map<String, dynamic>).cast<String, Object?>(),
+    revision: row.revision,
+  );
+}
+
+Map<String, Object?> _schemaUpdate(
+  WorkspaceTable table,
+  List<WorkspaceColumn> columns,
+) => {
+  'name': table.name,
+  'parentId': table.parentId,
+  'labelColumnId': table.labelColumnId,
+  'schemaRevision': table.schemaRevision + 1,
+  'columns': columns.map((column) => column.toJson()).toList(),
+};
+Iterable<WorkspaceResource> _active(List<WorkspaceResource> rows) =>
+    rows.where((row) => row.deletedAt == null);
+Future<ReadWorkspaceStateResponse> _page(
+  CloudWorkspaceResourceStore store,
+  WorkspaceResourceKind kind,
+  String? cursor,
+) => store.read(
+  pages: [
+    WorkspaceResourcePageRequest(
+      resourceKind: kind,
+      afterResourceId: cursor,
+      limit: 100,
+    ),
+  ],
+);
+List<WorkspaceColumn> _columns(List<dynamic> values) =>
+    values.cast<Map<String, dynamic>>().map(WorkspaceColumn.fromJson).toList();
+
+List<WorkspaceColumn> _decodeColumns(Map<String, Object?> data) =>
+    _columns(data['columns']! as List<dynamic>);
+
+Future<Map<String, dynamic>> _currentData(CloudWorkspaceResourceStore store, String id) async {
+  final rows = await _rows(store, .table);
+  return CloudResourceMapper.decode(rows.firstWhere((row) => row.resourceId == id));
 }

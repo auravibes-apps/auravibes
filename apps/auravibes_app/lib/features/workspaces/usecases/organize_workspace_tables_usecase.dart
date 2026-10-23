@@ -5,26 +5,6 @@ import 'package:uuid/v7.dart';
 class const OrganizeWorkspaceTablesUsecase(
   final WorkspaceTableRepository _repository,
 ) {
-  Future<List<WorkspaceTableMember>> members(String tableId) =>
-      _repository.members(tableId);
-  Future<void> setMemberAccess({
-    required WorkspaceTable table,
-    required String userId,
-    required String? access,
-  }) {
-    if (!table.canManage ||
-        !table.supportsSharing ||
-        (access != null && access != 'read' && access != 'edit')) {
-      throw const WorkspaceTableException();
-    }
-
-    return _repository.setMemberAccess(
-      table: table,
-      userId: userId,
-      access: access,
-    );
-  }
-
   Future<List<WorkspaceTable>> list({String? parentId}) =>
       _repository.list(parentId: parentId);
   Future<WorkspaceTable> table(String id) => _repository.table(id);
@@ -44,14 +24,14 @@ class const OrganizeWorkspaceTablesUsecase(
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
     required String name,
-  }) { if (!table.canManage) throw const WorkspaceTableException(denied: true);
+  }) { _requireManage(table);
     return _repository.renameLabel(table: table, name: _name(name));
   }
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
     required Map<String, Object?> values,
   }) {
-    if (!table.canEditRecords) throw const WorkspaceTableException(denied: true);
+    _requireEdit(table);
     WorkspaceColumnValidation.values(table.columns, values);
 
     return _repository.createRecord(table: table, values: values);
@@ -62,7 +42,7 @@ class const OrganizeWorkspaceTablesUsecase(
     required WorkspaceRecord record,
     required Map<String, Object?> values,
   }) {
-    if (!table.canEditRecords) throw const WorkspaceTableException(denied: true);
+    _requireEdit(table);
     WorkspaceColumnValidation.values(table.columns, values);
     if (record.tableId != table.id) {
       throw const WorkspaceTableException();
@@ -77,38 +57,45 @@ class const OrganizeWorkspaceTablesUsecase(
 
   Future<WorkspaceTable> saveColumn({
     required WorkspaceTable table,
-    required String name,
-    required WorkspaceColumnType type,
-    String? columnId,
-    List<String> options = const [],
+    required WorkspaceColumn column,
   }) {
-    if (!table.canManage) throw const WorkspaceTableException(denied: true);
-    final column = WorkspaceColumn(
-      id: columnId ?? const UuidV7().generate(),
-      name: _name(name),
-      type: type,
-      options: options.map(_name).toList(),
+    _requireManage(table);
+    final normalized = _normalizeColumn(column);
+    _checkColumnId(table, column.id);
+    WorkspaceColumnValidation.columns(
+      table.withColumn(normalized),
+      table.labelColumnId,
     );
-    if (columnId != null &&
-        !table.columns.any((value) => value.id == columnId)) {
-      throw const WorkspaceTableException();
-    }
-    final columns = [
-      for (final existing in table.columns)
-        if (existing.id != column.id) existing,
-      column,
-    ];
-    WorkspaceColumnValidation.columns(columns, table.labelColumnId);
 
-    return _repository.saveColumn(table: table, column: column);
+    return _repository.saveColumn(table: table, column: normalized);
+  }
+}
+
+void _checkColumnId(WorkspaceTable table, String id) {
+  if (id.isNotEmpty && !table.columns.any((column) => column.id == id)) {
+    throw const WorkspaceTableException();
+  }
+}
+
+WorkspaceColumn _normalizeColumn(WorkspaceColumn column) => WorkspaceColumn(
+  id: column.id.isEmpty ? const UuidV7().generate() : column.id,
+  name: _name(column.name),
+  type: column.type,
+  options: column.options.map(_name).toList(),
+);
+
+String _name(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty || trimmed.length > 200) {
+    throw const WorkspaceTableException();
   }
 
-  String _name(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty || trimmed.length > 200) {
-      throw const WorkspaceTableException();
-    }
+  return trimmed;
+}
 
-    return trimmed;
-  }
+void _requireManage(WorkspaceTable table) {
+  if (!table.canManage) throw const WorkspaceTableException(denied: true);
+}
+void _requireEdit(WorkspaceTable table) {
+  if (!table.canEditRecords) throw const WorkspaceTableException(denied: true);
 }
