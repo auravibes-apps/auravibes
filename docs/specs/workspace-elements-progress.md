@@ -188,6 +188,13 @@ The turn interruption removed live agent contexts; source changes and background
 - Whitespace and ancestry checks passed; existing untracked diagnostics remain preserved. No push or tracker write occurred. #1669 and #1670 remain open pending final review and root-owned live UI acceptance. Parent #1665 remains incomplete; full workspace/CI/platform validation remains pending.
 - Rename/move worker was informed that the access policy now owns resource visibility. It will add owner/admin folder capabilities in its separate worktree after merging this integration; that behavior is not claimed complete here. Connections credential-race follow-up remains separate and was not merged in this step.
 
+### Connections review repair integration
+
+- Integrated verified follow-up `d6aca0851af3ce1c73d27cb16fa847ff7144d412` as `18dfc9732`, without conflicts. Access integration and membership cleanup remain ancestors and unchanged.
+- The review finding was reproduced with an actual-repository interleaving: a URL edit restored credential reference A after a concurrent key replacement deleted A. URL-only updates now omit credential and suffix writes; lazy migration continues to persist its reference independently. The regression verifies the replacement key and suffix survive, the URL persists, and the previous credential is unavailable.
+- Postmerge checks passed: eight app regressions (seven real database credential checks and one actual shared-executor wrapper/group denial check) and two cloud runtime regressions (wrapper denial prevents execution; admin execution reaches Connection resolution and honors disabled target groups). Pinned FVM 3.47.7 and the root validation lease were used. Logs: `/tmp/auravibes-1685-race-merger-app.log` and `/tmp/auravibes-1685-race-merger-server.log`.
+- Worker evidence additionally includes 27 model/repository regressions, focused fatal analysis, production DCL and format checks. No generator inputs changed. Merger whitespace and ancestry checks passed; untracked diagnostics remain preserved. No push or closure occurred; root retains live UI and final acceptance ownership.
+
 ### Live rendering recovery and Connections integration follow-up
 
 - Approved native `cua-driver` exact-window binding succeeded for the UI-worktree executable. Focusing that isolated window changed Marionette from zero controls to 33. Refocusing after stalled actions advanced rendering consistently; no production routing fix is justified by the prior blank/stalled captures.
