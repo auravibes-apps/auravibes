@@ -11,6 +11,19 @@ import '../../../tool/testing/ci_widget_test_timeout.dart';
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   WidgetController.hitTestWarningShouldBeFatal = true;
   configureCiWidgetTestTimeout();
+  setUp(() {
+    if (BindingBase.debugBindingType() == null) return;
+
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockStreamHandler(
+          const .new('flutter_file_drop/events'),
+          .inline(
+            onListen: (_, events) {
+              final _ = events;
+            },
+          ),
+        );
+  });
   setUpAll(() async {
     // Pure Dart tests need real HTTP, not the widget binding's HTTP 400.
     if (BindingBase.debugBindingType() == null) return;

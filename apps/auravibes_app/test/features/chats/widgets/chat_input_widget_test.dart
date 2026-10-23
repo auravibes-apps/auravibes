@@ -218,7 +218,10 @@ void main() {
   }
 
   testWidgets('tool access control requires callback', (tester) async {
-    await pumpAndInit(tester, buildSubject(onSendMessage: (_) => _noop()));
+    final _ = await pumpAndInit(
+      tester,
+      buildSubject(onSendMessage: (_) => _noop()),
+    );
     expect(
       find.byKey(const ValueKey<String>('chat_tool_access_mode')),
       findsNothing,
@@ -229,7 +232,7 @@ void main() {
     'tool access supports keyboard focus, open, selection and escape',
     (tester) async {
       ConversationToolAccessMode? changed;
-      await pumpAndInit(
+      final _ = await pumpAndInit(
         tester,
         buildSubject(
           onSendMessage: (_) => _noop(),
@@ -283,7 +286,7 @@ void main() {
       ConversationToolAccessMode? changed;
       final semantics = tester.ensureSemantics();
       try {
-        await pumpAndInit(
+        final _ = await pumpAndInit(
           tester,
           buildSubject(
             onSendMessage: (_) => _noop(),
@@ -352,7 +355,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final semantics = tester.ensureSemantics();
       try {
-        await pumpAndInit(
+        final _ = await pumpAndInit(
           tester,
           buildSubject(
             onSendMessage: (_) => _noop(),
@@ -399,7 +402,7 @@ void main() {
   testWidgets('reports text draft changes', (tester) async {
     final draftStatuses = <bool>[];
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) => Future<void>.value(),
@@ -424,7 +427,7 @@ void main() {
     var opened = false;
     final semantics = tester.ensureSemantics();
     try {
-      await pumpAndInit(
+      final _ = await pumpAndInit(
         tester,
         buildSubject(
           onSendMessage: (_) => Future<void>.value(),
@@ -456,7 +459,7 @@ void main() {
     final conversation = ValueNotifier<String?>('conversation-1');
     addTearDown(conversation.dispose);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) => Future<void>.value(),
@@ -480,7 +483,7 @@ void main() {
     );
     final draftStatuses = <bool>[];
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) => Future<void>.value(),
@@ -505,7 +508,7 @@ void main() {
     );
     final draftStatuses = <bool>[];
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) => Future<void>.value(),
@@ -549,7 +552,7 @@ void main() {
       ),
     ]);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         activeConversation: activeConversation,
@@ -619,7 +622,7 @@ void main() {
     addTearDown(activeConversation.dispose);
     var attempts = 0;
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         activeConversation: activeConversation,
@@ -671,7 +674,7 @@ void main() {
   });
 
   testWidgets('renders without error', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -688,7 +691,7 @@ void main() {
   testWidgets('shows and clears the drop overlay for file previews', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         disabled: true,
@@ -793,7 +796,7 @@ void main() {
       position: tester.getCenter(find.byType(AuraInput)),
       fileName: 'report.pdf',
       mimeType: 'application/pdf',
-      bytes: Uint8List(0),
+      bytes: .new(0),
       fileSize: ChatAttachmentModality.maxChatAttachmentBytes + 1,
     );
     final _ = await tester.pumpAndSettle();
@@ -815,7 +818,7 @@ void main() {
     );
     final sentDrafts = <ChatDraft>[];
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text'],
@@ -847,7 +850,7 @@ void main() {
     );
     ChatDraft? sentDraft;
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'file'],
@@ -879,7 +882,7 @@ void main() {
 
   testWidgets('exposes stable selectors for composer controls', (tester) async {
     final semantics = tester.ensureSemantics();
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'audio'],
@@ -944,7 +947,7 @@ void main() {
     final sendCompleter = Completer<void>();
     ChatDraft? sentDraft;
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (draft) {
@@ -990,7 +993,7 @@ void main() {
       ),
     ]);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'file'],
@@ -1061,7 +1064,7 @@ void main() {
       ),
     ]);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'file'],
@@ -1103,7 +1106,7 @@ void main() {
       ),
     ]);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'file'],
@@ -1149,7 +1152,7 @@ void main() {
     );
     final attachmentService = _FakeLocalChatAttachmentService(first);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['file'],
@@ -1184,7 +1187,7 @@ void main() {
   testWidgets('does not update sending state after unmount', (tester) async {
     final sendCompleter = Completer<void>();
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(onSendMessage: (_) => sendCompleter.future),
     );
@@ -1200,7 +1203,7 @@ void main() {
   });
 
   testWidgets('shows tools button when onToolsPress provided', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1219,7 +1222,7 @@ void main() {
   });
 
   testWidgets('shows tools button by default', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1237,7 +1240,7 @@ void main() {
   testWidgets('shows manual compaction when conversation can compact', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1258,7 +1261,7 @@ void main() {
   ) async {
     var wasTapped = false;
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1295,7 +1298,7 @@ void main() {
   testWidgets('blocks sending and shows disabled hint', (tester) async {
     var wasSent = false;
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) => wasSent = true,
@@ -1314,7 +1317,7 @@ void main() {
   });
 
   testWidgets('shows disabled Continue with reason', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1346,7 +1349,7 @@ void main() {
   testWidgets('disables manual compaction while compaction is running', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1377,7 +1380,7 @@ void main() {
   testWidgets('shows disabled mic button with an audio support reason', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1427,7 +1430,7 @@ void main() {
       startError: const ChatMicrophonePermissionDeniedException(),
     );
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['audio'],
@@ -1454,7 +1457,7 @@ void main() {
   testWidgets('explains unsupported file and image inputs', (tester) async {
     overridePlatform(.linux);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(onSendMessage: (_) => Future.value()),
     );
@@ -1497,7 +1500,7 @@ void main() {
       recordingResult: attachment,
     );
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['audio'],
@@ -1537,7 +1540,7 @@ void main() {
       stopCompleter: stopCompleter,
     );
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['audio'],
@@ -1580,7 +1583,7 @@ void main() {
     );
     final attachmentService = _FakeLocalChatAttachmentService(attachment);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['audio'],
@@ -1609,7 +1612,7 @@ void main() {
     addTearDown(() => ImagePickerPlatform.instance = previousImagePicker);
     ImagePickerPlatform.instance = _FakeImagePickerPlatform();
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['image'],
@@ -1640,7 +1643,7 @@ void main() {
       error: .new('Camera unavailable'),
     );
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['image'],
@@ -1666,7 +1669,7 @@ void main() {
   testWidgets('shows mic button outside menu when audio is supported', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'audio'],
@@ -1694,7 +1697,7 @@ void main() {
   testWidgets('shows file and hides photo attachment on macOS', (tester) async {
     overridePlatform(.macOS);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'image'],
@@ -1716,7 +1719,7 @@ void main() {
   testWidgets('shows file attachment for audio on macOS', (tester) async {
     overridePlatform(.macOS);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'audio'],
@@ -1737,7 +1740,7 @@ void main() {
   testWidgets('keeps photo attachment visible outside macOS', (tester) async {
     overridePlatform(.linux);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'image'],
@@ -1759,7 +1762,7 @@ void main() {
   testWidgets('shows stop button when isBusy and onStop provided', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1787,7 +1790,7 @@ void main() {
   ) async {
     ChatDraft? sentDraft;
     var stopCount = 0;
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (draft) => sentDraft = draft,
@@ -1824,7 +1827,7 @@ void main() {
   testWidgets('does not expose stop button when isBusy is false', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1840,7 +1843,7 @@ void main() {
   });
 
   testWidgets('hides stop button while keeping input busy', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1867,7 +1870,7 @@ void main() {
   });
 
   testWidgets('hides stop button when onStop is null', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1890,7 +1893,7 @@ void main() {
   testWidgets('tabs through composer controls to model and effort selector', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1929,7 +1932,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1991,7 +1994,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -2020,7 +2023,7 @@ void main() {
   });
 
   testWidgets('desktop uses menu model agent layout', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -2049,7 +2052,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -2073,7 +2076,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -2105,7 +2108,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -2192,21 +2195,20 @@ class _TestFlutterFileDropChannel {
       'dev.flutter.pigeon.flutter_file_drop_platform_interface.'
       'DropFileHostApi.releaseSession';
 
-  _TestFlutterFileDropChannel() {
-    final messenger =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockStreamHandler(
-      const EventChannel('flutter_file_drop/events'),
-      MockStreamHandler.inline(
-        onListen: (_, events) {
-          _eventSink = events;
-        },
-        onCancel: (_) => _eventSink = null,
-      ),
-    );
-    messenger.setMockMessageHandler(_readFileChunkChannel, _readFileChunk);
-    messenger.setMockMessageHandler(_releaseFileReadStreamChannel, _emptyReply);
-    messenger.setMockMessageHandler(_releaseSessionChannel, _emptyReply);
+  new() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      ..setMockStreamHandler(
+        const .new('flutter_file_drop/events'),
+        .inline(
+          onListen: (_, events) {
+            _eventSink = events;
+          },
+          onCancel: (_) => _eventSink = null,
+        ),
+      )
+      ..setMockMessageHandler(_readFileChunkChannel, _readFileChunk)
+      ..setMockMessageHandler(_releaseFileReadStreamChannel, _emptyReply)
+      ..setMockMessageHandler(_releaseSessionChannel, _emptyReply);
   }
 
   final StandardMessageCodec _codec = const .new();
@@ -2245,16 +2247,18 @@ class _TestFlutterFileDropChannel {
   }
 
   Future<ByteData?> _readFileChunk(ByteData? message) async {
-    if (message == null) throw FormatException('Missing file chunk request.');
+    if (message == null) {
+      throw const FormatException('Missing file chunk request.');
+    }
     final decoded = _codec.decodeMessage(message);
     if (decoded is! List<Object?> || decoded.length < 5) {
-      throw FormatException('Invalid file chunk request.');
+      throw const FormatException('Invalid file chunk request.');
     }
     final handle = decoded[1];
     final offset = decoded[3];
     final maxBytes = decoded[4];
     if (handle is! String || offset is! int || maxBytes is! int) {
-      throw FormatException('Invalid file chunk request fields.');
+      throw const FormatException('Invalid file chunk request fields.');
     }
     final file = _files[handle];
     if (file == null) throw StateError('Unknown dropped file handle.');

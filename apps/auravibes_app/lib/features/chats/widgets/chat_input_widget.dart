@@ -654,20 +654,27 @@ Future<void> _handleChatInputDrop(
 
 Future<void> _addDroppedChatFile(_ChatInputState state, DropFile file) async {
   try {
-    final bytes = await file.readAsBytes(
-      maxBytes: ChatAttachmentModality.maxChatAttachmentBytes,
-    );
-    if (!state.actions.ref.context.mounted) return;
-
-    await state.actions.addDroppedFile(
-      bytes,
-      fileName: file.name ?? 'attachment',
-    );
+    await _readAndAttachDroppedChatFile(state, file);
   } on DropFileReadException catch (error, stackTrace) {
     _handleDroppedChatFileReadError(state, error, stackTrace);
   } on Object catch (error, stackTrace) {
     _logger.warning('Failed to attach dropped file', error, stackTrace);
   }
+}
+
+Future<void> _readAndAttachDroppedChatFile(
+  _ChatInputState state,
+  DropFile file,
+) async {
+  final bytes = await file.readAsBytes(
+    maxBytes: ChatAttachmentModality.maxChatAttachmentBytes,
+  );
+  if (!state.actions.ref.context.mounted) return;
+
+  await state.actions.addDroppedFile(
+    bytes,
+    fileName: file.name ?? 'attachment',
+  );
 }
 
 void _handleDroppedChatFileReadError(
@@ -956,21 +963,35 @@ class const _ChatInputDropTarget({
     final isActive = useState(false);
     final isHovered = useState(false);
 
-    return DropTarget(
+    return _ChatInputDropRegion(
+      state: state,
       child: _ChatInputDropStack(
         child: child,
         isActive: isActive.value,
         isHighlighted: isHovered.value,
       ),
-      constraints: DropConstraints(allowedKinds: const {.file}),
-      onEnter: (preview) =>
-          _handleChatInputDropPreview(isActive, isHovered, preview),
-      onMove: (preview) =>
+      onPreview: (preview) =>
           _handleChatInputDropPreview(isActive, isHovered, preview),
       onLeave: () => _clearChatInputDropState(isActive, isHovered),
-      onDrop: (result) => _handleChatInputDrop(state, result),
     );
   }
+}
+
+class const _ChatInputDropRegion({
+  required final _ChatInputState state,
+  required final Widget child,
+  required final ValueChanged<DropPreview> onPreview,
+  required final VoidCallback onLeave,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => DropTarget(
+    child: child,
+    constraints: .new(allowedKinds: const {.file}),
+    onEnter: onPreview,
+    onMove: onPreview,
+    onLeave: onLeave,
+    onDrop: (result) => _handleChatInputDrop(state, result),
+  );
 }
 
 class const _ChatInputField({
