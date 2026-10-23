@@ -9,6 +9,9 @@ class const WorkspaceFolder({
 
 class const WorkspaceFolderException() implements Exception {
   String get localizationKey => LocaleKeys.workspace_items_invalid_folder;
+
+  @override
+  String toString() => 'WorkspaceFolderException';
 }
 
 abstract interface class WorkspaceFolderRepository {
