@@ -115,10 +115,13 @@ The user requested the name **Directory**, ordinary folder/item navigation, a to
 | Q75 | Toolbar + creates in the current folder. Choose an available item type, provide essential setup, then open the new item. Do not offer unimplemented types. |
 | Q76 | Default to a simple list: folders first, then other items alphabetically. Show icon/name/minimal useful metadata; keep sort/filter controls in the toolbar. |
 | Q77 | Use per-row menus for permitted Rename, Move, Duplicate and Trash actions. Group choices only where useful; show bulk actions after selection. |
+| Q78 | Use a minimal creation sheet on narrow screens or dialog on wide screens. Ask for name and unavoidable required fields, then open the new item; defer advanced setup. |
+| Q79 | Make + contextual: Directory creates item types; inside a table it adds a record. Put columns/schema in a separate menu. |
+| Q80 | Enter selection mode by long-press on touch or Select in the toolbar menu. Show checkboxes and a contextual action bar only in selection mode. |
 
 The [glossary](../../GLOSSARY.md) defines Directory, Folder and Item. Directory is a product/navigation concept, not a promise of an operating-system filesystem. Internal symbol renaming is not implied.
 
-Pending questions: Q78 minimal responsive creation form; Q79 contextual + inside tables; Q80 entry into selection mode. The final shared-understanding confirmation is still pending. Do not implement the new UX from unanswered recommendations. Dates/money and constraints work continues independently; the integrated #1676 UI is a transitional baseline.
+Q73–Q80 are confirmed. Q81, the final shared-understanding confirmation before applying the new UX, is pending. Do not implement the new UX from unanswered recommendations. Dates/money and constraints work continues independently; the integrated #1676 UI is a transitional baseline.
 
 No ADR is added for reversible labels, menus or layout choices. Existing persistence, authorization, execution and release decisions remain in force.
 
