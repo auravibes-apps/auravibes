@@ -12,34 +12,44 @@ class const LocalWorkspaceRecordQueryRepository(
   final AppDatabase database,
   final String workspaceId,
 ) implements WorkspaceRecordQueryRepository {
+  LocalWorkspaceTableRepository get _tables =>
+      LocalWorkspaceTableRepository(database, workspaceId);
   @override
   Future<WorkspaceRecordPage> query(
     String tableId,
     WorkspaceRecordQuery query,
-  ) => database.transaction(() async {
-    final table = await LocalWorkspaceTableRepository(
-      database,
-      workspaceId,
-    ).table(tableId);
+  ) => database.transaction(() => _query(tableId, query));
+
+  Future<WorkspaceRecordPage> _query(
+    String tableId,
+    WorkspaceRecordQuery query,
+  ) async {
+    final table = await _tables.table(tableId);
     final statement = _QueryStatement(workspaceId, table, query).._validate();
     await _reference(table, query);
+
+    return await _authorized(statement, query);
+  }
+
+  Future<WorkspaceRecordPage> _authorized(
+    _QueryStatement statement,
+    WorkspaceRecordQuery query,
+  ) async {
     final rows = await _read(statement);
 
     return _page(rows, query.limit);
-  });
+  }
 
   Future<void> _reference(
     WorkspaceTable table,
     WorkspaceRecordQuery query,
   ) async {
-    final column = table.columns
-        .where((column) => column.id == query.filterColumnId)
-        .firstOrNull;
-    if (column?.type != .reference) return;
-    final _ = await LocalWorkspaceTableRepository(
-      database,
-      workspaceId,
-    ).record(column?.targetTableId ?? '', query.filterValue ?? '');
+    final column = _filterColumn(table, query.filterColumnId);
+    if (column == null || column.type != .reference) return;
+    final _ = await _tables.record(
+      column.targetTableId ?? '',
+      query.filterValue ?? '',
+    );
   }
 
   Future<List<QueryRow>> _read(_QueryStatement statement) => database
@@ -140,3 +150,6 @@ String _fold(String value) => value.replaceAllMapped(
   RegExp('[A-Z]'),
   (match) => match.group(0)?.toLowerCase() ?? '',
 );
+
+WorkspaceColumn? _filterColumn(WorkspaceTable table, String? id) =>
+    table.columns.where((column) => column.id == id).firstOrNull;

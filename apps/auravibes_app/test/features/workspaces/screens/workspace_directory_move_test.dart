@@ -22,14 +22,17 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
   for (final scenario in [
-    (width: 400.0, stale: false),
-    (width: 1200.0, stale: false),
-    (width: 400.0, stale: true),
+    (width: 400.0, stale: false, scale: 1.0),
+    (width: 1200.0, stale: false, scale: 1.0),
+    (width: 400.0, stale: true, scale: 1.0),
+    (width: 400.0, stale: false, scale: 2.0),
   ]) {
     final width = scenario.width;
     testWidgets(
-      'mixed selection at $width preserves failures: ${scenario.stale}',
+      'mixed selection $width/${scenario.scale} stale:${scenario.stale}',
       (tester) async {
+        tester.platformDispatcher.textScaleFactorTestValue = scenario.scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = .new(width, 900);
         addTearDown(tester.view.resetPhysicalSize);

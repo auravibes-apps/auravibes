@@ -151,8 +151,8 @@ class const _Controls(final WorkspaceRecordBrowser owner, final _Draft draft)
     child: ListView(
       children: [
         WorkspaceQueryFilter(
-          workspaceId: owner.workspaceId,
           table: table,
+          workspaceId: owner.workspaceId,
           query: draft.query,
         ),
         _SortColumn(table, draft),

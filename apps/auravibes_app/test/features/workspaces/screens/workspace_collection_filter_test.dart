@@ -61,12 +61,12 @@ void main() {
             child: WorkspaceRecordBrowser(
               workspaceId: 'one',
               table: table,
-              onRecord: (_) {},
+              onRecord: (_) => fail('Unexpected direct record open'),
             ),
-            workspaceId: 'one',
             overrides: [
               workspaceRecordQueryProvider.overrideWith((ref, arguments) async {
                 queries.add(arguments.$3);
+
                 return const WorkspaceRecordPage(records: [], hasMore: false);
               }),
               workspaceReferencesUsecaseProvider('one').overrideWith(
@@ -77,6 +77,7 @@ void main() {
                 'target',
               ).overrideWith((ref) async => target),
             ],
+            workspaceId: 'one',
           ),
         ),
       );
@@ -124,7 +125,11 @@ void main() {
       final _ = await tester.pumpAndSettle();
       await tester.tap(find.text('People').first);
       final _ = await tester.pumpAndSettle();
-      final choose = find.byWidgetPredicate((widget) => widget is AuraButton && widget.identifier == 'workspace_filter_reference');
+      final choose = find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraButton &&
+            widget.identifier == 'workspace_filter_reference',
+      );
       await tester.ensureVisible(choose);
       final _ = await tester.pumpAndSettle();
       await tester.tap(choose);
@@ -155,6 +160,7 @@ class _References extends Fake implements WorkspaceReferenceRepository {
     String? afterId,
   }) async {
     requested = tableId;
+
     return const WorkspaceReferencePage(
       records: [
         WorkspaceRecord(

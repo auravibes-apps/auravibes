@@ -35,18 +35,12 @@ abstract final class WorkspaceQueryFilterValidation {
     Object? value, {
     bool contains = false,
   }) {
-    if (column.type == .reference) {
-      return !contains &&
-          value is String &&
-          value.isNotEmpty &&
-          value.length <= 200;
-    }
-    if (column.type == .multiSelect) {
-      return contains && value is String && column.options.contains(value);
-    }
-    return contains
-        ? supportsContains(column) && value is String && value.length <= 16384
-        : WorkspaceColumnValidation.accepts([column], {column.id: value});
+    return switch (column.type) {
+      .reference => _reference(value, contains: contains),
+      .multiSelect =>
+        contains && value is String && column.options.contains(value),
+      _ => _scalar(column, value, contains: contains),
+    };
   }
 
   static Map<String, Object?> parse(
@@ -61,20 +55,35 @@ abstract final class WorkspaceQueryFilterValidation {
 
       return {column.id: encoded};
     }
-    final value = switch (column.type) {
-      .number => num.tryParse(encoded),
-      .checkbox => switch (encoded) {
-        'true' => true,
-        'false' => false,
-        _ => null,
-      },
-      .money => _money(encoded),
-      _ => encoded,
-    };
-    WorkspaceColumnValidation.values([column], {column.id: value});
+    final values = _values(column, encoded);
+    WorkspaceColumnValidation.values([column], values);
 
-    return {column.id: value};
+    return values;
   }
+
+  static bool _reference(Object? value, {required bool contains}) =>
+      !contains && value is String && value.isNotEmpty && value.length <= 200;
+  static bool _scalar(
+    WorkspaceColumn column,
+    Object? value, {
+    required bool contains,
+  }) => contains
+      ? supportsContains(column) && value is String && value.length <= 16384
+      : WorkspaceColumnValidation.accepts([column], {column.id: value});
+
+  static Map<String, Object?> _values(WorkspaceColumn column, String encoded) =>
+      {
+        column.id: switch (column.type) {
+          .number => num.tryParse(encoded),
+          .checkbox => switch (encoded) {
+            'true' => true,
+            'false' => false,
+            _ => null,
+          },
+          .money => _money(encoded),
+          _ => encoded,
+        },
+      };
 
   static Map<String, dynamic>? _money(String encoded) {
     try {

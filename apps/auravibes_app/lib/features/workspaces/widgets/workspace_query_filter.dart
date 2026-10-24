@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:auravibes_app/features/workspaces/models/workspace_query_filter_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_query_collection_filter.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -163,25 +163,44 @@ class const _Value(final _FilterDraft draft, final WorkspaceColumn column)
   @override
   Widget build(BuildContext context) =>
       column.type == .multiSelect || column.type == .reference
-      ? WorkspaceQueryCollectionFilter(
-          workspaceId: draft.owner.workspaceId,
-          table: draft.owner.table,
-          column: column,
-          value: draft.value.value as String?,
-          onChanged: (value) => draft.value.value = value,
-          key: ValueKey(column.id),
-        )
-      : WorkspaceRecordField(
-          column: column,
-          value: draft.value.value,
-          present: true,
-          disabled: false,
-          identifier: 'workspace_filter_value',
-          onChanged: (value) => draft.value.value = value,
-          onUnset: () => draft.value.value = null,
-          showPresence: false,
-          key: ValueKey(column.id),
-        );
+      ? _CollectionValue(draft, column)
+      : _ScalarValue(draft, column);
+}
+
+class const _CollectionValue(
+  final _FilterDraft draft,
+  final WorkspaceColumn column,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final owner = draft.owner;
+
+    return WorkspaceQueryCollectionFilter(
+      workspaceId: owner.workspaceId,
+      table: owner.table,
+      column: column,
+      value: draft.value.value as String?,
+      onChanged: (value) => draft.value.value = value,
+      key: ValueKey(column.id),
+    );
+  }
+}
+
+class const _ScalarValue(final _FilterDraft draft, final WorkspaceColumn column)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceRecordField(
+    column: column,
+    value: draft.value.value,
+    present: true,
+    disabled: false,
+    identifier: 'workspace_filter_value',
+    onChanged: (value) => draft.value.value = value,
+    onUnset: _unset,
+    showPresence: false,
+    key: ValueKey(column.id),
+  );
+  void _unset() => draft.value.value = null;
 }
 
 class const _FilterActions(final _FilterDraft draft) extends StatelessWidget {

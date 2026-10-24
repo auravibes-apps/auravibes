@@ -16,54 +16,81 @@ class const WorkspaceQueryCollectionFilter({
   super.key,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => column.type == .multiSelect
-      ? AuraDropdownSelector<String>(
-          identifier: 'workspace_filter_option',
-          value: value,
-          label: Text(column.name),
-          options: [
-            for (final option in column.options)
-              AuraDropdownOption(value: option, child: Text(option)),
-          ],
-          onChanged: onChanged,
-        )
-      : Column(
-          crossAxisAlignment: .stretch,
-          children: [
-            Text(column.name),
-            if (value case final String id)
-              WorkspaceReferenceLabel(
-                workspaceId: workspaceId,
-                targetTableId: column.targetTableId ?? '',
-                recordId: id,
-              ),
-            AuraButton(
-              identifier: 'workspace_filter_reference',
-              onPressed: () => _pick(context),
-              child: const TextLocale(
-                LocaleKeys.workspace_items_reference_choose,
-              ),
-            ),
-          ],
-        );
+  Widget build(BuildContext context) =>
+      column.type == .multiSelect ? _Options(this) : _Reference(this);
+}
+
+class const _Options(final WorkspaceQueryCollectionFilter owner)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraDropdownSelector<String>(
+    options: [
+      for (final option in owner.column.options)
+        AuraDropdownOption(value: option, child: Text(option)),
+    ],
+    value: owner.value,
+    onChanged: owner.onChanged,
+    label: Text(owner.column.name),
+    identifier: 'workspace_filter_option',
+  );
+}
+
+class const _Reference(final WorkspaceQueryCollectionFilter owner)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [Text(owner.column.name), _Selected(owner), _Choose(owner)],
+  );
+}
+
+class const _Selected(final WorkspaceQueryCollectionFilter owner)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (owner.value) {
+    final String id => WorkspaceReferenceLabel(
+      workspaceId: owner.workspaceId,
+      targetTableId: owner.column.targetTableId ?? '',
+      recordId: id,
+    ),
+    _ => const SizedBox.shrink(),
+  };
+}
+
+class const _Choose(final WorkspaceQueryCollectionFilter owner)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => _pick(context),
+    child: const TextLocale(LocaleKeys.workspace_items_reference_choose),
+    identifier: 'workspace_filter_reference',
+  );
   Future<void> _pick(BuildContext context) => showDialog<void>(
     context: context,
-    builder: (dialogContext) => Dialog(
-      child: SizedBox(
-        width: 720,
-        height: 620,
-        child: WorkspaceReferencePicker(
-          workspaceId: workspaceId,
-          table: table,
-          column: column,
-          selected: [if (value case final id?) id],
-          queryFilter: true,
-          onSelected: (ids) {
-            onChanged(ids.firstOrNull);
-            Navigator.of(dialogContext).pop();
-          },
-        ),
-      ),
-    ),
+    builder: (_) => _ReferenceDialog(owner),
   );
+}
+
+class const _ReferenceDialog(final WorkspaceQueryCollectionFilter owner)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      Dialog(child: SizedBox(width: 720, height: 620, child: _Picker(owner)));
+}
+
+class const _Picker(final WorkspaceQueryCollectionFilter owner)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceReferencePicker(
+    workspaceId: owner.workspaceId,
+    table: owner.table,
+    column: owner.column,
+    selected: [?owner.value],
+    onSelected: (ids) => _select(context, ids),
+    queryFilter: true,
+  );
+  void _select(BuildContext context, List<String> ids) {
+    owner.onChanged(ids.firstOrNull);
+    Navigator.of(context).pop();
+  }
 }
