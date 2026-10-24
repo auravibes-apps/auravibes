@@ -187,7 +187,7 @@ Launch countries, minimum age, retention durations, actual AI/hosting/Connector 
 
 No prototype established a physical schema or new runtime. No production behavior, migration, live provider integration, or test execution is claimed by this specification. Related existing issues concerning tool modes, workspace policies, local-network disclosure, and shared-Conversation visibility should be coordinated during implementation rather than overwritten or silently closed.
 
-## Directory UX amendment — interview in progress
+## Approved Directory UX amendment
 
 Confirmed requirements from the 2026-10-23 follow-up supersede transitional creation-heavy layouts:
 
@@ -201,4 +201,4 @@ Confirmed requirements from the 2026-10-23 follow-up supersede transitional crea
 - Make + contextual: create items in Directory, add records inside tables. Keep column/schema configuration separate.
 - Enter selection mode through touch long-press or Select in the toolbar menu; show checkboxes and a contextual action bar within that mode.
 
-Q73–Q80 are confirmed. Final shared-understanding confirmation Q81 and ticket reconciliation remain pending. Existing database hierarchy, stable IDs, current-user permissions and local/cloud boundaries remain required; this amendment does not authorize executable file types or change release gates.
+Q73–Q81 are confirmed. Apply this amendment through the Directory/table browsing slice #1675 and carry the same content-first controls into later item types. Existing database hierarchy, stable IDs, current-user permissions and local/cloud boundaries remain required; this amendment does not authorize executable file types or change release gates.

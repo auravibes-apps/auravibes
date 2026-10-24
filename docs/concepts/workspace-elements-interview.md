@@ -118,10 +118,11 @@ The user requested the name **Directory**, ordinary folder/item navigation, a to
 | Q78 | Use a minimal creation sheet on narrow screens or dialog on wide screens. Ask for name and unavoidable required fields, then open the new item; defer advanced setup. |
 | Q79 | Make + contextual: Directory creates item types; inside a table it adds a record. Put columns/schema in a separate menu. |
 | Q80 | Enter selection mode by long-press on touch or Select in the toolbar menu. Show checkboxes and a contextual action bar only in selection mode. |
+| Q81 | Final shared understanding confirmed: apply the complete Directory and content-first item-editor plan. |
 
 The [glossary](../../GLOSSARY.md) defines Directory, Folder and Item. Directory is a product/navigation concept, not a promise of an operating-system filesystem. Internal symbol renaming is not implied.
 
-Q73–Q80 are confirmed. Q81, the final shared-understanding confirmation before applying the new UX, is pending. Do not implement the new UX from unanswered recommendations. Dates/money and constraints work continues independently; the integrated #1676 UI is a transitional baseline.
+Q73–Q81 are confirmed. The user explicitly approved applying this complete plan across Directory and item editors. Dates/money and constraints work continues independently; the integrated #1676 UI is a transitional baseline.
 
 No ADR is added for reversible labels, menus or layout choices. Existing persistence, authorization, execution and release decisions remain in force.
 

@@ -256,3 +256,5 @@ Validation-script repair completed: two actual-process regressions pass; focused
 - Combined UI check at source `6f87e7c96` completed numeric/missing round trips. Exact isolated launcher/bridge stopped; manifest removal verified. Computer plugin is the approved fallback; CUA driver control remains superseded.
 
 Directory interview update: Q78–Q80 confirmed minimal responsive creation forms, contextual + (item versus record), and selection-mode entry through long-press/toolbar menu. Q81 final shared-understanding confirmation is pending per the explicitly invoked grilling workflow. No new Directory UI implementation has started.
+
+Q81 confirmed: apply the complete Directory plan. Interview complete; UI implementation is authorized. Reconcile #1675 to own Directory navigation/creation/context menus and responsive content-first table browsing. Preserve #1676 metadata behavior and validate its actions in the resulting UI before closure.
