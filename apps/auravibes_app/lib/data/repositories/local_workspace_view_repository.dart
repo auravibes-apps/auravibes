@@ -49,20 +49,42 @@ class const LocalWorkspaceViewRepository(
     String id, {
     required int expectedRevision,
     required String? parentId,
-  }) => database.transaction(() => _move(id, expectedRevision, parentId));
+    String? name,
+  }) => database.transaction(
+    () =>
+        _move(id, (revision: expectedRevision, parentId: parentId, name: name)),
+  );
 
-  Future<WorkspaceView> _move(String id, int expected, String? parentId) async {
+  Future<WorkspaceView> _move(
+    String id,
+    ({int revision, String? parentId, String? name}) metadata,
+  ) async {
+    _validateName(metadata.name);
     final current = await read(id);
-    if (current.revision != expected) {
+    if (current.revision != metadata.revision) {
       throw const WorkspaceTableException(conflict: true);
     }
+    await _authorizeMove(current, metadata.parentId);
+    final edited = _metadata(current, metadata.name, metadata.parentId);
+
+    return await _saveMetadata(current, edited);
+  }
+
+  Future<WorkspaceView> _saveMetadata(
+    WorkspaceView current,
+    WorkspaceView edited,
+  ) async {
+    if (edited.name == current.name && edited.parentId == current.parentId) {
+      return current;
+    }
+
+    return await save(edited, requestId: const UuidV7().generate());
+  }
+
+  Future<void> _authorizeMove(WorkspaceView current, String? parentId) async {
     await _source(current.tableId);
     await _requireLocalParent(database, workspaceId, current.parentId);
-
-    return await save(
-      current.withParent(parentId),
-      requestId: const UuidV7().generate(),
-    );
+    await _requireLocalParent(database, workspaceId, parentId);
   }
 
   Future<void> _source(String id) async {
@@ -233,3 +255,22 @@ class const _LocalParentKey(final String workspaceId, final String id) {
       row.workspaceId.equals(workspaceId) &
       row.deletedAt.isNull();
 }
+
+void _validateName(String? name) {
+  if (name != null && (name.trim().isEmpty || name.length > 200)) {
+    throw const WorkspaceTableException();
+  }
+}
+
+WorkspaceView _metadata(
+  WorkspaceView current,
+  String? name,
+  String? parentId,
+) => current
+    .edited(
+      name: name ?? current.name,
+      definition: current.definition,
+      bindings: current.bindings,
+      columnTypes: current.columnTypes,
+    )
+    .withParent(parentId);

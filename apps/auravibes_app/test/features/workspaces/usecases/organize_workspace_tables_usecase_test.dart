@@ -996,11 +996,21 @@ void main() {
       );
       expect(unchanged.schemaRevision, typed.schemaRevision);
       typed = unchanged;
+      final rawBefore = jsonDecode(
+        rows.firstWhere((row) => row.resourceId == typed.id).data,
+      ) as Map<String, dynamic>;
       final moved = await tables.updateMetadata(
         table: typed,
         name: 'Renamed remotely',
         parentId: null,
       );
+      final rawAfter = jsonDecode(
+        rows.firstWhere((row) => row.resourceId == moved.id).data,
+      ) as Map<String, dynamic>;
+      expect(rawAfter.containsKey('canManageTable'), isFalse);
+      expect(rawAfter.containsKey('canEditRecords'), isFalse);
+      expect(rawAfter['memberAccess'], rawBefore['memberAccess']);
+      expect(rawAfter['columns'], rawBefore['columns']);
       final refreshed = OrganizeWorkspaceTablesUsecase(
         CloudWorkspaceTableRepository(store),
       );

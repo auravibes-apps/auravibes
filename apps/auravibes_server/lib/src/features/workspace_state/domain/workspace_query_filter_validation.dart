@@ -12,6 +12,39 @@ abstract final class WorkspaceQueryFilterValidation {
     if (operator != 'equals' && operator != 'contains') {
       throw const FormatException();
     }
+    switch (column['type']) {
+      case 'reference':
+        _reference(encoded, operator);
+        return;
+      case 'multiSelect':
+        _multiple(column, encoded, operator);
+        return;
+    }
+    _scalar(column, encoded, operator);
+  }
+
+  static void _reference(String encoded, String operator) {
+    if (operator != 'equals' || encoded.isEmpty || encoded.length > 200) {
+      throw const FormatException();
+    }
+  }
+
+  static void _multiple(
+    Map<String, dynamic> column,
+    String encoded,
+    String operator,
+  ) {
+    if (operator != 'contains' ||
+        !(column['options'] as List<dynamic>).contains(encoded)) {
+      throw const FormatException();
+    }
+  }
+
+  static void _scalar(
+    Map<String, dynamic> column,
+    String encoded,
+    String operator,
+  ) {
     if (operator == 'contains') {
       if (!{'text', 'email', 'url', 'phone'}.contains(column['type']) ||
           encoded.length > 16384) {
@@ -20,6 +53,10 @@ abstract final class WorkspaceQueryFilterValidation {
 
       return;
     }
+    _exact(column, encoded);
+  }
+
+  static void _exact(Map<String, dynamic> column, String encoded) {
     final value = _value(column, encoded);
     WorkspaceTableValidation.values(
       {

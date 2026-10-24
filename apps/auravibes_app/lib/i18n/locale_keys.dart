@@ -2670,6 +2670,15 @@ abstract class LocaleKeys {
       'workspace_items.reference_remove';
   static const workspace_items_reference_choose_target =
       'workspace_items.reference_choose_target';
+  static const workspace_items_filter_operator =
+      'workspace_items.filter_operator';
+  static const workspace_items_filter_equals = 'workspace_items.filter_equals';
+  static const workspace_items_filter_contains =
+      'workspace_items.filter_contains';
+  static const workspace_items_filter_apply = 'workspace_items.filter_apply';
+  static const workspace_items_filter_clear = 'workspace_items.filter_clear';
+  static const workspace_items_filter_invalid_value =
+      'workspace_items.filter_invalid_value';
   static const workspace_items_reference_parent =
       'workspace_items.reference_parent';
   static const workspace_items_reference_match =
@@ -2682,15 +2691,12 @@ abstract class LocaleKeys {
       'workspace_items.reference_incompatible';
   static const workspace_items_reference_select_parent =
       'workspace_items.reference_select_parent';
-  static const workspace_items_filter_operator =
-      'workspace_items.filter_operator';
-  static const workspace_items_filter_equals = 'workspace_items.filter_equals';
-  static const workspace_items_filter_contains =
-      'workspace_items.filter_contains';
-  static const workspace_items_filter_apply = 'workspace_items.filter_apply';
-  static const workspace_items_filter_clear = 'workspace_items.filter_clear';
-  static const workspace_items_filter_invalid_value =
-      'workspace_items.filter_invalid_value';
+  static const workspace_items_move = 'workspace_items.move';
+  static const workspace_items_move_here = 'workspace_items.move_here';
+  static const workspace_items_selection_move_limit =
+      'workspace_items.selection_move_limit';
+  static const workspace_items_selection_move_denied =
+      'workspace_items.selection_move_denied';
   static const workspace_items_trash = 'workspace_items.trash';
   static const workspace_items_trash_action = 'workspace_items.trash_action';
   static const workspace_items_trash_impact = 'workspace_items.trash_impact';

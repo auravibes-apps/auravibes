@@ -4,16 +4,27 @@ class const LocalWorkspaceRecordQuerySql(
   final String filterType, {
   required final bool descending,
   final bool contains = false,
+  final bool referenceMultiple = false,
 }) {
-  String get _filter => contains
-      ? 'instr(lower(CAST(filtered AS TEXT)),lower(operand)) > 0'
-      : switch (filterType) {
-          'number' => 'filtered = CAST(operand AS NUMERIC)',
-          'checkbox' => 'filtered = CAST(operand AS INTEGER)',
-          'timestamp' => '${_instant('filtered')} = ${_instant('operand')}',
-          'money' => const _Money('filtered').equals(const _Money('operand')),
-          _ => 'CAST(filtered AS TEXT) = operand',
-        };
+  String get _filter {
+    if (filterType == 'multiSelect' ||
+        filterType == 'reference' && referenceMultiple) {
+      return 'EXISTS (SELECT 1 FROM json_each(filtered) WHERE value = operand)';
+    }
+    if (contains) {
+      return 'instr(lower(CAST(filtered AS TEXT)),lower(operand)) > 0';
+    }
+
+    return _equality;
+  }
+
+  String get _equality => switch (filterType) {
+    'number' => 'filtered = CAST(operand AS NUMERIC)',
+    'checkbox' => 'filtered = CAST(operand AS INTEGER)',
+    'timestamp' => '${_instant('filtered')} = ${_instant('operand')}',
+    'money' => const _Money('filtered').equals(const _Money('operand')),
+    _ => 'CAST(filtered AS TEXT) = operand',
+  };
 
   String get _order => switch (sortType) {
     'timestamp' => '${_instant('sorted')} $_direction',
