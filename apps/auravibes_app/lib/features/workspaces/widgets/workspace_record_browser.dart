@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -88,7 +89,7 @@ class const _RecordState(
   @override
   Widget build(BuildContext context) => switch (records) {
     AsyncData(:final value) => _Rows(
-      owner.table,
+      owner,
       value.records,
       draft.columns.value,
       owner.onRecord,
@@ -255,11 +256,13 @@ class const _VisibleColumn(final WorkspaceColumn column, final _Draft draft)
 }
 
 class const _Rows(
-  final WorkspaceTable table,
+  final WorkspaceRecordBrowser browser,
   final List<WorkspaceRecord> records,
   final Set<String> columns,
   final ValueChanged<WorkspaceRecord> onRecord,
 ) extends StatelessWidget {
+  WorkspaceTable get table => browser.table;
+
   List<WorkspaceColumn> get visible {
     final selected = table.columns
         .where((column) => columns.contains(column.id))
@@ -298,15 +301,23 @@ class const _RecordRow(final _Rows owner, final WorkspaceRecord record)
   @override
   Widget build(BuildContext context) => ListTile(
     title: Text(_value(record, owner.table.labelColumnId)),
-    subtitle: Text(_details()),
+    subtitle: _RecordDetails(owner, record),
     onTap: () => owner.onRecord(record),
   );
-  String _details() => [
-    for (final column in owner.visible.where(
-      (column) => column.id != owner.table.labelColumnId,
-    ))
-      '${column.name}: ${_value(record, column.id, column)}',
-  ].join('\n');
+}
+
+class const _RecordDetails(final _Rows owner, final WorkspaceRecord record)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      for (final column in owner.visible.where(
+        (column) => column.id != owner.table.labelColumnId,
+      ))
+        _RecordDetail(owner, record, column),
+    ],
+  );
 }
 
 class const _Grid(final _Rows owner) extends StatelessWidget {
@@ -319,6 +330,7 @@ class const _Grid(final _Rows owner) extends StatelessWidget {
           for (final column in owner.visible)
             DataColumn(label: Text(column.name)),
         ],
+        dataRowMaxHeight: .infinity,
         rows: [for (final record in owner.records) _row(record)],
       ),
     ),
@@ -327,10 +339,74 @@ class const _Grid(final _Rows owner) extends StatelessWidget {
     cells: [
       for (final column in owner.visible)
         DataCell(
-          Text(_value(record, column.id, column)),
+          _Cell(owner, record, column),
           onTap: () => owner.onRecord(record),
         ),
     ],
+  );
+}
+
+class const _RecordDetail(
+  final _Rows owner,
+  final WorkspaceRecord record,
+  final WorkspaceColumn column,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: .start,
+    children: [
+      Expanded(child: Text('${column.name}: ')),
+      Expanded(flex: 2, child: _Cell(owner, record, column)),
+    ],
+  );
+}
+
+class const _Cell(
+  final _Rows owner,
+  final WorkspaceRecord record,
+  final WorkspaceColumn column,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (record.restrictedReferenceColumns.contains(column.id)) {
+      return const TextLocale(LocaleKeys.workspace_items_reference_unavailable);
+    }
+    if (column.type == WorkspaceColumnType.reference) {
+      return _ReferenceCell(owner, record.values[column.id], column);
+    }
+
+    return Text(_value(record, column.id, column));
+  }
+}
+
+class const _ReferenceCell(
+  final _Rows owner,
+  final Object? value,
+  final WorkspaceColumn column,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (value) {
+    final String id => _ReferenceLabel(owner, column, id),
+    final List<Object?> ids => Wrap(
+      children: [
+        for (final id in ids.whereType<String>())
+          _ReferenceLabel(owner, column, id),
+      ],
+    ),
+    _ => const TextLocale(LocaleKeys.workspace_items_missing_value),
+  };
+}
+
+class const _ReferenceLabel(
+  final _Rows owner,
+  final WorkspaceColumn column,
+  final String id,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceReferenceLabel(
+    workspaceId: owner.browser.workspaceId,
+    targetTableId: column.targetTableId ?? '',
+    recordId: id,
   );
 }
 

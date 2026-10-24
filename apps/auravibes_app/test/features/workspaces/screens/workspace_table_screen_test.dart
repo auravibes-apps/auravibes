@@ -4,11 +4,13 @@ import 'package:auravibes_app/features/workspaces/models/workspace_record_query.
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_browser.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' show Value;
@@ -83,6 +85,250 @@ void main() {
     expect(find.text('Readable'), findsOneWidget);
     expect(button('workspace_record_save'), findsNothing);
   });
+  testWidgets('restricted reference cells hide stored IDs at both widths', (
+    tester,
+  ) async {
+    const table = WorkspaceTable(
+      id: 'source',
+      name: 'Source',
+      labelColumnId: 'label',
+      columns: [
+        WorkspaceColumn(id: 'label', name: 'Title'),
+        WorkspaceColumn(
+          id: 'link',
+          name: 'Related',
+          type: .reference,
+          targetTableId: 'target',
+        ),
+      ],
+      revision: 1,
+      schemaRevision: 1,
+    );
+    const record = WorkspaceRecord(
+      id: 'source-record',
+      tableId: 'source',
+      values: {'label': 'Readable source', 'link': 'secret-record-id'},
+      revision: 1,
+      restrictedReferenceColumns: ['link'],
+    );
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceRecordBrowser(
+            workspaceId: 'one',
+            table: table,
+            onRecord: (_) => fail('Unexpected row navigation'),
+          ),
+          overrides: [
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async =>
+                  const WorkspaceRecordPage(records: [record], hasMore: false),
+            ),
+          ],
+          workspaceId: 'one',
+        ),
+      ),
+    );
+    for (final width in [1200.0, 400.0]) {
+      tester.view.physicalSize = .new(width, 900);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Readable source'), findsOneWidget);
+      expect(
+        find.text('Linked records are unavailable with your current access.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('secret-record-id'), findsNothing);
+    }
+  });
+  testWidgets(
+    'reference cells show authorized labels instead of IDs at both widths',
+    (tester) async {
+      const table = WorkspaceTable(
+        id: 'source',
+        name: 'Source',
+        labelColumnId: 'label',
+        columns: [
+          WorkspaceColumn(id: 'label', name: 'Title'),
+          WorkspaceColumn(
+            id: 'link',
+            name: 'Related',
+            type: .reference,
+            targetTableId: 'target',
+          ),
+        ],
+        revision: 1,
+        schemaRevision: 1,
+        canManage: false,
+        canEditRecords: false,
+      );
+      const record = WorkspaceRecord(
+        id: 'source-record',
+        tableId: 'source',
+        values: {'label': 'Readable source', 'link': 'target-record-id'},
+        revision: 1,
+      );
+      const target = WorkspaceTable(
+        id: 'target',
+        name: 'Targets',
+        labelColumnId: 'label',
+        columns: [WorkspaceColumn(id: 'label', name: 'Title')],
+        revision: 1,
+        schemaRevision: 1,
+        canManage: false,
+        canEditRecords: false,
+      );
+      const targetRecord = WorkspaceRecord(
+        id: 'target-record-id',
+        tableId: 'target',
+        values: {'label': 'Friendly target'},
+        revision: 1,
+      );
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.runAsync(
+        () => tester.pumpWidget(
+          TestableApp(
+            child: WorkspaceRecordBrowser(
+              workspaceId: 'one',
+              table: table,
+              onRecord: (_) => fail('Unexpected row navigation'),
+            ),
+            overrides: [
+              workspaceRecordQueryProvider.overrideWith(
+                (ref, arguments) async => const WorkspaceRecordPage(
+                  records: [record],
+                  hasMore: false,
+                ),
+              ),
+              workspaceTableProvider(
+                'one',
+                'target',
+              ).overrideWith((ref) async => target),
+              workspaceReferencedRecordProvider(
+                'one',
+                'target',
+                'target-record-id',
+              ).overrideWith((ref) async => targetRecord),
+            ],
+            workspaceId: 'one',
+          ),
+        ),
+      );
+      for (final width in [1200.0, 400.0]) {
+        tester.view.physicalSize = .new(width, 900);
+        final _ = await tester.pumpAndSettle();
+        expect(find.text('Friendly target'), findsOneWidget);
+        expect(find.textContaining('target-record-id'), findsNothing);
+      }
+    },
+  );
+  testWidgets(
+    'saving a target refreshes a continuously mounted reference label',
+    (tester) async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      late WorkspaceTable schema;
+      late WorkspaceRecord target;
+      late OrganizeWorkspaceTablesUsecase tables;
+      await tester.runAsync(() async {
+        final _ = await database
+            .into(database.workspaces)
+            .insert(
+              WorkspacesCompanion.insert(
+                id: const .new('one'),
+                name: 'One',
+                type: .local,
+              ),
+            );
+        tables = OrganizeWorkspaceTablesUsecase(
+          LocalWorkspaceTableRepository(database, 'one'),
+        );
+        final table = await tables.create(name: 'Targets', labelName: 'Title');
+        schema = await tables.saveColumn(
+          table: table,
+          column: WorkspaceColumn(
+            id: '',
+            name: 'Related',
+            type: .reference,
+            targetTableId: table.id,
+          ),
+        );
+        target = await tables.createRecord(
+          table: schema,
+          values: {schema.labelColumnId: 'Old target'},
+        );
+        final _ = await tables.createRecord(
+          table: schema,
+          values: {
+            schema.labelColumnId: 'Source',
+            schema.columns.last.id: target.id,
+          },
+        );
+        await tester.pumpWidget(
+          TestableApp(
+            workspaceId: 'one',
+            overrides: [
+              appDatabaseProvider.overrideWithValue(database),
+              workspaceTableUsecaseProvider('one')
+                  .overrideWith((ref) async => tables),
+            ],
+            child: Column(
+              children: [
+                Expanded(
+                  child: WorkspaceTableScreen(
+                    workspaceId: 'one',
+                    tableId: schema.id,
+                    onBack: () => fail('Unexpected table back'),
+                  ),
+                ),
+                SizedBox(
+                  height: 60,
+                  child: WorkspaceReferenceLabel(
+                    workspaceId: 'one',
+                    targetTableId: schema.id,
+                    recordId: target.id,
+                    key: const ValueKey('stable_reference'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      });
+      await _settleDatabase(tester);
+      await tester.tap(find.text('Old target').first);
+      await _settleDatabase(tester);
+      await tester.enterText(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraInput &&
+              widget.identifier == 'workspace_record_value',
+        ),
+        'Updated target',
+      );
+      await tester.runAsync(
+        () => tester.tap(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is AuraButton &&
+                widget.identifier == 'workspace_record_save',
+          ),
+        ),
+      );
+      await _settleDatabase(tester);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('stable_reference')),
+          matching: find.text('Updated target'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
   testWidgets('record grid preserves money precision and selected timezone', (
     tester,
   ) async {
@@ -260,4 +506,14 @@ void main() {
     expect(find.byType(DataTable), findsNothing);
     expect(find.text('Updated book'), findsOneWidget);
   });
+}
+
+Future<void> _settleDatabase(WidgetTester tester) async {
+  for (var index = 0; index < 5; index++) {
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+  }
+  final _ = await tester.pumpAndSettle();
 }

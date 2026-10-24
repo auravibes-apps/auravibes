@@ -239,6 +239,122 @@ void main() {
           'numeric-2',
           'numeric-10',
         ]);
+        final targetSchema = {
+          'name': 'Targets',
+          'labelColumnId': 'label',
+          'schemaRevision': 1,
+          'columns': [
+            {'id': 'label', 'name': 'Title', 'type': 'text'},
+          ],
+        };
+        final sourceSchema = {
+          'name': 'Sources',
+          'labelColumnId': 'label',
+          'schemaRevision': 1,
+          'memberAccess': {memberId: 'read'},
+          'columns': [
+            {'id': 'label', 'name': 'Title', 'type': 'text'},
+            {
+              'id': 'link',
+              'name': 'Related',
+              'type': 'reference',
+              'targetTableId': 'reference-target',
+              'referenceMultiple': false,
+            },
+          ],
+        };
+        for (final operation in [
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .table,
+            resourceId: 'reference-target',
+            data: jsonEncode(targetSchema),
+            fieldMask: const [],
+          ),
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .tableRecord,
+            resourceId: 'hidden-target-record',
+            data: jsonEncode({
+              'tableId': 'reference-target',
+              'schemaRevision': 1,
+              'values': {'label': 'Private target'},
+            }),
+            fieldMask: const [],
+          ),
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .table,
+            resourceId: 'reference-source',
+            data: jsonEncode(sourceSchema),
+            fieldMask: const [],
+          ),
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .tableRecord,
+            resourceId: 'source-record',
+            data: jsonEncode({
+              'tableId': 'reference-source',
+              'schemaRevision': 1,
+              'values': {'label': 'Source', 'link': 'hidden-target-record'},
+            }),
+            fieldMask: const [],
+          ),
+        ]) {
+          await patch([operation]);
+        }
+        Future<WorkspaceResource> sourceQuery() async =>
+            (await endpoints.workspaceState.queryRecords(
+              member,
+              workspace.id!,
+              'reference-source',
+              '{}',
+            )).single;
+        final deniedReference = await sourceQuery();
+        expect(deniedReference.data, isNot(contains('hidden-target-record')));
+        expect(
+          jsonDecode(deniedReference.data),
+          containsPair('restrictedReferenceColumns', ['link']),
+        );
+        await patch([
+          WorkspacePatchOperation(
+            operation: .update,
+            resourceKind: .table,
+            resourceId: 'reference-target',
+            data: jsonEncode({
+              ...targetSchema,
+              'memberAccess': {memberId: 'read'},
+            }),
+            fieldMask: const [],
+            expectedRevision: 1,
+          ),
+        ]);
+        final grantedReference =
+            jsonDecode((await sourceQuery()).data) as Map<String, dynamic>;
+        expect(grantedReference['restrictedReferenceColumns'], isEmpty);
+        expect(
+          grantedReference['values'],
+          containsPair('link', 'hidden-target-record'),
+        );
+        await patch([
+          WorkspacePatchOperation(
+            operation: .update,
+            resourceKind: .table,
+            resourceId: 'reference-target',
+            data: jsonEncode({
+              ...targetSchema,
+              'memberAccess': <String, String>{},
+            }),
+            fieldMask: const [],
+            expectedRevision: 2,
+          ),
+        ]);
+        final revokedReference = await sourceQuery();
+        expect(revokedReference.data, isNot(contains('hidden-target-record')));
+        expect(
+          jsonDecode(revokedReference.data),
+          containsPair('restrictedReferenceColumns', ['link']),
+        );
         await expectLater(
           endpoints.workspaceState.queryRecords(
             authenticated,

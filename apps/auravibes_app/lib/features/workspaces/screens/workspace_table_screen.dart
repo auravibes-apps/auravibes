@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
@@ -144,6 +145,7 @@ abstract final class _TableNavigationActions {
     ref
       ..invalidate(workspaceTableProvider(workspaceId, tableId))
       ..invalidate(workspaceTableRecordsProvider(workspaceId, tableId))
+      ..invalidate(workspaceReferencesUsecaseProvider(workspaceId))
       ..invalidate(workspaceRecordQueryProvider);
   }
 }

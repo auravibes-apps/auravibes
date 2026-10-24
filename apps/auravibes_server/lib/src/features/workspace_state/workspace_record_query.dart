@@ -30,17 +30,24 @@ class const _QueryScope(
   final Transaction transaction,
 ) {
   Future<List<WorkspaceResource>> read() async {
-    final table = await _AuthorizedTable(
+    final source = await _AuthorizedTable(
       session,
       userId,
       input,
       transaction,
     ).read();
-    final query = _QueryParameters(input.encoded, table).read();
+    final query = _QueryParameters(input.encoded, source.table).read();
 
-    return await _QueryReader(session, input, transaction).read(query);
+    return await _QueryReader(
+      session,
+      input,
+      transaction,
+      source.member,
+    ).read(query);
   }
 }
+
+typedef _AuthorizedSource = ({WorkspaceResource table, WorkspaceMember member});
 
 class const _AuthorizedTable(
   final Session session,
@@ -48,7 +55,7 @@ class const _AuthorizedTable(
   final WorkspaceRecordQueryInput input,
   final Transaction transaction,
 ) {
-  Future<WorkspaceResource> read() async {
+  Future<_AuthorizedSource> read() async {
     final repository = WorkspaceStateRepository();
     await _workspace(repository);
     final member = await repository.findMember(
@@ -59,7 +66,7 @@ class const _AuthorizedTable(
     );
     if (member == null) _denied();
 
-    return await _visible(member);
+    return (table: await _visible(member), member: member);
   }
 
   Future<void> _workspace(WorkspaceStateRepository repository) async {
@@ -99,6 +106,7 @@ class const _QueryReader(
   final Session session,
   final WorkspaceRecordQueryInput input,
   final Transaction transaction,
+  final WorkspaceMember member,
 ) {
   Future<List<WorkspaceResource>> read(Map<String, Object?> query) async {
     final ids = await _ids(query);
@@ -128,7 +136,15 @@ class const _QueryReader(
     if (ids.isEmpty) return [];
     final rows = await _find(ids);
 
-    return _ordered(rows, ids);
+    return await _visible(_ordered(rows, ids));
+  }
+
+  Future<List<WorkspaceResource>> _visible(List<WorkspaceResource> rows) async {
+    final access = WorkspaceTableAccess(transaction: transaction);
+
+    return [
+      for (final row in rows) ?await access.visible(session, member, row),
+    ];
   }
 
   Future<List<WorkspaceResource>> _find(List<String> ids) async {

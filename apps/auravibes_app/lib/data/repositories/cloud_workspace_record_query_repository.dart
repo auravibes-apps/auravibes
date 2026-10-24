@@ -42,7 +42,14 @@ WorkspaceRecord _record(WorkspaceResource row) {
   return WorkspaceRecord(
     id: row.resourceId,
     tableId: data['tableId'] as String,
-    values: (data['values'] as Map<String, dynamic>).cast<String, Object?>(),
+    values: _values(data),
     revision: row.revision,
+    restrictedReferenceColumns: _restricted(data),
   );
 }
+
+Map<String, Object?> _values(Map<String, dynamic> data) =>
+    (data['values'] as Map<String, dynamic>).cast<String, Object?>();
+List<String> _restricted(Map<String, dynamic> data) =>
+    (data['restrictedReferenceColumns'] as List<dynamic>? ?? const [])
+        .cast<String>();
