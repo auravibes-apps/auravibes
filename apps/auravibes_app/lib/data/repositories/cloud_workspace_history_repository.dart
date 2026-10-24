@@ -1,6 +1,7 @@
-import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
 import 'dart:convert';
 
+import 'package:auravibes_app/features/workspaces/models/workspace_history_blocked_exception.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_revision.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
@@ -17,15 +18,27 @@ class const CloudWorkspaceHistoryRepository(
   @override
   Future<WorkspaceHistoryPolicy> policy() async {
     final connection = await _connection();
-    final encoded = await CloudAppErrors.guardCall(.state, () => connection.client.workspaceHistory.policy(connection.workspaceId));
+    final encoded = await CloudAppErrors.guardCall(
+      .state,
+      () => connection.client.workspaceHistory.policy(connection.workspaceId),
+    );
+
     return _policy(encoded);
   }
 
   @override
   Future<void> configure(WorkspaceHistoryPolicy current, int? days) async {
     final connection = await _connection();
-    final request = cloud.WorkspaceHistoryPolicyRequest(workspaceId: connection.workspaceId, days: days, expectedRevision: current.revision, requestId: const UuidV7().generate());
-    await CloudAppErrors.guardCall(.state, () => connection.client.workspaceHistory.configurePolicy(request));
+    final request = cloud.WorkspaceHistoryPolicyRequest(
+      workspaceId: connection.workspaceId,
+      days: days,
+      expectedRevision: current.revision,
+      requestId: const UuidV7().generate(),
+    );
+    await CloudAppErrors.guardCall(
+      .state,
+      () => connection.client.workspaceHistory.configurePolicy(request),
+    );
   }
 
   @override
@@ -45,13 +58,11 @@ class const CloudWorkspaceHistoryRepository(
   @override
   Future<void> permanentlyDelete(WorkspaceTrashTarget target) async {
     final connection = await _connection();
-    await CloudAppErrors.guardCall(
+    final details = await CloudAppErrors.guardCall(
       .state,
-      () => connection.client.workspaceHistory.permanentlyDelete(
-        connection.workspaceId,
-        jsonEncode(target.toJson()),
-      ),
+      () => _purge(connection, target),
     );
+    if (details != null) throw WorkspaceHistoryBlockedException.decode(details);
   }
 
   Future<_Connection> _connection() async {
@@ -114,5 +125,28 @@ cloud.WorkspaceHistoryRestoreRequest _request(
 
 WorkspaceHistoryPolicy _policy(String encoded) {
   final data = jsonDecode(encoded) as Map<String, dynamic>;
-  return WorkspaceHistoryPolicy(days: data['days'] as int?, revision: data['revision'] as int, canManage: data['canManage'] as bool);
+
+  return WorkspaceHistoryPolicy(
+    days: data['days'] as int?,
+    revision: data['revision'] as int,
+    canManage: data['canManage'] as bool,
+  );
+}
+
+Future<String?> _purge(
+  _Connection connection,
+  WorkspaceTrashTarget target,
+) async {
+  try {
+    await connection.client.workspaceHistory.permanentlyDelete(
+      connection.workspaceId,
+      jsonEncode(target.toJson()),
+    );
+
+    return null;
+  } on cloud.CloudWorkspaceException catch (error) {
+    final details = error.blockingResourcesJson;
+    if (details != null) return details;
+    rethrow;
+  }
 }

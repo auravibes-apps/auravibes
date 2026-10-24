@@ -1,4 +1,3 @@
-import 'package:auravibes_app/data/database/drift/tables/workspace_history_policies.dart';
 import 'package:auravibes_app/app_storage_namespace.dart';
 import 'package:auravibes_app/data/database/drift/daos/agent_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/agents_dao.dart';
@@ -45,6 +44,7 @@ import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_history_policies.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_record_batch_receipts.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_revisions.dart';

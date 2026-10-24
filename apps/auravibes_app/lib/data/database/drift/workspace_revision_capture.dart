@@ -13,8 +13,12 @@ abstract final class WorkspaceRevisionCapture {
 'labelColumnId', ROW.label_column_id, 'columns', json(ROW.columns_json),
 'schemaRevision', ROW.schema_revision
 '''
-          : '''
- 'tableId', ROW.table_id, 'values', json(ROW.values_json)
+          : r'''
+ 'tableId', ROW.table_id, 'values', json(ROW.values_json),
+ 'historyAttachmentColumns', json((SELECT json_group_array(json_extract(value, '$.id'))
+ FROM json_each((SELECT columns_json FROM workspace_tables
+ WHERE workspace_id = ROW.workspace_id AND id = ROW.table_id))
+ WHERE json_extract(value, '$.type') = 'attachment'))
 ''';
       for (final event in ['INSERT', 'UPDATE']) {
         final old = event == 'UPDATE' ? _capture(kind, payload, 'OLD') : '';

@@ -2543,6 +2543,8 @@ abstract class LocaleKeys {
   static const mcp_elicitation_cancel = 'mcp.elicitation.cancel';
   static const mcp_elicitation_invalid = 'mcp.elicitation.invalid';
   static const mcp_elicitation_open_error = 'mcp.elicitation.open_error';
+  static const workspace_items_history_blocked =
+      'workspace_items.history.blocked';
   static const workspace_items_history_title = 'workspace_items.history.title';
   static const workspace_items_history_retention =
       'workspace_items.history.retention';
@@ -2554,6 +2556,18 @@ abstract class LocaleKeys {
   static const workspace_items_history_purge = 'workspace_items.history.purge';
   static const workspace_items_history_purge_notice =
       'workspace_items.history.purge_notice';
+  static const workspace_items_history_policy_title =
+      'workspace_items.history.policy_title';
+  static const workspace_items_history_policy_hint =
+      'workspace_items.history.policy_hint';
+  static const workspace_items_history_policy_days =
+      'workspace_items.history.policy_days';
+  static const workspace_items_history_policy_summary =
+      'workspace_items.history.policy_summary';
+  static const workspace_items_history_policy_notice =
+      'workspace_items.history.policy_notice';
+  static const workspace_items_history_policy_invalid =
+      'workspace_items.history.policy_invalid';
   static const workspace_items_edit_item = 'workspace_items.edit_item';
   static const workspace_items_item_name = 'workspace_items.item_name';
   static const workspace_items_destination = 'workspace_items.destination';

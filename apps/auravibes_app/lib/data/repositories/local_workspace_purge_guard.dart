@@ -6,19 +6,25 @@ class const LocalWorkspacePurgeGuard(
   final AppDatabase database,
   final String workspaceId,
 ) {
-  Future<void> view(String id) async {
+  Future<void> view(String id) => resource('view', id);
+
+  Future<void> resource(String kind, String id) async {
     final query = database.select(database.workspaceRevisions)
-      ..where(_PurgeKey(workspaceId, id).matches);
+      ..where(_PurgeKey(workspaceId, kind, id).matches);
     if (await query.getSingleOrNull() != null) {
       throw const WorkspaceTableException(conflict: true);
     }
   }
 }
 
-class const _PurgeKey(final String workspaceId, final String id) {
+class const _PurgeKey(
+  final String workspaceId,
+  final String kind,
+  final String id,
+) {
   Expression<bool> matches($WorkspaceRevisionsTable row) =>
       row.workspaceId.equals(workspaceId) &
-      row.kind.equals('view') &
+      row.kind.equals(kind) &
       row.resourceId.equals(id) &
       row.revision.equals(0);
 }

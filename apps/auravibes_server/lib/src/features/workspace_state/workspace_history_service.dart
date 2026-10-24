@@ -56,17 +56,23 @@ class const _Restoration(final WorkspaceHistoryContext context) {
     int revision,
   ) async {
     final current = await context.current(target, write: true);
-    final snapshots = await context.snapshots(current);
-    final selected = snapshots
-        .where((row) => row.revision == revision)
-        .firstOrNull;
-    if (selected == null) trashInvalid();
+    final selected = await _selected(current, revision);
 
     return _operation(
       current,
       target.revision,
       await _data(current, selected),
     );
+  }
+
+  Future<WorkspaceRevision> _selected(
+    WorkspaceResource current,
+    int revision,
+  ) async {
+    final snapshots = await context.snapshots(current);
+
+    return snapshots.where((row) => row.revision == revision).firstOrNull ??
+        trashInvalid();
   }
 
   Future<String> _data(

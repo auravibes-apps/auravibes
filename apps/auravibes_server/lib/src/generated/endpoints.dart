@@ -140,6 +140,8 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/w
     as _ii3fyw7y;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_history_restore_request.dart'
     as _i1gme7yv;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_record_summary_request.dart'
+    as _il1i4a8s;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_record_request.dart'
     as _irm41t6a;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_table_request.dart'
@@ -2161,6 +2163,27 @@ class Endpoints extends _is.EndpointDispatch {
       name: 'workspaceState',
       endpoint: endpoints['workspaceState']!,
       methodConnectors: {
+        'summarizeRecords': _is.MethodConnector(
+          name: 'summarizeRecords',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_il1i4a8s.WorkspaceRecordSummaryRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceState']
+                          as _iv99006q.WorkspaceStateEndpoint)
+                      .summarizeRecords(
+                        session,
+                        params['request'],
+                      ),
+        ),
         'queryRecords': _is.MethodConnector(
           name: 'queryRecords',
           params: {

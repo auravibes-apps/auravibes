@@ -4,7 +4,8 @@ import 'package:auravibes_app/features/workspaces/models/workspace_revision.dart
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_history_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_history_approval.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_history_policy_settings.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_history_policy_button.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_history_policy_summary.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_trash_actions.dart';
@@ -18,18 +19,24 @@ import 'package:material_ui/material_ui.dart';
 class const WorkspaceHistoryPanel({
   required final String workspaceId,
   required final WorkspaceTrashTarget target,
+  final bool canRestore = true,
   super.key,
 }) extends HookConsumerWidget {
   static Future<void> open(
     BuildContext context,
     String workspaceId,
-    WorkspaceTrashTarget target,
-  ) => showDialog<void>(
+    WorkspaceTrashTarget target, {
+    bool canRestore = true,
+  }) => showDialog<void>(
     context: context,
     builder: (_) => Dialog(
       child: SizedBox(
         width: 600,
-        child: WorkspaceHistoryPanel(workspaceId: workspaceId, target: target),
+        child: WorkspaceHistoryPanel(
+          workspaceId: workspaceId,
+          target: target,
+          canRestore: canRestore,
+        ),
       ),
     ),
   );
@@ -49,6 +56,7 @@ class const WorkspaceHistoryPanel({
             child: _HistoryResult(
               workspaceId: workspaceId,
               target: target,
+              canRestore: canRestore,
               snapshot: snapshot,
             ),
           ),
@@ -64,21 +72,31 @@ AsyncSnapshot<List<WorkspaceRevision>> _useHistory(
   String workspaceId,
   WorkspaceTrashTarget target,
 ) {
-  final policyRevision = ref.watch(workspaceHistoryPolicyProvider(workspaceId)).value?.revision;
-  final future = useMemoized(() async {
-    final usecase = await ref.read(
-      workspaceHistoryUsecaseProvider(workspaceId).future,
-    );
-
-    return await usecase.history(target);
-  }, [workspaceId, target.id, target.revision, policyRevision]);
+  final policyRevision = ref
+      .watch(workspaceHistoryPolicyProvider(workspaceId))
+      .value
+      ?.revision;
+  final future = useMemoized(() => _loadHistory(ref, workspaceId, target), [
+    workspaceId,
+    target.id,
+    target.revision,
+    policyRevision,
+  ]);
 
   return useFuture(future);
 }
 
-class const _HistoryHeader({required final String workspaceId}) extends StatelessWidget {
+class const _HistoryHeader({required final String workspaceId})
+    extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(children: [const Expanded(child: TextLocale(LocaleKeys.workspace_items_history_title)), WorkspaceHistoryPolicyButton(workspaceId: workspaceId)]);
+  Widget build(BuildContext context) => Row(
+    children: [
+      const Expanded(
+        child: TextLocale(LocaleKeys.workspace_items_history_title),
+      ),
+      WorkspaceHistoryPolicyButton(workspaceId: workspaceId),
+    ],
+  );
 }
 
 class const _CloseHistory() extends StatelessWidget {
@@ -93,6 +111,7 @@ class const _CloseHistory() extends StatelessWidget {
 class const _HistoryResult({
   required final String workspaceId,
   required final WorkspaceTrashTarget target,
+  required final bool canRestore,
   required final AsyncSnapshot<List<WorkspaceRevision>> snapshot,
 }) extends StatelessWidget {
   @override
@@ -101,7 +120,12 @@ class const _HistoryResult({
       return WorkspaceItemFailure(error: error);
     }
     if (snapshot.data case final rows?) {
-      return _HistoryRows(workspaceId: workspaceId, target: target, rows: rows);
+      return _HistoryRows(
+        workspaceId: workspaceId,
+        target: target,
+        canRestore: canRestore,
+        rows: rows,
+      );
     }
 
     return const Center(child: CircularProgressIndicator());
@@ -111,6 +135,7 @@ class const _HistoryResult({
 class const _HistoryRows({
   required final String workspaceId,
   required final WorkspaceTrashTarget target,
+  required final bool canRestore,
   required final List<WorkspaceRevision> rows,
 }) extends StatelessWidget {
   @override
@@ -120,7 +145,12 @@ class const _HistoryRows({
       if (rows.isEmpty)
         const TextLocale(LocaleKeys.workspace_items_history_empty),
       for (final row in rows)
-        _RevisionRow(workspaceId: workspaceId, target: target, revision: row),
+        _RevisionRow(
+          workspaceId: workspaceId,
+          target: target,
+          canRestore: canRestore,
+          revision: row,
+        ),
       WorkspaceHistoryPolicySummary(workspaceId: workspaceId),
     ],
   );
@@ -129,6 +159,7 @@ class const _HistoryRows({
 class const _RevisionRow({
   required final String workspaceId,
   required final WorkspaceTrashTarget target,
+  required final bool canRestore,
   required final WorkspaceRevision revision,
 }) extends HookConsumerWidget {
   @override
@@ -139,6 +170,7 @@ class const _RevisionRow({
       revision: revision,
       action: action,
       target: target,
+      canRestore: canRestore,
       onPressed: () => unawaited(action.run(() => _restore(context, ref))),
     );
   }
@@ -151,7 +183,7 @@ class const _RevisionRow({
     final restored = await usecase.restore(
       target,
       revision.target.revision,
-      approve: () => WorkspaceHistoryApproval.ask(context, purge: false),
+      approve: () => _approveRestore(context),
     );
     if (context.mounted) _complete(context, ref, restored);
   }
@@ -167,6 +199,7 @@ class const _RevisionContent({
   required final WorkspaceRevision revision,
   required final WorkspaceTableAction action,
   required final WorkspaceTrashTarget target,
+  required final bool canRestore,
   required final VoidCallback onPressed,
 }) extends StatelessWidget {
   @override
@@ -176,6 +209,7 @@ class const _RevisionContent({
       revision: revision,
       action: action,
       target: target,
+      canRestore: canRestore,
       onPressed: onPressed,
     ),
   );
@@ -185,6 +219,7 @@ class const _RevisionBody({
   required final WorkspaceRevision revision,
   required final WorkspaceTableAction action,
   required final WorkspaceTrashTarget target,
+  required final bool canRestore,
   required final VoidCallback onPressed,
 }) extends StatelessWidget {
   @override
@@ -193,7 +228,7 @@ class const _RevisionBody({
     crossAxisAlignment: .stretch,
     children: [
       _RevisionDetails(revision: revision),
-      if (revision.target.revision != target.revision)
+      if (canRestore && revision.target.revision != target.revision)
         _RestoreRevision(
           action: action,
           revision: revision.target.revision,
@@ -242,3 +277,18 @@ String _summary(WorkspaceRevision revision) {
 
   return values is Map ? values.values.map((value) => '$value').join(', ') : '';
 }
+
+Future<List<WorkspaceRevision>> _loadHistory(
+  WidgetRef ref,
+  String workspaceId,
+  WorkspaceTrashTarget target,
+) async {
+  final usecase = await ref.read(
+    workspaceHistoryUsecaseProvider(workspaceId).future,
+  );
+
+  return await usecase.history(target);
+}
+
+Future<bool> _approveRestore(BuildContext context) =>
+    WorkspaceHistoryApproval.ask(context, purge: false);

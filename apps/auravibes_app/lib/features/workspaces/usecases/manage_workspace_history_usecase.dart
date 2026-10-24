@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_revision.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
@@ -8,13 +9,17 @@ class const ManageWorkspaceHistoryUsecase(
 ) {
   Future<WorkspaceHistoryPolicy> policy() => repository.policy();
 
-  Future<bool> configurePolicy(WorkspaceHistoryPolicy current, int? days, {
+  Future<bool> configurePolicy(
+    WorkspaceHistoryPolicy current,
+    int? days, {
     required Future<bool> Function() approve,
     ConversationToolAccessMode mode = .defaultMode,
   }) async {
     WorkspaceHistoryPolicy.validate(days);
+    if (!current.canManage) throw const WorkspaceTableException(denied: true);
     if (mode == .defaultMode && !await approve()) return false;
     await repository.configure(current, days);
+
     return true;
   }
 
@@ -29,6 +34,7 @@ class const ManageWorkspaceHistoryUsecase(
   }) async {
     if (mode == .defaultMode && !await approve()) return false;
     await repository.restore(target, revision);
+
     return true;
   }
 
@@ -39,6 +45,7 @@ class const ManageWorkspaceHistoryUsecase(
   }) async {
     if (mode == .defaultMode && !await approve()) return false;
     await repository.permanentlyDelete(target);
+
     return true;
   }
 }

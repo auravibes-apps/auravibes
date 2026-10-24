@@ -14,6 +14,7 @@ class const WorkspaceRecordTrashMenu({
   required final String workspaceId,
   required final WorkspaceRecord record,
   required final VoidCallback onTrashed,
+  final bool canTrash = true,
   super.key,
 }) extends ConsumerWidget {
   @override
@@ -21,7 +22,6 @@ class const WorkspaceRecordTrashMenu({
     items: [
       AuraPopupMenuItem(
         title: const TextLocale(LocaleKeys.workspace_items_history_title),
-        identifier: 'workspace_record_history',
         onTap: () => unawaited(
           WorkspaceHistoryPanel.open(
             context,
@@ -32,15 +32,18 @@ class const WorkspaceRecordTrashMenu({
               tableId: record.tableId,
               revision: record.revision,
             ),
+            canRestore: canTrash,
           ),
         ),
+        identifier: 'workspace_record_history',
       ),
-      AuraPopupMenuItem(
-        title: const TextLocale(LocaleKeys.workspace_items_trash_action),
-        onTap: () => unawaited(_trash(context, ref)),
-        variant: .error,
-        identifier: 'workspace_record_trash',
-      ),
+      if (canTrash)
+        AuraPopupMenuItem(
+          title: const TextLocale(LocaleKeys.workspace_items_trash_action),
+          onTap: () => unawaited(_trash(context, ref)),
+          variant: .error,
+          identifier: 'workspace_record_trash',
+        ),
     ],
     identifier: 'workspace_record_overflow',
     tooltip: LocaleKeys.common_show_more.tr(),

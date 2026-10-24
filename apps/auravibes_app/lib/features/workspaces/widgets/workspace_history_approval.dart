@@ -4,20 +4,28 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:material_ui/material_ui.dart';
 
 abstract final class WorkspaceHistoryApproval {
-  static Future<bool> ask(BuildContext context, {required bool purge}) async {
-    final approved = await showDialog<bool>(
-      context: context,
-      builder: (_) => _ApprovalDialog(notice: purge ? LocaleKeys.workspace_items_history_purge_notice : LocaleKeys.workspace_items_history_restore_notice, action: purge ? LocaleKeys.workspace_items_history_purge : LocaleKeys.workspace_items_history_restore),
-    );
+  static Future<bool> ask(BuildContext context, {required bool purge}) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (_) => _RestoreApproval(purge: purge),
+      ) ??
+      false;
 
-    return approved ?? false;
-  }
-  static Future<bool> configure(BuildContext context) async => await showDialog<bool>(context: context, builder: (_) => const _ApprovalDialog(notice: LocaleKeys.workspace_items_history_policy_notice, action: LocaleKeys.common_save)) ?? false;
-
+  static Future<bool> configure(BuildContext context) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (_) => const _ApprovalDialog(
+          notice: LocaleKeys.workspace_items_history_policy_notice,
+          action: LocaleKeys.common_save,
+        ),
+      ) ??
+      false;
 }
 
-class const _ApprovalDialog({required final String notice, required final String action})
-    extends StatelessWidget {
+class const _ApprovalDialog({
+  required final String notice,
+  required final String action,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Dialog(
     child: ConstrainedBox(
@@ -32,8 +40,10 @@ class const _ApprovalDialog({required final String notice, required final String
   );
 }
 
-class const _ApprovalContent({required final String notice, required final String action})
-    extends StatelessWidget {
+class const _ApprovalContent({
+  required final String notice,
+  required final String action,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     mainAxisSize: .min,
@@ -62,5 +72,18 @@ class const _Cancel() extends StatelessWidget {
     child: const TextLocale(LocaleKeys.common_cancel),
     variant: .ghost,
     identifier: 'workspace_history_cancel',
+  );
+}
+
+class const _RestoreApproval({required final bool purge})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ApprovalDialog(
+    notice: purge
+        ? LocaleKeys.workspace_items_history_purge_notice
+        : LocaleKeys.workspace_items_history_restore_notice,
+    action: purge
+        ? LocaleKeys.workspace_items_history_purge
+        : LocaleKeys.workspace_items_history_restore,
   );
 }

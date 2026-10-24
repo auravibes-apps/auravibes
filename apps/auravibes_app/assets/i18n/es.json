@@ -1954,6 +1954,7 @@
   },
   "workspace_items": {
     "history": {
+      "blocked": "Hay datos conservados que aún hacen referencia a este elemento. Resuelve el origen indicado y su historial conservado, e inténtalo de nuevo.",
       "title": "Historial de revisiones",
       "retention": "La caducidad automática de revisiones de registros y tablas no está configurada. Se conservan hasta eliminarlas explícitamente.",
       "empty": "No hay revisiones guardadas disponibles.",

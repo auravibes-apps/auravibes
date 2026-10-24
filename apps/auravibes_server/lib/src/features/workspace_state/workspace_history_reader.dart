@@ -11,7 +11,11 @@ import 'workspace_trash_access.dart';
 class const WorkspaceHistoryReader(final WorkspaceHistoryContext context) {
   Future<List<String>> read(HistoryTarget target) async {
     final current = await context.current(target, write: false);
-    await WorkspaceHistoryRetention(context.session, context.workspaceId, context.transaction).prune();
+    await WorkspaceHistoryRetention(
+      context.session,
+      context.workspaceId,
+      context.transaction,
+    ).prune();
     final snapshots = await context.snapshots(current);
     final locked = await context.access.lock();
 

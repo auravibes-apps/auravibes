@@ -6,7 +6,8 @@ import 'package:drift/drift.dart';
 
 @DataClassName('WorkspaceHistoryPolicyRow')
 class WorkspaceHistoryPolicies extends Table {
-  TextColumn get workspaceId => text().references(Workspaces, #id, onDelete: .cascade)();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: .cascade)();
   IntColumn get days => integer().nullable()();
   IntColumn get revision => integer().withDefault(const Constant(1))();
   @override

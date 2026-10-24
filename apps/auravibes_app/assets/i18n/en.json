@@ -1954,6 +1954,7 @@
   },
   "workspace_items": {
     "history": {
+      "blocked": "Retained data still references this item. Resolve the listed source and its retained history, then try again.",
       "title": "Revision history",
       "retention": "Automatic expiry of record and table revisions is unset. Saved revisions remain until explicitly deleted.",
       "empty": "No saved revisions are available.",

@@ -4,6 +4,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import 'repositories/workspace_state_repository.dart';
+import 'workspace_history_retention.dart';
 import 'workspace_trash_access.dart';
 
 typedef HistoryTarget = ({
@@ -36,13 +37,16 @@ class const WorkspaceHistoryContext(
     return current;
   }
 
-  Future<List<WorkspaceRevision>> snapshots(WorkspaceResource current) =>
-      WorkspaceRevision.db.find(
-        session,
-        where: (row) => _matches(row, current),
-        orderBy: (row) => row.revision,
-        transaction: transaction,
-      );
+  Future<List<WorkspaceRevision>> snapshots(WorkspaceResource current) async {
+    await WorkspaceHistoryRetention(session, workspaceId, transaction).prune();
+
+    return WorkspaceRevision.db.find(
+      session,
+      where: (row) => _matches(row, current),
+      orderBy: (row) => row.revision,
+      transaction: transaction,
+    );
+  }
 
   static HistoryTarget target(String encoded) {
     final Object? decoded;
@@ -52,6 +56,7 @@ class const WorkspaceHistoryContext(
       trashInvalid();
     }
     if (decoded is! Map<String, dynamic>) trashInvalid();
+
     return _target(decoded);
   }
 
@@ -63,6 +68,7 @@ class const WorkspaceHistoryContext(
       resourceId: target.id,
       transaction: transaction,
     );
+
     return _requireCurrent(current, target);
   }
 }
@@ -82,11 +88,13 @@ HistoryTarget _target(Map<String, dynamic> data) {
 
 String _id(Object? value) {
   if (value is! String || value.isEmpty) trashInvalid();
+
   return value;
 }
 
 int _revision(Object? value) {
   if (value is! int || value < 1) trashInvalid();
+
   return value;
 }
 
@@ -106,6 +114,7 @@ WorkspaceResource _requireCurrent(
       trashData(resource)['tableId'] != target.tableId) {
     trashDenied();
   }
+
   return resource;
 }
 

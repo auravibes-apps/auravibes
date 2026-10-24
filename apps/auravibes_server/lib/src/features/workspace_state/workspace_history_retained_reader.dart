@@ -4,7 +4,12 @@ import '../../generated/protocol.dart';
 import 'workspace_trash_access.dart';
 import 'workspace_trash_context.dart';
 
-typedef HistoryRetainedData = ({Map<String, dynamic> data, bool view});
+typedef HistoryRetainedData = ({
+  Map<String, dynamic> data,
+  bool view,
+  WorkspaceResourceKind kind,
+  String id,
+});
 
 class const WorkspaceHistoryRetainedReader(
   final WorkspaceTrashContext context,
@@ -43,13 +48,21 @@ class const WorkspaceHistoryRetainedReader(
   }
 }
 
-HistoryRetainedData _resource(WorkspaceResource row) =>
-    (data: trashData(row), view: row.resourceKind == .view);
-HistoryRetainedData _snapshot(WorkspaceRevision row) =>
-    (data: jsonDecode(row.data) as Map<String, dynamic>, view: false);
+HistoryRetainedData _resource(WorkspaceResource row) => (
+  data: trashData(row),
+  view: row.resourceKind == .view,
+  kind: row.resourceKind,
+  id: row.resourceId,
+);
+HistoryRetainedData _snapshot(WorkspaceRevision row) => (
+  data: jsonDecode(row.data) as Map<String, dynamic>,
+  view: false,
+  kind: row.resourceKind,
+  id: row.resourceId,
+);
 Iterable<HistoryRetainedData> _viewHistory(WorkspaceView row) =>
     (jsonDecode(row.history) as List).cast<Map<String, dynamic>>().map(
-      (data) => (data: data, view: true),
+      (data) => (data: data, view: true, kind: .view, id: row.stableId),
     );
 bool _scoped(Set<String> scope, WorkspaceResourceKind kind, String id) =>
     scope.contains('${kind == .tableRecord ? 'record' : kind.name}:$id');

@@ -757,6 +757,30 @@ const _workspaceSetupDynamicKeys = <String>{
 /// Dynamic translations are listed by source call site and finite key family.
 const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   LocalizationDynamicRegistry(
+    family: 'workspace-history-approval',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_history_approval.dart',
+        method: 'TextLocale',
+        keyExpression: 'notice',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_history_approval.dart',
+        method: 'TextLocale',
+        keyExpression: 'action',
+      ),
+    ],
+    keys: {
+      'workspace_items.history.purge_notice',
+      'workspace_items.history.restore_notice',
+      'workspace_items.history.policy_notice',
+      'workspace_items.history.purge',
+      'workspace_items.history.restore',
+      'common.save',
+    },
+  ),
+
+  LocalizationDynamicRegistry(
     family: 'workspace-item-typed-errors',
     sites: [
       DynamicTranslationSite(

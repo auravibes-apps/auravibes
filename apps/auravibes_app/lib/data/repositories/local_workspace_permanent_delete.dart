@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_history_retention.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_retained_reader.dart';
 import 'package:auravibes_app/data/repositories/workspace_retained_references.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_history_blocked_exception.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:drift/drift.dart';
@@ -15,6 +17,7 @@ class const LocalWorkspacePermanentDelete(
       database.transaction(() => _run(target));
 
   Future<void> _run(WorkspaceTrashTarget target) async {
+    await LocalWorkspaceHistoryRetention(database, workspaceId).prune();
     final batch = await _batch(target);
     final members = _members(batch);
     final scope = _scope(members);
@@ -51,7 +54,7 @@ class const LocalWorkspacePermanentDelete(
       retained.map((item) => item.data),
     );
     final ids = _ids(members);
-    if (_blocked(retained, ids, columns)) throw const WorkspaceTableException();
+    _requireUnreferenced(_blocked(retained, ids, columns));
   }
 
   Future<void> _erase(List<Map<String, dynamic>> members) async {
@@ -124,11 +127,11 @@ bool _same(Map<String, dynamic> data, WorkspaceTrashTarget target) =>
     data['id'] == target.id &&
     data['revision'] == target.revision &&
     data['tableId'] == target.tableId;
-bool _blocked(
+Iterable<LocalRetainedData> _blocked(
   List<LocalRetainedData> rows,
   Set<String> ids,
   Set<String> columns,
-) => rows.any(
+) => rows.where(
   (row) => WorkspaceRetainedReferences.references(row.data, ids, (
     columns: columns,
     view: row.view,
@@ -159,3 +162,9 @@ WorkspaceTrashBatchRow _findBatch(
 ) =>
     rows.where((row) => _same(_decode(row.targetJson), target)).firstOrNull ??
     (throw const WorkspaceTableException());
+
+void _requireUnreferenced(Iterable<LocalRetainedData> blocked) {
+  if (blocked.firstOrNull case final source?) {
+    throw WorkspaceHistoryBlockedException([source.id]);
+  }
+}

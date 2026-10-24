@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -378,7 +377,7 @@ class const _TableMenu(
   List<AuraPopupMenuEntry> _items(BuildContext context, WidgetRef ref) => [
     if (browser.table.canEditRecords && !selectionMode.value) _select(),
     if (browser.table.canManage) _settings(),
-    if (browser.table.canManage) _history(context),
+    _history(context),
     if (browser.table.canEditRecords) _import(context, ref),
     _export(context),
     if (browser.table.canManage) ...[
@@ -399,7 +398,6 @@ class const _TableMenu(
 
   AuraPopupMenuItem _history(BuildContext context) => AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.workspace_items_history_title),
-    identifier: 'workspace_table_history',
     onTap: () => unawaited(
       WorkspaceHistoryPanel.open(
         context,
@@ -409,8 +407,10 @@ class const _TableMenu(
           id: browser.table.id,
           revision: browser.table.revision,
         ),
+        canRestore: browser.table.canManage,
       ),
     ),
+    identifier: 'workspace_table_history',
   );
 
   AuraPopupMenuItem _settings() => AuraPopupMenuItem(

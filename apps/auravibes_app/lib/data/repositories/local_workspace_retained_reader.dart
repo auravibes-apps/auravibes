@@ -3,7 +3,12 @@ import 'dart:convert';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:drift/drift.dart';
 
-typedef LocalRetainedData = ({Map<String, dynamic> data, bool view});
+typedef LocalRetainedData = ({
+  Map<String, dynamic> data,
+  bool view,
+  String kind,
+  String id,
+});
 typedef _Source = ({String table, String kind, String column});
 
 class const LocalWorkspaceRetainedReader(
@@ -27,7 +32,7 @@ class const LocalWorkspaceRetainedReader(
   ) async {
     for (final row in await _rows(source.table)) {
       if (scope.contains('${source.kind}:${row.data['id']}')) continue;
-      result.add((data: _data(row, source), view: source.kind == 'view'));
+      result.add(_current(row, source));
       if (source.kind == 'view') result.addAll(_viewHistory(row));
     }
   }
@@ -69,9 +74,16 @@ Map<String, dynamic> _data(QueryRow row, _Source source) {
 Iterable<LocalRetainedData> _viewHistory(QueryRow row) =>
     (jsonDecode(row.read<String>('history')) as List)
         .cast<Map<String, dynamic>>()
-        .map((data) => (data: data, view: true));
-LocalRetainedData _snapshot(WorkspaceRevisionRow row) =>
-    (data: jsonDecode(row.data) as Map<String, dynamic>, view: false);
+        .map((data) => _viewSnapshot(row, data));
+LocalRetainedData _viewSnapshot(QueryRow row, Map<String, dynamic> data) =>
+    (data: data, view: true, kind: 'view', id: row.read<String>('id'));
+
+LocalRetainedData _snapshot(WorkspaceRevisionRow row) => (
+  data: jsonDecode(row.data) as Map<String, dynamic>,
+  view: false,
+  kind: row.kind,
+  id: row.resourceId,
+);
 
 List<LocalRetainedData> _retainedSnapshots(
   List<WorkspaceRevisionRow> rows,
@@ -80,3 +92,10 @@ List<LocalRetainedData> _retainedSnapshots(
     .where((row) => !scope.contains('${row.kind}:${row.resourceId}'))
     .map(_snapshot)
     .toList();
+
+LocalRetainedData _current(QueryRow row, _Source source) => (
+  data: _data(row, source),
+  view: source.kind == 'view',
+  kind: source.kind,
+  id: row.read<String>('id'),
+);

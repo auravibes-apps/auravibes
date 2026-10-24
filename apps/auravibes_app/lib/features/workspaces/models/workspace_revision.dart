@@ -6,7 +6,8 @@ class const WorkspaceRevision({
   required final Map<String, dynamic> data,
 });
 
-abstract interface class WorkspaceHistoryRepository implements WorkspaceHistoryPolicyRepository {
+abstract interface class WorkspaceHistoryRepository
+    implements WorkspaceHistoryPolicyRepository {
   Future<List<WorkspaceRevision>> history(WorkspaceTrashTarget target);
   Future<void> restore(WorkspaceTrashTarget target, int revision);
   Future<void> permanentlyDelete(WorkspaceTrashTarget target);

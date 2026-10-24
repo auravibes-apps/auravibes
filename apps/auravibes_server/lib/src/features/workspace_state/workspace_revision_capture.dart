@@ -13,13 +13,12 @@ class const WorkspaceRevisionCapture(
     if (!_historical(resource.resourceKind)) return;
     final key = _RevisionKey.resource(resource);
     if (await _existing(key) != null) return;
-    final data = await _data(resource);
-    final _ = await WorkspaceRevision.db.insertRow(
+    await _insert(resource);
+    await WorkspaceHistoryRetention(
       session,
-      _snapshot(resource, data),
-      transaction: transaction,
-    );
-    await WorkspaceHistoryRetention(session, resource.workspaceId, transaction).prune();
+      resource.workspaceId,
+      transaction,
+    ).prune();
   }
 
   Future<void> requireView(WorkspaceViewSaveRequest request) async {
@@ -31,6 +30,7 @@ class const WorkspaceRevisionCapture(
 
   Future<void> requirePatch(PatchWorkspaceStateRequest request) async {
     for (final operation in request.operations) {
+      _requirePolicyOperation(operation);
       final key = _RevisionKey(
         request.workspaceId,
         operation.resourceKind,
@@ -43,6 +43,15 @@ class const WorkspaceRevisionCapture(
     }
   }
 
+  Future<void> _insert(WorkspaceResource resource) async {
+    final data = await _data(resource);
+    final _ = await WorkspaceRevision.db.insertRow(
+      session,
+      _snapshot(resource, data),
+      transaction: transaction,
+    );
+  }
+
   Future<WorkspaceRevision?> _existing(_RevisionKey key) => WorkspaceRevision.db
       .findFirstRow(session, where: key.matches, transaction: transaction);
 
@@ -50,7 +59,7 @@ class const WorkspaceRevisionCapture(
     if (resource.resourceKind != .tableRecord) return resource.data;
     final data = jsonDecode(resource.data) as Map<String, dynamic>;
     final table = await _table(resource.workspaceId, data['tableId'] as String);
-    data['historyReferenceTargets'] = _referenceTargets(table);
+    _provenance(data, table);
 
     return jsonEncode(data);
   }
@@ -105,8 +114,7 @@ Expression _tableMatches(
     row.resourceKind.equals(.table) &
     row.resourceId.equals(id);
 Map<String, Object?> _referenceTargets(WorkspaceResource table) {
-  final data = jsonDecode(table.data) as Map<String, dynamic>;
-  final columns = (data['columns'] as List).cast<Map<String, dynamic>>();
+  final columns = _columns(table);
 
   return {
     for (final column in columns.where(_reference))
@@ -115,3 +123,29 @@ Map<String, Object?> _referenceTargets(WorkspaceResource table) {
 }
 
 bool _reference(Map<String, dynamic> column) => column['type'] == 'reference';
+
+void _provenance(Map<String, dynamic> data, WorkspaceResource table) {
+  data['historyReferenceTargets'] = _referenceTargets(table);
+  data['historyAttachmentColumns'] = _attachmentColumns(table);
+}
+
+List<String> _attachmentColumns(WorkspaceResource table) {
+  final columns = _columns(table);
+
+  return columns
+      .where((column) => column['type'] == 'attachment')
+      .map((column) => column['id'] as String)
+      .toList();
+}
+
+void _requirePolicyOperation(WorkspacePatchOperation operation) {
+  if (operation.resourceKind == .workspaceSetting &&
+      operation.resourceId == WorkspaceHistoryRetention.resourceId &&
+      operation.operation == .delete) {
+    throw CloudWorkspaceException(code: .validationFailed);
+  }
+}
+
+List<Map<String, dynamic>> _columns(WorkspaceResource table) =>
+    ((jsonDecode(table.data) as Map<String, dynamic>)['columns'] as List)
+        .cast<Map<String, dynamic>>();

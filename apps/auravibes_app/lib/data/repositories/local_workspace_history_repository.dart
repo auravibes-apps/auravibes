@@ -1,11 +1,11 @@
-import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/repositories/local_workspace_permanent_delete.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_history_retention.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_permanent_delete.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_schema_recovery.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_revision.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
@@ -18,9 +18,14 @@ class const LocalWorkspaceHistoryRepository(
   _HistoryStore get _store => .new(database, workspaceId);
 
   @override
-  Future<WorkspaceHistoryPolicy> policy() => LocalWorkspaceHistoryRetention(database, workspaceId).policy();
+  Future<WorkspaceHistoryPolicy> policy() =>
+      LocalWorkspaceHistoryRetention(database, workspaceId).policy();
   @override
-  Future<void> configure(WorkspaceHistoryPolicy current, int? days) => LocalWorkspaceHistoryRetention(database, workspaceId).configure(current, days);
+  Future<void> configure(WorkspaceHistoryPolicy current, int? days) =>
+      LocalWorkspaceHistoryRetention(
+        database,
+        workspaceId,
+      ).configure(current, days);
 
   @override
   Future<List<WorkspaceRevision>> history(WorkspaceTrashTarget target) async {
@@ -49,6 +54,7 @@ class const LocalWorkspaceHistoryRepository(
         database,
         workspaceId,
       ).restore(target, selected.data);
+
       return;
     }
     await _store.restoreRecord(target, selected.data);
@@ -75,6 +81,7 @@ class const _HistoryStore(
     await requireLocal();
     if (target.kind == .record) {
       final _ = await tables.record(_tableId(target), target.id);
+
       return;
     }
     if (target.kind != .table) throw const WorkspaceTableException();

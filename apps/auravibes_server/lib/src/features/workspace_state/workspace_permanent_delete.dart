@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import 'workspace_history_blockers.dart';
 import 'workspace_history_purge_writer.dart';
 import 'workspace_history_receipts.dart';
 import 'workspace_history_retained_reader.dart';
+import 'workspace_history_retention.dart';
 import 'workspace_retained_references.dart';
 import 'workspace_trash_access.dart';
 import 'workspace_trash_context.dart';
@@ -32,9 +34,16 @@ class const _PurgeOperation(final WorkspaceTrashContext context) {
   Future<void> run(String targetJson) async {
     final selection = await _selection(targetJson);
     await context.requireBatch(selection.batch, selection.rows);
+    await _prune();
     await _validate(selection);
     await _erase(selection);
   }
+
+  Future<void> _prune() => WorkspaceHistoryRetention(
+    context.store.session,
+    context.store.workspaceId,
+    context.store.transaction,
+  ).prune();
 
   Future<_PurgeSelection> _selection(String targetJson) async {
     final target = jsonDecode(targetJson) as Map<String, dynamic>;
@@ -47,7 +56,10 @@ class const _PurgeOperation(final WorkspaceTrashContext context) {
   Future<void> _validate(_PurgeSelection selection) async {
     final retained = await WorkspaceHistoryRetainedReader(context)
         .read(selection.rows, selection.scope());
-    if (_blocked(retained, selection.ids())) trashInvalid();
+    final blocked = _blocked(retained, selection.ids());
+    if (blocked.isNotEmpty) {
+      await WorkspaceHistoryBlockers(context).deny(blocked, selection.rows);
+    }
   }
 
   Future<void> _erase(_PurgeSelection selection) async {
@@ -97,12 +109,15 @@ bool _same(Map<String, dynamic> left, Map<String, dynamic> right) => [
   'revision',
   'tableId',
 ].every((key) => left[key] == right[key]);
-bool _blocked(List<HistoryRetainedData> retained, Set<String> ids) {
+Iterable<HistoryRetainedData> _blocked(
+  List<HistoryRetainedData> retained,
+  Set<String> ids,
+) {
   final columns = WorkspaceRetainedReferences.columns(
     retained.map((item) => item.data),
   );
 
-  return retained.any(
+  return retained.where(
     (row) => WorkspaceRetainedReferences.references(
       row.data,
       ids,

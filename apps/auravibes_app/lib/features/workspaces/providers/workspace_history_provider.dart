@@ -1,6 +1,6 @@
-import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
 import 'package:auravibes_app/data/repositories/cloud_workspace_history_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_history_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -29,6 +29,7 @@ Future<ManageWorkspaceHistoryUsecase> workspaceHistoryUsecase(
         ),
       );
     }
+
     return await _cloudHistory(ref, session);
   } finally {
     link.close();
@@ -50,7 +51,13 @@ Future<ManageWorkspaceHistoryUsecase> _cloudHistory(
 }
 
 @riverpod
-Future<WorkspaceHistoryPolicy> workspaceHistoryPolicy(Ref ref, String workspaceId) async {
-  final usecase = await ref.watch(workspaceHistoryUsecaseProvider(workspaceId).future);
+Future<WorkspaceHistoryPolicy> workspaceHistoryPolicy(
+  Ref ref,
+  String workspaceId,
+) async {
+  final usecase = await ref.watch(
+    workspaceHistoryUsecaseProvider(workspaceId).future,
+  );
+
   return await usecase.policy();
 }
