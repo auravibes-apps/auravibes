@@ -2697,6 +2697,22 @@ abstract class LocaleKeys {
       'workspace_items.selection_move_limit';
   static const workspace_items_selection_move_denied =
       'workspace_items.selection_move_denied';
+  static const workspace_items_trash = 'workspace_items.trash';
+  static const workspace_items_trash_action = 'workspace_items.trash_action';
+  static const workspace_items_trash_impact = 'workspace_items.trash_impact';
+  static const workspace_items_trash_empty = 'workspace_items.trash_empty';
+  static const workspace_items_trash_restore = 'workspace_items.trash_restore';
+  static const workspace_items_trash_restored =
+      'workspace_items.trash_restored';
+  static const workspace_items_trash_root_fallback =
+      'workspace_items.trash_root_fallback';
+  static const workspace_items_trash_unresolved =
+      'workspace_items.trash_unresolved';
+  static const workspace_items_reference_deleted =
+      'workspace_items.reference_deleted';
+  static const workspace_items_trash_cancel = 'workspace_items.trash_cancel';
+  static const workspace_items_trash_close = 'workspace_items.trash_close';
+  static const workspace_items_trash_refresh = 'workspace_items.trash_refresh';
   static const workspace_views_title = 'workspace_views.title';
   static const workspace_views_create = 'workspace_views.create';
   static const workspace_views_name = 'workspace_views.name';
@@ -2713,6 +2729,25 @@ abstract class LocaleKeys {
   static const workspace_views_save = 'workspace_views.save';
   static const workspace_views_no_tables = 'workspace_views.no_tables';
   static const workspace_views_no_views = 'workspace_views.no_views';
+  static const workspace_csv_import = 'workspace_csv.import';
+  static const workspace_csv_export = 'workspace_csv.export';
+  static const workspace_csv_help = 'workspace_csv.help';
+  static const workspace_csv_skip = 'workspace_csv.skip';
+  static const workspace_csv_choose = 'workspace_csv.choose';
+  static const workspace_csv_validate = 'workspace_csv.validate';
+  static const workspace_csv_commit = 'workspace_csv.commit';
+  static const workspace_csv_save = 'workspace_csv.save';
+  static const workspace_csv_rows = 'workspace_csv.rows';
+  static const workspace_csv_validated = 'workspace_csv.validated';
+  static const workspace_csv_completed = 'workspace_csv.completed';
+  static const workspace_csv_invalid_value = 'workspace_csv.invalid_value';
+  static const workspace_csv_validation_failed =
+      'workspace_csv.validation_failed';
+  static const workspace_csv_row = 'workspace_csv.row';
+  static const workspace_csv_format = 'workspace_csv.format';
+  static const workspace_csv_invalid_file = 'workspace_csv.invalid_file';
+  static const workspace_csv_too_large = 'workspace_csv.too_large';
+  static const workspace_csv_invalid_mapping = 'workspace_csv.invalid_mapping';
   static const workspace_relational_next = 'workspace_relational.next';
   static const workspace_relational_summary = 'workspace_relational.summary';
   static const workspace_relational_count = 'workspace_relational.count';

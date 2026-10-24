@@ -44,7 +44,7 @@ class const WorkspaceReferenceVisibility(
     if (table == null) return false;
 
     return await WorkspaceTableAccess(transaction: transaction)
-        .canReadTable(session, member, table);
+        .canReadTable(session, member, table, includeDeleted: true);
   }
 
   Future<WorkspaceResource?> _table(String id) =>

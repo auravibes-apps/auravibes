@@ -221,6 +221,8 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/w
     as _if6l00dz;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_resource.dart'
     as _ixyz6pla;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_trash_request.dart'
+    as _ip7efsct;
 import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view.dart'
     as _i7rt6swg;
 import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view_list_request.dart'
@@ -428,11 +430,15 @@ class TestEndpoints {
 
   late final _WorkspaceStreamEndpoint workspaceStream;
 
+  late final _WorkspaceCsvEndpoint workspaceCsv;
+
   late final _WorkspaceReferenceEndpoint workspaceReference;
 
   late final _WorkspaceSecretEndpoint workspaceSecret;
 
   late final _WorkspaceStateEndpoint workspaceState;
+
+  late final _WorkspaceTrashEndpoint workspaceTrash;
 
   late final _WorkspaceViewEndpoint workspaceView;
 
@@ -494,6 +500,10 @@ class _InternalTestEndpoints extends TestEndpoints
       endpoints,
       serializationManager,
     );
+    workspaceCsv = _WorkspaceCsvEndpoint(
+      endpoints,
+      serializationManager,
+    );
     workspaceReference = _WorkspaceReferenceEndpoint(
       endpoints,
       serializationManager,
@@ -503,6 +513,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     workspaceState = _WorkspaceStateEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    workspaceTrash = _WorkspaceTrashEndpoint(
       endpoints,
       serializationManager,
     );
@@ -2824,6 +2838,46 @@ class _WorkspaceStreamEndpoint {
   }
 }
 
+class _WorkspaceCsvEndpoint {
+  _WorkspaceCsvEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse> preview(
+    _ist.TestSessionBuilder sessionBuilder,
+    _iti8d4cu.PatchWorkspaceStateRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceCsv',
+            method: 'preview',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceCsv',
+          methodName: 'preview',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _WorkspaceReferenceEndpoint {
   _WorkspaceReferenceEndpoint(
     this._endpointDispatch,
@@ -3174,6 +3228,176 @@ class _WorkspaceStateEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ie85dmeq.MutateWorkspaceCredentialResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _WorkspaceTrashEndpoint {
+  _WorkspaceTrashEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<String> deletedReference(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String tableId,
+    String recordId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceTrash',
+            method: 'deletedReference',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceTrash',
+          methodName: 'deletedReference',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'tableId': tableId,
+            'recordId': recordId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<String> preview(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String targetJson,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceTrash',
+            method: 'preview',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceTrash',
+          methodName: 'preview',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'targetJson': targetJson,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<String> trash(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ip7efsct.WorkspaceTrashRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceTrash',
+            method: 'trash',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceTrash',
+          methodName: 'trash',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<String>> list(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceTrash',
+            method: 'list',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceTrash',
+          methodName: 'list',
+          parameters: _ist.testObjectToJson({'workspaceId': workspaceId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<String>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<String> restore(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String batchId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceTrash',
+            method: 'restore',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceTrash',
+          methodName: 'restore',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'batchId': batchId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

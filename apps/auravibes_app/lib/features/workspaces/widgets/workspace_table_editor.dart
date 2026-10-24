@@ -16,23 +16,31 @@ class const WorkspaceTableEditor({
   required final Future<void> Function() onSave,
   required final WorkspaceTableEditorKind kind,
   required final List<Widget> children,
+  final Widget? trailing,
   super.key,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.all(16),
     children: [
-      _EditorBack(
-        kind: kind,
-        name: table.name,
-        disabled: action.pending,
-        onBack: onBack,
-      ),
+      _TableEditorHeader(this),
       ...children,
       if (kind.canSave(table))
         _SaveTableButton(action: action, onSave: onSave, kind: kind),
       if (action.error case final error?) WorkspaceItemFailure(error: error),
     ],
+  );
+}
+
+class const _TableEditorHeader(final WorkspaceTableEditor editor)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _EditorBack(
+    kind: editor.kind,
+    name: editor.table.name,
+    disabled: editor.action.pending,
+    onBack: editor.onBack,
+    trailing: editor.trailing,
   );
 }
 
@@ -56,6 +64,7 @@ class const _EditorBack({
   required final String name,
   required final bool disabled,
   required final VoidCallback onBack,
+  final Widget? trailing,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Tooltip(
@@ -64,6 +73,7 @@ class const _EditorBack({
       key: ValueKey('workspace_${kind.name}_back'),
       leading: const Icon(Icons.arrow_back),
       title: Text(name),
+      trailing: disabled ? null : trailing,
       onTap: disabled ? null : onBack,
     ),
   );

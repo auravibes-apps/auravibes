@@ -23,6 +23,7 @@ dependencies:
   # Database dependencies
   crypto: ^3.0.7
   cryptography: ^2.9.0
+  csv: ^6.0.0
   dio: ^5.11.1
   drift: ^2.35.0
   drift_flutter: ^0.3.0

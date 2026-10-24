@@ -13,4 +13,5 @@ class WorkspaceViews extends Table with TableMixin {
   IntColumn get revision => integer()();
   TextColumn get mutations => text().withDefault(const Constant('{}'))();
   TextColumn get history => text()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
 }

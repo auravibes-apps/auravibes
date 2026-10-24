@@ -295,6 +295,10 @@ import 'features/workspace_state/models/workspace_secret_kind.dart'
     as _iq96p1l9;
 import 'features/workspace_state/models/workspace_secret_scope.dart'
     as _ioqbiy3d;
+import 'features/workspace_state/models/workspace_trash_batch.dart'
+    as _il63fuk7;
+import 'features/workspace_state/models/workspace_trash_request.dart'
+    as _i49vb0x7;
 import 'features/workspace_state/models/workspace_view_move.dart' as _i00jdb9n;
 import 'features/workspace_views/models/workspace_view.dart' as _i97j1as2;
 import 'features/workspace_views/models/workspace_view_list_request.dart'
@@ -507,6 +511,8 @@ export 'features/workspace_state/models/workspace_resource_page_request.dart';
 export 'features/workspace_state/models/workspace_secret.dart';
 export 'features/workspace_state/models/workspace_secret_kind.dart';
 export 'features/workspace_state/models/workspace_secret_scope.dart';
+export 'features/workspace_state/models/workspace_trash_batch.dart';
+export 'features/workspace_state/models/workspace_trash_request.dart';
 export 'features/workspace_state/models/workspace_view_move.dart';
 export 'features/workspace_views/models/workspace_view.dart';
 export 'features/workspace_views/models/workspace_view_list_request.dart';
@@ -1048,6 +1054,12 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _ioqbiy3d.WorkspaceSecretScope) {
       return _ioqbiy3d.WorkspaceSecretScope.fromJson(data) as T;
+    }
+    if (t == _il63fuk7.WorkspaceTrashBatch) {
+      return _il63fuk7.WorkspaceTrashBatch.fromJson(data) as T;
+    }
+    if (t == _i49vb0x7.WorkspaceTrashRequest) {
+      return _i49vb0x7.WorkspaceTrashRequest.fromJson(data) as T;
     }
     if (t == _i00jdb9n.WorkspaceViewMove) {
       return _i00jdb9n.WorkspaceViewMove.fromJson(data) as T;
@@ -2004,6 +2016,18 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_il63fuk7.WorkspaceTrashBatch?>()) {
+      return (data != null
+              ? _il63fuk7.WorkspaceTrashBatch.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_i49vb0x7.WorkspaceTrashRequest?>()) {
+      return (data != null
+              ? _i49vb0x7.WorkspaceTrashRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_i00jdb9n.WorkspaceViewMove?>()) {
       return (data != null ? _i00jdb9n.WorkspaceViewMove.fromJson(data) : null)
           as T;
@@ -2600,6 +2624,8 @@ class Protocol extends _isc.SerializationManager {
       _iyjw9v2c.WorkspaceSecret => 'WorkspaceSecret',
       _iq96p1l9.WorkspaceSecretKind => 'WorkspaceSecretKind',
       _ioqbiy3d.WorkspaceSecretScope => 'WorkspaceSecretScope',
+      _il63fuk7.WorkspaceTrashBatch => 'WorkspaceTrashBatch',
+      _i49vb0x7.WorkspaceTrashRequest => 'WorkspaceTrashRequest',
       _i00jdb9n.WorkspaceViewMove => 'WorkspaceViewMove',
       _i97j1as2.WorkspaceView => 'WorkspaceView',
       _ihx1e06e.WorkspaceViewListRequest => 'WorkspaceViewListRequest',
@@ -2965,6 +2991,10 @@ class Protocol extends _isc.SerializationManager {
         return 'WorkspaceSecretKind';
       case _ioqbiy3d.WorkspaceSecretScope():
         return 'WorkspaceSecretScope';
+      case _il63fuk7.WorkspaceTrashBatch():
+        return 'WorkspaceTrashBatch';
+      case _i49vb0x7.WorkspaceTrashRequest():
+        return 'WorkspaceTrashRequest';
       case _i00jdb9n.WorkspaceViewMove():
         return 'WorkspaceViewMove';
       case _i97j1as2.WorkspaceView():
@@ -3564,6 +3594,12 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'WorkspaceSecretScope') {
       return deserialize<_ioqbiy3d.WorkspaceSecretScope>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceTrashBatch') {
+      return deserialize<_il63fuk7.WorkspaceTrashBatch>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceTrashRequest') {
+      return deserialize<_i49vb0x7.WorkspaceTrashRequest>(data['data']);
     }
     if (dataClassName == 'WorkspaceViewMove') {
       return deserialize<_i00jdb9n.WorkspaceViewMove>(data['data']);

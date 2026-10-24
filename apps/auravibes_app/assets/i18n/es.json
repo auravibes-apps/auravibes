@@ -2064,7 +2064,19 @@
     "move": "Mover",
     "move_here": "Mover aquí",
     "selection_move_limit": "Selecciona hasta 50 elementos para moverlos juntos.",
-    "selection_move_denied": "No se puede mover uno o más elementos seleccionados."
+    "selection_move_denied": "No se puede mover uno o más elementos seleccionados.",
+    "trash": "Papelera",
+    "trash_action": "Mover a la papelera",
+    "trash_impact": "¿Mover {name} y su contenido a la papelera? Se incluyen {count} elementos y registros. Los registros relacionados fuera de esta selección permanecen en su lugar.",
+    "trash_empty": "La papelera está vacía.",
+    "trash_restore": "Restaurar",
+    "trash_restored": "Restaurado.",
+    "trash_root_fallback": "Restaurado en la raíz del directorio porque la carpeta original no está disponible.",
+    "trash_unresolved": "Restaurado con dependencias pendientes. Se conservan los enlaces.",
+    "reference_deleted": "Registro eliminado",
+    "trash_cancel": "Cancelar",
+    "trash_close": "Cerrar",
+    "trash_refresh": "Actualizar"
   },
   "workspace_views": {
     "title": "Vista",
@@ -2083,6 +2095,26 @@
     "save": "Guardar vista",
     "no_tables": "No hay tablas en esta carpeta. Explora otra carpeta o crea una tabla en Directorio.",
     "no_views": "Aún no hay vistas guardadas. Crea una desde Directorio."
+  },
+  "workspace_csv": {
+    "import": "Importar CSV",
+    "export": "Exportar CSV",
+    "help": "Asigna las columnas del CSV explícitamente. Una celda vacía indica un valor ausente; usa cadenas JSON para texto vacío, arreglos JSON para selecciones o referencias múltiples y {\"amount\":\"12.50\",\"currency\":\"USD\"} para dinero. Las fechas usan YYYY-MM-DD y las marcas de tiempo ISO 8601 en UTC. La exportación usa comillas JSON cuando hace falta conservar texto vacío, comillas literales o texto similar a fórmulas. La importación crea registros; puedes omitir Record ID y las columnas auxiliares de etiquetas. Cada importación usa una solicitud atómica (hasta 50 registros).",
+    "skip": "Omitir esta columna",
+    "choose": "Elegir CSV",
+    "validate": "Validar y previsualizar",
+    "commit": "Importar registros",
+    "save": "Guardar CSV",
+    "rows": "{} registros",
+    "validated": "Validación correcta. Revisa los valores asignados antes de importar.",
+    "completed": "Completado",
+    "invalid_value": "Valor no válido en la fila {} del CSV. Revisa su tipo o clave de relación.",
+    "validation_failed": "La importación no pasó la validación. Revisa las restricciones obligatorias, únicas y de relaciones. No se importó ningún registro.",
+    "row": "Fila {} del CSV",
+    "format": "Formato CSV",
+    "invalid_file": "Este archivo no es CSV UTF-8 válido. Revisa comillas, separadores y longitud de las filas; después elige el archivo corregido.",
+    "too_large": "Este CSV supera el tamaño actual de solicitud. Elige un archivo más pequeño.",
+    "invalid_mapping": "Elige cada columna de destino una sola vez. Importa como máximo 50 registros por solicitud."
   },
   "workspace_relational": {
     "next": "Siguiente",

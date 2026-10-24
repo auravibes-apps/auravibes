@@ -1,0 +1,6 @@
+class: WorkspaceTrashRequest
+fields:
+  workspaceId: int
+  requestId: String
+  targetJson: String
+  planToken: String
