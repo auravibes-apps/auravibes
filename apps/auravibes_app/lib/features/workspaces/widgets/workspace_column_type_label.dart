@@ -21,5 +21,8 @@ class const WorkspaceColumnTypeLabel({
     .url => const TextLocale(LocaleKeys.workspace_items_type_url),
     .email => const TextLocale(LocaleKeys.workspace_items_type_email),
     .phone => const TextLocale(LocaleKeys.workspace_items_type_phone),
+    .dateOnly => const TextLocale(LocaleKeys.workspace_items_type_date_only),
+    .timestamp => const TextLocale(LocaleKeys.workspace_items_type_timestamp),
+    .money => const TextLocale(LocaleKeys.workspace_items_type_money),
   };
 }

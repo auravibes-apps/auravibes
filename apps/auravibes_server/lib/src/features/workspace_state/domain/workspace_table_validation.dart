@@ -1,3 +1,9 @@
+import 'package:auravibes_server/src/features/workspace_state/domain/workspace_time_zones.dart';
+import 'package:auravibes_server/src/features/workspace_state/domain/workspace_exact_value_validation.dart';
+
+const _maximumTextLength = 16384;
+const _minimumPhoneDigits = 3;
+
 abstract final class WorkspaceTableValidation {
   static const _types = {
     'text',
@@ -8,6 +14,9 @@ abstract final class WorkspaceTableValidation {
     'url',
     'email',
     'phone',
+    'dateOnly',
+    'timestamp',
+    'money',
   };
 
   static void schema(Map<String, Object?> data) {
@@ -33,6 +42,10 @@ abstract final class WorkspaceTableValidation {
       }
       if (column['id'] == data['labelColumnId']) {
         hasLabel = column['type'] == 'text';
+      }
+      final zone = column['timeZone'] ?? 'UTC';
+      if (zone is! String || !WorkspaceTimeZones.valid(zone)) {
+        throw const FormatException();
       }
       final options = column['options'] ?? const <String>[];
       final selection =
@@ -69,35 +82,50 @@ abstract final class WorkspaceTableValidation {
     }
   }
 
-  static bool _valid(Map<String, Object?> column, Object? value) {
+  static bool _valid(Map<String, Object?> column, Object? value) =>
+      switch (column['type']) {
+        'text' => value is String && value.length <= _maximumTextLength,
+        'number' => value is num && value.isFinite,
+        'checkbox' => value is bool,
+        'singleSelect' || 'multiSelect' => _selectionValue(column, value),
+        'url' || 'email' || 'phone' => _formattedValue(column['type'], value),
+        'dateOnly' => WorkspaceExactValueValidation.date(value),
+        'timestamp' => WorkspaceExactValueValidation.timestamp(value),
+        'money' => WorkspaceExactValueValidation.money(value),
+        _ => false,
+      };
+
+  static bool _selectionValue(Map<String, Object?> column, Object? value) {
     final options = (column['options'] as List<dynamic>? ?? const [])
         .cast<String>();
+    if (column['type'] == 'singleSelect') {
+      return value is String && options.contains(value);
+    }
 
-    return switch (column['type']) {
-      'text' => value is String && value.length <= 16384,
-      'number' => value is num && value.isFinite,
-      'checkbox' => value is bool,
-      'singleSelect' => value is String && options.contains(value),
-      'multiSelect' =>
-        value is List &&
-            value.toSet().length == value.length &&
-            value.every((entry) => entry is String && options.contains(entry)),
-      'url' => value is String && value.length <= 16384 && _url(value),
-      'email' =>
-        value is String &&
-            value.length <= 16384 &&
-            RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value),
-      'phone' =>
-        value is String &&
-            value.length <= 16384 &&
-            RegExp(
-              r'^\+?[0-9 ()-]+(?:\s*(?:x|ext\.?)\s*[0-9]+)?$',
-              caseSensitive: false,
-            ).hasMatch(value) &&
-            RegExp('[0-9]').allMatches(value).length >= 3,
+    return _multiple(options, value);
+  }
+
+  static bool _multiple(List<String> options, Object? value) =>
+      value is List &&
+      value.toSet().length == value.length &&
+      value.every((entry) => entry is String && options.contains(entry));
+
+  static bool _formattedValue(Object? type, Object? value) {
+    if (value is! String || value.length > _maximumTextLength) return false;
+    return switch (type) {
+      'url' => _url(value),
+      'email' => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value),
+      'phone' => _phone(value),
       _ => false,
     };
   }
+
+  static bool _phone(String value) =>
+      RegExp(
+        r'^\+?[0-9 ()-]+(?:\s*(?:x|ext\.?)\s*[0-9]+)?$',
+        caseSensitive: false,
+      ).hasMatch(value) &&
+      RegExp('[0-9]').allMatches(value).length >= _minimumPhoneDigits;
 
   static bool _url(String value) {
     final uri = Uri.tryParse(value);

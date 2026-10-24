@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_exact_record_input.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -74,6 +75,7 @@ class const _TypedRecordInput({
     .checkbox => _CheckboxInput(field: field),
     .singleSelect => _SingleSelectInput(field: field),
     .multiSelect => _MultiSelectInput(field: field),
+    .money || .dateOnly || .timestamp => _ExactRecordInput(field: field),
     _ => _TextInput(field: field, controller: controller),
   };
 }
@@ -168,6 +170,7 @@ Object _defaultValue(WorkspaceColumnType type) => switch (type) {
   .number => 0,
   .checkbox => false,
   .multiSelect => <String>[],
+  .money => <String, Object?>{'amount': '', 'currency': ''},
   _ => '',
 };
 TextInputType _keyboardType(WorkspaceColumnType type) => switch (type) {
@@ -177,3 +180,15 @@ TextInputType _keyboardType(WorkspaceColumnType type) => switch (type) {
   .phone => .phone,
   _ => .text,
 };
+
+class const _ExactRecordInput({required final WorkspaceRecordField field})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceExactRecordInput(
+    column: field.column,
+    value: field.value,
+    disabled: field.disabled,
+    identifier: field.identifier,
+    onChanged: field.onChanged,
+  );
+}
