@@ -1,5 +1,7 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
+@immutable
 class const WorkspaceRecordQuery({
   final String search = '',
   final String? filterColumnId,
@@ -15,6 +17,34 @@ class const WorkspaceRecordQuery({
     _baseQuery(value),
     value,
   ).change(offset: value['offset'] as int? ?? 0);
+
+  @override
+  int get hashCode => _identity.hashCode;
+
+  ({
+    String search,
+    String? filterColumnId,
+    String? filterValue,
+    WorkspaceRecordFilterOperator filterOperator,
+    String? sortColumnId,
+    bool descending,
+    int offset,
+    int limit,
+  })
+  get _identity => (
+    search: search,
+    filterColumnId: filterColumnId,
+    filterValue: filterValue,
+    filterOperator: filterOperator,
+    sortColumnId: sortColumnId,
+    descending: descending,
+    offset: offset,
+    limit: limit,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is WorkspaceRecordQuery && _identity == other._identity;
 
   Map<String, Object?> toJson() => {
     'search': search,
