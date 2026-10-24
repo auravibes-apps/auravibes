@@ -4,11 +4,10 @@ import 'package:test/test.dart';
 
 void main() {
   final root = Directory.current.absolute.path;
-  late Directory server;
+  final server = Directory.systemTemp.createTempSync('server-credentials-');
 
   setUp(() {
-    server = Directory.systemTemp.createTempSync('server-credentials-');
-    Directory('${server.path}/config').createSync();
+    Directory('${server.path}/config').createSync(recursive: true);
     File('${server.path}/config/test.yaml').writeAsStringSync('');
   });
   tearDown(() => server.deleteSync(recursive: true));

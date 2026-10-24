@@ -1,8 +1,7 @@
-// Serverpod owns password precedence; reuse its pinned loader without another dependency.
+// Serverpod owns password precedence; reuse its pinned password loader.
 
 import 'dart:io';
 
-// ignore: depend_on_referenced_packages
 import 'package:serverpod_shared/serverpod_shared.dart';
 
 /// Checks configuration without constructing Serverpod, which can hide errors.
