@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reverse_references.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_field.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -22,7 +23,7 @@ class const WorkspaceRecordEditor({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final draft = _RecordActions.use(context, record);
+    final draft = _RecordActions.use(context, this);
 
     return _RecordForm(
       editor: this,
@@ -38,8 +39,8 @@ typedef _RecordDraft = ({
 });
 
 abstract final class _RecordActions {
-  static _RecordDraft use(BuildContext context, WorkspaceRecord? record) => (
-    values: useState<Map<String, Object?>>({...?record?.values}),
+  static _RecordDraft use(BuildContext context, WorkspaceRecordEditor editor) => (
+    values: useState<Map<String, Object?>>({...editor.record?.values ?? WorkspaceTableConstraints.defaults(editor.table.columns, const {})}),
     action: WorkspaceTableActions.use(context),
   );
 
@@ -82,8 +83,13 @@ class const _RecordForm({
     action: draft.action,
     onSave: onSave,
     kind: .record,
-    children: [_RecordDraftFields(editor: editor, draft: draft),
-      if (editor.record case final record?) WorkspaceReverseReferences(workspaceId: editor.workspaceId, record: record),
+    children: [
+      _RecordDraftFields(editor: editor, draft: draft),
+      if (editor.record case final record?)
+        WorkspaceReverseReferences(
+          workspaceId: editor.workspaceId,
+          record: record,
+        ),
     ],
   );
 }
@@ -112,8 +118,8 @@ class const _RecordFields({
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      for (final column in table.columns) ...[
-        _RecordConstraintHints(column: column),
+      for (final column in table.columns)
+        Column(crossAxisAlignment: .stretch, children: [
         _RecordValue(
           table: table,
           workspaceId: workspaceId,
@@ -122,7 +128,8 @@ class const _RecordFields({
           draft: draft,
           disabled: disabled,
         ),
-      ],
+        _RecordConstraintHints(column: column),
+      ]),
     ],
   );
 }
@@ -137,21 +144,28 @@ class const _RecordValue({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => column.type == .reference
-    ? WorkspaceReferenceField(workspaceId: workspaceId, table: table, column: column,
-        value: draft.value[column.id], disabled: disabled, restricted: restricted,
-        onChanged: _change, onUnset: _unset)
-    : WorkspaceRecordField(
-    column: column,
-    value: draft.value[column.id],
-    present: draft.value.containsKey(column.id),
-    disabled: disabled,
-    identifier: column.id == table.labelColumnId
-        ? 'workspace_record_value'
-        : 'workspace_record_value_${column.id}',
-    onChanged: _change,
-    onUnset: _unset,
-    key: ValueKey(column.id),
-  );
+      ? WorkspaceReferenceField(
+          workspaceId: workspaceId,
+          table: table,
+          column: column,
+          value: draft.value[column.id],
+          disabled: disabled,
+          restricted: restricted,
+          onChanged: _change,
+          onUnset: _unset,
+        )
+      : WorkspaceRecordField(
+          column: column,
+          value: draft.value[column.id],
+          present: draft.value.containsKey(column.id),
+          disabled: disabled,
+          identifier: column.id == table.labelColumnId
+              ? 'workspace_record_value'
+              : 'workspace_record_value_${column.id}',
+          onChanged: _change,
+          onUnset: _unset,
+          key: ValueKey(column.id),
+        );
   void _change(Object? value) =>
       draft.value = {...draft.value, column.id: value};
   void _unset() => draft.value = Map.of(draft.value)..remove(column.id);
