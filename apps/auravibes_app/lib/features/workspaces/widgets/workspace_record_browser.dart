@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.da
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_bulk_record_dialog.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_minimum_viewport.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_query_filter.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -22,11 +23,13 @@ class const WorkspaceRecordBrowser({
   required final String workspaceId,
   required final WorkspaceTable table,
   required final ValueChanged<WorkspaceRecord> onRecord,
+  final ValueNotifier<bool>? selectionMode,
   super.key,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final draft = _Draft(table);
+    final localSelection = useState(false);
+    final draft = _Draft(table, selectionMode ?? localSelection);
     final records = ref.watch(
       workspaceRecordQueryProvider(workspaceId, table.id, draft.query.value),
     );
@@ -36,10 +39,9 @@ class const WorkspaceRecordBrowser({
 }
 
 class _Draft {
-  new(WorkspaceTable table)
+  new(WorkspaceTable table, this.selecting)
     : query = useState(const WorkspaceRecordQuery()),
       controls = useState(false),
-      selecting = useState(false),
       selected = useState<Map<String, WorkspaceRecord>>({}),
       columns = useState(table.columns.map((column) => column.id).toSet());
 
@@ -66,6 +68,19 @@ class _Draft {
 }
 
 class const _Frame(
+  final WorkspaceRecordBrowser owner,
+  final _Draft draft,
+  final AsyncValue<WorkspaceRecordPage> records,
+) extends StatelessWidget {
+  static const _minimumHeight = 360.0;
+  @override
+  Widget build(BuildContext context) => WorkspaceMinimumViewport(
+    minimumHeight: MediaQuery.textScalerOf(context).scale(_minimumHeight),
+    child: _FrameContent(owner, draft, records),
+  );
+}
+
+class const _FrameContent(
   final WorkspaceRecordBrowser owner,
   final _Draft draft,
   final AsyncValue<WorkspaceRecordPage> records,
@@ -395,8 +410,11 @@ class const _GridRecord(final _Rows owner, final WorkspaceRecord record) {
     }
   }
 
-  DataCell _cell(WorkspaceColumn column) =>
-      DataCell(_Cell(owner, record, column), onTap: _tap);
+  DataCell _cell(WorkspaceColumn column) => DataCell(
+    _Cell(owner, record, column),
+    onTap: _tap,
+    onLongPress: owner.table.canEditRecords ? _select : null,
+  );
 }
 
 class const _RecordDetail(
@@ -495,7 +513,7 @@ class const _BulkToolbar(
   @override
   Widget build(BuildContext context, WidgetRef ref) => draft.selecting.value
       ? _SelectedRecordsToolbar(this)
-      : _StartSelection(draft);
+      : const SizedBox.shrink();
   void _done() {
     draft.selecting.value = false;
     draft.selected.value = {};
@@ -512,15 +530,6 @@ class const _BulkToolbar(
     ref.invalidate(workspaceRecordQueryUsecaseProvider(browser.workspaceId));
     _done();
   }
-}
-
-class const _StartSelection(final _Draft draft) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraButton(
-    onPressed: () => draft.selecting.value = true,
-    child: const TextLocale(LocaleKeys.workspace_items_bulk_select),
-    identifier: 'workspace_records_select',
-  );
 }
 
 class const _SelectedRecordsToolbar(final _BulkToolbar owner)
