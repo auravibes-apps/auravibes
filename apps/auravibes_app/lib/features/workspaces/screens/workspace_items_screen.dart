@@ -8,12 +8,15 @@ import 'package:auravibes_app/features/workspaces/notifiers/directory_navigation
 import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_view_screen.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_folder_metadata_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_creation.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_lists.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_metadata_editor.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_creation.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -96,7 +99,8 @@ class const _Navigation(
         ?.id;
     ref
       ..invalidate(workspaceFoldersProvider(workspaceId, parent))
-      ..invalidate(workspaceTablesProvider(workspaceId, parent));
+      ..invalidate(workspaceTablesProvider(workspaceId, parent))
+      ..invalidate(workspaceViewsProvider(workspaceId, parent));
   }
 }
 
@@ -107,6 +111,7 @@ class const _SelectedItem(final _Navigation navigation) extends ConsumerWidget {
         final WorkspaceFolder folder => _FolderEditor(navigation, folder),
         final WorkspaceTable table => _TableEditor(navigation, table),
         final String id => _OpenedTable(navigation, id),
+        DirectoryViewLocation(:final id) => _OpenedView(navigation, id),
         _ => _Browser(navigation),
       };
 }
@@ -123,6 +128,21 @@ class const _OpenedTable(final _Navigation navigation, final String id)
     navigation.actions.open(null);
     navigation._refresh(ref);
   }
+}
+
+class const _OpenedView(final _Navigation navigation, final String id)
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AppScreen(
+    child: WorkspaceViewScreen(
+      workspaceId: navigation.workspaceId,
+      viewId: id,
+      onBack: () {
+        navigation.actions.open(null);
+        navigation._refresh(ref);
+      },
+    ),
+  );
 }
 
 class const _FolderEditor(
@@ -231,7 +251,24 @@ class const _BrowserBody(final _Navigation navigation, {super.key})
     final tables = ref.watch(
       workspaceTablesProvider(navigation.workspaceId, navigation._parentId),
     );
-    if (folders.isLoading || tables.isLoading) {
+
+    return _DirectoryReady(
+      navigation,
+      loading: folders.isLoading || tables.isLoading,
+    );
+  }
+}
+
+class const _DirectoryReady(
+  final _Navigation navigation, {
+  required final bool loading,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final views = ref.watch(
+      workspaceViewsProvider(navigation.workspaceId, navigation._parentId),
+    );
+    if (loading || views.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -345,55 +382,57 @@ class const _CreationChoices(
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraPopupMenuButton(
-    items: [
-      AuraPopupMenuItem(
-        title: const TextLocale(LocaleKeys.workspace_items_folder),
-        onTap: () => _show(context, false),
-      ),
-      if (access.isOwner)
-        AuraPopupMenuItem(
-          title: const TextLocale(LocaleKeys.workspace_items_table),
-          onTap: () => _show(context, true),
-        ),
-    ],
+    items: _items(context),
     key: const ValueKey('directory_create'),
     icon: Icons.add,
     tooltip: LocaleKeys.common_add.tr(),
   );
 
-  void _show(BuildContext context, bool table) {
+  List<AuraPopupMenuItem> _items(BuildContext context) => [
+    AuraPopupMenuItem(
+      title: const TextLocale(LocaleKeys.workspace_items_folder),
+      onTap: () => _show(context, false),
+    ),
+    if (access.isOwner)
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.workspace_items_table),
+        onTap: () => _show(context, true),
+      ),
+    if (access.isOwner)
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.workspace_views_title),
+        onTap: () => _present(context, _ViewCreation(navigation)),
+      ),
+  ];
+
+  void _show(BuildContext context, bool table) =>
+      _present(context, _Creation(navigation, table: table));
+  void _present(BuildContext context, Widget child) {
     if (MediaQuery.sizeOf(context).width < 600) {
-      _sheet(context, table);
+      _sheet(context, child);
     } else {
-      _dialog(context, table);
+      _dialog(context, child);
     }
   }
 
-  void _sheet(BuildContext context, bool table) {
+  void _sheet(BuildContext context, Widget child) {
     final _ = showModalBottomSheet<void>(
       context: context,
-      builder: (context) => _CreationSurface(navigation, table: table),
+      builder: (context) => _CreationSurface(child),
       isScrollControlled: true,
     );
   }
 
-  void _dialog(BuildContext context, bool table) {
+  void _dialog(BuildContext context, Widget child) {
     final _ = showDialog<void>(
       context: context,
-      builder: (context) => Dialog(
-        child: SizedBox(
-          width: 400,
-          child: _CreationSurface(navigation, table: table),
-        ),
-      ),
+      builder: (context) =>
+          Dialog(child: SizedBox(width: 400, child: _CreationSurface(child))),
     );
   }
 }
 
-class const _CreationSurface(
-  final _Navigation navigation, {
-  required final bool table,
-}) extends StatelessWidget {
+class const _CreationSurface(final Widget child) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(
@@ -402,7 +441,7 @@ class const _CreationSurface(
       right: _formPadding,
       bottom: _formPadding + MediaQuery.viewInsetsOf(context).bottom,
     ),
-    child: SingleChildScrollView(child: _Creation(navigation, table: table)),
+    child: SingleChildScrollView(child: child),
   );
 }
 
@@ -428,6 +467,19 @@ class const _Creation(final _Navigation navigation, {required final bool table})
   }
 }
 
+class const _ViewCreation(final _Navigation navigation)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceViewCreation(
+    workspaceId: navigation.workspaceId,
+    parentId: navigation._parentId,
+    onOpenView: (id) {
+      Navigator.of(context).pop();
+      navigation.actions.open(DirectoryViewLocation(id));
+    },
+  );
+}
+
 class const _Items(final _Navigation navigation) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => WorkspaceItemLists(
@@ -435,10 +487,12 @@ class const _Items(final _Navigation navigation) extends StatelessWidget {
     parentId: navigation._parentId,
     onOpenFolder: navigation._folder,
     onOpenTable: navigation.actions.open,
+    onOpenView: _view,
     onEdit: navigation.actions.open,
     selection: navigation.selection.value,
     onSelect: _select,
   );
+  void _view(String id) => navigation.actions.open(DirectoryViewLocation(id));
   void _select(String id) {
     final selected = navigation.selection.value?.toSet() ?? <String>{};
     if (!selected.add(id)) {

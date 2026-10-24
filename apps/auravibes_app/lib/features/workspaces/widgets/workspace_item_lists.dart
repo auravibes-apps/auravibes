@@ -1,7 +1,9 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -15,6 +17,7 @@ class const WorkspaceItemLists({
   required final String? parentId,
   required final ValueChanged<WorkspaceFolder> onOpenFolder,
   required final ValueChanged<String> onOpenTable,
+  required final ValueChanged<String> onOpenView,
   required final ValueChanged<Object> onEdit,
   final Set<String>? selection,
   final ValueChanged<String>? onSelect,
@@ -25,7 +28,9 @@ class const WorkspaceItemLists({
     final folders = ref.watch(workspaceFoldersProvider(workspaceId, parentId));
     final tables = ref.watch(workspaceTablesProvider(workspaceId, parentId));
 
-    return _State(this, folders, tables);
+    final views = ref.watch(workspaceViewsProvider(workspaceId, parentId));
+
+    return _State(this, folders, tables, views);
   }
 }
 
@@ -33,20 +38,32 @@ class const _State(
   final WorkspaceItemLists owner,
   final AsyncValue<List<WorkspaceFolder>> folders,
   final AsyncValue<List<WorkspaceTable>> tables,
+  final AsyncValue<List<WorkspaceView>> views,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final failure = folders.error ?? tables.error ?? views.error;
+    if (failure != null) return WorkspaceItemFailure(error: failure);
+
+    return _Loaded(owner, folders.value, tables.value, views.value);
+  }
+}
+
+class const _Loaded(
+  final WorkspaceItemLists owner,
+  final List<WorkspaceFolder>? folders,
+  final List<WorkspaceTable>? tables,
+  final List<WorkspaceView>? views,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      switch ((folders: folders, tables: tables)) {
-        (folders: AsyncError(:final error), tables: _) ||
+      switch ((folders: folders, tables: tables, views: views)) {
         (
-          folders: _,
-          tables: AsyncError(:final error),
-        ) => WorkspaceItemFailure(error: error),
-        (
-          folders: AsyncData(value: final folderItems),
-          tables: AsyncData(value: final tableItems),
+          folders: final folderItems?,
+          tables: final tableItems?,
+          views: final viewItems?,
         ) =>
-          _Contents(owner, folderItems, tableItems),
+          _Contents(owner, folderItems, tableItems, viewItems),
         _ => const Center(child: CircularProgressIndicator()),
       };
 }
@@ -55,25 +72,56 @@ class const _Contents(
   final WorkspaceItemLists owner,
   final List<WorkspaceFolder> folders,
   final List<WorkspaceTable> tables,
+  final List<WorkspaceView> views,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (folders.isEmpty && tables.isEmpty) {
+    if (folders.isEmpty && tables.isEmpty && views.isEmpty) {
       return const TextLocale(LocaleKeys.workspace_items_empty);
     }
 
     return Column(
       children: [
         for (final folder in _folders()) _FolderRow(owner, folder),
-        for (final table in _tables()) _TableRow(owner, table),
+        for (final element in _elements()) _ElementRow(owner, element),
       ],
     );
   }
 
   List<WorkspaceFolder> _folders() =>
       folders.toList()..sort((a, b) => _compare(a.name, b.name));
-  List<WorkspaceTable> _tables() =>
-      tables.toList()..sort((a, b) => _compare(a.name, b.name));
+  List<Object> _elements() =>
+      [...tables, ...views]
+        ..sort((a, b) => _compare(_elementName(a), _elementName(b)));
+}
+
+String _elementName(Object element) => switch (element) {
+  WorkspaceTable(:final name) || WorkspaceView(:final name) => name,
+  _ => '',
+};
+
+class const _ElementRow(final WorkspaceItemLists owner, final Object element)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (element) {
+    final WorkspaceTable table => _TableRow(owner, table),
+    final WorkspaceView view => _ViewRow(owner, view),
+    _ => const SizedBox.shrink(),
+  };
+}
+
+class const _ViewRow(final WorkspaceItemLists owner, final WorkspaceView view)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ItemRow(
+    owner,
+    id: view.id,
+    name: view.name,
+    icon: Icons.dashboard_outlined,
+    canManage: false,
+    onOpen: () => owner.onOpenView(view.id),
+    onEdit: () => owner.onOpenView(view.id),
+  );
 }
 
 class const _FolderRow(
