@@ -328,14 +328,16 @@ void main() {
         ]);
         expect(_data(renamedLegacy.resources.single)['schemaRevision'], 1);
         expect(_data(renamedLegacy.resources.single)['name'], 'Renamed people');
+        final capitalAccent = String.fromCharCode(0x00c9);
+        final lowerAccent = String.fromCharCode(0x00e9);
         await patch([
           _create(.tableRecord, 'accent-person', {
             'tableId': 'target',
             'schemaRevision': 1,
-            'values': {'label': '\u00c9va'},
+            'values': {'label': '${capitalAccent}va'},
           }),
         ]);
-        for (final search in ['\u00c9', '\u00e9']) {
+        for (final search in [capitalAccent, lowerAccent]) {
           final matches = await endpoints.workspaceReference.tableTargets(
             member,
             WorkspaceReferenceTableRequest(
@@ -346,7 +348,7 @@ void main() {
           );
           expect(
             matches.map((row) => row.resourceId),
-            search == '\u00c9' ? ['accent-person'] : isEmpty,
+            search == capitalAccent ? ['accent-person'] : isEmpty,
           );
         }
         await patch([
