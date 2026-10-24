@@ -8,21 +8,19 @@ class const WorkspaceColumnTypeLabel({
   super.key,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => switch (type) {
-    .text => const TextLocale(LocaleKeys.workspace_items_type_text),
-    .number => const TextLocale(LocaleKeys.workspace_items_type_number),
-    .checkbox => const TextLocale(LocaleKeys.workspace_items_type_checkbox),
-    .singleSelect => const TextLocale(
-      LocaleKeys.workspace_items_type_single_select,
-    ),
-    .multiSelect => const TextLocale(
-      LocaleKeys.workspace_items_type_multi_select,
-    ),
-    .url => const TextLocale(LocaleKeys.workspace_items_type_url),
-    .email => const TextLocale(LocaleKeys.workspace_items_type_email),
-    .phone => const TextLocale(LocaleKeys.workspace_items_type_phone),
-    .dateOnly => const TextLocale(LocaleKeys.workspace_items_type_date_only),
-    .timestamp => const TextLocale(LocaleKeys.workspace_items_type_timestamp),
-    .money => const TextLocale(LocaleKeys.workspace_items_type_money),
+  Widget build(BuildContext context) => TextLocale(_labelKey);
+
+  String get _labelKey => switch (type) {
+    .text => LocaleKeys.workspace_items_type_text,
+    .number => LocaleKeys.workspace_items_type_number,
+    .checkbox => LocaleKeys.workspace_items_type_checkbox,
+    .singleSelect => LocaleKeys.workspace_items_type_single_select,
+    .multiSelect => LocaleKeys.workspace_items_type_multi_select,
+    .url => LocaleKeys.workspace_items_type_url,
+    .email => LocaleKeys.workspace_items_type_email,
+    .phone => LocaleKeys.workspace_items_type_phone,
+    .dateOnly => LocaleKeys.workspace_items_type_date_only,
+    .timestamp => LocaleKeys.workspace_items_type_timestamp,
+    .money => LocaleKeys.workspace_items_type_money,
   };
 }

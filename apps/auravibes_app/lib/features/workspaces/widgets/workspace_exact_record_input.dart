@@ -75,7 +75,7 @@ class const _TemporalPickerControl({
     enabled: !input.disabled,
     semanticLabel: input.column.name,
     onChanged: _pick,
-    labels: workspaceDateTimeLabels(),
+    labels: const WorkspaceDateTimeLabels(),
   );
   void _pick(DateTime? selected) {
     if (selected == null) return;
