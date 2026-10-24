@@ -1,8 +1,8 @@
-import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_record_query_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/query_workspace_records_usecase.dart';
 import 'package:drift/native.dart';
@@ -65,10 +65,7 @@ void main() {
         values: {schema.labelColumnId: 'Value $amount', quantity: amount},
       );
     }
-    final sorted = await query(
-      schema.id,
-      .new(sortColumnId: quantity),
-    );
+    final sorted = await query(schema.id, .new(sortColumnId: quantity));
     expect(sorted.records.map((record) => record.values[quantity]), [2, 10]);
     final filtered = await query(
       schema.id,

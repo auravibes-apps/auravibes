@@ -259,18 +259,37 @@ class const _TableBrowser({
     return Column(
       children: [
         _BrowserToolbar(this, settings),
-        Expanded(child:_BrowserContent(this,settings)),
+        Expanded(child: _BrowserContent(this, settings)),
       ],
     );
   }
 }
 
-class const _BrowserContent(final _TableBrowser browser,final ValueNotifier<bool> settings) extends StatelessWidget {
+class const _BrowserContent(
+  final _TableBrowser browser,
+  final ValueNotifier<bool> settings,
+) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Stack(fit:.expand,children:[
-    Offstage(offstage:settings.value,child:WorkspaceRecordBrowser(workspaceId:browser.workspaceId,table:browser.table,onRecord:browser.onRecord)),
-    if(settings.value) Positioned.fill(child:ListView(padding:const EdgeInsets.all(16),children:[_TableManagement(browser:browser)])),
-  ]);
+  Widget build(BuildContext context) => Stack(
+    fit: .expand,
+    children: [
+      Offstage(
+        offstage: settings.value,
+        child: WorkspaceRecordBrowser(
+          workspaceId: browser.workspaceId,
+          table: browser.table,
+          onRecord: browser.onRecord,
+        ),
+      ),
+      if (settings.value)
+        Positioned.fill(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [_TableManagement(browser: browser)],
+          ),
+        ),
+    ],
+  );
 }
 
 class const _BrowserToolbar(

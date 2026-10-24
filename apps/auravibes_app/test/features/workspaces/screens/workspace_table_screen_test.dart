@@ -1,4 +1,3 @@
-import 'package:auravibes_app/features/workspaces/widgets/workspace_record_browser.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
@@ -9,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_tables_pro
 import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_record_browser.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' show Value;
@@ -56,7 +56,7 @@ void main() {
             workspaceRecordQueryProvider.overrideWith(
               (ref, arguments) async => const WorkspaceRecordPage(
                 records: [
-                  const WorkspaceRecord(
+                  WorkspaceRecord(
                     id: 'record',
                     tableId: 'table',
                     values: {'label': 'Readable'},
@@ -83,13 +83,63 @@ void main() {
     expect(find.text('Readable'), findsOneWidget);
     expect(button('workspace_record_save'), findsNothing);
   });
-  testWidgets('record grid preserves money precision and selected timezone', (tester) async {
-    const table=WorkspaceTable(id:'values',name:'Values',labelColumnId:'label',columns:[WorkspaceColumn(id:'label',name:'Title'),WorkspaceColumn(id:'money',name:'Amount',type:.money),WorkspaceColumn(id:'instant',name:'Time',type:.timestamp,timeZone:'America/New_York')],revision:1,schemaRevision:1);
-    const record=WorkspaceRecord(id:'value',tableId:'values',values:{'label':'Entry','money':{'amount':'9007199254740993.010000000000000001','currency':'USD'},'instant':'2026-03-08T07:00:00Z'},revision:1);
-    await tester.runAsync(() => tester.pumpWidget(TestableApp(child: WorkspaceRecordBrowser(workspaceId: 'one', table: table, onRecord: (_) {}), overrides: [workspaceRecordQueryProvider.overrideWith((ref, arguments) async => const WorkspaceRecordPage(records: [record], hasMore: false))], workspaceId: 'one')));
-    final _=await tester.pumpAndSettle();
-    expect(find.text('USD 9007199254740993.010000000000000001'),findsOneWidget);
-    expect(find.textContaining('2026-03-08T03:00:00'),findsOneWidget);
+  testWidgets('record grid preserves money precision and selected timezone', (
+    tester,
+  ) async {
+    const table = WorkspaceTable(
+      id: 'values',
+      name: 'Values',
+      labelColumnId: 'label',
+      columns: [
+        WorkspaceColumn(id: 'label', name: 'Title'),
+        WorkspaceColumn(id: 'money', name: 'Amount', type: .money),
+        WorkspaceColumn(
+          id: 'instant',
+          name: 'Time',
+          type: .timestamp,
+          timeZone: 'America/New_York',
+        ),
+      ],
+      revision: 1,
+      schemaRevision: 1,
+    );
+    const record = WorkspaceRecord(
+      id: 'value',
+      tableId: 'values',
+      values: {
+        'label': 'Entry',
+        'money': {
+          'amount': '9007199254740993.010000000000000001',
+          'currency': 'USD',
+        },
+        'instant': '2026-03-08T07:00:00Z',
+      },
+      revision: 1,
+    );
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceRecordBrowser(
+            workspaceId: 'one',
+            table: table,
+            onRecord: (_) => fail('Unexpected record navigation'),
+          ),
+          overrides: [
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async =>
+                  const WorkspaceRecordPage(records: [record], hasMore: false),
+            ),
+          ],
+          workspaceId: 'one',
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.text('USD 9007199254740993.010000000000000001'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('2026-03-08T03:00:00'), findsOneWidget);
   });
 
   testWidgets('ordinary controls create tables and edit columns and records', (
@@ -202,7 +252,7 @@ void main() {
     await tester.tap(find.text('Reading'));
     await flush();
     expect(find.text('Other book'), findsNothing);
-    tester.view.devicePixelRatio=1;
+    tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetDevicePixelRatio);
     tester.view.physicalSize = const Size(400, 800);
     addTearDown(tester.view.resetPhysicalSize);

@@ -93,6 +93,8 @@ class _ResponsiveSlidingDrawerState
   static const _animationDuration = Duration(milliseconds: 250);
   static const _scrimGradientWidth = 16.0;
 
+  // Keep editor state when responsive layouts reparent the body.
+  final _bodyKey = GlobalKey();
   AnimationController? _controller;
   double? _desktopDrawerWidth;
   double _resizeOvershoot = 0;
@@ -656,7 +658,7 @@ class const _DesktopBodyPosition({
       top: 0,
       end: 0,
       bottom: 0,
-      child: state.widget.body,
+      child: KeyedSubtree(key: state._bodyKey, child: state.widget.body),
     );
   }
 }
@@ -878,7 +880,7 @@ class const _MobileBodyGesture({
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      child: state.widget.body,
+      child: KeyedSubtree(key: state._bodyKey, child: state.widget.body),
       onTap: state._closeIfFullyOpenCurrent,
       behavior: .opaque,
     );

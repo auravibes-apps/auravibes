@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/local_workspace_folder_repositor
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
@@ -90,7 +91,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
     expect(find.text('Folder35'), findsOneWidget);
     expect(find.text('Folder00'), findsNothing);
-    await tester.binding.handlePopRoute();
+    final _ = await tester.binding.handlePopRoute();
     final _ = await tester.pumpAndSettle();
     expect(find.text('Folder35').hitTestable(), findsOneWidget);
     generation.value++;
@@ -126,10 +127,31 @@ void main() {
     final _ = await tester.pumpAndSettle();
     expect(find.byType(Checkbox), findsOneWidget);
     expect(find.byKey(const ValueKey('directory_create')), findsNothing);
-    await tester.binding.handlePopRoute();
+    final _ = await tester.binding.handlePopRoute();
     final _ = await tester.pumpAndSettle();
     expect(find.byType(Checkbox), findsNothing);
     expect(find.byKey(const ValueKey('directory_create')), findsOneWidget);
+  });
+
+  testWidgets('workspace member has no unauthorized creation choices', (
+    tester,
+  ) async {
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: const WorkspaceItemsScreen(workspaceId: 'one'),
+          overrides: [
+            workspaceAccessProvider('one')
+                .overrideWith((ref) async => (role: 'member')),
+            workspaceTablesProvider.overrideWith((ref, arguments) async => []),
+            workspaceFoldersProvider.overrideWith((ref, arguments) async => []),
+          ],
+          workspaceId: 'one',
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('directory_create')), findsNothing);
   });
 
   for (final key in [

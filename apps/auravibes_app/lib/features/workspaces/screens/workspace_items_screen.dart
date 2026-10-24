@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/directory_navigation.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_access_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/directory_navigation_notifier.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
@@ -78,7 +80,10 @@ class const _Navigation(
 
   void _refresh(WidgetRef ref) => unawaited(_reload(ref));
   Future<void> _reload(WidgetRef ref) async {
-    await actions.refreshPath();
+    final folders = ref.read(
+      workspaceFolderUsecaseProvider(workspaceId).future,
+    );
+    await actions.refreshPath(folders);
     if (!ref.context.mounted) return;
     final parent = ref
         .read(directoryNavigationProvider(workspaceId))
@@ -97,14 +102,19 @@ class const _SelectedItem(final _Navigation navigation) extends ConsumerWidget {
       switch (navigation.state.selected) {
         final WorkspaceFolder folder => _FolderEditor(navigation, folder),
         final WorkspaceTable table => _TableEditor(navigation, table),
-        final String id => _OpenedTable(navigation,id),
-    _ => _Browser(navigation),
+        final String id => _OpenedTable(navigation, id),
+        _ => _Browser(navigation),
       };
 }
 
-class const _OpenedTable(final _Navigation navigation,final String id) extends ConsumerWidget {
+class const _OpenedTable(final _Navigation navigation, final String id)
+    extends ConsumerWidget {
   @override
-  Widget build(BuildContext context,WidgetRef ref) => WorkspaceTableScreen(workspaceId:navigation.workspaceId,tableId:id,onBack:() => _back(ref));
+  Widget build(BuildContext context, WidgetRef ref) => WorkspaceTableScreen(
+    workspaceId: navigation.workspaceId,
+    tableId: id,
+    onBack: () => _back(ref),
+  );
   void _back(WidgetRef ref) {
     navigation.actions.open(null);
     navigation._refresh(ref);
@@ -225,8 +235,7 @@ class const _BrowserBody(final _Navigation navigation, {super.key})
   }
 }
 
-class const _DirectoryList(final _Navigation navigation)
-    extends HookWidget {
+class const _DirectoryList(final _Navigation navigation) extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final parent = navigation._parentId;
@@ -235,22 +244,44 @@ class const _DirectoryList(final _Navigation navigation)
     );
     _rememberScroll(scroll, navigation, parent);
 
-    return _DirectoryScroll(navigation,scroll);
+    return _DirectoryScroll(navigation, scroll);
   }
 }
 
-class const _DirectoryScroll(final _Navigation navigation,final ScrollController scroll) extends StatelessWidget {
+class const _DirectoryScroll(
+  final _Navigation navigation,
+  final ScrollController scroll,
+) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => ListView(key:ValueKey(navigation._parentId),controller:scroll,padding:const EdgeInsets.all(16),children:[_Breadcrumb(navigation),_DirectoryStatus(navigation),_Items(navigation)]);
+  Widget build(BuildContext context) => ListView(
+    key: ValueKey(navigation._parentId),
+    controller: scroll,
+    padding: const EdgeInsets.all(16),
+    children: [
+      _Breadcrumb(navigation),
+      _DirectoryStatus(navigation),
+      _Items(navigation),
+    ],
+  );
 }
 
-class const _DirectoryStatus(final _Navigation navigation) extends StatelessWidget {
+class const _DirectoryStatus(final _Navigation navigation)
+    extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Column(children:[
-    if(navigation.state.recovered) const TextLocale(LocaleKeys.workspace_items_location_recovered),
-    if(navigation.state.failure case final failure?) WorkspaceItemFailure(error:failure),
-    if(navigation.selection.value case final selected?) Text(LocaleKeys.workspace_items_selected.tr(args:[selected.length.toString()])),
-  ]);
+  Widget build(BuildContext context) => Column(
+    children: [
+      if (navigation.state.recovered)
+        const TextLocale(LocaleKeys.workspace_items_location_recovered),
+      if (navigation.state.failure case final failure?)
+        WorkspaceItemFailure(error: failure),
+      if (navigation.selection.value case final selected?)
+        Text(
+          LocaleKeys.workspace_items_selected.tr(
+            args: [selected.length.toString()],
+          ),
+        ),
+    ],
+  );
 }
 
 void _rememberScroll(
@@ -289,7 +320,23 @@ class const _PathSegment(final _Navigation navigation, final int index)
   );
 }
 
-class const _CreateMenu(final _Navigation navigation) extends StatelessWidget {
+class const _CreateMenu(final _Navigation navigation) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => switch (ref.watch(
+    workspaceAccessProvider(navigation.workspaceId),
+  )) {
+    AsyncData(:final value) when value.canManage => _CreationChoices(
+      navigation,
+      value,
+    ),
+    AsyncData() || AsyncLoading() || AsyncError() => const SizedBox.shrink(),
+  };
+}
+
+class const _CreationChoices(
+  final _Navigation navigation,
+  final WorkspaceAccess access,
+) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraPopupMenuButton(
     items: [
@@ -297,10 +344,11 @@ class const _CreateMenu(final _Navigation navigation) extends StatelessWidget {
         title: const TextLocale(LocaleKeys.workspace_items_folder),
         onTap: () => _show(context, false),
       ),
-      AuraPopupMenuItem(
-        title: const TextLocale(LocaleKeys.workspace_items_table),
-        onTap: () => _show(context, true),
-      ),
+      if (access.isOwner)
+        AuraPopupMenuItem(
+          title: const TextLocale(LocaleKeys.workspace_items_table),
+          onTap: () => _show(context, true),
+        ),
     ],
     key: const ValueKey('directory_create'),
     icon: Icons.add,

@@ -19,7 +19,7 @@ class const WorkspaceRecordBrowser({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final draft = _Draft.use(table);
+    final draft = _Draft(table);
     final records = ref.watch(
       workspaceRecordQueryProvider(workspaceId, table.id, draft.query.value),
     );
@@ -28,18 +28,17 @@ class const WorkspaceRecordBrowser({
   }
 }
 
-class const _Draft(
-  final ValueNotifier<WorkspaceRecordQuery> query,
-  final ValueNotifier<bool> controls,
-  final ValueNotifier<Set<String>> columns,
-  final ValueNotifier<String?> filter,
-) {
-  static _Draft use(WorkspaceTable table) => _Draft(
-    useState(const WorkspaceRecordQuery()),
-    useState(false),
-    useState(table.columns.map((column) => column.id).toSet()),
-    useState(null),
-  );
+class _Draft {
+  new(WorkspaceTable table)
+    : query = useState(const WorkspaceRecordQuery()),
+      controls = useState(false),
+      columns = useState(table.columns.map((column) => column.id).toSet()),
+      filter = useState(null);
+
+  final ValueNotifier<WorkspaceRecordQuery> query;
+  final ValueNotifier<bool> controls;
+  final ValueNotifier<Set<String>> columns;
+  final ValueNotifier<String?> filter;
 }
 
 class const _Frame(
@@ -53,7 +52,7 @@ class const _Frame(
       _Search(draft),
       if (draft.controls.value) _Controls(owner.table, draft),
       Expanded(child: _RecordState(owner, draft, records)),
-      _Pages(draft.query, records.value?.hasMore ?? false),
+      _Pages(draft.query, more: records.value?.hasMore ?? false),
     ],
   );
 }
@@ -102,16 +101,16 @@ class const _RecordState(
 }
 
 class const _Pages(
-  final ValueNotifier<WorkspaceRecordQuery> query,
-  final bool more,
-) extends StatelessWidget {
+  final ValueNotifier<WorkspaceRecordQuery> query, {
+  required final bool more,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     mainAxisAlignment: .spaceBetween,
     children: [
-      _PageButton(this,true),
+      _PageButton(this, previous: true),
       Text('${query.value.offset ~/ query.value.limit + 1}'),
-      _PageButton(this,false),
+      _PageButton(this, previous: false),
     ],
   );
   void _page(int direction) => query.value = query.value.change(
@@ -119,11 +118,21 @@ class const _Pages(
   );
 }
 
-class const _PageButton(final _Pages pages,final bool previous) extends StatelessWidget {
-  bool get _disabled => previous ? pages.query.value.offset==0 : !pages.more;
-  String get _tooltip => (previous ? LocaleKeys.workspace_items_previous_page : LocaleKeys.workspace_items_next_page).tr();
+class const _PageButton(final _Pages pages, {required final bool previous})
+    extends StatelessWidget {
+  bool get _disabled => previous ? pages.query.value.offset == 0 : !pages.more;
+  String get _tooltip =>
+      (previous
+              ? LocaleKeys.workspace_items_previous_page
+              : LocaleKeys.workspace_items_next_page)
+          .tr();
   @override
-  Widget build(BuildContext context) => AuraIconButton(icon:previous ? Icons.chevron_left : Icons.chevron_right,onPressed:() => pages._page(previous ? -1 : 1),disabled:_disabled,tooltip:_tooltip);
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: previous ? Icons.chevron_left : Icons.chevron_right,
+    onPressed: () => pages._page(previous ? -1 : 1),
+    disabled: _disabled,
+    tooltip: _tooltip,
+  );
 }
 
 class const _Controls(final WorkspaceTable table, final _Draft draft)
@@ -252,9 +261,17 @@ class const _Rows(
   final ValueChanged<WorkspaceRecord> onRecord,
 ) extends StatelessWidget {
   List<WorkspaceColumn> get visible {
-    final selected=table.columns.where((column) => columns.contains(column.id)).toList();
+    final selected = table.columns
+        .where((column) => columns.contains(column.id))
+        .toList();
 
-    return selected.isEmpty ? [table.columns.firstWhere((column) => column.id==table.labelColumnId)] : selected;
+    return selected.isEmpty
+        ? [
+            table.columns.firstWhere(
+              (column) => column.id == table.labelColumnId,
+            ),
+          ]
+        : selected;
   }
 
   @override
@@ -268,7 +285,7 @@ class const _Rows(
     return LayoutBuilder(builder: _layout);
   }
 
-  Widget _layout(BuildContext context, BoxConstraints constraints) =>
+  Widget _layout(BuildContext _, BoxConstraints constraints) =>
       constraints.maxWidth < 600
       ? ListView(
           children: [for (final record in records) _RecordRow(this, record)],
@@ -288,7 +305,7 @@ class const _RecordRow(final _Rows owner, final WorkspaceRecord record)
     for (final column in owner.visible.where(
       (column) => column.id != owner.table.labelColumnId,
     ))
-      '${column.name}: ${_value(record, column.id,column)}',
+      '${column.name}: ${_value(record, column.id, column)}',
   ].join('\n');
 }
 
@@ -310,22 +327,30 @@ class const _Grid(final _Rows owner) extends StatelessWidget {
     cells: [
       for (final column in owner.visible)
         DataCell(
-          Text(_value(record, column.id,column)),
+          Text(_value(record, column.id, column)),
           onTap: () => owner.onRecord(record),
         ),
     ],
   );
 }
 
-String _value(WorkspaceRecord record,String columnId,[WorkspaceColumn? column]) {
-  final value=record.values[columnId];
-  if(value==null) return LocaleKeys.workspace_items_missing_value.tr();
-  if(column?.type==WorkspaceColumnType.timestamp && value is String) return WorkspaceTimeZones.display(value,column?.timeZone ?? 'UTC');
+String _value(
+  WorkspaceRecord record,
+  String columnId, [
+  WorkspaceColumn? column,
+]) {
+  final value = record.values[columnId];
+  if (value == null) return LocaleKeys.workspace_items_missing_value.tr();
+  if (column?.type == WorkspaceColumnType.timestamp && value is String) {
+    return WorkspaceTimeZones.display(value, column?.timeZone ?? 'UTC');
+  }
 
   return _display(value);
 }
-String _display(Object value) => switch(value) {
-  {'amount':final String amount,'currency':final String currency} => '$currency $amount',
+
+String _display(Object value) => switch (value) {
+  {'amount': final String amount, 'currency': final String currency} =>
+    '$currency $amount',
   final List<Object?> values => values.join(', '),
   _ => value.toString(),
 };

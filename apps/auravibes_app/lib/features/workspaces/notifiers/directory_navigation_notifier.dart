@@ -1,6 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/directory_navigation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -19,10 +18,10 @@ class DirectoryNavigationNotifier extends _$DirectoryNavigationNotifier {
   void rememberOffset(String? parent, double offset) =>
       state = state.scroll(parent, offset);
 
-  Future<void> refreshPath() async {
+  Future<void> refreshPath(Future<OrganizeWorkspaceFoldersUsecase> folders) async {
     final original = state.path;
     try {
-      final path = await _readPath(original);
+      final path = await _PathReader(await folders).read(original);
       _apply(original, path);
     } on Object catch (error) {
       if (ref.mounted) state = state.location(original, failure: error);
@@ -32,16 +31,6 @@ class DirectoryNavigationNotifier extends _$DirectoryNavigationNotifier {
   void _apply(List<WorkspaceFolder> original, List<WorkspaceFolder> path) {
     if (!ref.mounted || !identical(state.path, original)) return;
     state = state.location(path, recovered: path.length != original.length);
-  }
-
-  Future<List<WorkspaceFolder>> _readPath(
-    List<WorkspaceFolder> original,
-  ) async {
-    final folders = await ref.read(
-      workspaceFolderUsecaseProvider(workspaceId).future,
-    );
-
-    return await _PathReader(folders).read(original);
   }
 }
 

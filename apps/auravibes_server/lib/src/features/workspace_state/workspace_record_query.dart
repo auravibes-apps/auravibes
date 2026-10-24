@@ -287,9 +287,9 @@ Map<String, dynamic> _decode(String encoded) {
 
 const _maxEncodedLength = 2000;
 
-String _querySql(Map<String,Object?> query) {
-  final descending=query.remove('descending')==true;
-  final numeric=query.remove('numeric')==true;
+String _querySql(Map<String, Object?> query) {
+  final descending = query.remove('descending') == true;
+  final numeric = query.remove('numeric') == true;
 
-  return _sql(descending,numeric);
+  return _sql(descending, numeric);
 }
