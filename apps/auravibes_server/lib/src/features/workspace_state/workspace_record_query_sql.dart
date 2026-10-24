@@ -43,7 +43,7 @@ WITH selected AS (
 SELECT "resourceId" FROM selected
 WHERE (@search = '' OR strpos(translate(label, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), @search) > 0)
 AND (@filter = '' OR $_filter)
-ORDER BY $_order, "resourceId" ASC
+ORDER BY $_order, "resourceId" COLLATE "C" ASC
 LIMIT @limit OFFSET @offset
 ''';
   String _ordered(String value) =>
