@@ -131,6 +131,10 @@ Future<void> _editAndSwitch(WidgetTester tester) async {
   final _ = await tester.pumpAndSettle();
   await tester.tap(find.text(LocaleKeys.workspace_views_edit.tr()));
   final _ = await tester.pumpAndSettle();
+  expect(
+    find.byKey(const ValueKey('workspace_view_editor_back')),
+    findsOneWidget,
+  );
   await tester.enterText(find.byType(AuraInput).first, 'Keep this draft');
   await tester.pump(const Duration(seconds: 11));
   revision = 2;

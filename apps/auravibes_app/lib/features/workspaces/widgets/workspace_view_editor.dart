@@ -107,6 +107,7 @@ class const _Back(final WorkspaceViewEditor owner, final _EditState state)
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
+    key: const ValueKey('workspace_view_editor_back'),
     leading: const Icon(Icons.arrow_back),
     title: Text(owner.data.view.name),
     onTap: state.action.pending ? null : owner.onDone,
