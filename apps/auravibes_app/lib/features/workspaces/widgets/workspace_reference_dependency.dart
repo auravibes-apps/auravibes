@@ -40,6 +40,7 @@ class const _SourceDependency({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _DependencyChoice(
+    identifier: 'workspace_reference_dependency_parent',
     label: const TextLocale(LocaleKeys.workspace_items_reference_parent),
     columns: field.parents,
     value: field.parent.value,
@@ -78,6 +79,7 @@ class const _MatchDependency({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _DependencyChoice(
+    identifier: 'workspace_reference_dependency_match',
     label: const TextLocale(LocaleKeys.workspace_items_reference_match),
     columns: _matches(table, parent),
     value: field.match.value,
@@ -100,6 +102,7 @@ bool _parent(WorkspaceColumn column) =>
     column.dependsOnColumnId == null;
 
 class const _DependencyChoice({
+  required final String identifier,
   required final Widget label,
   required final List<WorkspaceColumn> columns,
   required final String? value,
@@ -108,17 +111,25 @@ class const _DependencyChoice({
 }) extends StatelessWidget {
   String? get _selectedValue =>
       columns.any((column) => column.id == value) ? value : '';
+  ValueChanged<String?>? get _onChanged => disabled ? null : _change;
   @override
   Widget build(BuildContext context) => AuraDropdownSelector<String>(
     options: [
       _noDependency,
       for (final column in columns)
-        AuraDropdownOption(value: column.id, child: Text(column.name)),
+        AuraDropdownOption(
+          value: column.id,
+          child: Text(
+            column.name,
+            key: ValueKey('${identifier}_option_${column.id}'),
+          ),
+        ),
     ],
     value: _selectedValue,
-    onChanged: disabled ? null : _change,
+    onChanged: _onChanged,
     label: label,
     isEnabled: !disabled,
+    identifier: identifier,
   );
   void _change(String? value) => onChanged(value == '' ? null : value);
 }
