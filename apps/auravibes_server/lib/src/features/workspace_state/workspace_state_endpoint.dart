@@ -5,10 +5,25 @@ import '../accounts/authenticated_account_resolver.dart';
 import '../sync/stream/sync_wakeups.dart';
 import 'repositories/workspace_state_repository.dart';
 import 'usecases/workspace_state_usecases.dart';
+import 'workspace_record_query.dart';
 
 class WorkspaceStateEndpoint extends Endpoint {
-  WorkspaceStateUseCases get _useCases =>
-      WorkspaceStateUseCases(WorkspaceStateRepository());
+  WorkspaceStateUseCases get _useCases => WorkspaceStateUseCases(.new());
+
+  Future<List<WorkspaceResource>> queryRecords(
+    Session session,
+    int workspaceId,
+    String tableId,
+    String queryJson,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+
+    return await const WorkspaceRecordQuery()(
+      session,
+      account.userId,
+      (workspaceId: workspaceId, tableId: tableId, encoded: queryJson),
+    );
+  }
 
   Future<ReadWorkspaceStateResponse> read(
     Session session,
@@ -27,12 +42,13 @@ class WorkspaceStateEndpoint extends Endpoint {
         'resources=${response.pages.fold<int>(0, (count, page) => count + page.resources.length)}, '
         'sequence=${response.currentSequence}.',
       );
+
       return response;
     } on Object catch (error, stackTrace) {
       session.log(
         'Workspace state read failed: workspace=${request.workspaceId}, '
         'kinds=${request.pages.map((page) => page.resourceKind.name).join(',')}.',
-        level: LogLevel.warning,
+        level: .warning,
         exception: error.runtimeType,
         stackTrace: stackTrace,
       );
@@ -51,6 +67,7 @@ class WorkspaceStateEndpoint extends Endpoint {
       request: request,
     );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
+
     return response;
   }
 
@@ -65,6 +82,7 @@ class WorkspaceStateEndpoint extends Endpoint {
       request: request,
     );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
+
     return response;
   }
 
@@ -79,6 +97,7 @@ class WorkspaceStateEndpoint extends Endpoint {
       request: request,
     );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
+
     return response;
   }
 }

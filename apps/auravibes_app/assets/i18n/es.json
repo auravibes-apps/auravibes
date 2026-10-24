@@ -277,7 +277,7 @@
     },
     "create": {
       "type_label": "Tipo de conexión",
-    "connector_label": "Connector",
+      "connector_label": "Connector",
       "name_label": "Nombre",
       "api_key_label": "Clave API",
       "base_url_label": "URL base de la instancia"
@@ -1946,7 +1946,7 @@
     }
   },
   "workspace_items": {
-    "edit_item": "Editar elemento",
+    "edit_item": "Renombrar o mover",
     "item_name": "Nombre",
     "destination": "Carpeta de destino",
     "root": "Raíz del espacio de trabajo",
@@ -1954,10 +1954,10 @@
     "access_read": "Solo lectura",
     "access_edit": "Leer y editar",
     "access_none": "Sin acceso",
-    "title": "Elementos del espacio",
+    "title": "Directorio",
     "folder_name": "Nombre de la carpeta",
     "create_folder": "Crear carpeta",
-    "empty": "Aún no hay carpetas. Crea una carpeta para comenzar.",
+    "empty": "Esta carpeta está vacía. Usa + para crear un elemento.",
     "invalid_folder": "Introduce un nombre de carpeta válido y elige una carpeta disponible.",
     "table": "Tabla",
     "table_name": "Nombre de la tabla",
@@ -1984,6 +1984,21 @@
     "type_multi_select": "Selección múltiple",
     "type_url": "URL",
     "type_email": "Correo electrónico",
-    "type_phone": "Teléfono"
+    "type_phone": "Teléfono",
+    "folder": "Carpeta",
+    "settings": "Ajustes de tabla",
+    "search": "Buscar registros",
+    "query_controls": "Filtros, orden y columnas",
+    "filter_value": "Valor igual a",
+    "all_columns": "Sin filtro",
+    "ascending": "Ascendente",
+    "descending": "Descendente",
+    "next_page": "Página siguiente",
+    "previous_page": "Página anterior",
+    "select": "Seleccionar elementos",
+    "done": "Listo",
+    "selected": "Seleccionados: {}",
+    "query_type_unavailable": "El orden y los filtros no están disponibles para valores complejos y marcas de tiempo.",
+    "location_recovered": "Esta ubicación ya no está disponible. Se volvió al Directorio."
   }
 }

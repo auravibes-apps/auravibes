@@ -277,7 +277,7 @@
     },
     "create": {
       "type_label": "Connection type",
-    "connector_label": "Connector",
+      "connector_label": "Connector",
       "name_label": "Name",
       "api_key_label": "API key",
       "base_url_label": "Instance base URL"
@@ -1946,7 +1946,7 @@
     }
   },
   "workspace_items": {
-    "edit_item": "Edit item",
+    "edit_item": "Rename or move",
     "item_name": "Name",
     "destination": "Destination folder",
     "root": "Workspace root",
@@ -1954,10 +1954,10 @@
     "access_read": "Read only",
     "access_edit": "Read and edit",
     "access_none": "No access",
-    "title": "Workspace items",
+    "title": "Directory",
     "folder_name": "Folder name",
     "create_folder": "Create folder",
-    "empty": "No folders yet. Create a folder to get started.",
+    "empty": "This folder is empty. Use + to create an item.",
     "invalid_folder": "Enter a valid folder name and choose an available parent folder.",
     "table": "Table",
     "table_name": "Table name",
@@ -1984,6 +1984,21 @@
     "type_multi_select": "Multiple selections",
     "type_url": "URL",
     "type_email": "Email",
-    "type_phone": "Phone"
+    "type_phone": "Phone",
+    "folder": "Folder",
+    "settings": "Table settings",
+    "search": "Search records",
+    "query_controls": "Filter, sort and columns",
+    "filter_value": "Value equals",
+    "all_columns": "No filter",
+    "ascending": "Ascending",
+    "descending": "Descending",
+    "next_page": "Next page",
+    "previous_page": "Previous page",
+    "select": "Select items",
+    "done": "Done",
+    "selected": "Selected: {}",
+    "query_type_unavailable": "Sorting and filtering are unavailable for complex values and timestamps.",
+    "location_recovered": "This location is no longer available. Returned to Directory."
   }
 }

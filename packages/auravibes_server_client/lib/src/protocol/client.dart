@@ -1107,6 +1107,20 @@ class EndpointWorkspaceState extends _isc.EndpointRef {
   @override
   String get name => 'workspaceState';
 
+  _ida.Future<List<_iar0fwau.WorkspaceResource>> queryRecords(
+    int workspaceId,
+    String tableId,
+    String queryJson,
+  ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
+    'workspaceState',
+    'queryRecords',
+    {
+      'workspaceId': workspaceId,
+      'tableId': tableId,
+      'queryJson': queryJson,
+    },
+  );
+
   _ida.Future<_i3s0ysat.ReadWorkspaceStateResponse> read(
     _i7oqzoiv.ReadWorkspaceStateRequest request,
   ) => caller.callServerEndpoint<_i3s0ysat.ReadWorkspaceStateResponse>(

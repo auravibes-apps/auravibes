@@ -2582,4 +2582,22 @@ abstract class LocaleKeys {
   static const workspace_items_type_url = 'workspace_items.type_url';
   static const workspace_items_type_email = 'workspace_items.type_email';
   static const workspace_items_type_phone = 'workspace_items.type_phone';
+  static const workspace_items_folder = 'workspace_items.folder';
+  static const workspace_items_settings = 'workspace_items.settings';
+  static const workspace_items_search = 'workspace_items.search';
+  static const workspace_items_query_controls =
+      'workspace_items.query_controls';
+  static const workspace_items_filter_value = 'workspace_items.filter_value';
+  static const workspace_items_all_columns = 'workspace_items.all_columns';
+  static const workspace_items_ascending = 'workspace_items.ascending';
+  static const workspace_items_descending = 'workspace_items.descending';
+  static const workspace_items_next_page = 'workspace_items.next_page';
+  static const workspace_items_previous_page = 'workspace_items.previous_page';
+  static const workspace_items_select = 'workspace_items.select';
+  static const workspace_items_done = 'workspace_items.done';
+  static const workspace_items_selected = 'workspace_items.selected';
+  static const workspace_items_query_type_unavailable =
+      'workspace_items.query_type_unavailable';
+  static const workspace_items_location_recovered =
+      'workspace_items.location_recovered';
 }

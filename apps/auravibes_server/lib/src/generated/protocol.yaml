@@ -87,6 +87,7 @@ workspaceStream:
 workspaceSecret:
   - put:
 workspaceState:
+  - queryRecords:
   - read:
   - patch:
   - duplicateAgent:

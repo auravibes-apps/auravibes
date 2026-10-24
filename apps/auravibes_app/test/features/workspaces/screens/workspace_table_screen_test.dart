@@ -1,16 +1,20 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
@@ -48,15 +52,18 @@ void main() {
               'one',
               'table',
             ).overrideWith((ref) async => table),
-            workspaceTableRecordsProvider('one', 'table').overrideWith(
-              (ref) async => [
-                const WorkspaceRecord(
-                  id: 'record',
-                  tableId: 'table',
-                  values: {'label': 'Readable'},
-                  revision: 1,
-                ),
-              ],
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async => const WorkspaceRecordPage(
+                records: [
+                  const WorkspaceRecord(
+                    id: 'record',
+                    tableId: 'table',
+                    values: {'label': 'Readable'},
+                    revision: 1,
+                  ),
+                ],
+                hasMore: false,
+              ),
             ),
           ],
           workspaceId: 'one',
@@ -97,6 +104,7 @@ void main() {
         TestableApp(
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
+            appDatabaseProvider.overrideWithValue(database),
             workspaceTableUsecaseProvider('one')
                 .overrideWith((ref) async => tables),
             workspaceFoldersProvider(
@@ -125,16 +133,30 @@ void main() {
     Finder button(String id) => find.byWidgetPredicate(
       (widget) => widget is AuraButton && widget.identifier == id,
     );
+    await tester.tap(find.byKey(const ValueKey('directory_create')));
+    await flush();
+    await tester.tap(find.text('Table'));
+    await flush();
     await tester.enterText(input('workspace_table_name'), 'Reading');
     await tester.runAsync(() => tester.tap(button('workspace_table_create')));
     await flush();
 
     expect(find.text('Reading'), findsOneWidget);
+    await tester.tap(find.byType(AuraPopupMenuButton).last);
+    await flush();
+    await tester.tap(find.text('Table settings'));
+    await flush();
     await tester.enterText(input('workspace_label_column'), 'Book');
     await tester.runAsync(() => tester.tap(button('workspace_label_save')));
     await flush();
 
-    await tester.tap(button('workspace_record_create'));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraIconButton &&
+            widget.identifier == 'workspace_record_create',
+      ),
+    );
     await flush();
     expect(find.text('Book'), findsOneWidget);
     await tester.tap(find.text('Book'));
@@ -151,5 +173,31 @@ void main() {
 
     expect(find.text('Updated book'), findsOneWidget);
     expect(find.text('First book'), findsNothing);
+    final current = (await tables.list()).single;
+    final _ = await tables.createRecord(
+      table: current,
+      values: {current.labelColumnId: 'Other book'},
+    );
+    await tester.tap(find.byIcon(Icons.refresh));
+    await flush();
+    expect(find.byType(DataTable), findsOneWidget);
+    expect(find.text('Other book'), findsOneWidget);
+    await tester.enterText(input('workspace_record_search'), 'Updated');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await flush();
+    expect(find.text('Updated book'), findsOneWidget);
+    expect(find.text('Other book'), findsNothing);
+    await tester.tap(find.text('Updated book'));
+    await flush();
+    await tester.tap(find.text('Reading'));
+    await flush();
+    expect(find.text('Other book'), findsNothing);
+    tester.view.devicePixelRatio=1;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.view.physicalSize = const Size(400, 800);
+    addTearDown(tester.view.resetPhysicalSize);
+    await flush();
+    expect(find.byType(DataTable), findsNothing);
+    expect(find.text('Updated book'), findsOneWidget);
   });
 }

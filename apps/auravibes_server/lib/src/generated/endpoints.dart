@@ -1869,6 +1869,39 @@ class Endpoints extends _is.EndpointDispatch {
       name: 'workspaceState',
       endpoint: endpoints['workspaceState']!,
       methodConnectors: {
+        'queryRecords': _is.MethodConnector(
+          name: 'queryRecords',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'tableId': _is.ParameterDescription(
+              name: 'tableId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'queryJson': _is.ParameterDescription(
+              name: 'queryJson',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceState']
+                          as _iv99006q.WorkspaceStateEndpoint)
+                      .queryRecords(
+                        session,
+                        params['workspaceId'],
+                        params['tableId'],
+                        params['queryJson'],
+                      ),
+        ),
         'read': _is.MethodConnector(
           name: 'read',
           params: {

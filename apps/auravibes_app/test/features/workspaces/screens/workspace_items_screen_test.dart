@@ -11,11 +11,13 @@ import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_fo
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
@@ -25,6 +27,109 @@ void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
+  });
+
+  testWidgets('Directory keeps creation behind the toolbar type menu', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const WorkspaceItemsScreen(workspaceId: 'one'),
+          overrides: [
+            workspaceTablesProvider.overrideWith((ref, arguments) async => []),
+            workspaceFoldersProvider.overrideWith((ref, arguments) async => []),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(AuraInput), findsNothing);
+    expect(find.text('Directory'), findsWidgets);
+    await tester.tap(find.byKey(const ValueKey('directory_create')));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Folder'), findsOneWidget);
+    expect(find.text('Table'), findsOneWidget);
+  });
+
+  testWidgets('Back and shell remount retain current folder and scroll', (
+    tester,
+  ) async {
+    final folders = OrganizeWorkspaceFoldersUsecase(_MemoryFolders());
+    for (var index = 0; index < 40; index++) {
+      final _ = await folders.create(
+        name: 'Folder${index.toString().padLeft(2, '0')}',
+      );
+    }
+    final generation = ValueNotifier(0);
+    addTearDown(generation.dispose);
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: ValueListenableBuilder<int>(
+            valueListenable: generation,
+            builder: (context, value, child) =>
+                WorkspaceItemsScreen(workspaceId: 'one', key: ValueKey(value)),
+          ),
+          overrides: [
+            workspaceTablesProvider.overrideWith((ref, arguments) async => []),
+            workspaceFolderUsecaseProvider('one')
+                .overrideWith((ref) async => folders),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Folder35'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Folder35'));
+    final _ = await tester.pumpAndSettle();
+    generation.value++;
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Folder35'), findsOneWidget);
+    expect(find.text('Folder00'), findsNothing);
+    await tester.binding.handlePopRoute();
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Folder35').hitTestable(), findsOneWidget);
+    generation.value++;
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Folder35').hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('long press selects and Back exits selection before navigation', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const WorkspaceItemsScreen(workspaceId: 'one'),
+          overrides: [
+            workspaceTablesProvider.overrideWith((ref, arguments) async => []),
+            workspaceFoldersProvider.overrideWith(
+              (ref, arguments) async => [
+                const WorkspaceFolder(
+                  id: 'folder',
+                  name: 'Documents',
+                  revision: 1,
+                ),
+              ],
+            ),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    await tester.longPress(find.text('Documents'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(Checkbox), findsOneWidget);
+    expect(find.byKey(const ValueKey('directory_create')), findsNothing);
+    await tester.binding.handlePopRoute();
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(Checkbox), findsNothing);
+    expect(find.byKey(const ValueKey('directory_create')), findsOneWidget);
   });
 
   for (final key in [
@@ -141,6 +246,7 @@ void main() {
         TestableApp(
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
+            appDatabaseProvider.overrideWithValue(database),
             workspaceTableUsecaseProvider('one')
                 .overrideWith((ref) async => tables),
             workspaceFolderUsecaseProvider('one')
@@ -153,11 +259,13 @@ void main() {
     final _ = await tester.pumpAndSettle();
     final edit = find.byWidgetPredicate(
       (widget) =>
-          widget is AuraIconButton &&
+          widget is AuraPopupMenuButton &&
           widget.identifier == 'workspace_item_edit_${table.id}',
     );
     await tester.ensureVisible(edit);
     await tester.tap(edit);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Rename or move'));
     final _ = await tester.pumpAndSettle();
     await tester.enterText(
       find.byWidgetPredicate(
@@ -224,22 +332,22 @@ void main() {
       );
     });
     final _ = await tester.pumpAndSettle();
-    final button = tester.widget<AuraIconButton>(
+    expect(
       find.byWidgetPredicate(
         (widget) =>
-            widget is AuraIconButton &&
+            widget is AuraPopupMenuButton &&
             widget.identifier == 'workspace_item_edit_read-only',
       ),
+      findsNothing,
     );
-    expect(button.disabled, isTrue);
-    final tableButton = tester.widget<AuraIconButton>(
+    expect(
       find.byWidgetPredicate(
         (widget) =>
-            widget is AuraIconButton &&
+            widget is AuraPopupMenuButton &&
             widget.identifier == 'workspace_item_edit_read-only-table',
       ),
+      findsNothing,
     );
-    expect(tableButton.disabled, isTrue);
   });
 
   testWidgets('folder controls rename and move to another folder', (
@@ -264,11 +372,13 @@ void main() {
     final _ = await tester.pumpAndSettle();
     final edit = find.byWidgetPredicate(
       (widget) =>
-          widget is AuraIconButton &&
+          widget is AuraPopupMenuButton &&
           widget.identifier == 'workspace_item_edit_${original.id}',
     );
     await tester.ensureVisible(edit);
     await tester.tap(edit);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Rename or move'));
     final _ = await tester.pumpAndSettle();
     await tester.enterText(
       find.byWidgetPredicate(
@@ -311,9 +421,13 @@ void main() {
     });
     final _ = await tester.pumpAndSettle();
     expect(
-      find.text('No folders yet. Create a folder to get started.'),
+      find.text('This folder is empty. Use + to create an item.'),
       findsOneWidget,
     );
+    await tester.tap(find.byKey(const ValueKey('directory_create')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Folder'));
+    final _ = await tester.pumpAndSettle();
     await tester.enterText(
       find.byWidgetPredicate(
         (widget) =>
@@ -330,10 +444,8 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
     expect(find.text('My documents'), findsOneWidget);
-    await tester.tap(find.text('My documents'));
-    final _ = await tester.pumpAndSettle();
     expect(
-      find.text('No folders yet. Create a folder to get started.'),
+      find.text('This folder is empty. Use + to create an item.'),
       findsOneWidget,
     );
   });
