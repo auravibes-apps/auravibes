@@ -1,11 +1,10 @@
-import 'workspace_reference_visibility.dart';
-
 import 'dart:convert';
 
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import '../workspaces/domain/workspace_roles.dart';
+import 'workspace_reference_visibility.dart';
 
 /// Resolves table grants against current membership on every request.
 class const WorkspaceTableAccess({final Transaction? transaction}) {
@@ -38,6 +37,7 @@ class const WorkspaceTableAccess({final Transaction? transaction}) {
         (!includeDeleted && table.deletedAt != null)) {
       return false;
     }
+
     return await _TableReader(session, member, transaction).level(table) !=
         null;
   }
@@ -94,14 +94,27 @@ class const _TableReader(
     if (resource.resourceKind == WorkspaceResourceKind.folder) {
       return _visibleFolder(resource, member.role);
     }
+    if (resource.resourceKind == WorkspaceResourceKind.file) {
+      if (resource.deletedAt != null) return null;
+
+      return await _visibleFile(session, resource, member.role, transaction);
+    }
     if (!_isTableResource(resource.resourceKind)) return resource;
     final access = await level(resource);
     if (access == null) return null;
+
     return await _project(resource, access);
   }
 
   Future<bool> canSeeEvent(WorkspaceEvent event) async {
     final kind = _eventKind(event);
+    if (kind == .file) {
+      final id = event.resourceId;
+      if (id == null) return false;
+      final row = await resource(_ResourceKey(event.workspaceId, .file, id));
+
+      return row != null && row.deletedAt == null;
+    }
     if (kind == null || !_isTableResource(kind)) return true;
     final id = event.resourceId;
     if (id == null) return false;
@@ -123,6 +136,7 @@ class const _TableReader(
         transaction,
       ).table(_visibleTable(resource, access));
     }
+
     return await WorkspaceReferenceVisibility(
       session,
       member,
@@ -260,6 +274,41 @@ WorkspaceResource _visibleFolder(WorkspaceResource resource, String role) =>
             role == WorkspaceRoles.owner || role == WorkspaceRoles.admin,
       }),
     );
+
+Future<WorkspaceResource> _visibleFile(
+  Session session,
+  WorkspaceResource resource,
+  String role,
+  Transaction? transaction,
+) async {
+  final data = _data(resource);
+  final objectId = int.tryParse(data['assetId'] as String? ?? '');
+  final object = await WorkspaceObject.db.findFirstRow(
+    session,
+    where: (row) =>
+        row.workspaceId.equals(resource.workspaceId) &
+        row.id.equals(objectId) &
+        row.status.equals('active') &
+        row.deletedAt.equals(null),
+    transaction: transaction,
+  );
+
+  return resource.copyWith(
+    data: jsonEncode({
+      ...data,
+      'canManageFile':
+          role == WorkspaceRoles.owner || role == WorkspaceRoles.admin,
+      if (object != null)
+        'asset': {
+          'id': '${object.id}',
+          'name': object.displayName,
+          'mimeType': object.mimeType,
+          'sizeBytes': object.sizeBytes,
+          'checksum': object.checksumSha256,
+        },
+    }),
+  );
+}
 
 WorkspaceEvent _hiddenEvent(WorkspaceEvent event) => event.copyWith(
   id: null,

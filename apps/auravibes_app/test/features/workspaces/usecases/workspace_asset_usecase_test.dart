@@ -4,8 +4,10 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_file_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_assets_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_trash_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_files_usecase.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
@@ -18,11 +20,11 @@ void main() {
       'workspace-assets-',
     );
     final channel =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    channel.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (_) async => directory.path,
-    );
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          ..setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/path_provider'),
+            (_) async => directory.path,
+          );
     addTearDown(() async {
       channel.setMockMethodCallHandler(
         const MethodChannel('plugins.flutter.io/path_provider'),
@@ -71,17 +73,52 @@ void main() {
         LocalWorkspaceAssetRepository(reopened, 'local', store),
       ),
     );
-    final first = await files.create(name: 'First', assetId: asset.id);
-    final second = await files.create(name: 'Second', assetId: asset.id);
+    final first = await files.create(
+      id: 'first-file',
+      name: 'First',
+      assetId: asset.id,
+    );
+    final second = await files.create(
+      id: 'second-file',
+      name: 'Second',
+      assetId: asset.id,
+    );
     expect(first.id, isNot(second.id));
-    expect(second.asset.id, first.asset.id);
+    expect(second.assetId, first.assetId);
     final renamed = await files.updateMetadata(
       file: first,
       name: 'Renamed',
       parentId: null,
     );
     expect(renamed.id, first.id);
-    expect(renamed.asset.id, asset.id);
+    expect(renamed.assetId, asset.id);
+    final replayed = await files.create(
+      id: first.id,
+      name: 'First',
+      assetId: asset.id,
+    );
+    expect(replayed.name, 'Renamed');
+    expect(replayed.revision, renamed.revision);
+    await expectLater(
+      files.create(id: first.id, name: 'Changed payload', assetId: asset.id),
+      throwsA(isA<WorkspaceAssetException>()),
+    );
+    final trash = ManageWorkspaceTrashUsecase(
+      LocalWorkspaceTrashRepository(reopened, 'local'),
+    );
+    final batch = await trash.apply(
+      .new(kind: .file, id: second.id, revision: second.revision),
+      approve: (_) async => true,
+    );
+    expect(batch, isNotNull);
+    expect((await files.list()).map((file) => file.id), [first.id]);
+    expect((await next.preview(asset.id)).bytes, 'hello'.codeUnits);
+    if (batch == null) {
+      fail('Expected the File Trash batch');
+    }
+    final _ = await trash.restore(batch.id);
+    expect((await files.list()).length, 2);
+
     final _ = await expectLater(
       files.updateMetadata(file: first, name: 'Stale', parentId: null),
       throwsA(

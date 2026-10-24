@@ -20,7 +20,32 @@ class CloudChatAttachmentAdapter({
     getDownload: _gateway.getDownload,
     deleteObject: _gateway.deleteObject,
     readBytes: _readBytes,
+    describeObject: _gateway.describeObject,
   );
+
+  Future<Uint8List> downloadAssetBytes(Uri uri, int expectedBytes) async {
+    if (!uri.isScheme('https') || expectedBytes <= 0) {
+      throw StateError('Invalid private asset download.');
+    }
+    final response = await _dio.get<ResponseBody>(
+      uri.toString(),
+      options: .new(responseType: .stream, followRedirects: false),
+    );
+    final body = response.data;
+    if (body == null) throw StateError('Asset download is unavailable.');
+    final bytes = BytesBuilder(copy: false);
+    await for (final chunk in body.stream) {
+      if (bytes.length + chunk.length > expectedBytes) {
+        throw StateError('Asset download exceeds its declared size.');
+      }
+      bytes.add(chunk);
+    }
+    if (bytes.length != expectedBytes) {
+      throw StateError('Asset download is incomplete.');
+    }
+
+    return bytes.takeBytes();
+  }
 
   Future<Uint8List> _readBytes(String localPath) async {
     final bytes = await ChatAttachmentBytes.read(localPath);

@@ -16,7 +16,11 @@ class const WorkspaceReferenceValidation(
 ) {
   WorkspaceDependentValidation get dependents =>
       WorkspaceDependentValidation(session, member, transaction);
-  Future<void> columns(Map<String, Object?> schema) async {
+  Future<void> columns(
+    Map<String, Object?> schema, {
+    required String tableId,
+    Map<String, Object?> previous = const {},
+  }) async {
     final dependent = _DependentReferences(this);
     for (final column in _columns(schema)) {
       await _target(column['targetTableId'] as String);
@@ -29,9 +33,23 @@ class const WorkspaceReferenceValidation(
           column['id'] as String: column['defaultValue'],
     };
     await ObjectRecordAttachments(session, member, transaction).validate(
-      schema: schema, values: defaults, previous: const {},
-      recordId: '', tableId: '',
+      schema: schema,
+      values: defaults,
+      previous: {
+        for (final column
+            in (previous['columns'] as List? ?? const []).whereType<Map>())
+          if (column['type'] == 'attachment' && column['defaultValue'] != null)
+            column['id'] as String: column['defaultValue'],
+      },
+      recordId: '',
+      tableId: tableId,
     );
+    for (final column in (schema['columns'] as List).whereType<Map>()) {
+      if (column['type'] == 'attachment' &&
+          defaults.containsKey(column['id'])) {
+        column['defaultValue'] = defaults[column['id']];
+      }
+    }
   }
 
   Future<void> values(

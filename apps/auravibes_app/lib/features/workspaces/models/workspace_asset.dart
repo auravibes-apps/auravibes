@@ -13,8 +13,9 @@ class const WorkspaceAsset({
 class const WorkspaceFile({
   required final String id,
   required final String name,
-  required final WorkspaceAsset asset,
+  required final String assetId,
   required final int revision,
+  final WorkspaceAsset? asset,
   final String? parentId,
   final bool canManage = true,
 });
@@ -32,7 +33,9 @@ class const WorkspaceAssetException(final WorkspaceAssetFailure failure)
   String get localizationKey => switch (failure) {
     .denied => LocaleKeys.cloud_errors_permission_denied,
     .conflict => LocaleKeys.cloud_errors_conflict,
-    _ => LocaleKeys.cloud_errors_unavailable,
+    .invalid => LocaleKeys.workspace_assets_invalid,
+    .referenced => LocaleKeys.workspace_assets_referenced,
+    .unavailable => LocaleKeys.workspace_assets_unavailable,
   };
 }
 
@@ -46,6 +49,7 @@ abstract interface class WorkspaceFileRepository {
   Future<List<WorkspaceFile>> list({String? parentId});
   Future<WorkspaceFile> file(String id);
   Future<WorkspaceFile> create({
+    required String id,
     required String name,
     required String assetId,
     String? parentId,
@@ -57,3 +61,11 @@ abstract interface class WorkspaceFileRepository {
     required String? parentId,
   });
 }
+
+enum WorkspaceAssetPreviewKind { image, text, downloadOnly }
+
+class const WorkspaceAssetPreview({
+  required final WorkspaceAsset asset,
+  required final Uint8List bytes,
+  required final WorkspaceAssetPreviewKind kind,
+});

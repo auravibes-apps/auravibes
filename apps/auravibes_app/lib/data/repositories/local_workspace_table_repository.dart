@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_values.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_record_batch_receipt.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_reference_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
@@ -63,17 +64,28 @@ class const LocalWorkspaceTableRepository(
 
   @override
   Future<List<WorkspaceRecord>> records(String tableId) async {
-    final _ = await _tableRow(_database, _workspaceId, tableId);
+    final schema = await _tableRow(_database, _workspaceId, tableId);
     final query = _records(_database, _workspaceId, tableId)
       ..orderBy([_createdOrder, _recordIdOrder]);
     final rows = await query.get();
+    final columns = _columns(schema.columnsJson);
+    if (!columns.any((column) => column.type == .attachment)) {
+      return rows.map(_record).toList();
+    }
 
-    return rows.map(_record).toList();
+    return await Future.wait(
+      rows.map(
+        (row) => LocalWorkspaceAssetValues(
+          _database,
+          _workspaceId,
+        ).project(_columns(schema.columnsJson), _record(row)),
+      ),
+    );
   }
 
   @override
   Future<WorkspaceRecord> record(String tableId, String id) async {
-    final _ = await _tableRow(_database, _workspaceId, tableId);
+    final schema = await _tableRow(_database, _workspaceId, tableId);
     final query = _records(_database, _workspaceId, tableId)
       ..where((row) => row.id.equals(id));
     final row = await query.getSingleOrNull();
@@ -81,7 +93,10 @@ class const LocalWorkspaceTableRepository(
       throw const WorkspaceTableException();
     }
 
-    return _record(row);
+    return await LocalWorkspaceAssetValues(
+      _database,
+      _workspaceId,
+    ).project(_columns(schema.columnsJson), _record(row));
   }
 
   @override
@@ -248,6 +263,10 @@ Future<void> _checkSchema(
 ) async {
   final current = await _tableRow(database, workspaceId, input.table.id);
   final columns = _schemaColumns(current, input.table.schemaRevision);
+  await LocalWorkspaceAssetValues(
+    database,
+    workspaceId,
+  ).preserve(columns, input.values, input.previous);
   WorkspaceColumnValidation.values(columns, input.values);
   await LocalWorkspaceReferenceValidation(
     database,
@@ -662,12 +681,23 @@ class const LocalWorkspaceRecordBatchRepository(
       change.table.schemaRevision,
     );
 
-    return await tables.record(table.id, change.record.id);
+    final row = await (_records(
+      database,
+      workspaceId,
+      table.id,
+    )..where((row) => row.id.equals(change.record.id))).getSingleOrNull();
+    if (row == null) throw const WorkspaceTableException();
+
+    return _record(row);
   }
 
   Future<WorkspaceRecord> _stage(WorkspaceRecordChange change) async {
     final current = await _current(change);
     _checkRecordRevision(current, change.record);
+    await LocalWorkspaceAssetValues(
+      database,
+      workspaceId,
+    ).preserve(change.table.columns, change.values, current.values);
     WorkspaceColumnValidation.values(change.table.columns, change.values);
     final target = (workspaceId: workspaceId, record: current);
     await _writeRecord(database, target, change.values);

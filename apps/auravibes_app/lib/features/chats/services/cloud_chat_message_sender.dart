@@ -154,8 +154,14 @@ extension on CloudChatMessageSender {
 
 extension on CloudChatMessageSender {
   Future<void> _deleteUploaded(_QueueMessageInput input) async {
+    final existing = input.payload.draft.attachments
+        .map((attachment) => attachment.assetId)
+        .whereType<String>()
+        .toSet();
     await input.payload.attachments?.deleteUploaded(
-      input.payload.uploadedObjects,
+      input.payload.uploadedObjects
+          .where((object) => !existing.contains('${object.objectId}'))
+          .toList(),
     );
   }
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../objects/object_attachment_projection.dart';
 import 'workspace_table_access.dart';
 
 class const WorkspaceReferenceVisibility(
@@ -15,6 +16,12 @@ class const WorkspaceReferenceVisibility(
     final table = await _table(data['tableId'] as String);
     if (table == null) return row;
     final restricted = await _restricted(_columns(table));
+    restricted.addAll(
+      await ObjectAttachmentProjection(session, member, transaction).restricted(
+        (_data(table)['columns'] as List).cast<Map<String, dynamic>>(),
+        (data['values'] as Map).cast<String, Object?>(),
+      ),
+    );
 
     return _project(row, data, restricted);
   }
@@ -22,7 +29,19 @@ class const WorkspaceReferenceVisibility(
   Future<WorkspaceResource> table(WorkspaceResource row) async {
     final restricted = await _restricted(_columns(row));
     final data = _data(row);
+    final columns = (data['columns'] as List).cast<Map<String, dynamic>>();
+    restricted.addAll(
+      await ObjectAttachmentProjection(session, member, transaction).restricted(
+        columns,
+        {
+          for (final column in columns)
+            if (column['defaultValue'] != null)
+              column['id'] as String: column['defaultValue'],
+        },
+      ),
+    );
     data['columns'] = _visibleColumns(data, restricted);
+
     return row.copyWith(data: jsonEncode(data));
   }
 
@@ -95,5 +114,6 @@ Map<String, dynamic> _visibleColumn(
   List<String> restricted,
 ) {
   if (!restricted.contains(column['id'])) return column;
+
   return {...column}..remove('defaultValue');
 }

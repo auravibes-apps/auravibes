@@ -20,6 +20,7 @@ class WorkspaceFiles extends Table with TableMixin {
   TextColumn get name => text()();
   TextColumn get parentId => text().nullable()();
   TextColumn get assetId => text().references(WorkspaceAssets, #id)();
+  TextColumn get creationHash => text()();
   IntColumn get revision => integer().withDefault(const Constant(1))();
   DateTimeColumn get deletedAt => dateTime().nullable()();
 }

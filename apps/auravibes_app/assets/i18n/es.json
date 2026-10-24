@@ -1952,6 +1952,33 @@
       "open_error": "No se pudo abrir este enlace. La solicitud sigue pendiente."
     }
   },
+  "workspace_assets": {
+    "saved": "Copia guardada.",
+    "title": "Archivos",
+    "file": "Archivo",
+    "name": "Nombre del archivo",
+    "choose": "Elegir archivo",
+    "create": "Crear archivo",
+    "attachments": "Archivos adjuntos",
+    "add": "Agregar adjunto",
+    "existing": "Elegir del Directorio",
+    "upload": "Subir archivo",
+    "preview": "Vista previa",
+    "save": "Guardar una copia",
+    "unavailable": "Este archivo no está disponible. Revisa tu conexión o acceso y vuelve a intentarlo.",
+    "invalid": "Este archivo no es compatible, no es válido o supera el límite de carga.",
+    "referenced": "Este recurso todavía tiene usos conservados.",
+    "download_only": "Guarda una copia para abrir este archivo con otra aplicación.",
+    "text_truncated": "Vista previa abreviada. Guarda una copia para ver el archivo completo.",
+    "uploaded_retry": "Archivo subido. Vuelve a intentar crear su elemento en el Directorio.",
+    "share_title": "¿Compartir este archivo con el espacio de trabajo?",
+    "share_body": "Crear un Archivo permite que los miembros del espacio accedan a este recurso. Los permisos de la tabla no limitan ese Archivo.",
+    "share": "Compartir archivo",
+    "count": "{} archivos",
+    "remove": "Quitar adjunto",
+    "selected": "Archivo seleccionado",
+    "workspace_readable": "Los miembros del espacio pueden leer este Archivo."
+  },
   "workspace_items": {
     "edit_item": "Renombrar o mover",
     "item_name": "Nombre",

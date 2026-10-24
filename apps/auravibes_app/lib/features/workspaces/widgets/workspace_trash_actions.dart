@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
@@ -51,6 +52,9 @@ abstract final class WorkspaceTrashActions {
 
   static void refresh(WidgetRef ref) {
     ref
+      ..invalidate(workspaceFilesProvider)
+      ..invalidate(workspaceFileProvider)
+      ..invalidate(workspaceAssetPreviewProvider)
       ..invalidate(workspaceFoldersProvider)
       ..invalidate(workspaceTablesProvider)
       ..invalidate(workspaceTableProvider)

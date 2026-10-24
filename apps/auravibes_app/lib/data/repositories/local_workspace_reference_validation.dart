@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_values.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_reference_value.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:drift/drift.dart';
@@ -37,6 +38,10 @@ class const LocalWorkspaceReferenceValidation(
     Map<String, Object?> values, {
     Map<String, Object?> previous = const {},
   }) async {
+    await LocalWorkspaceAssetValues(
+      database,
+      workspaceId,
+    ).preserve(columns, values, previous);
     for (final column in columns.where((column) => column.type == .reference)) {
       await _LocalReferenceValues(this).column(column, values, previous);
     }
@@ -46,6 +51,10 @@ class const LocalWorkspaceReferenceValidation(
       final ids = values[column.id];
       if (ids is! List) continue;
       for (final id in ids.cast<String>()) {
+        if (previous[column.id] case final List<Object?> old
+            when old.contains(id)) {
+          continue;
+        }
         final asset =
             await (database.select(database.workspaceAssets)..where(
                   (row) =>

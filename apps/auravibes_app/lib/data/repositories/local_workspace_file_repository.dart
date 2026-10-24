@@ -1,7 +1,9 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
-import 'package:uuid/v7.dart';
 
 class const LocalWorkspaceFileRepository(
   final AppDatabase database,
@@ -22,33 +24,52 @@ class const LocalWorkspaceFileRepository(
               )
               ..orderBy([(row) => OrderingTerm.asc(row.name)]))
             .get();
-    return Future.wait(rows.map(_file));
+
+    return await Future.wait(rows.map(_file));
   }
 
   @override
-  Future<WorkspaceFile> file(String id) async => _file(await _row(id));
+  Future<WorkspaceFile> file(String id) async => await _file(await _row(id));
 
   @override
   Future<WorkspaceFile> create({
+    required String id,
     required String name,
     required String assetId,
     String? parentId,
     bool sharingApproved = false,
   }) => database.transaction(() async {
     final _ = await assets.asset(assetId);
+    final digest = sha256
+        .convert(utf8.encode(jsonEncode([name, assetId, parentId])))
+        .toString();
+    final existing = await (database.select(
+      database.workspaceFiles,
+    )..where((row) => row.id.equals(id))).getSingleOrNull();
+    if (existing != null) {
+      if (existing.workspaceId != workspaceId ||
+          existing.deletedAt != null ||
+          existing.creationHash != digest) {
+        throw const WorkspaceAssetException(.conflict);
+      }
+
+      return await _file(existing);
+    }
     await _parent(parentId);
     final row = await database
         .into(database.workspaceFiles)
         .insertReturning(
           WorkspaceFilesCompanion.insert(
-            id: .new(const UuidV7().generate()),
+            id: .new(id),
             workspaceId: workspaceId,
             name: name,
-            assetId: assetId,
             parentId: .new(parentId),
+            assetId: assetId,
+            creationHash: digest,
           ),
         );
-    return _file(row);
+
+    return await _file(row);
   });
 
   @override
@@ -58,8 +79,9 @@ class const LocalWorkspaceFileRepository(
     required String? parentId,
   }) => database.transaction(() async {
     final existing = await _row(file.id);
-    if (existing.revision != file.revision)
+    if (existing.revision != file.revision) {
       throw const WorkspaceAssetException(.conflict);
+    }
     await _parent(parentId);
     final _ =
         await (database.update(database.workspaceFiles)..where(
@@ -68,13 +90,14 @@ class const LocalWorkspaceFileRepository(
             ))
             .write(
               WorkspaceFilesCompanion(
+                updatedAt: .new(DateTime.now()),
                 name: .new(name),
                 parentId: .new(parentId),
                 revision: .new(existing.revision + 1),
-                updatedAt: .new(DateTime.now()),
               ),
             );
-    return this.file(file.id);
+
+    return await this.file(file.id);
   });
 
   Future<WorkspaceFileRow> _row(String id) async {
@@ -87,16 +110,27 @@ class const LocalWorkspaceFileRepository(
             ))
             .getSingleOrNull();
     if (row == null) throw const WorkspaceAssetException(.denied);
+
     return row;
   }
 
-  Future<WorkspaceFile> _file(WorkspaceFileRow row) async => WorkspaceFile(
-    id: row.id,
-    name: row.name,
-    parentId: row.parentId,
-    revision: row.revision,
-    asset: await assets.asset(row.assetId),
-  );
+  Future<WorkspaceFile> _file(WorkspaceFileRow row) async {
+    WorkspaceAsset? asset;
+    try {
+      asset = await assets.asset(row.assetId);
+    } on WorkspaceAssetException catch (error) {
+      if (error.failure != .denied && error.failure != .unavailable) rethrow;
+    }
+
+    return WorkspaceFile(
+      id: row.id,
+      name: row.name,
+      assetId: row.assetId,
+      revision: row.revision,
+      asset: asset,
+      parentId: row.parentId,
+    );
+  }
 
   Future<void> _parent(String? id) async {
     if (id == null) return;

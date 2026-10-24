@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_values.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_record_query_sql.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_query_filter_validation.dart';
@@ -47,7 +48,22 @@ class const LocalWorkspaceRecordQueryRepository(
   ) async {
     final rows = await _read(statement);
 
-    return _page(rows, query.limit);
+    final page = _page(rows, query.limit);
+    if (!statement.table.columns.any((column) => column.type == .attachment)) {
+      return page;
+    }
+
+    return WorkspaceRecordPage(
+      records: await Future.wait(
+        page.records.map(
+          (record) => LocalWorkspaceAssetValues(
+            database,
+            workspaceId,
+          ).project(statement.table.columns, record),
+        ),
+      ),
+      hasMore: page.hasMore,
+    );
   }
 
   Future<void> _reference(

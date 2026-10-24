@@ -67,4 +67,4 @@ void validateWorkspaceTrashTarget(WorkspaceTrashTarget target) {
   }
 }
 
-enum WorkspaceTrashKind { folder, table, record, view }
+enum WorkspaceTrashKind { folder, table, record, view, file }

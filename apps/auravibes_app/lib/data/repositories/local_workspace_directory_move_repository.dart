@@ -27,6 +27,8 @@ class const LocalWorkspaceDirectoryMoveRepository(
         await _folder(item, parentId);
       case .table:
         await _table(item, parentId);
+      case .file:
+        await _file(item, parentId);
       case .view:
         final _ = await LocalWorkspaceViewRepository(database, workspaceId)
             .move(
@@ -36,6 +38,37 @@ class const LocalWorkspaceDirectoryMoveRepository(
               name: item.metadataName,
             );
     }
+  }
+
+  Future<void> _file(WorkspaceDirectoryMoveItem item, String? parentId) async {
+    final current =
+        await (database.select(database.workspaceFiles)..where(
+              (row) =>
+                  row.id.equals(item.key.id) &
+                  row.workspaceId.equals(workspaceId) &
+                  row.deletedAt.isNull(),
+            ))
+            .getSingleOrNull();
+    if (current == null) throw const WorkspaceTableException(denied: true);
+    if (current.revision != item.revision) {
+      throw const WorkspaceTableException(conflict: true);
+    }
+    if (parentId != null) {
+      final _ = await _currentFolder(parentId);
+    }
+    final _ =
+        await (database.update(database.workspaceFiles)..where(
+              (row) =>
+                  row.id.equals(current.id) &
+                  row.workspaceId.equals(workspaceId),
+            ))
+            .write(
+              WorkspaceFilesCompanion(
+                updatedAt: .new(DateTime.now()),
+                parentId: .new(parentId),
+                revision: .new(current.revision + 1),
+              ),
+            );
   }
 
   Future<void> _folder(

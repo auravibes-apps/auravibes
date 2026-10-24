@@ -669,3 +669,57 @@ Root visually compared the worker's production-widget captures before/after at40
 Current PR head66a6403d was conflicting with main, so pull-request Flutter CI did not start. Main dd2af7eba adds isolated self-leasing server tests/handoff guidance, Flutter3.47.8 and the Dart3.13.7 server image. Main is merged into this feature branch only. The sole conflict was README integration commands: retained explicit project scoping and omitted remove-orphans, adopted main's self-leasing test entrypoint without an outer lease. Feature code and existing acceptance commits remain preserved.
 
 Post-merge FVM setup/bootstrap and clean generated/scoped combined checks are pending. Earlier3.47.7 local proofs remain historical; baseline rendering comparisons need renewed verification if used under the changed toolchain. Main was not modified, merged into or deployed.
+
+### #1681 shared assets — active candidate, not accepted (2026-10-24)
+
+Owner: `feat/1681-workspace-assets`, based on integration `d88c57a8`;
+foundation commits `a38bf5a6`, `991724916`, merge `8e0daee34`.
+Uncommitted work continues; parent must not close this ticket yet.
+
+Verified with Flutter 3.47.8: local asset/SQLite reopen and File lifecycle,
+stable creation replay, optimistic conflict, one shared File in Trash preserving
+other uses, restoration. Authenticated server regressions verify current grants,
+private-source sharing approval, unavailable attachment field projection and
+preservation during unrelated edits. CSV attachment JSON decoding preserves
+stable IDs, rejects guessed IDs, hides unavailable IDs on export, and preserves
+retained references during edits. Each authorization/projection fix has a genuine
+failing regression before its passing result. Evidence logs:
+`/tmp/auravibes-1681-file-lifecycle.log`,
+`/tmp/auravibes-1681-asset-projection-{red,green}.log`,
+`/tmp/auravibes-1681-preserve-assets-{red,green}.log`,
+`/tmp/auravibes-1681-csv-{red,green}.log`,
+`/tmp/auravibes-1681-local-projection-{red,green}.log`.
+
+Candidate UI includes current-folder File listing, toolbar type creation,
+metadata/move/Trash paths, safe image/text previews and explicit Save,
+multiple attachment editing, and existing File selection. UI/fatal/strict gates
+remain active. Cloud bytes are transient; local web uses hidden durable OPFS
+with explicit unsupported-context failure. No native UI verification is claimed.
+
+Remaining: full Conversation reuse, bounded host View asset previews, schema
+40/41 integration, historical/default attachment authorization and reachability,
+reference-aware configurable cleanup, browser/production-widget parity proof,
+and final standards/generated/review checks. No unavailable credential or owner
+decision currently blocks independent implementation. Exact continuation lives
+in `/Users/davidlondono/.codex/implementation-checkpoints/workspace-assets-1681.md`.
+
+### #1681 verification follow-up (2026-10-24)
+
+File/View production-widget regressions now pass for hidden stale previews during
+authorization refresh, creation-backend failure/reload, and host-controlled View
+assets without exposing stable IDs to generated data. Oversized preview metadata
+is rejected before downloading bytes (genuine RED then GREEN). The two existing
+Directory View reopen timeouts reproduce on clean integration d88c57a83 at both
+400/1200 widths; snapshots and tests remain unchanged. The added File-loading
+scroll regression is fixed and all 11 Directory Items checks pass.
+
+Final analyzer brace diagnostics were fixed; reruns and new-method strict metric
+cleanup remain pending. Conversation reuse, History40 integration, retention and
+cleanup remain incomplete. This evidence does not close #1681.
+
+Shared cloud chat attachment preparation now reauthorizes existing stable IDs and
+avoids byte cloning. A failed later upload cleans up only objects created by that
+attempt; existing assets remain intact. Three new regressions failed first, then
+passed with five legacy attachment checks. Local chat persistence, audience
+validation, and retention still need completion. History contract checkpoint
+49e0c20b is available for schema 40/41 integration.

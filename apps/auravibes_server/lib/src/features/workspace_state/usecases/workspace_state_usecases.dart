@@ -1,5 +1,4 @@
 import 'dart:convert';
-import '../../objects/object_file_mutation.dart';
 import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
@@ -8,6 +7,7 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../../mcp_servers/mcp_server_headers.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
+import '../../objects/object_file_mutation.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
@@ -79,6 +79,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             afterSequence: after,
             limit: request.eventLimit,
           );
+
     return ReadWorkspaceStateResponse(
       pages: pages,
       currentSequence: workspace.sequence,
@@ -120,6 +121,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             WorkspaceResourceKind.folder,
             WorkspaceResourceKind.table,
             WorkspaceResourceKind.tableRecord,
+            WorkspaceResourceKind.file,
           }.contains(operation.resourceKind),
     )) {
       throw CloudWorkspaceException(code: .validationFailed);
@@ -240,6 +242,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
+
         return PatchWorkspaceStateResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
@@ -250,6 +253,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         request,
         transaction,
       );
+
       return _commitOperations(
         session,
         workspace: workspace,
@@ -274,14 +278,17 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     required Iterable<WorkspacePatchOperation> operations,
     required Transaction transaction,
   }) async {
-    return await _commitPrepared((
-      session: session,
-      workspace: workspace,
-      workspaceId: workspaceId,
-      metadata: metadata,
-      transaction: transaction,
-      now: DateTime.now().toUtc(),
-    ), operations);
+    return await _commitPrepared(
+      (
+        session: session,
+        workspace: workspace,
+        workspaceId: workspaceId,
+        metadata: metadata,
+        transaction: transaction,
+        now: DateTime.now().toUtc(),
+      ),
+      operations,
+    );
   }
 
   Future<PatchWorkspaceStateResponse> _commitPrepared(
@@ -434,6 +441,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           .visible(session, member, row);
       if (visible != null) resources.add(visible);
     }
+
     return response.copyWith(resources: resources);
   }
 
@@ -451,6 +459,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final hash = base64UrlEncode(
       (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
     );
+
     return session.db.transaction((transaction) async {
       final member = await _authorize(
         session,
@@ -478,6 +487,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
+
         return PutWorkspaceSecretResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
@@ -582,6 +592,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         now: now,
         transaction: transaction,
       );
+
       return response;
     });
   }
@@ -623,6 +634,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final hash = base64UrlEncode(
       (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
     );
+
     return session.db.transaction((transaction) async {
       final member = await _authorize(
         session,
@@ -651,6 +663,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
+
         return MutateWorkspaceCredentialResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
@@ -795,6 +808,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           now: now,
           transaction: transaction,
         );
+
         return response;
       }
       final box = secret == null
@@ -893,6 +907,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         now: now,
         transaction: transaction,
       );
+
       return response;
     });
   }
@@ -922,6 +937,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       ..['hasSecret'] = configured;
     if (displaySuffix != null) decoded['keySuffix'] = displaySuffix;
     if (secretRevision != null) decoded['secretRevision'] = secretRevision;
+
     return WorkspacePatchOperation(
       operation: operation.operation,
       resourceKind: operation.resourceKind,
@@ -1116,6 +1132,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     if (value is List) return value.any(_containsSecretData);
     if (value is! Map) return false;
     const secretKeys = {'secret', 'token', 'apiKey', 'password', 'credential'};
+
     return value.entries.any(
       (entry) =>
           (entry.key is String && secretKeys.contains(entry.key)) ||
@@ -1146,6 +1163,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         code: CloudWorkspaceErrorCode.membershipRequired,
       );
     }
+
     return member;
   }
 
@@ -1221,6 +1239,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       ),
     ];
     if (operations.length > _maxOperations) _validationFailed();
+
     return operations;
   }
 
@@ -1387,11 +1406,18 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           deferRecordState: deferRecordState,
         ).validate(operation, decoded, existing);
         if (operation.resourceKind == WorkspaceResourceKind.file) {
-          await ObjectFileMutation(session, workspaceId, userId, transaction)
-              .validate(decoded, existing);
+          await ObjectFileMutation(
+            session,
+            workspaceId,
+            userId,
+            transaction,
+          ).validate(decoded, existing);
           validatedData = jsonEncode(decoded);
         }
-        if (operation.resourceKind == WorkspaceResourceKind.tableRecord) {
+        if ({
+          WorkspaceResourceKind.table,
+          WorkspaceResourceKind.tableRecord,
+        }.contains(operation.resourceKind)) {
           validatedData = jsonEncode(decoded);
         }
         if (operation.resourceKind == WorkspaceResourceKind.folder) {
@@ -1415,6 +1441,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           operation.expectedRevision != null) {
         throw CloudWorkspaceException(code: CloudWorkspaceErrorCode.conflict);
       }
+
       return WorkspaceResource.db.insertRow(
         session,
         WorkspaceResource(
@@ -1466,6 +1493,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
     }
+
     return WorkspaceResource.db.updateRow(
       session,
       updated,
@@ -1523,8 +1551,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       session,
       WorkspaceMutationReceipt(
         workspaceId: workspaceId,
-        actorUserId: userId,
         scopeKey: WorkspaceResourceValidation.receiptScopeKey(workspaceId),
+        actorUserId: userId,
         endpoint: endpoint,
         requestId: requestId,
         requestHash: hash,

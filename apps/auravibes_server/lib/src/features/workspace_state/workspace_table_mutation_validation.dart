@@ -38,19 +38,32 @@ class WorkspaceTableMutationValidation(
   ) async {
     if (_schemaRevision(data, existing)) return;
     final references = await _references();
-    await references.columns(data);
+    await references.columns(
+      data,
+      tableId: id,
+      previous: existing == null ? const {} : _decode(existing),
+    );
     await references.dependents.schema(id, data);
     final records = await _records(id);
     WorkspaceTableConstraints.records(data, records.values);
-    final oldAttachmentColumns = existing == null ? <String>{} :
-      (_decode(existing)['columns'] as List).whereType<Map>()
-        .where((column) => column['type'] == 'attachment')
-        .map((column) => column['id'] as String).toSet();
+    final oldAttachmentColumns = existing == null
+        ? <String>{}
+        : (_decode(existing)['columns'] as List)
+              .whereType<Map>()
+              .where((column) => column['type'] == 'attachment')
+              .map((column) => column['id'] as String)
+              .toSet();
     for (final entry in records.entries) {
-      await references.values(data, entry.value, {
-        for (final id in oldAttachmentColumns)
-          if (entry.value.containsKey(id)) id: entry.value[id],
-      }, recordId: entry.key, tableId: id);
+      await references.values(
+        data,
+        entry.value,
+        {
+          for (final id in oldAttachmentColumns)
+            if (entry.value.containsKey(id)) id: entry.value[id],
+        },
+        recordId: entry.key,
+        tableId: id,
+      );
     }
   }
 

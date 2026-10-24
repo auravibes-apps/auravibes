@@ -14,6 +14,7 @@ class const ObjectFileMutation(
   final String userId,
   final Transaction transaction, {
   final String? excludedRecordId,
+  final String? excludedTableId,
 }) {
   Future<void> validate(
     Map<String, Object?> data,
@@ -21,6 +22,11 @@ class const ObjectFileMutation(
   ) async {
     final id = int.tryParse(data['assetId'] as String? ?? '');
     if (id == null) throw const FormatException();
+    if (previous != null &&
+        (jsonDecode(previous.data) as Map)['assetId'] == '$id') {
+      data.remove('sharingApproved');
+      return;
+    }
     final repository = ObjectRepository();
     final object = await repository.findObject(
       session,
@@ -29,13 +35,10 @@ class const ObjectFileMutation(
       transaction: transaction,
       lock: true,
     );
-    if (object == null || object.status != 'active' || object.deletedAt != null) {
+    if (object == null ||
+        object.status != 'active' ||
+        object.deletedAt != null) {
       _denied();
-    }
-    if (previous != null &&
-        (jsonDecode(previous.data) as Map)['assetId'] == '$id') {
-      data.remove('sharingApproved');
-      return;
     }
     final member = await workspace_repo.CloudWorkspaceRepository()
         .findActiveMember(
@@ -50,6 +53,7 @@ class const ObjectFileMutation(
       member,
       transaction: transaction,
       excludedRecordId: excludedRecordId,
+      excludedTableId: excludedTableId,
     );
     final upload = await repository.findUpload(
       session,

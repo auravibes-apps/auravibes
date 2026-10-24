@@ -127,7 +127,17 @@ class WorkspaceResourceValidation {
     }
     if (kind == WorkspaceResourceKind.file &&
         (data['assetId'] is! String ||
-            int.tryParse(data['assetId'] as String) == null)) {
+            int.tryParse(data['assetId'] as String) == null ||
+            data.keys.any(
+              (key) => !const {
+                'id',
+                'workspaceId',
+                'name',
+                'parentId',
+                'assetId',
+                'sharingApproved',
+              }.contains(key),
+            ))) {
       throw const FormatException();
     }
     if (kind == WorkspaceResourceKind.tableRecord) {

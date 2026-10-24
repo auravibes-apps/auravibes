@@ -19621,6 +19621,17 @@ class $WorkspaceFilesTable extends WorkspaceFiles
       'REFERENCES workspace_assets (id)',
     ),
   );
+  static const VerificationMeta _creationHashMeta = const VerificationMeta(
+    'creationHash',
+  );
+  @override
+  late final GeneratedColumn<String> creationHash = GeneratedColumn<String>(
+    'creation_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _revisionMeta = const VerificationMeta(
     'revision',
   );
@@ -19653,6 +19664,7 @@ class $WorkspaceFilesTable extends WorkspaceFiles
     name,
     parentId,
     assetId,
+    creationHash,
     revision,
     deletedAt,
   ];
@@ -19716,6 +19728,17 @@ class $WorkspaceFilesTable extends WorkspaceFiles
     } else if (isInserting) {
       context.missing(_assetIdMeta);
     }
+    if (data.containsKey('creation_hash')) {
+      context.handle(
+        _creationHashMeta,
+        creationHash.isAcceptableOrUnknown(
+          data['creation_hash']!,
+          _creationHashMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_creationHashMeta);
+    }
     if (data.containsKey('revision')) {
       context.handle(
         _revisionMeta,
@@ -19765,6 +19788,10 @@ class $WorkspaceFilesTable extends WorkspaceFiles
         DriftSqlType.string,
         data['${effectivePrefix}asset_id'],
       )!,
+      creationHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}creation_hash'],
+      )!,
       revision: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}revision'],
@@ -19796,6 +19823,7 @@ class WorkspaceFileRow extends DataClass
   final String name;
   final String? parentId;
   final String assetId;
+  final String creationHash;
   final int revision;
   final DateTime? deletedAt;
   const WorkspaceFileRow({
@@ -19806,6 +19834,7 @@ class WorkspaceFileRow extends DataClass
     required this.name,
     this.parentId,
     required this.assetId,
+    required this.creationHash,
     required this.revision,
     this.deletedAt,
   });
@@ -19821,6 +19850,7 @@ class WorkspaceFileRow extends DataClass
       map['parent_id'] = Variable<String>(parentId);
     }
     map['asset_id'] = Variable<String>(assetId);
+    map['creation_hash'] = Variable<String>(creationHash);
     map['revision'] = Variable<int>(revision);
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
@@ -19839,6 +19869,7 @@ class WorkspaceFileRow extends DataClass
           ? const Value.absent()
           : Value(parentId),
       assetId: Value(assetId),
+      creationHash: Value(creationHash),
       revision: Value(revision),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
@@ -19859,6 +19890,7 @@ class WorkspaceFileRow extends DataClass
       name: serializer.fromJson<String>(json['name']),
       parentId: serializer.fromJson<String?>(json['parentId']),
       assetId: serializer.fromJson<String>(json['assetId']),
+      creationHash: serializer.fromJson<String>(json['creationHash']),
       revision: serializer.fromJson<int>(json['revision']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
     );
@@ -19874,6 +19906,7 @@ class WorkspaceFileRow extends DataClass
       'name': serializer.toJson<String>(name),
       'parentId': serializer.toJson<String?>(parentId),
       'assetId': serializer.toJson<String>(assetId),
+      'creationHash': serializer.toJson<String>(creationHash),
       'revision': serializer.toJson<int>(revision),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
     };
@@ -19887,6 +19920,7 @@ class WorkspaceFileRow extends DataClass
     String? name,
     Value<String?> parentId = const Value.absent(),
     String? assetId,
+    String? creationHash,
     int? revision,
     Value<DateTime?> deletedAt = const Value.absent(),
   }) => WorkspaceFileRow(
@@ -19897,6 +19931,7 @@ class WorkspaceFileRow extends DataClass
     name: name ?? this.name,
     parentId: parentId.present ? parentId.value : this.parentId,
     assetId: assetId ?? this.assetId,
+    creationHash: creationHash ?? this.creationHash,
     revision: revision ?? this.revision,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
@@ -19911,6 +19946,9 @@ class WorkspaceFileRow extends DataClass
       name: data.name.present ? data.name.value : this.name,
       parentId: data.parentId.present ? data.parentId.value : this.parentId,
       assetId: data.assetId.present ? data.assetId.value : this.assetId,
+      creationHash: data.creationHash.present
+          ? data.creationHash.value
+          : this.creationHash,
       revision: data.revision.present ? data.revision.value : this.revision,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
@@ -19926,6 +19964,7 @@ class WorkspaceFileRow extends DataClass
           ..write('name: $name, ')
           ..write('parentId: $parentId, ')
           ..write('assetId: $assetId, ')
+          ..write('creationHash: $creationHash, ')
           ..write('revision: $revision, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -19941,6 +19980,7 @@ class WorkspaceFileRow extends DataClass
     name,
     parentId,
     assetId,
+    creationHash,
     revision,
     deletedAt,
   );
@@ -19955,6 +19995,7 @@ class WorkspaceFileRow extends DataClass
           other.name == this.name &&
           other.parentId == this.parentId &&
           other.assetId == this.assetId &&
+          other.creationHash == this.creationHash &&
           other.revision == this.revision &&
           other.deletedAt == this.deletedAt);
 }
@@ -19967,6 +20008,7 @@ class WorkspaceFilesCompanion extends UpdateCompanion<WorkspaceFileRow> {
   final Value<String> name;
   final Value<String?> parentId;
   final Value<String> assetId;
+  final Value<String> creationHash;
   final Value<int> revision;
   final Value<DateTime?> deletedAt;
   final Value<int> rowid;
@@ -19978,6 +20020,7 @@ class WorkspaceFilesCompanion extends UpdateCompanion<WorkspaceFileRow> {
     this.name = const Value.absent(),
     this.parentId = const Value.absent(),
     this.assetId = const Value.absent(),
+    this.creationHash = const Value.absent(),
     this.revision = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -19990,12 +20033,14 @@ class WorkspaceFilesCompanion extends UpdateCompanion<WorkspaceFileRow> {
     required String name,
     this.parentId = const Value.absent(),
     required String assetId,
+    required String creationHash,
     this.revision = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
        name = Value(name),
-       assetId = Value(assetId);
+       assetId = Value(assetId),
+       creationHash = Value(creationHash);
   static Insertable<WorkspaceFileRow> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -20004,6 +20049,7 @@ class WorkspaceFilesCompanion extends UpdateCompanion<WorkspaceFileRow> {
     Expression<String>? name,
     Expression<String>? parentId,
     Expression<String>? assetId,
+    Expression<String>? creationHash,
     Expression<int>? revision,
     Expression<DateTime>? deletedAt,
     Expression<int>? rowid,
@@ -20016,6 +20062,7 @@ class WorkspaceFilesCompanion extends UpdateCompanion<WorkspaceFileRow> {
       if (name != null) 'name': name,
       if (parentId != null) 'parent_id': parentId,
       if (assetId != null) 'asset_id': assetId,
+      if (creationHash != null) 'creation_hash': creationHash,
       if (revision != null) 'revision': revision,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
@@ -20030,6 +20077,7 @@ class WorkspaceFilesCompanion extends UpdateCompanion<WorkspaceFileRow> {
     Value<String>? name,
     Value<String?>? parentId,
     Value<String>? assetId,
+    Value<String>? creationHash,
     Value<int>? revision,
     Value<DateTime?>? deletedAt,
     Value<int>? rowid,
@@ -20042,6 +20090,7 @@ class WorkspaceFilesCompanion extends UpdateCompanion<WorkspaceFileRow> {
       name: name ?? this.name,
       parentId: parentId ?? this.parentId,
       assetId: assetId ?? this.assetId,
+      creationHash: creationHash ?? this.creationHash,
       revision: revision ?? this.revision,
       deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
@@ -20072,6 +20121,9 @@ class WorkspaceFilesCompanion extends UpdateCompanion<WorkspaceFileRow> {
     if (assetId.present) {
       map['asset_id'] = Variable<String>(assetId.value);
     }
+    if (creationHash.present) {
+      map['creation_hash'] = Variable<String>(creationHash.value);
+    }
     if (revision.present) {
       map['revision'] = Variable<int>(revision.value);
     }
@@ -20094,6 +20146,7 @@ class WorkspaceFilesCompanion extends UpdateCompanion<WorkspaceFileRow> {
           ..write('name: $name, ')
           ..write('parentId: $parentId, ')
           ..write('assetId: $assetId, ')
+          ..write('creationHash: $creationHash, ')
           ..write('revision: $revision, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
@@ -39184,6 +39237,7 @@ typedef $$WorkspaceFilesTableCreateCompanionBuilder =
       required String name,
       Value<String?> parentId,
       required String assetId,
+      required String creationHash,
       Value<int> revision,
       Value<DateTime?> deletedAt,
       Value<int> rowid,
@@ -39197,6 +39251,7 @@ typedef $$WorkspaceFilesTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String?> parentId,
       Value<String> assetId,
+      Value<String> creationHash,
       Value<int> revision,
       Value<DateTime?> deletedAt,
       Value<int> rowid,
@@ -39278,6 +39333,11 @@ class $$WorkspaceFilesTableFilterComposer
 
   ColumnFilters<String> get parentId => $composableBuilder(
     column: $table.parentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get creationHash => $composableBuilder(
+    column: $table.creationHash,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -39372,6 +39432,11 @@ class $$WorkspaceFilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get creationHash => $composableBuilder(
+    column: $table.creationHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get revision => $composableBuilder(
     column: $table.revision,
     builder: (column) => ColumnOrderings(column),
@@ -39452,6 +39517,11 @@ class $$WorkspaceFilesTableAnnotationComposer
 
   GeneratedColumn<String> get parentId =>
       $composableBuilder(column: $table.parentId, builder: (column) => column);
+
+  GeneratedColumn<String> get creationHash => $composableBuilder(
+    column: $table.creationHash,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get revision =>
       $composableBuilder(column: $table.revision, builder: (column) => column);
@@ -39543,6 +39613,7 @@ class $$WorkspaceFilesTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String?> parentId = const Value.absent(),
                 Value<String> assetId = const Value.absent(),
+                Value<String> creationHash = const Value.absent(),
                 Value<int> revision = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -39554,6 +39625,7 @@ class $$WorkspaceFilesTableTableManager
                 name: name,
                 parentId: parentId,
                 assetId: assetId,
+                creationHash: creationHash,
                 revision: revision,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -39567,6 +39639,7 @@ class $$WorkspaceFilesTableTableManager
                 required String name,
                 Value<String?> parentId = const Value.absent(),
                 required String assetId,
+                required String creationHash,
                 Value<int> revision = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -39578,6 +39651,7 @@ class $$WorkspaceFilesTableTableManager
                 name: name,
                 parentId: parentId,
                 assetId: assetId,
+                creationHash: creationHash,
                 revision: revision,
                 deletedAt: deletedAt,
                 rowid: rowid,

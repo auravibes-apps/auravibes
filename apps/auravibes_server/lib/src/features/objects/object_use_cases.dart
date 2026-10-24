@@ -8,6 +8,7 @@ import '../workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'object_policy.dart';
 import 'object_item_access.dart';
+import 'object_mutation_access.dart';
 import 'object_repository.dart';
 import 'object_scanner.dart';
 import 'object_store.dart';
@@ -402,6 +403,11 @@ class ObjectUseCases {
         userId,
         transaction: transaction,
       );
+      await ObjectMutationAccess(
+        session,
+        member,
+        transaction,
+      ).requireDelete(request.objectId);
       final replay = await repository.findDeletionByRequest(
         session,
         workspaceId: request.workspaceId,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_assets.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chart.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_detail.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_editor.dart';
@@ -172,20 +173,21 @@ class const _LoadState(final WorkspaceViewScreen owner)
       ),
     );
 
-    return _PageState(state, offset);
+    return _PageState(state, offset, owner.workspaceId);
   }
 }
 
 class const _PageState(
   final AsyncValue<WorkspaceViewData> state,
   final ValueNotifier<int> offset,
+  final String workspaceId,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state.isLoading) return _Waiting(stale: state.hasValue);
 
     return switch (state) {
-      AsyncData(:final value) => _Page(value, offset),
+      AsyncData(:final value) => _Page(value, offset, workspaceId),
       AsyncError(:final error) => Center(
         child: WorkspaceItemFailure(error: error),
       ),
@@ -211,12 +213,15 @@ class const _Waiting({required final bool stale}) extends StatelessWidget {
   );
 }
 
-class const _Page(final WorkspaceViewData data, final ValueNotifier<int> offset)
-    extends StatelessWidget {
+class const _Page(
+  final WorkspaceViewData data,
+  final ValueNotifier<int> offset,
+  final String workspaceId,
+) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Expanded(child: _Content(data)),
+      Expanded(child: _Content(data, workspaceId)),
       _Pages(data, offset),
     ],
   );
@@ -292,7 +297,8 @@ class const _Selected(
         );
 }
 
-class const _Content(final WorkspaceViewData data) extends HookWidget {
+class const _Content(final WorkspaceViewData data, final String workspaceId)
+    extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final selected = useState<String?>(null);
@@ -304,6 +310,7 @@ class const _Content(final WorkspaceViewData data) extends HookWidget {
         const TextLocale(LocaleKeys.workspace_views_display_only),
         _DataSurface(data, selected),
         WorkspaceViewSummary(data: data),
+        WorkspaceViewAssets(workspaceId: workspaceId, data: data),
       ],
     );
   }

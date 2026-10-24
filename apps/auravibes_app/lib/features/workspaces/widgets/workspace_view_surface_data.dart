@@ -99,6 +99,9 @@ Object? _formatted(WorkspaceViewData data, WorkspaceRecord record, String id) {
 }
 
 Object? _columnValue(WorkspaceColumn? column, Object? value) {
+  if (column?.type == .attachment) {
+    return LocaleKeys.workspace_assets_attachments.tr();
+  }
   if (column?.type == .timestamp && value is String) {
     return WorkspaceTimeZones.display(value, column?.timeZone ?? 'UTC');
   }

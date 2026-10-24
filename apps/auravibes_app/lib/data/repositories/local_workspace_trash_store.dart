@@ -56,6 +56,7 @@ class const LocalWorkspaceTrashStore(
       WorkspaceTrashKind.table,
       WorkspaceTrashKind.record,
       WorkspaceTrashKind.view,
+      WorkspaceTrashKind.file,
     ])
       ...await _nodes(kind),
   ];
@@ -100,6 +101,7 @@ class const LocalWorkspaceTrashStore(
       database.workspaceFolders,
       database.workspaceTables,
       database.workspaceTableRecords,
+      database.workspaceFiles,
     },
     updateKind: .update,
   );
@@ -110,6 +112,7 @@ String _table(WorkspaceTrashKind kind) => switch (kind) {
   .table => 'workspace_tables',
   .record => 'workspace_table_records',
   .view => 'workspace_views',
+  .file => 'workspace_files',
 };
 LocalTrashNode _node(WorkspaceTrashKind kind, QueryRow row) =>
     .fromJson({..._identity(kind, row), ..._content(row)});
@@ -132,6 +135,7 @@ String _nodeColumns(WorkspaceTrashKind kind) => switch (kind) {
         r'''json_extract(data, '$.name') AS name, '''
         r'''json_extract(data, '$.parentId') AS parent_id, '''
         r'''json_extract(data, '$.tableId') AS table_id''',
+  .file ||
   .folder ||
   .table => 'id, revision, deleted_at, name, parent_id, NULL AS table_id',
 };

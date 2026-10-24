@@ -27,6 +27,7 @@ class const WorkspaceTrashAccess(
       transaction: transaction,
     );
     if (workspace == null || member == null) trashDenied();
+
     return (member: member, workspace: workspace);
   }
 
@@ -42,7 +43,11 @@ class const WorkspaceTrashAccess(
     WorkspaceResource resource,
   ) async {
     if (member.role == WorkspaceRoles.owner) return true;
+    if (member.role == WorkspaceRoles.admin && resource.resourceKind == .file) {
+      return true;
+    }
     if (resource.resourceKind != .tableRecord) return false;
+
     return await _grant(resource) == 'edit';
   }
 
@@ -51,11 +56,15 @@ class const WorkspaceTrashAccess(
     WorkspaceResource resource,
   ) async {
     if (member.role == WorkspaceRoles.owner) return true;
+    if (member.role == WorkspaceRoles.admin && resource.resourceKind == .file) {
+      return true;
+    }
     if (resource.resourceKind != .tableRecord &&
         resource.resourceKind != .table) {
       return false;
     }
     final grant = await _grant(resource);
+
     return grant == 'read' || grant == 'edit';
   }
 
@@ -64,6 +73,7 @@ class const WorkspaceTrashAccess(
         ? resource
         : await _table(resource);
     final grants = table == null ? null : trashData(table)['memberAccess'];
+
     return grants is Map ? grants[userId] : null;
   }
 

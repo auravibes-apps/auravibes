@@ -8,11 +8,13 @@ class const OrganizeWorkspaceFilesUsecase(
   Future<WorkspaceFile> file(String id) => repository.file(id);
 
   Future<WorkspaceFile> create({
+    required String id,
     required String name,
     required String assetId,
     String? parentId,
     bool sharingApproved = false,
   }) => repository.create(
+    id: id,
     name: _name(name),
     assetId: assetId,
     parentId: parentId,
@@ -39,5 +41,6 @@ String _name(String name) {
   if (normalized.isEmpty || normalized.length > 200) {
     throw const WorkspaceAssetException(.invalid);
   }
+
   return normalized;
 }

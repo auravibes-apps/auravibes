@@ -1952,6 +1952,33 @@
       "open_error": "Could not open this link. The request remains pending."
     }
   },
+  "workspace_assets": {
+    "saved": "Copy saved.",
+    "title": "Files",
+    "file": "File",
+    "name": "File name",
+    "choose": "Choose file",
+    "create": "Create file",
+    "attachments": "Attachments",
+    "add": "Add attachment",
+    "existing": "Choose from Directory",
+    "upload": "Upload file",
+    "preview": "Preview",
+    "save": "Save a copy",
+    "unavailable": "This file is unavailable. Check your connection or access and retry.",
+    "invalid": "This file is unsupported, invalid, or exceeds the upload size limit.",
+    "referenced": "This asset still has retained uses.",
+    "download_only": "Save a copy to open this file with another app.",
+    "text_truncated": "Preview shortened. Save a copy for the full file.",
+    "uploaded_retry": "File uploaded. Retry creating its Directory item.",
+    "share_title": "Share this file with the workspace?",
+    "share_body": "Creating a File makes this asset available to workspace members. Existing table permissions do not limit that File.",
+    "share": "Share file",
+    "count": "{} files",
+    "remove": "Remove attachment",
+    "selected": "Selected file",
+    "workspace_readable": "Workspace members can read this File."
+  },
   "workspace_items": {
     "edit_item": "Rename or move",
     "item_name": "Name",

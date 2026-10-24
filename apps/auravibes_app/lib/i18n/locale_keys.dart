@@ -2543,6 +2543,35 @@ abstract class LocaleKeys {
   static const mcp_elicitation_cancel = 'mcp.elicitation.cancel';
   static const mcp_elicitation_invalid = 'mcp.elicitation.invalid';
   static const mcp_elicitation_open_error = 'mcp.elicitation.open_error';
+  static const workspace_assets_saved = 'workspace_assets.saved';
+  static const workspace_assets_title = 'workspace_assets.title';
+  static const workspace_assets_file = 'workspace_assets.file';
+  static const workspace_assets_name = 'workspace_assets.name';
+  static const workspace_assets_choose = 'workspace_assets.choose';
+  static const workspace_assets_create = 'workspace_assets.create';
+  static const workspace_assets_attachments = 'workspace_assets.attachments';
+  static const workspace_assets_add = 'workspace_assets.add';
+  static const workspace_assets_existing = 'workspace_assets.existing';
+  static const workspace_assets_upload = 'workspace_assets.upload';
+  static const workspace_assets_preview = 'workspace_assets.preview';
+  static const workspace_assets_save = 'workspace_assets.save';
+  static const workspace_assets_unavailable = 'workspace_assets.unavailable';
+  static const workspace_assets_invalid = 'workspace_assets.invalid';
+  static const workspace_assets_referenced = 'workspace_assets.referenced';
+  static const workspace_assets_download_only =
+      'workspace_assets.download_only';
+  static const workspace_assets_text_truncated =
+      'workspace_assets.text_truncated';
+  static const workspace_assets_uploaded_retry =
+      'workspace_assets.uploaded_retry';
+  static const workspace_assets_share_title = 'workspace_assets.share_title';
+  static const workspace_assets_share_body = 'workspace_assets.share_body';
+  static const workspace_assets_share = 'workspace_assets.share';
+  static const workspace_assets_count = 'workspace_assets.count';
+  static const workspace_assets_remove = 'workspace_assets.remove';
+  static const workspace_assets_selected = 'workspace_assets.selected';
+  static const workspace_assets_workspace_readable =
+      'workspace_assets.workspace_readable';
   static const workspace_items_edit_item = 'workspace_items.edit_item';
   static const workspace_items_item_name = 'workspace_items.item_name';
   static const workspace_items_destination = 'workspace_items.destination';

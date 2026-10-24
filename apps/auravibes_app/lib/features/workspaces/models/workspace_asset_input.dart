@@ -9,6 +9,9 @@ abstract final class WorkspaceAssetInput {
   static String validate(String name, Uint8List bytes) {
     if (name.trim().isEmpty ||
         name.length > 200 ||
+        name.contains('/') ||
+        name.contains(r'\') ||
+        name.codeUnits.any((unit) => unit < 32) ||
         bytes.isEmpty ||
         bytes.length > ChatAttachmentModality.maxChatAttachmentBytes) {
       throw const WorkspaceAssetException(.invalid);
@@ -27,10 +30,14 @@ abstract final class WorkspaceAssetInput {
     if (mime == 'text/plain' || mime == 'application/json') {
       try {
         final _ = utf8.decode(bytes);
-      } on FormatException {
-        throw const WorkspaceAssetException(.invalid);
+      } on FormatException catch (_, stackTrace) {
+        Error.throwWithStackTrace(
+          const WorkspaceAssetException(.invalid),
+          stackTrace,
+        );
       }
     }
+
     return mime;
   }
 }

@@ -31,3 +31,5 @@ class const DirectoryNavigation({
 
 /// Identifies an opened saved View without confusing its ID with a table ID.
 class const DirectoryViewLocation(final String id);
+
+class const DirectoryFileLocation(final String id);

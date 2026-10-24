@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_csv_input.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -9,6 +10,9 @@ class const WorkspaceItemFailure({required final Object error, super.key})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (error) {
+    final WorkspaceAssetException failure => TextLocale(
+      failure.localizationKey,
+    ),
     final WorkspaceCsvException failure => TextLocale(failure.localizationKey),
     final WorkspaceFolderException failure => TextLocale(
       failure.localizationKey,
