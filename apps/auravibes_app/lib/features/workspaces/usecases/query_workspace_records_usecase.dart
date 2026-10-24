@@ -5,12 +5,9 @@ class const QueryWorkspaceRecordsUsecase(
   final WorkspaceRecordQueryRepository repository,
 ) {
   Future<WorkspaceRecordPage> call(String tableId, WorkspaceRecordQuery query) {
-    if (query.limit < 1 ||
-        query.limit > _maxPageSize ||
-        query.offset < 0 ||
-        query.offset > _maxOffset ||
+    if (!_validPage(query) ||
         query.search.length > _maxTextLength ||
-        (query.filterValue?.length ?? 0) > _maxTextLength) {
+        (query.filterValue?.length ?? 0) > _maxFilterLength) {
       throw const WorkspaceTableException();
     }
 
@@ -21,3 +18,12 @@ class const QueryWorkspaceRecordsUsecase(
 const _maxPageSize = 100;
 const _maxOffset = 100000;
 const _maxTextLength = 200;
+
+// Includes the existing 16384-character field bound and money JSON envelope.
+const _maxFilterLength = 16448;
+
+bool _validPage(WorkspaceRecordQuery query) =>
+    query.limit >= 1 &&
+    query.limit <= _maxPageSize &&
+    query.offset >= 0 &&
+    query.offset <= _maxOffset;

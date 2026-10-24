@@ -1,8 +1,10 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_query_filter_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_query_filter.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -33,13 +35,11 @@ class _Draft {
   new(WorkspaceTable table)
     : query = useState(const WorkspaceRecordQuery()),
       controls = useState(false),
-      columns = useState(table.columns.map((column) => column.id).toSet()),
-      filter = useState(null);
+      columns = useState(table.columns.map((column) => column.id).toSet());
 
   final ValueNotifier<WorkspaceRecordQuery> query;
   final ValueNotifier<bool> controls;
   final ValueNotifier<Set<String>> columns;
-  final ValueNotifier<String?> filter;
 }
 
 class const _Frame(
@@ -73,6 +73,8 @@ class const _Search(final _Draft draft) extends StatelessWidget {
         icon: Icons.tune,
         onPressed: _toggle,
         identifier: 'workspace_query_controls',
+        semanticLabel: LocaleKeys.common_filters.tr(),
+        tooltip: LocaleKeys.common_filters.tr(),
       ),
     ],
   );
@@ -147,39 +149,36 @@ class const _Controls(final WorkspaceTable table, final _Draft draft)
     height: 220,
     child: ListView(
       children: [
-        _FilterColumn(table, draft),
-        _FilterValue(draft),
+        WorkspaceQueryFilter(table: table, query: draft.query),
         _SortColumn(table, draft),
         _Direction(draft),
-        if (table.columns.any((column) => !_supportsQuery(column)))
-          const TextLocale(LocaleKeys.workspace_items_query_type_unavailable),
+        _QueryAvailability(table),
         for (final column in table.columns) _VisibleColumn(column, draft),
       ],
     ),
   );
 }
 
+class const _QueryAvailability(final WorkspaceTable table)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      table.columns.any((column) => !_supportsQuery(column))
+      ? const TextLocale(LocaleKeys.workspace_items_query_type_unavailable)
+      : const SizedBox.shrink();
+}
+
 class const _QueryDropdown(
   final WorkspaceTable table,
   final String value,
-  final ValueChanged<String?> onChanged, {
-  final bool filter = false,
-}) extends StatelessWidget {
+  final ValueChanged<String?> onChanged,
+) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraDropdownSelector<String>(
-    options: [
-      if (filter)
-        const AuraDropdownOption(
-          value: '',
-          child: TextLocale(LocaleKeys.workspace_items_all_columns),
-        ),
-      for (final column in table.columns) _QueryColumnOption(column),
-    ],
+    options: [for (final column in table.columns) _QueryColumnOption(column)],
     value: value,
     onChanged: onChanged,
-    label: TextLocale(
-      filter ? LocaleKeys.common_filters : LocaleKeys.common_sort_by,
-    ),
+    label: const TextLocale(LocaleKeys.common_sort_by),
   );
 }
 
@@ -190,29 +189,6 @@ class _QueryColumnOption extends AuraDropdownOption<String> {
         isEnabled: _supportsQuery(column),
         child: Text(column.name),
       );
-}
-
-class const _FilterColumn(final WorkspaceTable table, final _Draft draft)
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) =>
-      _QueryDropdown(table, draft.filter.value ?? '', _change, filter: true);
-  void _change(String? id) {
-    draft.filter.value = id;
-    if (id == null || id.isEmpty) {
-      draft.query.value = draft.query.value.filter(null, '');
-    }
-  }
-}
-
-class const _FilterValue(final _Draft draft) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraInput(
-    label: const TextLocale(LocaleKeys.workspace_items_filter_value),
-    onSubmitted: _filter,
-  );
-  void _filter(String value) =>
-      draft.query.value = draft.query.value.filter(draft.filter.value, value);
 }
 
 class const _SortColumn(final WorkspaceTable table, final _Draft draft)
@@ -434,10 +410,5 @@ String _display(Object value) => switch (value) {
   final List<Object?> values => values.join(', '),
   _ => value.toString(),
 };
-bool _supportsQuery(WorkspaceColumn column) => !{
-  'timestamp',
-  'money',
-  'multiSelect',
-  'attachment',
-  'reference',
-}.contains(column.type.name);
+bool _supportsQuery(WorkspaceColumn column) =>
+    WorkspaceQueryFilterValidation.supports(column);

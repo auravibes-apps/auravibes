@@ -239,6 +239,227 @@ void main() {
           'numeric-2',
           'numeric-10',
         ]);
+        final equivalentNumbers = await endpoints.workspaceState.queryRecords(
+          authenticated,
+          workspace.id!,
+          'numeric',
+          jsonEncode({'filterColumnId': 'quantity', 'filterValue': '2.0'}),
+        );
+        expect(equivalentNumbers.map((row) => row.resourceId), ['numeric-2']);
+        await patch([
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .table,
+            resourceId: 'exact',
+            data: jsonEncode({
+              'name': 'Exact',
+              'schemaRevision': 1,
+              'labelColumnId': 'label',
+              'columns': [
+                {'id': 'label', 'name': 'Title', 'type': 'text'},
+                {'id': 'cost', 'name': 'Cost', 'type': 'money'},
+                {
+                  'id': 'instant',
+                  'name': 'Instant',
+                  'type': 'timestamp',
+                  'timeZone': 'UTC',
+                },
+              ],
+            }),
+            fieldMask: const [],
+          ),
+        ]);
+        final exactValues = [
+          {"id": "a", "currency": "USD", "amount": "-9007199254740993.00001"},
+          {"id": "b", "currency": "USD", "amount": "-9007199254740993.00002"},
+          {"id": "c", "currency": "USD", "amount": "0.00"},
+          {"id": "d", "currency": "USD", "amount": "-0"},
+          {"id": "e", "currency": "USD", "amount": "9007199254740993.00001"},
+          {"id": "f", "currency": "EUR", "amount": "1000000000000000000000"},
+          {"id": "g", "currency": "USD", "amount": "-10"},
+          {"id": "h", "currency": "USD", "amount": "-2"},
+          {"id": "i", "currency": "USD", "amount": "2.00000"},
+          {"id": "j", "currency": "USD", "amount": "2"},
+          {"id": "k", "currency": "USD", "amount": "0.000000000000000000001"},
+          {"id": "l", "currency": "USD", "amount": "-0.000000000000000000001"},
+          {"id": "m", "currency": "USD", "amount": "10"},
+          {"id": "n", "currency": "USD", "amount": "9007199254740993.00002"},
+          {"id": "o", "currency": "USD", "amount": "-0.00"},
+          {"id": "p", "currency": "USD", "amount": "100"},
+          {"id": "q", "currency": "JPY", "amount": "0"},
+        ];
+        for (final value in exactValues) {
+          final id = value['id']!;
+          final instant = switch (id) {
+            'a' => '2026-10-23T10:00:00Z',
+            'b' => '2026-10-23T10:00:00.000000Z',
+            'c' => '2026-10-23T10:00:00.1Z',
+            _ => '2026-10-23T10:00:00.000001Z',
+          };
+          await patch([
+            WorkspacePatchOperation(
+              operation: .create,
+              resourceKind: .tableRecord,
+              resourceId: 'exact-$id',
+              data: jsonEncode({
+                'tableId': 'exact',
+                'schemaRevision': 1,
+                'values': {
+                  'label': id,
+                  'instant': instant,
+                  'cost': {
+                    'currency': value['currency'],
+                    'amount': value['amount'],
+                  },
+                },
+              }),
+              fieldMask: const [],
+            ),
+          ]);
+        }
+        await patch([
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .tableRecord,
+            resourceId: 'exact-z',
+            data: jsonEncode({
+              'tableId': 'exact',
+              'schemaRevision': 1,
+              'values': {'label': 'z'},
+            }),
+            fieldMask: const [],
+          ),
+        ]);
+        Future<List<String>> exactQuery(Map<String, Object?> query) async =>
+            (await endpoints.workspaceState.queryRecords(
+              authenticated,
+              workspace.id!,
+              'exact',
+              jsonEncode(query),
+            )).map((row) => row.resourceId.replaceFirst('exact-', '')).toList();
+        // Expected orders derived independently with Python decimal.Decimal.
+        expect(await exactQuery({'sortColumnId': 'cost'}), [
+          'z',
+          'f',
+          'q',
+          'b',
+          'a',
+          'g',
+          'h',
+          'l',
+          'c',
+          'd',
+          'o',
+          'k',
+          'i',
+          'j',
+          'm',
+          'p',
+          'e',
+          'n',
+        ]);
+        expect(await exactQuery({'sortColumnId': 'cost', 'descending': true}), [
+          'n',
+          'e',
+          'p',
+          'm',
+          'i',
+          'j',
+          'k',
+          'c',
+          'd',
+          'o',
+          'l',
+          'h',
+          'g',
+          'a',
+          'b',
+          'q',
+          'f',
+          'z',
+        ]);
+        expect(
+          await exactQuery({'sortColumnId': 'cost', 'offset': 2, 'limit': 2}),
+          ['q', 'b', 'a'],
+        );
+        final instants = await exactQuery({'sortColumnId': 'instant'});
+        expect(instants.take(3), ['z', 'a', 'b']);
+        expect(instants.last, 'c');
+        expect(
+          await exactQuery({
+            'filterColumnId': 'instant',
+            'filterValue': '2026-10-23T10:00:00.0Z',
+          }),
+          ['a', 'b'],
+        );
+        expect(
+          await exactQuery({
+            'filterColumnId': 'cost',
+            'filterValue': '{"currency":"USD","amount":"0"}',
+          }),
+          ['c', 'd', 'o'],
+        );
+        for (final invalid in [('instant', 'invalid'), ('cost', '{')]) {
+          await expectLater(
+            exactQuery({
+              'filterColumnId': invalid.$1,
+              'filterValue': invalid.$2,
+            }),
+            throwsA(
+              isA<CloudWorkspaceException>().having(
+                (error) => error.code,
+                'code',
+                CloudWorkspaceErrorCode.validationFailed,
+              ),
+            ),
+          );
+        }
+        expect(
+          await exactQuery({
+            'filterColumnId': 'label',
+            'filterValue': 'A',
+            'filterOperator': 'contains',
+          }),
+          ['a'],
+        );
+        for (final operator in ['greaterThan', 'contains']) {
+          await expectLater(
+            exactQuery({
+              'filterColumnId': 'cost',
+              'filterValue': '{"currency":"USD","amount":"0"}',
+              'filterOperator': operator,
+            }),
+            throwsA(
+              isA<CloudWorkspaceException>().having(
+                (error) => error.code,
+                'code',
+                CloudWorkspaceErrorCode.validationFailed,
+              ),
+            ),
+          );
+        }
+        final largeAmount = '0.${'0' * 16381}1';
+        final largeValue = {'currency': 'USD', 'amount': largeAmount};
+        await patch([
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .tableRecord,
+            resourceId: 'exact-large',
+            data: jsonEncode({
+              'tableId': 'exact',
+              'schemaRevision': 1,
+              'values': {'label': 'Large', 'cost': largeValue},
+            }),
+            fieldMask: const [],
+          ),
+        ]);
+        expect(
+          await exactQuery({
+            'filterColumnId': 'cost',
+            'filterValue': jsonEncode(largeValue),
+          }),
+          ['large'],
+        );
         final targetSchema = {
           'name': 'Targets',
           'labelColumnId': 'label',

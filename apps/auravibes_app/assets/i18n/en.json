@@ -1996,7 +1996,7 @@
     "settings": "Table settings",
     "search": "Search records",
     "query_controls": "Filter, sort and columns",
-    "filter_value": "Value equals",
+    "filter_value": "Filter value",
     "all_columns": "No filter",
     "ascending": "Ascending",
     "descending": "Descending",
@@ -2005,7 +2005,7 @@
     "select": "Select items",
     "done": "Done",
     "selected": "Selected: {}",
-    "query_type_unavailable": "Sorting and filtering are unavailable for complex values and timestamps.",
+    "query_type_unavailable": "Sorting and filtering are unavailable for linked records, attachments and multiple-choice values.",
     "location_recovered": "This location is no longer available. Returned to Directory.",
     "type_date_only": "Date",
     "type_timestamp": "Date and time",
@@ -2054,6 +2054,12 @@
     "reference_no_dependency": "No dependent filter",
     "reference_dependency_hint": "Candidates must link to the same parent. Change or clear both fields together when needed.",
     "reference_incompatible": "Choose related records matching the selected parent, or explicitly clear both fields before saving.",
-    "reference_select_parent": "Select a parent before choosing related records."
+    "reference_select_parent": "Select a parent before choosing related records.",
+    "filter_operator": "Operator",
+    "filter_equals": "Equals",
+    "filter_contains": "Contains",
+    "filter_apply": "Apply filter",
+    "filter_clear": "Clear filter",
+    "filter_invalid_value": "Enter a valid value for this field."
   }
 }

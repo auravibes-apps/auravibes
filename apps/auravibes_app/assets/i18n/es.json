@@ -1996,7 +1996,7 @@
     "settings": "Ajustes de tabla",
     "search": "Buscar registros",
     "query_controls": "Filtros, orden y columnas",
-    "filter_value": "Valor igual a",
+    "filter_value": "Valor del filtro",
     "all_columns": "Sin filtro",
     "ascending": "Ascendente",
     "descending": "Descendente",
@@ -2005,7 +2005,7 @@
     "select": "Seleccionar elementos",
     "done": "Listo",
     "selected": "Seleccionados: {}",
-    "query_type_unavailable": "El orden y los filtros no están disponibles para valores complejos y marcas de tiempo.",
+    "query_type_unavailable": "El orden y los filtros no están disponibles para registros vinculados, adjuntos y valores de selección múltiple.",
     "location_recovered": "Esta ubicación ya no está disponible. Se volvió al Directorio.",
     "type_date_only": "Fecha",
     "type_timestamp": "Fecha y hora",
@@ -2054,6 +2054,12 @@
     "reference_no_dependency": "Sin filtro dependiente",
     "reference_dependency_hint": "Las opciones deben enlazar al mismo registro padre. Cambia o borra ambos campos juntos cuando sea necesario.",
     "reference_incompatible": "Elige registros relacionados que coincidan con el padre seleccionado o borra ambos campos explícitamente antes de guardar.",
-    "reference_select_parent": "Selecciona un padre antes de elegir registros relacionados."
+    "reference_select_parent": "Selecciona un padre antes de elegir registros relacionados.",
+    "filter_operator": "Operador",
+    "filter_equals": "Es igual a",
+    "filter_contains": "Contiene",
+    "filter_apply": "Aplicar filtro",
+    "filter_clear": "Quitar filtro",
+    "filter_invalid_value": "Introduce un valor válido para este campo."
   }
 }

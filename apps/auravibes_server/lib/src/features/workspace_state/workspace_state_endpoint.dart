@@ -3,7 +3,6 @@ import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 import '../accounts/authenticated_account_resolver.dart';
 import '../sync/stream/sync_wakeups.dart';
-import 'repositories/workspace_state_repository.dart';
 import 'usecases/workspace_state_usecases.dart';
 import 'workspace_record_query.dart';
 
