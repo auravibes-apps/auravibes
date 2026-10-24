@@ -49,7 +49,7 @@ mixin _WorkspaceToolsDaoCoreApi {
   Future<List<ToolsTable>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolId,
-    String? config,
+    String config,
   ) =>
       WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
           .patchWorkspaceToolConfig(workspaceId, toolId, config);
@@ -219,7 +219,7 @@ extension WorkspaceToolsDaoCoreMethods on WorkspaceToolsDao {
   Future<List<ToolsTable>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolId,
-    String? config,
+    String config,
   ) => _patchWorkspaceToolConfig(workspaceId, toolId, config);
 
   Future<bool> deleteWorkspaceToolByToolId(
@@ -416,7 +416,7 @@ extension WorkspaceToolsDaoHelpers on WorkspaceToolsDao {
   Future<List<ToolsTable>> _patchWorkspaceToolConfig(
     String workspaceId,
     String toolId,
-    String? config,
+    String config,
   ) {
     final statement = update(tools)
       ..where((tbl) => _toolConfigFilter(tbl, workspaceId, toolId));
