@@ -4,6 +4,8 @@ class const WorkspaceRecordQuery({
   final String search = '',
   final String? filterColumnId,
   final String? filterValue,
+  final WorkspaceRecordFilterOperator filterOperator =
+      WorkspaceRecordFilterOperator.equals,
   final String? sortColumnId,
   final bool descending = false,
   final int offset = 0,
@@ -13,12 +15,15 @@ class const WorkspaceRecordQuery({
     'search': search,
     'filterColumnId': filterColumnId,
     'filterValue': filterValue,
+    'filterOperator': filterOperator.name,
     'sortColumnId': sortColumnId,
     'descending': descending,
     'offset': offset,
     'limit': limit,
   };
 }
+
+enum WorkspaceRecordFilterOperator { equals, contains }
 
 class const WorkspaceRecordPage({
   required final List<WorkspaceRecord> records,
@@ -39,18 +44,24 @@ extension WorkspaceRecordQueryChanges on WorkspaceRecordQuery {
     search: search ?? this.search,
     filterColumnId: filterColumnId,
     filterValue: filterValue,
+    filterOperator: filterOperator,
     sortColumnId: sort ?? sortColumnId,
     descending: descending ?? this.descending,
     offset: offset ?? 0,
     limit: limit,
   );
-  WorkspaceRecordQuery filter(String? column, String value) =>
-      WorkspaceRecordQuery(
-        search: search,
-        filterColumnId: column,
-        filterValue: value,
-        sortColumnId: sortColumnId,
-        descending: descending,
-        limit: limit,
-      );
+  WorkspaceRecordQuery filter(
+    String? column,
+    String value, {
+    WorkspaceRecordFilterOperator operator =
+        WorkspaceRecordFilterOperator.equals,
+  }) => WorkspaceRecordQuery(
+    search: search,
+    filterColumnId: column,
+    filterValue: value,
+    filterOperator: operator,
+    sortColumnId: sortColumnId,
+    descending: descending,
+    limit: limit,
+  );
 }

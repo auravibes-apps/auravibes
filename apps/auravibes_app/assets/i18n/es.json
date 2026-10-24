@@ -2048,7 +2048,13 @@
     "reference_previous": "Primera página",
     "reference_empty": "No hay registros coincidentes",
     "reference_remove": "Borrar selección",
-    "reference_choose_target": "Elige primero una tabla de destino."
+    "reference_choose_target": "Elige primero una tabla de destino.",
+    "filter_operator": "Operador",
+    "filter_equals": "Es igual a",
+    "filter_contains": "Contiene",
+    "filter_apply": "Aplicar filtro",
+    "filter_clear": "Quitar filtro",
+    "filter_invalid_value": "Introduce un valor válido para este campo."
   },
   "workspace_views": {
     "title": "Vista",

@@ -2670,6 +2670,15 @@ abstract class LocaleKeys {
       'workspace_items.reference_remove';
   static const workspace_items_reference_choose_target =
       'workspace_items.reference_choose_target';
+  static const workspace_items_filter_operator =
+      'workspace_items.filter_operator';
+  static const workspace_items_filter_equals = 'workspace_items.filter_equals';
+  static const workspace_items_filter_contains =
+      'workspace_items.filter_contains';
+  static const workspace_items_filter_apply = 'workspace_items.filter_apply';
+  static const workspace_items_filter_clear = 'workspace_items.filter_clear';
+  static const workspace_items_filter_invalid_value =
+      'workspace_items.filter_invalid_value';
   static const workspace_views_title = 'workspace_views.title';
   static const workspace_views_create = 'workspace_views.create';
   static const workspace_views_name = 'workspace_views.name';

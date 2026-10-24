@@ -294,6 +294,7 @@ import 'features/workspace_state/models/workspace_secret_kind.dart'
     as _iq96p1l9;
 import 'features/workspace_state/models/workspace_secret_scope.dart'
     as _ioqbiy3d;
+import 'features/workspace_state/models/workspace_view_move.dart' as _i00jdb9n;
 import 'features/workspace_views/models/workspace_view.dart' as _i97j1as2;
 import 'features/workspace_views/models/workspace_view_list_request.dart'
     as _ihx1e06e;
@@ -504,6 +505,7 @@ export 'features/workspace_state/models/workspace_resource_page_request.dart';
 export 'features/workspace_state/models/workspace_secret.dart';
 export 'features/workspace_state/models/workspace_secret_kind.dart';
 export 'features/workspace_state/models/workspace_secret_scope.dart';
+export 'features/workspace_state/models/workspace_view_move.dart';
 export 'features/workspace_views/models/workspace_view.dart';
 export 'features/workspace_views/models/workspace_view_list_request.dart';
 export 'features/workspace_views/models/workspace_view_save_request.dart';
@@ -5720,6 +5722,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _ioqbiy3d.WorkspaceSecretScope) {
       return _ioqbiy3d.WorkspaceSecretScope.fromJson(data) as T;
     }
+    if (t == _i00jdb9n.WorkspaceViewMove) {
+      return _i00jdb9n.WorkspaceViewMove.fromJson(data) as T;
+    }
     if (t == _i97j1as2.WorkspaceView) {
       return _i97j1as2.WorkspaceView.fromJson(data) as T;
     }
@@ -6666,6 +6671,10 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_i00jdb9n.WorkspaceViewMove?>()) {
+      return (data != null ? _i00jdb9n.WorkspaceViewMove.fromJson(data) : null)
+          as T;
+    }
     if (t == _is.getType<_i97j1as2.WorkspaceView?>()) {
       return (data != null ? _i97j1as2.WorkspaceView.fromJson(data) : null)
           as T;
@@ -6914,6 +6923,20 @@ class Protocol extends _is.DatabaseSerializationManager {
       return (data as List)
               .map((e) => deserialize<_iolo6w4a.WorkspacePatchOperation>(e))
               .toList()
+          as T;
+    }
+    if (t == List<_i00jdb9n.WorkspaceViewMove>) {
+      return (data as List)
+              .map((e) => deserialize<_i00jdb9n.WorkspaceViewMove>(e))
+              .toList()
+          as T;
+    }
+    if (t == _is.getType<List<_i00jdb9n.WorkspaceViewMove>?>()) {
+      return (data != null
+              ? (data as List)
+                    .map((e) => deserialize<_i00jdb9n.WorkspaceViewMove>(e))
+                    .toList()
+              : null)
           as T;
     }
     if (t == List<_iqzfyfs9.WorkspaceResource>) {
@@ -7244,6 +7267,7 @@ class Protocol extends _is.DatabaseSerializationManager {
       _iyjw9v2c.WorkspaceSecret => 'WorkspaceSecret',
       _iq96p1l9.WorkspaceSecretKind => 'WorkspaceSecretKind',
       _ioqbiy3d.WorkspaceSecretScope => 'WorkspaceSecretScope',
+      _i00jdb9n.WorkspaceViewMove => 'WorkspaceViewMove',
       _i97j1as2.WorkspaceView => 'WorkspaceView',
       _ihx1e06e.WorkspaceViewListRequest => 'WorkspaceViewListRequest',
       _io73c0ad.WorkspaceViewSaveRequest => 'WorkspaceViewSaveRequest',
@@ -7606,6 +7630,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'WorkspaceSecretKind';
       case _ioqbiy3d.WorkspaceSecretScope():
         return 'WorkspaceSecretScope';
+      case _i00jdb9n.WorkspaceViewMove():
+        return 'WorkspaceViewMove';
       case _i97j1as2.WorkspaceView():
         return 'WorkspaceView';
       case _ihx1e06e.WorkspaceViewListRequest():
@@ -8204,6 +8230,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'WorkspaceSecretScope') {
       return deserialize<_ioqbiy3d.WorkspaceSecretScope>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceViewMove') {
+      return deserialize<_i00jdb9n.WorkspaceViewMove>(data['data']);
     }
     if (dataClassName == 'WorkspaceView') {
       return deserialize<_i97j1as2.WorkspaceView>(data['data']);

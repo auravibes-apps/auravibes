@@ -14,6 +14,7 @@ class const WorkspaceRecordField({
   required final String identifier,
   required final ValueChanged<Object?> onChanged,
   required final VoidCallback onUnset,
+  final bool showPresence = true,
   super.key,
 }) extends HookWidget {
   @override
@@ -39,7 +40,7 @@ class const _RecordFieldBody({
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .stretch,
     children: [
-      _PresenceControl(field: field),
+      if (field.showPresence) _PresenceControl(field: field),
       if (field.present)
         _TypedRecordInput(field: field, controller: controller),
     ],
@@ -156,6 +157,7 @@ class const _TextInput({
   @override
   Widget build(BuildContext context) => AuraInput(
     controller: controller,
+    label: field.showPresence ? null : Text(field.column.name),
     keyboardType: _keyboardType(field.column.type),
     enabled: !field.disabled,
     onChanged: _change,
