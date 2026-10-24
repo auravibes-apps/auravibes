@@ -156,4 +156,4 @@ WorkspaceColumnType _columnType(Map<String, dynamic> data) =>
     WorkspaceColumnType.values.byName(data['type'] as String? ?? 'text');
 
 String _columnTimeZone(Map<String, dynamic> data) =>
-  data['timeZone'] as String? ?? 'UTC';
+    data['timeZone'] as String? ?? 'UTC';
