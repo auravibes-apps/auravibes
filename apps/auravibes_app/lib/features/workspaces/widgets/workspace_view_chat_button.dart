@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -25,14 +27,14 @@ class const WorkspaceViewChatButton({
     tooltip: LocaleKeys.workspace_views_title.tr(),
   );
   Future<void> _pick(BuildContext context, WidgetRef ref) async {
-    final id = await showDialog<String>(
+    final id = await showDialog<WorkspaceChatItem>(
       context: context,
       builder: (_) => _ViewPicker(workspaceId),
     );
     if (!context.mounted || id == null) return;
     ref
         .read(workspaceOpenViewProvider(workspaceId, conversationId).notifier)
-        .open(id);
+        .openItem(id.id, id.kind);
   }
 }
 
@@ -43,7 +45,19 @@ class const _ViewPicker(final String workspaceId) extends StatelessWidget {
     content: SizedBox(
       width: _pickerExtent,
       height: _pickerExtent,
-      child: _Choices(workspaceId),
+      child: ListView(
+        children: [
+          ListTile(
+            title: const TextLocale(LocaleKeys.workspace_items_title),
+            leading: const Icon(Icons.folder_outlined),
+            onTap: () =>
+                Navigator.of(context)
+                    .pop(const WorkspaceChatItem(id: '', kind: 'directory')),
+          ),
+          _TableChoices(workspaceId),
+          SizedBox(height: _pickerExtent / 2, child: _Choices(workspaceId)),
+        ],
+      ),
     ),
   );
 }
@@ -69,6 +83,30 @@ class const _View(final WorkspaceView view) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
     title: Text(view.name),
-    onTap: () => Navigator.of(context).pop(view.id),
+    onTap: () =>
+        Navigator.of(context).pop(WorkspaceChatItem(id: view.id, kind: 'view')),
+  );
+}
+
+class const _TableChoices(final String workspaceId) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      switch (ref.watch(workspaceTablesProvider(workspaceId, null))) {
+        AsyncData(:final value) => Column(
+          children: [for (final table in value) _TableChoice(table)],
+        ),
+        AsyncError(:final error) => WorkspaceItemFailure(error: error),
+        AsyncLoading() => const LinearProgressIndicator(),
+      };
+}
+
+class const _TableChoice(final WorkspaceTable table) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListTile(
+    title: Text(table.name),
+    leading: const Icon(Icons.table_chart_outlined),
+    onTap: () =>
+        Navigator.of(context)
+            .pop(WorkspaceChatItem(id: table.id, kind: 'table')),
   );
 }

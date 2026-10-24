@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'workspace_conversation_commands.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -450,6 +451,10 @@ class const ServerToolExecutorService({
       turn,
       isCancelled: request.isCancelled,
     );
+    if (tool.descriptor.tableId == workspaceCommandTableId &&
+        tool.descriptor.toolIdentifier == workspaceCommandToolName) {
+      return const WorkspaceConversationCommands().call(session, turn, request.id, request.arguments);
+    }
     return switch (tool.descriptor.kind) {
       AgentResolvedToolKind.mcp => _runMcp(
         session,

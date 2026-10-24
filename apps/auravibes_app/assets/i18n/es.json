@@ -2167,5 +2167,14 @@
     "previous": "Anterior",
     "stale": "Actualizando datos. Los resultados anteriores pueden haber cambiado.",
     "loading": "Cargando los datos actuales…"
-  }
+  },
+  "workspace_chat": {
+    "share": "Compartir con IA",
+    "revoke": "Dejar de compartir con IA",
+    "scope": "Solo se compartirán los registros marcados y la estructura de este elemento. Abrir un elemento no comparte sus datos.",
+    "shared": "Selección del espacio compartida con esta conversación. Lee solo la selección compartida, salvo que solicite cambios.",
+    "revoked": "Se dejó de compartir la selección. No leas ni edites la selección anterior.",
+    "records": "Selecciona los registros que deseas compartir",
+    "structure": "Solo la estructura del elemento"
+}
 }

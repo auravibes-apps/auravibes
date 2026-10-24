@@ -2,14 +2,21 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_open_view_notifier.g.dart';
 
+class const WorkspaceChatItem({
+  required final String id,
+  required final String kind,
+});
+
 @riverpod
 class WorkspaceOpenViewNotifier extends _$WorkspaceOpenViewNotifier {
   @override
-  String? build(String workspaceId, String conversationId) => null;
+  WorkspaceChatItem? build(String workspaceId, String conversationId) => null;
   void open(String viewId) {
-    if (state == viewId) return;
-    state = viewId;
+    openItem(viewId, 'view');
   }
+
+  void openItem(String id, String kind) =>
+      state = WorkspaceChatItem(id: id, kind: kind);
 
   void close() => state = null;
 }

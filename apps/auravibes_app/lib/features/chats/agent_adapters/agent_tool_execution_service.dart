@@ -244,7 +244,7 @@ Future<ToolApprovalDecision> _resolvePermission(
   _ToolApprovalRequest request,
   ResolvedTool approvalTool,
 ) {
-  if (approvalTool.isConnectorCommand) {
+  if (approvalTool.isConnectorCommand || approvalTool.isWorkspaceCommand) {
     return resolver.callForRequest((
       conversationId: request.conversationId,
       workspaceId: request.workspaceId,

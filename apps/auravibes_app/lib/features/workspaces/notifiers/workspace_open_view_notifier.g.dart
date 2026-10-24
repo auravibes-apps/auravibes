@@ -13,7 +13,7 @@ part of 'workspace_open_view_notifier.dart';
 final workspaceOpenViewProvider = WorkspaceOpenViewNotifierFamily._();
 
 final class WorkspaceOpenViewNotifierProvider
-    extends $NotifierProvider<WorkspaceOpenViewNotifier, String?> {
+    extends $NotifierProvider<WorkspaceOpenViewNotifier, WorkspaceChatItem?> {
   WorkspaceOpenViewNotifierProvider._({
     required WorkspaceOpenViewNotifierFamily super.from,
     required (String, String) super.argument,
@@ -40,10 +40,10 @@ final class WorkspaceOpenViewNotifierProvider
   WorkspaceOpenViewNotifier create() => WorkspaceOpenViewNotifier();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(String? value) {
+  Override overrideWithValue(WorkspaceChatItem? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<String?>(value),
+      providerOverride: $SyncValueProvider<WorkspaceChatItem?>(value),
     );
   }
 
@@ -60,15 +60,15 @@ final class WorkspaceOpenViewNotifierProvider
 }
 
 String _$workspaceOpenViewNotifierHash() =>
-    r'7a031d73dddb2248bbfcb990de9ebc2fa6b5d192';
+    r'897f50591dd8413ceb88376058038f9b7469b89c';
 
 final class WorkspaceOpenViewNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
           WorkspaceOpenViewNotifier,
-          String?,
-          String?,
-          String?,
+          WorkspaceChatItem?,
+          WorkspaceChatItem?,
+          WorkspaceChatItem?,
           (String, String)
         > {
   WorkspaceOpenViewNotifierFamily._()
@@ -92,21 +92,22 @@ final class WorkspaceOpenViewNotifierFamily extends $Family
   String toString() => r'workspaceOpenViewProvider';
 }
 
-abstract class _$WorkspaceOpenViewNotifier extends $Notifier<String?> {
+abstract class _$WorkspaceOpenViewNotifier
+    extends $Notifier<WorkspaceChatItem?> {
   late final _$args = ref.$arg as (String, String);
   String get workspaceId => _$args.$1;
   String get conversationId => _$args.$2;
 
-  String? build(String workspaceId, String conversationId);
+  WorkspaceChatItem? build(String workspaceId, String conversationId);
   @$mustCallSuper
   @override
   WhenComplete runBuild() {
-    final ref = this.ref as $Ref<String?, String?>;
+    final ref = this.ref as $Ref<WorkspaceChatItem?, WorkspaceChatItem?>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<String?, String?>,
-              String?,
+              AnyNotifier<WorkspaceChatItem?, WorkspaceChatItem?>,
+              WorkspaceChatItem?,
               Object?,
               Object?
             >;

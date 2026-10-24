@@ -2,6 +2,9 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
+import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_tools_provider.dart';
+
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
@@ -97,6 +100,7 @@ class ResolvedToolService {
     BrowserSkillToolRunner? browserSkillToolRunner,
     ConnectorCommandUsecase? connectorCommandUsecase,
     ConversationAgentLanguageRuntime? conversationLanguageRuntime,
+    WorkspaceConversationToolsUsecase? workspaceConversationTools,
   }) : _delegate = agent.ResolvedToolRunner<ResolvedTool>(
          provider: AppResolvedToolProvider(
            agentCancellationRuntime: agentCancellationRuntime,
@@ -116,10 +120,12 @@ class ResolvedToolService {
            connectorCommandUsecase: connectorCommandUsecase,
            conversationLanguageRuntime: conversationLanguageRuntime,
          ),
-       );
-  new _cloud() : _delegate = null;
+       ),
+       _workspaceConversationTools = workspaceConversationTools;
+  new _cloud() : _delegate = null, _workspaceConversationTools = null;
 
   final agent.ResolvedToolRunner<ResolvedTool>? _delegate;
+  final WorkspaceConversationToolsUsecase? _workspaceConversationTools;
   final Map<({String conversationId, String toolCallId}), Map<String, Object?>>
   _mcpAppResultData = {};
 
@@ -145,6 +151,15 @@ class ResolvedToolService {
       throw StateError('Cloud tools execute on the server.');
     }
 
+    if (tool.isWorkspaceCommand) {
+      final commands = _workspaceConversationTools;
+      if (commands == null)
+        throw StateError('Workspace commands are not configured.');
+      return commands.call(
+        conversationId: conversationId,
+        arguments: arguments,
+      );
+    }
     final result = await delegate.call(
       conversationId: conversationId,
       toolCallId: toolCallId,
@@ -1072,6 +1087,7 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
             .read(browserSessionProvider(workspaceId, conversationId).notifier)
             .runSkillTool(toolSlug, arguments),
     connectorCommandUsecase: ref.watch(connectorCommandUsecaseProvider),
+    workspaceConversationTools: ref.watch(workspaceConversationToolsProvider),
     conversationLanguageRuntime: ref.watch(
       conversationAgentLanguageRuntimeProvider,
     ),

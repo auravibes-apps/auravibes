@@ -116,3 +116,5 @@ export 'src/transcript_selection.dart';
 export 'src/url_content_format.dart';
 export 'src/url_content_transformer.dart';
 export 'src/url_tool.dart';
+
+export 'src/workspace_command.dart';

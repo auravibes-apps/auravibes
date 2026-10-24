@@ -64,6 +64,13 @@ class ResolvedTool._({
   })
   skillNative = _skillNative;
 
+  static ResolvedTool workspaceCommand() => ResolvedTool._(
+    type: .builtIn, tableId: workspaceCommandTableId,
+    toolIdentifier: workspaceCommandToolName, fullName: workspaceCommandToolName,
+  );
+  bool get isWorkspaceCommand => tableId == workspaceCommandTableId &&
+      toolIdentifier == workspaceCommandToolName && type == .builtIn;
+
   final bool isBuiltIn = type == .builtIn;
   final bool isMcp = type == .mcp;
   final bool isNative = type == .native;

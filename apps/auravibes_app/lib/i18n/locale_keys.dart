@@ -2818,4 +2818,11 @@ abstract class LocaleKeys {
   static const workspace_relational_previous = 'workspace_relational.previous';
   static const workspace_relational_stale = 'workspace_relational.stale';
   static const workspace_relational_loading = 'workspace_relational.loading';
+  static const workspace_chat_share = 'workspace_chat.share';
+  static const workspace_chat_revoke = 'workspace_chat.revoke';
+  static const workspace_chat_scope = 'workspace_chat.scope';
+  static const workspace_chat_shared = 'workspace_chat.shared';
+  static const workspace_chat_revoked = 'workspace_chat.revoked';
+  static const workspace_chat_records = 'workspace_chat.records';
+  static const workspace_chat_structure = 'workspace_chat.structure';
 }

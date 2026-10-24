@@ -2167,5 +2167,14 @@
     "previous": "Previous",
     "stale": "Refreshing data. Previous results may have changed.",
     "loading": "Loading current data…"
-  }
+  },
+  "workspace_chat": {
+    "share": "Share with AI",
+    "revoke": "Stop sharing with AI",
+    "scope": "Only checked records and this item’s structure will be shared. Opening an item does not share its data.",
+    "shared": "Workspace selection shared with this Conversation. Read only the shared selection unless I request edits.",
+    "revoked": "Workspace selection sharing stopped. Do not read or edit the previous selection.",
+    "records": "Select records to share",
+    "structure": "Item structure only"
+}
 }
