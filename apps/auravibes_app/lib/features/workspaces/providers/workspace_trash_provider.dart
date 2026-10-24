@@ -14,6 +14,15 @@ part 'workspace_trash_provider.g.dart';
 Future<ManageWorkspaceTrashUsecase> workspaceTrashUsecase(
   Ref ref,
   String workspaceId,
+) {
+  final link = ref.keepAlive();
+
+  return _trashUsecase(ref, workspaceId).whenComplete(link.close);
+}
+
+Future<ManageWorkspaceTrashUsecase> _trashUsecase(
+  Ref ref,
+  String workspaceId,
 ) async {
   final session = await ref.watch(
     workspaceSessionForRouteProvider(workspaceId).future,

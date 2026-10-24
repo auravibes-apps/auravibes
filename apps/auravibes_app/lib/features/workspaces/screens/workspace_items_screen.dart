@@ -20,6 +20,7 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_item_creatio
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_lists.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_metadata_editor.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_trash_panel.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_creation.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_metadata_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -229,7 +230,17 @@ class const _DirectoryMore(final _Navigation navigation)
   Widget build(BuildContext context, WidgetRef ref) =>
       navigation.selection.value != null
       ? _SelectionActions(navigation)
-      : AuraPopupMenuButton(items: [_select(), _reload(ref)]);
+      : AuraPopupMenuButton(
+          items: [_select(), _reload(ref), _trash(context)],
+          identifier: 'workspace_directory_more',
+          tooltip: LocaleKeys.common_show_more.tr(),
+        );
+  AuraPopupMenuItem _trash(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_items_trash),
+    onTap: () =>
+        unawaited(WorkspaceTrashPanel.open(context, navigation.workspaceId)),
+    identifier: 'workspace_directory_trash',
+  );
   AuraPopupMenuItem _select() => AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.workspace_items_select),
     onTap: () => navigation.selection.value =

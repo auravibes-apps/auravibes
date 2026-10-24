@@ -6,11 +6,13 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_references
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_csv_dialog.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_browser.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_access_panel.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_trash_actions.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -304,7 +306,7 @@ class const _BrowserToolbar(
       _TableBackButton(browser, settings),
       Expanded(child: Text(browser.table.name)),
       if (browser.table.canEditRecords) _NewRecordButton(browser, settings),
-      if (browser.table.canManage) _SettingsButton(settings),
+      _TableMenu(browser, settings),
     ],
   );
 }
@@ -347,19 +349,70 @@ class const _NewRecordButton(
   }
 }
 
-class const _SettingsButton(final ValueNotifier<bool> settings)
-    extends StatelessWidget {
+class const _TableMenu(
+  final _TableBrowser browser,
+  final ValueNotifier<bool> settings,
+) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => AuraPopupMenuButton(
+  Widget build(BuildContext context, WidgetRef ref) => AuraPopupMenuButton(
     items: [
-      AuraPopupMenuItem(
-        title: const TextLocale(LocaleKeys.workspace_items_settings),
-        onTap: () => settings.value = !settings.value,
-      ),
+      if (browser.table.canManage) _settings(),
+      if (browser.table.canEditRecords) _import(context, ref),
+      _export(context),
+      if (browser.table.canManage) ...[
+        const AuraPopupMenuDivider(),
+        _trash(context, ref),
+      ],
     ],
     identifier: 'workspace_table_overflow',
-    tooltip: LocaleKeys.workspace_items_settings.tr(),
+    tooltip: LocaleKeys.common_show_more.tr(),
   );
+
+  AuraPopupMenuItem _settings() => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_items_settings),
+    onTap: () => settings.value = !settings.value,
+  );
+  AuraPopupMenuItem _import(BuildContext context, WidgetRef ref) =>
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.workspace_csv_import),
+        onTap: () => unawaited(
+          WorkspaceCsvDialog.openImport(
+            context,
+            ref,
+            browser.workspaceId,
+            browser.table,
+          ),
+        ),
+        identifier: 'workspace_csv_import',
+      );
+  AuraPopupMenuItem _export(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_csv_export),
+    onTap: () => unawaited(
+      WorkspaceCsvDialog.openExport(
+        context,
+        browser.workspaceId,
+        browser.table,
+      ),
+    ),
+    identifier: 'workspace_csv_export',
+  );
+  AuraPopupMenuItem _trash(BuildContext context, WidgetRef ref) =>
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.workspace_items_trash_action),
+        onTap: () => unawaited(_delete(context, ref)),
+        variant: .error,
+        identifier: 'workspace_table_trash',
+      );
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final table = browser.table;
+    final deleted = await WorkspaceTrashActions.trash(
+      context,
+      ref,
+      browser.workspaceId,
+      .new(kind: .table, id: table.id, revision: table.revision),
+    );
+    if (context.mounted && deleted) browser.onBack();
+  }
 }
 
 class const _TableManagement({required final _TableBrowser browser})
