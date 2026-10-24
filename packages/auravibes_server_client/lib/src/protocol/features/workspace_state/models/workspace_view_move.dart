@@ -18,12 +18,14 @@ abstract class WorkspaceViewMove
     required this.id,
     required this.expectedRevision,
     this.parentId,
+    this.name,
   });
 
   factory WorkspaceViewMove({
     required String id,
     required int expectedRevision,
     String? parentId,
+    String? name,
   }) = _WorkspaceViewMoveImpl;
 
   factory WorkspaceViewMove.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -31,6 +33,7 @@ abstract class WorkspaceViewMove
       id: jsonSerialization['id'] as String,
       expectedRevision: jsonSerialization['expectedRevision'] as int,
       parentId: jsonSerialization['parentId'] as String?,
+      name: jsonSerialization['name'] as String?,
     );
   }
 
@@ -40,6 +43,8 @@ abstract class WorkspaceViewMove
 
   String? parentId;
 
+  String? name;
+
   /// Returns a shallow copy of this [WorkspaceViewMove]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -47,6 +52,7 @@ abstract class WorkspaceViewMove
     String? id,
     int? expectedRevision,
     String? parentId,
+    String? name,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -55,6 +61,7 @@ abstract class WorkspaceViewMove
       'id': id,
       'expectedRevision': expectedRevision,
       if (parentId != null) 'parentId': parentId,
+      if (name != null) 'name': name,
     };
   }
 
@@ -65,6 +72,7 @@ abstract class WorkspaceViewMove
       'id': id,
       'expectedRevision': expectedRevision,
       if (parentId != null) 'parentId': parentId,
+      if (name != null) 'name': name,
     };
   }
 
@@ -81,10 +89,12 @@ class _WorkspaceViewMoveImpl extends WorkspaceViewMove {
     required String id,
     required int expectedRevision,
     String? parentId,
+    String? name,
   }) : super._(
          id: id,
          expectedRevision: expectedRevision,
          parentId: parentId,
+         name: name,
        );
 
   /// Returns a shallow copy of this [WorkspaceViewMove]
@@ -95,11 +105,13 @@ class _WorkspaceViewMoveImpl extends WorkspaceViewMove {
     String? id,
     int? expectedRevision,
     Object? parentId = _Undefined,
+    Object? name = _Undefined,
   }) {
     return WorkspaceViewMove(
       id: id ?? this.id,
       expectedRevision: expectedRevision ?? this.expectedRevision,
       parentId: parentId is String? ? parentId : this.parentId,
+      name: name is String? ? name : this.name,
     );
   }
 }
