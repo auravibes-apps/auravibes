@@ -1500,18 +1500,20 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     String endpoint,
     String requestId,
     Transaction transaction,
-  ) => WorkspaceMutationReceipt.db.findFirstRow(
-    session,
-    where: (t) =>
-        t.workspaceId.equals(workspaceId) &
-        t.actorUserId.equals(userId) &
-        t.scopeKey.equals(
-          WorkspaceResourceValidation.receiptScopeKey(workspaceId),
-        ) &
-        t.endpoint.equals(endpoint) &
-        t.requestId.equals(requestId),
-    transaction: transaction,
-  ).then(WorkspaceHistoryReceipts.available);
+  ) => WorkspaceMutationReceipt.db
+      .findFirstRow(
+        session,
+        where: (t) =>
+            t.workspaceId.equals(workspaceId) &
+            t.actorUserId.equals(userId) &
+            t.scopeKey.equals(
+              WorkspaceResourceValidation.receiptScopeKey(workspaceId),
+            ) &
+            t.endpoint.equals(endpoint) &
+            t.requestId.equals(requestId),
+        transaction: transaction,
+      )
+      .then(WorkspaceHistoryReceipts.available);
   Future<void> _saveReceipt(
     Session session, {
     required int workspaceId,

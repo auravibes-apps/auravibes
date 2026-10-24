@@ -11,6 +11,7 @@ import 'package:auravibes_app/data/repositories/local_workspace_view_repository.
 import 'package:auravibes_app/features/workspaces/models/workspace_csv_input.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_history_blocked_exception.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_record_change.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_history_usecase.dart';
@@ -251,10 +252,11 @@ void main() {
         fixture.database,
         'local',
       );
-      await batch.apply([
+      final swap = <WorkspaceRecordChange>[
         .new(table: table, record: first, values: {table.labelColumnId: 'B'}),
         .new(table: table, record: second, values: {table.labelColumnId: 'A'}),
-      ], requestId: 'swap');
+      ];
+      await batch.apply(swap, requestId: 'swap');
       final revisions = await fixture.history.history(
         .new(kind: .record, id: first.id, tableId: table.id, revision: 2),
       );
@@ -263,14 +265,11 @@ void main() {
         {table.labelColumnId: 'A'},
       ]);
       final current = await tables.record(table.id, first.id);
+      final duplicate = <WorkspaceRecordChange>[
+        .new(table: table, record: current, values: {table.labelColumnId: 'A'}),
+      ];
       await expectLater(
-        batch.apply([
-          .new(
-            table: table,
-            record: current,
-            values: {table.labelColumnId: 'A'},
-          ),
-        ], requestId: 'duplicate'),
+        batch.apply(duplicate, requestId: 'duplicate'),
         throwsA(isA<WorkspaceTableException>()),
       );
       expect(
@@ -336,8 +335,7 @@ void main() {
     },
   );
 
-  test('permanent deletion rejects retained history links but '
-      'purges unreferenced own history', () async {
+  test('permanent deletion protects external history', () async {
     final fixture = await _fixture();
     final targetTable = await fixture.tables.create(
       name: 'Targets',
@@ -457,8 +455,7 @@ void main() {
     },
   );
 
-  test('purging a View removes its own history and prevents receipt '
-      'replay or identity reuse', () async {
+  test('purged Views reject replay and identity reuse', () async {
     final fixture = await _fixture();
     final views = ManageWorkspaceViewsUsecase(
       LocalWorkspaceViewRepository(fixture.database, 'local'),
@@ -494,8 +491,7 @@ void main() {
     expect(await trash.list(), isEmpty);
   });
 
-  test('explicit retention expires old references, preserves '
-      'current data and replay markers', () async {
+  test('retention expiry preserves data and replay guards', () async {
     final fixture = await _fixture();
     final targetTable = await fixture.tables.create(
       name: 'Targets',

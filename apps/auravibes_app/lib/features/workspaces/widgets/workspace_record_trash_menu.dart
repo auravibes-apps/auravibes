@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_history_panel.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_trash_actions.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -17,49 +18,49 @@ class const WorkspaceRecordTrashMenu({
   final bool canTrash = true,
   super.key,
 }) extends ConsumerWidget {
+  WorkspaceTrashTarget get _target => .new(
+    kind: .record,
+    id: record.id,
+    revision: record.revision,
+    tableId: record.tableId,
+  );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraPopupMenuButton(
-    items: [
-      AuraPopupMenuItem(
-        title: const TextLocale(LocaleKeys.workspace_items_history_title),
-        onTap: () => unawaited(
-          WorkspaceHistoryPanel.open(
-            context,
-            workspaceId,
-            .new(
-              kind: .record,
-              id: record.id,
-              tableId: record.tableId,
-              revision: record.revision,
-            ),
-            canRestore: canTrash,
-          ),
-        ),
-        identifier: 'workspace_record_history',
-      ),
-      if (canTrash)
-        AuraPopupMenuItem(
-          title: const TextLocale(LocaleKeys.workspace_items_trash_action),
-          onTap: () => unawaited(_trash(context, ref)),
-          variant: .error,
-          identifier: 'workspace_record_trash',
-        ),
-    ],
+    items: [_history(context), if (canTrash) _trashItem(context, ref)],
     identifier: 'workspace_record_overflow',
     tooltip: LocaleKeys.common_show_more.tr(),
   );
+
+  AuraPopupMenuItem _history(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_items_history_title),
+    onTap: () => _openHistory(context),
+    identifier: 'workspace_record_history',
+  );
+
+  void _openHistory(BuildContext context) => unawaited(
+    WorkspaceHistoryPanel.open(
+      context,
+      workspaceId,
+      _target,
+      canRestore: canTrash,
+    ),
+  );
+
+  AuraPopupMenuItem _trashItem(BuildContext context, WidgetRef ref) =>
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.workspace_items_trash_action),
+        onTap: () => unawaited(_trash(context, ref)),
+        variant: .error,
+        identifier: 'workspace_record_trash',
+      );
 
   Future<void> _trash(BuildContext context, WidgetRef ref) async {
     final deleted = await WorkspaceTrashActions.trash(
       context,
       ref,
       workspaceId,
-      .new(
-        kind: .record,
-        id: record.id,
-        revision: record.revision,
-        tableId: record.tableId,
-      ),
+      _target,
     );
     if (context.mounted && deleted) onTrashed();
   }
