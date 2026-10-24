@@ -2707,4 +2707,23 @@ abstract class LocaleKeys {
   static const workspace_views_save = 'workspace_views.save';
   static const workspace_views_no_tables = 'workspace_views.no_tables';
   static const workspace_views_no_views = 'workspace_views.no_views';
+  static const workspace_csv_import = 'workspace_csv.import';
+  static const workspace_csv_export = 'workspace_csv.export';
+  static const workspace_csv_help = 'workspace_csv.help';
+  static const workspace_csv_skip = 'workspace_csv.skip';
+  static const workspace_csv_choose = 'workspace_csv.choose';
+  static const workspace_csv_validate = 'workspace_csv.validate';
+  static const workspace_csv_commit = 'workspace_csv.commit';
+  static const workspace_csv_save = 'workspace_csv.save';
+  static const workspace_csv_rows = 'workspace_csv.rows';
+  static const workspace_csv_validated = 'workspace_csv.validated';
+  static const workspace_csv_completed = 'workspace_csv.completed';
+  static const workspace_csv_invalid_value = 'workspace_csv.invalid_value';
+  static const workspace_csv_validation_failed =
+      'workspace_csv.validation_failed';
+  static const workspace_csv_row = 'workspace_csv.row';
+  static const workspace_csv_format = 'workspace_csv.format';
+  static const workspace_csv_invalid_file = 'workspace_csv.invalid_file';
+  static const workspace_csv_too_large = 'workspace_csv.too_large';
+  static const workspace_csv_invalid_mapping = 'workspace_csv.invalid_mapping';
 }

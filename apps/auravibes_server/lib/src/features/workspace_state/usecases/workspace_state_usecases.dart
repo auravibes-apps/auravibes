@@ -76,6 +76,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             afterSequence: after,
             limit: request.eventLimit,
           );
+
     return ReadWorkspaceStateResponse(
       pages: pages,
       currentSequence: workspace.sequence,
@@ -97,6 +98,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     required String userId,
     required PatchWorkspaceStateRequest request,
     Future<void> Function(Transaction transaction)? guard,
+    bool previewOnly = false,
   }) async {
     if (request.requestId.isEmpty ||
         request.viewMoves?.isNotEmpty == true ||
@@ -120,67 +122,75 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final requestHash = (await Sha256().hash(utf8.encode(requestJson))).bytes;
     final hash = base64UrlEncode(requestHash);
 
-    return session.db.transaction((transaction) async {
-      await _authorize(
-        session,
-        request.workspaceId,
-        userId,
-        transaction: transaction,
-      );
-      final workspace = await _requireLockedWorkspace(
-        session,
-        request.workspaceId,
-        transaction,
-      );
-      final member = await _authorize(
-        session,
-        request.workspaceId,
-        userId,
-        transaction: transaction,
-      );
-      _requirePatchRole(member.role, request.operations);
-      for (final operation in request.operations) {
-        await WorkspaceTableAccess(transaction: transaction).requireWrite(
+    try {
+      return await session.db.transaction((transaction) async {
+        await _authorize(
           session,
-          member,
-          operation,
+          request.workspaceId,
+          userId,
+          transaction: transaction,
         );
-      }
-      final receipt = await _findReceipt(
-        session,
-        request.workspaceId,
-        userId,
-        _endpointPatch,
-        request.requestId,
-        transaction,
-      );
-      if (receipt != null) {
-        if (receipt.requestHash != hash) _idempotencyConflict();
-        return await _visiblePatch(
+        final workspace = await _requireLockedWorkspace(
           session,
-          member,
+          request.workspaceId,
           transaction,
-          PatchWorkspaceStateResponse.fromJson(
-            jsonDecode(receipt.responseJson) as Map<String, dynamic>,
-          ),
         );
-      }
+        final member = await _authorize(
+          session,
+          request.workspaceId,
+          userId,
+          transaction: transaction,
+        );
+        _requirePatchRole(member.role, request.operations);
+        for (final operation in request.operations) {
+          await WorkspaceTableAccess(transaction: transaction).requireWrite(
+            session,
+            member,
+            operation,
+          );
+        }
+        final receipt = await _findReceipt(
+          session,
+          request.workspaceId,
+          userId,
+          _endpointPatch,
+          request.requestId,
+          transaction,
+        );
+        if (!previewOnly && receipt != null) {
+          if (receipt.requestHash != hash) _idempotencyConflict();
 
-      await guard?.call(transaction);
-      return _commitOperations(
-        session,
-        workspace: workspace,
-        workspaceId: request.workspaceId,
-        metadata: (
-          userId: userId,
-          endpoint: _endpointPatch,
-          requestId: request.requestId,
-          hash: hash,
-        ),
-        operations: request.operations,
-        transaction: transaction,
-      );
-    });
+          return await _visiblePatch(
+            session,
+            member,
+            transaction,
+            PatchWorkspaceStateResponse.fromJson(
+              jsonDecode(receipt.responseJson) as Map<String, dynamic>,
+            ),
+          );
+        }
+
+        await guard?.call(transaction);
+        final response = await _commitOperations(
+          session,
+          workspace: workspace,
+          workspaceId: request.workspaceId,
+          metadata: (
+            userId: userId,
+            endpoint: _endpointPatch,
+            requestId: request.requestId,
+            hash: hash,
+          ),
+          operations: request.operations,
+          transaction: transaction,
+        );
+        if (previewOnly) throw _WorkspacePreviewComplete(response);
+
+        return response;
+      });
+    } on _WorkspacePreviewComplete catch (preview) {
+      return preview.response;
+    }
   }
 
   Future<PatchWorkspaceStateResponse> duplicateAgent(
@@ -222,6 +232,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
+
         return PatchWorkspaceStateResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
@@ -232,6 +243,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         request,
         transaction,
       );
+
       return _commitOperations(
         session,
         workspace: workspace,
@@ -312,6 +324,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       transaction: transaction,
     );
     if (member == null) throw CloudWorkspaceException(code: .permissionDenied);
+
     return await _visiblePatch(session, member, transaction, response);
   }
 
@@ -327,6 +340,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           .visible(session, member, row);
       if (visible != null) resources.add(visible);
     }
+
     return response.copyWith(resources: resources);
   }
 
@@ -344,6 +358,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final hash = base64UrlEncode(
       (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
     );
+
     return session.db.transaction((transaction) async {
       final member = await _authorize(
         session,
@@ -371,6 +386,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
+
         return PutWorkspaceSecretResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
@@ -475,6 +491,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         now: now,
         transaction: transaction,
       );
+
       return response;
     });
   }
@@ -516,6 +533,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final hash = base64UrlEncode(
       (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
     );
+
     return session.db.transaction((transaction) async {
       final member = await _authorize(
         session,
@@ -544,6 +562,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
+
         return MutateWorkspaceCredentialResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
@@ -688,6 +707,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           now: now,
           transaction: transaction,
         );
+
         return response;
       }
       final box = secret == null
@@ -786,6 +806,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         now: now,
         transaction: transaction,
       );
+
       return response;
     });
   }
@@ -815,6 +836,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       ..['hasSecret'] = configured;
     if (displaySuffix != null) decoded['keySuffix'] = displaySuffix;
     if (secretRevision != null) decoded['secretRevision'] = secretRevision;
+
     return WorkspacePatchOperation(
       operation: operation.operation,
       resourceKind: operation.resourceKind,
@@ -1009,6 +1031,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     if (value is List) return value.any(_containsSecretData);
     if (value is! Map) return false;
     const secretKeys = {'secret', 'token', 'apiKey', 'password', 'credential'};
+
     return value.entries.any(
       (entry) =>
           (entry.key is String && secretKeys.contains(entry.key)) ||
@@ -1039,6 +1062,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         code: CloudWorkspaceErrorCode.membershipRequired,
       );
     }
+
     return member;
   }
 
@@ -1114,6 +1138,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       ),
     ];
     if (operations.length > _maxOperations) _validationFailed();
+
     return operations;
   }
 
@@ -1301,6 +1326,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           operation.expectedRevision != null) {
         throw CloudWorkspaceException(code: CloudWorkspaceErrorCode.conflict);
       }
+
       return WorkspaceResource.db.insertRow(
         session,
         WorkspaceResource(
@@ -1352,6 +1378,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
     }
+
     return WorkspaceResource.db.updateRow(
       session,
       updated,
@@ -1462,3 +1489,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     code: CloudWorkspaceErrorCode.idempotencyConflict,
   );
 }
+
+class const _WorkspacePreviewComplete(
+  final PatchWorkspaceStateResponse response,
+) implements Exception;

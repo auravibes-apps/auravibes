@@ -1097,6 +1097,22 @@ class EndpointWorkspaceStream extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointWorkspaceCsv extends _isc.EndpointRef {
+  EndpointWorkspaceCsv(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceCsv';
+
+  _ida.Future<_inzhu3sh.PatchWorkspaceStateResponse> preview(
+    _i4jm10bd.PatchWorkspaceStateRequest request,
+  ) => caller.callServerEndpoint<_inzhu3sh.PatchWorkspaceStateResponse>(
+    'workspaceCsv',
+    'preview',
+    {'request': request},
+  );
+}
+
+/// {@category Endpoint}
 class EndpointWorkspaceReference extends _isc.EndpointRef {
   EndpointWorkspaceReference(_isc.EndpointCaller caller) : super(caller);
 
@@ -1448,6 +1464,7 @@ class Client extends _isc.ServerpodClientShared {
     object = EndpointObject(this);
     skillResource = EndpointSkillResource(this);
     workspaceStream = EndpointWorkspaceStream(this);
+    workspaceCsv = EndpointWorkspaceCsv(this);
     workspaceReference = EndpointWorkspaceReference(this);
     workspaceSecret = EndpointWorkspaceSecret(this);
     workspaceState = EndpointWorkspaceState(this);
@@ -1480,6 +1497,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointWorkspaceStream workspaceStream;
 
+  late final EndpointWorkspaceCsv workspaceCsv;
+
   late final EndpointWorkspaceReference workspaceReference;
 
   late final EndpointWorkspaceSecret workspaceSecret;
@@ -1506,6 +1525,7 @@ class Client extends _isc.ServerpodClientShared {
     'object': object,
     'skillResource': skillResource,
     'workspaceStream': workspaceStream,
+    'workspaceCsv': workspaceCsv,
     'workspaceReference': workspaceReference,
     'workspaceSecret': workspaceSecret,
     'workspaceState': workspaceState,

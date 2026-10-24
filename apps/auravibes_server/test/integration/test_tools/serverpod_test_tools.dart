@@ -426,6 +426,8 @@ class TestEndpoints {
 
   late final _WorkspaceStreamEndpoint workspaceStream;
 
+  late final _WorkspaceCsvEndpoint workspaceCsv;
+
   late final _WorkspaceReferenceEndpoint workspaceReference;
 
   late final _WorkspaceSecretEndpoint workspaceSecret;
@@ -489,6 +491,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     workspaceStream = _WorkspaceStreamEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    workspaceCsv = _WorkspaceCsvEndpoint(
       endpoints,
       serializationManager,
     );
@@ -2819,6 +2825,46 @@ class _WorkspaceStreamEndpoint {
       _localTestStreamManager.outputStreamController,
     );
     return _localTestStreamManager.outputStreamController.stream;
+  }
+}
+
+class _WorkspaceCsvEndpoint {
+  _WorkspaceCsvEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse> preview(
+    _ist.TestSessionBuilder sessionBuilder,
+    _iti8d4cu.PatchWorkspaceStateRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceCsv',
+            method: 'preview',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceCsv',
+          methodName: 'preview',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
   }
 }
 
