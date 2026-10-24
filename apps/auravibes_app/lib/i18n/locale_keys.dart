@@ -2691,4 +2691,20 @@ abstract class LocaleKeys {
       'workspace_items.reference_incompatible';
   static const workspace_items_reference_select_parent =
       'workspace_items.reference_select_parent';
+  static const workspace_views_title = 'workspace_views.title';
+  static const workspace_views_create = 'workspace_views.create';
+  static const workspace_views_name = 'workspace_views.name';
+  static const workspace_views_bindings = 'workspace_views.bindings';
+  static const workspace_views_repair = 'workspace_views.repair';
+  static const workspace_views_edit = 'workspace_views.edit';
+  static const workspace_views_history = 'workspace_views.history';
+  static const workspace_views_restore = 'workspace_views.restore';
+  static const workspace_views_empty = 'workspace_views.empty';
+  static const workspace_views_display_only = 'workspace_views.display_only';
+  static const workspace_views_definition = 'workspace_views.definition';
+  static const workspace_views_unavailable = 'workspace_views.unavailable';
+  static const workspace_views_limit = 'workspace_views.limit';
+  static const workspace_views_save = 'workspace_views.save';
+  static const workspace_views_no_tables = 'workspace_views.no_tables';
+  static const workspace_views_no_views = 'workspace_views.no_views';
 }

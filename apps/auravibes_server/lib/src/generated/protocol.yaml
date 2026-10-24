@@ -97,6 +97,11 @@ workspaceState:
   - patch:
   - duplicateAgent:
   - mutateCredential:
+workspaceView:
+  - list:
+  - read:
+  - history:
+  - save:
 cloudWorkspace:
   - listAuthorizedWorkspaces:
   - listPendingInvites:

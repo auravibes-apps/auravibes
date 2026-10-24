@@ -1,0 +1,12 @@
+class: WorkspaceView
+table: workspace_view
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  stableId: String
+  data: String
+  revision: int
+  history: String
+indexes:
+  workspace_view_stable_idx:
+    fields: workspaceId, stableId
+    unique: true
