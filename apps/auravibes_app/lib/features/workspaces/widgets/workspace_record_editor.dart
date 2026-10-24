@@ -82,12 +82,12 @@ class const _RecordForm({
   required final Future<void> Function() onSave,
 }) extends StatelessWidget {
   Widget? get _trailing => switch (editor.record) {
-    final WorkspaceRecord record when editor.table.canEditRecords =>
-      WorkspaceRecordTrashMenu(
-        workspaceId: editor.workspaceId,
-        record: record,
-        onTrashed: editor.onBack,
-      ),
+    final WorkspaceRecord record => WorkspaceRecordTrashMenu(
+      workspaceId: editor.workspaceId,
+      record: record,
+      onTrashed: editor.onBack,
+      canTrash: editor.table.canEditRecords,
+    ),
     _ => null,
   };
 

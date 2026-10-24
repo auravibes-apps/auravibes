@@ -7,6 +7,8 @@ import '../../generated/protocol.dart';
 import '../workspace_state/domain/workspace_resource_validation.dart';
 import '../workspace_state/workspace_table_access.dart';
 import '../workspace_state/workspace_table_duplication.dart';
+
+import '../workspace_state/workspace_revision_capture.dart';
 import 'workspace_view_validation.dart';
 
 class const WorkspaceViewStore(
@@ -127,6 +129,10 @@ class const _ViewWriter(final _ViewContext context) {
     WorkspaceViewValidation.requestId(request.requestId);
     final input = await _input(request);
     await _requireLive(request.viewId);
+    await WorkspaceRevisionCapture(
+      context.session,
+      context.transaction,
+    ).requireView(request);
     final replay = await _ViewReceipts(context).replay(request);
     if (replay != null) return replay;
 

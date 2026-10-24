@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import 'workspace_revision_capture.dart';
 import 'workspace_trash_access.dart';
 import 'workspace_trash_view_store.dart';
 
@@ -78,11 +79,20 @@ class const WorkspaceTrashStore(
       await _views.write(resource);
       return;
     }
+    final previous = await WorkspaceResource.db.findById(
+      session,
+      resource.id!,
+      transaction: transaction,
+    );
+    if (previous != null) {
+      await WorkspaceRevisionCapture(session, transaction).save(previous);
+    }
     final _ = await WorkspaceResource.db.updateRow(
       session,
       resource,
       transaction: transaction,
     );
+    await WorkspaceRevisionCapture(session, transaction).save(resource);
   }
 
   Future<void> _event(

@@ -138,6 +138,10 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/p
     as _ixodmwhe;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_request.dart'
     as _i2v5creq;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_history_policy_request.dart'
+    as _ii3fyw7y;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_history_restore_request.dart'
+    as _i1gme7yv;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_record_summary_request.dart'
     as _il1i4a8s;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_record_request.dart'
@@ -202,6 +206,8 @@ import '../features/objects/object_endpoint.dart' as _ia0f4jqg;
 import '../features/skills/skill_resource_endpoint.dart' as _ip6c362v;
 import '../features/sync/stream/workspace_stream_endpoint.dart' as _ifbwcqx4;
 import '../features/workspace_state/workspace_csv_endpoint.dart' as _iml0si8c;
+import '../features/workspace_state/workspace_history_endpoint.dart'
+    as _iro98jgh;
 import '../features/workspace_state/workspace_reference_endpoint.dart'
     as _it87m04z;
 import '../features/workspace_state/workspace_secret_endpoint.dart'
@@ -291,6 +297,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'workspaceCsv',
+          null,
+        ),
+      'workspaceHistory': _iro98jgh.WorkspaceHistoryEndpoint()
+        ..initialize(
+          server,
+          'workspaceHistory',
           null,
         ),
       'workspaceReference': _it87m04z.WorkspaceReferenceEndpoint()
@@ -1903,6 +1915,129 @@ class Endpoints extends _is.EndpointDispatch {
               ) async =>
                   (endpoints['workspaceCsv'] as _iml0si8c.WorkspaceCsvEndpoint)
                       .preview(
+                        session,
+                        params['request'],
+                      ),
+        ),
+      },
+    );
+    connectors['workspaceHistory'] = _is.EndpointConnector(
+      name: 'workspaceHistory',
+      endpoint: endpoints['workspaceHistory']!,
+      methodConnectors: {
+        'policy': _is.MethodConnector(
+          name: 'policy',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceHistory']
+                          as _iro98jgh.WorkspaceHistoryEndpoint)
+                      .policy(
+                        session,
+                        params['workspaceId'],
+                      ),
+        ),
+        'configurePolicy': _is.MethodConnector(
+          name: 'configurePolicy',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_ii3fyw7y.WorkspaceHistoryPolicyRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceHistory']
+                          as _iro98jgh.WorkspaceHistoryEndpoint)
+                      .configurePolicy(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'permanentlyDelete': _is.MethodConnector(
+          name: 'permanentlyDelete',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'targetJson': _is.ParameterDescription(
+              name: 'targetJson',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceHistory']
+                          as _iro98jgh.WorkspaceHistoryEndpoint)
+                      .permanentlyDelete(
+                        session,
+                        params['workspaceId'],
+                        params['targetJson'],
+                      ),
+        ),
+        'history': _is.MethodConnector(
+          name: 'history',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'targetJson': _is.ParameterDescription(
+              name: 'targetJson',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceHistory']
+                          as _iro98jgh.WorkspaceHistoryEndpoint)
+                      .history(
+                        session,
+                        params['workspaceId'],
+                        params['targetJson'],
+                      ),
+        ),
+        'restore': _is.MethodConnector(
+          name: 'restore',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i1gme7yv.WorkspaceHistoryRestoreRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceHistory']
+                          as _iro98jgh.WorkspaceHistoryEndpoint)
+                      .restore(
                         session,
                         params['request'],
                       ),
