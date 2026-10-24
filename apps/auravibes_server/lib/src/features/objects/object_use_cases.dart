@@ -335,7 +335,7 @@ class ObjectUseCases {
         object.deletedAt != null) {
       throw ObjectException(code: ObjectErrorCode.objectNotFound);
     }
-    if (!await repository.hasLiveReference(
+    if (!await repository.hasReadableMessageReference(
       session,
       workspaceId: request.workspaceId,
       objectId: request.objectId,

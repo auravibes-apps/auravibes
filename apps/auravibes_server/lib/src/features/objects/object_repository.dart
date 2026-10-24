@@ -57,17 +57,50 @@ class ObjectRepository {
       transaction: transaction,
       lockMode: lock ? LockMode.forUpdate : null,
     );
-    if (reference == null) return false;
+    return reference != null;
+  }
+
+  Future<bool> hasReadableMessageReference(
+    Session session, {
+    required int workspaceId,
+    required int objectId,
+  }) async {
+    final references = await ObjectReference.db.find(
+      session,
+      where: (row) =>
+          row.workspaceId.equals(workspaceId) &
+          row.objectId.equals(objectId) &
+          row.deletedAt.equals(null),
+    );
+    for (final reference in references) {
+      if (await _messageReadable(session, workspaceId, reference.messageId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<bool> _messageReadable(
+    Session session,
+    int workspaceId,
+    int messageId,
+  ) async {
     final message = await ConversationMessage.db.findFirstRow(
       session,
       where: (t) =>
-          t.id.equals(reference.messageId) &
+          t.id.equals(messageId) &
           t.workspaceId.equals(workspaceId) &
           t.status.notEquals('deleted'),
-      transaction: transaction,
-      lockMode: lock ? LockMode.forUpdate : null,
     );
-    return message != null;
+    if (message == null) return false;
+    final conversation = await Conversation.db.findFirstRow(
+      session,
+      where: (row) =>
+          row.id.equals(message.conversationId) &
+          row.workspaceId.equals(workspaceId) &
+          row.deletedAt.equals(null),
+    );
+    return conversation != null;
   }
 
   Future<ObjectDeletion?> findDeletionByRequest(
