@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_connector_write_journal.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/features/service_connections/usecases/run_connector_tool_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
@@ -55,13 +56,15 @@ void main() {
         }),
         null,
         permissions,
+        journalForWorkspace: (id) => LocalConnectorWriteJournal(database, id),
       );
-      Future<Object?> run() => execute.call(
+      Future<Object?> run() => execute.call((
         workspaceId: 'workspace',
         connectorId: connector.identifier,
         toolSlug: connector.tools.single.slug,
         arguments: {'query': 'example'},
-      );
+        operationId: 'search-operation',
+      ));
       final _ = await run();
       expect(requests, 1);
       final group = await database.toolsGroupsDao.getToolsGroupByName(

@@ -130,7 +130,7 @@ void main() {
       addTearDown(container.dispose);
 
       final result = container.read(appDatabaseProvider);
-      expect(result.schemaVersion, 35);
+      expect(result.schemaVersion, 36);
     });
 
     test('overridden database has all DAOs accessible', () {

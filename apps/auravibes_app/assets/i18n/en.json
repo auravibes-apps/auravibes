@@ -1177,7 +1177,14 @@
       "stop_all": "Could not stop pending tool calls."
     }
   },
+  "connector_write": {
+    "approval": "This action may change external data. Review the destination and inputs before approving. Undo requires a supported compensating action; services cannot roll back together.",
+    "completed": "External action completed. Undo requires a supported compensating action.",
+    "failed": "External action failed. No automatic retry was performed.",
+    "uncertain": "Outcome uncertain. Check the source. Retry is blocked until the provider confirms the result; undo requires a supported compensating action."
+  },
   "tool_call_status": {
+    "uncertain": "Uncertain — needs review",
     "success": "Completed",
     "skipped_by_user": "Skipped",
     "stopped_by_user": "Stopped",

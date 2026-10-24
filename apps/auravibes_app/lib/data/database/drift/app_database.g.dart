@@ -17250,6 +17250,396 @@ class WorkspaceTableRecordsCompanion
   }
 }
 
+class $ConnectorWritesTable extends ConnectorWrites
+    with TableInfo<$ConnectorWritesTable, ConnectorWriteRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConnectorWritesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requestDigestMeta = const VerificationMeta(
+    'requestDigest',
+  );
+  @override
+  late final GeneratedColumn<String> requestDigest = GeneratedColumn<String>(
+    'request_digest',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _outcomeMeta = const VerificationMeta(
+    'outcome',
+  );
+  @override
+  late final GeneratedColumn<String> outcome = GeneratedColumn<String>(
+    'outcome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusCodeMeta = const VerificationMeta(
+    'statusCode',
+  );
+  @override
+  late final GeneratedColumn<int> statusCode = GeneratedColumn<int>(
+    'status_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    workspaceId,
+    operationId,
+    requestDigest,
+    outcome,
+    statusCode,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'connector_writes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ConnectorWriteRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('request_digest')) {
+      context.handle(
+        _requestDigestMeta,
+        requestDigest.isAcceptableOrUnknown(
+          data['request_digest']!,
+          _requestDigestMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_requestDigestMeta);
+    }
+    if (data.containsKey('outcome')) {
+      context.handle(
+        _outcomeMeta,
+        outcome.isAcceptableOrUnknown(data['outcome']!, _outcomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_outcomeMeta);
+    }
+    if (data.containsKey('status_code')) {
+      context.handle(
+        _statusCodeMeta,
+        statusCode.isAcceptableOrUnknown(data['status_code']!, _statusCodeMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId, operationId};
+  @override
+  ConnectorWriteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ConnectorWriteRow(
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      requestDigest: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_digest'],
+      )!,
+      outcome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}outcome'],
+      )!,
+      statusCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}status_code'],
+      ),
+    );
+  }
+
+  @override
+  $ConnectorWritesTable createAlias(String alias) {
+    return $ConnectorWritesTable(attachedDatabase, alias);
+  }
+}
+
+class ConnectorWriteRow extends DataClass
+    implements Insertable<ConnectorWriteRow> {
+  final String workspaceId;
+  final String operationId;
+  final String requestDigest;
+  final String outcome;
+  final int? statusCode;
+  const ConnectorWriteRow({
+    required this.workspaceId,
+    required this.operationId,
+    required this.requestDigest,
+    required this.outcome,
+    this.statusCode,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['operation_id'] = Variable<String>(operationId);
+    map['request_digest'] = Variable<String>(requestDigest);
+    map['outcome'] = Variable<String>(outcome);
+    if (!nullToAbsent || statusCode != null) {
+      map['status_code'] = Variable<int>(statusCode);
+    }
+    return map;
+  }
+
+  ConnectorWritesCompanion toCompanion(bool nullToAbsent) {
+    return ConnectorWritesCompanion(
+      workspaceId: Value(workspaceId),
+      operationId: Value(operationId),
+      requestDigest: Value(requestDigest),
+      outcome: Value(outcome),
+      statusCode: statusCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(statusCode),
+    );
+  }
+
+  factory ConnectorWriteRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ConnectorWriteRow(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      operationId: serializer.fromJson<String>(json['operationId']),
+      requestDigest: serializer.fromJson<String>(json['requestDigest']),
+      outcome: serializer.fromJson<String>(json['outcome']),
+      statusCode: serializer.fromJson<int?>(json['statusCode']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'operationId': serializer.toJson<String>(operationId),
+      'requestDigest': serializer.toJson<String>(requestDigest),
+      'outcome': serializer.toJson<String>(outcome),
+      'statusCode': serializer.toJson<int?>(statusCode),
+    };
+  }
+
+  ConnectorWriteRow copyWith({
+    String? workspaceId,
+    String? operationId,
+    String? requestDigest,
+    String? outcome,
+    Value<int?> statusCode = const Value.absent(),
+  }) => ConnectorWriteRow(
+    workspaceId: workspaceId ?? this.workspaceId,
+    operationId: operationId ?? this.operationId,
+    requestDigest: requestDigest ?? this.requestDigest,
+    outcome: outcome ?? this.outcome,
+    statusCode: statusCode.present ? statusCode.value : this.statusCode,
+  );
+  ConnectorWriteRow copyWithCompanion(ConnectorWritesCompanion data) {
+    return ConnectorWriteRow(
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      requestDigest: data.requestDigest.present
+          ? data.requestDigest.value
+          : this.requestDigest,
+      outcome: data.outcome.present ? data.outcome.value : this.outcome,
+      statusCode: data.statusCode.present
+          ? data.statusCode.value
+          : this.statusCode,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConnectorWriteRow(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('operationId: $operationId, ')
+          ..write('requestDigest: $requestDigest, ')
+          ..write('outcome: $outcome, ')
+          ..write('statusCode: $statusCode')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(workspaceId, operationId, requestDigest, outcome, statusCode);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ConnectorWriteRow &&
+          other.workspaceId == this.workspaceId &&
+          other.operationId == this.operationId &&
+          other.requestDigest == this.requestDigest &&
+          other.outcome == this.outcome &&
+          other.statusCode == this.statusCode);
+}
+
+class ConnectorWritesCompanion extends UpdateCompanion<ConnectorWriteRow> {
+  final Value<String> workspaceId;
+  final Value<String> operationId;
+  final Value<String> requestDigest;
+  final Value<String> outcome;
+  final Value<int?> statusCode;
+  final Value<int> rowid;
+  const ConnectorWritesCompanion({
+    this.workspaceId = const Value.absent(),
+    this.operationId = const Value.absent(),
+    this.requestDigest = const Value.absent(),
+    this.outcome = const Value.absent(),
+    this.statusCode = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ConnectorWritesCompanion.insert({
+    required String workspaceId,
+    required String operationId,
+    required String requestDigest,
+    required String outcome,
+    this.statusCode = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       operationId = Value(operationId),
+       requestDigest = Value(requestDigest),
+       outcome = Value(outcome);
+  static Insertable<ConnectorWriteRow> custom({
+    Expression<String>? workspaceId,
+    Expression<String>? operationId,
+    Expression<String>? requestDigest,
+    Expression<String>? outcome,
+    Expression<int>? statusCode,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (operationId != null) 'operation_id': operationId,
+      if (requestDigest != null) 'request_digest': requestDigest,
+      if (outcome != null) 'outcome': outcome,
+      if (statusCode != null) 'status_code': statusCode,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ConnectorWritesCompanion copyWith({
+    Value<String>? workspaceId,
+    Value<String>? operationId,
+    Value<String>? requestDigest,
+    Value<String>? outcome,
+    Value<int?>? statusCode,
+    Value<int>? rowid,
+  }) {
+    return ConnectorWritesCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      operationId: operationId ?? this.operationId,
+      requestDigest: requestDigest ?? this.requestDigest,
+      outcome: outcome ?? this.outcome,
+      statusCode: statusCode ?? this.statusCode,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (requestDigest.present) {
+      map['request_digest'] = Variable<String>(requestDigest.value);
+    }
+    if (outcome.present) {
+      map['outcome'] = Variable<String>(outcome.value);
+    }
+    if (statusCode.present) {
+      map['status_code'] = Variable<int>(statusCode.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConnectorWritesCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('operationId: $operationId, ')
+          ..write('requestDigest: $requestDigest, ')
+          ..write('outcome: $outcome, ')
+          ..write('statusCode: $statusCode, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -17299,6 +17689,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $WorkspaceTableRecordsTable workspaceTableRecords =
       $WorkspaceTableRecordsTable(this);
+  late final $ConnectorWritesTable connectorWrites = $ConnectorWritesTable(
+    this,
+  );
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
@@ -17435,6 +17828,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workspaceFolders,
     workspaceTables,
     workspaceTableRecords,
+    connectorWrites,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
     conversationsForkSourceIdx,
@@ -17724,6 +18118,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('workspace_table_records', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('connector_writes', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -18020,6 +18421,26 @@ final class $$WorkspacesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _workspaceTableRecordsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ConnectorWritesTable, List<ConnectorWriteRow>>
+  _connectorWritesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.connectorWrites,
+    aliasName: 'workspaces__id__connector_writes__workspace_id',
+  );
+
+  $$ConnectorWritesTableProcessedTableManager get connectorWritesRefs {
+    final manager = $$ConnectorWritesTableTableManager(
+      $_db,
+      $_db.connectorWrites,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _connectorWritesRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -18406,6 +18827,31 @@ class $$WorkspacesTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> connectorWritesRefs(
+    Expression<bool> Function($$ConnectorWritesTableFilterComposer f) f,
+  ) {
+    final $$ConnectorWritesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.connectorWrites,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConnectorWritesTableFilterComposer(
+            $db: $db,
+            $table: $db.connectorWrites,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -18829,6 +19275,31 @@ class $$WorkspacesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> connectorWritesRefs<T extends Object>(
+    Expression<T> Function($$ConnectorWritesTableAnnotationComposer a) f,
+  ) {
+    final $$ConnectorWritesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.connectorWrites,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConnectorWritesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.connectorWrites,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$WorkspacesTableTableManager
@@ -18858,6 +19329,7 @@ class $$WorkspacesTableTableManager
             bool workspaceFoldersRefs,
             bool workspaceTablesRefs,
             bool workspaceTableRecordsRefs,
+            bool connectorWritesRefs,
           })
         > {
   $$WorkspacesTableTableManager(_$AppDatabase db, $WorkspacesTable table)
@@ -18938,6 +19410,7 @@ class $$WorkspacesTableTableManager
                 workspaceFoldersRefs = false,
                 workspaceTablesRefs = false,
                 workspaceTableRecordsRefs = false,
+                connectorWritesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -18957,6 +19430,7 @@ class $$WorkspacesTableTableManager
                     if (workspaceFoldersRefs) db.workspaceFolders,
                     if (workspaceTablesRefs) db.workspaceTables,
                     if (workspaceTableRecordsRefs) db.workspaceTableRecords,
+                    if (connectorWritesRefs) db.connectorWrites,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -19234,6 +19708,27 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (connectorWritesRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          ConnectorWriteRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._connectorWritesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).connectorWritesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -19268,6 +19763,7 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool workspaceFoldersRefs,
         bool workspaceTablesRefs,
         bool workspaceTableRecordsRefs,
+        bool connectorWritesRefs,
       })
     >;
 typedef $$ServiceConnectionsTableCreateCompanionBuilder =
@@ -33758,6 +34254,338 @@ typedef $$WorkspaceTableRecordsTableProcessedTableManager =
       WorkspaceTableRecordRow,
       PrefetchHooks Function({bool workspaceId, bool tableId})
     >;
+typedef $$ConnectorWritesTableCreateCompanionBuilder =
+    ConnectorWritesCompanion Function({
+      required String workspaceId,
+      required String operationId,
+      required String requestDigest,
+      required String outcome,
+      Value<int?> statusCode,
+      Value<int> rowid,
+    });
+typedef $$ConnectorWritesTableUpdateCompanionBuilder =
+    ConnectorWritesCompanion Function({
+      Value<String> workspaceId,
+      Value<String> operationId,
+      Value<String> requestDigest,
+      Value<String> outcome,
+      Value<int?> statusCode,
+      Value<int> rowid,
+    });
+
+final class $$ConnectorWritesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ConnectorWritesTable,
+          ConnectorWriteRow
+        > {
+  $$ConnectorWritesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) => db.workspaces
+      .createAlias('connector_writes__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ConnectorWritesTableFilterComposer
+    extends Composer<_$AppDatabase, $ConnectorWritesTable> {
+  $$ConnectorWritesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requestDigest => $composableBuilder(
+    column: $table.requestDigest,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get statusCode => $composableBuilder(
+    column: $table.statusCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConnectorWritesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConnectorWritesTable> {
+  $$ConnectorWritesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requestDigest => $composableBuilder(
+    column: $table.requestDigest,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get statusCode => $composableBuilder(
+    column: $table.statusCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConnectorWritesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConnectorWritesTable> {
+  $$ConnectorWritesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get requestDigest => $composableBuilder(
+    column: $table.requestDigest,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get outcome =>
+      $composableBuilder(column: $table.outcome, builder: (column) => column);
+
+  GeneratedColumn<int> get statusCode => $composableBuilder(
+    column: $table.statusCode,
+    builder: (column) => column,
+  );
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConnectorWritesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ConnectorWritesTable,
+          ConnectorWriteRow,
+          $$ConnectorWritesTableFilterComposer,
+          $$ConnectorWritesTableOrderingComposer,
+          $$ConnectorWritesTableAnnotationComposer,
+          $$ConnectorWritesTableCreateCompanionBuilder,
+          $$ConnectorWritesTableUpdateCompanionBuilder,
+          (ConnectorWriteRow, $$ConnectorWritesTableReferences),
+          ConnectorWriteRow,
+          PrefetchHooks Function({bool workspaceId})
+        > {
+  $$ConnectorWritesTableTableManager(
+    _$AppDatabase db,
+    $ConnectorWritesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ConnectorWritesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ConnectorWritesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ConnectorWritesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> operationId = const Value.absent(),
+                Value<String> requestDigest = const Value.absent(),
+                Value<String> outcome = const Value.absent(),
+                Value<int?> statusCode = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConnectorWritesCompanion(
+                workspaceId: workspaceId,
+                operationId: operationId,
+                requestDigest: requestDigest,
+                outcome: outcome,
+                statusCode: statusCode,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workspaceId,
+                required String operationId,
+                required String requestDigest,
+                required String outcome,
+                Value<int?> statusCode = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConnectorWritesCompanion.insert(
+                workspaceId: workspaceId,
+                operationId: operationId,
+                requestDigest: requestDigest,
+                outcome: outcome,
+                statusCode: statusCode,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ConnectorWritesTable, ConnectorWriteRow>(table),
+                  $$ConnectorWritesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workspaceId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable: $$ConnectorWritesTableReferences
+                            ._workspaceIdTable(db),
+                        referencedColumn: $$ConnectorWritesTableReferences
+                            ._workspaceIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ConnectorWritesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ConnectorWritesTable,
+      ConnectorWriteRow,
+      $$ConnectorWritesTableFilterComposer,
+      $$ConnectorWritesTableOrderingComposer,
+      $$ConnectorWritesTableAnnotationComposer,
+      $$ConnectorWritesTableCreateCompanionBuilder,
+      $$ConnectorWritesTableUpdateCompanionBuilder,
+      (ConnectorWriteRow, $$ConnectorWritesTableReferences),
+      ConnectorWriteRow,
+      PrefetchHooks Function({bool workspaceId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -33826,4 +34654,6 @@ class $AppDatabaseManager {
       $$WorkspaceTablesTableTableManager(_db, _db.workspaceTables);
   $$WorkspaceTableRecordsTableTableManager get workspaceTableRecords =>
       $$WorkspaceTableRecordsTableTableManager(_db, _db.workspaceTableRecords);
+  $$ConnectorWritesTableTableManager get connectorWrites =>
+      $$ConnectorWritesTableTableManager(_db, _db.connectorWrites);
 }
