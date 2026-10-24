@@ -155,9 +155,10 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
-        return PatchWorkspaceStateResponse.fromJson(
-          jsonDecode(receipt.responseJson) as Map<String, dynamic>,
-        );
+        return await _visiblePatch(session, member, transaction,
+          PatchWorkspaceStateResponse.fromJson(
+            jsonDecode(receipt.responseJson) as Map<String, dynamic>,
+          ));
       }
 
       await guard?.call(transaction);
@@ -260,6 +261,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           workspaceId,
           now,
           transaction,
+          userId: metadata.userId,
         ),
       );
     }
@@ -298,7 +300,21 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       now: now,
       transaction: transaction,
     );
-    return response;
+    final member = await _repository.findMember(session, workspaceId: workspaceId,
+      userId: metadata.userId, transaction: transaction);
+    if (member == null) throw CloudWorkspaceException(code: .permissionDenied);
+    return await _visiblePatch(session, member, transaction, response);
+  }
+
+  Future<PatchWorkspaceStateResponse> _visiblePatch(Session session,
+    WorkspaceMember member, Transaction transaction,
+    PatchWorkspaceStateResponse response) async {
+    final resources = <WorkspaceResource>[];
+    for (final row in response.resources) {
+      final visible = await WorkspaceTableAccess(transaction: transaction).visible(session, member, row);
+      if (visible != null) resources.add(visible);
+    }
+    return response.copyWith(resources: resources);
   }
 
   Future<PutWorkspaceSecretResponse> putSecret(
@@ -598,6 +614,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         request.workspaceId,
         now,
         transaction,
+        userId: userId,
         credentialSecret: (value: secret),
       );
       final resetResources = resetMcpPermissions
@@ -1192,6 +1209,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     int workspaceId,
     DateTime now,
     Transaction transaction, {
+    required String userId,
     ({String? value})? credentialSecret,
   }) async {
     if (operation.resourceId.isEmpty) {
@@ -1244,6 +1262,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           session,
           workspaceId,
           transaction,
+          userId,
         ).validate(operation, decoded, existing);
         if (operation.resourceKind == WorkspaceResourceKind.tableRecord) {
           validatedData = jsonEncode(decoded);

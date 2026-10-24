@@ -1,3 +1,4 @@
+import 'workspace_reference_validation.dart';
 import 'dart:convert';
 
 import 'package:serverpod/serverpod.dart';
@@ -12,6 +13,7 @@ class WorkspaceTableMutationValidation(
   final Session _session,
   final int _workspaceId,
   final Transaction _transaction,
+  final String _userId,
 ) {
   static const _pageSize = 100;
 
@@ -34,8 +36,11 @@ class WorkspaceTableMutationValidation(
     WorkspaceResource? existing,
   ) async {
     if (_schemaRevision(data, existing)) return;
+    final references = await _references();
+    await references.columns(data);
     final records = await _records(id);
     WorkspaceTableConstraints.records(data, records.values);
+    for (final values in records.values) { await references.values(data, values, const {}); }
   }
 
   bool _schemaRevision(Map<String, Object?> data, WorkspaceResource? existing) {
@@ -62,6 +67,8 @@ class WorkspaceTableMutationValidation(
     final schema = await _schema(id);
     if (data['schemaRevision'] != schema['schemaRevision']) _stale();
     final values = _values(operation, schema, data);
+    final references = await _references();
+    await references.values(schema, values, existing == null ? const {} : (_decode(existing)['values'] as Map).cast<String, Object?>());
     await _checkValues(id, operation.resourceId, schema, values);
     _recordTable(existing, id);
   }
@@ -89,6 +96,12 @@ class WorkspaceTableMutationValidation(
     }
 
     return values;
+  }
+
+  Future<WorkspaceReferenceValidation> _references() async {
+    final member = await _repository.findMember(_session, workspaceId: _workspaceId, userId: _userId, transaction: _transaction);
+    if (member == null) throw CloudWorkspaceException(code: .permissionDenied);
+    return WorkspaceReferenceValidation(_repository, _session, member, _transaction);
   }
 
   Future<Map<String, Object?>> _schema(String id) async {

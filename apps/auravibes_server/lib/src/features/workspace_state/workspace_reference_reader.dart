@@ -111,7 +111,7 @@ class const _Reader(
         'tableId': tableId,
         'recordId': recordId,
         'afterId': cursor,
-      });
+      }, project: false);
       for (final row in candidates) {
         final visible = await WorkspaceTableAccess(transaction: transaction)
             .visible(session, member, row);
@@ -126,8 +126,9 @@ class const _Reader(
 
   Future<List<WorkspaceResource>> _query(
     String sql,
-    Map<String, Object?> values,
-  ) async {
+    Map<String, Object?> values, {
+    bool project = true,
+  }) async {
     final result = await session.db.unsafeQuery(
       sql,
       parameters: .named({...values, 'workspaceId': member.workspaceId}),
@@ -146,7 +147,15 @@ class const _Reader(
       transaction: transaction,
     );
     final indexed = {for (final row in rows) row.resourceId: row};
-    return [for (final id in ids) ?indexed[id]];
+    if (!project) return [for (final id in ids) ?indexed[id]];
+    final visible = <WorkspaceResource>[];
+    for (final id in ids) {
+      final row = indexed[id];
+      if (row == null) continue;
+      final projected = await WorkspaceTableAccess(transaction: transaction).visible(session, member, row);
+      if (projected != null) visible.add(projected);
+    }
+    return visible;
   }
 }
 

@@ -64,7 +64,8 @@ class const OrganizeWorkspaceTablesUsecase(
     required Map<String, Object?> values,
   }) {
     _requireEdit(table);
-    WorkspaceColumnValidation.values(table.columns, values);
+    WorkspaceColumnValidation.values(table.columns.where((column) =>
+      !record.restrictedReferenceColumns.contains(column.id)).toList(), values);
     if (record.tableId != table.id) {
       throw const WorkspaceTableException();
     }
