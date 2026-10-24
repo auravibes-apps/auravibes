@@ -572,6 +572,7 @@ class _AuraPopupMenuItemContent extends StatelessWidget {
     fontSize: typography.fontSizeBase,
     fontWeight: typography.fontWeightMedium,
     height: typography.lineHeightBase,
+    fontFamily: typography.bodyFontFamily,
   );
 }
 
