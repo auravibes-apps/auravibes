@@ -29,6 +29,20 @@ class const WorkspaceTableAccess({final Transaction? transaction}) {
     return visible ? event : _hiddenEvent(event);
   }
 
+  Future<bool> canReadTable(
+    Session session,
+    WorkspaceMember member,
+    WorkspaceResource table,
+  ) async {
+    if (table.resourceKind != .table ||
+        table.workspaceId != member.workspaceId ||
+        table.deletedAt != null) {
+      return false;
+    }
+    return await _TableReader(session, member, transaction).level(table) !=
+        null;
+  }
+
   Future<void> requireWrite(
     Session session,
     WorkspaceMember member,
@@ -87,19 +101,6 @@ class const _TableReader(
     return await _project(resource, access);
   }
 
-  Future<WorkspaceResource> _project(
-    WorkspaceResource resource,
-    String access,
-  ) async {
-    if (resource.resourceKind == WorkspaceResourceKind.table)
-      return _visibleTable(resource, access);
-    return await WorkspaceReferenceVisibility(
-      session,
-      member,
-      transaction,
-    ).record(resource);
-  }
-
   Future<bool> canSeeEvent(WorkspaceEvent event) async {
     final kind = _eventKind(event);
     if (kind == null || !_isTableResource(kind)) return true;
@@ -110,6 +111,24 @@ class const _TableReader(
     );
 
     return row != null && await level(row) != null;
+  }
+
+  Future<WorkspaceResource> _project(
+    WorkspaceResource resource,
+    String access,
+  ) async {
+    if (resource.resourceKind == WorkspaceResourceKind.table) {
+      return await WorkspaceReferenceVisibility(
+        session,
+        member,
+        transaction,
+      ).table(_visibleTable(resource, access));
+    }
+    return await WorkspaceReferenceVisibility(
+      session,
+      member,
+      transaction,
+    ).record(resource);
   }
 }
 

@@ -3,13 +3,14 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/browse_workspace_references_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_picker.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
-import 'package:auravibes_ui/ui.dart';
 
 import '../../../helpers/test_app.dart';
 
@@ -18,50 +19,48 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
-  testWidgets(
-    'picker pages and searches, retains selection and hides unauthorized creation',
-    (tester) async {
-      final repository = _References();
-      List<String>? selected;
-      await tester.pumpWidget(
-        TestableApp(
+  testWidgets('picker pages and searches, retains selection '
+      'and hides unauthorized creation', (tester) async {
+    final repository = _References();
+    List<String>? selected;
+    await tester.pumpWidget(
+      TestableApp(
+        child: WorkspaceReferencePicker(
           workspaceId: 'one',
-          overrides: [
-            workspaceReferencesUsecaseProvider('one').overrideWith(
-              (ref) async => BrowseWorkspaceReferencesUsecase(repository),
-            ),
-            workspaceTableProvider(
-              'one',
-              'target',
-            ).overrideWith((ref) async => _target),
-          ],
-          child: WorkspaceReferencePicker(
-            workspaceId: 'one',
-            table: _source,
-            column: _source.columns.last,
-            selected: const [],
-            onSelected: (ids) => selected = ids,
-          ),
+          table: _source,
+          column: _source.columns.last,
+          selected: const [],
+          onSelected: (ids) => selected = ids,
         ),
-      );
-      await _flush(tester);
-      expect(find.text('Ada'), findsOneWidget);
-      expect(find.text('Email: ada@example.com'), findsOneWidget);
-      expect(find.text('Add record'), findsNothing);
-      await tester.tap(find.text('Ada'));
-      await tester.tap(find.text('Next page'));
-      await _flush(tester);
-      expect(repository.cursors, [null, 'first']);
-      expect(find.text('Grace'), findsOneWidget);
-      await tester.tap(find.text('Grace'));
-      await tester.enterText(find.byType(AuraInput), 'Ada');
-      await _flush(tester);
-      expect(repository.searches.last, 'Ada');
-      expect(repository.cursors.last, isNull);
-      await tester.tap(find.text('Done'));
-      expect(selected, ['first', 'second']);
-    },
-  );
+        overrides: [
+          workspaceReferencesUsecaseProvider('one').overrideWith(
+            (ref) async => BrowseWorkspaceReferencesUsecase(repository),
+          ),
+          workspaceTableProvider(
+            'one',
+            'target',
+          ).overrideWith((ref) async => _target),
+        ],
+        workspaceId: 'one',
+      ),
+    );
+    await _flush(tester);
+    expect(find.text('Ada'), findsOneWidget);
+    expect(find.text('Email: ada@example.com'), findsOneWidget);
+    expect(find.text('Add record'), findsNothing);
+    await tester.tap(find.text('Ada'));
+    await tester.tap(find.text('Next page'));
+    await _flush(tester);
+    expect(repository.cursors, [null, 'first']);
+    expect(find.text('Grace'), findsOneWidget);
+    await tester.tap(find.text('Grace'));
+    await tester.enterText(find.byType(AuraInput), 'Ada');
+    await _flush(tester);
+    expect(repository.searches.last, 'Ada');
+    expect(repository.cursors.last, isNull);
+    await tester.tap(find.text('Done'));
+    expect(selected, ['first', 'second']);
+  });
   testWidgets('authorized target creation selects the new stable record ID', (
     tester,
   ) async {
@@ -78,7 +77,13 @@ void main() {
     );
     await tester.pumpWidget(
       TestableApp(
-        workspaceId: 'one',
+        child: WorkspaceReferencePicker(
+          workspaceId: 'one',
+          table: _source,
+          column: _source.columns.last,
+          selected: const [],
+          onSelected: (ids) => selected = ids,
+        ),
         overrides: [
           workspaceReferencesUsecaseProvider('one').overrideWith(
             (ref) async => BrowseWorkspaceReferencesUsecase(repository),
@@ -91,13 +96,7 @@ void main() {
             'one',
           ).overrideWith((ref) async => OrganizeWorkspaceTablesUsecase(tables)),
         ],
-        child: WorkspaceReferencePicker(
-          workspaceId: 'one',
-          table: _source,
-          column: _source.columns.last,
-          selected: const [],
-          onSelected: (ids) => selected = ids,
-        ),
+        workspaceId: 'one',
       ),
     );
     await _flush(tester);
@@ -120,6 +119,101 @@ void main() {
     await tester.tap(find.text('Done'));
     expect(selected, ['created']);
   });
+  testWidgets(
+    'mounted label refreshes a rename and hides revoked target access',
+    (tester) async {
+      final repository = _References();
+      await tester.pumpWidget(
+        TestableApp(
+          child: const WorkspaceReferenceLabel(
+            workspaceId: 'one',
+            targetTableId: 'target',
+            recordId: 'first',
+          ),
+          overrides: [
+            workspaceReferencesUsecaseProvider('one').overrideWith(
+              (ref) async => BrowseWorkspaceReferencesUsecase(repository),
+            ),
+            workspaceTableProvider(
+              'one',
+              'target',
+            ).overrideWith((ref) async => _target),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+      await _flush(tester);
+      expect(find.text('Ada'), findsOneWidget);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(WorkspaceReferenceLabel)),
+      );
+      repository.label = 'Renamed Ada';
+      container.invalidate(workspaceReferencesUsecaseProvider('one'));
+      await _flush(tester);
+      expect(find.text('Ada'), findsNothing);
+      expect(find.text('Renamed Ada'), findsOneWidget);
+      repository.denyTables = true;
+      container.invalidate(workspaceReferencesUsecaseProvider('one'));
+      await _flush(tester);
+      expect(find.text('Renamed Ada'), findsNothing);
+      expect(
+        find.text('Linked records are unavailable with your current access.'),
+        findsOneWidget,
+      );
+    },
+  );
+  for (final denied in [false, true]) {
+    testWidgets(
+      denied
+          ? 'unsaved reference default hides denied targets'
+          : 'unsaved reference default selects authorized target IDs',
+      (tester) async {
+        final repository = _References()..denyTables = denied;
+        List<String>? selected;
+        await tester.pumpWidget(
+          TestableApp(
+            child: WorkspaceReferencePicker(
+              workspaceId: 'one',
+              table: _source,
+              column: const WorkspaceColumn(
+                id: '',
+                name: 'Unsaved link',
+                type: .reference,
+                targetTableId: 'target',
+              ),
+              selected: const ['first', 'second'],
+              onSelected: (ids) => selected = ids,
+              schemaDefault: true,
+            ),
+            overrides: [
+              workspaceReferencesUsecaseProvider('one').overrideWith(
+                (ref) async => BrowseWorkspaceReferencesUsecase(repository),
+              ),
+              workspaceTableProvider(
+                'one',
+                'target',
+              ).overrideWith((ref) async => _target),
+            ],
+            workspaceId: 'one',
+          ),
+        );
+        await _flush(tester);
+        expect(repository.tableRequests, ['target']);
+        if (denied) {
+          expect(find.text('Ada'), findsNothing);
+          expect(
+            find.text(
+              'Linked records are unavailable with your current access.',
+            ),
+            findsOneWidget,
+          );
+        } else {
+          await tester.tap(find.text('Done'));
+          expect(selected, ['first']);
+        }
+      },
+    );
+  }
 }
 
 const _target = WorkspaceTable(
@@ -155,9 +249,37 @@ const _source = WorkspaceTable(
 class _References implements WorkspaceReferenceRepository {
   final cursors = <String?>[];
   final searches = <String>[];
+  final tableRequests = <String>[];
+  bool denyTables = false;
+  String label = 'Ada';
   @override
-  Future<WorkspaceRecord> record(String tableId, String id) async =>
-      throw UnimplementedError();
+  Future<WorkspaceReferencePage> tableTargets(
+    String tableId, {
+    required String search,
+    String? afterId,
+  }) {
+    tableRequests.add(tableId);
+    if (denyTables) throw const WorkspaceTableException(denied: true);
+
+    return targets(
+      (tableId: 'unsaved', columnId: ''),
+      search: search,
+      afterId: afterId,
+    );
+  }
+
+  @override
+  Future<WorkspaceRecord> record(String tableId, String id) async {
+    if (denyTables) throw const WorkspaceTableException(denied: true);
+
+    return WorkspaceRecord(
+      id: id,
+      tableId: tableId,
+      values: {'name': label},
+      revision: 1,
+    );
+  }
+
   @override
   Future<WorkspaceReferencePage> targets(
     WorkspaceReferenceSource source, {
@@ -217,6 +339,7 @@ class _Tables extends Fake implements WorkspaceTableRepository {
     required Map<String, Object?> values,
   }) async {
     saved = values;
+
     return WorkspaceRecord(
       id: 'created',
       tableId: table.id,

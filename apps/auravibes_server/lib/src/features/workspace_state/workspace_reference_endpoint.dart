@@ -18,6 +18,18 @@ class WorkspaceReferenceEndpoint extends Endpoint {
     ).targets(request);
   }
 
+  Future<List<WorkspaceResource>> tableTargets(
+    Session session,
+    WorkspaceReferenceTableRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return await WorkspaceReferenceReader(
+      session,
+      request.workspaceId,
+      account.userId,
+    ).tableTargets(request);
+  }
+
   Future<WorkspaceResource> record(
     Session session,
     WorkspaceReferenceRecordRequest request,

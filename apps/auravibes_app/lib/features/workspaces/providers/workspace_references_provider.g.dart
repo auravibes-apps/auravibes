@@ -68,7 +68,7 @@ final class WorkspaceReferencesUsecaseProvider
 }
 
 String _$workspaceReferencesUsecaseHash() =>
-    r'3993c20cd3ad498267aecc6701b20c256d90ef80';
+    r'b451ace99bd11cf164e428db2b01004afb2f2b7f';
 
 final class WorkspaceReferencesUsecaseFamily extends $Family
     with
@@ -154,7 +154,7 @@ final class WorkspaceReferencedRecordProvider
 }
 
 String _$workspaceReferencedRecordHash() =>
-    r'60d594f83be8c0156d8af9377ddb6961971356cd';
+    r'a0d4507611726c4ee83f4673ec0000fc55a3e06e';
 
 final class WorkspaceReferencedRecordFamily extends $Family
     with

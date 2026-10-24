@@ -7,19 +7,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-
-import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:logging/logging.dart';
-import 'package:material_ui/material_ui.dart';
-
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -36,23 +23,23 @@ import 'package:auravibes_app/features/chats/providers/background_work_providers
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
-import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
-import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result.dart';
-import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result_controller.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_announcement.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
+import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result.dart';
+import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result_controller.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
@@ -72,6 +59,17 @@ import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/confirmed_external_link.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+import 'package:material_ui/material_ui.dart';
 
 final _a2uiLogger = Logger('chat_a2ui_actions');
 const _latestMessageScrollThreshold = 64.0;
@@ -3291,6 +3289,7 @@ class const _ActivityToolCallRow({
       ToolCallResultStatus.disabledByAgent => Icons.block,
       ToolCallResultStatus.notConfigured => Icons.settings,
       ToolCallResultStatus.executionError => Icons.warning_amber,
+      ToolCallResultStatus.uncertain => Icons.help_outline,
     };
   }
 
@@ -3312,6 +3311,7 @@ class const _ActivityToolCallRow({
       ToolCallResultStatus.disabledByAgent => colors.warning,
       ToolCallResultStatus.notConfigured => colors.warning,
       ToolCallResultStatus.executionError => colors.error,
+      ToolCallResultStatus.uncertain => colors.warning,
     };
   }
 }

@@ -66,15 +66,6 @@ abstract final class WorkspaceTableValidation {
         _ => _exact(column, value),
       };
 
-  static bool _exact(Map<String, Object?> column, Object? value) =>
-      switch (column['type']) {
-        'dateOnly' => WorkspaceExactValueValidation.date(value),
-        'timestamp' => WorkspaceExactValueValidation.timestamp(value),
-        'money' => WorkspaceExactValueValidation.money(value),
-        'reference' => WorkspaceReferenceValue.valid(column, value),
-        _ => false,
-      };
-
   static bool _selectionValue(Map<String, Object?> column, Object? value) {
     final options = (column['options'] as List<dynamic>? ?? const [])
         .cast<String>();
@@ -207,3 +198,12 @@ abstract final class _SchemaValidation {
       name.trim().isNotEmpty &&
       name.length <= _maximumNameLength;
 }
+
+bool _exact(Map<String, Object?> column, Object? value) =>
+    switch (column['type']) {
+      'dateOnly' => WorkspaceExactValueValidation.date(value),
+      'timestamp' => WorkspaceExactValueValidation.timestamp(value),
+      'money' => WorkspaceExactValueValidation.money(value),
+      'reference' => WorkspaceReferenceValue.valid(column, value),
+      _ => false,
+    };

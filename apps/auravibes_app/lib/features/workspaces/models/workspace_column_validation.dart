@@ -1,5 +1,5 @@
-import 'package:auravibes_app/features/workspaces/models/workspace_reference_value.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_exact_value_validation.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_reference_value.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:uuid/v7.dart';
@@ -129,11 +129,6 @@ abstract final class _ValueValidation {
         _ => _extra(column, value),
       };
 
-  static bool _extra(WorkspaceColumn column, Object? value) =>
-      column.type == .reference
-      ? WorkspaceReferenceValue.valid(column, value)
-      : _exact(column.type, value);
-
   static bool _exact(WorkspaceColumnType type, Object? value) => switch (type) {
     .dateOnly => WorkspaceExactValueValidation.date(value),
     .timestamp => WorkspaceExactValueValidation.timestamp(value),
@@ -181,3 +176,7 @@ abstract final class _ValueValidation {
   static bool _webScheme(String scheme) =>
       scheme == 'https' || scheme == 'http';
 }
+
+bool _extra(WorkspaceColumn column, Object? value) => column.type == .reference
+    ? WorkspaceReferenceValue.valid(column, value)
+    : _ValueValidation._exact(column.type, value);

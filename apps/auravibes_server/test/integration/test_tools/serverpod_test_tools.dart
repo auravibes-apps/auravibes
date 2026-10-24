@@ -213,6 +213,8 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/r
     as _iwsbsne8;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_record_request.dart'
     as _irm41t6a;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_table_request.dart'
+    as _iv6a6cze;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_target_request.dart'
     as _if6l00dz;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_resource.dart'
@@ -2833,6 +2835,35 @@ class _WorkspaceReferenceEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'workspaceReference',
           methodName: 'targets',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_ixyz6pla.WorkspaceResource>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_ixyz6pla.WorkspaceResource>> tableTargets(
+    _ist.TestSessionBuilder sessionBuilder,
+    _iv6a6cze.WorkspaceReferenceTableRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceReference',
+            method: 'tableTargets',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceReference',
+          methodName: 'tableTargets',
           parameters: _ist.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );

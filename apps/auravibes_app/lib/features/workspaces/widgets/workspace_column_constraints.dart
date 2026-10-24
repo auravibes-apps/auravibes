@@ -16,6 +16,7 @@ class const WorkspaceColumnConstraints({
   required final WorkspaceColumnConstraintDraft draft,
   required final WorkspaceColumn column,
   required final bool disabled,
+  final Widget? referenceDefault,
   super.key,
 }) extends StatelessWidget {
   static WorkspaceColumnConstraintDraft use(WorkspaceColumn? column) => (
@@ -62,6 +63,19 @@ class const _ConstraintUnique({
 }
 
 class const _ConstraintDefault({required final WorkspaceColumnConstraints view})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (view.column.type == .reference) {
+      return view.referenceDefault ??
+          const TextLocale(LocaleKeys.workspace_items_reference_choose_target);
+    }
+
+    return _ScalarDefault(view: view);
+  }
+}
+
+class const _ScalarDefault({required final WorkspaceColumnConstraints view})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

@@ -332,39 +332,51 @@ void main() {
     },
   );
 
-  test('compiled Connector tool uses injected HTTP client', () async {
-    UrlRequest? captured;
-    final result = await runCompiledConnectorTool(
-      connectorId: 'duckduckgo',
-      toolSlug: 'search',
-      input: const {'query': 'aura vibes'},
-      httpClient: (request) {
-        captured = request;
-        return CancelableOperation.fromValue(
-          UrlResponse(
-            statusCode: HttpStatus.ok,
-            body: '<html></html>',
-            headers: const {},
-            elapsed: Duration.zero,
-          ),
-        );
-      },
-    );
+  test(
+    'compiled Connector write uses common executor with injected HTTP client',
+    () async {
+      UrlRequest? captured;
+      final resolved = resolveCloudConnectorTool(
+        toolId: 'connector/duckduckgo/search',
+        arguments: const {'query': 'aura vibes'},
+      );
+      final result = await ConnectorRequestExecution(
+        connector: resolved.connector,
+        tool: resolved.tool,
+        inputs: const {'query': 'aura vibes'},
+        credentials: const {},
+        connectionId: '',
+        operationId: 'compiled-write',
+        journal: _FirstWriteJournal(),
+        executor: ConnectorToolTemplateExecutor(
+          const ResolveConnectorRequestTemplate(),
+          (request) {
+            captured = request;
+            return CancelableOperation.fromValue(
+              const UrlResponse(
+                statusCode: HttpStatus.ok,
+                body: '<html></html>',
+                headers: {},
+                elapsed: Duration.zero,
+              ),
+            );
+          },
+        ),
+      ).call();
+      expect(captured?.url, 'https://html.duckduckgo.com/html/');
+      expect(captured?.method, UrlRequestMethod.post);
+      expect(result, containsPair('response', '<html></html>'));
+      expect(result, containsPair('outcome', 'completed'));
+    },
+  );
 
-    expect(captured?.url, 'https://html.duckduckgo.com/html/');
-    expect(captured?.method, UrlRequestMethod.post);
-    expect(result, '<html></html>');
-  });
-
-  test('dynamic Connector cannot supply a compiled callback', () async {
+  test('dynamic Connector cannot supply a compiled callback', () {
     expect(
-      () => runCompiledConnectorTool(
-        connectorId: 'user-skill',
-        toolSlug: 'search',
-        input: const {},
-        httpClient: (_) => throw StateError('must not run'),
+      () => resolveCloudConnectorTool(
+        toolId: 'connector/user-skill/search',
+        arguments: const {},
       ),
-      throwsA(isA<ServerToolNotConfiguredException>()),
+      throwsA(isA<AgentToolExecutionFailure>()),
     );
   });
 
@@ -491,4 +503,15 @@ void main() {
       client.close(force: true);
     },
   );
+}
+
+class _FirstWriteJournal implements ConnectorWriteJournal {
+  @override
+  Future<ConnectorWriteReceipt?> claim(
+    String operationId,
+    String requestDigest,
+  ) => Future.value();
+
+  @override
+  Future<void> save(ConnectorWriteReceipt receipt) => Future.value();
 }

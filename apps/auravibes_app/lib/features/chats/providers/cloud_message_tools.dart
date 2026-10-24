@@ -16,6 +16,7 @@ abstract final class CloudMessageTools {
     'granted' ||
     'awaitingSubAgents' => ToolCallResultStatus.running,
     'success' => ToolCallResultStatus.success,
+    'uncertain' => ToolCallResultStatus.uncertain,
     'denied' => ToolCallResultStatus.skippedByUser,
     'toolNotFound' => ToolCallResultStatus.toolNotFound,
     'disabledInWorkspace' => ToolCallResultStatus.disabledInWorkspace,

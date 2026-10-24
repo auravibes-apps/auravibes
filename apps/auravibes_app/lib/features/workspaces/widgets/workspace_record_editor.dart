@@ -1,10 +1,10 @@
-import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_reverse_references.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_field.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_field.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reverse_references.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -131,9 +131,9 @@ class const _RecordFields({
           children: [
             _RecordValue(
               table: table,
+              column: column,
               workspaceId: workspaceId,
               restricted: restricted.contains(column.id),
-              column: column,
               draft: draft,
               disabled: disabled,
             ),
@@ -152,18 +152,17 @@ class const _RecordValue({
   required final ValueNotifier<Map<String, Object?>> draft,
   required final bool disabled,
 }) extends StatelessWidget {
-  Object? get value => draft.value[column.id];
   bool get present => draft.value.containsKey(column.id);
   String get identifier => column.id == table.labelColumnId
       ? 'workspace_record_value'
       : 'workspace_record_value_${column.id}';
+  void change(Object? value) =>
+      draft.value = {...draft.value, column.id: value};
+  void unset() => draft.value = Map.of(draft.value)..remove(column.id);
   @override
   Widget build(BuildContext context) => column.type == .reference
       ? _ReferenceRecordValue(this)
       : _ScalarRecordValue(this);
-  void _change(Object? value) =>
-      draft.value = {...draft.value, column.id: value};
-  void _unset() => draft.value = Map.of(draft.value)..remove(column.id);
 }
 
 class const _RecordConstraintHints({required final WorkspaceColumn column})
@@ -185,11 +184,11 @@ class const _ReferenceRecordValue(final _RecordValue field)
     workspaceId: field.workspaceId,
     table: field.table,
     column: field.column,
-    value: field.value,
+    value: _recordValue(field),
     disabled: field.disabled,
     restricted: field.restricted,
-    onChanged: field._change,
-    onUnset: field._unset,
+    onChanged: field.change,
+    onUnset: field.unset,
   );
 }
 
@@ -198,12 +197,14 @@ class const _ScalarRecordValue(final _RecordValue field)
   @override
   Widget build(BuildContext context) => WorkspaceRecordField(
     column: field.column,
-    value: field.value,
+    value: _recordValue(field),
     present: field.present,
     disabled: field.disabled,
     identifier: field.identifier,
-    onChanged: field._change,
-    onUnset: field._unset,
+    onChanged: field.change,
+    onUnset: field.unset,
     key: ValueKey(field.column.id),
   );
 }
+
+Object? _recordValue(_RecordValue field) => field.draft.value[field.column.id];

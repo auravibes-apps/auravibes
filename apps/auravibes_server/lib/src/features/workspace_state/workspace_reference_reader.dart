@@ -21,6 +21,12 @@ class const WorkspaceReferenceReader(
 
     return await reader.targets(input);
   });
+  Future<List<WorkspaceResource>> tableTargets(
+    WorkspaceReferenceTableRequest input,
+  ) => session.db.transaction((transaction) async {
+    final reader = await _reader(transaction);
+    return await reader.tableTargets(input);
+  });
   Future<WorkspaceResource> record(WorkspaceReferenceRecordRequest input) =>
       session.db.transaction((transaction) async {
         final reader = await _reader(transaction);
@@ -66,16 +72,14 @@ class const _Reader(
   final WorkspaceMember member,
   final Transaction transaction,
 ) {
-  _QueryRows get query => _QueryRows(session, member, transaction);
-  WorkspaceTableAccess get access =>
-      WorkspaceTableAccess(transaction: transaction);
   Future<WorkspaceResource> visible(
     WorkspaceResourceKind kind,
     String id,
   ) async {
     final row = await _resource(kind, id);
     if (row == null || row.deletedAt != null) _denied();
-    final result = await access.visible(session, member, row);
+    final result = await WorkspaceTableAccess(transaction: transaction)
+        .visible(session, member, row);
 
     return result ?? _denied();
   }
@@ -85,9 +89,21 @@ class const _Reader(
   ) async {
     if (input.search.length > _maximumSearchLength) _invalid();
     final target = await _target(input);
-    final rows = await query.read(_targetSql, _targetParameters(target, input));
+    return await _targetRows(target, (
+      search: input.search,
+      afterId: input.afterId,
+    ));
+  }
 
-    return await query.project(rows);
+  Future<List<WorkspaceResource>> tableTargets(
+    WorkspaceReferenceTableRequest input,
+  ) async {
+    if (input.search.length > _maximumSearchLength) _invalid();
+    final target = await visible(.table, input.tableId);
+    return await _targetRows(target, (
+      search: input.search,
+      afterId: input.afterId,
+    ));
   }
 
   Future<WorkspaceResource> record(
@@ -130,16 +146,25 @@ class const _Reader(
     return await visible(.table, _targetId(source, input.columnId));
   }
 
+  Future<List<WorkspaceResource>> _targetRows(
+    WorkspaceResource target,
+    ({String search, String? afterId}) input,
+  ) async {
+    final rows = await _query(this)
+        .read(_targetSql, _targetParameters(target, input));
+    return await _query(this).project(rows);
+  }
+
   Future<List<WorkspaceResource>> _reversePage(
     WorkspaceReferenceRecordRequest input,
     String? cursor,
-  ) => query.read(_reverseSql, _reverseParameters(input, cursor));
+  ) => _query(this).read(_reverseSql, _reverseParameters(input, cursor));
 
   Future<void> _append(
     List<WorkspaceResource> rows,
     List<WorkspaceResource> candidates,
   ) async {
-    for (final row in await query.project(candidates)) {
+    for (final row in await _query(this).project(candidates)) {
       rows.add(row);
       if (rows.length == _pageBatch) break;
     }
@@ -218,7 +243,7 @@ bool _referenceColumn(Map<String, dynamic> column, String id) =>
     column['id'] == id && column['type'] == 'reference';
 Map<String, Object?> _targetParameters(
   WorkspaceResource table,
-  WorkspaceReferenceTargetRequest input,
+  ({String search, String? afterId}) input,
 ) => {
   'tableId': table.resourceId,
   'label': _data(table)['labelColumnId'],
@@ -258,3 +283,6 @@ Map<String, dynamic> _data(WorkspaceResource row) =>
     jsonDecode(row.data) as Map<String, dynamic>;
 Never _denied() => throw CloudWorkspaceException(code: .permissionDenied);
 Never _invalid() => throw CloudWorkspaceException(code: .validationFailed);
+
+_QueryRows _query(_Reader reader) =>
+    _QueryRows(reader.session, reader.member, reader.transaction);

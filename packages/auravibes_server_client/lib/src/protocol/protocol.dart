@@ -72,6 +72,7 @@ import 'features/conversations/models/bookmark_message_request.dart'
 import 'features/conversations/models/cancel_turn_request.dart' as _iarqshx6;
 import 'features/conversations/models/compact_conversation_request.dart'
     as _isyd7s84;
+import 'features/conversations/models/connector_write.dart' as _ik5xiz1a;
 import 'features/conversations/models/continue_conversation_request.dart'
     as _ialxa16r;
 import 'features/conversations/models/continue_turn_request.dart' as _iwrs6sde;
@@ -274,6 +275,8 @@ import 'features/workspace_state/models/workspace_patch_operation_kind.dart'
     as _ihbarnlu;
 import 'features/workspace_state/models/workspace_reference_record_request.dart'
     as _izw41l59;
+import 'features/workspace_state/models/workspace_reference_table_request.dart'
+    as _i25xbz7v;
 import 'features/workspace_state/models/workspace_reference_target_request.dart'
     as _ib7agc3j;
 import 'features/workspace_state/models/workspace_resource.dart' as _iqzfyfs9;
@@ -356,6 +359,7 @@ export 'features/conversations/models/background_work_view.dart';
 export 'features/conversations/models/bookmark_message_request.dart';
 export 'features/conversations/models/cancel_turn_request.dart';
 export 'features/conversations/models/compact_conversation_request.dart';
+export 'features/conversations/models/connector_write.dart';
 export 'features/conversations/models/continue_conversation_request.dart';
 export 'features/conversations/models/continue_turn_request.dart';
 export 'features/conversations/models/conversation.dart';
@@ -483,6 +487,7 @@ export 'features/workspace_state/models/read_workspace_state_response.dart';
 export 'features/workspace_state/models/workspace_patch_operation.dart';
 export 'features/workspace_state/models/workspace_patch_operation_kind.dart';
 export 'features/workspace_state/models/workspace_reference_record_request.dart';
+export 'features/workspace_state/models/workspace_reference_table_request.dart';
 export 'features/workspace_state/models/workspace_reference_target_request.dart';
 export 'features/workspace_state/models/workspace_resource.dart';
 export 'features/workspace_state/models/workspace_resource_kind.dart';
@@ -609,6 +614,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _isyd7s84.CompactConversationRequest) {
       return _isyd7s84.CompactConversationRequest.fromJson(data) as T;
+    }
+    if (t == _ik5xiz1a.ConnectorWrite) {
+      return _ik5xiz1a.ConnectorWrite.fromJson(data) as T;
     }
     if (t == _ialxa16r.ContinueConversationRequest) {
       return _ialxa16r.ContinueConversationRequest.fromJson(data) as T;
@@ -996,6 +1004,9 @@ class Protocol extends _isc.SerializationManager {
     if (t == _izw41l59.WorkspaceReferenceRecordRequest) {
       return _izw41l59.WorkspaceReferenceRecordRequest.fromJson(data) as T;
     }
+    if (t == _i25xbz7v.WorkspaceReferenceTableRequest) {
+      return _i25xbz7v.WorkspaceReferenceTableRequest.fromJson(data) as T;
+    }
     if (t == _ib7agc3j.WorkspaceReferenceTargetRequest) {
       return _ib7agc3j.WorkspaceReferenceTargetRequest.fromJson(data) as T;
     }
@@ -1198,6 +1209,10 @@ class Protocol extends _isc.SerializationManager {
       return (data != null
               ? _isyd7s84.CompactConversationRequest.fromJson(data)
               : null)
+          as T;
+    }
+    if (t == _isc.getType<_ik5xiz1a.ConnectorWrite?>()) {
+      return (data != null ? _ik5xiz1a.ConnectorWrite.fromJson(data) : null)
           as T;
     }
     if (t == _isc.getType<_ialxa16r.ContinueConversationRequest?>()) {
@@ -1903,6 +1918,12 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_i25xbz7v.WorkspaceReferenceTableRequest?>()) {
+      return (data != null
+              ? _i25xbz7v.WorkspaceReferenceTableRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_ib7agc3j.WorkspaceReferenceTargetRequest?>()) {
       return (data != null
               ? _ib7agc3j.WorkspaceReferenceTargetRequest.fromJson(data)
@@ -2341,6 +2362,7 @@ class Protocol extends _isc.SerializationManager {
       _ihrj16d1.BookmarkMessageRequest => 'BookmarkMessageRequest',
       _iarqshx6.CancelTurnRequest => 'CancelTurnRequest',
       _isyd7s84.CompactConversationRequest => 'CompactConversationRequest',
+      _ik5xiz1a.ConnectorWrite => 'ConnectorWrite',
       _ialxa16r.ContinueConversationRequest => 'ContinueConversationRequest',
       _iwrs6sde.ContinueTurnRequest => 'ContinueTurnRequest',
       _iivijtsr.Conversation => 'Conversation',
@@ -2489,6 +2511,8 @@ class Protocol extends _isc.SerializationManager {
       _ihbarnlu.WorkspacePatchOperationKind => 'WorkspacePatchOperationKind',
       _izw41l59.WorkspaceReferenceRecordRequest =>
         'WorkspaceReferenceRecordRequest',
+      _i25xbz7v.WorkspaceReferenceTableRequest =>
+        'WorkspaceReferenceTableRequest',
       _ib7agc3j.WorkspaceReferenceTargetRequest =>
         'WorkspaceReferenceTargetRequest',
       _iqzfyfs9.WorkspaceResource => 'WorkspaceResource',
@@ -2583,6 +2607,8 @@ class Protocol extends _isc.SerializationManager {
         return 'CancelTurnRequest';
       case _isyd7s84.CompactConversationRequest():
         return 'CompactConversationRequest';
+      case _ik5xiz1a.ConnectorWrite():
+        return 'ConnectorWrite';
       case _ialxa16r.ContinueConversationRequest():
         return 'ContinueConversationRequest';
       case _iwrs6sde.ContinueTurnRequest():
@@ -2837,6 +2863,8 @@ class Protocol extends _isc.SerializationManager {
         return 'WorkspacePatchOperationKind';
       case _izw41l59.WorkspaceReferenceRecordRequest():
         return 'WorkspaceReferenceRecordRequest';
+      case _i25xbz7v.WorkspaceReferenceTableRequest():
+        return 'WorkspaceReferenceTableRequest';
       case _ib7agc3j.WorkspaceReferenceTargetRequest():
         return 'WorkspaceReferenceTargetRequest';
       case _iqzfyfs9.WorkspaceResource():
@@ -2986,6 +3014,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'CompactConversationRequest') {
       return deserialize<_isyd7s84.CompactConversationRequest>(data['data']);
+    }
+    if (dataClassName == 'ConnectorWrite') {
+      return deserialize<_ik5xiz1a.ConnectorWrite>(data['data']);
     }
     if (dataClassName == 'ContinueConversationRequest') {
       return deserialize<_ialxa16r.ContinueConversationRequest>(data['data']);
@@ -3405,6 +3436,11 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'WorkspaceReferenceRecordRequest') {
       return deserialize<_izw41l59.WorkspaceReferenceRecordRequest>(
+        data['data'],
+      );
+    }
+    if (dataClassName == 'WorkspaceReferenceTableRequest') {
+      return deserialize<_i25xbz7v.WorkspaceReferenceTableRequest>(
         data['data'],
       );
     }

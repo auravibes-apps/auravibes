@@ -1,6 +1,8 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_reference_page.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 
+const _maximumSearchLength = 200;
+
 class const BrowseWorkspaceReferencesUsecase(
   final WorkspaceReferenceRepository repository,
 ) {
@@ -12,9 +14,23 @@ class const BrowseWorkspaceReferencesUsecase(
     String search = '',
     String? afterId,
   }) {
-    if (search.length > 200) throw const WorkspaceTableException();
+    if (search.length > _maximumSearchLength) {
+      throw const WorkspaceTableException();
+    }
 
     return repository.targets(source, search: search, afterId: afterId);
+  }
+
+  Future<WorkspaceReferencePage> tableTargets({
+    required String tableId,
+    String search = '',
+    String? afterId,
+  }) {
+    if (search.length > _maximumSearchLength) {
+      throw const WorkspaceTableException();
+    }
+
+    return repository.tableTargets(tableId, search: search, afterId: afterId);
   }
 
   Future<WorkspaceReferencePage> reverse({

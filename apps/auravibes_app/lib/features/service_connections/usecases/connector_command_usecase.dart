@@ -24,6 +24,7 @@ typedef _ConnectorExecutionRequest = ({
   Map<String, Object?> arguments,
   String? connectionId,
   String? revision,
+  String? operationId,
 });
 
 typedef _ResolvedConnectorExecution = ({
@@ -169,24 +170,21 @@ class const ConnectorCommandUsecase({
     required String workspaceId,
     required String commandName,
     required Map<String, dynamic> arguments,
+    String operationId = '',
   }) async {
     try {
-      return await _dispatch(workspaceId, commandName, arguments);
+      return await _dispatch(workspaceId, commandName, arguments, operationId);
     } on AgentToolExecutionFailure catch (failure, stackTrace) {
-      if (_authorizationFailure(failure)) rethrow;
-      _throwCommandFailure(
-        stackTrace,
-        message: 'Connector command failed. Check the Connection and retry.',
-      );
+      if (_authorizationFailure(failure)) {
+        rethrow;
+      }
+      _throwExecutionFailure(stackTrace);
     } on _ConnectorCommandException catch (error, stackTrace) {
       _throwFailure(error, stackTrace);
     } on FormatException catch (_, stackTrace) {
       _throwInvalidArguments(stackTrace);
     } on Object catch (_, stackTrace) {
-      _throwCommandFailure(
-        stackTrace,
-        message: 'Connector command failed. Check the Connection and retry.',
-      );
+      _throwExecutionFailure(stackTrace);
     }
   }
 
@@ -194,6 +192,7 @@ class const ConnectorCommandUsecase({
     String workspaceId,
     String commandName,
     Map<String, dynamic> arguments,
+    String operationId,
   ) => switch (commandName) {
     listConnectorConnectionsToolName => _ConnectorCommandDiscovery(
       connectors: connectors,
@@ -207,12 +206,18 @@ class const ConnectorCommandUsecase({
       connectors: connectors,
       loadConnections: loadConnections,
       runTool: runTool,
-    ).execute(workspaceId, arguments),
+    ).execute(workspaceId, arguments, operationId),
     _ => throw const _ConnectorCommandException(
       code: 'unknown_command',
       message: 'Unknown Connector command.',
     ),
   };
+
+  static Never _throwExecutionFailure(StackTrace stackTrace) =>
+      _throwCommandFailure(
+        stackTrace,
+        message: 'Connector command failed. Check the Connection and retry.',
+      );
 
   static Never _throwCommandFailure(
     StackTrace stackTrace, {
@@ -239,6 +244,7 @@ class _ConnectorCommandExecution({
   Future<Object?> execute(
     String workspaceId,
     Map<String, dynamic> arguments,
+    String operationId,
   ) async {
     final request = _ConnectorExecutionArgumentParser.parse(arguments);
     final execution = await _resolveExecution(workspaceId, request);
@@ -247,7 +253,11 @@ class _ConnectorCommandExecution({
       workspaceId: workspaceId,
       connector: execution.connector,
       tool: execution.tool,
-      arguments: execution.arguments,
+      arguments: {
+        ...execution.arguments,
+        if ((request.operationId ?? operationId).isNotEmpty)
+          '_connectorOperationId': request.operationId ?? operationId,
+      },
     );
   }
 
@@ -418,6 +428,7 @@ class _ConnectorExecutionArgumentParser {
       arguments: _stringKeyedArguments(rawArguments),
       connectionId: _optionalString(arguments, 'connectionId'),
       revision: _optionalString(arguments, 'revision'),
+      operationId: _optionalString(arguments, 'operationId'),
     );
   }
 
@@ -557,12 +568,14 @@ final connectorCommandUsecaseProvider = Provider<ConnectorCommandUsecase>((
           required connector,
           required tool,
           required arguments,
-        }) => runConnectorTool.call(
+        }) => runConnectorTool.call((
           workspaceId: workspaceId,
           connectorId: connector.identifier,
           toolSlug: tool.slug,
-          arguments: arguments,
-        ),
+          arguments: Map<String, dynamic>.from(arguments)
+            ..remove('_connectorOperationId'),
+          operationId: arguments['_connectorOperationId'] as String? ?? '',
+        )),
     connectors: connectorDefinitions,
   );
 });
@@ -577,4 +590,6 @@ Never _throwInvalidArguments(StackTrace stackTrace) =>
     );
 
 bool _authorizationFailure(AgentToolExecutionFailure failure) =>
-    failure.failurePhase == 'connector.authorization';
+    failure.failurePhase == 'connector.authorization' ||
+    failure.failurePhase == 'connector.write' ||
+    failure.failurePhase == 'connector.read';

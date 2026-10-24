@@ -1,6 +1,7 @@
 // Required: Existing thresholds and limits use numeric values.
 import 'dart:async';
 
+import 'package:auravibes_app/features/chats/widgets/connector_write_result_notice.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -111,6 +112,7 @@ class const _ToolCallResponsePreviewContent({
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .start,
     children: [
+      ConnectorWriteResultNotice(content: content),
       _ToolCallResponsePreviewText(content: content, textStyle: textStyle),
       if (content.isNotEmpty ||
           (showExpandButton && (hasOverflow || inspectionStatus != null)))

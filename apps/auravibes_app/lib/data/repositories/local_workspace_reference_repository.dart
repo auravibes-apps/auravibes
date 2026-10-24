@@ -30,6 +30,17 @@ class const LocalWorkspaceReferenceRepository(
   }
 
   @override
+  Future<WorkspaceReferencePage> tableTargets(
+    String tableId, {
+    required String search,
+    String? afterId,
+  }) async {
+    final target = await tables.table(tableId);
+
+    return _page(await _targetRows(target, (search: search, afterId: afterId)));
+  }
+
+  @override
   Future<WorkspaceReferencePage> reverse({
     required String tableId,
     required String recordId,

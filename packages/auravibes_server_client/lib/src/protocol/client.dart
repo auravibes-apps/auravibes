@@ -210,6 +210,8 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _i3s0ysat;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_record_request.dart'
     as _iic7z6j2;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_table_request.dart'
+    as _i6klb7x8;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_target_request.dart'
     as _ikdp8816;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_resource.dart'
@@ -1100,6 +1102,14 @@ class EndpointWorkspaceReference extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
     'workspaceReference',
     'targets',
+    {'request': request},
+  );
+
+  _ida.Future<List<_iar0fwau.WorkspaceResource>> tableTargets(
+    _i6klb7x8.WorkspaceReferenceTableRequest request,
+  ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
+    'workspaceReference',
+    'tableTargets',
     {'request': request},
   );
 

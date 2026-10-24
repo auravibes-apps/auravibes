@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
-import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
-import 'package:auravibes_app/data/repositories/local_workspace_reference_repository.dart';
-import 'package:auravibes_app/features/workspaces/usecases/browse_workspace_references_usecase.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_reference_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/usecases/browse_workspace_references_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -24,10 +24,10 @@ void main() {
       var database = AppDatabase(connection: NativeDatabase(file));
       addTearDown(() => database.close());
       for (final id in ['one', 'two']) {
-        await database
+        final _ = await database
             .into(database.workspaces)
             .insert(
-              WorkspacesCompanion.insert(id: Value(id), name: id, type: .local),
+              WorkspacesCompanion.insert(id: .new(id), name: id, type: .local),
             );
       }
       final tables = OrganizeWorkspaceTablesUsecase(
@@ -44,7 +44,7 @@ void main() {
       var source = await tables.create(name: 'Tasks', labelName: 'Title');
       source = await tables.saveColumn(
         table: source,
-        column: WorkspaceColumn(
+        column: .new(
           id: '',
           name: 'Owner',
           type: .reference,
@@ -91,7 +91,7 @@ void main() {
       await expectLater(
         tables.saveColumn(
           table: source,
-          column: WorkspaceColumn(
+          column: .new(
             id: '',
             name: 'Invalid',
             type: .reference,
@@ -102,7 +102,7 @@ void main() {
       );
       source = await tables.saveColumn(
         table: source,
-        column: WorkspaceColumn(
+        column: .new(
           id: '',
           name: 'Participants',
           type: .reference,
@@ -144,7 +144,7 @@ void main() {
         [task.id],
       );
       for (var index = 0; index < 52; index++) {
-        await tables.createRecord(
+        final _ = await tables.createRecord(
           table: target,
           values: {target.labelColumnId: 'Batch $index'},
         );
@@ -154,6 +154,14 @@ void main() {
         search: 'Batch',
       );
       expect(firstPage.records.length, 50);
+      final defaultOptions = await references.tableTargets(
+        tableId: target.id,
+        search: 'Batch',
+      );
+      expect(
+        defaultOptions.records.map((record) => record.id),
+        firstPage.records.map((record) => record.id),
+      );
       final lastPage = await references.targets(
         source: (tableId: source.id, columnId: link),
         search: 'Batch',

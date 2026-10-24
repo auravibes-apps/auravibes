@@ -19,6 +19,13 @@ class const WorkspaceReferenceVisibility(
     return _project(row, data, restricted);
   }
 
+  Future<WorkspaceResource> table(WorkspaceResource row) async {
+    final restricted = await _restricted(_columns(row));
+    final data = _data(row);
+    data['columns'] = _visibleColumns(data, restricted);
+    return row.copyWith(data: jsonEncode(data));
+  }
+
   Future<List<String>> _restricted(
     Iterable<Map<String, dynamic>> columns,
   ) async {
@@ -37,8 +44,7 @@ class const WorkspaceReferenceVisibility(
     if (table == null) return false;
 
     return await WorkspaceTableAccess(transaction: transaction)
-            .visible(session, member, table) !=
-        null;
+        .canReadTable(session, member, table);
   }
 
   Future<WorkspaceResource?> _table(String id) =>
@@ -76,3 +82,18 @@ Map<String, Object?> _visibleValues(
       ..removeWhere((key, _) => restricted.contains(key));
 Map<String, dynamic> _data(WorkspaceResource resource) =>
     jsonDecode(resource.data) as Map<String, dynamic>;
+
+List<Map<String, dynamic>> _visibleColumns(
+  Map<String, dynamic> data,
+  List<String> restricted,
+) => (data['columns'] as List)
+    .cast<Map<String, dynamic>>()
+    .map((column) => _visibleColumn(column, restricted))
+    .toList();
+Map<String, dynamic> _visibleColumn(
+  Map<String, dynamic> column,
+  List<String> restricted,
+) {
+  if (!restricted.contains(column['id'])) return column;
+  return {...column}..remove('defaultValue');
+}

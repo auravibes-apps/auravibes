@@ -73,6 +73,7 @@ import 'features/conversations/models/bookmark_message_request.dart'
 import 'features/conversations/models/cancel_turn_request.dart' as _iarqshx6;
 import 'features/conversations/models/compact_conversation_request.dart'
     as _isyd7s84;
+import 'features/conversations/models/connector_write.dart' as _ik5xiz1a;
 import 'features/conversations/models/continue_conversation_request.dart'
     as _ialxa16r;
 import 'features/conversations/models/continue_turn_request.dart' as _iwrs6sde;
@@ -275,6 +276,8 @@ import 'features/workspace_state/models/workspace_patch_operation_kind.dart'
     as _ihbarnlu;
 import 'features/workspace_state/models/workspace_reference_record_request.dart'
     as _izw41l59;
+import 'features/workspace_state/models/workspace_reference_table_request.dart'
+    as _i25xbz7v;
 import 'features/workspace_state/models/workspace_reference_target_request.dart'
     as _ib7agc3j;
 import 'features/workspace_state/models/workspace_resource.dart' as _iqzfyfs9;
@@ -357,6 +360,7 @@ export 'features/conversations/models/background_work_view.dart';
 export 'features/conversations/models/bookmark_message_request.dart';
 export 'features/conversations/models/cancel_turn_request.dart';
 export 'features/conversations/models/compact_conversation_request.dart';
+export 'features/conversations/models/connector_write.dart';
 export 'features/conversations/models/continue_conversation_request.dart';
 export 'features/conversations/models/continue_turn_request.dart';
 export 'features/conversations/models/conversation.dart';
@@ -484,6 +488,7 @@ export 'features/workspace_state/models/read_workspace_state_response.dart';
 export 'features/workspace_state/models/workspace_patch_operation.dart';
 export 'features/workspace_state/models/workspace_patch_operation_kind.dart';
 export 'features/workspace_state/models/workspace_reference_record_request.dart';
+export 'features/workspace_state/models/workspace_reference_table_request.dart';
 export 'features/workspace_state/models/workspace_reference_target_request.dart';
 export 'features/workspace_state/models/workspace_resource.dart';
 export 'features/workspace_state/models/workspace_resource_kind.dart';
@@ -1111,6 +1116,100 @@ class Protocol extends _is.DatabaseSerializationManager {
             _isp.IndexElementDefinition(
               type: _isp.IndexElementDefinitionType.column,
               definition: 'expiresAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _isp.TableDefinition(
+      name: 'connector_write',
+      dartName: 'ConnectorWrite',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'workspaceId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'operationId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'requestDigest',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'outcome',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'statusCode',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+      ],
+      foreignKeys: [
+        _isp.ForeignKeyDefinition(
+          constraintName: 'connector_write_fk_0',
+          columns: ['workspaceId'],
+          referenceTable: 'cloud_workspace',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'connector_write_operation_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'operationId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _isp.IndexDefinition(
+          indexName: 'connector_write_digest_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'requestDigest',
             ),
           ],
           type: 'btree',
@@ -5118,6 +5217,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _isyd7s84.CompactConversationRequest) {
       return _isyd7s84.CompactConversationRequest.fromJson(data) as T;
     }
+    if (t == _ik5xiz1a.ConnectorWrite) {
+      return _ik5xiz1a.ConnectorWrite.fromJson(data) as T;
+    }
     if (t == _ialxa16r.ContinueConversationRequest) {
       return _ialxa16r.ContinueConversationRequest.fromJson(data) as T;
     }
@@ -5504,6 +5606,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _izw41l59.WorkspaceReferenceRecordRequest) {
       return _izw41l59.WorkspaceReferenceRecordRequest.fromJson(data) as T;
     }
+    if (t == _i25xbz7v.WorkspaceReferenceTableRequest) {
+      return _i25xbz7v.WorkspaceReferenceTableRequest.fromJson(data) as T;
+    }
     if (t == _ib7agc3j.WorkspaceReferenceTargetRequest) {
       return _ib7agc3j.WorkspaceReferenceTargetRequest.fromJson(data) as T;
     }
@@ -5706,6 +5811,10 @@ class Protocol extends _is.DatabaseSerializationManager {
       return (data != null
               ? _isyd7s84.CompactConversationRequest.fromJson(data)
               : null)
+          as T;
+    }
+    if (t == _is.getType<_ik5xiz1a.ConnectorWrite?>()) {
+      return (data != null ? _ik5xiz1a.ConnectorWrite.fromJson(data) : null)
           as T;
     }
     if (t == _is.getType<_ialxa16r.ContinueConversationRequest?>()) {
@@ -6411,6 +6520,12 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_i25xbz7v.WorkspaceReferenceTableRequest?>()) {
+      return (data != null
+              ? _i25xbz7v.WorkspaceReferenceTableRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_ib7agc3j.WorkspaceReferenceTargetRequest?>()) {
       return (data != null
               ? _ib7agc3j.WorkspaceReferenceTargetRequest.fromJson(data)
@@ -6851,6 +6966,7 @@ class Protocol extends _is.DatabaseSerializationManager {
       _ihrj16d1.BookmarkMessageRequest => 'BookmarkMessageRequest',
       _iarqshx6.CancelTurnRequest => 'CancelTurnRequest',
       _isyd7s84.CompactConversationRequest => 'CompactConversationRequest',
+      _ik5xiz1a.ConnectorWrite => 'ConnectorWrite',
       _ialxa16r.ContinueConversationRequest => 'ContinueConversationRequest',
       _iwrs6sde.ContinueTurnRequest => 'ContinueTurnRequest',
       _iivijtsr.Conversation => 'Conversation',
@@ -6999,6 +7115,8 @@ class Protocol extends _is.DatabaseSerializationManager {
       _ihbarnlu.WorkspacePatchOperationKind => 'WorkspacePatchOperationKind',
       _izw41l59.WorkspaceReferenceRecordRequest =>
         'WorkspaceReferenceRecordRequest',
+      _i25xbz7v.WorkspaceReferenceTableRequest =>
+        'WorkspaceReferenceTableRequest',
       _ib7agc3j.WorkspaceReferenceTargetRequest =>
         'WorkspaceReferenceTargetRequest',
       _iqzfyfs9.WorkspaceResource => 'WorkspaceResource',
@@ -7093,6 +7211,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'CancelTurnRequest';
       case _isyd7s84.CompactConversationRequest():
         return 'CompactConversationRequest';
+      case _ik5xiz1a.ConnectorWrite():
+        return 'ConnectorWrite';
       case _ialxa16r.ContinueConversationRequest():
         return 'ContinueConversationRequest';
       case _iwrs6sde.ContinueTurnRequest():
@@ -7347,6 +7467,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'WorkspacePatchOperationKind';
       case _izw41l59.WorkspaceReferenceRecordRequest():
         return 'WorkspaceReferenceRecordRequest';
+      case _i25xbz7v.WorkspaceReferenceTableRequest():
+        return 'WorkspaceReferenceTableRequest';
       case _ib7agc3j.WorkspaceReferenceTargetRequest():
         return 'WorkspaceReferenceTargetRequest';
       case _iqzfyfs9.WorkspaceResource():
@@ -7500,6 +7622,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'CompactConversationRequest') {
       return deserialize<_isyd7s84.CompactConversationRequest>(data['data']);
+    }
+    if (dataClassName == 'ConnectorWrite') {
+      return deserialize<_ik5xiz1a.ConnectorWrite>(data['data']);
     }
     if (dataClassName == 'ContinueConversationRequest') {
       return deserialize<_ialxa16r.ContinueConversationRequest>(data['data']);
@@ -7922,6 +8047,11 @@ class Protocol extends _is.DatabaseSerializationManager {
         data['data'],
       );
     }
+    if (dataClassName == 'WorkspaceReferenceTableRequest') {
+      return deserialize<_i25xbz7v.WorkspaceReferenceTableRequest>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'WorkspaceReferenceTargetRequest') {
       return deserialize<_ib7agc3j.WorkspaceReferenceTargetRequest>(
         data['data'],
@@ -8088,6 +8218,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return _ify5ufwn.CodexOAuthTransaction.t;
       case _i76zqh14.BackgroundWorkRecord:
         return _i76zqh14.BackgroundWorkRecord.t;
+      case _ik5xiz1a.ConnectorWrite:
+        return _ik5xiz1a.ConnectorWrite.t;
       case _iivijtsr.Conversation:
         return _iivijtsr.Conversation.t;
       case _i77s958n.ConversationEvent:
