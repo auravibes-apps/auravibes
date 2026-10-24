@@ -274,6 +274,35 @@ void main() {
           isTrue,
         );
         expect((await memberMove('admin-move')).resources.single.revision, 3);
+        await expectLater(
+          endpoints.workspaceState.patch(
+            authenticated,
+            PatchWorkspaceStateRequest(
+              workspaceId: workspace.id!,
+              requestId: 'mixed-missing-view',
+              operations: [
+                WorkspacePatchOperation(
+                  operation: .create,
+                  resourceKind: .folder,
+                  resourceId: 'partial-folder',
+                  data: jsonEncode({'name': 'Partial'}),
+                  fieldMask: const [],
+                ),
+              ],
+              viewMoves: [
+                WorkspaceViewMove(id: 'missing-view', expectedRevision: 1),
+              ],
+            ),
+          ),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+        final afterMixed = await readAsMember();
+        expect(
+          afterMixed.pages.single.resources.any(
+            (row) => row.resourceId == 'partial-folder',
+          ),
+          isFalse,
+        );
       },
     );
   });
