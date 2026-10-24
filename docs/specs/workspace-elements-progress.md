@@ -2,6 +2,15 @@
 
 Parent: #1665. Branch: `feat/1665-workspace-elements`.
 
+## Current checkpoint
+
+- Closed with acceptance evidence: #1667, #1668, #1669, #1670, #1671, #1685 (6 of 26 children).
+- Integrated but awaiting Directory live acceptance: #1676 rename/move.
+- Active implementers: #1672 constraints, #1675 Directory/table browsing, #1673 relationships. Each owns a separate worktree.
+- Latest published verified head: `ea6dcb2f4`; draft PR #1693 remains draft. Parent/final CI and remaining children are incomplete.
+- #1671 acceptance comment: https://github.com/auravibes-apps/auravibes/issues/1671#issuecomment-6379169692. Local/cloud date, timestamp and exact-money behavior is accepted; #1672 separately verifies constraint interactions.
+
+
 ## Accepted scope and source of truth
 
 The accepted product decisions are recorded in `docs/concepts/workspace-elements-interview.md`, the implementation specification in `docs/specs/workspace-elements.md`, and the 26-ticket dependency graph in `docs/specs/workspace-elements-tickets.md`.
