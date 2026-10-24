@@ -757,6 +757,39 @@ const _workspaceSetupDynamicKeys = <String>{
 /// Dynamic translations are listed by source call site and finite key family.
 const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   LocalizationDynamicRegistry(
+    family: 'workspace-item-typed-errors',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_item_failure.dart',
+        method: 'TextLocale',
+        keyExpression: 'failure.localizationKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_item_failure.dart',
+        method: 'TextLocale',
+        keyExpression: 'failure.localizationKey',
+        occurrence: 1,
+      ),
+    ],
+    keys: {
+      'cloud_errors.conflict',
+      'cloud_errors.permission_denied',
+      'workspace_items.invalid_folder',
+      'workspace_items.invalid_table',
+    },
+  ),
+  LocalizationDynamicRegistry(
+    family: 'workspace-table-save-actions',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_table_editor.dart',
+        method: 'TextLocale',
+        keyExpression: 'kind.label',
+      ),
+    ],
+    keys: {'workspace_items.save_record', 'workspace_items.save_typed_column'},
+  ),
+  LocalizationDynamicRegistry(
     family: 'agent-form-validation-keys',
     sites: [
       DynamicTranslationSite(
