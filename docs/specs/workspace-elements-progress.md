@@ -2,6 +2,15 @@
 
 Parent: #1665. Branch: `feat/1665-workspace-elements`.
 
+## Current checkpoint
+
+- Closed with acceptance evidence: #1667, #1668, #1669, #1670, #1671, #1685 (6 of 26 children).
+- Integrated but awaiting Directory live acceptance: #1676 rename/move.
+- Active implementers: #1672 constraints, #1675 Directory/table browsing, #1673 relationships. Each owns a separate worktree.
+- Latest published verified head: `ea6dcb2f4`; draft PR #1693 remains draft. Parent/final CI and remaining children are incomplete.
+- #1671 acceptance comment: https://github.com/auravibes-apps/auravibes/issues/1671#issuecomment-6379169692. Local/cloud date, timestamp and exact-money behavior is accepted; #1672 separately verifies constraint interactions.
+
+
 ## Accepted scope and source of truth
 
 The accepted product decisions are recorded in `docs/concepts/workspace-elements-interview.md`, the implementation specification in `docs/specs/workspace-elements.md`, and the 26-ticket dependency graph in `docs/specs/workspace-elements-tickets.md`.
@@ -280,3 +289,11 @@ Root CI repair verification: exact `unnecessary:nullable` gate and `validate:cha
 Hosted run 40053413591 finished: app shards 0/2 failed. Reproduced remaining failures locally: grouped-tools unit fixtures invoked real connector-sync storage; OAuth fixtures still assumed AES blobs instead of platform credential references; one wrapped-error assertion expected the inner tool message instead of the safe command message. Fixed fixture overrides, mocked secure storage and used `readCredential`; retained redaction assertions. All 34 focused tests and fatal analysis of the three changed test files now pass. Generated drift gate initially blocked by preserved untracked scratch/golden evidence; no generated-drift success claimed yet.
 
 Clean committed generated-artifact gate at `fd7c849d` passes, including Serverpod. Preserved untracked scratch/golden evidence was temporarily parked at `/tmp/auravibes-1665-preserved-untracked-fd7c849d` and restored unchanged after the check. Current handwritten repairs: 70 tool/provider/DAO +6 cloud adapter +34 remaining CI-fixture tests pass; scoped fatal analysis, nullable gate and changed-Dart preflight pass. Parent remains incomplete; #1671/#1672/#1675 are active and #1676 awaits Directory live acceptance.
+
+### Temporal and exact-money live acceptance
+
+- Root verified #1671 on isolated UI worktree `bd547ef5d`, instance `temporal-1665-oct23`. Marionette controlled the app; approved Computer fallback raised the exact debug app and scrolled the type menu. No production credentials or network writes were used.
+- Created Date and time column `Scheduled at` with IANA zone `Africa/Cairo`; ordinary date picker worked. Saved and reopened `2026-11-01T05:30:12.123456Z` without losing microseconds. UI preview changed correctly from October UTC+03 to November UTC+02 for Cairo.
+- Created Money column `Budget`; saved and reopened amount `9007199254740993.123456789` with currency `USD`, unchanged. Date-only/missing-value local/cloud behavior is covered by worker and merger regressions. No currency conversion or mixed-currency totals were introduced.
+- Screenshots/trees: `/tmp/auravibes-1665-ui-evidence/{temporal-before-0,temporal-exact-0,temporal-reopened-0,money-reopened-0}.png` and matching reopened tree files. Logs contain only the captured failed automation selector for nonexistent text `Timestamp`; correct UI label is `Date and time`. No additional application error appeared. Own bridge disconnected, exact runner stopped, manifest removal verified.
+- #1671 acceptance is verified and ready for tracker resolution after publication. #1672 remains responsible for cross-type constraint semantics and its combined tests; parent/final CI remain incomplete. Root reference worker now owns #1673 at managed `workspace-references-1673/auravibes`, based on `2a8b35c6d`, after native #1669 dependency/preflight/assignment.
