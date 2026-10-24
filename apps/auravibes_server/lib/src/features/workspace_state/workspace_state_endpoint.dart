@@ -5,10 +5,25 @@ import '../accounts/authenticated_account_resolver.dart';
 import '../sync/stream/sync_wakeups.dart';
 import 'repositories/workspace_state_repository.dart';
 import 'usecases/workspace_state_usecases.dart';
+import 'workspace_record_query.dart';
 
 class WorkspaceStateEndpoint extends Endpoint {
-  WorkspaceStateUseCases get _useCases =>
-      WorkspaceStateUseCases(WorkspaceStateRepository());
+  WorkspaceStateUseCases get _useCases => WorkspaceStateUseCases(.new());
+
+  Future<List<WorkspaceResource>> queryRecords(
+    Session session,
+    int workspaceId,
+    String tableId,
+    String queryJson,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+
+    return await const WorkspaceRecordQuery()(
+      session,
+      account.userId,
+      (workspaceId: workspaceId, tableId: tableId, encoded: queryJson),
+    );
+  }
 
   Future<ReadWorkspaceStateResponse> read(
     Session session,
@@ -51,6 +66,7 @@ class WorkspaceStateEndpoint extends Endpoint {
       request: request,
     );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
+
     return response;
   }
 
@@ -65,6 +81,7 @@ class WorkspaceStateEndpoint extends Endpoint {
       request: request,
     );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
+
     return response;
   }
 
@@ -79,6 +96,7 @@ class WorkspaceStateEndpoint extends Endpoint {
       request: request,
     );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
+
     return response;
   }
 }
