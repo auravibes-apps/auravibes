@@ -170,16 +170,16 @@ void main() {
       expect(lastPage.nextId, isNull);
       final accent = await tables.createRecord(
         table: target,
-        values: {target.labelColumnId: 'Éva'},
+        values: {target.labelColumnId: '\u00c9va'},
       );
-      for (final search in ['É', 'é']) {
+      for (final search in ['\u00c9', '\u00e9']) {
         final matches = await references.tableTargets(
           tableId: target.id,
           search: search,
         );
         expect(
           matches.records.map((record) => record.id),
-          search == 'É' ? [accent.id] : isEmpty,
+          search == '\u00c9' ? [accent.id] : isEmpty,
         );
       }
       await database.close();

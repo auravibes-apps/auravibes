@@ -332,10 +332,10 @@ void main() {
           _create(.tableRecord, 'accent-person', {
             'tableId': 'target',
             'schemaRevision': 1,
-            'values': {'label': 'Éva'},
+            'values': {'label': '\u00c9va'},
           }),
         ]);
-        for (final search in ['É', 'é']) {
+        for (final search in ['\u00c9', '\u00e9']) {
           final matches = await endpoints.workspaceReference.tableTargets(
             member,
             WorkspaceReferenceTableRequest(
@@ -346,7 +346,7 @@ void main() {
           );
           expect(
             matches.map((row) => row.resourceId),
-            search == 'É' ? ['accent-person'] : isEmpty,
+            search == '\u00c9' ? ['accent-person'] : isEmpty,
           );
         }
         await patch([
