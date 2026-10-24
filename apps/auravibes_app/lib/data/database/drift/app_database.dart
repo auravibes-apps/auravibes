@@ -46,6 +46,7 @@ import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_se
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -106,6 +107,7 @@ part 'app_database.g.dart';
     WorkspaceTables,
     WorkspaceTableRecords,
     ConnectorWrites,
+    WorkspaceViews,
   ],
   daos: [
     WorkspaceDao,
@@ -190,7 +192,8 @@ class AppDatabase extends _$AppDatabase {
       _workspaceFoldersSchemaVersion + 1;
   static const int _connectorWritesSchemaVersion =
       _workspaceTablesSchemaVersion + 1;
-  static const int _currentSchemaVersion = _connectorWritesSchemaVersion;
+  static const int _workspaceViewsSchemaVersion = _connectorWritesSchemaVersion + 1;
+  static const int _currentSchemaVersion = _workspaceViewsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -229,6 +232,9 @@ extension on AppDatabase {
   }
 
   Future<void> _runUpgrades(Migrator m, int from, int _) async {
+    if (from < AppDatabase._workspaceViewsSchemaVersion) {
+      await m.createTable(workspaceViews);
+    }
     await _upgradeApiModelModalitiesSchema(from);
     await _runCoreUpgrades(m, from);
     await _upgradeLegacyStreamingStatuses(from);

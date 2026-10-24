@@ -188,6 +188,7 @@ import '../features/sync/stream/workspace_stream_endpoint.dart' as _ifbwcqx4;
 import '../features/workspace_state/workspace_secret_endpoint.dart'
     as _i2j4mlvu;
 import '../features/workspace_state/workspace_state_endpoint.dart' as _iv99006q;
+import '../features/workspace_views/workspace_view_endpoint.dart' as _i1itox65;
 import '../features/workspaces/cloud_workspace_endpoint.dart' as _ij5poshv;
 
 class Endpoints extends _is.EndpointDispatch {
@@ -276,6 +277,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'workspaceState',
+          null,
+        ),
+      'workspaceView': _i1itox65.WorkspaceViewEndpoint()
+        ..initialize(
+          server,
+          'workspaceView',
           null,
         ),
       'cloudWorkspace': _ij5poshv.CloudWorkspaceEndpoint()
@@ -1951,6 +1958,132 @@ class Endpoints extends _is.EndpointDispatch {
                       .mutateCredential(
                         session,
                         params['request'],
+                      ),
+        ),
+      },
+    );
+    connectors['workspaceView'] = _is.EndpointConnector(
+      name: 'workspaceView',
+      endpoint: endpoints['workspaceView']!,
+      methodConnectors: {
+        'list': _is.MethodConnector(
+          name: 'list',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'parentId': _is.ParameterDescription(
+              name: 'parentId',
+              type: _is.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceView']
+                          as _i1itox65.WorkspaceViewEndpoint)
+                      .list(
+                        session,
+                        params['workspaceId'],
+                        params['parentId'],
+                      ),
+        ),
+        'read': _is.MethodConnector(
+          name: 'read',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceView']
+                          as _i1itox65.WorkspaceViewEndpoint)
+                      .read(
+                        session,
+                        params['workspaceId'],
+                        params['id'],
+                      ),
+        ),
+        'history': _is.MethodConnector(
+          name: 'history',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceView']
+                          as _i1itox65.WorkspaceViewEndpoint)
+                      .history(
+                        session,
+                        params['workspaceId'],
+                        params['id'],
+                      ),
+        ),
+        'save': _is.MethodConnector(
+          name: 'save',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'expectedRevision': _is.ParameterDescription(
+              name: 'expectedRevision',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'definition': _is.ParameterDescription(
+              name: 'definition',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceView']
+                          as _i1itox65.WorkspaceViewEndpoint)
+                      .save(
+                        session,
+                        params['workspaceId'],
+                        params['id'],
+                        params['expectedRevision'],
+                        params['definition'],
                       ),
         ),
       },

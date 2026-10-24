@@ -277,7 +277,7 @@
     },
     "create": {
       "type_label": "Tipo de conexión",
-    "connector_label": "Connector",
+      "connector_label": "Connector",
       "name_label": "Nombre",
       "api_key_label": "Clave API",
       "base_url_label": "URL base de la instancia"
@@ -2021,5 +2021,20 @@
     "advanced_value": "Editar valor exacto",
     "utc_time": "Hora en UTC",
     "weekdays": "L,M,X,J,V,S,D"
+  },
+  "workspace_views": {
+    "title": "Vista",
+    "create": "Crear vista",
+    "name": "Nombre de la vista",
+    "bindings": "Origen y campos",
+    "repair": "Algunos campos no están disponibles o no son compatibles. Edita la vista para corregirlos.",
+    "edit": "Editar vista",
+    "history": "Historial de revisiones",
+    "restore": "Restaurar como nueva revisión",
+    "empty": "Aún no hay registros",
+    "display_only": "Abrir esta vista no comparte sus datos con la IA.",
+    "definition": "Definición avanzada del diseño",
+    "unavailable": "No disponible",
+    "limit": "Se muestran los primeros 100 registros."
   }
 }

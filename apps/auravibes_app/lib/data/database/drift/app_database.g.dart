@@ -16045,6 +16045,476 @@ class WorkspaceFoldersCompanion extends UpdateCompanion<WorkspaceFolderRow> {
   }
 }
 
+class $WorkspaceViewsTable extends WorkspaceViews
+    with TableInfo<$WorkspaceViewsTable, WorkspaceViewRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceViewsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _dataMeta = const VerificationMeta('data');
+  @override
+  late final GeneratedColumn<String> data = GeneratedColumn<String>(
+    'data',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _historyMeta = const VerificationMeta(
+    'history',
+  );
+  @override
+  late final GeneratedColumn<String> history = GeneratedColumn<String>(
+    'history',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    data,
+    revision,
+    history,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_views';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceViewRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('data')) {
+      context.handle(
+        _dataMeta,
+        this.data.isAcceptableOrUnknown(data['data']!, _dataMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('history')) {
+      context.handle(
+        _historyMeta,
+        history.isAcceptableOrUnknown(data['history']!, _historyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_historyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WorkspaceViewRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceViewRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      data: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      history: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}history'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceViewsTable createAlias(String alias) {
+    return $WorkspaceViewsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceViewRow extends DataClass
+    implements Insertable<WorkspaceViewRow> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String workspaceId;
+  final String data;
+  final int revision;
+  final String history;
+  const WorkspaceViewRow({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.workspaceId,
+    required this.data,
+    required this.revision,
+    required this.history,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['data'] = Variable<String>(data);
+    map['revision'] = Variable<int>(revision);
+    map['history'] = Variable<String>(history);
+    return map;
+  }
+
+  WorkspaceViewsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceViewsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      workspaceId: Value(workspaceId),
+      data: Value(data),
+      revision: Value(revision),
+      history: Value(history),
+    );
+  }
+
+  factory WorkspaceViewRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceViewRow(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      data: serializer.fromJson<String>(json['data']),
+      revision: serializer.fromJson<int>(json['revision']),
+      history: serializer.fromJson<String>(json['history']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'data': serializer.toJson<String>(data),
+      'revision': serializer.toJson<int>(revision),
+      'history': serializer.toJson<String>(history),
+    };
+  }
+
+  WorkspaceViewRow copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? workspaceId,
+    String? data,
+    int? revision,
+    String? history,
+  }) => WorkspaceViewRow(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    workspaceId: workspaceId ?? this.workspaceId,
+    data: data ?? this.data,
+    revision: revision ?? this.revision,
+    history: history ?? this.history,
+  );
+  WorkspaceViewRow copyWithCompanion(WorkspaceViewsCompanion data) {
+    return WorkspaceViewRow(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      data: data.data.present ? data.data.value : this.data,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      history: data.history.present ? data.history.value : this.history,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceViewRow(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('data: $data, ')
+          ..write('revision: $revision, ')
+          ..write('history: $history')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    data,
+    revision,
+    history,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceViewRow &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.workspaceId == this.workspaceId &&
+          other.data == this.data &&
+          other.revision == this.revision &&
+          other.history == this.history);
+}
+
+class WorkspaceViewsCompanion extends UpdateCompanion<WorkspaceViewRow> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> workspaceId;
+  final Value<String> data;
+  final Value<int> revision;
+  final Value<String> history;
+  final Value<int> rowid;
+  const WorkspaceViewsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.data = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.history = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceViewsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String workspaceId,
+    required String data,
+    required int revision,
+    required String history,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       data = Value(data),
+       revision = Value(revision),
+       history = Value(history);
+  static Insertable<WorkspaceViewRow> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? workspaceId,
+    Expression<String>? data,
+    Expression<int>? revision,
+    Expression<String>? history,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (data != null) 'data': data,
+      if (revision != null) 'revision': revision,
+      if (history != null) 'history': history,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceViewsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? workspaceId,
+    Value<String>? data,
+    Value<int>? revision,
+    Value<String>? history,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceViewsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      workspaceId: workspaceId ?? this.workspaceId,
+      data: data ?? this.data,
+      revision: revision ?? this.revision,
+      history: history ?? this.history,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (data.present) {
+      map['data'] = Variable<String>(data.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (history.present) {
+      map['history'] = Variable<String>(history.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceViewsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('data: $data, ')
+          ..write('revision: $revision, ')
+          ..write('history: $history, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $WorkspaceTablesTable extends WorkspaceTables
     with TableInfo<$WorkspaceTablesTable, WorkspaceTableRow> {
   @override
@@ -17684,6 +18154,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WorkspaceFoldersTable workspaceFolders = $WorkspaceFoldersTable(
     this,
   );
+  late final $WorkspaceViewsTable workspaceViews = $WorkspaceViewsTable(this);
   late final $WorkspaceTablesTable workspaceTables = $WorkspaceTablesTable(
     this,
   );
@@ -17826,6 +18297,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     modelUsageRecords,
     backgroundWorks,
     workspaceFolders,
+    workspaceViews,
     workspaceTables,
     workspaceTableRecords,
     connectorWrites,
@@ -18097,6 +18569,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('workspace_folders', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('workspace_views', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -18377,6 +18856,24 @@ final class $$WorkspacesTableReferences
     final cache = $_typedResult.readTableOrNull(
       _workspaceFoldersRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$WorkspaceViewsTable, List<WorkspaceViewRow>>
+  _workspaceViewsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.workspaceViews,
+    aliasName: 'workspaces__id__workspace_views__workspace_id',
+  );
+
+  $$WorkspaceViewsTableProcessedTableManager get workspaceViewsRefs {
+    final manager = $$WorkspaceViewsTableTableManager(
+      $_db,
+      $_db.workspaceViews,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_workspaceViewsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -18770,6 +19267,31 @@ class $$WorkspacesTableFilterComposer
           }) => $$WorkspaceFoldersTableFilterComposer(
             $db: $db,
             $table: $db.workspaceFolders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceViewsRefs(
+    Expression<bool> Function($$WorkspaceViewsTableFilterComposer f) f,
+  ) {
+    final $$WorkspaceViewsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.workspaceViews,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspaceViewsTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaceViews,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -19225,6 +19747,31 @@ class $$WorkspacesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> workspaceViewsRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceViewsTableAnnotationComposer a) f,
+  ) {
+    final $$WorkspaceViewsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.workspaceViews,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspaceViewsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaceViews,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> workspaceTablesRefs<T extends Object>(
     Expression<T> Function($$WorkspaceTablesTableAnnotationComposer a) f,
   ) {
@@ -19327,6 +19874,7 @@ class $$WorkspacesTableTableManager
             bool appSkillWorkspaceSettingsRefs,
             bool backgroundWorksRefs,
             bool workspaceFoldersRefs,
+            bool workspaceViewsRefs,
             bool workspaceTablesRefs,
             bool workspaceTableRecordsRefs,
             bool connectorWritesRefs,
@@ -19408,6 +19956,7 @@ class $$WorkspacesTableTableManager
                 appSkillWorkspaceSettingsRefs = false,
                 backgroundWorksRefs = false,
                 workspaceFoldersRefs = false,
+                workspaceViewsRefs = false,
                 workspaceTablesRefs = false,
                 workspaceTableRecordsRefs = false,
                 connectorWritesRefs = false,
@@ -19428,6 +19977,7 @@ class $$WorkspacesTableTableManager
                       db.appSkillWorkspaceSettings,
                     if (backgroundWorksRefs) db.backgroundWorks,
                     if (workspaceFoldersRefs) db.workspaceFolders,
+                    if (workspaceViewsRefs) db.workspaceViews,
                     if (workspaceTablesRefs) db.workspaceTables,
                     if (workspaceTableRecordsRefs) db.workspaceTableRecords,
                     if (connectorWritesRefs) db.connectorWrites,
@@ -19666,6 +20216,27 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workspaceViewsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          WorkspaceViewRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._workspaceViewsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceViewsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (workspaceTablesRefs)
                         await $_getPrefetchedData<
                           WorkspacesTable,
@@ -19761,6 +20332,7 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool appSkillWorkspaceSettingsRefs,
         bool backgroundWorksRefs,
         bool workspaceFoldersRefs,
+        bool workspaceViewsRefs,
         bool workspaceTablesRefs,
         bool workspaceTableRecordsRefs,
         bool connectorWritesRefs,
@@ -33221,6 +33793,366 @@ typedef $$WorkspaceFoldersTableProcessedTableManager =
       WorkspaceFolderRow,
       PrefetchHooks Function({bool workspaceId})
     >;
+typedef $$WorkspaceViewsTableCreateCompanionBuilder =
+    WorkspaceViewsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String workspaceId,
+      required String data,
+      required int revision,
+      required String history,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceViewsTableUpdateCompanionBuilder =
+    WorkspaceViewsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> workspaceId,
+      Value<String> data,
+      Value<int> revision,
+      Value<String> history,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceViewsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $WorkspaceViewsTable, WorkspaceViewRow> {
+  $$WorkspaceViewsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) => db.workspaces
+      .createAlias('workspace_views__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceViewsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceViewsTable> {
+  $$WorkspaceViewsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get history => $composableBuilder(
+    column: $table.history,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceViewsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceViewsTable> {
+  $$WorkspaceViewsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get history => $composableBuilder(
+    column: $table.history,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceViewsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceViewsTable> {
+  $$WorkspaceViewsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get history =>
+      $composableBuilder(column: $table.history, builder: (column) => column);
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceViewsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceViewsTable,
+          WorkspaceViewRow,
+          $$WorkspaceViewsTableFilterComposer,
+          $$WorkspaceViewsTableOrderingComposer,
+          $$WorkspaceViewsTableAnnotationComposer,
+          $$WorkspaceViewsTableCreateCompanionBuilder,
+          $$WorkspaceViewsTableUpdateCompanionBuilder,
+          (WorkspaceViewRow, $$WorkspaceViewsTableReferences),
+          WorkspaceViewRow,
+          PrefetchHooks Function({bool workspaceId})
+        > {
+  $$WorkspaceViewsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceViewsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceViewsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WorkspaceViewsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WorkspaceViewsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> data = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String> history = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceViewsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                data: data,
+                revision: revision,
+                history: history,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                required String data,
+                required int revision,
+                required String history,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceViewsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                data: data,
+                revision: revision,
+                history: history,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$WorkspaceViewsTable, WorkspaceViewRow>(table),
+                  $$WorkspaceViewsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workspaceId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable: $$WorkspaceViewsTableReferences
+                            ._workspaceIdTable(db),
+                        referencedColumn: $$WorkspaceViewsTableReferences
+                            ._workspaceIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkspaceViewsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceViewsTable,
+      WorkspaceViewRow,
+      $$WorkspaceViewsTableFilterComposer,
+      $$WorkspaceViewsTableOrderingComposer,
+      $$WorkspaceViewsTableAnnotationComposer,
+      $$WorkspaceViewsTableCreateCompanionBuilder,
+      $$WorkspaceViewsTableUpdateCompanionBuilder,
+      (WorkspaceViewRow, $$WorkspaceViewsTableReferences),
+      WorkspaceViewRow,
+      PrefetchHooks Function({bool workspaceId})
+    >;
 typedef $$WorkspaceTablesTableCreateCompanionBuilder =
     WorkspaceTablesCompanion Function({
       Value<String> id,
@@ -34650,6 +35582,8 @@ class $AppDatabaseManager {
       $$BackgroundWorksTableTableManager(_db, _db.backgroundWorks);
   $$WorkspaceFoldersTableTableManager get workspaceFolders =>
       $$WorkspaceFoldersTableTableManager(_db, _db.workspaceFolders);
+  $$WorkspaceViewsTableTableManager get workspaceViews =>
+      $$WorkspaceViewsTableTableManager(_db, _db.workspaceViews);
   $$WorkspaceTablesTableTableManager get workspaceTables =>
       $$WorkspaceTablesTableTableManager(_db, _db.workspaceTables);
   $$WorkspaceTableRecordsTableTableManager get workspaceTableRecords =>

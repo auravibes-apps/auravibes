@@ -213,6 +213,8 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/r
     as _iwsbsne8;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_resource.dart'
     as _ixyz6pla;
+import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view.dart'
+    as _i7rt6swg;
 import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i3cjuwla;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_detail.dart'
@@ -418,6 +420,8 @@ class TestEndpoints {
 
   late final _WorkspaceStateEndpoint workspaceState;
 
+  late final _WorkspaceViewEndpoint workspaceView;
+
   late final _CloudWorkspaceEndpoint cloudWorkspace;
 }
 
@@ -481,6 +485,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     workspaceState = _WorkspaceStateEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    workspaceView = _WorkspaceViewEndpoint(
       endpoints,
       serializationManager,
     );
@@ -2957,6 +2965,153 @@ class _WorkspaceStateEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ie85dmeq.MutateWorkspaceCredentialResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _WorkspaceViewEndpoint {
+  _WorkspaceViewEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<List<_i7rt6swg.WorkspaceView>> list(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String? parentId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceView',
+            method: 'list',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceView',
+          methodName: 'list',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'parentId': parentId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_i7rt6swg.WorkspaceView>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i7rt6swg.WorkspaceView> read(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String id,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceView',
+            method: 'read',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceView',
+          methodName: 'read',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'id': id,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i7rt6swg.WorkspaceView>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<String>> history(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String id,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceView',
+            method: 'history',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceView',
+          methodName: 'history',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'id': id,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<String>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i7rt6swg.WorkspaceView> save(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String id,
+    int expectedRevision,
+    String definition,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceView',
+            method: 'save',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceView',
+          methodName: 'save',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'id': id,
+            'expectedRevision': expectedRevision,
+            'definition': definition,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i7rt6swg.WorkspaceView>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

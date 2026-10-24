@@ -210,6 +210,8 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _i3s0ysat;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_resource.dart'
     as _iar0fwau;
+import 'package:auravibes_server_client/src/protocol/features/workspace_views/models/workspace_view.dart'
+    as _i3ruzhns;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i0tihsii;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_detail.dart'
@@ -1141,6 +1143,66 @@ class EndpointWorkspaceState extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointWorkspaceView extends _isc.EndpointRef {
+  EndpointWorkspaceView(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceView';
+
+  _ida.Future<List<_i3ruzhns.WorkspaceView>> list(
+    int workspaceId,
+    String? parentId,
+  ) => caller.callServerEndpoint<List<_i3ruzhns.WorkspaceView>>(
+    'workspaceView',
+    'list',
+    {
+      'workspaceId': workspaceId,
+      'parentId': parentId,
+    },
+  );
+
+  _ida.Future<_i3ruzhns.WorkspaceView> read(
+    int workspaceId,
+    String id,
+  ) => caller.callServerEndpoint<_i3ruzhns.WorkspaceView>(
+    'workspaceView',
+    'read',
+    {
+      'workspaceId': workspaceId,
+      'id': id,
+    },
+  );
+
+  _ida.Future<List<String>> history(
+    int workspaceId,
+    String id,
+  ) => caller.callServerEndpoint<List<String>>(
+    'workspaceView',
+    'history',
+    {
+      'workspaceId': workspaceId,
+      'id': id,
+    },
+  );
+
+  _ida.Future<_i3ruzhns.WorkspaceView> save(
+    int workspaceId,
+    String id,
+    int expectedRevision,
+    String definition,
+  ) => caller.callServerEndpoint<_i3ruzhns.WorkspaceView>(
+    'workspaceView',
+    'save',
+    {
+      'workspaceId': workspaceId,
+      'id': id,
+      'expectedRevision': expectedRevision,
+      'definition': definition,
+    },
+  );
+}
+
+/// {@category Endpoint}
 class EndpointCloudWorkspace extends _isc.EndpointRef {
   EndpointCloudWorkspace(_isc.EndpointCaller caller) : super(caller);
 
@@ -1336,6 +1398,7 @@ class Client extends _isc.ServerpodClientShared {
     workspaceStream = EndpointWorkspaceStream(this);
     workspaceSecret = EndpointWorkspaceSecret(this);
     workspaceState = EndpointWorkspaceState(this);
+    workspaceView = EndpointWorkspaceView(this);
     cloudWorkspace = EndpointCloudWorkspace(this);
     modules = Modules(this);
   }
@@ -1368,6 +1431,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointWorkspaceState workspaceState;
 
+  late final EndpointWorkspaceView workspaceView;
+
   late final EndpointCloudWorkspace cloudWorkspace;
 
   late final Modules modules;
@@ -1388,6 +1453,7 @@ class Client extends _isc.ServerpodClientShared {
     'workspaceStream': workspaceStream,
     'workspaceSecret': workspaceSecret,
     'workspaceState': workspaceState,
+    'workspaceView': workspaceView,
     'cloudWorkspace': cloudWorkspace,
   };
 

@@ -114,3 +114,5 @@ export 'src/transcript_selection.dart';
 export 'src/url_content_format.dart';
 export 'src/url_content_transformer.dart';
 export 'src/url_tool.dart';
+
+export 'src/a2ui/a2ui_saved_definition.dart';
