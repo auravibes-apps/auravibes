@@ -1,3 +1,9 @@
+// Required: Existing test and UI helpers keep compact return flow.
+// Required: UI callbacks stay local to their widgets.
+// Required: Existing code repeats lookups where extraction adds noise.
+// Required: Feature widgets keep closely related private widgets together.
+// Required: Existing helpers remain top-level for local feature use.
+
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/side_panel_preferences_repository.dart';
@@ -67,6 +73,12 @@ import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
+    show
+        AgentIterationDecision,
+        ConversationToolAccessMode,
+        ReasoningConfiguration,
+        ReasoningOption,
+        SelectedModelNotFoundException;
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -75,20 +87,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-// Required: Existing test and UI helpers keep compact return flow.
-// Required: UI callbacks stay local to their widgets.
-// Required: Existing code repeats lookups where extraction adds noise.
-// Required: Feature widgets keep closely related private widgets together.
-// Required: Existing helpers remain top-level for local feature use.
-
-
-    show
-        AgentIterationDecision,
-        ConversationToolAccessMode,
-        ReasoningConfiguration,
-        ReasoningOption,
-        SelectedModelNotFoundException;
 
 final _logger = Logger('chat_conversation_screen');
 
