@@ -229,7 +229,7 @@ final class WorkspaceViewDataProvider
   }
 }
 
-String _$workspaceViewDataHash() => r'f656396a38e7207f2ece6ebad51671f2b6196ee3';
+String _$workspaceViewDataHash() => r'0c460171c90dea19f7598a930ede4181aaadee6c';
 
 final class WorkspaceViewDataFamily extends $Family
     with

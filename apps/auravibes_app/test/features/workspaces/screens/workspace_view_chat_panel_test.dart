@@ -1,4 +1,3 @@
-import 'package:auravibes_app/features/chats/widgets/responsive_conversation_layout.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';

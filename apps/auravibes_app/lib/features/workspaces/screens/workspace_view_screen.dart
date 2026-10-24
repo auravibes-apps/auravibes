@@ -57,21 +57,33 @@ class const _Toolbar(
   @override
   Widget build(BuildContext context, WidgetRef ref) => Row(
     children: [
-      AuraIconButton(
-        icon: Icons.arrow_back,
-        onPressed: owner.onBack,
-        identifier: 'workspace_view_back',
-        tooltip: LocaleKeys.common_back.tr(),
-      ),
+      _BackButton(owner),
       const Expanded(child: TextLocale(LocaleKeys.workspace_views_title)),
-      AuraIconButton(
-        icon: Icons.refresh,
-        onPressed: () => owner.refresh(ref),
-        identifier: 'workspace_view_refresh',
-        tooltip: LocaleKeys.common_reload.tr(),
-      ),
+      _RefreshButton(owner),
       _Menu(owner, selected),
     ],
+  );
+}
+
+class const _BackButton(final WorkspaceViewScreen owner)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.arrow_back,
+    onPressed: owner.onBack,
+    identifier: 'workspace_view_back',
+    tooltip: LocaleKeys.common_back.tr(),
+  );
+}
+
+class const _RefreshButton(final WorkspaceViewScreen owner)
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraIconButton(
+    icon: Icons.refresh,
+    onPressed: () => owner.refresh(ref),
+    identifier: 'workspace_view_refresh',
+    tooltip: LocaleKeys.common_reload.tr(),
   );
 }
 
