@@ -2630,4 +2630,13 @@ abstract class LocaleKeys {
   static const workspace_items_utc_time = 'workspace_items.utc_time';
   static const workspace_items_weekdays = 'workspace_items.weekdays';
   static const workspace_items_missing_value = 'workspace_items.missing_value';
+  static const workspace_items_required = 'workspace_items.required';
+  static const workspace_items_unique = 'workspace_items.unique';
+  static const workspace_items_default_value = 'workspace_items.default_value';
+  static const workspace_items_constraint_violations =
+      'workspace_items.constraint_violations';
+  static const workspace_items_correct_records =
+      'workspace_items.correct_records';
+  static const workspace_items_replacement_column =
+      'workspace_items.replacement_column';
 }

@@ -9,11 +9,10 @@ import '../../mcp_servers/mcp_server_headers.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
-import '../domain/workspace_table_schema_identity.dart';
-import '../domain/workspace_table_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
 import '../workspace_table_access.dart';
+import '../workspace_table_mutation_validation.dart';
 import '../workspace_table_page_reader.dart';
 
 typedef _OperationCommitMetadata = ({
@@ -1161,89 +1160,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     fieldMask: const [],
   );
 
-  Future<void> _validateTableOperation(
-    Session session,
-    WorkspacePatchOperation operation,
-    Map<String, Object?> data,
-    WorkspaceResource? existing,
-    int workspaceId,
-    Transaction transaction,
-  ) async {
-    if (operation.resourceKind == WorkspaceResourceKind.table) {
-      final previous = existing == null
-          ? null
-          : jsonDecode(existing.data) as Map<String, dynamic>;
-      if (previous == null) {
-        if (data['schemaRevision'] != 1) {
-          throw const FormatException();
-        }
-      } else {
-        final metadataOnly =
-            WorkspaceTableSchemaIdentity.matches(
-              data,
-              previous,
-            ) &&
-            data['schemaRevision'] == previous['schemaRevision'];
-        final expectedSchemaRevision =
-            (previous['schemaRevision'] as int) + (metadataOnly ? 0 : 1);
-        if (data['labelColumnId'] != previous['labelColumnId'] ||
-            data['schemaRevision'] != expectedSchemaRevision) {
-          _staleRevision();
-        }
-        if (metadataOnly) return;
-      }
-      String? cursor;
-      while (true) {
-        final records = await _repository.readPage(
-          session,
-          workspaceId: workspaceId,
-          kind: WorkspaceResourceKind.tableRecord,
-          limit: _maxPageSize,
-          afterResourceId: cursor,
-          transaction: transaction,
-        );
-        for (final record in records) {
-          final current = jsonDecode(record.data) as Map<String, dynamic>;
-          if (current['tableId'] == operation.resourceId) {
-            WorkspaceTableValidation.values(
-              data,
-              (current['values'] as Map<String, dynamic>)
-                  .cast<String, Object?>(),
-            );
-          }
-        }
-        if (records.length < _maxPageSize) break;
-        cursor = records.last.resourceId;
-      }
-    }
-    if (operation.resourceKind != WorkspaceResourceKind.tableRecord) {
-      return;
-    }
-    final table = await _repository.findResource(
-      session,
-      workspaceId: workspaceId,
-      kind: WorkspaceResourceKind.table,
-      resourceId: data['tableId'] as String,
-      transaction: transaction,
-    );
-    if (table == null || table.deletedAt != null) {
-      throw const FormatException();
-    }
-    final schema = jsonDecode(table.data) as Map<String, dynamic>;
-    if (data['schemaRevision'] != schema['schemaRevision']) {
-      _staleRevision();
-    }
-    WorkspaceTableValidation.values(
-      schema,
-      (data['values'] as Map).cast<String, Object?>(),
-    );
-    if (existing != null &&
-        (jsonDecode(existing.data) as Map<String, dynamic>)['tableId'] !=
-            data['tableId']) {
-      throw const FormatException();
-    }
-  }
-
   Future<void> _validateFolderParent(
     Session session,
     int workspaceId,
@@ -1297,6 +1213,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       resourceId: operation.resourceId,
       transaction: transaction,
     );
+    var validatedData = operation.data;
     if (operation.operation != WorkspacePatchOperationKind.delete) {
       final data = operation.data;
       if (data == null) {
@@ -1322,14 +1239,15 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             transaction: transaction,
           ),
         );
-        await _validateTableOperation(
+        await WorkspaceTableMutationValidation(
+          _repository,
           session,
-          operation,
-          decoded,
-          existing,
           workspaceId,
           transaction,
-        );
+        ).validate(operation, decoded, existing);
+        if (operation.resourceKind == WorkspaceResourceKind.tableRecord) {
+          validatedData = jsonEncode(decoded);
+        }
         if (operation.resourceKind == WorkspaceResourceKind.folder) {
           await _validateFolderParent(
             session,
@@ -1357,7 +1275,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           workspaceId: workspaceId,
           resourceKind: operation.resourceKind,
           resourceId: operation.resourceId,
-          data: operation.data!,
+          data: validatedData!,
           revision: 1,
           createdAt: now,
           updatedAt: now,
@@ -1372,7 +1290,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final updated = existing.copyWith(
       data: operation.operation == WorkspacePatchOperationKind.delete
           ? existing.data
-          : operation.data ?? existing.data,
+          : validatedData ?? existing.data,
       revision: existing.revision + 1,
       updatedAt: now,
       deletedAt: operation.operation == WorkspacePatchOperationKind.delete

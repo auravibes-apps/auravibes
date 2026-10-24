@@ -2022,6 +2022,12 @@
     "advanced_value": "Editar valor exacto",
     "utc_time": "Hora en UTC",
     "weekdays": "L,M,X,J,V,S,D",
-    "missing_value": "Sin valor"
+    "missing_value": "Sin valor",
+    "required": "Obligatorio",
+    "unique": "Valores únicos",
+    "default_value": "Valor predeterminado para nuevos registros",
+    "constraint_violations": "Corrige estos registros antes de aplicar el cambio. Los valores existentes se conservarán.",
+    "correct_records": "Volver a la tabla para corregir registros",
+    "replacement_column": "Crear una columna de reemplazo separada"
   }
 }

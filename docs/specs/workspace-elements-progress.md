@@ -2,6 +2,15 @@
 
 Parent: #1665. Branch: `feat/1665-workspace-elements`.
 
+## Current checkpoint
+
+- Closed with acceptance evidence: #1667, #1668, #1669, #1670, #1671, #1685 (6 of 26 children).
+- Integrated pending acceptance follow-up: #1676 rename/move awaits Directory live acceptance; #1672 constraints awaits two record-editor clarity repairs owned by #1673.
+- Active implementers: #1675 Directory/table browsing, #1673 relationships, #1688 Connector writes. Each owns a separate worktree.
+- Latest published verified head: `69f361501`; draft PR #1693 remains draft. Full Flutter CI passed at prior `ea6dcb2f4` (40057406933); current-head CI and remaining children are incomplete.
+- #1671 acceptance comment: https://github.com/auravibes-apps/auravibes/issues/1671#issuecomment-6379169692. Local/cloud date, timestamp and exact-money behavior is accepted; #1672 separately verifies constraint interactions.
+
+
 ## Accepted scope and source of truth
 
 The accepted product decisions are recorded in `docs/concepts/workspace-elements-interview.md`, the implementation specification in `docs/specs/workspace-elements.md`, and the 26-ticket dependency graph in `docs/specs/workspace-elements-tickets.md`.
@@ -218,6 +227,14 @@ The turn interruption removed live agent contexts; source changes and background
 - Worker evidence includes 15 app and 15 server regressions, strict DCL for 11 owned behavior files, full `validate:app`, server domain fatal analysis, clean generation and localization audit. Worker changed-file validation still reported baseline generated LocaleKeys long lines; generated files were not hand-edited.
 - Joint acceptance remains explicit: #1672 owns server schema DCL cleanup and column-aware timestamp uniqueness normalization so equivalent UTC strings compare as the same instant. Root owns live acceptance and final workspace/CI/platform gates. #1671 remains open; no push, closure, release or UI automation occurred in this merge.
 
+### Constraints and safe schema changes integration
+
+- Integrated #1672 tip `f282367f4` as `faa72712a`, without conflicts, preserving root `f7b66e41`, temporal values, original folder commit `4eee5ba18`, ACL/grants, metadata and event redaction.
+- Required/unique/default column constraints now share local/cloud validation, preview existing violations and reject unsafe schema changes transactionally. Defaults apply only to missing fields on record creation. Stable IDs, explicit empty/zero/false values and no-op schema revisions remain preserved. Timestamp uniqueness compares instants; exact-money equality normalizes decimal representations while preserving stored precision and currency.
+- Postmerge checks passed: 19 combined constraints/temporal/editor/model/metadata app regressions and three authenticated schema/concurrency/table endpoint regressions. Pinned FVM 3.47.7 ran through the root validation lease. Logs: `/tmp/auravibes-1672-merger-app.log` and `/tmp/auravibes-1672-merger-server.log`. Whitespace and ancestry checks passed; untracked evidence remains preserved.
+- Worker evidence includes strict combined DCL, fatal analysis across 60 handwritten paths, clean generation, changed-file validation and localization audit. The earlier #1671 timestamp-uniqueness and server schema DCL integration gaps are addressed. No broad checks were repeated after this conflict-free merge.
+- Capacity remains unverified: cloud validation scans workspace records and retains matching rows; local uniqueness scans may be quadratic. #1680 measurement must establish supported bounds; this is not a scalability claim. Root owns live acceptance and final CI/platform/spec review. #1672 remains open; no push, closure or UI automation occurred.
+
 ### Live rendering recovery and Connections integration follow-up
 
 - Approved native `cua-driver` exact-window binding succeeded for the UI-worktree executable. Focusing that isolated window changed Marionette from zero controls to 33. Refocusing after stalled actions advanced rendering consistently; no production routing fix is justified by the prior blank/stalled captures.
@@ -288,3 +305,14 @@ Clean committed generated-artifact gate at `fd7c849d` passes, including Serverpo
 - Created Money column `Budget`; saved and reopened amount `9007199254740993.123456789` with currency `USD`, unchanged. Date-only/missing-value local/cloud behavior is covered by worker and merger regressions. No currency conversion or mixed-currency totals were introduced.
 - Screenshots/trees: `/tmp/auravibes-1665-ui-evidence/{temporal-before-0,temporal-exact-0,temporal-reopened-0,money-reopened-0}.png` and matching reopened tree files. Logs contain only the captured failed automation selector for nonexistent text `Timestamp`; correct UI label is `Date and time`. No additional application error appeared. Own bridge disconnected, exact runner stopped, manifest removal verified.
 - #1671 acceptance is verified and ready for tracker resolution after publication. #1672 remains responsible for cross-type constraint semantics and its combined tests; parent/final CI remain incomplete. Root reference worker now owns #1673 at managed `workspace-references-1673/auravibes`, based on `2a8b35c6d`, after native #1669 dependency/preflight/assignment.
+
+### Constraints live behavior and remaining clarity repairs
+
+- Root ran isolated `constraints-1665-oct23` on UI worktree `6b2edfeb4`. Required Quantity preview rejected existing missing data and named the affected record without changing schema or discarding its timestamp/money values. Correction returned to the table; explicit numeric zero saved successfully.
+- Required + unique Quantity with default7 then saved. A new record omitting Quantity reopened with7. Attempting duplicate0 stayed in the editor with the attempted draft intact and surfaced a validation message. Restoring7 saved successfully. Local/cloud concurrency and exact timestamp/money semantic equality are separately covered by the merged 19app/3authenticated tests.
+- Two clarity gaps keep #1672 open: required/unique hints render before their field (visually following the previous one), and defaults are invisible in new-record drafts until save. References implementer accepted both repairs and focused new-default/existing-missing UI regressions; updates must preserve absent values. Existing duplicate error is generic; final UX review should assess message specificity.
+- Evidence: `/tmp/auravibes-1665-ui-evidence/constraints-{violation,default-reopened,duplicate}-0.png`, corresponding trees and final logs. Logged errors are the captured Marionette scroll/tap selector failures; duplicate rejection is an expected WorkspaceTableException warning. Approved Computer fallback scrolled the exact isolated window and disambiguated default checkbox. Own bridges (including the temporary lost-handle bridge) and exact runner stopped; manifest removal verified.
+- #1688 started after native #1685 closure/preflight in managed `workspace-writes-1688/auravibes`, based on `6b2edfeb4`; owns durable Connector write outcomes/approval/reconciliation with deterministic provider fakes. Prep pointers: `/tmp/auravibes-1688-frontier-notes.md`. No production provider calls are permitted.
+- Hosted full Flutter CI at `d6d991db` passed (40056284955). At latest published `ea6dcb2f`, lint/harness passed; Flutter Test CI40057406933 was still running when last checked. Never infer full CI success from the first two workflow results.
+
+Publication checkpoint: root `69f361501e5429d0408f21e987837d8d944f3af7` pushed after dry-run and remote-SHA verification. Full Flutter Test CI40057406933 at `ea6dcb2f4` subsequently completed successfully. Current-head CI remains pending. Both isolated UI manifests are gone; no UI app or own bridge remains running.

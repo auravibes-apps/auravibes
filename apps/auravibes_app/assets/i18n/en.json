@@ -2022,6 +2022,12 @@
     "advanced_value": "Edit exact value",
     "utc_time": "Time in UTC",
     "weekdays": "M,T,W,T,F,S,S",
-    "missing_value": "No value"
+    "missing_value": "No value",
+    "required": "Required",
+    "unique": "Unique values",
+    "default_value": "Default for new records",
+    "constraint_violations": "Resolve these records before applying this change. Existing values will not be discarded.",
+    "correct_records": "Return to table to correct records",
+    "replacement_column": "Create a separate replacement column"
   }
 }
