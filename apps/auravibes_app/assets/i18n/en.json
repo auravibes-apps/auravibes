@@ -1953,6 +1953,15 @@
     }
   },
   "workspace_items": {
+    "history": {
+      "title": "Revision history",
+      "retention": "Saved revisions remain available until explicitly deleted. Automatic retention is not configured.",
+      "empty": "No saved revisions are available.",
+      "restore": "Restore revision",
+      "restore_notice": "Restore this saved content as a new revision? Current access and data rules still apply.",
+      "purge": "Delete permanently",
+      "purge_notice": "Permanently delete this trashed item, its batch contents and their saved revisions? This cannot be undone. Retained links can block deletion."
+    },
     "edit_item": "Rename or move",
     "item_name": "Name",
     "destination": "Destination folder",

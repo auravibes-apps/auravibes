@@ -430,6 +430,8 @@ class TestEndpoints {
 
   late final _WorkspaceCsvEndpoint workspaceCsv;
 
+  late final _WorkspaceHistoryEndpoint workspaceHistory;
+
   late final _WorkspaceReferenceEndpoint workspaceReference;
 
   late final _WorkspaceSecretEndpoint workspaceSecret;
@@ -499,6 +501,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     workspaceCsv = _WorkspaceCsvEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    workspaceHistory = _WorkspaceHistoryEndpoint(
       endpoints,
       serializationManager,
     );
@@ -2868,6 +2874,120 @@ class _WorkspaceCsvEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _WorkspaceHistoryEndpoint {
+  _WorkspaceHistoryEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<void> permanentlyDelete(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String targetJson,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceHistory',
+            method: 'permanentlyDelete',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceHistory',
+          methodName: 'permanentlyDelete',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'targetJson': targetJson,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<String>> history(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String targetJson,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceHistory',
+            method: 'history',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceHistory',
+          methodName: 'history',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'targetJson': targetJson,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<String>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<void> restore(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String targetJson,
+    int revision,
+    String requestId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceHistory',
+            method: 'restore',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceHistory',
+          methodName: 'restore',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'targetJson': targetJson,
+            'revision': revision,
+            'requestId': requestId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

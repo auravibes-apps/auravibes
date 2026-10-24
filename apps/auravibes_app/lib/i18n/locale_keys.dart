@@ -2543,6 +2543,17 @@ abstract class LocaleKeys {
   static const mcp_elicitation_cancel = 'mcp.elicitation.cancel';
   static const mcp_elicitation_invalid = 'mcp.elicitation.invalid';
   static const mcp_elicitation_open_error = 'mcp.elicitation.open_error';
+  static const workspace_items_history_title = 'workspace_items.history.title';
+  static const workspace_items_history_retention =
+      'workspace_items.history.retention';
+  static const workspace_items_history_empty = 'workspace_items.history.empty';
+  static const workspace_items_history_restore =
+      'workspace_items.history.restore';
+  static const workspace_items_history_restore_notice =
+      'workspace_items.history.restore_notice';
+  static const workspace_items_history_purge = 'workspace_items.history.purge';
+  static const workspace_items_history_purge_notice =
+      'workspace_items.history.purge_notice';
   static const workspace_items_edit_item = 'workspace_items.edit_item';
   static const workspace_items_item_name = 'workspace_items.item_name';
   static const workspace_items_destination = 'workspace_items.destination';

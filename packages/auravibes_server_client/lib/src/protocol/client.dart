@@ -1115,6 +1115,54 @@ class EndpointWorkspaceCsv extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointWorkspaceHistory extends _isc.EndpointRef {
+  EndpointWorkspaceHistory(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceHistory';
+
+  _ida.Future<void> permanentlyDelete(
+    int workspaceId,
+    String targetJson,
+  ) => caller.callServerEndpoint<void>(
+    'workspaceHistory',
+    'permanentlyDelete',
+    {
+      'workspaceId': workspaceId,
+      'targetJson': targetJson,
+    },
+  );
+
+  _ida.Future<List<String>> history(
+    int workspaceId,
+    String targetJson,
+  ) => caller.callServerEndpoint<List<String>>(
+    'workspaceHistory',
+    'history',
+    {
+      'workspaceId': workspaceId,
+      'targetJson': targetJson,
+    },
+  );
+
+  _ida.Future<void> restore(
+    int workspaceId,
+    String targetJson,
+    int revision,
+    String requestId,
+  ) => caller.callServerEndpoint<void>(
+    'workspaceHistory',
+    'restore',
+    {
+      'workspaceId': workspaceId,
+      'targetJson': targetJson,
+      'revision': revision,
+      'requestId': requestId,
+    },
+  );
+}
+
+/// {@category Endpoint}
 class EndpointWorkspaceReference extends _isc.EndpointRef {
   EndpointWorkspaceReference(_isc.EndpointCaller caller) : super(caller);
 
@@ -1527,6 +1575,7 @@ class Client extends _isc.ServerpodClientShared {
     skillResource = EndpointSkillResource(this);
     workspaceStream = EndpointWorkspaceStream(this);
     workspaceCsv = EndpointWorkspaceCsv(this);
+    workspaceHistory = EndpointWorkspaceHistory(this);
     workspaceReference = EndpointWorkspaceReference(this);
     workspaceSecret = EndpointWorkspaceSecret(this);
     workspaceState = EndpointWorkspaceState(this);
@@ -1562,6 +1611,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointWorkspaceCsv workspaceCsv;
 
+  late final EndpointWorkspaceHistory workspaceHistory;
+
   late final EndpointWorkspaceReference workspaceReference;
 
   late final EndpointWorkspaceSecret workspaceSecret;
@@ -1591,6 +1642,7 @@ class Client extends _isc.ServerpodClientShared {
     'skillResource': skillResource,
     'workspaceStream': workspaceStream,
     'workspaceCsv': workspaceCsv,
+    'workspaceHistory': workspaceHistory,
     'workspaceReference': workspaceReference,
     'workspaceSecret': workspaceSecret,
     'workspaceState': workspaceState,

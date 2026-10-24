@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_history_panel.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_trash_actions.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -18,6 +19,22 @@ class const WorkspaceRecordTrashMenu({
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraPopupMenuButton(
     items: [
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.workspace_items_history_title),
+        identifier: 'workspace_record_history',
+        onTap: () => unawaited(
+          WorkspaceHistoryPanel.open(
+            context,
+            workspaceId,
+            .new(
+              kind: .record,
+              id: record.id,
+              tableId: record.tableId,
+              revision: record.revision,
+            ),
+          ),
+        ),
+      ),
       AuraPopupMenuItem(
         title: const TextLocale(LocaleKeys.workspace_items_trash_action),
         onTap: () => unawaited(_trash(context, ref)),

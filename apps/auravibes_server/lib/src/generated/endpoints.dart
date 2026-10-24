@@ -198,6 +198,8 @@ import '../features/objects/object_endpoint.dart' as _ia0f4jqg;
 import '../features/skills/skill_resource_endpoint.dart' as _ip6c362v;
 import '../features/sync/stream/workspace_stream_endpoint.dart' as _ifbwcqx4;
 import '../features/workspace_state/workspace_csv_endpoint.dart' as _iml0si8c;
+import '../features/workspace_state/workspace_history_endpoint.dart'
+    as _iro98jgh;
 import '../features/workspace_state/workspace_reference_endpoint.dart'
     as _it87m04z;
 import '../features/workspace_state/workspace_secret_endpoint.dart'
@@ -287,6 +289,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'workspaceCsv',
+          null,
+        ),
+      'workspaceHistory': _iro98jgh.WorkspaceHistoryEndpoint()
+        ..initialize(
+          server,
+          'workspaceHistory',
           null,
         ),
       'workspaceReference': _it87m04z.WorkspaceReferenceEndpoint()
@@ -1901,6 +1909,105 @@ class Endpoints extends _is.EndpointDispatch {
                       .preview(
                         session,
                         params['request'],
+                      ),
+        ),
+      },
+    );
+    connectors['workspaceHistory'] = _is.EndpointConnector(
+      name: 'workspaceHistory',
+      endpoint: endpoints['workspaceHistory']!,
+      methodConnectors: {
+        'permanentlyDelete': _is.MethodConnector(
+          name: 'permanentlyDelete',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'targetJson': _is.ParameterDescription(
+              name: 'targetJson',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceHistory']
+                          as _iro98jgh.WorkspaceHistoryEndpoint)
+                      .permanentlyDelete(
+                        session,
+                        params['workspaceId'],
+                        params['targetJson'],
+                      ),
+        ),
+        'history': _is.MethodConnector(
+          name: 'history',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'targetJson': _is.ParameterDescription(
+              name: 'targetJson',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceHistory']
+                          as _iro98jgh.WorkspaceHistoryEndpoint)
+                      .history(
+                        session,
+                        params['workspaceId'],
+                        params['targetJson'],
+                      ),
+        ),
+        'restore': _is.MethodConnector(
+          name: 'restore',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'targetJson': _is.ParameterDescription(
+              name: 'targetJson',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'revision': _is.ParameterDescription(
+              name: 'revision',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'requestId': _is.ParameterDescription(
+              name: 'requestId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceHistory']
+                          as _iro98jgh.WorkspaceHistoryEndpoint)
+                      .restore(
+                        session,
+                        params['workspaceId'],
+                        params['targetJson'],
+                        params['revision'],
+                        params['requestId'],
                       ),
         ),
       },

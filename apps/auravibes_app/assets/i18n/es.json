@@ -1953,6 +1953,15 @@
     }
   },
   "workspace_items": {
+    "history": {
+      "title": "Historial de revisiones",
+      "retention": "Las revisiones guardadas permanecen disponibles hasta su eliminación explícita. La retención automática no está configurada.",
+      "empty": "No hay revisiones guardadas disponibles.",
+      "restore": "Restaurar revisión",
+      "restore_notice": "¿Restaurar este contenido guardado como una revisión nueva? Se aplicarán los permisos y las reglas actuales.",
+      "purge": "Eliminar permanentemente",
+      "purge_notice": "¿Eliminar permanentemente este elemento de la papelera, el contenido de su lote y sus revisiones guardadas? Esta acción no se puede deshacer. Los enlaces conservados pueden impedirla."
+    },
     "edit_item": "Renombrar o mover",
     "item_name": "Nombre",
     "destination": "Carpeta de destino",

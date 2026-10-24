@@ -12,6 +12,7 @@ import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_directory_move_batch.dart';
 import '../workspace_record_mutation_batch.dart';
+import '../workspace_revision_capture.dart';
 import '../workspace_secret_cipher.dart';
 import '../workspace_table_access.dart';
 import '../workspace_table_mutation_validation.dart';
@@ -155,6 +156,15 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           );
         }
         await moves.authorize(session, member, transaction);
+        for (final operation in request.operations) {
+          await requireUnpurgedWorkspaceResource(
+            session,
+            request.workspaceId,
+            operation.resourceKind,
+            operation.resourceId,
+            transaction,
+          );
+        }
         final receipt = await _findReceipt(
           session,
           request.workspaceId,
@@ -1409,7 +1419,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           operation.expectedRevision != null) {
         throw CloudWorkspaceException(code: CloudWorkspaceErrorCode.conflict);
       }
-      return WorkspaceResource.db.insertRow(
+      final created = await WorkspaceResource.db.insertRow(
         session,
         WorkspaceResource(
           workspaceId: workspaceId,
@@ -1422,6 +1432,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         ),
         transaction: transaction,
       );
+      await captureWorkspaceRevision(session, created, transaction);
+      return created;
     }
     if (existing == null || existing.deletedAt != null) {
       throw CloudWorkspaceException(code: CloudWorkspaceErrorCode.conflict);
@@ -1460,11 +1472,14 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
     }
-    return WorkspaceResource.db.updateRow(
+    await captureWorkspaceRevision(session, existing, transaction);
+    final written = await WorkspaceResource.db.updateRow(
       session,
       updated,
       transaction: transaction,
     );
+    await captureWorkspaceRevision(session, written, transaction);
+    return written;
   }
 
   Future<CloudWorkspace> _requireLockedWorkspace(
