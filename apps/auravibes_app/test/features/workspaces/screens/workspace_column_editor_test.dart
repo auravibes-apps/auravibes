@@ -1,11 +1,14 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' show Value;
@@ -133,6 +136,11 @@ void main() {
               onBack: () => fail('Unexpected table exit'),
             ),
             overrides: [
+              appDatabaseProvider.overrideWithValue(database),
+              workspaceRecordQueryProvider.overrideWith(
+                (ref, arguments) async =>
+                    const WorkspaceRecordPage(records: [], hasMore: false),
+              ),
               workspaceTableUsecaseProvider('one')
                   .overrideWith((ref) async => tables),
             ],
@@ -141,21 +149,35 @@ void main() {
         );
       });
       Future<void> flush() async {
-        for (var i = 0; i < 5; i++) {
-          await tester.pump();
-          await tester.runAsync(() async {
-            await Future<void>.delayed(const Duration(milliseconds: 10));
-          });
-        }
-        final _ = await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.runAsync(() async {
+          final _ = await database.customSelect('SELECT 1').get();
+        });
+        await tester.runAsync(() async {
+          final _ = await tester.pumpAndSettle();
+        });
       }
 
       Finder button(String id) => find.byWidgetPredicate(
-        (widget) => widget is AuraButton && widget.identifier == id,
+        (widget) => switch (widget) {
+          final AuraButton button => button.identifier == id,
+          final AuraIconButton button => button.identifier == id,
+          _ => false,
+        },
       );
       Finder input(String id) => find.byWidgetPredicate(
         (widget) => widget is AuraInput && widget.identifier == id,
       );
+      await flush();
+      await tester.tap(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraPopupMenuButton &&
+              widget.identifier == 'workspace_table_overflow',
+        ),
+      );
+      await flush();
+      await tester.tap(find.text('Table settings'));
       await flush();
       await tester.tap(button('workspace_column_create'));
       await flush();
