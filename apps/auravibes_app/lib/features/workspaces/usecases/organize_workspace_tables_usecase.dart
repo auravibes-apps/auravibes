@@ -99,6 +99,7 @@ WorkspaceColumn _normalizeColumn(WorkspaceColumn column) => WorkspaceColumn(
   name: _name(column.name),
   type: column.type,
   options: column.options.map(_name).toList(),
+  timeZone: column.timeZone,
 );
 
 String _name(String value) {

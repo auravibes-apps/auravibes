@@ -2582,4 +2582,34 @@ abstract class LocaleKeys {
   static const workspace_items_type_url = 'workspace_items.type_url';
   static const workspace_items_type_email = 'workspace_items.type_email';
   static const workspace_items_type_phone = 'workspace_items.type_phone';
+  static const workspace_items_type_date_only =
+      'workspace_items.type_date_only';
+  static const workspace_items_type_timestamp =
+      'workspace_items.type_timestamp';
+  static const workspace_items_type_money = 'workspace_items.type_money';
+  static const workspace_items_amount = 'workspace_items.amount';
+  static const workspace_items_currency = 'workspace_items.currency';
+  static const workspace_items_timezone = 'workspace_items.timezone';
+  static const workspace_items_select_date_time =
+      'workspace_items.select_date_time';
+  static const workspace_items_select_date = 'workspace_items.select_date';
+  static const workspace_items_select_time = 'workspace_items.select_time';
+  static const workspace_items_date_and_time = 'workspace_items.date_and_time';
+  static const workspace_items_date = 'workspace_items.date';
+  static const workspace_items_time = 'workspace_items.time';
+  static const workspace_items_cancel = 'workspace_items.cancel';
+  static const workspace_items_done = 'workspace_items.done';
+  static const workspace_items_previous_month =
+      'workspace_items.previous_month';
+  static const workspace_items_next_month = 'workspace_items.next_month';
+  static const workspace_items_decrease_hour = 'workspace_items.decrease_hour';
+  static const workspace_items_increase_hour = 'workspace_items.increase_hour';
+  static const workspace_items_decrease_minute =
+      'workspace_items.decrease_minute';
+  static const workspace_items_increase_minute =
+      'workspace_items.increase_minute';
+  static const workspace_items_advanced_value =
+      'workspace_items.advanced_value';
+  static const workspace_items_utc_time = 'workspace_items.utc_time';
+  static const workspace_items_weekdays = 'workspace_items.weekdays';
 }
