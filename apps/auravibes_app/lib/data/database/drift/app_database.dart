@@ -26,6 +26,7 @@ import 'package:auravibes_app/data/database/drift/tables/agents.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/background_works.dart';
+import 'package:auravibes_app/data/database/drift/tables/connector_writes.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
@@ -104,6 +105,7 @@ part 'app_database.g.dart';
     WorkspaceFolders,
     WorkspaceTables,
     WorkspaceTableRecords,
+    ConnectorWrites,
   ],
   daos: [
     WorkspaceDao,
@@ -186,7 +188,9 @@ class AppDatabase extends _$AppDatabase {
       _messageBookmarkSnapshotsSchemaVersion + 1;
   static const int _workspaceTablesSchemaVersion =
       _workspaceFoldersSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workspaceTablesSchemaVersion;
+  static const int _connectorWritesSchemaVersion =
+      _workspaceTablesSchemaVersion + 1;
+  static const int _currentSchemaVersion = _connectorWritesSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -236,6 +240,9 @@ extension on AppDatabase {
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
     await _upgradeWorkspaceItemsSchema(m, from);
+    if (from < AppDatabase._connectorWritesSchemaVersion) {
+      await m.createTable(connectorWrites);
+    }
   }
 
   Future<void> _upgradeModelSchemas(Migrator m) async {

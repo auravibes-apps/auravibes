@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:async/async.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
@@ -133,6 +134,250 @@ void main() {
           endpoints,
           languageCode: languageCode,
         );
+
+    test('Connector writes require Default approval and durable uncertainty prevents duplicate effects', () async {
+      final fixture = await prepare();
+      final assistant = fixture.messages.singleWhere(
+        (message) => message.id == fixture.turn.assistantMessageId,
+      );
+      final now = DateTime.now().toUtc();
+      final target = await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: .tool,
+          resourceId: 'connector/duckduckgo/search',
+          data: jsonEncode({
+            'toolId': 'connector/duckduckgo/search',
+            'isEnabled': true,
+            'permissionMode': 'alwaysAllow',
+          }),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: .toolPermission,
+          resourceId: 'command-allow',
+          data: jsonEncode({
+            'toolId': executeConnectorToolName,
+            'isEnabled': true,
+            'permissionMode': 'alwaysAllow',
+          }),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      var effects = 0;
+      var loseResponse = true;
+      var statusCode = 201;
+      ServerToolRuntime runtime() => ServerToolRuntime(
+        executor: ServerToolExecutorService(
+          connectorHttpClient: (_) {
+            effects++;
+            if (loseResponse) {
+              return CancelableOperation.fromFuture(
+                Future<UrlResponse>.error(
+                  TimeoutException('synthetic-provider-secret'),
+                ),
+              );
+            }
+            return CancelableOperation.fromFuture(
+              Future.value(
+                UrlResponse(
+                  statusCode: statusCode,
+                  body: 'deterministic response',
+                  headers: const {},
+                  elapsed: Duration.zero,
+                ),
+              ),
+            );
+          },
+        ).call,
+      );
+      Future<ServerToolDisposition> run(
+        String id, {
+        String query = 'write fixture',
+        String? operationId,
+      }) => runtime().handle(
+        fixture.database,
+        turn: fixture.turn,
+        messageId: assistant.id!,
+        request: ServerToolRequest(
+          id: id,
+          name: executeConnectorToolName,
+          arguments: {
+            'toolId': 'connector/duckduckgo/search',
+            'args': {'query': query},
+            'operationId': ?operationId,
+          },
+        ),
+      );
+      expect(
+        await run('default-preview'),
+        ServerToolDisposition.awaitingApproval,
+      );
+      expect(effects, 0);
+      final conversation = await Conversation.db.findById(
+        fixture.database,
+        fixture.conversationId,
+      );
+      await Conversation.db.updateRow(
+        fixture.database,
+        conversation!.copyWith(toolAccessMode: 'allow_all'),
+      );
+      expect(await run('write-1'), ServerToolDisposition.completed);
+      expect(effects, 1);
+      expect(await run('retry-new-runtime'), ServerToolDisposition.completed);
+      expect(effects, 1);
+      final snapshot = await endpoints.conversation.getConversationSnapshot(
+        fixture.session,
+        GetConversationRequest(
+          workspaceId: fixture.workspaceId,
+          conversationId: 'conversation-1',
+        ),
+      );
+      final results = snapshot.toolCalls
+          .where(
+            (call) => call.id == 'write-1' || call.id == 'retry-new-runtime',
+          )
+          .toList();
+      expect(results, hasLength(2));
+      for (final result in results) {
+        expect(result.status, 'uncertain');
+        expect(result.resultJson, contains('"operationId":"write-1"'));
+        expect(result.resultJson, contains('"retryBlocked":true'));
+        expect(result.resultJson, isNot(contains('synthetic-provider-secret')));
+      }
+      loseResponse = false;
+      expect(
+        await run('write-completed', query: 'intentional new action'),
+        ServerToolDisposition.completed,
+      );
+      expect(
+        await run(
+          'replay-completed',
+          query: 'intentional new action',
+          operationId: 'write-completed',
+        ),
+        ServerToolDisposition.completed,
+      );
+      expect(effects, 2);
+      statusCode = 422;
+      expect(
+        await run('write-rejected', query: 'invalid action'),
+        ServerToolDisposition.completed,
+      );
+      expect(
+        await run(
+          'replay-rejected',
+          query: 'invalid action',
+          operationId: 'write-rejected',
+        ),
+        ServerToolDisposition.completed,
+      );
+      expect(effects, 3);
+      final outcomes = await endpoints.conversation.getConversationSnapshot(
+        fixture.session,
+        GetConversationRequest(
+          workspaceId: fixture.workspaceId,
+          conversationId: 'conversation-1',
+        ),
+      );
+      expect(
+        outcomes.toolCalls
+            .singleWhere((call) => call.id == 'replay-completed')
+            .resultJson,
+        contains('"statusCode":201'),
+      );
+      expect(
+        outcomes.toolCalls
+            .singleWhere((call) => call.id == 'replay-rejected')
+            .status,
+        'executionError',
+      );
+      expect(
+        outcomes.toolCalls
+            .singleWhere((call) => call.id == 'replay-rejected')
+            .resultJson,
+        contains('"statusCode":422'),
+      );
+      final interrupted = await ConversationToolCall.db.findFirstRow(
+        fixture.database,
+        where: (row) =>
+            row.workspaceId.equals(fixture.workspaceId) &
+            row.stableId.equals('replay-completed'),
+      );
+      await ConversationToolCall.db.updateRow(
+        fixture.database,
+        interrupted!.copyWith(
+          status: 'running',
+          updatedAt: DateTime.now().toUtc().subtract(const Duration(days: 1)),
+        ),
+      );
+      await run(
+        'replay-completed',
+        query: 'intentional new action',
+        operationId: 'write-completed',
+      );
+      final recovered = await endpoints.conversation.getConversationSnapshot(
+        fixture.session,
+        GetConversationRequest(
+          workspaceId: fixture.workspaceId,
+          conversationId: 'conversation-1',
+        ),
+      );
+      final recoveredCall = recovered.toolCalls.singleWhere(
+        (call) => call.id == 'replay-completed',
+      );
+      expect(recoveredCall.status, 'uncertain');
+      expect(
+        recoveredCall.resultJson,
+        contains('"operationId":"write-completed"'),
+      );
+      await run(
+        'recheck-after-recovery',
+        query: 'intentional new action',
+        operationId: 'write-completed',
+      );
+      expect(effects, 3);
+      await WorkspaceResource.db.updateRow(
+        fixture.database,
+        target.copyWith(
+          data: jsonEncode({
+            'toolId': 'connector/duckduckgo/search',
+            'isEnabled': false,
+          }),
+        ),
+      );
+      expect(
+        await run(
+          'denied-after-uncertain',
+          query: 'intentional new action',
+          operationId: 'write-completed',
+        ),
+        ServerToolDisposition.completed,
+      );
+      expect(effects, 3);
+      final denied = await endpoints.conversation.getConversationSnapshot(
+        fixture.session,
+        GetConversationRequest(
+          workspaceId: fixture.workspaceId,
+          conversationId: 'conversation-1',
+        ),
+      );
+      expect(
+        denied.toolCalls
+            .singleWhere((call) => call.id == 'denied-after-uncertain')
+            .status,
+        'executionError',
+      );
+    });
 
     Future<void> configureProvider(_Fixture fixture) async {
       fixture.database.passwords['workspaceSecretKey'] =

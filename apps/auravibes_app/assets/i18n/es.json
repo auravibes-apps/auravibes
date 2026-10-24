@@ -1177,7 +1177,14 @@
       "stop_all": "No se pudieron detener las llamadas de herramienta pendientes."
     }
   },
+  "connector_write": {
+    "approval": "Esta acción puede cambiar datos externos. Revisa el destino y los datos antes de aprobar. Deshacer requiere una acción compensatoria compatible; los servicios no pueden revertirse juntos.",
+    "completed": "Acción externa completada. Deshacer requiere una acción compensatoria compatible.",
+    "failed": "La acción externa falló. No se reintentó automáticamente.",
+    "uncertain": "Resultado incierto. Revisa el origen. El reintento está bloqueado hasta que el proveedor confirme el resultado; deshacer requiere una acción compensatoria compatible."
+  },
   "tool_call_status": {
+    "uncertain": "Incierto — requiere revisión",
     "success": "Completado",
     "skipped_by_user": "Omitido",
     "stopped_by_user": "Detenido",

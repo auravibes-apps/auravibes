@@ -22,6 +22,7 @@ import '../../workspace_state/usecases/workspace_state_usecases.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../../workspace_state/workspace_secret_resolver.dart';
 import '../domain/conversation_values.dart';
+import '../repositories/cloud_connector_write_journal.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
 import 'background_work_result_reader.dart';
@@ -324,37 +325,6 @@ const _runCreateChildPhase = 'run.createChild';
 const _runCreatePromptPhase = 'run.createPrompt';
 const _runContinueAgentPhase = 'run.continueAgent';
 
-Future<Object?> runCompiledConnectorTool({
-  required String connectorId,
-  required String toolSlug,
-  required Map<String, dynamic> input,
-  Map<String, String> credentials = const {},
-  required ConnectorHttpClient httpClient,
-}) {
-  final connector = connectorDefinitions
-      .where((candidate) => candidate.identifier == connectorId)
-      .firstOrNull;
-  final connectorTool = connector?.tools
-      .where((candidate) => candidate.slug == toolSlug)
-      .firstOrNull;
-  final definition = connectorTool?.definition;
-  if (connector == null || connectorTool == null || definition == null) {
-    throw const ServerToolNotConfiguredException();
-  }
-  return ConnectorToolTemplateExecutor(
-        const ResolveConnectorRequestTemplate(),
-        httpClient,
-      )
-      .call(
-        definition: definition,
-        inputs: input,
-        credentials: credentials,
-        schema: connectorTool.inputJsonSchema,
-      )
-      .value
-      .then((response) => response.body);
-}
-
 Future<({Uri uri, List<InternetAddress> addresses})>
 validateServerSkillRequestTarget(
   UrlRequest request, {
@@ -467,6 +437,7 @@ class const ServerToolExecutorService({
   final ServerToolExecutorInterlock? afterChildContinuation,
   final ServerToolExecutorInterlock? beforeSkillSelectionMutation,
   final Set<String>? a2uiSupportedComponents,
+  final ConnectorHttpClient? connectorHttpClient,
 }) {
   Future<Object?> call(
     Session session,
@@ -566,7 +537,9 @@ class const ServerToolExecutorService({
         stackTrace,
       );
     } on AgentToolExecutionFailure catch (failure, stackTrace) {
-      if (failure.error is _CloudConnectorCommandException) rethrow;
+      if (_trustedConnectorFailure(failure)) {
+        rethrow;
+      }
       _throwCloudConnectorCommandFailure(
         'execution_failed',
         'Connector command failed. Check the Connection and retry.',
@@ -772,18 +745,24 @@ class const ServerToolExecutorService({
     if (connectionId != null) {
       executionArguments.remove('connectionId');
     }
-    return await runCompiledConnectorTool(
-      connectorId: resolved.connector.identifier,
-      toolSlug: resolved.tool.slug,
-      input: executionArguments,
-      credentials: credentials,
-      httpClient: _connectorHttpClient(
-        session,
-        turn,
-        requireHttps: credentials.isNotEmpty,
-        isCancelled: request.isCancelled,
+    return await ConnectorRequestExecution(
+      executor: ConnectorToolTemplateExecutor(
+        const ResolveConnectorRequestTemplate(),
+        _connectorHttpClient(
+          session,
+          turn,
+          requireHttps: credentials.isNotEmpty,
+          isCancelled: request.isCancelled,
+        ),
       ),
-    );
+      connector: resolved.connector,
+      tool: resolved.tool,
+      inputs: executionArguments,
+      connectionId: connectionId ?? '',
+      operationId: _connectorOperationId(request),
+      journal: CloudConnectorWriteJournal(session, turn.workspaceId),
+      credentials: credentials,
+    ).call();
   }
 
   Future<Map<String, Object?>> _readBackgroundWorkResult(
@@ -1948,7 +1927,8 @@ class const ServerToolExecutorService({
     required bool requireHttps,
     Future<bool> Function()? isCancelled,
   }) =>
-      (input) => CancelableOperation<UrlResponse>.fromFuture(
+      connectorHttpClient ??
+      ((input) => CancelableOperation<UrlResponse>.fromFuture(
         runBoundedServerSkillHttpRequest(
           timeout: input.timeout,
           run: (registerClient) async {
@@ -1968,7 +1948,7 @@ class const ServerToolExecutorService({
             );
           },
         ),
-      );
+      ));
 
   Future<UrlResponse> _request(
     Session session,
@@ -2125,3 +2105,17 @@ class const ServerToolExecutorService({
 }
 
 class const ServerToolNotConfiguredException() implements Exception;
+
+bool _trustedConnectorFailure(AgentToolExecutionFailure failure) =>
+    failure.error is _CloudConnectorCommandException ||
+    const {'connector.write', 'connector.read'}.contains(failure.failurePhase);
+
+String _connectorOperationId(ServerToolRequest request) {
+  final id = request.arguments['operationId'];
+  if (id == null) return request.id;
+  if (id is String && id.isNotEmpty) return id;
+  throw const _CloudConnectorCommandException(
+    code: 'invalid_arguments',
+    message: 'operationId must be a non-empty string.',
+  );
+}

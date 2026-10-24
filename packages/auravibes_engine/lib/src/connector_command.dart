@@ -65,7 +65,9 @@ List<ToolSpec> buildConnectorCommandToolSpecs() => [
     name: executeConnectorToolName,
     description:
         'Execute a Connector tool by stable tool ID. The current tool '
-        'contract and workspace Connection access are checked at execution.',
+        'contract and workspace Connection access are checked at execution. '
+        'Reuse an existing operationId for write retries; uncertain writes '
+        'require provider reconciliation and cannot be blindly repeated.',
     inputJsonSchema: const {
       'type': 'object',
       'properties': {
@@ -73,6 +75,13 @@ List<ToolSpec> buildConnectorCommandToolSpecs() => [
         'args': {'type': 'object'},
         'connectionId': {'type': 'string'},
         'revision': {'type': 'string'},
+        'operationId': {
+          'type': 'string',
+          'description':
+              'Reuse the returned operationId when checking or '
+              'retrying a write. Use a new ID only for an intentional '
+              'new action.',
+        },
       },
       'required': ['toolId', 'args'],
       'additionalProperties': false,
@@ -86,3 +95,42 @@ const _emptyObjectSchema = <String, Object?>{
   'required': <String>[],
   'additionalProperties': false,
 };
+
+/// Unknown targets conservatively require write approval; declared reads retain
+/// their configured permission. Execution still validates the full contract.
+bool connectorCommandMayWrite(
+  Object? arguments,
+  Iterable<ConnectorDefinition> connectors,
+) {
+  final target = connectorCommandTarget(arguments, connectors);
+  final method = target?.urlTemplate?.template.method.value;
+  return method != 'GET' && method != 'HEAD';
+}
+
+ConnectorToolDefinition? connectorCommandTarget(
+  Object? arguments,
+  Iterable<ConnectorDefinition> connectors,
+) {
+  final id = _commandTargetId(arguments);
+  for (final connector in connectors) {
+    final target = _targetInConnector(connector, id);
+    if (target != null) return target;
+  }
+  return null;
+}
+
+ConnectorToolDefinition? _targetInConnector(
+  ConnectorDefinition connector,
+  Object? id,
+) => connector.tools
+    .where((tool) => connectorToolId(connector, tool) == id)
+    .firstOrNull;
+
+Object? _commandTargetId(Object? arguments) {
+  try {
+    final value = arguments is String ? jsonDecode(arguments) : arguments;
+    return value is Map<String, dynamic> ? value['toolId'] : null;
+  } on FormatException {
+    return null;
+  }
+}

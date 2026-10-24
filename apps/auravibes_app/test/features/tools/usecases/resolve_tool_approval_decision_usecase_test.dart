@@ -137,6 +137,63 @@ void main() {
       },
     );
 
+    for (final mode in agent.ConversationToolAccessMode.values) {
+      test('Connector $mode asks in Default and keeps denials', () async {
+        final sync = _MockSyncConnectorToolPermissionsUsecase();
+        when(
+          () => sync.permissionTableIdFor(
+            workspaceId: 'ws-1',
+            toolName: agent.executeConnectorToolName,
+          ),
+        ).thenAnswer((_) async => 'execute');
+        var permission = ToolPermissionResult.granted;
+        when(
+          () => fixture.conversationToolsRepository.checkToolPermission(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolId: 'execute',
+          ),
+        ).thenAnswer((_) async => permission);
+        final usecase = ResolveToolApprovalDecisionUsecase(
+          conversationToolsRepository: fixture.conversationToolsRepository,
+          toolsGroupsRepository: fixture.toolsGroupsRepository,
+          workspaceToolsRepository: fixture.workspaceToolsRepository,
+          syncConnectorToolPermissionsUsecase: sync,
+          getToolAccessMode: (_) async => mode,
+        );
+        Future<ToolApprovalDecision> decision() => usecase(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'call',
+          resolvedTool: ResolvedTool.connectorCommand(
+            commandName: agent.executeConnectorToolName,
+          ),
+        );
+        expect(
+          (await decision()).permissionResult,
+          mode == agent.ConversationToolAccessMode.allowAll
+              ? ToolPermissionResult.granted
+              : ToolPermissionResult.needsConfirmation,
+        );
+        final read = await usecase.callForRequest((
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'read',
+          resolvedTool: ResolvedTool.connectorCommand(
+            commandName: agent.executeConnectorToolName,
+          ),
+          argumentsRaw:
+              '{"toolId":"connector/brave/web_search","args":{"query":"read"}}',
+        ));
+        expect(read.permissionResult, ToolPermissionResult.granted);
+        permission = ToolPermissionResult.disabledInWorkspace;
+        expect(
+          (await decision()).permissionResult,
+          ToolPermissionResult.disabledInWorkspace,
+        );
+      });
+    }
+
     group('built-in tools', () {
       test('returns granted for always-approved built-in tool', () async {
         final conversationToolsRepository = fixture.conversationToolsRepository;

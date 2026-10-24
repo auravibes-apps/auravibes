@@ -38,6 +38,9 @@ enum ToolCallResultStatus {
 
   /// Tool execution threw an error.
   executionError,
+
+  /// External write may have completed; reconcile before retry.
+  uncertain,
 }
 
 /// Extension methods for [ToolCallResultStatus].
@@ -69,6 +72,7 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
 }
 
 final _responseStrings = <ToolCallResultStatus, String>{
+  ToolCallResultStatus.uncertain: AgentToolResultStatus.uncertain.modelFallback,
   ToolCallResultStatus.running: AgentToolCallLifecycle.pending.modelFallback,
   ToolCallResultStatus.success: AgentToolResultStatus.success.modelFallback,
   ToolCallResultStatus.skippedByUser:
@@ -90,6 +94,7 @@ final _responseStrings = <ToolCallResultStatus, String>{
 };
 
 const _agentLifecycles = <ToolCallResultStatus, AgentToolCallLifecycle>{
+  .uncertain: .failed,
   .running: .pending,
   .success: .success,
   .skippedByUser: .skippedByUser,
@@ -103,6 +108,7 @@ const _agentLifecycles = <ToolCallResultStatus, AgentToolCallLifecycle>{
 };
 
 const _localeKeys = <ToolCallResultStatus, String>{
+  .uncertain: LocaleKeys.tool_call_status_uncertain,
   .running: LocaleKeys.tool_call_status_running,
   .success: LocaleKeys.tool_call_status_success,
   .skippedByUser: LocaleKeys.tool_call_status_skipped_by_user,
@@ -116,6 +122,7 @@ const _localeKeys = <ToolCallResultStatus, String>{
 };
 
 const _statusFromJson = <String, ToolCallResultStatus>{
+  'uncertain': .uncertain,
   'running': .running,
   'success': .success,
   'skipped_by_user': .skippedByUser,
@@ -129,6 +136,7 @@ const _statusFromJson = <String, ToolCallResultStatus>{
 };
 
 const _statusToJson = <ToolCallResultStatus, String>{
+  .uncertain: 'uncertain',
   .running: 'running',
   .success: 'success',
   .skippedByUser: 'skipped_by_user',
