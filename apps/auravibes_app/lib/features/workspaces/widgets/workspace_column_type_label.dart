@@ -7,9 +7,6 @@ class const WorkspaceColumnTypeLabel({
   required final WorkspaceColumnType type,
   super.key,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => TextLocale(_labelKey);
-
   String get _labelKey => switch (type) {
     .text => LocaleKeys.workspace_items_type_text,
     .number => LocaleKeys.workspace_items_type_number,
@@ -19,8 +16,15 @@ class const WorkspaceColumnTypeLabel({
     .url => LocaleKeys.workspace_items_type_url,
     .email => LocaleKeys.workspace_items_type_email,
     .phone => LocaleKeys.workspace_items_type_phone,
+    _ => _exactLabelKey,
+  };
+  String get _exactLabelKey => switch (type) {
     .dateOnly => LocaleKeys.workspace_items_type_date_only,
     .timestamp => LocaleKeys.workspace_items_type_timestamp,
     .money => LocaleKeys.workspace_items_type_money,
+    _ => LocaleKeys.workspace_items_type_text,
   };
+
+  @override
+  Widget build(BuildContext context) => TextLocale(_labelKey);
 }

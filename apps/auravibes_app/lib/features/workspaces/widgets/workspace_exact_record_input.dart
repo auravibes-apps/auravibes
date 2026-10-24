@@ -60,26 +60,32 @@ class const _TemporalPicker({required final WorkspaceExactRecordInput input})
     children: [
       if (input.column.type == .timestamp)
         const TextLocale(LocaleKeys.workspace_items_utc_time),
-      _TemporalPickerControl(input: input),
+      _TemporalPickerControl(input: input, timeOnly: false),
+      if (input.column.type == .timestamp)
+        _TemporalPickerControl(input: input, timeOnly: true),
     ],
   );
 }
 
 class const _TemporalPickerControl({
   required final WorkspaceExactRecordInput input,
+  required final bool timeOnly,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraDateTimeInput(
     value: .tryParse(input.value as String? ?? ''),
-    enableTime: input.column.type == .timestamp,
+    enableDate: !timeOnly,
+    enableTime: timeOnly,
     enabled: !input.disabled,
     semanticLabel: input.column.name,
     onChanged: _pick,
-    labels: const WorkspaceDateTimeLabels(),
+    labels: timeOnly
+        ? WorkspaceDateTimeLabels.time()
+        : WorkspaceDateTimeLabels.date(),
   );
   void _pick(DateTime? selected) {
     if (selected == null) return;
-    final next = _pickedInstant(selected, input.value);
+    final next = _pickedInstant(selected, input.value, timeOnly);
 
     input.onChanged(
       input.column.type == .dateOnly
@@ -89,13 +95,17 @@ class const _TemporalPickerControl({
   }
 }
 
-DateTime _pickedInstant(DateTime selected, Object? original) => DateTime.utc(
-  selected.year,
-  selected.month,
-  selected.day,
-  selected.hour,
-  selected.minute,
-).add(_precision(original));
+DateTime _pickedInstant(DateTime selected, Object? original, bool timeOnly) {
+  final current =
+      DateTime.tryParse(original as String? ?? '') ?? DateTime.now().toUtc();
+  final date = timeOnly ? current : selected;
+  final time = timeOnly ? selected : current;
+
+  return _calendarInstant(date, time).add(_precision(original));
+}
+
+DateTime _calendarInstant(DateTime date, DateTime time) =>
+    DateTime.utc(date.year, date.month, date.day, time.hour, time.minute);
 
 Duration _precision(Object? original) {
   final parsed = DateTime.tryParse(original as String? ?? '');
@@ -196,11 +206,7 @@ class const _MoneyFields({
 
 TextEditingController _useText(String value) {
   final text = useTextEditingController(text: value);
-  useEffect(() {
-    if (text.text != value) text.text = value;
-
-    return null;
-  }, [value]);
+  useEffect(() => _syncText(text, value), [value]);
 
   return text;
 }
@@ -228,4 +234,10 @@ class const _MoneyCurrency({required final _MoneyFields fields})
     onChanged: fields._change,
     identifier: '${fields.input.identifier}_currency',
   );
+}
+
+Dispose? _syncText(TextEditingController text, String value) {
+  if (text.text != value) text.text = value;
+
+  return null;
 }

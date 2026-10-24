@@ -93,9 +93,19 @@ void main() {
         );
       }
       expect((await tables.record(table.id, record.id)).values, values);
-      values[money] = {'amount': '9007199254740993.010000000000000002', 'currency': 'EUR'};
-      final edited = await tables.updateRecord(table: table, record: record, values: values);
-      expect(edited.values[money], {'amount': '9007199254740993.010000000000000002', 'currency': 'EUR'});
+      values[money] = {
+        'amount': '9007199254740993.010000000000000002',
+        'currency': 'EUR',
+      };
+      final edited = await tables.updateRecord(
+        table: table,
+        record: record,
+        values: values,
+      );
+      expect(edited.values[money], {
+        'amount': '9007199254740993.010000000000000002',
+        'currency': 'EUR',
+      });
       await database.close();
       final reopened = AppDatabase(connection: NativeDatabase(file));
       addTearDown(reopened.close);
@@ -766,10 +776,22 @@ void main() {
         (await tables.record(typed.id, typedRecord.id)).values,
         typedValues,
       );
-      final moneyId = typed.columns.firstWhere((column) => column.type == .money).id;
-      typedValues[moneyId] = {'amount': '9007199254740993.010000000000000002', 'currency': 'EUR'};
-      final editedTyped = await tables.updateRecord(table: typed, record: typedRecord, values: typedValues);
-      expect(editedTyped.values[moneyId], {'amount': '9007199254740993.010000000000000002', 'currency': 'EUR'});
+      final moneyId = typed.columns
+          .firstWhere((column) => column.type == .money)
+          .id;
+      typedValues[moneyId] = {
+        'amount': '9007199254740993.010000000000000002',
+        'currency': 'EUR',
+      };
+      final editedTyped = await tables.updateRecord(
+        table: typed,
+        record: typedRecord,
+        values: typedValues,
+      );
+      expect(editedTyped.values[moneyId], {
+        'amount': '9007199254740993.010000000000000002',
+        'currency': 'EUR',
+      });
       final moved = await tables.updateMetadata(
         table: typed,
         name: 'Renamed remotely',

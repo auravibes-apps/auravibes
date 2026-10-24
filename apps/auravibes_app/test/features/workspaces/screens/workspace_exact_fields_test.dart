@@ -147,7 +147,14 @@ void main() {
         ),
       );
       final _ = await tester.pumpAndSettle();
-      await tester.tap(find.byType(AuraDateTimeInput));
+      await tester.tap(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraDateTimeInput &&
+              widget.enableTime &&
+              !widget.enableDate,
+        ),
+      );
       final _ = await tester.pumpAndSettle();
       await tester.ensureVisible(find.bySemanticsLabel('Increase minute'));
       final _ = await tester.pumpAndSettle();
