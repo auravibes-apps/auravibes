@@ -5,6 +5,8 @@ import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 import 'repositories/workspace_state_repository.dart';
 import 'workspace_table_access.dart';
+import 'workspace_record_query_sql.dart';
+import 'domain/workspace_query_filter_validation.dart';
 
 typedef WorkspaceRecordQueryInput = ({
   int workspaceId,
@@ -204,25 +206,39 @@ class _QueryParameters {
       };
     } on TypeError {
       _invalid();
+    } on FormatException {
+      _invalid();
     }
   }
 
   Map<String, Object?> _selection() {
     final sort =
         input['sortColumnId'] as String? ?? data['labelColumnId'] as String;
-    final filter = input['filterColumnId'] as String? ?? '';
-    final sortColumn = _column(sort);
-    if (filter.isNotEmpty) {
-      final _ = _column(filter);
-    }
-
     return {
       'sort': sort,
-      'filter': filter,
       'label': data['labelColumnId'],
-      'numeric': sortColumn['type'] == 'number',
+      'sortType': _column(sort)['type'],
+      ..._filter(),
     };
   }
+
+  Map<String, Object?> _filter() {
+    final filter = input['filterColumnId'] as String? ?? '';
+    final column = filter.isEmpty ? null : _column(filter);
+    if (column != null) _validateFilter(column);
+    return {
+      'filter': filter,
+      'filterType': column?['type'] ?? 'text',
+      'contains': input['filterOperator'] == 'contains',
+    };
+  }
+
+  void _validateFilter(Map<String, dynamic> column) =>
+      WorkspaceQueryFilterValidation.validate(
+        column,
+        input['filterValue'] as String? ?? '',
+        operator: input['filterOperator'] as String? ?? 'equals',
+      );
 
   Map<String, Object?> _pagination() {
     final limit = input['limit'] as int? ?? 50;
@@ -240,7 +256,7 @@ class _QueryParameters {
   Map<String, Object?> _text() {
     final search = input['search'] as String? ?? '';
     final value = input['filterValue'] as String? ?? '';
-    if (search.length > _maxTextLength || value.length > _maxTextLength) {
+    if (search.length > _maxTextLength || value.length > _maxFilterLength) {
       _invalid();
     }
 
@@ -256,23 +272,10 @@ class _QueryParameters {
 }
 
 const _unsupported = {
-  'timestamp',
-  'money',
   'multiSelect',
   'attachment',
   'reference',
 };
-
-String _sql(bool descending, bool numeric) =>
-    '''
-SELECT "resourceId" FROM workspace_resource
-WHERE "workspaceId" = @workspaceId AND "resourceKind" = 'tableRecord' AND "deletedAt" IS NULL
-AND data::jsonb->>'tableId' = @tableId
-AND (@search = '' OR strpos(translate(data::jsonb->'values'->>@label, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), @search) > 0)
-AND (@filter = '' OR data::jsonb->'values'->>@filter = @value)
-ORDER BY ${_order(numeric)} ${descending ? 'DESC' : 'ASC'} ${descending ? 'NULLS LAST' : 'NULLS FIRST'}, "resourceId" ASC
-LIMIT @limit OFFSET @offset
-''';
 
 Never _denied() => throw CloudWorkspaceException(
   code: .permissionDenied,
@@ -285,10 +288,6 @@ String _fold(String value) => value.replaceAllMapped(
   RegExp('[A-Z]'),
   (match) => match.group(0)?.toLowerCase() ?? '',
 );
-
-String _order(bool numeric) => numeric
-    ? "(data::jsonb->'values'->>@sort)::numeric"
-    : "(data::jsonb->'values'->>@sort) COLLATE \"C\"";
 
 Map<String, dynamic> _decodeInput(String encoded) {
   if (encoded.length > _maxEncodedLength) _invalid();
@@ -306,11 +305,20 @@ Map<String, dynamic> _decode(String encoded) {
   }
 }
 
-const _maxEncodedLength = 2000;
+// Bound includes worst-case JSON escaping of the existing field value limit.
+const _maxEncodedLength = 120000;
+const _maxFilterLength = 16448;
 
 String _querySql(Map<String, Object?> query) {
   final descending = query.remove('descending') == true;
-  final numeric = query.remove('numeric') == true;
+  final sortType = query.remove('sortType') as String;
+  final filterType = query.remove('filterType') as String;
+  final contains = query.remove('contains') == true;
 
-  return _sql(descending, numeric);
+  return WorkspaceRecordQuerySql(
+    sortType,
+    filterType,
+    descending: descending,
+    contains: contains,
+  ).build();
 }

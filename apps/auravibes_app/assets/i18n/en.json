@@ -1996,7 +1996,7 @@
     "settings": "Table settings",
     "search": "Search records",
     "query_controls": "Filter, sort and columns",
-    "filter_value": "Value equals",
+    "filter_value": "Filter value",
     "all_columns": "No filter",
     "ascending": "Ascending",
     "descending": "Descending",
@@ -2005,7 +2005,7 @@
     "select": "Select items",
     "done": "Done",
     "selected": "Selected: {}",
-    "query_type_unavailable": "Sorting and filtering are unavailable for complex values and timestamps.",
+    "query_type_unavailable": "Sorting and filtering are unavailable for linked records, attachments and multiple-choice values.",
     "location_recovered": "This location is no longer available. Returned to Directory.",
     "type_date_only": "Date",
     "type_timestamp": "Date and time",
@@ -2048,6 +2048,12 @@
     "reference_previous": "First page",
     "reference_empty": "No matching records",
     "reference_remove": "Clear selection",
-    "reference_choose_target": "Choose a target table first."
+    "reference_choose_target": "Choose a target table first.",
+    "filter_operator": "Operator",
+    "filter_equals": "Equals",
+    "filter_contains": "Contains",
+    "filter_apply": "Apply filter",
+    "filter_clear": "Clear filter",
+    "filter_invalid_value": "Enter a valid value for this field."
   }
 }
