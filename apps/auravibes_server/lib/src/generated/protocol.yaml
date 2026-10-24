@@ -84,6 +84,8 @@ skillResource:
   - delete:
 workspaceStream:
   - subscribe:
+workspaceCsv:
+  - preview:
 workspaceReference:
   - targets:
   - tableTargets:

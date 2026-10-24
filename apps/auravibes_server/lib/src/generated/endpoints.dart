@@ -197,6 +197,7 @@ import '../features/model_connections/model_connection_endpoint.dart'
 import '../features/objects/object_endpoint.dart' as _ia0f4jqg;
 import '../features/skills/skill_resource_endpoint.dart' as _ip6c362v;
 import '../features/sync/stream/workspace_stream_endpoint.dart' as _ifbwcqx4;
+import '../features/workspace_state/workspace_csv_endpoint.dart' as _iml0si8c;
 import '../features/workspace_state/workspace_reference_endpoint.dart'
     as _it87m04z;
 import '../features/workspace_state/workspace_secret_endpoint.dart'
@@ -280,6 +281,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'workspaceStream',
+          null,
+        ),
+      'workspaceCsv': _iml0si8c.WorkspaceCsvEndpoint()
+        ..initialize(
+          server,
+          'workspaceCsv',
           null,
         ),
       'workspaceReference': _it87m04z.WorkspaceReferenceEndpoint()
@@ -1866,6 +1873,32 @@ class Endpoints extends _is.EndpointDispatch {
                   (endpoints['workspaceStream']
                           as _ifbwcqx4.WorkspaceStreamEndpoint)
                       .subscribe(
+                        session,
+                        params['request'],
+                      ),
+        ),
+      },
+    );
+    connectors['workspaceCsv'] = _is.EndpointConnector(
+      name: 'workspaceCsv',
+      endpoint: endpoints['workspaceCsv']!,
+      methodConnectors: {
+        'preview': _is.MethodConnector(
+          name: 'preview',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iti8d4cu.PatchWorkspaceStateRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceCsv'] as _iml0si8c.WorkspaceCsvEndpoint)
+                      .preview(
                         session,
                         params['request'],
                       ),

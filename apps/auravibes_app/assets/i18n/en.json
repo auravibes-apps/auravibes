@@ -2095,5 +2095,25 @@
     "save": "Save view",
     "no_tables": "No tables in this folder. Browse another folder or create a table in Directory.",
     "no_views": "No saved views yet. Create one from Directory."
+  },
+  "workspace_csv": {
+    "import": "Import CSV",
+    "export": "Export CSV",
+    "help": "Map CSV columns explicitly. Empty cells are missing; use JSON strings for empty text, JSON arrays for multiple choices/references, and {\"amount\":\"12.50\",\"currency\":\"USD\"} for money. Dates use YYYY-MM-DD; timestamps use UTC ISO 8601. Export uses JSON quoting when needed to preserve empty text, literal quotes, or formula-like text. Imports create records; Record ID and label helper columns may be skipped. Each import uses one atomic request (up to 50 records).",
+    "skip": "Skip this column",
+    "choose": "Choose CSV",
+    "validate": "Validate and preview",
+    "commit": "Import records",
+    "save": "Save CSV",
+    "rows": "{} records",
+    "validated": "Validation passed. Review mapped values before importing.",
+    "completed": "Completed",
+    "invalid_value": "Invalid value on CSV row {}. Check its type or relationship key.",
+    "validation_failed": "Import validation failed. Check required, unique and relationship constraints. No records were imported.",
+    "row": "CSV row {}",
+    "format": "CSV format",
+    "invalid_file": "This file is not valid UTF-8 CSV. Check quotes, delimiters and row lengths, then choose a corrected file.",
+    "too_large": "This CSV exceeds the current request size. Choose a smaller file.",
+    "invalid_mapping": "Choose each destination column once. Import at most 50 records per request."
   }
 }
