@@ -247,7 +247,7 @@ Map<String, Object?> _targetParameters(
 ) => {
   'tableId': table.resourceId,
   'label': _data(table)['labelColumnId'],
-  'search': input.search.toLowerCase(),
+  'search': input.search,
   'afterId': input.afterId ?? '',
 };
 Map<String, Object?> _reverseParameters(
@@ -264,7 +264,10 @@ const _targetSql = '''SELECT "resourceId" FROM workspace_resource
 WHERE "workspaceId" = @workspaceId AND "resourceKind" = 'tableRecord'
 AND "deletedAt" IS NULL AND "resourceId" > @afterId
 AND data::jsonb->>'tableId' = @tableId
-AND strpos(lower(COALESCE(data::jsonb->'values'->>@label, '')), @search) > 0
+AND strpos(
+  translate(COALESCE(data::jsonb->'values'->>@label, ''),
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),
+  translate(@search, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')) > 0
 ORDER BY "resourceId" LIMIT 51''';
 
 const _reverseSql = '''SELECT DISTINCT r."resourceId" FROM workspace_resource r

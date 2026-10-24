@@ -168,6 +168,20 @@ void main() {
       );
       expect(lastPage.records.length, 2);
       expect(lastPage.nextId, isNull);
+      final accent = await tables.createRecord(
+        table: target,
+        values: {target.labelColumnId: 'Éva'},
+      );
+      for (final search in ['É', 'é']) {
+        final matches = await references.tableTargets(
+          tableId: target.id,
+          search: search,
+        );
+        expect(
+          matches.records.map((record) => record.id),
+          search == 'É' ? [accent.id] : isEmpty,
+        );
+      }
       await database.close();
       database = AppDatabase(connection: NativeDatabase(file));
       final reopened = OrganizeWorkspaceTablesUsecase(
