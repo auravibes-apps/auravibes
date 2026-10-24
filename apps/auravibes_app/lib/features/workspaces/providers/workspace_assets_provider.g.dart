@@ -9,6 +9,93 @@ part of 'workspace_assets_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(selectWorkspaceAssetAttachment)
+final selectWorkspaceAssetAttachmentProvider =
+    SelectWorkspaceAssetAttachmentFamily._();
+
+final class SelectWorkspaceAssetAttachmentProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<SelectWorkspaceAssetAttachmentUsecase>,
+          SelectWorkspaceAssetAttachmentUsecase,
+          FutureOr<SelectWorkspaceAssetAttachmentUsecase>
+        >
+    with
+        $FutureModifier<SelectWorkspaceAssetAttachmentUsecase>,
+        $FutureProvider<SelectWorkspaceAssetAttachmentUsecase> {
+  SelectWorkspaceAssetAttachmentProvider._({
+    required SelectWorkspaceAssetAttachmentFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'selectWorkspaceAssetAttachmentProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$selectWorkspaceAssetAttachmentHash();
+
+  @override
+  String toString() {
+    return r'selectWorkspaceAssetAttachmentProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<SelectWorkspaceAssetAttachmentUsecase> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<SelectWorkspaceAssetAttachmentUsecase> create(Ref ref) {
+    final argument = this.argument as String;
+    return selectWorkspaceAssetAttachment(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SelectWorkspaceAssetAttachmentProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$selectWorkspaceAssetAttachmentHash() =>
+    r'ccbf897176d124df6abd3bc86d330d9752770ba2';
+
+final class SelectWorkspaceAssetAttachmentFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<SelectWorkspaceAssetAttachmentUsecase>,
+          String
+        > {
+  SelectWorkspaceAssetAttachmentFamily._()
+    : super(
+        retry: null,
+        name: r'selectWorkspaceAssetAttachmentProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  SelectWorkspaceAssetAttachmentProvider call(String workspaceId) =>
+      SelectWorkspaceAssetAttachmentProvider._(
+        argument: workspaceId,
+        from: this,
+      );
+
+  @override
+  String toString() => r'selectWorkspaceAssetAttachmentProvider';
+}
+
 @ProviderFor(workspaceAssetRepository)
 final workspaceAssetRepositoryProvider = WorkspaceAssetRepositoryFamily._();
 

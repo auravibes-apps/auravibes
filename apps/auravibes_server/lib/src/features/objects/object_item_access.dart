@@ -4,6 +4,8 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import '../workspace_state/workspace_table_access.dart';
+import 'object_historical_assets.dart';
+import 'object_retained_assets.dart';
 
 /// Item reachability never substitutes workspace membership for table grants.
 class const ObjectItemAccess(
@@ -44,35 +46,18 @@ class const ObjectItemAccess(
         return true;
       }
     }
-    return false;
+    return await _history.readable(objectId, member);
   }
 
-  Future<bool> retained(int objectId) async {
-    final resources = await _resources();
-    for (final resource in resources) {
-      final data = _data(resource);
-      if (resource.resourceKind == .table &&
-          resource.resourceId != excludedTableId &&
-          _defaultContains(data, '$objectId')) {
-        return true;
-      }
-      if (resource.resourceKind == .file && data['assetId'] == '$objectId') {
-        return true;
-      }
-      if (resource.resourceKind != .tableRecord ||
-          resource.resourceId == excludedRecordId) {
-        continue;
-      }
-      final table = resources
-          .where(
-            (row) =>
-                row.resourceKind == .table && row.resourceId == data['tableId'],
-          )
-          .firstOrNull;
-      if (table != null && _contains(table, data, '$objectId')) return true;
-    }
-    return false;
-  }
+  Future<bool> retained(int objectId) => ObjectRetainedAssets(
+    session,
+    member.workspaceId,
+    transaction,
+    excluding: {
+      if (excludedRecordId != null) 'tableRecord:$excludedRecordId',
+      if (excludedTableId != null) 'table:$excludedTableId',
+    },
+  ).retained(objectId);
 
   Future<bool> publiclyReadable(int objectId) async => (await _resources()).any(
     (row) =>
@@ -129,8 +114,18 @@ class const ObjectItemAccess(
         return true;
       }
     }
-    return false;
+    return await _history.readable(
+      objectId,
+      member,
+      targetReaders: targetReaders,
+    );
   }
+
+  ObjectHistoricalAssets get _history => .new(
+    session,
+    member.workspaceId,
+    transaction,
+  );
 
   Future<List<WorkspaceResource>> _resources() => WorkspaceResource.db.find(
     session,

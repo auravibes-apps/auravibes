@@ -58,10 +58,14 @@ const _sources = <_Source>[
   (table: 'workspace_table_records', kind: 'record', column: 'values_json'),
   (table: 'workspace_views', kind: 'view', column: 'data'),
   (table: 'workspace_folders', kind: 'folder', column: 'name'),
+  (table: 'workspace_files', kind: 'file', column: 'asset_id'),
 ];
 Map<String, dynamic> _data(QueryRow row, _Source source) {
   final raw = row.data;
   if (source.kind == 'folder') return {'parentId': raw['parent_id']};
+  if (source.kind == 'file') {
+    return {'parentId': raw['parent_id'], 'assetId': raw['asset_id']};
+  }
   final value = jsonDecode(row.read<String>(source.column));
 
   return switch (source.kind) {

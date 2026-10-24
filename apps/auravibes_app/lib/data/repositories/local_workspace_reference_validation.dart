@@ -17,6 +17,7 @@ class const LocalWorkspaceReferenceValidation(
   Future<void> columns(
     List<WorkspaceColumn> columns, {
     bool retained = false,
+    List<WorkspaceColumn> previous = const [],
   }) async {
     for (final column in columns.where((column) => column.type == .reference)) {
       await _table(_targetId(column), retained: retained);
@@ -28,7 +29,16 @@ class const LocalWorkspaceReferenceValidation(
       (column) => column.type == .attachment,
     )) {
       if (!retained && column.defaultValue != null) {
-        await values([column], {column.id: column.defaultValue});
+        await values(
+          [column],
+          {column.id: column.defaultValue},
+          previous: {
+            for (final old in previous.where(
+              (column) => column.type == .attachment,
+            ))
+              if (old.defaultValue != null) old.id: old.defaultValue,
+          },
+        );
       }
     }
   }

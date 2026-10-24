@@ -1192,6 +1192,111 @@ void main() {
           ),
           isEmpty,
         );
+        final originalUpload = await ObjectUpload.db.findFirstRow(
+          databaseSession,
+          where: (row) => row.objectId.equals(object.id),
+        );
+        await ObjectUpload.db.updateRow(
+          databaseSession,
+          originalUpload!.copyWith(actorUserId: ownerId),
+        );
+        await WorkspaceResource.db.insertRow(
+          databaseSession,
+          WorkspaceResource(
+            workspaceId: workspaceId,
+            resourceKind: .table,
+            resourceId: 'private-source',
+            data: jsonEncode({
+              'name': 'Private',
+              'columns': [
+                {
+                  'id': 'asset',
+                  'name': 'File',
+                  'type': 'attachment',
+                  'defaultValue': ['${object.id}'],
+                },
+              ],
+            }),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await expectLater(
+          endpoints.conversation.startTurn(
+            ownerSession,
+            StartTurnRequest(
+              workspaceId: workspaceId,
+              requestId: 'private-source-turn',
+              conversationId: conversation.id,
+              expectedConversationRevision: conversation.revision,
+              clientMessageId: 'private-source-message',
+              content: 'Do not broaden privately retained bytes',
+              attachmentIds: ['${object.id}'],
+            ),
+          ),
+          throwsA(
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'private source',
+              ConversationErrorCode.validationFailed,
+            ),
+          ),
+        );
+        await ObjectUpload.db.updateRow(databaseSession, originalUpload);
+        await WorkspaceResource.db.insertRow(
+          databaseSession,
+          WorkspaceResource(
+            workspaceId: workspaceId,
+            resourceKind: .file,
+            resourceId: 'shared-file',
+            data: jsonEncode({'name': 'Shared', 'assetId': '${object.id}'}),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final _ = await endpoints.conversation.startTurn(
+          ownerSession,
+          StartTurnRequest(
+            workspaceId: workspaceId,
+            requestId: 'shared-attachment-turn',
+            conversationId: conversation.id,
+            expectedConversationRevision: conversation.revision,
+            clientMessageId: 'shared-attachment-message',
+            content: 'Use shared File',
+            attachmentIds: [object.id!.toString()],
+          ),
+        );
+        final current = await Conversation.db.findFirstRow(
+          databaseSession,
+          where: (row) =>
+              row.workspaceId.equals(workspaceId) &
+              row.stableId.equals(conversation.id),
+        );
+        await endpoints.conversation.delete(
+          ownerSession,
+          DeleteConversationRequest(
+            workspaceId: workspaceId,
+            requestId: 'remove-shared-conversation',
+            conversationId: conversation.id,
+            expectedRevision: current!.revision,
+          ),
+        );
+        expect(
+          (await WorkspaceObject.db.findById(
+            databaseSession,
+            object.id!,
+          ))?.status,
+          'active',
+        );
+        expect(
+          await ObjectDeletion.db.find(
+            databaseSession,
+            where: (row) => row.objectId.equals(object.id),
+          ),
+          isEmpty,
+        );
       },
     );
   });

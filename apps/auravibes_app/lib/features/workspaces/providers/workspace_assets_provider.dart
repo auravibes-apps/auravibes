@@ -11,10 +11,27 @@ import 'package:auravibes_app/features/workspaces/usecases/create_workspace_file
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_assets_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_files_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/save_workspace_asset_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/select_workspace_asset_attachment_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_assets_provider.g.dart';
+
+@riverpod
+Future<SelectWorkspaceAssetAttachmentUsecase> selectWorkspaceAssetAttachment(
+  Ref ref,
+  String workspaceId,
+) async {
+  final namespace = ref.watch(appStorageNamespaceProvider);
+  final assets = await ref.watch(
+    workspaceAssetsUsecaseProvider(workspaceId).future,
+  );
+
+  return SelectWorkspaceAssetAttachmentUsecase(assets, (
+    namespace: namespace,
+    workspaceId: workspaceId,
+  ));
+}
 
 @riverpod
 Future<WorkspaceAssetRepository> workspaceAssetRepository(

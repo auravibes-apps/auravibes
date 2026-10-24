@@ -169,6 +169,14 @@ abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
     int? totalTokens,
     String? thinking,
     @Default(<String, Object?>{}) Map<String, Object?> modelMetadata,
+    // Read-only cloud projection. ObjectReference remains authoritative.
+    @JsonKey(
+      name: 'attachmentIds',
+      fromJson: _readCloudAttachmentAssetIds,
+      includeToJson: false,
+    )
+    @Default(<String>[])
+    List<String> cloudAssetIds,
     @Default(<String>[]) List<String> a2uiMessages,
     @Default(<String, List<String>>{})
     Map<String, List<String>> a2uiIssuesBySurface,
@@ -218,7 +226,21 @@ MessageMetadataEntity _metadataFromDecodedJson(Map<String, dynamic> json) {
 
   return MessageMetadataEntity(
     modelMetadata: {a2uiChatActionMetadataKey: action.toJson()},
+    cloudAssetIds: _readCloudAttachmentAssetIds(json['attachmentIds']),
   );
+}
+
+List<String> _readCloudAttachmentAssetIds(Object? value) {
+  if (value is! List) return [];
+  final key = RegExp(r'^[1-9][0-9]*$');
+
+  return value
+      .where(
+        (id) => (id is int && id > 0) || (id is String && key.hasMatch(id)),
+      )
+      .map((id) => '$id')
+      .toSet()
+      .toList();
 }
 
 /// Entity representing a message in a conversation.

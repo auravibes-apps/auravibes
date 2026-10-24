@@ -1016,6 +1016,7 @@ extension on ConversationRepository {
     updatedAt: .new(attachment.updatedAt),
     messageId: messageId,
     localPath: attachment.localPath,
+    assetId: .absentIfNull(attachment.assetId),
     fileName: attachment.fileName,
     displayName: .new(attachment.displayName),
     mimeType: attachment.mimeType,

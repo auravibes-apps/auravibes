@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_csv_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_history_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/usecases/export_workspace_csv_usecase.dart';
@@ -85,6 +86,19 @@ void main() {
     final hidden = await tables.record(table.id, rows.single.id);
     expect(hidden.values, isNot(contains(assetColumn)));
     expect(hidden.restrictedReferenceColumns, contains(assetColumn));
+    final history = await LocalWorkspaceHistoryRepository(database, 'local')
+        .history(
+          .new(
+            kind: .record,
+            id: hidden.id,
+            tableId: table.id,
+            revision: hidden.revision,
+          ),
+        );
+    expect(history, isNotEmpty);
+    for (final snapshot in history) {
+      expect(snapshot.data['values'] as Map, isNot(contains(assetColumn)));
+    }
     final hiddenExport = await ExportWorkspaceCsvUsecase(repository)(table.id);
     expect(const CsvToListConverter().convert(hiddenExport).last.last, '');
     final _ = await tables.updateRecord(

@@ -24,12 +24,12 @@ class const LocalWorkspaceTableRepository(
       ..orderBy([_nameOrder]);
     final rows = await query.get();
 
-    return rows.map(_table).toList();
+    return await Future.wait(rows.map(_visible));
   }
 
   @override
   Future<WorkspaceTable> table(String id) async =>
-      _table(await _tableRow(_database, _workspaceId, id));
+      await _visible(await _tableRow(_database, _workspaceId, id));
   @override
   Future<WorkspaceTable> create({
     required String name,
@@ -111,6 +111,15 @@ class const LocalWorkspaceTableRepository(
     required WorkspaceRecord record,
     required Map<String, Object?> values,
   }) => _RecordWriter(_database, _workspaceId).update(table, record, values);
+
+  Future<WorkspaceTable> _visible(WorkspaceTableRow row) async {
+    final data = await LocalWorkspaceAssetValues(
+      _database,
+      _workspaceId,
+    ).schema({'columns': jsonDecode(row.columnsJson)});
+
+    return _table(row.copyWith(columnsJson: jsonEncode(data['columns'])));
+  }
 }
 
 WorkspaceTable _table(WorkspaceTableRow row) => WorkspaceTable(
@@ -447,9 +456,13 @@ class const _TableWriter(
     WorkspaceColumn column,
   ) async {
     final row = await _tableRow(_database, _workspaceId, table.id);
-    final columns = _updatedColumns(row, table, column);
-    await _references.columns(columns);
-    await _checkRecords(table.id, columns);
+    final previous = _columns(row.columnsJson);
+    final columns = await LocalWorkspaceAssetValues(
+      _database,
+      _workspaceId,
+    ).preserveDefaults(_updatedColumns(row, table, column), previous);
+    await _references.columns(columns, previous: previous);
+    await _checkRecords(table.id, columns, previous);
     await _writeColumns(_database, row, columns);
     await _references.allDependencies();
 
@@ -457,19 +470,24 @@ class const _TableWriter(
   }
 
   Future<WorkspaceTable> _read(String id) async =>
-      _table(await _tableRow(_database, _workspaceId, id));
+      await LocalWorkspaceTableRepository(_database, _workspaceId).table(id);
 
   Future<void> _checkRecords(
     String tableId,
     List<WorkspaceColumn> columns,
+    List<WorkspaceColumn> previous,
   ) async {
     final rows = await _records(_database, _workspaceId, tableId).get();
     _validateRecords(columns, rows.map(_record).toList());
     for (final row in rows) {
-      await LocalWorkspaceReferenceValidation(
-        _database,
-        _workspaceId,
-      ).values(columns, _record(row).values);
+      await LocalWorkspaceReferenceValidation(_database, _workspaceId).values(
+        columns,
+        _record(row).values,
+        previous: retainedWorkspaceAttachmentValues(
+          previous,
+          _record(row).values,
+        ),
+      );
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:auravibes_app/data/repositories/attachment_file_store_io.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chat_attachment_bytes.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -48,6 +49,12 @@ void main() {
     await first.writeAsset('asset-one', .fromList([1, 2, 255]));
     const reopened = AttachmentFileStore(storageNamespace: 'asset-tests');
     expect(await reopened.readAsset('asset-one'), [1, 2, 255]);
+    expect(
+      await ChatAttachmentBytes.read(
+        'workspace-asset://asset/asset-tests/local/asset-one',
+      ),
+      [1, 2, 255],
+    );
     const other = AttachmentFileStore(storageNamespace: 'other-tests');
     await expectLater(
       other.readAsset('asset-one'),

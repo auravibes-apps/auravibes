@@ -15,6 +15,7 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_shared_asset.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/notifiers/activity_run_expansion_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
@@ -1546,7 +1547,9 @@ List<Widget> _messageContentChildren({
         showMetadata:
             message.isUser || (showResponseActions && !hasA2uiResponse),
       ),
-    if (message.attachments.isNotEmpty) _MessageAttachments(message: message),
+    if (message.attachments.isNotEmpty ||
+        message.metadata?.cloudAssetIds.isNotEmpty == true)
+      _MessageAttachments(message: message, workspaceId: workspaceId),
     if (!message.isUser && !message.isForkReference && a2uiRuntime != null)
       ChatA2uiSurfaceHost.message(
         key: ValueKey('a2ui_${message.id}'),
@@ -1681,8 +1684,10 @@ bool _hasA2uiMessageState(MessageEntity? message) {
       metadata.a2uiMessageIssues.isNotEmpty;
 }
 
-class const _MessageAttachments({required final MessageEntity message})
-    extends StatelessWidget {
+class const _MessageAttachments({
+  required final MessageEntity message,
+  required final String workspaceId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Align(
@@ -1692,7 +1697,12 @@ class const _MessageAttachments({required final MessageEntity message})
         runSpacing: context.auraTheme.fromSpacing(.xs),
         children: [
           for (final attachment in message.attachments)
-            _AttachmentPreview(attachment: attachment),
+            if (attachment.assetId case final id?)
+              ChatSharedAsset(workspaceId: workspaceId, assetId: id)
+            else
+              _AttachmentPreview(attachment: attachment),
+          for (final id in message.metadata?.cloudAssetIds ?? const <String>[])
+            ChatSharedAsset(workspaceId: workspaceId, assetId: id),
         ],
       ),
     );

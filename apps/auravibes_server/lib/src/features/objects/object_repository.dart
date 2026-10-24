@@ -64,6 +64,7 @@ class ObjectRepository {
     Session session, {
     required int workspaceId,
     required int objectId,
+    Transaction? transaction,
   }) async {
     final references = await ObjectReference.db.find(
       session,
@@ -71,9 +72,10 @@ class ObjectRepository {
           row.workspaceId.equals(workspaceId) &
           row.objectId.equals(objectId) &
           row.deletedAt.equals(null),
+      transaction: transaction,
     );
     for (final reference in references) {
-      if (await _messageReadable(session, workspaceId, reference.messageId)) {
+      if (await _messageReadable(session, reference, transaction)) {
         return true;
       }
     }
@@ -82,23 +84,25 @@ class ObjectRepository {
 
   Future<bool> _messageReadable(
     Session session,
-    int workspaceId,
-    int messageId,
+    ObjectReference reference,
+    Transaction? transaction,
   ) async {
     final message = await ConversationMessage.db.findFirstRow(
       session,
       where: (t) =>
-          t.id.equals(messageId) &
-          t.workspaceId.equals(workspaceId) &
+          t.id.equals(reference.messageId) &
+          t.workspaceId.equals(reference.workspaceId) &
           t.status.notEquals('deleted'),
+      transaction: transaction,
     );
     if (message == null) return false;
     final conversation = await Conversation.db.findFirstRow(
       session,
       where: (row) =>
           row.id.equals(message.conversationId) &
-          row.workspaceId.equals(workspaceId) &
+          row.workspaceId.equals(reference.workspaceId) &
           row.deletedAt.equals(null),
+      transaction: transaction,
     );
     return conversation != null;
   }

@@ -5,6 +5,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../model_connections/domain/virtual_workspace_model_selection.dart';
+import '../../objects/object_conversation_access.dart';
 import '../../objects/object_reference_service.dart';
 import '../domain/conversation_values.dart';
 
@@ -497,20 +498,20 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
           table.workspaceId.equals(workspaceId) & table.id.inSet(ids),
       transaction: transaction,
     );
-    final uploads = await ObjectUpload.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(workspaceId) &
-          table.actorUserId.equals(actorUserId) &
-          table.objectId.inSet(ids),
-      transaction: transaction,
-    );
     if (objects.length != ids.length ||
-        uploads.length != ids.length ||
         objects.any(
           (object) => object.status != 'active' || object.deletedAt != null,
         )) {
       return null;
+    }
+    final access = ObjectConversationAccess(
+      session,
+      workspaceId,
+      actorUserId,
+      transaction,
+    );
+    for (final id in ids) {
+      if (!await access.canUse(id)) return null;
     }
     return objects.fold<int>(
       0,

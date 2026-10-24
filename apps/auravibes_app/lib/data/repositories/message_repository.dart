@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/local_message_asset_references.dart';
 import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
 import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -973,6 +974,10 @@ extension on MessageRepository {
     Iterable<MessageAttachmentToCreate> attachments,
   ) async {
     for (final attachment in attachments) {
+      await LocalMessageAssetReferences(
+        _database,
+        _attachmentFileStore.storageNamespace,
+      ).validate(messageId, attachment);
       final _ = await _database
           .into(_database.messageAttachments)
           .insert(_mapToMessageAttachmentCompanion(messageId, attachment));
@@ -1826,6 +1831,7 @@ extension on MessageRepository {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       toolCallId: row.toolCallId,
+      assetId: row.assetId,
     );
   }
 
@@ -1868,6 +1874,7 @@ extension MessageRepositoryCompanionMappings on MessageRepository {
     return MessageAttachmentsCompanion(
       messageId: .new(messageId),
       toolCallId: .absentIfNull(attachment.toolCallId),
+      assetId: .absentIfNull(attachment.assetId),
       localPath: .new(attachment.localPath),
       fileName: .new(attachment.fileName),
       displayName: .new(attachment.displayName),

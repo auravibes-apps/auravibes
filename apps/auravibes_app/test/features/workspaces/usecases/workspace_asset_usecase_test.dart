@@ -4,8 +4,10 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_file_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_history_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_assets_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_trash_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_files_usecase.dart';
@@ -118,6 +120,23 @@ void main() {
     }
     final _ = await trash.restore(batch.id);
     expect((await files.list()).length, 2);
+    final current = await files.file(second.id);
+    final target = WorkspaceTrashTarget(
+      kind: .file,
+      id: current.id,
+      revision: current.revision,
+    );
+    final _ = await trash.apply(target, approve: (_) async => true);
+    await LocalWorkspaceHistoryRepository(
+      reopened,
+      'local',
+    ).permanentlyDelete(target);
+    expect((await files.list()).map((file) => file.id), [first.id]);
+    expect((await next.preview(asset.id)).bytes, 'hello'.codeUnits);
+    await expectLater(
+      files.create(id: second.id, name: second.name, assetId: asset.id),
+      throwsA(isA<Exception>()),
+    );
 
     final _ = await expectLater(
       files.updateMetadata(file: first, name: 'Stale', parentId: null),

@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:cryptography/cryptography.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentToolNameResolver,
@@ -10,17 +9,18 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         ReasoningConfiguration,
         ReasoningOption,
         projectToolOutput;
+import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
-import '../../workspaces/domain/workspace_roles.dart';
+import '../../objects/object_retained_assets.dart';
 import '../../sync/stream/sync_wakeups.dart';
+import '../../workspaces/domain/workspace_roles.dart';
 import '../conversation_event_writer.dart';
 import '../domain/conversation_values.dart';
 import '../domain/message_bookmark_view_mapper.dart';
-import '../engine/conversation_host_effects.dart';
 import '../engine/a2ui_protocol.dart';
-
+import '../engine/conversation_host_effects.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 
 typedef ConversationJobPublisher = Future<void> Function(
@@ -5210,7 +5210,14 @@ class ConversationUseCases {
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );
-      if (liveReference != null) continue;
+      if (liveReference != null ||
+          await ObjectRetainedAssets(
+            session,
+            workspaceId,
+            transaction,
+          ).retained(objectId)) {
+        continue;
+      }
       final existingDeletion = await ObjectDeletion.db.findFirstRow(
         session,
         where: (table) => table.objectId.equals(objectId),

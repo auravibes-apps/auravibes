@@ -283,6 +283,10 @@ extension on AppDatabase {
     if (from < AppDatabase._workspaceAssetsSchemaVersion) {
       await m.createTable(workspaceAssets);
       await m.createTable(workspaceFiles);
+      if (await _tableExists('message_attachments') &&
+          !await _columnExists('message_attachments', 'asset_id')) {
+        await m.addColumn(messageAttachments, messageAttachments.assetId);
+      }
     }
     if (from < AppDatabase._connectorWritesSchemaVersion) {
       await m.createTable(connectorWrites);

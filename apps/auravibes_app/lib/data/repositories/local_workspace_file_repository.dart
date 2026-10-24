@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_purge_guard.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
@@ -39,6 +40,7 @@ class const LocalWorkspaceFileRepository(
     String? parentId,
     bool sharingApproved = false,
   }) => database.transaction(() async {
+    await LocalWorkspacePurgeGuard(database, workspaceId).resource('file', id);
     final _ = await assets.asset(assetId);
     final digest = sha256
         .convert(utf8.encode(jsonEncode([name, assetId, parentId])))

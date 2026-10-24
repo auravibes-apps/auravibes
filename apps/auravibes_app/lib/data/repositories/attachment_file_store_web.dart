@@ -30,7 +30,18 @@ class const AttachmentFileStoreWeb({
 
   Future<void> deleteAsset(String assetId) async {
     validateAttachmentAssetKey(assetId);
-    final _ = await (await _assets()).removeEntry(assetId).toDart;
+    final directory = await _assets();
+    try {
+      final _ = await directory.removeEntry(assetId).toDart;
+    } on Object catch (error, stackTrace) {
+      // WebIDL removeEntry rejects with a DOMException; only missing is success.
+      final value = error as JSAny;
+      if (value.isA<web.DOMException>() &&
+          (value as web.DOMException).name == 'NotFoundError') {
+        return;
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   Future<String> persistDraftFile(String localPath) => Future.value(localPath);
