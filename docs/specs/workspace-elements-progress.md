@@ -210,6 +210,14 @@ The turn interruption removed live agent contexts; source changes and background
 - Worker generation/drift, localization audit, fatal analysis and strict DCL gates passed. Generation and localization were not repeated after the conflict-free merge. Whitespace and ancestry checks passed; untracked diagnostics remain preserved. No push, closure or UI action occurred.
 - New user steering requests Directory naming, directory-list navigation, a plus-bar type creation menu and menus/submenus. The root-owned interview must resolve and document those decisions before implementation. This merge adds none of those new decisions. #1676 remains open pending root live UI verification and the Directory decisions; full workspace/CI/platform acceptance and parent completion remain pending.
 
+### Temporal and exact-money integration
+
+- Integrated #1671 tip `dc35044869b4e900f39bea15f9f6e44dc43b9522` as `bd547ef5d`, without conflicts, from root `d6d991db`. Original folder commit `4eee5ba18`, table grants, metadata/schema semantics and existing authorization repairs remain preserved.
+- Added strict date-only values, UTC timestamp instants with IANA display time zones and exact decimal-string money with explicit currency. Ordinary date/time pickers preserve untouched timestamp components and fractional precision; advanced exact input remains available. Local/cloud persistence, reopen and edit checks retain exact values and missing-value distinctions.
+- Postmerge checks passed: 15 app temporal/model/editor/metadata regressions and one authenticated table endpoint regression. Pinned FVM 3.47.7 ran through the root validation lease. Logs: `/tmp/auravibes-1671-merger-app.log` and `/tmp/auravibes-1671-merger-server.log`. Merger whitespace and ancestry checks passed; tracked source is clean and untracked evidence remains preserved.
+- Worker evidence includes 15 app and 15 server regressions, strict DCL for 11 owned behavior files, full `validate:app`, server domain fatal analysis, clean generation and localization audit. Worker changed-file validation still reported baseline generated LocaleKeys long lines; generated files were not hand-edited.
+- Joint acceptance remains explicit: #1672 owns server schema DCL cleanup and column-aware timestamp uniqueness normalization so equivalent UTC strings compare as the same instant. Root owns live acceptance and final workspace/CI/platform gates. #1671 remains open; no push, closure, release or UI automation occurred in this merge.
+
 ### Live rendering recovery and Connections integration follow-up
 
 - Approved native `cua-driver` exact-window binding succeeded for the UI-worktree executable. Focusing that isolated window changed Marionette from zero controls to 33. Refocusing after stalled actions advanced rendering consistently; no production routing fix is justified by the prior blank/stalled captures.
