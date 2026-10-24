@@ -208,9 +208,7 @@ class const _ViewMover(final _ViewContext context) {
     final current = await _row(move.id);
     final data = _data(current.data);
     final _ = _metadataName(current, move.name);
-    await _source(data['tableId'] as String);
-    await _parent(data['parentId'] as String?);
-    await _parent(move.parentId);
+    await _ancestry(data, move.parentId);
   }
 
   Future<WorkspaceView> move(WorkspaceViewMove move) async {
@@ -226,6 +224,12 @@ class const _ViewMover(final _ViewContext context) {
     if (row == null) _denied();
 
     return row;
+  }
+
+  Future<void> _ancestry(Map<String, Object?> data, String? parent) async {
+    await _source(data['tableId'] as String);
+    await _parent(data['parentId'] as String?);
+    await _parent(parent);
   }
 
   Future<void> _source(String id) async {
@@ -248,14 +252,9 @@ class const _ViewMover(final _ViewContext context) {
     WorkspaceViewMove move,
   ) async {
     if (_sameMetadata(current, move)) return current.copyWith(history: '[]');
-    final data = _movedMetadata(current, move);
     final saved = await WorkspaceView.db.updateRow(
       context.session,
-      current.copyWith(
-        data: jsonEncode(data),
-        revision: current.revision + 1,
-        history: jsonEncode([..._history(current), data]),
-      ),
+      _movedRow(current, move),
       transaction: context.transaction,
     );
 
@@ -382,4 +381,14 @@ String _metadataName(WorkspaceView current, String? proposed) {
 bool _sameMetadata(WorkspaceView current, WorkspaceViewMove move) {
   final data = _data(current.data);
   return data['parentId'] == move.parentId && data['name'] == _metadataName(current, move.name);
+}
+
+WorkspaceView _movedRow(WorkspaceView current, WorkspaceViewMove move) {
+  final data = _movedMetadata(current, move);
+
+  return current.copyWith(
+    data: jsonEncode(data),
+    revision: current.revision + 1,
+    history: jsonEncode([..._history(current), data]),
+  );
 }
