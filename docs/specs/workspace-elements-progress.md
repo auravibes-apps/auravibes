@@ -202,6 +202,14 @@ The turn interruption removed live agent contexts; source changes and background
 - Postmerge authenticated endpoint and stream checks passed: four tests, including 100 hidden events followed by the visible event at sequence 101. Pinned FVM 3.47.7 ran through the root validation lease. Log: `/tmp/auravibes-1669-event-merger.log`. Worker evidence includes meaningful pagination/privacy failures before the repair, 17 server regressions, three stream checks, focused fatal analysis and strict DCL.
 - Whitespace and ancestry checks passed. No push, closure or UI action occurred; untracked diagnostics remain preserved. #1669/#1670 acceptance, full workspace/CI/platform checks and parent completion remain root-owned and pending.
 
+### Rename/move integration and Directory interview boundary
+
+- Integrated #1676 worker tip `d16849b253c5b16a1b6e93f01058287bf021632e` as `939d4bb1f`, without conflicts. Original folder, table ACL/membership, Connections and private-event pagination commits remain preserved.
+- Folder/table metadata edits retain stable IDs and grants, reject stale or invalid destinations, and preserve schema revisions when canonical column/label schema is unchanged. Folder capability metadata permits owner/admin management; table metadata retains owner-only management. The current edit UI is a transitional baseline.
+- Postmerge checks passed: 22 app regressions covering metadata workflows, storage/reopen, revisions and table access controls; two authenticated folder/table endpoint regressions covering metadata, ACL, membership cleanup and hidden-event pagination. Pinned FVM 3.47.7 ran through the root validation lease. Logs: `/tmp/auravibes-1676-merger-app.log` and `/tmp/auravibes-1676-merger-server.log`.
+- Worker generation/drift, localization audit, fatal analysis and strict DCL gates passed. Generation and localization were not repeated after the conflict-free merge. Whitespace and ancestry checks passed; untracked diagnostics remain preserved. No push, closure or UI action occurred.
+- New user steering requests Directory naming, directory-list navigation, a plus-bar type creation menu and menus/submenus. The root-owned interview must resolve and document those decisions before implementation. This merge adds none of those new decisions. #1676 remains open pending root live UI verification and the Directory decisions; full workspace/CI/platform acceptance and parent completion remain pending.
+
 ### Live rendering recovery and Connections integration follow-up
 
 - Approved native `cua-driver` exact-window binding succeeded for the UI-worktree executable. Focusing that isolated window changed Marionette from zero controls to 33. Refocusing after stalled actions advanced rendering consistently; no production routing fix is justified by the prior blank/stalled captures.
