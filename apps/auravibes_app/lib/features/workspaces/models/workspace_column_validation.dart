@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_reference_value.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_exact_value_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:uuid/v7.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 
 const _maximumColumns = 100;
@@ -9,6 +10,19 @@ const _maximumTextLength = 16384;
 const _minimumPhoneDigits = 3;
 
 abstract final class WorkspaceColumnValidation {
+  static WorkspaceColumn normalized(WorkspaceColumn column) => WorkspaceColumn(
+    id: column.id.isEmpty ? const UuidV7().generate() : column.id,
+    name: column.name.trim(),
+    type: column.type,
+    options: column.options.map((name) => name.trim()).toList(),
+    isRequired: column.isRequired,
+    isUnique: column.isUnique,
+    defaultValue: column.defaultValue,
+    timeZone: column.timeZone,
+    targetTableId: column.targetTableId,
+    referenceMultiple: column.referenceMultiple,
+  );
+
   static void columns(List<WorkspaceColumn> columns, String labelColumnId) {
     _require(columns.isNotEmpty && columns.length <= _maximumColumns);
     _require(_uniqueIds(columns));
@@ -24,12 +38,27 @@ abstract final class WorkspaceColumnValidation {
     List<WorkspaceColumn> columns,
     Map<String, Object?> values,
   ) {
-    for (final entry in values.entries) {
-      final column = columns
-          .where((column) => column.id == entry.key)
-          .firstOrNull;
-      _require(column != null && _ValueValidation.valid(column, entry.value));
-    }
+    _require(accepts(columns, values));
+  }
+
+  static bool accepts(
+    List<WorkspaceColumn> columns,
+    Map<String, Object?> values,
+  ) =>
+      columns.every(
+        (column) => !column.isRequired || values.containsKey(column.id),
+      ) &&
+      values.entries.every((entry) => _entryValid(columns, entry));
+
+  static bool _entryValid(
+    List<WorkspaceColumn> columns,
+    MapEntry<String, Object?> entry,
+  ) {
+    final column = columns
+        .where((column) => column.id == entry.key)
+        .firstOrNull;
+
+    return column != null && _ValueValidation.valid(column, entry.value);
   }
 
   static bool _uniqueIds(List<WorkspaceColumn> columns) =>
@@ -37,6 +66,9 @@ abstract final class WorkspaceColumnValidation {
 
   static void _column(WorkspaceColumn column) {
     _require(column.id.isNotEmpty && _name(column.name));
+    if (column.defaultValue != null) {
+      _require(_ValueValidation.valid(column, column.defaultValue));
+    }
     _require(WorkspaceTimeZones.valid(column.timeZone));
     _require(column.type == .reference
         ? column.targetTableId?.isNotEmpty == true

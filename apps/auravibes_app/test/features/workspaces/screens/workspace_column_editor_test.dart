@@ -1,8 +1,10 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_column_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -20,6 +22,90 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
+  testWidgets(
+    'preview rejects duplicate values and offers a separate replacement',
+    (tester) async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final tables = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(database, 'one'),
+      );
+      var saved = false;
+      final table = await tester.runAsync(() async {
+        final _ = await database
+            .into(database.workspaces)
+            .insert(
+              WorkspacesCompanion.insert(
+                id: const Value('one'),
+                name: 'One',
+                type: .local,
+              ),
+            );
+        var table = await tables.create(name: 'Items', labelName: 'Title');
+        table = await tables.saveColumn(
+          table: table,
+          column: const WorkspaceColumn(id: '', name: 'Value'),
+        );
+        for (final label in ['First', 'Second']) {
+          final _ = await tables.createRecord(
+            table: table,
+            values: {
+              table.labelColumnId: label,
+              table.columns.last.id: 'Duplicate',
+            },
+          );
+        }
+        await tester.pumpWidget(
+          TestableApp(
+            child: WorkspaceColumnEditor(
+              workspaceId: 'one',
+              table: table,
+              column: table.columns.last,
+              onBack: () => saved = true,
+            ),
+            overrides: [
+              workspaceTableUsecaseProvider('one')
+                  .overrideWith((ref) async => tables),
+            ],
+            workspaceId: 'one',
+          ),
+        );
+
+        return table;
+      });
+      if (table == null) fail('Missing prepared table');
+      await _flush(tester);
+      await tester.tap(find.text('Unique values'));
+      await _flush(tester);
+      final save = find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraButton &&
+            widget.identifier == 'workspace_column_save',
+      );
+      await tester.runAsync(() => tester.tap(save));
+      await _flush(tester);
+      expect(saved, false);
+      expect(find.textContaining('First ('), findsOneWidget);
+      expect(find.textContaining('Second ('), findsOneWidget);
+      await tester.ensureVisible(
+        find.text('Create a separate replacement column'),
+      );
+      await tester.tap(find.text('Create a separate replacement column'));
+      await _flush(tester);
+      await tester.ensureVisible(save);
+      await tester.runAsync(() => tester.tap(save));
+      await _flush(tester);
+      expect(saved, true);
+      await tester.runAsync(() async {
+        final current = await tables.table(table.id);
+        expect(current.columns.length, 3);
+        expect(
+          (await tables.records(table.id)).first.values[table.columns.last.id],
+          'Duplicate',
+        );
+      });
+    },
+  );
   testWidgets(
     'ordinary controls add a number column and retain zero in a record',
     (tester) async {
@@ -84,6 +170,15 @@ void main() {
       await flush();
       await tester.tap(find.text('Number').last);
       await flush();
+      await tester.tap(find.text('Required'));
+      await tester.tap(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraCheckboxListTile && widget.semanticLabel == 'Count',
+        ),
+      );
+      await flush();
+      await tester.enterText(input('workspace_column_default'), '2.5');
       await tester.runAsync(() => tester.tap(button('workspace_column_save')));
       await flush();
       expect(find.text('Count'), findsOneWidget);
@@ -111,10 +206,22 @@ void main() {
       await flush();
       await tester.runAsync(() async {
         final table = (await tables.list()).single;
+        expect(table.columns.last.isRequired, true);
+        expect(table.columns.last.defaultValue, 2.5);
         final record = (await tables.records(table.id)).single;
         expect(record.values[table.columns.last.id], 0);
         expect(record.values.containsKey(table.columns.last.id), true);
       });
     },
   );
+}
+
+Future<void> _flush(WidgetTester tester) async {
+  for (var i = 0; i < 5; i++) {
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+  }
+  final _ = await tester.pumpAndSettle();
 }

@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/v7.dart';
 
@@ -47,7 +48,9 @@ class const LocalWorkspaceTableRepository(
     required String name,
   }) => saveColumn(
     table: table,
-    column: .new(id: table.labelColumnId, name: name),
+    column: table.columns
+        .firstWhere((column) => column.id == table.labelColumnId)
+        .renamed(name),
   );
 
   @override
@@ -195,7 +198,9 @@ WorkspaceTablesCompanion _columnUpdate(
     jsonEncode(columns.map((column) => column.toJson()).toList()),
   ),
   revision: .new(row.revision + 1),
-  schemaRevision: .new(row.schemaRevision + 1),
+  schemaRevision: .new(
+    WorkspaceTableConstraints.schemaRevision(_table(row), columns),
+  ),
 );
 
 WorkspaceTableRecordsCompanion _newRecord(
@@ -240,11 +245,11 @@ Future<void> _checkSchema(
   ({WorkspaceTable table, Map<String, Object?> values}) input,
 ) async {
   final current = await _tableRow(database, workspaceId, input.table.id);
-  WorkspaceColumnValidation.values(_table(current).columns, input.values);
-  await LocalWorkspaceReferenceValidation(database, workspaceId).values(_table(current).columns, input.values);
   if (current.schemaRevision != input.table.schemaRevision) {
     throw const WorkspaceTableException(conflict: true);
   }
+  WorkspaceColumnValidation.values(_table(current).columns, input.values);
+  await LocalWorkspaceReferenceValidation(database, workspaceId).values(_table(current).columns, input.values);
 }
 
 Expression<bool> _parent(WorkspaceTables row, String? parentId) =>
@@ -271,9 +276,7 @@ void _validateRecords(
   List<WorkspaceColumn> columns,
   List<WorkspaceRecord> records,
 ) {
-  for (final record in records) {
-    WorkspaceColumnValidation.values(columns, record.values);
-  }
+  WorkspaceTableConstraints.records(columns, records);
 }
 
 Future<String> _insertTable(
@@ -438,17 +441,38 @@ class const _RecordWriter(
   Future<WorkspaceRecord> create(
     WorkspaceTable table,
     Map<String, Object?> values,
-  ) => _database.transaction(() async {
-    await _checkSchema(_database, _workspaceId, (table: table, values: values));
-
-    return await _insert(table.id, values);
-  });
+  ) => _database.transaction(
+    () async => await _insert(table.id, await _prepare(table, values)),
+  );
 
   Future<WorkspaceRecord> update(
     WorkspaceTable table,
     WorkspaceRecord record,
     Map<String, Object?> values,
   ) => _database.transaction(() => _update(table, record, values));
+
+  Future<Map<String, Object?>> _prepare(
+    WorkspaceTable table,
+    Map<String, Object?> values,
+  ) async {
+    final normalized = await _defaults(table, values);
+    await _checkSchema(_database, _workspaceId, (
+      table: table,
+      values: normalized,
+    ));
+    await _checkUnique(table, normalized);
+
+    return normalized;
+  }
+
+  Future<Map<String, Object?>> _defaults(
+    WorkspaceTable table,
+    Map<String, Object?> values,
+  ) async {
+    final current = _table(await _tableRow(_database, _workspaceId, table.id));
+
+    return WorkspaceTableConstraints.defaults(current.columns, values);
+  }
 
   Future<WorkspaceRecord> _insert(
     String tableId,
@@ -470,10 +494,41 @@ class const _RecordWriter(
     await _checkSchema(_database, _workspaceId, (table: table, values: values));
     final current = await _read(table.id, record.id);
     _checkRecordRevision(current, record);
+    await _checkUnique(table, values, exceptId: current.id);
+
+    return await _replace(current, values);
+  }
+
+  Future<WorkspaceRecord> _replace(
+    WorkspaceRecord current,
+    Map<String, Object?> values,
+  ) async {
     final target = (workspaceId: _workspaceId, record: current);
     await _writeRecord(_database, target, values);
 
-    return await _read(table.id, record.id);
+    return await _read(current.tableId, current.id);
+  }
+
+  Future<void> _checkUnique(
+    WorkspaceTable table,
+    Map<String, Object?> values, {
+    String? exceptId,
+  }) async {
+    final others = await _otherRecords(table.id, exceptId);
+    final current = _table(await _tableRow(_database, _workspaceId, table.id));
+    WorkspaceTableConstraints.records(current.columns, [
+      ...others,
+      WorkspaceRecord(id: '', tableId: table.id, values: values, revision: 1),
+    ]);
+  }
+
+  Future<List<WorkspaceRecord>> _otherRecords(
+    String tableId,
+    String? exceptId,
+  ) async {
+    final rows = await _records(_database, _workspaceId, tableId).get();
+
+    return rows.where((row) => row.id != exceptId).map(_record).toList();
   }
 
   Future<WorkspaceRecord> _read(String tableId, String id) async {

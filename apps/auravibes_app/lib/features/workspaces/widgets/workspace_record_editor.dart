@@ -6,6 +6,8 @@ import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_ta
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_editor.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -110,7 +112,8 @@ class const _RecordFields({
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      for (final column in table.columns)
+      for (final column in table.columns) ...[
+        _RecordConstraintHints(column: column),
         _RecordValue(
           table: table,
           workspaceId: workspaceId,
@@ -119,6 +122,7 @@ class const _RecordFields({
           draft: draft,
           disabled: disabled,
         ),
+      ],
     ],
   );
 }
@@ -151,4 +155,16 @@ class const _RecordValue({
   void _change(Object? value) =>
       draft.value = {...draft.value, column.id: value};
   void _unset() => draft.value = Map.of(draft.value)..remove(column.id);
+}
+
+class const _RecordConstraintHints({required final WorkspaceColumn column})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      if (column.isRequired)
+        const TextLocale(LocaleKeys.workspace_items_required),
+      if (column.isUnique) const TextLocale(LocaleKeys.workspace_items_unique),
+    ],
+  );
 }

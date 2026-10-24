@@ -1946,6 +1946,12 @@
     }
   },
   "workspace_items": {
+    "required": "Required",
+    "unique": "Unique values",
+    "default_value": "Default for new records",
+    "constraint_violations": "Resolve these records before applying this change. Existing values will not be discarded.",
+    "correct_records": "Return to table to correct records",
+    "replacement_column": "Create a separate replacement column",
     "edit_item": "Edit item",
     "item_name": "Name",
     "destination": "Destination folder",
