@@ -17,7 +17,14 @@ abstract final class WorkspaceQueryFilterValidation {
     WorkspaceColumnType.timestamp,
     WorkspaceColumnType.money,
   }.contains(column.type);
+  static bool supportsFilter(WorkspaceColumn column) =>
+      supports(column) ||
+      {
+        WorkspaceColumnType.reference,
+        WorkspaceColumnType.multiSelect,
+      }.contains(column.type);
   static bool supportsContains(WorkspaceColumn column) => {
+    WorkspaceColumnType.multiSelect,
     WorkspaceColumnType.text,
     WorkspaceColumnType.email,
     WorkspaceColumnType.url,
@@ -27,16 +34,28 @@ abstract final class WorkspaceQueryFilterValidation {
     WorkspaceColumn column,
     Object? value, {
     bool contains = false,
-  }) => contains
-      ? supportsContains(column) && value is String && value.length <= 16384
-      : WorkspaceColumnValidation.accepts([column], {column.id: value});
+  }) {
+    if (column.type == .reference) {
+      return !contains &&
+          value is String &&
+          value.isNotEmpty &&
+          value.length <= 200;
+    }
+    if (column.type == .multiSelect) {
+      return contains && value is String && column.options.contains(value);
+    }
+    return contains
+        ? supportsContains(column) && value is String && value.length <= 16384
+        : WorkspaceColumnValidation.accepts([column], {column.id: value});
+  }
+
   static Map<String, Object?> parse(
     WorkspaceColumn column,
     String encoded, {
     bool contains = false,
   }) {
-    if (contains) {
-      if (!accepts(column, encoded, contains: true)) {
+    if (contains || column.type == .reference) {
+      if (!accepts(column, encoded, contains: contains)) {
         throw const WorkspaceTableException();
       }
 

@@ -12,6 +12,19 @@ abstract final class WorkspaceQueryFilterValidation {
     if (operator != 'equals' && operator != 'contains') {
       throw const FormatException();
     }
+    if (column['type'] == 'reference') {
+      if (operator != 'equals' || encoded.isEmpty || encoded.length > 200) {
+        throw const FormatException();
+      }
+      return;
+    }
+    if (column['type'] == 'multiSelect') {
+      if (operator != 'contains' ||
+          !(column['options'] as List<dynamic>).contains(encoded)) {
+        throw const FormatException();
+      }
+      return;
+    }
     if (operator == 'contains') {
       if (!{'text', 'email', 'url', 'phone'}.contains(column['type']) ||
           encoded.length > 16384) {

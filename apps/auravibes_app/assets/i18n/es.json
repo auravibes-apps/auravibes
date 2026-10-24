@@ -2005,7 +2005,7 @@
     "select": "Seleccionar elementos",
     "done": "Listo",
     "selected": "Seleccionados: {}",
-    "query_type_unavailable": "El orden y los filtros no están disponibles para registros vinculados, adjuntos y valores de selección múltiple.",
+    "query_type_unavailable": "El orden no está disponible para registros vinculados ni valores de selección múltiple. Fíltralos por un registro o una opción.",
     "location_recovered": "Esta ubicación ya no está disponible. Se volvió al Directorio.",
     "type_date_only": "Fecha",
     "type_timestamp": "Fecha y hora",

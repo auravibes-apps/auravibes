@@ -532,6 +532,19 @@ void main() {
               'targetTableId': 'reference-target',
               'referenceMultiple': false,
             },
+            {
+              'id': 'links',
+              'name': 'Related many',
+              'type': 'reference',
+              'targetTableId': 'reference-target',
+              'referenceMultiple': true,
+            },
+            {
+              'id': 'tags',
+              'name': 'Tags',
+              'type': 'multiSelect',
+              'options': ['One', 'Two'],
+            },
           ],
         };
         for (final operation in [
@@ -567,7 +580,12 @@ void main() {
             data: jsonEncode({
               'tableId': 'reference-source',
               'schemaRevision': 1,
-              'values': {'label': 'Source', 'link': 'hidden-target-record'},
+              'values': {
+                'label': 'Source',
+                'link': 'hidden-target-record',
+                'links': ['hidden-target-record'],
+                'tags': ['One', 'Two'],
+              },
             }),
             fieldMask: const [],
           ),
@@ -579,13 +597,33 @@ void main() {
               member,
               workspace.id!,
               'reference-source',
-              '{}',
+              jsonEncode({'filterColumnId': 'label', 'filterValue': 'Source'}),
             )).single;
+        Future<List<WorkspaceResource>> referenceFilter({
+          String column = 'link',
+          String id = 'hidden-target-record',
+        }) => endpoints.workspaceState.queryRecords(
+          member,
+          workspace.id!,
+          'reference-source',
+          jsonEncode({'filterColumnId': column, 'filterValue': id, 'limit': 1}),
+        );
+        Future<void> deniedFilter() => expectLater(
+          referenceFilter(),
+          throwsA(
+            isA<CloudWorkspaceException>().having(
+              (error) => error.code,
+              'code',
+              CloudWorkspaceErrorCode.permissionDenied,
+            ),
+          ),
+        );
+        await deniedFilter();
         final deniedReference = await sourceQuery();
         expect(deniedReference.data, isNot(contains('hidden-target-record')));
         expect(
           jsonDecode(deniedReference.data),
-          containsPair('restrictedReferenceColumns', ['link']),
+          containsPair('restrictedReferenceColumns', ['link', 'links']),
         );
         await patch([
           WorkspacePatchOperation(
@@ -600,6 +638,46 @@ void main() {
             expectedRevision: 1,
           ),
         ]);
+        expect((await referenceFilter()).single.resourceId, 'source-record');
+        expect(
+          (await referenceFilter(column: 'links')).single.resourceId,
+          'source-record',
+        );
+        await expectLater(
+          referenceFilter(id: 'source-record'),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+        final otherRecords = [
+          for (var index = 0; index < 55; index++)
+            WorkspacePatchOperation(
+              operation: .create,
+              resourceKind: .tableRecord,
+              resourceId: 'source-other-$index',
+              fieldMask: const [],
+              data: jsonEncode({
+                'tableId': 'reference-source',
+                'schemaRevision': 1,
+                'values': {
+                  'label': 'A $index',
+                  'tags': ['One'],
+                },
+              }),
+            ),
+        ];
+        await patch(otherRecords.take(50).toList());
+        await patch(otherRecords.skip(50).toList());
+        final tags = await endpoints.workspaceState.queryRecords(
+          member,
+          workspace.id!,
+          'reference-source',
+          jsonEncode({
+            'filterColumnId': 'tags',
+            'filterOperator': 'contains',
+            'filterValue': 'Two',
+            'limit': 1,
+          }),
+        );
+        expect(tags.single.resourceId, 'source-record');
         final grantedReference =
             jsonDecode((await sourceQuery()).data) as Map<String, dynamic>;
         expect(grantedReference['restrictedReferenceColumns'], isEmpty);
@@ -620,11 +698,12 @@ void main() {
             expectedRevision: 2,
           ),
         ]);
+        await deniedFilter();
         final revokedReference = await sourceQuery();
         expect(revokedReference.data, isNot(contains('hidden-target-record')));
         expect(
           jsonDecode(revokedReference.data),
-          containsPair('restrictedReferenceColumns', ['link']),
+          containsPair('restrictedReferenceColumns', ['link', 'links']),
         );
         await expectLater(
           endpoints.workspaceState.queryRecords(

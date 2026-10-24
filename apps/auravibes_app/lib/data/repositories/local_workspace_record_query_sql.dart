@@ -4,8 +4,13 @@ class const LocalWorkspaceRecordQuerySql(
   final String filterType, {
   required final bool descending,
   final bool contains = false,
+  final bool referenceMultiple = false,
 }) {
-  String get _filter => contains
+  String get _filter =>
+      filterType == 'multiSelect' ||
+          filterType == 'reference' && referenceMultiple
+      ? 'EXISTS (SELECT 1 FROM json_each(filtered) WHERE value = operand)'
+      : contains
       ? 'instr(lower(CAST(filtered AS TEXT)),lower(operand)) > 0'
       : switch (filterType) {
           'number' => 'filtered = CAST(operand AS NUMERIC)',

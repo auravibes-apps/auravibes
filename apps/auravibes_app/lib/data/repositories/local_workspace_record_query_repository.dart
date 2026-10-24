@@ -16,15 +16,30 @@ class const LocalWorkspaceRecordQueryRepository(
   Future<WorkspaceRecordPage> query(
     String tableId,
     WorkspaceRecordQuery query,
-  ) async {
+  ) => database.transaction(() async {
     final table = await LocalWorkspaceTableRepository(
       database,
       workspaceId,
     ).table(tableId);
     final statement = _QueryStatement(workspaceId, table, query).._validate();
+    await _reference(table, query);
     final rows = await _read(statement);
 
     return _page(rows, query.limit);
+  });
+
+  Future<void> _reference(
+    WorkspaceTable table,
+    WorkspaceRecordQuery query,
+  ) async {
+    final column = table.columns
+        .where((column) => column.id == query.filterColumnId)
+        .firstOrNull;
+    if (column?.type != .reference) return;
+    final _ = await LocalWorkspaceTableRepository(
+      database,
+      workspaceId,
+    ).record(column?.targetTableId ?? '', query.filterValue ?? '');
   }
 
   Future<List<QueryRow>> _read(_QueryStatement statement) => database
@@ -68,6 +83,7 @@ class const _QueryStatement(
     _column(_filter).type.name,
     descending: query.descending,
     contains: query.filterOperator == .contains,
+    referenceMultiple: _column(_filter).referenceMultiple,
   );
   String get _operand => switch (_column(_filter).type) {
     .number => num.parse(query.filterValue ?? '').toString(),
@@ -76,7 +92,9 @@ class const _QueryStatement(
     _ => query.filterValue ?? '',
   };
   void _validate() {
-    final _ = _column(_sort);
+    if (!WorkspaceQueryFilterValidation.supports(_column(_sort))) {
+      throw const WorkspaceTableException();
+    }
     if (query.filterColumnId?.isNotEmpty == true) {
       final _ = _column(_filter);
       final _ = WorkspaceQueryFilterValidation.parse(
@@ -89,7 +107,8 @@ class const _QueryStatement(
 
   WorkspaceColumn _column(String id) {
     final column = table.columns.where((column) => column.id == id).firstOrNull;
-    if (column == null || !WorkspaceQueryFilterValidation.supports(column)) {
+    if (column == null ||
+        !WorkspaceQueryFilterValidation.supportsFilter(column)) {
       throw const WorkspaceTableException();
     }
 

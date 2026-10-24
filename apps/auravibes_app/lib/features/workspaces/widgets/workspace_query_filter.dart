@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_query_filter_
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_query_collection_filter.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -12,6 +13,7 @@ import 'package:material_ui/material_ui.dart';
 
 class const WorkspaceQueryFilter({
   required final WorkspaceTable table,
+  required final String workspaceId,
   required final ValueNotifier<WorkspaceRecordQuery> query,
   super.key,
 }) extends HookWidget {
@@ -42,7 +44,7 @@ class _FilterDraft {
   };
   void select(String? id) {
     columnId.value = id;
-    operator.value = .equals;
+    operator.value = column?.type == .multiSelect ? .contains : .equals;
     value.value = switch (column?.type) {
       .checkbox => false,
       .text => '',
@@ -120,7 +122,7 @@ class _FilterColumnOption extends AuraDropdownOption<String> {
     : super(
         value: column.id,
         child: Text(column.name),
-        isEnabled: WorkspaceQueryFilterValidation.supports(column),
+        isEnabled: WorkspaceQueryFilterValidation.supportsFilter(column),
       );
 }
 
@@ -130,7 +132,7 @@ class const _Operator(final _FilterDraft draft, final WorkspaceColumn column)
   Widget build(BuildContext context) =>
       AuraDropdownSelector<WorkspaceRecordFilterOperator>(
         options: [
-          _OperatorOption(.equals),
+          if (column.type != .multiSelect) _OperatorOption(.equals),
           if (WorkspaceQueryFilterValidation.supportsContains(column))
             _OperatorOption(.contains),
         ],
@@ -159,17 +161,27 @@ class _OperatorOption
 class const _Value(final _FilterDraft draft, final WorkspaceColumn column)
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => WorkspaceRecordField(
-    column: column,
-    value: draft.value.value,
-    present: true,
-    disabled: false,
-    identifier: 'workspace_filter_value',
-    onChanged: (value) => draft.value.value = value,
-    onUnset: () => draft.value.value = null,
-    showPresence: false,
-    key: ValueKey(column.id),
-  );
+  Widget build(BuildContext context) =>
+      column.type == .multiSelect || column.type == .reference
+      ? WorkspaceQueryCollectionFilter(
+          workspaceId: draft.owner.workspaceId,
+          table: draft.owner.table,
+          column: column,
+          value: draft.value.value as String?,
+          onChanged: (value) => draft.value.value = value,
+          key: ValueKey(column.id),
+        )
+      : WorkspaceRecordField(
+          column: column,
+          value: draft.value.value,
+          present: true,
+          disabled: false,
+          identifier: 'workspace_filter_value',
+          onChanged: (value) => draft.value.value = value,
+          onUnset: () => draft.value.value = null,
+          showPresence: false,
+          key: ValueKey(column.id),
+        );
 }
 
 class const _FilterActions(final _FilterDraft draft) extends StatelessWidget {

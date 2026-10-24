@@ -4,8 +4,13 @@ class const WorkspaceRecordQuerySql(
   final String filterType, {
   required final bool descending,
   final bool contains = false,
+  final bool referenceMultiple = false,
 }) {
-  String get _filter => contains
+  String get _filter =>
+      filterType == 'multiSelect' ||
+          filterType == 'reference' && referenceMultiple
+      ? 'jsonb_exists(filtered, @value)'
+      : contains
       ? "strpos(translate(filtered#>>'{}', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), translate(@value, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')) > 0"
       : switch (filterType) {
           'number' => "(filtered#>>'{}')::numeric = @value::numeric",

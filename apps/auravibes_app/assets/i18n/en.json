@@ -2005,7 +2005,7 @@
     "select": "Select items",
     "done": "Done",
     "selected": "Selected: {}",
-    "query_type_unavailable": "Sorting and filtering are unavailable for linked records, attachments and multiple-choice values.",
+    "query_type_unavailable": "Sorting is unavailable for linked records and multiple-choice values. Filter them by a selected record or option.",
     "location_recovered": "This location is no longer available. Returned to Directory.",
     "type_date_only": "Date",
     "type_timestamp": "Date and time",

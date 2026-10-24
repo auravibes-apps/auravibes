@@ -6,6 +6,7 @@ import '../../generated/protocol.dart';
 import 'repositories/workspace_state_repository.dart';
 import 'workspace_table_access.dart';
 import 'workspace_record_query_sql.dart';
+import 'workspace_record_query_reference_access.dart';
 import 'domain/workspace_query_filter_validation.dart';
 
 typedef WorkspaceRecordQueryInput = ({
@@ -39,6 +40,14 @@ class const _QueryScope(
       transaction,
     ).read();
     final query = _QueryParameters(input.encoded, source.table).read();
+    if (query.remove('referenceTarget') case final String targetId) {
+      await WorkspaceRecordQueryReferenceAccess(
+        session,
+        source.member,
+        input.workspaceId,
+        transaction,
+      ).require(targetId, query['value'] as String);
+    }
 
     return await _QueryReader(
       session,
@@ -215,10 +224,13 @@ class _QueryParameters {
     final sort =
         input['sortColumnId'] as String? ?? data['labelColumnId'] as String;
 
+    final column = _column(sort);
+    if (_unsupported.contains(column['type'])) _invalid();
+
     return {
       'sort': sort,
       'label': data['labelColumnId'],
-      'sortType': _column(sort)['type'],
+      'sortType': column['type'],
       ..._filter(),
     };
   }
@@ -232,6 +244,9 @@ class _QueryParameters {
       'filter': filter,
       'filterType': column?['type'] ?? 'text',
       'contains': input['filterOperator'] == 'contains',
+      'referenceMultiple': column?['referenceMultiple'] == true,
+      if (column?['type'] == 'reference')
+        'referenceTarget': column?['targetTableId'],
     };
   }
 
@@ -275,7 +290,7 @@ class _QueryParameters {
 
   Map<String, dynamic> _column(String id) {
     final column = columns.where((column) => column['id'] == id).firstOrNull;
-    if (column == null || _unsupported.contains(column['type'])) _invalid();
+    if (column == null || column['type'] == 'attachment') _invalid();
 
     return column;
   }
@@ -324,11 +339,13 @@ String _querySql(Map<String, Object?> query) {
   final sortType = query.remove('sortType') as String;
   final filterType = query.remove('filterType') as String;
   final contains = query.remove('contains') == true;
+  final referenceMultiple = query.remove('referenceMultiple') == true;
 
   return WorkspaceRecordQuerySql(
     sortType,
     filterType,
     descending: descending,
     contains: contains,
+    referenceMultiple: referenceMultiple,
   ).build();
 }
