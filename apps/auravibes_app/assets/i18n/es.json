@@ -2078,6 +2078,6 @@
     "limit": "Se muestran los primeros 100 registros.",
     "save": "Guardar vista",
     "no_tables": "No hay tablas en esta carpeta. Explora otra carpeta o crea una tabla en Directorio.",
-    "no_views": "Aún no hay vistas guardadas. Crea una desde Directorio."
+    "no_views": "No hay vistas guardadas disponibles."
   }
 }
