@@ -34,7 +34,7 @@ WITH selected AS (
 SELECT id, table_id, values_json, revision FROM selected
 WHERE (? = '' OR instr(lower(CAST(label AS TEXT)), ?) > 0)
 AND (? = '' OR $_filter)
-ORDER BY $_order, id ASC
+ORDER BY $_order, id COLLATE BINARY ASC
 LIMIT ? OFFSET ?
 ''';
 }

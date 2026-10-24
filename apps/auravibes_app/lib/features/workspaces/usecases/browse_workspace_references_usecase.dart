@@ -13,12 +13,18 @@ class const BrowseWorkspaceReferencesUsecase(
     required WorkspaceReferenceSource source,
     String search = '',
     String? afterId,
+    String? parentId,
   }) {
     if (search.length > _maximumSearchLength) {
       throw const WorkspaceTableException();
     }
 
-    return repository.targets(source, search: search, afterId: afterId);
+    return repository.targets(
+      source,
+      search: search,
+      afterId: afterId,
+      parentId: parentId,
+    );
   }
 
   Future<WorkspaceReferencePage> tableTargets({

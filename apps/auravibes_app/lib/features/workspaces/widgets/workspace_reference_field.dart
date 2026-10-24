@@ -20,6 +20,7 @@ class const WorkspaceReferenceField({
   required final ValueChanged<Object?> onChanged,
   required final VoidCallback onUnset,
   final bool schemaDefault = false,
+  final String? parentId,
   super.key,
 }) extends StatelessWidget {
   List<String> get ids => WorkspaceReferenceValue.ids(value);
@@ -32,6 +33,7 @@ class const WorkspaceReferenceField({
         const TextLocale(LocaleKeys.workspace_items_reference_unavailable)
       else
         _ReferenceChoices(field: this),
+      _ReferenceParentHint(field: this),
     ],
   );
   Future<void> _pick(BuildContext context) => showDialog<void>(
@@ -67,15 +69,21 @@ class const _ReferenceChoices({required final WorkspaceReferenceField field})
 
 class const _ReferenceActions({required final WorkspaceReferenceField field})
     extends StatelessWidget {
+  bool get available =>
+      field.schemaDefault ||
+      field.column.dependsOnColumnId == null ||
+      field.parentId != null;
+  bool get _canRemove => !field.disabled && field.value != null;
   @override
   Widget build(BuildContext context) => Column(
     children: [
       AuraButton(
         onPressed: () => field._pick(context),
         child: const TextLocale(LocaleKeys.workspace_items_reference_choose),
-        disabled: field.disabled,
+        disabled: field.disabled || !available,
       ),
-      if (!field.disabled && field.value != null)
+
+      if (_canRemove)
         AuraButton(
           onPressed: field.onUnset,
           child: const TextLocale(LocaleKeys.workspace_items_reference_remove),
@@ -106,5 +114,17 @@ class const _ReferencePickerContent({
     selected: field.ids,
     onSelected: (ids) => field._selected(context, ids),
     schemaDefault: field.schemaDefault,
+    parentId: field.parentId,
   );
+}
+
+class const _ReferenceParentHint({required final WorkspaceReferenceField field})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      !field.schemaDefault &&
+          field.column.dependsOnColumnId != null &&
+          field.parentId == null
+      ? const TextLocale(LocaleKeys.workspace_items_reference_select_parent)
+      : const SizedBox.shrink();
 }
