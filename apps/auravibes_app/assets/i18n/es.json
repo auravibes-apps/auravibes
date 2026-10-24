@@ -2063,6 +2063,9 @@
     "display_only": "Abrir esta vista no comparte sus datos con la IA.",
     "definition": "Definición avanzada del diseño",
     "unavailable": "No disponible",
-    "limit": "Se muestran los primeros 100 registros."
+    "limit": "Se muestran los primeros 100 registros.",
+    "save": "Guardar vista",
+    "no_tables": "No hay tablas en esta carpeta. Explora otra carpeta o crea una tabla en Directorio.",
+    "no_views": "Aún no hay vistas guardadas. Crea una desde Directorio."
   }
 }

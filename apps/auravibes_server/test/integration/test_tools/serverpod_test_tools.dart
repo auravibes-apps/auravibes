@@ -221,6 +221,10 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/w
     as _ixyz6pla;
 import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view.dart'
     as _i7rt6swg;
+import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view_list_request.dart'
+    as _izm33ufy;
+import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view_save_request.dart'
+    as _iq8az3jy;
 import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i3cjuwla;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_detail.dart'
@@ -3159,8 +3163,7 @@ class _WorkspaceViewEndpoint {
 
   _ida.Future<List<_i7rt6swg.WorkspaceView>> list(
     _ist.TestSessionBuilder sessionBuilder,
-    int workspaceId,
-    String? parentId,
+    _izm33ufy.WorkspaceViewListRequest request,
   ) async {
     return _ist.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -3173,10 +3176,7 @@ class _WorkspaceViewEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'workspaceView',
           methodName: 'list',
-          parameters: _ist.testObjectToJson({
-            'workspaceId': workspaceId,
-            'parentId': parentId,
-          }),
+          parameters: _ist.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue = await (_localCallContext.method.call(
@@ -3258,10 +3258,7 @@ class _WorkspaceViewEndpoint {
 
   _ida.Future<_i7rt6swg.WorkspaceView> save(
     _ist.TestSessionBuilder sessionBuilder,
-    int workspaceId,
-    String id,
-    int expectedRevision,
-    String definition,
+    _iq8az3jy.WorkspaceViewSaveRequest request,
   ) async {
     return _ist.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -3274,12 +3271,7 @@ class _WorkspaceViewEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'workspaceView',
           methodName: 'save',
-          parameters: _ist.testObjectToJson({
-            'workspaceId': workspaceId,
-            'id': id,
-            'expectedRevision': expectedRevision,
-            'definition': definition,
-          }),
+          parameters: _ist.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue = await (_localCallContext.method.call(

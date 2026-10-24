@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_editor.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_history.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_surface.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -11,69 +13,177 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const WorkspaceViewScreen({required final String workspaceId,required final String viewId,
-  required final VoidCallback onBack,super.key}) extends HookConsumerWidget {
+typedef _Selection = ({String mode, WorkspaceViewData data});
+const _maximumVisibleRecords = 100;
+const _refreshInterval = Duration(seconds: 10);
+
+class const WorkspaceViewScreen({
+  required final String workspaceId,
+  required final String viewId,
+  required final VoidCallback onBack,
+  super.key,
+}) extends HookConsumerWidget {
+  void refresh(WidgetRef ref) =>
+      ref.invalidate(workspaceViewDataProvider(workspaceId, viewId));
+
   @override
-  Widget build(BuildContext context,WidgetRef ref) {
-    final editing = useState(false);
-    final data = ref.watch(workspaceViewDataProvider(workspaceId,viewId));
-    useEffect(() {
-      final timer = Timer.periodic(const Duration(seconds:10),(_) => ref.invalidate(workspaceViewDataProvider(workspaceId,viewId)));
-      return timer.cancel;
-    },[workspaceId,viewId]);
-    return Column(children:[
-      Row(children:[AuraIconButton(icon:Icons.arrow_back,onPressed:onBack),
-        const Expanded(child:TextLocale(LocaleKeys.workspace_views_title)),
-        AuraIconButton(icon:Icons.refresh,onPressed:()=>ref.invalidate(workspaceViewDataProvider(workspaceId,viewId))),
-        if (data.value?.table.canManage ?? false) PopupMenuButton<String>(
-          onSelected:(action) { if (action == 'edit') { editing.value=true; } else { unawaited(_history(context,ref,data.requireValue)); } },
-          itemBuilder:(_) => [const PopupMenuItem(value:'edit',child:TextLocale(LocaleKeys.workspace_views_edit)),
-            const PopupMenuItem(value:'history',child:TextLocale(LocaleKeys.workspace_views_history))]),
-      ]),
-      Expanded(child:switch(data) {
-        AsyncData(:final value) => editing.value
-          ? WorkspaceViewEditor(workspaceId:workspaceId,data:value,onDone:() { editing.value=false; ref.invalidate(workspaceViewDataProvider(workspaceId,viewId)); })
-          : _ViewContent(data:value),
-        AsyncError(:final error) => Center(child:WorkspaceItemFailure(error:error)),
-        AsyncLoading() => const Center(child:CircularProgressIndicator()),
-      }),
-    ]);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = useState<_Selection?>(null);
+    _useRefresh(ref, selected);
+
+    return Column(
+      children: [
+        _Toolbar(this, selected),
+        Expanded(child: _Contents(this, selected)),
+      ],
+    );
   }
-  Future<void> _history(BuildContext context,WidgetRef ref,WorkspaceViewData data) async {
-    try {
-      final usecase = await ref.read(workspaceViewUsecaseProvider(workspaceId).future);
-      final revisions = await usecase.history(viewId);
-      if (!context.mounted) return;
-      await showDialog<void>(context:context,builder:(dialogContext) => AlertDialog(
-        title:const TextLocale(LocaleKeys.workspace_views_history),
-        content:SizedBox(width:400,height:400,child:ListView(children:[for (final revision in revisions.reversed) ListTile(
-          title:Text('${revision.name} · ${revision.revision}'),
-          subtitle:const TextLocale(LocaleKeys.workspace_views_restore),
-          onTap:() async {
-            try {
-              final _ = await usecase.restore(data.view,revision);
-              if (!dialogContext.mounted) return;
-              Navigator.of(dialogContext).pop();
-              ref.invalidate(workspaceViewDataProvider(workspaceId,viewId));
-            } on Object catch (error) {
-              if (dialogContext.mounted) ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content:WorkspaceItemFailure(error:error)));
-            }
-          },
-        )])),
-      ));
-    } on Object catch (error) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:WorkspaceItemFailure(error:error)));
-    }
+
+  void _useRefresh(WidgetRef ref, ValueNotifier<_Selection?> selected) =>
+      useEffect(() {
+        final timer = Timer.periodic(_refreshInterval, (_) {
+          if (selected.value == null) refresh(ref);
+        });
+
+        return timer.cancel;
+      }, [workspaceId, viewId]);
+}
+
+class const _Toolbar(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<_Selection?> selected,
+) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Row(
+    children: [
+      AuraIconButton(icon: Icons.arrow_back, onPressed: owner.onBack),
+      const Expanded(child: TextLocale(LocaleKeys.workspace_views_title)),
+      AuraIconButton(icon: Icons.refresh, onPressed: () => owner.refresh(ref)),
+      _Menu(owner, selected),
+    ],
+  );
+}
+
+class const _Menu(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<_Selection?> selected,
+) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final data = _data(ref);
+    if (data == null || !data.table.canManage) return const SizedBox.shrink();
+
+    return _Popup(data, selected);
+  }
+
+  WorkspaceViewData? _data(WidgetRef ref) => ref
+      .watch(workspaceViewDataProvider(owner.workspaceId, owner.viewId))
+      .value;
+}
+
+class const _Popup(
+  final WorkspaceViewData data,
+  final ValueNotifier<_Selection?> selected,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => PopupMenuButton<String>(
+    onSelected: (mode) => selected.value = (mode: mode, data: data),
+    itemBuilder: _items,
+  );
+
+  List<PopupMenuEntry<String>> _items(BuildContext context) => [
+    const PopupMenuItem(
+      value: 'edit',
+      child: TextLocale(LocaleKeys.workspace_views_edit),
+    ),
+    const PopupMenuItem(
+      value: 'history',
+      child: TextLocale(LocaleKeys.workspace_views_history),
+    ),
+  ];
+}
+
+class const _Contents(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<_Selection?> selected,
+) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selection = selected.value;
+    if (selection != null) return _Selected(owner, selection, () => _done(ref));
+
+    return _LoadState(owner);
+  }
+
+  void _done(WidgetRef ref) {
+    selected.value = null;
+    owner.refresh(ref);
   }
 }
-class const _ViewContent({required final WorkspaceViewData data}) extends StatelessWidget {
+
+class const _LoadState(final WorkspaceViewScreen owner) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => ListView(padding:const EdgeInsets.all(16),children:[
-    Text(data.view.name),
-    const TextLocale(LocaleKeys.workspace_views_display_only),
-    if (data.needsRepair) const TextLocale(LocaleKeys.workspace_views_repair)
-    else if (data.records.isEmpty) const TextLocale(LocaleKeys.workspace_views_empty)
-    else WorkspaceViewSurface(data:data),
-    if (data.records.length >= 100) const TextLocale(LocaleKeys.workspace_views_limit),
-  ]);
+  Widget build(BuildContext context, WidgetRef ref) => switch (ref.watch(
+    workspaceViewDataProvider(owner.workspaceId, owner.viewId),
+  )) {
+    AsyncData(:final value) => _Content(value),
+    AsyncError(:final error) => Center(
+      child: WorkspaceItemFailure(error: error),
+    ),
+    AsyncLoading() => const Center(child: CircularProgressIndicator()),
+  };
+}
+
+class const _Selected(
+  final WorkspaceViewScreen owner,
+  final _Selection selection,
+  final VoidCallback done,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => selection.mode == 'history'
+      ? WorkspaceViewHistory(
+          workspaceId: owner.workspaceId,
+          current: selection.data.view,
+          onDone: done,
+        )
+      : WorkspaceViewEditor(
+          workspaceId: owner.workspaceId,
+          data: selection.data,
+          onDone: done,
+        );
+}
+
+class const _Content(final WorkspaceViewData data) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(16),
+    children: [
+      Text(data.view.name),
+      const TextLocale(LocaleKeys.workspace_views_display_only),
+      _Surface(data),
+      _Limit(data),
+    ],
+  );
+}
+
+class const _Surface(final WorkspaceViewData data) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (data.needsRepair) {
+      return const TextLocale(LocaleKeys.workspace_views_repair);
+    }
+    if (data.records.isEmpty) {
+      return const TextLocale(LocaleKeys.workspace_views_empty);
+    }
+
+    return WorkspaceViewSurface(data: data);
+  }
+}
+
+class const _Limit(final WorkspaceViewData data) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      data.records.length >= _maximumVisibleRecords
+      ? const TextLocale(LocaleKeys.workspace_views_limit)
+      : const SizedBox.shrink();
 }

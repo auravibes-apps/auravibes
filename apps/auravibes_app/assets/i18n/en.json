@@ -2063,6 +2063,9 @@
     "display_only": "Opening this view does not share its data with AI.",
     "definition": "Advanced layout definition",
     "unavailable": "Unavailable",
-    "limit": "Showing the first 100 records."
+    "limit": "Showing the first 100 records.",
+    "save": "Save view",
+    "no_tables": "No tables in this folder. Browse another folder or create a table in Directory.",
+    "no_views": "No saved views yet. Create one from Directory."
   }
 }

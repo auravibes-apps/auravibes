@@ -294,6 +294,10 @@ import 'features/workspace_state/models/workspace_secret_kind.dart'
 import 'features/workspace_state/models/workspace_secret_scope.dart'
     as _ioqbiy3d;
 import 'features/workspace_views/models/workspace_view.dart' as _i97j1as2;
+import 'features/workspace_views/models/workspace_view_list_request.dart'
+    as _ihx1e06e;
+import 'features/workspace_views/models/workspace_view_save_request.dart'
+    as _io73c0ad;
 import 'features/workspaces/models/accept_workspace_invite_request.dart'
     as _ib7b2bmq;
 import 'features/workspaces/models/cloud_workspace.dart' as _iyfjt29r;
@@ -500,6 +504,8 @@ export 'features/workspace_state/models/workspace_secret.dart';
 export 'features/workspace_state/models/workspace_secret_kind.dart';
 export 'features/workspace_state/models/workspace_secret_scope.dart';
 export 'features/workspace_views/models/workspace_view.dart';
+export 'features/workspace_views/models/workspace_view_list_request.dart';
+export 'features/workspace_views/models/workspace_view_save_request.dart';
 export 'features/workspaces/models/accept_workspace_invite_request.dart';
 export 'features/workspaces/models/cloud_workspace.dart';
 export 'features/workspaces/models/cloud_workspace_capabilities.dart';
@@ -1037,6 +1043,12 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _i97j1as2.WorkspaceView) {
       return _i97j1as2.WorkspaceView.fromJson(data) as T;
+    }
+    if (t == _ihx1e06e.WorkspaceViewListRequest) {
+      return _ihx1e06e.WorkspaceViewListRequest.fromJson(data) as T;
+    }
+    if (t == _io73c0ad.WorkspaceViewSaveRequest) {
+      return _io73c0ad.WorkspaceViewSaveRequest.fromJson(data) as T;
     }
     if (t == _ib7b2bmq.AcceptWorkspaceInviteRequest) {
       return _ib7b2bmq.AcceptWorkspaceInviteRequest.fromJson(data) as T;
@@ -1979,6 +1991,18 @@ class Protocol extends _isc.SerializationManager {
       return (data != null ? _i97j1as2.WorkspaceView.fromJson(data) : null)
           as T;
     }
+    if (t == _isc.getType<_ihx1e06e.WorkspaceViewListRequest?>()) {
+      return (data != null
+              ? _ihx1e06e.WorkspaceViewListRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_io73c0ad.WorkspaceViewSaveRequest?>()) {
+      return (data != null
+              ? _io73c0ad.WorkspaceViewSaveRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_ib7b2bmq.AcceptWorkspaceInviteRequest?>()) {
       return (data != null
               ? _ib7b2bmq.AcceptWorkspaceInviteRequest.fromJson(data)
@@ -2540,6 +2564,8 @@ class Protocol extends _isc.SerializationManager {
       _iq96p1l9.WorkspaceSecretKind => 'WorkspaceSecretKind',
       _ioqbiy3d.WorkspaceSecretScope => 'WorkspaceSecretScope',
       _i97j1as2.WorkspaceView => 'WorkspaceView',
+      _ihx1e06e.WorkspaceViewListRequest => 'WorkspaceViewListRequest',
+      _io73c0ad.WorkspaceViewSaveRequest => 'WorkspaceViewSaveRequest',
       _ib7b2bmq.AcceptWorkspaceInviteRequest => 'AcceptWorkspaceInviteRequest',
       _iyfjt29r.CloudWorkspace => 'CloudWorkspace',
       _i1uzipdf.CloudWorkspaceCapabilities => 'CloudWorkspaceCapabilities',
@@ -2901,6 +2927,10 @@ class Protocol extends _isc.SerializationManager {
         return 'WorkspaceSecretScope';
       case _i97j1as2.WorkspaceView():
         return 'WorkspaceView';
+      case _ihx1e06e.WorkspaceViewListRequest():
+        return 'WorkspaceViewListRequest';
+      case _io73c0ad.WorkspaceViewSaveRequest():
+        return 'WorkspaceViewSaveRequest';
       case _ib7b2bmq.AcceptWorkspaceInviteRequest():
         return 'AcceptWorkspaceInviteRequest';
       case _iyfjt29r.CloudWorkspace():
@@ -3492,6 +3522,12 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'WorkspaceView') {
       return deserialize<_i97j1as2.WorkspaceView>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceViewListRequest') {
+      return deserialize<_ihx1e06e.WorkspaceViewListRequest>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceViewSaveRequest') {
+      return deserialize<_io73c0ad.WorkspaceViewSaveRequest>(data['data']);
     }
     if (dataClassName == 'AcceptWorkspaceInviteRequest') {
       return deserialize<_ib7b2bmq.AcceptWorkspaceInviteRequest>(data['data']);

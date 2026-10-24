@@ -1,3 +1,7 @@
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_browser_toggle.dart';
+import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chat_button.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chat_layout.dart';
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: UI callbacks stay local to their widgets.
 // Required: Existing code repeats lookups where extraction adds noise.
@@ -52,7 +56,6 @@ import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indica
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
-import 'package:auravibes_app/features/chats/widgets/conversation_sidebar_toggle_button.dart';
 import 'package:auravibes_app/features/chats/widgets/model_usage_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/responsive_conversation_layout.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
@@ -1627,9 +1630,11 @@ class const _LoadedChatConversationLayout({
     final values = sidePanel.values;
     final actions = sidePanel.actions;
 
-    return ResponsiveConversationLayout(
+    return WorkspaceViewChatLayout(
+      workspaceId: data.workspaceId,
+      conversationId: data.conversation.id,
       mainContent: _LoadedChatConversationMain(data: data, actions: actions),
-      sidePanel: _loadedChatConversationSidePanel(data, values, actions),
+      fallbackSidePanel: _loadedChatConversationSidePanel(data, values, actions),
     );
   }
 }
@@ -1651,12 +1656,14 @@ ResponsiveConversationSidePanel _loadedChatConversationSidePanel(
 class const _LoadedChatConversationMain({
   required final _LoadedChatConversationData data,
   required final _LoadedSidePanelActions actions,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => _ChatConversationBody(
-    data: data,
-    onOpenToolResult: actions.onOpenToolResult,
-  );
+  Widget build(BuildContext context,WidgetRef ref) => _ChatConversationBody(
+    data:data,onOpenToolResult:(tab)=>_open(ref,tab));
+  void _open(WidgetRef ref,SidebarToolResultTab tab) {
+    ref.read(workspaceOpenViewProvider(data.workspaceId,data.conversation.id).notifier).close();
+    actions.onOpenToolResult(tab);
+  }
 }
 
 class const _ChatConversationAppBar({
@@ -1682,6 +1689,7 @@ class _ChatConversationAppBarActions({
   required VoidCallback onSidebarToggle,
 }) {
   final List<Widget> widgets = [
+    WorkspaceViewChatButton(workspaceId:workspaceId,conversationId:conversationId),
     ModelUsageHeaderButton(conversationId: conversationId),
     BackgroundWorkHeaderButton(
       workspaceId: workspaceId,
@@ -1691,7 +1699,9 @@ class _ChatConversationAppBarActions({
       workspaceId: workspaceId,
       conversationId: conversationId,
     ),
-    ConversationSidebarToggleButton(
+    WorkspaceViewBrowserToggle(
+      workspaceId:workspaceId,
+      conversationId:conversationId,
       isPanelVisible: sidePanelVisible,
       tabCount: tabCount,
       onPressed: onSidebarToggle,

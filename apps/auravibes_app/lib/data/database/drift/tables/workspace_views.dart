@@ -6,8 +6,10 @@ import 'package:drift/drift.dart';
 
 @DataClassName('WorkspaceViewRow')
 class WorkspaceViews extends Table with TableMixin {
-  TextColumn get workspaceId => text().references(Workspaces, #id, onDelete: .cascade)();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: .cascade)();
   TextColumn get data => text()();
   IntColumn get revision => integer()();
+  TextColumn get mutations => text().withDefault(const Constant('{}'))();
   TextColumn get history => text()();
 }

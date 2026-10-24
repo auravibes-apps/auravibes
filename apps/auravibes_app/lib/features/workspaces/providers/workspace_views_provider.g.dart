@@ -67,7 +67,7 @@ final class WorkspaceViewUsecaseProvider
 }
 
 String _$workspaceViewUsecaseHash() =>
-    r'08b0fa7b15949f5c78a6af1aedf9167efd659a25';
+    r'd3a3ce5b4d05732d40b8a7af514eebd90e9e649a';
 
 final class WorkspaceViewUsecaseFamily extends $Family
     with
@@ -148,7 +148,7 @@ final class WorkspaceViewsProvider
   }
 }
 
-String _$workspaceViewsHash() => r'aa51ccb5e9203f862d81a3b1097cd684b9fd24fa';
+String _$workspaceViewsHash() => r'911f92615dc14f1fd4d86b44875f9bcf06a47273';
 
 final class WorkspaceViewsFamily extends $Family
     with
@@ -251,4 +251,167 @@ final class WorkspaceViewDataFamily extends $Family
 
   @override
   String toString() => r'workspaceViewDataProvider';
+}
+
+@ProviderFor(workspaceViewChoices)
+final workspaceViewChoicesProvider = WorkspaceViewChoicesFamily._();
+
+final class WorkspaceViewChoicesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<WorkspaceView>>,
+          List<WorkspaceView>,
+          FutureOr<List<WorkspaceView>>
+        >
+    with
+        $FutureModifier<List<WorkspaceView>>,
+        $FutureProvider<List<WorkspaceView>> {
+  WorkspaceViewChoicesProvider._({
+    required WorkspaceViewChoicesFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'workspaceViewChoicesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$workspaceViewChoicesHash();
+
+  @override
+  String toString() {
+    return r'workspaceViewChoicesProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<WorkspaceView>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<WorkspaceView>> create(Ref ref) {
+    final argument = this.argument as String;
+    return workspaceViewChoices(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkspaceViewChoicesProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$workspaceViewChoicesHash() =>
+    r'c28bf69b68888c02246b0a1ab2c042a1c8221806';
+
+final class WorkspaceViewChoicesFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<WorkspaceView>>, String> {
+  WorkspaceViewChoicesFamily._()
+    : super(
+        retry: null,
+        name: r'workspaceViewChoicesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkspaceViewChoicesProvider call(String workspaceId) =>
+      WorkspaceViewChoicesProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'workspaceViewChoicesProvider';
+}
+
+@ProviderFor(workspaceViewHistory)
+final workspaceViewHistoryProvider = WorkspaceViewHistoryFamily._();
+
+final class WorkspaceViewHistoryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<WorkspaceView>>,
+          List<WorkspaceView>,
+          FutureOr<List<WorkspaceView>>
+        >
+    with
+        $FutureModifier<List<WorkspaceView>>,
+        $FutureProvider<List<WorkspaceView>> {
+  WorkspaceViewHistoryProvider._({
+    required WorkspaceViewHistoryFamily super.from,
+    required (String, String) super.argument,
+  }) : super(
+         retry: null,
+         name: r'workspaceViewHistoryProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$workspaceViewHistoryHash();
+
+  @override
+  String toString() {
+    return r'workspaceViewHistoryProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<WorkspaceView>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<WorkspaceView>> create(Ref ref) {
+    final argument = this.argument as (String, String);
+    return workspaceViewHistory(ref, argument.$1, argument.$2);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkspaceViewHistoryProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$workspaceViewHistoryHash() =>
+    r'a84865bd3910241b7571737cdd4716eb4cba8e32';
+
+final class WorkspaceViewHistoryFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<List<WorkspaceView>>,
+          (String, String)
+        > {
+  WorkspaceViewHistoryFamily._()
+    : super(
+        retry: null,
+        name: r'workspaceViewHistoryProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkspaceViewHistoryProvider call(String workspaceId, String viewId) =>
+      WorkspaceViewHistoryProvider._(
+        argument: (workspaceId, viewId),
+        from: this,
+      );
+
+  @override
+  String toString() => r'workspaceViewHistoryProvider';
 }

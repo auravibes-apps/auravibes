@@ -218,6 +218,10 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _iar0fwau;
 import 'package:auravibes_server_client/src/protocol/features/workspace_views/models/workspace_view.dart'
     as _i3ruzhns;
+import 'package:auravibes_server_client/src/protocol/features/workspace_views/models/workspace_view_list_request.dart'
+    as _iyht06fi;
+import 'package:auravibes_server_client/src/protocol/features/workspace_views/models/workspace_view_save_request.dart'
+    as _i9r20p9w;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i0tihsii;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_detail.dart'
@@ -1210,15 +1214,11 @@ class EndpointWorkspaceView extends _isc.EndpointRef {
   String get name => 'workspaceView';
 
   _ida.Future<List<_i3ruzhns.WorkspaceView>> list(
-    int workspaceId,
-    String? parentId,
+    _iyht06fi.WorkspaceViewListRequest request,
   ) => caller.callServerEndpoint<List<_i3ruzhns.WorkspaceView>>(
     'workspaceView',
     'list',
-    {
-      'workspaceId': workspaceId,
-      'parentId': parentId,
-    },
+    {'request': request},
   );
 
   _ida.Future<_i3ruzhns.WorkspaceView> read(
@@ -1246,19 +1246,11 @@ class EndpointWorkspaceView extends _isc.EndpointRef {
   );
 
   _ida.Future<_i3ruzhns.WorkspaceView> save(
-    int workspaceId,
-    String id,
-    int expectedRevision,
-    String definition,
+    _i9r20p9w.WorkspaceViewSaveRequest request,
   ) => caller.callServerEndpoint<_i3ruzhns.WorkspaceView>(
     'workspaceView',
     'save',
-    {
-      'workspaceId': workspaceId,
-      'id': id,
-      'expectedRevision': expectedRevision,
-      'definition': definition,
-    },
+    {'request': request},
   );
 }
 

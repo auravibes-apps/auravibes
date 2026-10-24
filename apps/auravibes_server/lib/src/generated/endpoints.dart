@@ -142,6 +142,10 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/w
     as _iv6a6cze;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_target_request.dart'
     as _if6l00dz;
+import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view_list_request.dart'
+    as _izm33ufy;
+import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view_save_request.dart'
+    as _iq8az3jy;
 import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i3cjuwla;
 import 'package:auravibes_server/src/generated/features/workspaces/models/create_cloud_workspace_request.dart'
@@ -2106,15 +2110,10 @@ class Endpoints extends _is.EndpointDispatch {
         'list': _is.MethodConnector(
           name: 'list',
           params: {
-            'workspaceId': _is.ParameterDescription(
-              name: 'workspaceId',
-              type: _is.getType<int>(),
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_izm33ufy.WorkspaceViewListRequest>(),
               nullable: false,
-            ),
-            'parentId': _is.ParameterDescription(
-              name: 'parentId',
-              type: _is.getType<String?>(),
-              nullable: true,
             ),
           },
           call:
@@ -2126,8 +2125,7 @@ class Endpoints extends _is.EndpointDispatch {
                           as _i1itox65.WorkspaceViewEndpoint)
                       .list(
                         session,
-                        params['workspaceId'],
-                        params['parentId'],
+                        params['request'],
                       ),
         ),
         'read': _is.MethodConnector(
@@ -2187,24 +2185,9 @@ class Endpoints extends _is.EndpointDispatch {
         'save': _is.MethodConnector(
           name: 'save',
           params: {
-            'workspaceId': _is.ParameterDescription(
-              name: 'workspaceId',
-              type: _is.getType<int>(),
-              nullable: false,
-            ),
-            'id': _is.ParameterDescription(
-              name: 'id',
-              type: _is.getType<String>(),
-              nullable: false,
-            ),
-            'expectedRevision': _is.ParameterDescription(
-              name: 'expectedRevision',
-              type: _is.getType<int>(),
-              nullable: false,
-            ),
-            'definition': _is.ParameterDescription(
-              name: 'definition',
-              type: _is.getType<String>(),
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iq8az3jy.WorkspaceViewSaveRequest>(),
               nullable: false,
             ),
           },
@@ -2217,10 +2200,7 @@ class Endpoints extends _is.EndpointDispatch {
                           as _i1itox65.WorkspaceViewEndpoint)
                       .save(
                         session,
-                        params['workspaceId'],
-                        params['id'],
-                        params['expectedRevision'],
-                        params['definition'],
+                        params['request'],
                       ),
         ),
       },

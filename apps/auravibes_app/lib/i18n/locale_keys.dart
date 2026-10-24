@@ -2683,4 +2683,7 @@ abstract class LocaleKeys {
   static const workspace_views_definition = 'workspace_views.definition';
   static const workspace_views_unavailable = 'workspace_views.unavailable';
   static const workspace_views_limit = 'workspace_views.limit';
+  static const workspace_views_save = 'workspace_views.save';
+  static const workspace_views_no_tables = 'workspace_views.no_tables';
+  static const workspace_views_no_views = 'workspace_views.no_views';
 }

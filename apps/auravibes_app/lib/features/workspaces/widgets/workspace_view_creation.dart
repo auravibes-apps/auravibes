@@ -1,8 +1,11 @@
 import 'dart:async';
+
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_form_state.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_source_picker.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -10,42 +13,109 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const WorkspaceViewCreation({required final String workspaceId,required final String? parentId,
-  required final ValueChanged<String> onOpenView,super.key}) extends HookConsumerWidget {
+class const WorkspaceViewCreation({
+  required final String workspaceId,
+  required final String? parentId,
+  required final ValueChanged<String> onOpenView,
+  super.key,
+}) extends HookWidget {
   @override
-  Widget build(BuildContext context,WidgetRef ref) {
-    final name = useTextEditingController();
-    final selected = useState<WorkspaceTable?>(null);
-    final pending = useState(false);
-    final failure = useState<Object?>(null);
-    final tables = ref.watch(workspaceTablesProvider(workspaceId,parentId));
-    Future<void> create() async {
-      final table = selected.value;
-      if (table == null || pending.value) return;
-      pending.value = true;
-      failure.value = null;
-      try {
-        final usecase = await ref.read(workspaceViewUsecaseProvider(workspaceId).future);
-        final view = await usecase.create(name:name.text,table:table,columnIds:[table.labelColumnId],parentId:parentId);
-        if (!context.mounted) return;
-        ref.invalidate(workspaceViewsProvider(workspaceId,parentId));
-        onOpenView(view.id);
-      } on Object catch (error) {
-        if (context.mounted) failure.value = error;
-      } finally { if (context.mounted) pending.value = false; }
-    }
-    return Column(mainAxisSize:MainAxisSize.min,children:[
-      AuraInput(controller:name,label:const TextLocale(LocaleKeys.workspace_views_name),identifier:'workspace_view_name'),
+  Widget build(BuildContext context) =>
+      _Form(this, .use(), useState<WorkspaceTable?>(null));
+}
+
+class const _Form(
+  final WorkspaceViewCreation owner,
+  final WorkspaceItemFormState state,
+  final ValueNotifier<WorkspaceTable?> selected,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _Name(state),
       const TextLocale(LocaleKeys.workspace_views_bindings),
-      switch(tables) {
-        AsyncData(:final value) => Column(mainAxisSize:MainAxisSize.min,children:[for (final table in value.where((table)=>table.canManage)) ListTile(
-          title:Text(table.name),selected:selected.value?.id == table.id,onTap:()=>selected.value=table)]),
-        AsyncError(:final error) => WorkspaceItemFailure(error:error),
-        AsyncLoading() => const CircularProgressIndicator(),
-      },
-      AuraButton(onPressed:()=>unawaited(create()),disabled:selected.value==null || pending.value,isLoading:pending.value,
-        identifier:'workspace_view_create',child:const TextLocale(LocaleKeys.workspace_views_create)),
-      if (failure.value case final error?) WorkspaceItemFailure(error:error),
-    ]);
+      _Source(owner, selected),
+      _Create(owner, state, selected),
+      if (state.error.value case final error?)
+        WorkspaceItemFailure(error: error),
+    ],
+  );
+}
+
+class const _Name(final WorkspaceItemFormState state) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: state.name,
+    label: const TextLocale(LocaleKeys.workspace_views_name),
+    identifier: 'workspace_view_name',
+  );
+}
+
+class const _Source(
+  final WorkspaceViewCreation owner,
+  final ValueNotifier<WorkspaceTable?> selected,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceViewSourcePicker(
+    workspaceId: owner.workspaceId,
+    selected: selected.value,
+    onSelected: (table) => selected.value = table,
+  );
+}
+
+class const _Create(
+  final WorkspaceViewCreation owner,
+  final WorkspaceItemFormState state,
+  final ValueNotifier<WorkspaceTable?> selected,
+) extends HookConsumerWidget {
+  bool get _disabled => selected.value == null || state.pending.value;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final draft = useState<WorkspaceView?>(null);
+    return AuraButton(
+      onPressed: () =>
+          unawaited(state.run(context, () => _save(context, ref, draft))),
+      child: const TextLocale(LocaleKeys.workspace_views_create),
+      isLoading: state.pending.value,
+      disabled: _disabled,
+      identifier: 'workspace_view_create',
+    );
+  }
+
+  Future<void> _save(
+    BuildContext context,
+    WidgetRef ref,
+    ValueNotifier<WorkspaceView?> draft,
+  ) async {
+    final table = selected.value;
+    if (table == null) return;
+    final view = _draft(table, draft.value);
+    draft.value = view;
+    final id = await _create(ref, view);
+    if (!context.mounted) return;
+    ref.invalidate(workspaceViewsProvider(owner.workspaceId, owner.parentId));
+    owner.onOpenView(id);
+  }
+
+  WorkspaceView _draft(WorkspaceTable table, WorkspaceView? previous) {
+    if (previous != null &&
+        previous.name == state.name.text &&
+        previous.tableId == table.id)
+      return previous;
+    return WorkspaceView.create(
+      name: state.name.text,
+      table: table,
+      columnIds: [table.labelColumnId],
+      parentId: owner.parentId,
+    );
+  }
+
+  Future<String> _create(WidgetRef ref, WorkspaceView view) async {
+    final usecase = await ref.read(
+      workspaceViewUsecaseProvider(owner.workspaceId).future,
+    );
+    final created = await usecase.save(view, requestId: view.id);
+    return created.id;
   }
 }
