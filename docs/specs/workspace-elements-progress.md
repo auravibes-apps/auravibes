@@ -4,11 +4,12 @@ Parent: #1665. Branch: `feat/1665-workspace-elements`.
 
 ## Current checkpoint
 
-- Closed with acceptance evidence: #1667, #1668, #1669, #1670, #1671, #1685 (6 of 26 children).
-- Integrated pending acceptance follow-up: #1676 rename/move awaits Directory live acceptance; #1672 constraints awaits two record-editor clarity repairs owned by #1673.
+- Closed with acceptance evidence: #1667, #1668, #1669, #1670, #1671, #1672, #1673, #1676, #1685 (9 of 26 children).
+- #1672 constraints, #1673 references and #1676 rename/move passed final integration and live acceptance, were published at `bb40369ad`, and were closed with linked evidence below.
 - Integrated #1688 Connector writes at `c8a0e6ae5`; isolated live UI acceptance and final standards review remain before closure.
-- Active implementers: #1675 Directory/table browsing, #1673 relationships and #1682 persistent A2UI views. Each owns a separate worktree. #1682 is based on integrated #1688 at `29a973065`; native blocker #1669 is closed, and its preflight only matched this coordinated draft PR.
-- Latest published verified head: `05a844a59`; draft PR #1693 remains draft. Full Flutter CI passed at prior `ea6dcb2f4` (40057406933). Run40058728216 at69f361501 passed every gate except format; the one-line formatter repair is published. Current-head CI and remaining children are incomplete.
+- Directory checkpoint `edd71871e` is integrated at `b2a7fc832`: current-folder navigation, contextual creation/actions, bounded browsing, reference privacy projection and responsive draft retention. #1675 remains incomplete: exact typed filter/sort operators, permitted bulk Move and record-dialog query refresh are still active.
+- Active implementers: #1675 Directory/table browsing, #1682 persistent A2UI views and newly unblocked #1674 dependent relationship filters. Each owns a separate worktree. #1674 starts from `bb40369ad`; its native blocker #1673 is verified closed, and preflight only matched this coordinated draft PR.
+- Latest published head: `bb40369ad`, verified against `git ls-remote`; draft PR #1693 remains draft. Full Flutter CI passed at prior `ea6dcb2f4` (40057406933). Run40058728216 failed only format; repaired run40060362461 passed formatting but was superseded/cancelled before all app tests finished. Current-head CI and remaining children are incomplete.
 - #1671 acceptance comment: https://github.com/auravibes-apps/auravibes/issues/1671#issuecomment-6379169692. Local/cloud date, timestamp and exact-money behavior is accepted; #1672 separately verifies constraint interactions.
 
 
@@ -162,7 +163,7 @@ Root repair verification: scoped DCL checks now pass for folder/shared changes (
 ### Continuation checkpoint
 
 - Root integration after provisional typed merge: `28b62155` (includes `bbc758936`, `437183849`, `2b59d0e5`); remote still last verified `a5fbe5f7b`. Only #1667/#1668 closed. All remaining children remain open; #1670 is explicitly provisional.
-- Active implementers: `connections_1685` in `workspace-connections-1685/auravibes` on `feat/1685-workspace-connections`; `golden_baseline` now in `workspace-access-1669/auravibes` on `feat/1669-workspace-table-access`; `tables_1668` now in `workspace-moves-1676/auravibes` on `feat/1676-workspace-item-organization`. Merger `integration_merger` is idle/reusable. Root owns integration tracked files between merges.
+- Active implementers: #1675 Directory/table browsing, #1682 persistent A2UI views and newly unblocked #1674 dependent relationship filters. Each owns a separate worktree. #1674 starts from `bb40369ad`; its native blocker #1673 is verified closed, and preflight only matched this coordinated draft PR.
 - #1685: prior 129 app and 31 backend checks passed; general DCL reached zero before latest model change. Root required actual model-key reads to migrate legacy ciphertext via existing common CAS path. Red tests reproduced migration/write-failure/concurrent-replacement gaps. Fix also prevents URL-only updates writing stale ciphertext back; five real DB/platform regressions plus existing model/service tests await green. Name-only null-as-unchanged behavior must remain covered. No eager DB sweep required.
 - #1669: core commit `1d965a30`, typed merge `dd8bda28`/later `581fd8e9`; final source remains worker-owned. Current membership must be rechecked after workspace lock and before replay authorization. Combined UI refactor owns table screen, column/record editors/fields; latest two DCL metric findings fixed, final analysis/UI/endpoint checks still active. Checkpoint `/tmp/auravibes-1669-checkpoint.md`.
 - #1676: stable metadata edits must not increment schemaRevision. Worktree confirmed from `bbc758936`; checkpoint `/tmp/auravibes-1676-checkpoint.md`. Cold frontend compile remains active, no duplicate retry; early DCL queued behind lease. Root has no heavy validation running. Host observed 16 GiB RAM, 27% memory free, no thermal/performance warning; no resource limit diagnosed.
@@ -330,6 +331,50 @@ Formatter repair `05a844a59381d861acde90d3022c0036e22fb316` pushed after dry-run
 - Worker evidence retained in `/Users/davidlondono/.codex/implementation-checkpoints/workspace-writes-1688.md`: app128, engine45 plus final9, server49, authenticated full26 plus final focused recovery regression; handwritten fatal analyzer, localization, nullable/unused, scoped new-helper DCL and clean generated-drift gate passed. No new full-suite claim is made for this integration check.
 - Existing server orchestration DCL excess remains: changed methods were compared against baseline and recorded in the worker checkpoint. New helpers pass their configured volume ceiling; whole server monolith files do not. No metric ignore or broad unrelated refactor was added.
 - Remaining acceptance: parent-owned isolated app smoke for write approval, allow-all and uncertainty UI; final standards/spec review and repository issue workflow. No live provider writes, push, issue closure, automation or golden updates occurred during integration. Release/provider/retention decisions remain unresolved.
+
+
+### Directory candidate live verification — 2026-10-24
+
+The isolated UI checkout combines References `ce605febf` and Directory `ab6439f43` at candidate `b5e44e8a5`. This is not the integration branch and does not establish final ticket acceptance. Marionette instance `directory-1665-oct24` uses the dedicated UI worktree; Computer provides approved fallback control for its window and an unlabeled table Back control.
+
+- Directory shows only current-folder elements, folders first. Toolbar + exposes implemented Folder/Table types. Minimal name forms create and open the new folder/table in the current folder.
+- A record created through table + saves and appears in the grid. Returning from the editor/table preserves the containing folder.
+- Row-menu rename and move preserve table ID `01a16c25-b6e1-7ec2-b45f-92ff82c9a859`; the table moves to root, disappears from its previous folder, and reopens with its record intact.
+- New-record Quantity default7 is visible before save. Required/Unique hints now follow Quantity; a small left-alignment repair is being verified by the References implementer. No duplicate record was saved during this check.
+- Long-press opens selection mode with checkboxes/count/Done. **Remaining #1675 gap:** permitted bulk Move is absent and must be implemented; selection is not accepted as complete. Exact typed sort/filter operators also remain open.
+- Native table Back lacked a stable selector/label. Directory has added Back/menu/pagination identifiers and labels; these are not yet included in this live capture.
+- No application error logs were collected. One automation argument failed schema validation (`text` instead of `input`); it performed no app mutation, was captured, and was corrected.
+
+Evidence under `/tmp/auravibes-1665-ui-evidence/`: `directory-start-0.png`, `directory-created-table-0.png`, `directory-moved-table-0.png` and tree, `constraints-visible-default-0.png` and tree, `directory-selection-0.png` and tree. Native phone-width verification, final permission/relationship picker flows, final combined slice acceptance and current-head CI remain open.
+
+
+### References integration — 2026-10-24
+
+- Merged final #1673 worker tip `0636c0251` without conflicts as `77a429121`. Preserved original folder commit `4eee5ba18` and integration history through `e5019c835`. No Directory candidate was merged.
+- Root integrated checks passed: 9 app tests covering file-backed relationship reopen, invalid targets, hidden-link source edits and denied previews, bounded picker/search/create/read-only behavior, unsaved reference default selection, new-record defaults and field-hint alignment; 4 authenticated server tests covering relationships, constraints and legacy table/schema identity. Full logs: `/tmp/merge1673-app.log`, `/tmp/merge1673-server.log`. Pinned FVM 3.47.7 commands used the root validation lease.
+- Review confirmed current grants and workspace-lock transactions on reference reads; record link and schema default projection; server retention of persisted hidden links with forged mutation denial; current projection on idempotent receipt replay; optional reference defaults normalized for legacy schema identity; typed generated endpoint/client request compatibility. Whitespace and ancestry checks passed.
+- Worker evidence remains in `/Users/davidlondono/.codex/implementation-checkpoints/workspace-references-1673.md`: 24 app cases, 4 authenticated endpoint tests, handwritten fatal analysis, strict new/reference DCL, localization audit and clean generated-artifact gate. The conflict-free merge changed no generator input beyond the verified worker state, so broad generation was not repeated.
+- #1673 and #1672 remain open pending root live UI acceptance and final combined Directory query projection/decoder/grid-label verification. Per-row grant projection remains secure; request-scope performance measurement belongs to #1680. Existing monolithic use-case DCL findings and baseline goldens remain unchanged. No push, issue closure, snapshot update or UI automation occurred during integration.
+
+## Directory checkpoint integration verification — 2026-10-24
+
+- Merged explicit verified worker SHA `edd71871e` as `b2a7fc832`, without copying the worker’s uncommitted next-stage tests. Final reference commit `0636c0251` and original folder commit `4eee5ba18` remain ancestors. The merge had no conflicts.
+- Integrated app regression command, through the root validation lease and pinned FVM: `fvm flutter test test/features/workspaces/screens/workspace_items_screen_test.dart test/features/workspaces/screens/workspace_table_screen_test.dart test/features/workspaces/screens/workspace_table_access_test.dart test/features/workspaces/notifiers/directory_navigation_notifier_test.dart test/features/workspaces/usecases/query_workspace_records_usecase_test.dart test/data/repositories/cloud_workspace_record_query_repository_test.dart test/widgets/responsive_drawer_draft_test.dart test/widgets/responsive_sliding_drawer_test.dart --no-pub`, from the app package. All 61 tests passed (7 seconds test runtime). Evidence: `/tmp/auravibes-directory-root-merge-tests.log`.
+- Authenticated query command, through the same lease: `fvm dart test test/integration/features/workspace_state/workspace_record_query_endpoint_test.dart`, from the server package. The comprehensive endpoint test passed (4 seconds test runtime), covering bounded pages, scalar ordering/search, current grants/revocation and hidden reference projection. It used the integration checkout’s existing isolated test Postgres at port 10753, with credentials injected from ignored configuration without printing them. Evidence: `/tmp/auravibes-directory-root-query-endpoint.log`.
+- Merge review retained same-transaction workspace authorization and per-record `WorkspaceTableAccess.visible` projection, cloud `restrictedReferenceColumns` decoding, authorized reference labels and drawer body identity. App tests cover folder/scroll return, selection, metadata actions, restricted cells at both widths and unsaved record/column drafts across breakpoints. `git diff --check` passed.
+- This is a verified checkpoint, not #1675 completion. Exact typed operators, permitted bulk Move and record-dialog bounded-query invalidation remain with the Directory implementer. No issue was closed, no remote write occurred and no UI automation ran during this integration. Full workspace gates and live verification are not repeated here; parent orchestration owns final acceptance. Preserved all pre-existing untracked scratch and golden evidence.
+
+
+### Accepted constraints, references and metadata slices — 2026-10-24
+
+- #1672 closed with evidence: https://github.com/auravibes-apps/auravibes/issues/1672#issuecomment-6379969911. Final live default visibility and correctly grouped/left-aligned hints pass after hot reload.
+- #1673 closed with evidence: https://github.com/auravibes-apps/auravibes/issues/1673#issuecomment-6379970351. Live reference default configuration, source save/reopen, linked details, target rename refresh and derived reverse discovery pass.
+- #1676 closed with evidence: https://github.com/auravibes-apps/auravibes/issues/1676#issuecomment-6379970800. Live per-item rename/move preserves table identity and saved records.
+- Published integration `bb40369ad` after successful dry-run; remote SHA matches. UI candidate `b8214b5d4` has no apps/packages diff from this integration. Wide-window capture also preserves content/current folder through responsive remount. Final Back/menu/pagination selectors are present and Back works through Marionette.
+- Final evidence: `constraints-aligned-reference-0.png` and tree, `reference-default-picker-0.png` and tree, `reference-target-details-0.png` and tree, `reference-renamed-label-tree.txt`, `reference-reverse-0.png` and tree, `directory-final-controls-tree.txt`, `directory-wide-table-0.png`, `directory-wide-list-0.png`, under `/tmp/auravibes-1665-ui-evidence/`.
+- The only recorded Flutter severe log was Marionette's own failed scroll-to simulator. Computer scrolling reached Save and preserved the draft; no application mutation failure occurred. The failed scroll capture/log is retained.
+- #1675 remains open for exact typed sort/filter operators, permitted bulk Move and dialog-query refresh. #1688 still awaits its remaining UI/standards acceptance. Parent completion, current-head CI and release/legal gates remain open. No snapshots, production data, deployment or release changed.
+
 
 ### #1675 Directory worker checkpoint and typed query contract
 
