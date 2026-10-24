@@ -197,7 +197,9 @@ WorkspaceTablesCompanion _columnUpdate(
     jsonEncode(columns.map((column) => column.toJson()).toList()),
   ),
   revision: .new(row.revision + 1),
-  schemaRevision: .new(row.schemaRevision + 1),
+  schemaRevision: .new(
+    WorkspaceTableConstraints.schemaRevision(_table(row), columns),
+  ),
 );
 
 WorkspaceTableRecordsCompanion _newRecord(

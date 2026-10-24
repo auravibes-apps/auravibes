@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:uuid/v7.dart';
 
 const _maximumColumns = 100;
 const _maximumNameLength = 200;
@@ -6,6 +7,16 @@ const _maximumTextLength = 16384;
 const _minimumPhoneDigits = 3;
 
 abstract final class WorkspaceColumnValidation {
+  static WorkspaceColumn normalized(WorkspaceColumn column) => WorkspaceColumn(
+    id: column.id.isEmpty ? const UuidV7().generate() : column.id,
+    name: column.name.trim(),
+    type: column.type,
+    options: column.options.map((name) => name.trim()).toList(),
+    isRequired: column.isRequired,
+    isUnique: column.isUnique,
+    defaultValue: column.defaultValue,
+  );
+
   static void columns(List<WorkspaceColumn> columns, String labelColumnId) {
     _require(columns.isNotEmpty && columns.length <= _maximumColumns);
     _require(_uniqueIds(columns));

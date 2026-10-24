@@ -1,7 +1,6 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
-import 'package:uuid/v7.dart';
 
 class const OrganizeWorkspaceTablesUsecase(
   final WorkspaceTableRepository _repository,
@@ -82,7 +81,7 @@ class const OrganizeWorkspaceTablesUsecase(
     required WorkspaceColumn column,
   }) {
     _requireManage(table);
-    final normalized = normalizeWorkspaceColumn(column);
+    final normalized = WorkspaceColumnValidation.normalized(column);
     _checkColumnId(table, column.id);
     WorkspaceColumnValidation.columns(
       table.withColumn(normalized),
@@ -98,16 +97,6 @@ void _checkColumnId(WorkspaceTable table, String id) {
     throw const WorkspaceTableException();
   }
 }
-
-WorkspaceColumn normalizeWorkspaceColumn(WorkspaceColumn column) => WorkspaceColumn(
-  id: column.id.isEmpty ? const UuidV7().generate() : column.id,
-  name: _name(column.name),
-  type: column.type,
-  options: column.options.map(_name).toList(),
-  isRequired: column.isRequired,
-  isUnique: column.isUnique,
-  defaultValue: column.defaultValue,
-);
 
 String _name(String value) {
   final trimmed = value.trim();

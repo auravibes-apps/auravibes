@@ -1,4 +1,3 @@
-import 'package:auravibes_app/features/workspaces/usecases/preview_workspace_column_usecase.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,6 +9,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/preview_workspace_column_usecase.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -53,22 +53,26 @@ void main() {
         isRequired: true,
       );
       expect(
-        (await PreviewWorkspaceColumnUsecase(tables).call(
-          table: table,
-          column: requiredColumn,
-        )).length,
+        (await PreviewWorkspaceColumnUsecase(
+          tables,
+        ).call(table: table, column: requiredColumn)).length,
         2,
       );
       await expectLater(
         tables.saveColumn(table: table, column: requiredColumn),
         throwsA(isA<WorkspaceTableException>()),
       );
+      final unchanged = await tables.saveColumn(
+        table: table,
+        column: table.columns.last,
+      );
+      expect(unchanged.schemaRevision, table.schemaRevision);
+      table = unchanged;
       final unique = WorkspaceColumn(id: id, name: 'Value', isUnique: true);
       expect(
-        (await PreviewWorkspaceColumnUsecase(tables).call(
-          table: table,
-          column: unique,
-        )).map((record) => record.id),
+        (await PreviewWorkspaceColumnUsecase(
+          tables,
+        ).call(table: table, column: unique)).map((record) => record.id),
         [first.id, second.id],
       );
       await expectLater(
@@ -77,7 +81,9 @@ void main() {
       );
       final number = WorkspaceColumn(id: id, name: 'Value', type: .number);
       expect(
-        (await PreviewWorkspaceColumnUsecase(tables).call(table: table, column: number)).length,
+        (await PreviewWorkspaceColumnUsecase(
+          tables,
+        ).call(table: table, column: number)).length,
         2,
       );
       await expectLater(
@@ -102,12 +108,7 @@ void main() {
       final stale = table;
       table = await tables.saveColumn(
         table: table,
-        column: .new(
-          id: id,
-          name: 'Value',
-          isRequired: true,
-          isUnique: true,
-        ),
+        column: .new(id: id, name: 'Value', isRequired: true, isUnique: true),
       );
       await expectLater(
         Future.sync(
@@ -857,6 +858,12 @@ void main() {
         (await tables.record(typed.id, typedRecord.id)).values,
         typedValues,
       );
+      final unchanged = await tables.saveColumn(
+        table: typed,
+        column: typed.columns.last,
+      );
+      expect(unchanged.schemaRevision, typed.schemaRevision);
+      typed = unchanged;
       final moved = await tables.updateMetadata(
         table: typed,
         name: 'Renamed remotely',

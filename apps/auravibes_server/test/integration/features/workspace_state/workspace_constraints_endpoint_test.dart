@@ -198,6 +198,28 @@ void main() {
         ),
       );
       expect(converted.resources.single.revision, 2);
+      final unchanged = {
+        ...safe,
+        'columns': [
+          for (final column
+              in (safe['columns'] as List).cast<Map<String, Object?>>())
+            {...column, if (column['id'] == 'value') 'defaultValue': 5.0},
+        ],
+      };
+      final noOp = await patch(
+        WorkspacePatchOperation(
+          operation: .update,
+          resourceKind: .table,
+          resourceId: tableId,
+          expectedRevision: 2,
+          data: jsonEncode(unchanged),
+          fieldMask: const [],
+        ),
+      );
+      expect(
+        (jsonDecode(noOp.resources.single.data) as Map)['schemaRevision'],
+        2,
+      );
       final incompatible = {
         ...schema,
         'schemaRevision': 3,
@@ -213,7 +235,7 @@ void main() {
             operation: .update,
             resourceKind: .table,
             resourceId: tableId,
-            expectedRevision: 2,
+            expectedRevision: 3,
             data: jsonEncode(incompatible),
             fieldMask: const [],
           ),
@@ -233,14 +255,29 @@ void main() {
           eventLimit: 100,
           pages: [
             WorkspaceResourcePageRequest(resourceKind: .table, limit: 100),
+            WorkspaceResourcePageRequest(
+              resourceKind: .tableRecord,
+              limit: 100,
+            ),
           ],
         ),
       );
-      final saved = state.pages.single.resources.firstWhere(
-        (row) => row.resourceId == tableId,
-      );
-      expect(saved.revision, 2);
+      final saved = state.pages
+          .firstWhere((page) => page.resourceKind == .table)
+          .resources
+          .firstWhere(
+            (row) => row.resourceId == tableId,
+          );
+      expect(saved.revision, 3);
       expect((jsonDecode(saved.data) as Map)['schemaRevision'], 2);
+      final retained = state.pages
+          .firstWhere((page) => page.resourceKind == .tableRecord)
+          .resources
+          .single;
+      expect((jsonDecode(retained.data) as Map)['values'], {
+        'value': 5,
+        'contact': 'person@example.com',
+      });
     });
   }, rollbackDatabase: RollbackDatabase.disabled);
 }

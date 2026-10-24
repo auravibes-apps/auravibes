@@ -1,7 +1,7 @@
-import 'package:auravibes_app/features/workspaces/usecases/preview_workspace_column_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/preview_workspace_column_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_constraints.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_violations.dart';
@@ -98,10 +98,8 @@ abstract final class _ColumnActions {
     ({WorkspaceTable table, WorkspaceColumn column}) input,
     _ColumnDraft draft,
   ) async {
-    final violations = await PreviewWorkspaceColumnUsecase(usecase).call(
-      table: input.table,
-      column: input.column,
-    );
+    final violations = await PreviewWorkspaceColumnUsecase(usecase)
+        .call(table: input.table, column: input.column);
     if (!ref.context.mounted) return false;
     draft.violations.value = violations;
 

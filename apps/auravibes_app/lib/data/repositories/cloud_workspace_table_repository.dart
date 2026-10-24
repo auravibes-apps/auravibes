@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -218,7 +219,7 @@ Map<String, Object?> _schemaUpdate(
   'name': table.name,
   'parentId': table.parentId,
   'labelColumnId': table.labelColumnId,
-  'schemaRevision': table.schemaRevision + 1,
+  'schemaRevision': WorkspaceTableConstraints.schemaRevision(table, columns),
   'columns': columns.map((column) => column.toJson()).toList(),
 };
 Iterable<WorkspaceResource> _active(List<WorkspaceResource> rows) =>

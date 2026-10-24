@@ -12,6 +12,18 @@ abstract final class WorkspaceTableConstraints {
     ...values,
   };
 
+  static int schemaRevision(
+    WorkspaceTable table,
+    List<WorkspaceColumn> columns,
+  ) =>
+      table.schemaRevision +
+      (const DeepCollectionEquality().equals(
+            _columnData(table.columns),
+            _columnData(columns),
+          )
+          ? 0
+          : 1);
+
   static void records(
     List<WorkspaceColumn> columns,
     Iterable<WorkspaceRecord> records,
@@ -29,10 +41,10 @@ abstract final class WorkspaceTableConstraints {
     List<WorkspaceRecord> records,
   ) => records.where((record) => _violates(columns, records, record)).toList();
 
-  static bool same(Object? left, Object? right) =>
+  static bool _same(WorkspaceColumn column, Object? left, Object? right) =>
       const DeepCollectionEquality.unordered().equals(
-        _canonical(left),
-        _canonical(right),
+        _comparison(column, left),
+        _comparison(column, right),
       );
   static void _remember(
     Iterable<WorkspaceColumn> columns,
@@ -43,7 +55,7 @@ abstract final class WorkspaceTableConstraints {
       if (!record.containsKey(column.id)) continue;
       final values = seen.putIfAbsent(column.id, () => []);
       final value = record[column.id];
-      if (values.any((existing) => same(existing, value))) {
+      if (values.any((existing) => _same(column, existing, value))) {
         throw const WorkspaceTableException();
       }
       values.add(value);
@@ -57,7 +69,7 @@ abstract final class WorkspaceTableConstraints {
   ) {
     if (!WorkspaceColumnValidation.accepts(columns, record.values)) return true;
     for (final column in columns) {
-      if (column.isUnique && _duplicate(column.id, record, records)) {
+      if (column.isUnique && _duplicate(column, record, records)) {
         return true;
       }
     }
@@ -66,17 +78,27 @@ abstract final class WorkspaceTableConstraints {
   }
 
   static bool _duplicate(
-    String id,
+    WorkspaceColumn column,
     WorkspaceRecord record,
     List<WorkspaceRecord> records,
   ) {
+    final id = column.id;
     if (!record.values.containsKey(id)) return false;
 
     return records.any(
       (other) =>
-          other.id != record.id && same(record.values[id], other.values[id]),
+          other.id != record.id &&
+          _same(column, record.values[id], other.values[id]),
     );
   }
+}
+
+Object? _comparison(WorkspaceColumn column, Object? value) {
+  if (column.type.name == 'timestamp' && value is String) {
+    return DateTime.tryParse(value)?.toUtc().microsecondsSinceEpoch;
+  }
+
+  return _canonical(value);
 }
 
 Object? _canonical(Object? value) {
@@ -102,3 +124,6 @@ String _decimal(String value) {
 
   return RegExp(r'^-?0(?:\.0*)?$').hasMatch(result) ? '0' : result;
 }
+
+List<Map<String, Object?>> _columnData(List<WorkspaceColumn> columns) =>
+    columns.map((column) => column.toJson()).toList();

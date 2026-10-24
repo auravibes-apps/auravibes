@@ -35,11 +35,19 @@ abstract final class WorkspaceTableConstraints {
     for (final column in columns) {
       final id = column['id'] as String;
       if (!values.containsKey(id)) continue;
-      final key = jsonEncode(_canonical(values[id]));
+      final key = jsonEncode(_comparison(column, values[id]));
       if (!seen.putIfAbsent(id, () => {}).add(key)) {
         throw const FormatException();
       }
     }
+  }
+
+  static Object? _comparison(Map column, Object? value) {
+    if (column['type'] == 'timestamp' && value is String) {
+      return DateTime.tryParse(value)?.toUtc().microsecondsSinceEpoch;
+    }
+
+    return _canonical(value);
   }
 
   static Object? _canonical(Object? value) {
