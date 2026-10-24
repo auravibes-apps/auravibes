@@ -58,7 +58,7 @@ class const ManageWorkspaceViewsUsecase(
   Future<WorkspaceView> restore(
     WorkspaceView current,
     WorkspaceView previous, {
-    String? requestId,
+    required String requestId,
   }) {
     if (current.id != previous.id) throw const WorkspaceTableException();
 
